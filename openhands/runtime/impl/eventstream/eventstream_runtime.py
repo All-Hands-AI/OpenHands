@@ -12,7 +12,6 @@ from openhands.core.exceptions import (
     AgentRuntimeError,
     AgentRuntimeTimeoutError,
 )
-from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
     ActionConfirmationStatus,
@@ -34,12 +33,10 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.base import Runtime
-from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.container import ContainerInfo
-from openhands.runtime.impl.eventstream.runtime_manager import EventStreamRuntimeManager
+from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.request import send_request
-from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
 
 
@@ -125,7 +122,10 @@ class EventStreamRuntime(Runtime):
         self.log_streamer = LogStreamer(self.container_info.container, self.log)
 
         if not self.attach_to_existing:
-            self.log('info', f'Waiting for client to become ready at {self.container_info.api_url}...')
+            self.log(
+                'info',
+                f'Waiting for client to become ready at {self.container_info.api_url}...',
+            )
             self.send_status_message('STATUS$WAITING_FOR_CLIENT')
 
         if not self.attach_to_existing:
@@ -231,7 +231,7 @@ class EventStreamRuntime(Runtime):
     ) -> None:
         if not os.path.exists(host_src):
             raise FileNotFoundError(f'Source file {host_src} does not exist')
-            
+
         if not self.container_info:
             raise RuntimeError('Runtime container is not initialized.')
 

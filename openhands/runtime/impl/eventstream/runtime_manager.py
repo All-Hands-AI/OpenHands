@@ -13,23 +13,24 @@ from openhands.core.exceptions import (
     AgentRuntimeNotReadyError,
     AgentRuntimeUnavailableError,
 )
-from openhands.core.logger import DEBUG, openhands_logger as logger
-from openhands.runtime.plugins import PluginRequirement, VSCodeRequirement
-from openhands.runtime.container import ContainerInfo
-from openhands.runtime.builder import DockerRuntimeBuilder
+from openhands.core.logger import DEBUG
+from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
+from openhands.runtime.builder import DockerRuntimeBuilder
+from openhands.runtime.container import ContainerInfo
+from openhands.runtime.impl.eventstream.eventstream_runtime import EventStreamRuntime
+from openhands.runtime.plugins import PluginRequirement, VSCodeRequirement
 from openhands.runtime.runtime_manager import RuntimeManager
-from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.request import send_request
+from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
 
 _atexit_registered = False
-
 
 
 class EventStreamRuntimeManager(RuntimeManager):
@@ -44,7 +45,9 @@ class EventStreamRuntimeManager(RuntimeManager):
 
         self._containers: Dict[str, ContainerInfo] = {}
         self._docker_client = self._init_docker_client()
-        self._runtime_builder: DockerRuntimeBuilder = DockerRuntimeBuilder(self._docker_client)
+        self._runtime_builder: DockerRuntimeBuilder = DockerRuntimeBuilder(
+            self._docker_client
+        )
 
     @staticmethod
     @functools.lru_cache(maxsize=1)
@@ -68,7 +71,7 @@ class EventStreamRuntimeManager(RuntimeManager):
         headless_mode: bool = False,
     ) -> Runtime:
         """Create a new EventStreamRuntime with an initialized container.
-        
+
         This overrides the base create_runtime to handle container initialization
         before creating the runtime.
         """
@@ -105,9 +108,6 @@ class EventStreamRuntimeManager(RuntimeManager):
                     status_callback,
                 )
 
-            # Import here to avoid circular dependency
-            from openhands.runtime.impl.eventstream.eventstream_runtime import EventStreamRuntime
-
             # Create the runtime with the initialized container
             runtime = EventStreamRuntime(
                 config=self.config,
@@ -127,7 +127,9 @@ class EventStreamRuntimeManager(RuntimeManager):
             except AgentRuntimeUnavailableError as e:
                 logger.error(f'Runtime initialization failed: {e}', exc_info=True)
                 if status_callback:
-                    status_callback('error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e))
+                    status_callback(
+                        'error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e)
+                    )
                 self._cleanup_container(sid)
                 raise
 
@@ -165,14 +167,14 @@ class EventStreamRuntimeManager(RuntimeManager):
         status_callback=None,
     ) -> ContainerInfo:
         """Initialize a new container for a runtime.
-        
+
         Args:
             runtime_container_image: The Docker image to use
             sid: The session ID that will be used to generate the container name
             plugins: Optional list of plugins to enable
             env_vars: Optional environment variables to set
             status_callback: Optional callback for status updates
-            
+
         Returns:
             ContainerInfo object with connection details
         """
@@ -268,10 +270,10 @@ class EventStreamRuntimeManager(RuntimeManager):
                 environment=environment,
                 volumes=volumes,
             )
-            
+
             api_url = f'{self.config.sandbox.local_runtime_url}:{container_port}'
             logger.debug(f'Container started. Server url: {api_url}')
-            
+
             if status_callback:
                 status_callback('info', 'STATUS$CONTAINER_STARTED')
 
@@ -312,32 +314,32 @@ class EventStreamRuntimeManager(RuntimeManager):
 
     def attach_to_container(self, sid: str) -> ContainerInfo:
         """Attach to an existing container.
-        
+
         Args:
             sid: The session ID used to generate the container name
-            
+
         Returns:
             ContainerInfo object with connection details
-            
+
         Raises:
             AgentRuntimeNotFoundError: If the container doesn't exist
         """
         container_name = f'{CONTAINER_NAME_PREFIX}{sid}'
-        
+
         # Check if we already have the container info
         if container_name in self._containers:
             return self._containers[container_name]
-            
+
         try:
             container = self._docker_client.containers.get(container_name)
             container_port = 0
             for port in container.attrs['NetworkSettings']['Ports']:
                 container_port = int(port.split('/')[0])
                 break
-                
+
             host_port = container_port  # In future this might differ
             api_url = f'{self.config.sandbox.local_runtime_url}:{container_port}'
-            
+
             container_info = ContainerInfo(
                 container_id=container.id,
                 api_url=api_url,
@@ -347,7 +349,7 @@ class EventStreamRuntimeManager(RuntimeManager):
             )
             self._containers[container_name] = container_info
             return container_info
-            
+
         except docker.errors.NotFound:
             raise AgentRuntimeNotFoundError(f'Container {container_name} not found.')
 
@@ -365,11 +367,11 @@ class EventStreamRuntimeManager(RuntimeManager):
         log_streamer: Optional[LogStreamer] = None,
     ):
         """Wait until a container is ready to accept connections.
-        
+
         Args:
             sid: The session ID used to generate the container name
             log_streamer: Optional log streamer that must be ready
-            
+
         Raises:
             AgentRuntimeNotFoundError: If the container doesn't exist
             AgentRuntimeDisconnectedError: If the container has exited
@@ -379,7 +381,7 @@ class EventStreamRuntimeManager(RuntimeManager):
         container_info = self._containers.get(container_name)
         if not container_info:
             raise AgentRuntimeNotFoundError(f'Container {container_name} not found.')
-            
+
         try:
             if container_info.container.status == 'exited':
                 raise AgentRuntimeDisconnectedError(
@@ -401,7 +403,7 @@ class EventStreamRuntimeManager(RuntimeManager):
 
     def _cleanup_container(self, sid: str, remove_all: bool = False) -> None:
         """Clean up a container and its resources.
-        
+
         Args:
             sid: The session ID used to generate the container name
             remove_all: If True, remove all containers with the same prefix
@@ -431,10 +433,10 @@ class EventStreamRuntimeManager(RuntimeManager):
 
     def destroy_runtime(self, runtime_id: str) -> bool:
         """Destroy a runtime and its container.
-        
+
         Args:
             runtime_id: The runtime ID to destroy
-            
+
         Returns:
             True if the runtime was found and destroyed, False otherwise
         """
