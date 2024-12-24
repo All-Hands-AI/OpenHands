@@ -309,14 +309,12 @@ jobs:
         run: |
           if [ "${{ steps.check_result.outputs.RESOLUTION_SUCCESS }}" == "true" ]; then
             cd /tmp && python -m openhands.resolver.send_pull_request \
-              --repo ${{ env.TARGET_REPO_OWNER }}/${{ env.TARGET_REPO_NAME }} \
               --issue-number ${{ env.ISSUE_NUMBER }} \
               --pr-type draft \
               --reviewer ${{ github.actor }} | tee pr_result.txt && \
               grep "draft created" pr_result.txt | sed 's/.*\///g' > pr_number.txt
           else
             cd /tmp && python -m openhands.resolver.send_pull_request \
-              --repo ${{ env.TARGET_REPO_OWNER }}/${{ env.TARGET_REPO_NAME }} \
               --issue-number ${{ env.ISSUE_NUMBER }} \
               --pr-type branch \
               --send-on-failure | tee branch_result.txt && \
