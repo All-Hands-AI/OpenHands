@@ -326,7 +326,8 @@ async def test_complete_runtime():
 @pytest.mark.asyncio
 async def test_process_issue(mock_output_dir, mock_prompt_template):
     # Mock dependencies
-    mock_create_runtime = MagicMock()
+    mock_runtime = MagicMock(connect=AsyncMock())
+    mock_create_runtime = AsyncMock(return_value=mock_runtime)
     mock_initialize_runtime = AsyncMock()
     mock_run_controller = AsyncMock()
     mock_complete_runtime = AsyncMock()
@@ -408,7 +409,9 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
         handler_instance.reset_mock()
 
         # Mock return values
-        mock_create_runtime.return_value = MagicMock(connect=AsyncMock())
+        mock_runtime = MagicMock(connect=AsyncMock())
+        mock_create_runtime.return_value = AsyncMock()
+        mock_create_runtime.return_value.__aenter__.return_value = mock_runtime
         if test_case['run_controller_raises']:
             mock_run_controller.side_effect = test_case['run_controller_raises']
         else:
