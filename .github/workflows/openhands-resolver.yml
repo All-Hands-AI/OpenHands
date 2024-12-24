@@ -57,34 +57,6 @@ on:
       PAT_USERNAME:
         required: false
 
-  workflow_dispatch:
-    inputs:
-      target_branch:
-        required: false
-        type: string
-        default: "main"
-        description: "Target branch to pull and create PR against"
-      issue_number:
-        required: true
-        type: string
-        description: "Issue number to process"
-      issue_type:
-        required: true
-        type: string
-        description: "Type of issue (issue or pr)"
-      target_repo_owner:
-        required: true
-        type: string
-        description: "Owner of the target repository"
-      target_repo_name:
-        required: true
-        type: string
-        description: "Name of the target repository"
-      comment_id:
-        required: false
-        type: string
-        description: "ID of the comment to update with progress"
-
   issues:
     types: [labeled]
   pull_request:
@@ -105,7 +77,6 @@ jobs:
   auto-fix:
     if: |
       github.event_name == 'workflow_call' ||
-      github.event_name == 'workflow_dispatch' ||
       github.event.label.name == 'fix-me' ||
       github.event.label.name == 'fix-me-experimental' ||
       (
