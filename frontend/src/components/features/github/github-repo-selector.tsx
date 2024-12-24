@@ -82,7 +82,9 @@ export function GitHubRepositorySelector({
       clearButtonProps={{ onClick: handleClearSelection }}
       listboxProps={{
         emptyContent,
-        startContent: config?.APP_MODE === "saas" && config?.APP_SLUG ? (
+      }}
+      startContent={
+        config?.APP_MODE === "saas" && config?.APP_SLUG ? (
           <a
             href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
             target="_blank"
@@ -92,10 +94,11 @@ export function GitHubRepositorySelector({
           >
             Add more repositories...
           </a>
-        ) : undefined,
-      }}
-      filter={(item, query) => 
-        !query || item.full_name.toLowerCase().includes(query.toLowerCase())
+        ) : undefined
+      }
+      defaultFilter={(textValue, inputValue) =>
+        !inputValue ||
+        textValue.toLowerCase().includes(inputValue.toLowerCase())
       }
     >
       {finalRepositories.map((repo) => (
@@ -107,7 +110,9 @@ export function GitHubRepositorySelector({
         >
           {repo.full_name}
           {repo.fromPublicRepoSearch && repo.stargazers_count !== undefined && (
-            <span className="ml-1 text-gray-400">({repo.stargazers_count}⭐)</span>
+            <span className="ml-1 text-gray-400">
+              ({repo.stargazers_count}⭐)
+            </span>
           )}
         </AutocompleteItem>
       ))}
