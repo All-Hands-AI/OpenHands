@@ -128,7 +128,6 @@ export const searchPublicRepositories = async (
     );
     return response.data.items;
   } catch (error) {
-    console.error("Error searching repositories:", error);
     return [];
   }
 };
