@@ -16,7 +16,7 @@ export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
       type="button"
       onClick={onClick}
       className={cn(
-        "bg-white w-8 h-8 rounded-full flex items-center justify-center",
+        "w-8 h-8 rounded-full flex items-center justify-center border-2 border-gray-200",
         isLoading && "bg-transparent",
       )}
     >
