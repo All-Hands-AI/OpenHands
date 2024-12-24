@@ -1,6 +1,6 @@
 import atexit
 import functools
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import docker
 import requests
@@ -11,12 +11,16 @@ from openhands.core.exceptions import (
     AgentRuntimeDisconnectedError,
     AgentRuntimeNotFoundError,
     AgentRuntimeNotReadyError,
+    AgentRuntimeUnavailableError,
 )
 from openhands.core.logger import DEBUG, openhands_logger as logger
 from openhands.runtime.plugins import PluginRequirement, VSCodeRequirement
 from openhands.runtime.container import ContainerInfo
 from openhands.runtime.builder import DockerRuntimeBuilder
+from openhands.events import EventStream
+from openhands.runtime.base import Runtime
 from openhands.runtime.runtime_manager import RuntimeManager
+from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.request import send_request
@@ -53,9 +57,88 @@ class EventStreamRuntimeManager(RuntimeManager):
             )
             raise ex
 
-    def get_runtime_builder(self) -> DockerRuntimeBuilder:
-        """Get the runtime builder for this manager."""
-        return self._runtime_builder
+    async def create_runtime(
+        self,
+        event_stream: EventStream,
+        sid: str,
+        plugins: Optional[List[PluginRequirement]] = None,
+        env_vars: Optional[Dict[str, str]] = None,
+        status_callback=None,
+        attach_to_existing: bool = False,
+        headless_mode: bool = False,
+    ) -> Runtime:
+        """Create a new EventStreamRuntime with an initialized container.
+        
+        This overrides the base create_runtime to handle container initialization
+        before creating the runtime.
+        """
+        if sid in self._runtimes:
+            raise RuntimeError(f'Runtime with ID {sid} already exists')
+
+        # First initialize or attach to the container
+        try:
+            if attach_to_existing:
+                container_info = self.attach_to_container(sid)
+            else:
+                runtime_container_image = self.config.sandbox.runtime_container_image
+                if runtime_container_image is None:
+                    if self.config.sandbox.base_container_image is None:
+                        raise ValueError(
+                            'Neither runtime container image nor base container image is set'
+                        )
+                    if status_callback:
+                        status_callback('info', 'STATUS$STARTING_CONTAINER')
+                    runtime_container_image = build_runtime_image(
+                        self.config.sandbox.base_container_image,
+                        self._runtime_builder,
+                        platform=self.config.sandbox.platform,
+                        extra_deps=self.config.sandbox.runtime_extra_deps,
+                        force_rebuild=self.config.sandbox.force_rebuild_runtime,
+                        extra_build_args=self.config.sandbox.runtime_extra_build_args,
+                    )
+
+                container_info = self.initialize_container(
+                    runtime_container_image,
+                    sid,
+                    plugins,
+                    env_vars,
+                    status_callback,
+                )
+
+            # Import here to avoid circular dependency
+            from openhands.runtime.impl.eventstream.eventstream_runtime import EventStreamRuntime
+
+            # Create the runtime with the initialized container
+            runtime = EventStreamRuntime(
+                config=self.config,
+                event_stream=event_stream,
+                sid=sid,
+                plugins=plugins,
+                env_vars=env_vars,
+                status_callback=status_callback,
+                attach_to_existing=attach_to_existing,
+                headless_mode=headless_mode,
+                container_info=container_info,
+            )
+
+            # Initialize the runtime
+            try:
+                await runtime.connect()
+            except AgentRuntimeUnavailableError as e:
+                logger.error(f'Runtime initialization failed: {e}', exc_info=True)
+                if status_callback:
+                    status_callback('error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e))
+                self._cleanup_container(sid)
+                raise
+
+            self._runtimes[sid] = runtime
+            logger.info(f'Created runtime with ID: {sid}')
+            return runtime
+
+        except Exception as e:
+            logger.error(f'Failed to create runtime: {str(e)}')
+            self._cleanup_container(sid)
+            raise
 
     def _is_port_in_use_docker(self, port):
         containers = self._docker_client.containers.list()

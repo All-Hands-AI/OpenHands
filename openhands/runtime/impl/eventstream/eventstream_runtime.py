@@ -87,13 +87,14 @@ class EventStreamRuntime(Runtime):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        container_info: ContainerInfo | None = None,
     ):
         self.config = config
         self._vscode_url: str | None = None
         self._runtime_initialized: bool = False
         self.session = requests.Session()
         self.status_callback = status_callback
-        self.container_info: ContainerInfo | None = None
+        self.container_info = container_info
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
         self.log_streamer: LogStreamer | None = None
 
@@ -116,90 +117,36 @@ class EventStreamRuntime(Runtime):
             )
 
     async def connect(self):
-        runtime_manager = EventStreamRuntimeManager(self.config)
+        """Initialize the runtime with the provided container."""
+        if not self.container_info:
+            raise RuntimeError('Container info not provided')
+
         self.send_status_message('STATUS$STARTING_RUNTIME')
-        
-        try:
-            if self.attach_to_existing:
-                self.container_info = runtime_manager.attach_to_container(self.sid)
-                self.log(
-                    'debug',
-                    f'Attached to container: {self.container_info.container_id}. API URL: {self.container_info.api_url}',
-                )
-            else:
-                runtime_container_image = self.config.sandbox.runtime_container_image
-                if runtime_container_image is None:
-                    if self.config.sandbox.base_container_image is None:
-                        raise ValueError(
-                            'Neither runtime container image nor base container image is set'
-                        )
-                    self.send_status_message('STATUS$STARTING_CONTAINER')
-                    runtime_container_image = build_runtime_image(
-                        self.config.sandbox.base_container_image,
-                        runtime_manager._runtime_builder,
-                        platform=self.config.sandbox.platform,
-                        extra_deps=self.config.sandbox.runtime_extra_deps,
-                        force_rebuild=self.config.sandbox.force_rebuild_runtime,
-                        extra_build_args=self.config.sandbox.runtime_extra_build_args,
-                    )
+        self.log_streamer = LogStreamer(self.container_info.container, self.log)
 
-                self.log('info', f'Starting runtime with image: {runtime_container_image}')
-                self.container_info = runtime_manager.initialize_container(
-                    runtime_container_image,
-                    self.sid,
-                    self.plugins,
-                    self.initial_env_vars,
-                    self.status_callback,
-                )
-                self.log(
-                    'info',
-                    f'Container started: {self.container_info.container_id}. VSCode URL: {self.vscode_url}',
-                )
+        if not self.attach_to_existing:
+            self.log('info', f'Waiting for client to become ready at {self.container_info.api_url}...')
+            self.send_status_message('STATUS$WAITING_FOR_CLIENT')
 
-            self.log_streamer = LogStreamer(self.container_info.container, self.log)
+        if not self.attach_to_existing:
+            self.log('info', 'Runtime is ready.')
+            await call_sync_from_async(self.setup_initial_env)
 
-            if not self.attach_to_existing:
-                self.log('info', f'Waiting for client to become ready at {self.container_info.api_url}...')
-                self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+        self.log(
+            'debug',
+            f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}. VSCode URL: {self.vscode_url}',
+        )
+        if not self.attach_to_existing:
+            self.send_status_message(' ')
+        self._runtime_initialized = True
 
-            runtime_manager.wait_until_alive(self.sid, self.log_streamer)
-
-            if not self.attach_to_existing:
-                self.log('info', 'Runtime is ready.')
-                await call_sync_from_async(self.setup_initial_env)
-
-            self.log(
-                'debug',
-                f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}. VSCode URL: {self.vscode_url}',
-            )
-            if not self.attach_to_existing:
-                self.send_status_message(' ')
-            self._runtime_initialized = True
-
-        except Exception as e:
-            self.log('error', f'Failed to connect to container: {str(e)}')
-            if self.container_info:
-                runtime_manager.cleanup_container(self.sid)
-            raise
-
-    def close(self, rm_all_containers: bool | None = None):
-        """Closes the EventStreamRuntime and associated objects
-
-        Parameters:
-        - rm_all_containers (bool): Whether to remove all containers with the 'openhands-runtime-' prefix
-        """
+    def close(self):
+        """Closes the EventStreamRuntime and associated objects."""
         if self.log_streamer:
             self.log_streamer.close()
 
         if self.session:
             self.session.close()
-
-        if rm_all_containers is None:
-            rm_all_containers = self.config.sandbox.rm_all_containers
-
-        if not (self.config.sandbox.keep_runtime_alive or self.attach_to_existing):
-            runtime_manager = EventStreamRuntimeManager(self.config)
-            runtime_manager._cleanup_container(self.sid, remove_all=rm_all_containers)
 
     def run_action(self, action: Action) -> Observation:
         if isinstance(action, FileEditAction):
