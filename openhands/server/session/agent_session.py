@@ -222,10 +222,10 @@ class AgentSession:
         await asyncio.sleep(1)
 
         runtime_manager = RuntimeManager()
+        runtime_manager.initialize(config)
         try:
             self.runtime = await runtime_manager.create_runtime(
                 runtime_class=runtime_cls,
-                config=config,
                 event_stream=self.event_stream,
                 sid=self.sid,
                 plugins=agent.sandbox_plugins,
