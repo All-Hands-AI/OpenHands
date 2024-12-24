@@ -19,7 +19,7 @@ export const loadSettings = createAsyncThunk(
   async () => {
     const settings = await OpenHands.loadSettings();
     return settings;
-  }
+  },
 );
 
 export const storeSettings = createAsyncThunk(
@@ -27,7 +27,7 @@ export const storeSettings = createAsyncThunk(
   async (settings: Settings) => {
     await OpenHands.storeSettings(settings);
     return settings;
-  }
+  },
 );
 
 export const settingsSlice = createSlice({

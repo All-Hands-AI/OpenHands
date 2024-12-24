@@ -4,13 +4,13 @@ import { Settings } from "#/api/open-hands.types";
 export const LATEST_SETTINGS_VERSION = 4;
 
 export const DEFAULT_SETTINGS: Settings = {
-  llm_model: "anthropic/claude-3-5-sonnet-20241022",
-  llm_base_url: "",
-  agent: "CodeActAgent",
-  language: "en",
-  llm_api_key: "",
-  confirmation_mode: false,
-  security_analyzer: "",
+  LLM_MODEL: "anthropic/claude-3-5-sonnet-20241022",
+  LLM_BASE_URL: "",
+  AGENT: "CodeActAgent",
+  LANGUAGE: "en",
+  LLM_API_KEY: "",
+  CONFIRMATION_MODEL: false,
+  SECURITY_ANALYZER: "",
 };
 
 export const getCurrentSettingsVersion = () => {

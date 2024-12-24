@@ -26,8 +26,8 @@ function UserPrefsProvider({ children }: React.PropsWithChildren) {
 
   const saveSettings = async (newSettings: Partial<Settings>) => {
     updateAndSaveSettingsToBackend(newSettings);
-    const settings = await getSettings();
-    setSettings(settings);
+    const retrievedSettings = await getSettings();
+    setSettings(retrievedSettings);
     setSettingsAreUpToDate(checkIfSettingsAreUpToDate());
   };
 
@@ -42,10 +42,10 @@ function UserPrefsProvider({ children }: React.PropsWithChildren) {
   }, []);
 
   React.useEffect(() => {
-    if (settings.llm_api_key) {
+    if (settings.LLM_API_KEY) {
       posthog.capture("user_activated");
     }
-  }, [settings.llm_api_key]);
+  }, [settings.LLM_API_KEY]);
 
   const value = React.useMemo(
     () => ({

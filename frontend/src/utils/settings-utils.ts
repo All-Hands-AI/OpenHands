@@ -1,19 +1,19 @@
-import { Settings } from "#/services/settings";
+import { Settings } from "#/api/open-hands.types";
 
 const extractBasicFormData = (formData: FormData) => {
   const provider = formData.get("llm-provider")?.toString();
   const model = formData.get("llm-model")?.toString();
 
-  const llm_model = `${provider}/${model}`.toLowerCase();
-  const llm_api_key = formData.get("api-key")?.toString();
-  const agent = formData.get("agent")?.toString();
-  const language = formData.get("language")?.toString();
+  const LLM_MODEL = `${provider}/${model}`.toLowerCase();
+  const LLM_API_KEY = formData.get("api-key")?.toString();
+  const AGENT = formData.get("agent")?.toString();
+  const LANGUAGE = formData.get("language")?.toString();
 
   return {
-    llm_model,
-    llm_api_key,
-    agent,
-    language,
+    LLM_MODEL,
+    LLM_API_KEY,
+    AGENT,
+    LANGUAGE,
   };
 };
 
@@ -21,48 +21,48 @@ const extractAdvancedFormData = (formData: FormData) => {
   const keys = Array.from(formData.keys());
   const isUsingAdvancedOptions = keys.includes("use-advanced-options");
 
-  let custom_llm_model: string | undefined;
-  let llm_base_url: string | undefined;
-  let confirmation_mode = false;
-  let security_analyzer: string | undefined;
+  let CUSTOM_LLM_MODEL: string | undefined;
+  let LLM_BASE_URL: string | undefined;
+  let CONFIRMATION_MODEL = false;
+  let SECURITY_ANALYZER: string | undefined;
 
   if (isUsingAdvancedOptions) {
-    custom_llm_model = formData.get("custom-model")?.toString();
-    llm_base_url = formData.get("base-url")?.toString();
-    confirmation_mode = keys.includes("confirmation-mode");
-    if (confirmation_mode) {
+    CUSTOM_LLM_MODEL = formData.get("custom-model")?.toString();
+    LLM_BASE_URL = formData.get("base-url")?.toString();
+    CONFIRMATION_MODEL = keys.includes("confirmation-mode");
+    if (CONFIRMATION_MODEL) {
       // only set securityAnalyzer if confirmationMode is enabled
-      security_analyzer = formData.get("security-analyzer")?.toString();
+      SECURITY_ANALYZER = formData.get("security-analyzer")?.toString();
     }
   }
 
   return {
-    custom_llm_model,
-    llm_base_url,
-    confirmation_mode,
-    security_analyzer,
+    CUSTOM_LLM_MODEL,
+    LLM_BASE_URL,
+    CONFIRMATION_MODEL,
+    SECURITY_ANALYZER,
   };
 };
 
 const extractSettings = (formData: FormData): Partial<Settings> => {
-  const { llm_model, llm_api_key, agent, language } =
+  const { LLM_MODEL, LLM_API_KEY, AGENT, LANGUAGE } =
     extractBasicFormData(formData);
 
   const {
-    custom_llm_model,
-    llm_base_url,
-    confirmation_mode,
-    security_analyzer,
+    CUSTOM_LLM_MODEL,
+    LLM_BASE_URL,
+    CONFIRMATION_MODEL,
+    SECURITY_ANALYZER,
   } = extractAdvancedFormData(formData);
 
   return {
-    llm_model: custom_llm_model || llm_model,
-    llm_api_key,
-    agent,
-    language,
-    llm_base_url,
-    confirmation_mode,
-    security_analyzer,
+    LLM_MODEL: CUSTOM_LLM_MODEL || LLM_MODEL,
+    LLM_API_KEY,
+    AGENT,
+    LANGUAGE,
+    LLM_BASE_URL,
+    CONFIRMATION_MODEL,
+    SECURITY_ANALYZER,
   };
 };
 
