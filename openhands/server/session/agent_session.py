@@ -13,8 +13,9 @@ from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.runtime.base import Runtime
 from openhands.runtime.runtime_manager import RuntimeManager
+from openhands.server.shared import config
 
-runtime_manager = RuntimeManager(AppConfig())
+runtime_manager = RuntimeManager(config)
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_async_from_sync, call_sync_from_async
