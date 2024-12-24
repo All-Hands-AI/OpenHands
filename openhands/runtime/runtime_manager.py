@@ -69,10 +69,3 @@ class RuntimeManager(metaclass=Singleton):
     async def destroy_all_runtimes(self):
         for runtime_id in list(self._runtimes.keys()):
             self.destroy_runtime(runtime_id)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        for runtime_id in list(self._runtimes.keys()):
-            self.destroy_runtime(runtime_id)
