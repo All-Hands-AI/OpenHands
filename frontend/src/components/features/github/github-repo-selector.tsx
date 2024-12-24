@@ -65,7 +65,7 @@ export function GitHubRepositorySelector({
   const emptyContent = "No results found.";
 
   return (
-    <Autocomplete
+    <Autocomplete<GitHubRepository>
       data-testid="github-repo-selector"
       name="repo"
       aria-label="GitHub Repository"
@@ -96,8 +96,9 @@ export function GitHubRepositorySelector({
         ) : undefined,
       }}
       defaultItems={finalRepositories}
+
       filter={(item, query) => 
-        item.full_name.toLowerCase().includes(query.toLowerCase())
+        !query || item.full_name.toLowerCase().includes(query.toLowerCase())
       }
     >
       {(item) => (
