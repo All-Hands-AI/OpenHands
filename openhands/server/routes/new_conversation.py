@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.routes.settings import SettingsStoreImpl
-from openhands.server.session.session_init_data import SessionInitData
+from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import config, session_manager
 from openhands.storage.conversation.conversation_store import (
     ConversationMetadata,
@@ -47,7 +47,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
 
     session_init_args['github_token'] = github_token
     session_init_args['selected_repository'] = data.selected_repository
-    session_init_data = SessionInitData(**session_init_args)
+    conversation_init_data = ConversationInitData(**session_init_args)
 
     conversation_store = await ConversationStore.get_instance(config)
 
@@ -70,5 +70,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         )
     )
 
-    await session_manager.start_agent_loop(conversation_id, session_init_data)
+    await session_manager.maybe_start_agent_loop(
+        conversation_id, conversation_init_data
+    )
     return JSONResponse(content={'status': 'ok', 'conversation_id': conversation_id})

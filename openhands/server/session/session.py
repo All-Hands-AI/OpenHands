@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 from copy import deepcopy
 
@@ -21,8 +22,10 @@ from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
-from openhands.server.session.session_init_data import SessionInitData
+from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.files import FileStore
+from openhands.storage.locations import get_conversation_init_data_filename
+from openhands.utils.async_utils import call_sync_from_async
 
 ROOM_KEY = 'room:{sid}'
 
@@ -35,6 +38,7 @@ class Session:
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
     config: AppConfig
+    file_store: FileStore
 
     def __init__(
         self,
@@ -46,6 +50,7 @@ class Session:
         self.sid = sid
         self.sio = sio
         self.last_active_ts = int(time.time())
+        self.file_store = file_store
         self.agent_session = AgentSession(
             sid, file_store, status_callback=self.queue_status_message
         )
@@ -60,35 +65,63 @@ class Session:
         self.is_alive = False
         self.agent_session.close()
 
-    async def initialize_agent(self, session_init_data: SessionInitData):
+    async def _restore_init_data(self, sid: str) -> ConversationInitData:
+        # FIXME: we should not store/restore this data once we have server-side
+        # LLM configs. Should be done by 1/1/2025
+        json_str = await call_sync_from_async(
+            self.file_store.read, get_conversation_init_data_filename(sid)
+        )
+        data = json.loads(json_str)
+        return ConversationInitData(**data)
+
+    async def _save_init_data(self, sid: str, init_data: ConversationInitData):
+        # FIXME: we should not store/restore this data once we have server-side
+        # LLM configs. Should be done by 1/1/2025
+        json_str = json.dumps(init_data.__dict__)
+        await call_sync_from_async(
+            self.file_store.write, get_conversation_init_data_filename(sid), json_str
+        )
+
+    async def initialize_agent(
+        self, conversation_init_data: ConversationInitData | None = None
+    ):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
         )
-        # Extract the agent-relevant arguments from the request
-        agent_cls = session_init_data.agent or self.config.default_agent
+        if conversation_init_data is None:
+            try:
+                conversation_init_data = await self._restore_init_data(self.sid)
+            except FileNotFoundError:
+                logger.error(f'User settings not found for session {self.sid}')
+                raise RuntimeError('User settings not found')
+
+        agent_cls = conversation_init_data.agent or self.config.default_agent
         self.config.security.confirmation_mode = (
             self.config.security.confirmation_mode
-            if session_init_data.confirmation_mode is None
-            else session_init_data.confirmation_mode
+            if conversation_init_data.confirmation_mode is None
+            else conversation_init_data.confirmation_mode
         )
         self.config.security.security_analyzer = (
-            session_init_data.security_analyzer
+            conversation_init_data.security_analyzer
             or self.config.security.security_analyzer
         )
-        max_iterations = session_init_data.max_iterations or self.config.max_iterations
+        max_iterations = (
+            conversation_init_data.max_iterations or self.config.max_iterations
+        )
         # override default LLM config
 
         default_llm_config = self.config.get_llm_config()
         default_llm_config.model = (
-            session_init_data.llm_model or default_llm_config.model
+            conversation_init_data.llm_model or default_llm_config.model
         )
         default_llm_config.api_key = (
-            session_init_data.llm_api_key or default_llm_config.api_key
+            conversation_init_data.llm_api_key or default_llm_config.api_key
         )
         default_llm_config.base_url = (
-            session_init_data.llm_base_url or default_llm_config.base_url
+            conversation_init_data.llm_base_url or default_llm_config.base_url
         )
+        await self._save_init_data(self.sid, conversation_init_data)
 
         # TODO: override other LLM config & agent config groups (#2075)
 
@@ -105,8 +138,8 @@ class Session:
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
-                github_token=session_init_data.github_token,
-                selected_repository=session_init_data.selected_repository,
+                github_token=conversation_init_data.github_token,
+                selected_repository=conversation_init_data.selected_repository,
             )
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')

@@ -27,7 +27,7 @@ OpenHands 是一个社区驱动的项目，我们欢迎每个人的贡献。无�
 
 我们有 Slack 工作区用于协作构建 OpenHands，也有 Discord 服务器用于讨论任何相关的内容，例如此项目、大语言模型、代理等。
 
-- [Slack 工作区](https://join.slack.com/t/openhands-ai/shared_invite/zt-2vbfigwev-G03twSpXaErwzYVD4CFiBg)
+- [Slack 工作区](https://join.slack.com/t/openhands-ai/shared_invite/zt-2wkh4pklz-w~h_DVDtEe9H5kyQlcNxVw)
 - [Discord 服务器](https://discord.gg/ESHStjSjD4)
 
 如果你想做出贡献，欢迎加入我们的社区。让我们一起简化软件工程！
