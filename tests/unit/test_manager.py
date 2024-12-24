@@ -252,7 +252,6 @@ async def test_cleanup_session_connections():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
-            # Add connections with different session IDs
             session_manager.local_connection_id_to_session_id.update(
                 {
                     'conn1': 'session1',
@@ -262,13 +261,8 @@ async def test_cleanup_session_connections():
                 }
             )
 
-            # Disconnect all connections for session1
             await session_manager._close_session('session1')
 
-            # Wait for cleanup to complete
-            await asyncio.sleep(0.1)
-
-            # Verify only connections for session1 were removed
             remaining_connections = session_manager.local_connection_id_to_session_id
             assert 'conn1' not in remaining_connections
             assert 'conn2' not in remaining_connections
