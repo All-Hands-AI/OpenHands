@@ -237,3 +237,36 @@ async def test_add_to_cluster_event_stream():
         'oh_event',
         '{"sid": "new-session-id", "message_type": "event", "data": {"event_type": "some_event"}}',
     )
+
+
+@pytest.mark.asyncio
+async def test_cleanup_session_connections():
+    sio = get_mock_sio()
+    with patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01):
+        async with SessionManager(
+            sio, AppConfig(), InMemoryFileStore()
+        ) as session_manager:
+            # Add connections with different session IDs
+            session_manager.local_connection_id_to_session_id.update(
+                {
+                    'conn1': 'session1',
+                    'conn2': 'session1',
+                    'conn3': 'session2',
+                    'conn4': 'session2',
+                }
+            )
+
+            # Disconnect all connections for session1
+            await session_manager._close_session('session1')
+
+            # Wait for cleanup to complete
+            await asyncio.sleep(0.1)
+
+            # Verify only connections for session1 were removed
+            remaining_connections = session_manager.local_connection_id_to_session_id
+            assert 'conn1' not in remaining_connections
+            assert 'conn2' not in remaining_connections
+            assert 'conn3' in remaining_connections
+            assert 'conn4' in remaining_connections
+            assert remaining_connections['conn3'] == 'session2'
+            assert remaining_connections['conn4'] == 'session2'

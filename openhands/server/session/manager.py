@@ -97,6 +97,9 @@ class SessionManager:
     async def _process_message(self, message: dict):
         data = json.loads(message['data'])
         logger.debug(f'got_published_message:{message}')
+        if not data:
+            logger.warning('no_data_in_message')
+            return
         sid = data['sid']
         message_type = data['message_type']
         if message_type == 'event':
