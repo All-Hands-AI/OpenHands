@@ -234,19 +234,19 @@ class SessionManager:
                 logger.warning('error_cleaning_detached_conversations', exc_info=True)
                 await asyncio.sleep(_CLEANUP_EXCEPTION_WAIT_TIME)
 
-    async def _is_agent_loop_running(self, sid: str) -> bool:
-        if await self._is_agent_loop_running_locally(sid):
+    async def is_agent_loop_running(self, sid: str) -> bool:
+        if await self.is_agent_loop_running_locally(sid):
             return True
-        if await self._is_agent_loop_running_in_cluster(sid):
+        if await self.is_agent_loop_running_in_cluster(sid):
             return True
         return False
 
-    async def _is_agent_loop_running_locally(self, sid: str) -> bool:
+    async def is_agent_loop_running_locally(self, sid: str) -> bool:
         if self._local_agent_loops_by_sid.get(sid, None):
             return True
         return False
 
-    async def _is_agent_loop_running_in_cluster(self, sid: str) -> bool:
+    async def is_agent_loop_running_in_cluster(self, sid: str) -> bool:
         """As the rest of the cluster if a session is running. Wait a for a short timeout for a reply"""
         redis_client = self._get_redis_client()
         if not redis_client:
@@ -307,7 +307,7 @@ class SessionManager:
     ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}')
         session: Session | None = None
-        if not await self._is_agent_loop_running(sid):
+        if not await self.is_agent_loop_running(sid):
             logger.info(f'start_agent_loop:{sid}')
             session = Session(
                 sid=sid, file_store=self.file_store, config=self.config, sio=self.sio
@@ -328,7 +328,7 @@ class SessionManager:
             logger.info(f'found_local_agent_loop:{sid}')
             return session.agent_session.event_stream
 
-        if await self._is_agent_loop_running_in_cluster(sid):
+        if await self.is_agent_loop_running_in_cluster(sid):
             logger.info(f'found_remote_agent_loop:{sid}')
             return EventStream(sid, self.file_store)
 
@@ -352,7 +352,7 @@ class SessionManager:
             next_alive_check = last_alive_at + _CHECK_ALIVE_INTERVAL
             if (
                 next_alive_check > time.time()
-                or await self._is_agent_loop_running_in_cluster(sid)
+                or await self.is_agent_loop_running_in_cluster(sid)
             ):
                 # Send the event to the other pod
                 await redis_client.publish(

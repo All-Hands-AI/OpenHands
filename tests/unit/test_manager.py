@@ -41,7 +41,7 @@ async def test_session_not_running_in_cluster():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
-            result = await session_manager._is_agent_loop_running_in_cluster(
+            result = await session_manager.is_agent_loop_running_in_cluster(
                 'non-existant-session'
             )
             assert result is False
@@ -65,7 +65,7 @@ async def test_session_is_running_in_cluster():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
-            result = await session_manager._is_agent_loop_running_in_cluster(
+            result = await session_manager.is_agent_loop_running_in_cluster(
                 'existing-session'
             )
             assert result is True
@@ -93,7 +93,7 @@ async def test_init_new_local_session():
             AsyncMock(),
         ),
         patch(
-            'openhands.server.session.manager.SessionManager._is_agent_loop_running_in_cluster',
+            'openhands.server.session.manager.SessionManager.is_agent_loop_running_in_cluster',
             is_agent_loop_running_in_cluster_mock,
         ),
     ):
@@ -125,7 +125,7 @@ async def test_join_local_session():
             AsyncMock(),
         ),
         patch(
-            'openhands.server.session.manager.SessionManager._is_agent_loop_running_in_cluster',
+            'openhands.server.session.manager.SessionManager.is_agent_loop_running_in_cluster',
             is_agent_loop_running_in_cluster_mock,
         ),
     ):
@@ -158,7 +158,7 @@ async def test_join_cluster_session():
             AsyncMock(),
         ),
         patch(
-            'openhands.server.session.manager.SessionManager._is_agent_loop_running_in_cluster',
+            'openhands.server.session.manager.SessionManager.is_agent_loop_running_in_cluster',
             is_agent_loop_running_in_cluster_mock,
         ),
     ):
@@ -187,7 +187,7 @@ async def test_add_to_local_event_stream():
             AsyncMock(),
         ),
         patch(
-            'openhands.server.session.manager.SessionManager._is_agent_loop_running_in_cluster',
+            'openhands.server.session.manager.SessionManager.is_agent_loop_running_in_cluster',
             is_agent_loop_running_in_cluster_mock,
         ),
     ):
@@ -221,7 +221,7 @@ async def test_add_to_cluster_event_stream():
             AsyncMock(),
         ),
         patch(
-            'openhands.server.session.manager.SessionManager._is_agent_loop_running_in_cluster',
+            'openhands.server.session.manager.SessionManager.is_agent_loop_running_in_cluster',
             is_agent_loop_running_in_cluster_mock,
         ),
     ):
