@@ -36,6 +36,7 @@ from openhands.runtime.plugins import (
     PluginRequirement,
     VSCodeRequirement,
 )
+from openhands.runtime.runtime_manager import RuntimeManager
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands.utils.async_utils import call_sync_from_async
 
@@ -71,6 +72,7 @@ class Runtime(FileEditRuntimeMixin):
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
     status_callback: Callable | None
+    runtime_manager: RuntimeManager | None
 
     def __init__(
         self,
@@ -82,6 +84,7 @@ class Runtime(FileEditRuntimeMixin):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
+        runtime_manager: 'RuntimeManager | None' = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
@@ -97,6 +100,7 @@ class Runtime(FileEditRuntimeMixin):
 
         self.status_callback = status_callback
         self.attach_to_existing = attach_to_existing
+        self.runtime_manager = runtime_manager
 
         self.config = copy.deepcopy(config)
         atexit.register(self.close)

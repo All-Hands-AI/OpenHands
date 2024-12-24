@@ -1,25 +1,17 @@
-import atexit
 import os
 import tempfile
 import threading
-from functools import lru_cache
 from pathlib import Path
 from typing import Callable
 from zipfile import ZipFile
 
-import docker
 import requests
-import tenacity
 
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import (
-    AgentRuntimeDisconnectedError,
     AgentRuntimeError,
-    AgentRuntimeNotFoundError,
-    AgentRuntimeNotReadyError,
     AgentRuntimeTimeoutError,
 )
-from openhands.core.logger import DEBUG
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
@@ -42,24 +34,12 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.base import Runtime
-from openhands.runtime.builder import DockerRuntimeBuilder
-from openhands.runtime.impl.eventstream.containers import remove_all_containers
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.utils import find_available_tcp_port
+from openhands.runtime.runtime_manager import RuntimeManager
 from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
-from openhands.utils.tenacity_stop import stop_if_should_exit
-
-CONTAINER_NAME_PREFIX = 'openhands-runtime-'
-
-
-def remove_all_runtime_containers():
-    remove_all_containers(CONTAINER_NAME_PREFIX)
-
-
-_atexit_registered = False
 
 
 class EventStreamRuntime(Runtime):
@@ -72,10 +52,9 @@ class EventStreamRuntime(Runtime):
         sid (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
+        runtime_manager (RuntimeManager): The runtime manager instance.
     """
 
-    # Need to provide this method to allow inheritors to init the Runtime
-    # without initting the EventStreamRuntime.
     def init_base_runtime(
         self,
         config: AppConfig,
@@ -86,6 +65,7 @@ class EventStreamRuntime(Runtime):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        runtime_manager: RuntimeManager | None = None,
     ):
         super().__init__(
             config,
@@ -108,12 +88,8 @@ class EventStreamRuntime(Runtime):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        runtime_manager: RuntimeManager | None = None,
     ):
-        global _atexit_registered
-        if not _atexit_registered:
-            _atexit_registered = True
-            atexit.register(remove_all_runtime_containers)
-
         self.config = config
         self._host_port = 30000  # initial dummy value
         self._container_port = 30001  # initial dummy value
@@ -123,17 +99,16 @@ class EventStreamRuntime(Runtime):
         self.session = requests.Session()
         self.status_callback = status_callback
 
-        self.docker_client: docker.DockerClient = self._init_docker_client()
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
-        self.container_name = CONTAINER_NAME_PREFIX + sid
+        self.container_name = 'openhands-runtime-' + sid
         self.container = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
-        self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
-
         # Buffer for container logs
         self.log_streamer: LogStreamer | None = None
+
+        self.runtime_manager = runtime_manager
 
         self.init_base_runtime(
             config,
@@ -144,6 +119,7 @@ class EventStreamRuntime(Runtime):
             status_callback,
             attach_to_existing,
             headless_mode,
+            runtime_manager,
         )
 
         # Log runtime_extra_deps after base class initialization so self.sid is available
@@ -154,10 +130,19 @@ class EventStreamRuntime(Runtime):
             )
 
     async def connect(self):
+        if not self.runtime_manager:
+            raise RuntimeError('RuntimeManager not initialized')
+
         self.send_status_message('STATUS$STARTING_RUNTIME')
         try:
-            await call_sync_from_async(self._attach_to_container)
-        except docker.errors.NotFound as e:
+            self.container, self._container_port = self.runtime_manager._attach_to_container(self.container_name)
+            self._host_port = self._container_port
+            self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
+            self.log(
+                'debug',
+                f'attached to container: {self.container_name} {self._container_port} {self.api_url}',
+            )
+        except Exception as e:
             if self.attach_to_existing:
                 self.log(
                     'error',
@@ -172,7 +157,7 @@ class EventStreamRuntime(Runtime):
                 self.send_status_message('STATUS$STARTING_CONTAINER')
                 self.runtime_container_image = build_runtime_image(
                     self.base_container_image,
-                    self.runtime_builder,
+                    self.runtime_manager._runtime_builder,
                     platform=self.config.sandbox.platform,
                     extra_deps=self.config.sandbox.runtime_extra_deps,
                     force_rebuild=self.config.sandbox.force_rebuild_runtime,
@@ -182,7 +167,18 @@ class EventStreamRuntime(Runtime):
             self.log(
                 'info', f'Starting runtime with image: {self.runtime_container_image}'
             )
-            await call_sync_from_async(self._init_container)
+            self._host_port = self.runtime_manager._find_available_port()
+            self._container_port = self._host_port
+            self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
+
+            self.container = self.runtime_manager._initialize_container(
+                self.runtime_container_image,
+                self.container_name,
+                self._container_port,
+                self.plugins,
+                self.initial_env_vars,
+                self.status_callback,
+            )
             self.log(
                 'info',
                 f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
@@ -194,7 +190,13 @@ class EventStreamRuntime(Runtime):
             self.log('info', f'Waiting for client to become ready at {self.api_url}...')
             self.send_status_message('STATUS$WAITING_FOR_CLIENT')
 
-        await call_sync_from_async(self._wait_until_alive)
+        await call_sync_from_async(
+            lambda: self.runtime_manager and self.runtime_manager._wait_until_alive(
+                self.container_name,
+                self._container_port,
+                self.log_streamer,
+            )
+        )
 
         if not self.attach_to_existing:
             self.log('info', 'Runtime is ready.')
@@ -210,181 +212,6 @@ class EventStreamRuntime(Runtime):
             self.send_status_message(' ')
         self._runtime_initialized = True
 
-    @staticmethod
-    @lru_cache(maxsize=1)
-    def _init_docker_client() -> docker.DockerClient:
-        try:
-            return docker.from_env()
-        except Exception as ex:
-            logger.error(
-                'Launch docker client failed. Please make sure you have installed docker and started docker desktop/daemon.',
-            )
-            raise ex
-
-    def _init_container(self):
-        self.log('debug', 'Preparing to start container...')
-        self.send_status_message('STATUS$PREPARING_CONTAINER')
-        plugin_arg = ''
-        if self.plugins is not None and len(self.plugins) > 0:
-            plugin_arg = (
-                f'--plugins {" ".join([plugin.name for plugin in self.plugins])} '
-            )
-        self._host_port = self._find_available_port()
-        self._container_port = (
-            self._host_port
-        )  # in future this might differ from host port
-        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
-
-        use_host_network = self.config.sandbox.use_host_network
-        network_mode: str | None = 'host' if use_host_network else None
-
-        port_mapping: dict[str, list[dict[str, str]]] | None = (
-            None
-            if use_host_network
-            else {f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}]}
-        )
-
-        if use_host_network:
-            self.log(
-                'warn',
-                'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
-            )
-
-        # Combine environment variables
-        environment = {
-            'port': str(self._container_port),
-            'PYTHONUNBUFFERED': 1,
-        }
-        if self.config.debug or DEBUG:
-            environment['DEBUG'] = 'true'
-
-        if self.vscode_enabled:
-            # vscode is on port +1 from container port
-            if isinstance(port_mapping, dict):
-                port_mapping[f'{self._container_port + 1}/tcp'] = [
-                    {'HostPort': str(self._host_port + 1)}
-                ]
-
-        self.log('debug', f'Workspace Base: {self.config.workspace_base}')
-        if (
-            self.config.workspace_mount_path is not None
-            and self.config.workspace_mount_path_in_sandbox is not None
-        ):
-            # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-            volumes = {
-                self.config.workspace_mount_path: {
-                    'bind': self.config.workspace_mount_path_in_sandbox,
-                    'mode': 'rw',
-                }
-            }
-            logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
-        else:
-            logger.debug(
-                'Mount dir is not set, will not mount the workspace directory to the container'
-            )
-            volumes = None
-        self.log(
-            'debug',
-            f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
-        )
-
-        if self.config.sandbox.browsergym_eval_env is not None:
-            browsergym_arg = (
-                f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
-            )
-        else:
-            browsergym_arg = ''
-
-        try:
-            self.container = self.docker_client.containers.run(
-                self.runtime_container_image,
-                command=(
-                    f'/openhands/micromamba/bin/micromamba run -n openhands '
-                    f'poetry run '
-                    f'python -u -m openhands.runtime.action_execution_server {self._container_port} '
-                    f'--working-dir "{self.config.workspace_mount_path_in_sandbox}" '
-                    f'{plugin_arg}'
-                    f'--username {"openhands" if self.config.run_as_openhands else "root"} '
-                    f'--user-id {self.config.sandbox.user_id} '
-                    f'{browsergym_arg}'
-                ),
-                network_mode=network_mode,
-                ports=port_mapping,
-                working_dir='/openhands/code/',  # do not change this!
-                name=self.container_name,
-                detach=True,
-                environment=environment,
-                volumes=volumes,
-            )
-            self.log('debug', f'Container started. Server url: {self.api_url}')
-            self.send_status_message('STATUS$CONTAINER_STARTED')
-        except docker.errors.APIError as e:
-            if '409' in str(e):
-                self.log(
-                    'warning',
-                    f'Container {self.container_name} already exists. Removing...',
-                )
-                remove_all_containers(self.container_name)
-                return self._init_container()
-
-            else:
-                self.log(
-                    'error',
-                    f'Error: Instance {self.container_name} FAILED to start container!\n',
-                )
-        except Exception as e:
-            self.log(
-                'error',
-                f'Error: Instance {self.container_name} FAILED to start container!\n',
-            )
-            self.log('error', str(e))
-            self.close()
-            raise e
-
-    def _attach_to_container(self):
-        self._container_port = 0
-        self.container = self.docker_client.containers.get(self.container_name)
-        for port in self.container.attrs['NetworkSettings']['Ports']:  # type: ignore
-            self._container_port = int(port.split('/')[0])
-            break
-        self._host_port = self._container_port
-        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
-        self.log(
-            'debug',
-            f'attached to container: {self.container_name} {self._container_port} {self.api_url}',
-        )
-
-    @tenacity.retry(
-        stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
-        retry=tenacity.retry_if_exception_type(
-            (ConnectionError, requests.exceptions.ConnectionError)
-        ),
-        reraise=True,
-        wait=tenacity.wait_fixed(2),
-    )
-    def _wait_until_alive(self):
-        try:
-            container = self.docker_client.containers.get(self.container_name)
-            if container.status == 'exited':
-                raise AgentRuntimeDisconnectedError(
-                    f'Container {self.container_name} has exited.'
-                )
-        except docker.errors.NotFound:
-            raise AgentRuntimeNotFoundError(
-                f'Container {self.container_name} not found.'
-            )
-
-        if not self.log_streamer:
-            raise AgentRuntimeNotReadyError('Runtime client is not ready.')
-
-        with send_request(
-            self.session,
-            'GET',
-            f'{self.api_url}/alive',
-            timeout=5,
-        ):
-            pass
-
     def close(self, rm_all_containers: bool | None = None):
         """Closes the EventStreamRuntime and associated objects
 
@@ -396,16 +223,6 @@ class EventStreamRuntime(Runtime):
 
         if self.session:
             self.session.close()
-
-        if rm_all_containers is None:
-            rm_all_containers = self.config.sandbox.rm_all_containers
-
-        if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
-            return
-        close_prefix = (
-            CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
-        )
-        remove_all_containers(close_prefix)
 
     def run_action(self, action: Action) -> Observation:
         if isinstance(action, FileEditAction):
@@ -478,10 +295,6 @@ class EventStreamRuntime(Runtime):
 
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return self.run_action(action)
-
-    # ====================================================================
-    # Implement these methods (for file operations) in the subclass
-    # ====================================================================
 
     def copy_to(
         self, host_src: str, sandbox_dest: str, recursive: bool = False
@@ -578,23 +391,6 @@ class EventStreamRuntime(Runtime):
                 return Path(temp_file.name)
         except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
-
-    def _is_port_in_use_docker(self, port):
-        containers = self.docker_client.containers.list()
-        for container in containers:
-            container_ports = container.ports
-            if str(port) in str(container_ports):
-                return True
-        return False
-
-    def _find_available_port(self, max_attempts=5):
-        port = 39999
-        for _ in range(max_attempts):
-            port = find_available_tcp_port(30000, 39999)
-            if not self._is_port_in_use_docker(port):
-                return port
-        # If no port is found after max_attempts, return the last tried port
-        return port
 
     @property
     def vscode_url(self) -> str | None:

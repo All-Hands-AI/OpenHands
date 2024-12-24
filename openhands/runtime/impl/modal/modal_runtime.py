@@ -16,6 +16,7 @@ from openhands.runtime.impl.eventstream.eventstream_runtime import (
 )
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
+from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import (
     BuildFromImageType,
     prep_build_folder,
@@ -181,7 +182,7 @@ class ModalRuntime(EventStreamRuntime):
             self.log('debug', 'Waiting for client to become ready...')
             self.send_status_message('STATUS$WAITING_FOR_CLIENT')
 
-        self._wait_until_alive()
+        await call_sync_from_async(self._wait_until_alive)
         self.setup_initial_env()
 
         if not self.attach_to_existing:
@@ -289,6 +290,26 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
             self.log('error', str(e))
             self.close()
             raise e
+
+    @tenacity.retry(
+        stop=tenacity.stop_after_delay(120),
+        retry=tenacity.retry_if_exception_type(
+            (ConnectionError, requests.exceptions.ConnectionError)
+        ),
+        reraise=True,
+        wait=tenacity.wait_fixed(2),
+    )
+    def _wait_until_alive(self):
+        if not self.sandbox:
+            raise RuntimeError('Sandbox not initialized')
+
+        with send_request(
+            self.session,
+            'GET',
+            f'{self.api_url}/alive',
+            timeout=5,
+        ):
+            pass
 
     def close(self):
         """Closes the ModalRuntime and associated objects."""
