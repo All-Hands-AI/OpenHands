@@ -130,9 +130,9 @@ class Session:
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
         try:
+            self.agent_session.config = self.config
             await self.agent_session.start(
                 runtime_name=self.config.runtime,
-                config=self.config,
                 agent=agent,
                 max_iterations=max_iterations,
                 max_budget_per_task=self.config.max_budget_per_task,

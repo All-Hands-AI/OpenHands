@@ -10,22 +10,13 @@ from openhands.runtime.utils.singleton import Singleton
 
 
 class RuntimeManager(metaclass=Singleton):
-    def __init__(self, config: Optional[AppConfig] = None):
+    def __init__(self, config: AppConfig):
         self._runtimes: Dict[str, Runtime] = {}
-        self._config: Optional[AppConfig] = config
+        self._config = config
 
     @property
     def config(self) -> AppConfig:
-        if self._config is None:
-            raise RuntimeError("RuntimeManager not initialized with AppConfig")
         return self._config
-
-    def initialize(self, config: AppConfig) -> None:
-        """Initialize the RuntimeManager with an AppConfig.
-        This should be called once at application startup."""
-        if self._config is not None:
-            logger.warning("RuntimeManager already initialized with a config")
-        self._config = config
 
     async def create_runtime(
         self,

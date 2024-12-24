@@ -80,8 +80,7 @@ async def create_runtime(
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
     logger.debug(f'Initializing runtime: {runtime_cls.__name__}')
-    runtime_manager = RuntimeManager()
-    runtime_manager.initialize(config)
+    runtime_manager = RuntimeManager(config)
     runtime: Runtime = await runtime_manager.create_runtime(
         runtime_class=runtime_cls,
         event_stream=event_stream,

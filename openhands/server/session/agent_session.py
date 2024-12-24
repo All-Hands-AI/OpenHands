@@ -57,11 +57,11 @@ class AgentSession:
         self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
         self._status_callback = status_callback
+        self.config: Optional[AppConfig] = None
 
     async def start(
         self,
         runtime_name: str,
-        config: AppConfig,
         agent: Agent,
         max_iterations: int,
         max_budget_per_task: float | None = None,
@@ -73,7 +73,6 @@ class AgentSession:
         """Starts the Agent session
         Parameters:
         - runtime_name: The name of the runtime associated with the session
-        - config:
         - agent:
         - max_iterations:
         - max_budget_per_task:
@@ -89,7 +88,6 @@ class AgentSession:
             None,
             self._start_thread,
             runtime_name,
-            config,
             agent,
             max_iterations,
             max_budget_per_task,
@@ -109,7 +107,6 @@ class AgentSession:
     async def _start(
         self,
         runtime_name: str,
-        config: AppConfig,
         agent: Agent,
         max_iterations: int,
         max_budget_per_task: float | None = None,
@@ -122,10 +119,12 @@ class AgentSession:
             logger.warning('Session closed before starting')
             return
         self._initializing = True
-        self._create_security_analyzer(config.security.security_analyzer)
+        if self.config is None:
+            raise RuntimeError("AgentSession not initialized with config")
+        runtime_manager = RuntimeManager(self.config)
+        self._create_security_analyzer(runtime_manager.config.security.security_analyzer)
         await self._create_runtime(
             runtime_name=runtime_name,
-            config=config,
             agent=agent,
             github_token=github_token,
             selected_repository=selected_repository,
@@ -133,7 +132,7 @@ class AgentSession:
 
         self.controller = self._create_controller(
             agent,
-            config.security.confirmation_mode,
+            runtime_manager.config.security.confirmation_mode,
             max_iterations,
             max_budget_per_task=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
@@ -171,7 +170,9 @@ class AgentSession:
             end_state.save_to_session(self.sid, self.file_store)
             await self.controller.close()
         if self.runtime is not None:
-            runtime_manager = RuntimeManager()
+            if self.config is None:
+                raise RuntimeError("AgentSession not initialized with config")
+            runtime_manager = RuntimeManager(self.config)
             runtime_manager.destroy_runtime(self.sid)
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
@@ -196,7 +197,6 @@ class AgentSession:
     async def _create_runtime(
         self,
         runtime_name: str,
-        config: AppConfig,
         agent: Agent,
         github_token: str | None = None,
         selected_repository: str | None = None,
@@ -205,7 +205,6 @@ class AgentSession:
 
         Parameters:
         - runtime_name: The name of the runtime associated with the session
-        - config:
         - agent:
         """
 
@@ -221,8 +220,9 @@ class AgentSession:
         # We should find a better way to plumb status messages through.
         await asyncio.sleep(1)
 
-        runtime_manager = RuntimeManager()
-        runtime_manager.initialize(config)
+        if self.config is None:
+            raise RuntimeError("AgentSession not initialized with config")
+        runtime_manager = RuntimeManager(self.config)
         try:
             self.runtime = await runtime_manager.create_runtime(
                 runtime_class=runtime_cls,
