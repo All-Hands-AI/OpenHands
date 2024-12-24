@@ -57,18 +57,18 @@ class RuntimeManager(metaclass=Singleton):
         logger.info(f'Created runtime with ID: {sid}')
         return runtime
 
-    def get_runtime(self, runtime_id: str) -> Optional[Runtime]:
-        return self._runtimes.get(runtime_id)
+    def get_runtime(self, sid: str) -> Optional[Runtime]:
+        return self._runtimes.get(sid)
 
     def list_runtimes(self) -> List[str]:
         return list(self._runtimes.keys())
 
-    def destroy_runtime(self, runtime_id: str) -> bool:
-        runtime = self._runtimes.get(runtime_id)
+    def destroy_runtime(self, sid: str) -> bool:
+        runtime = self._runtimes.get(sid)
         if runtime:
             runtime.close()
-            del self._runtimes[runtime_id]
-            logger.info(f'Destroyed runtime with ID: {runtime_id}')
+            del self._runtimes[sid]
+            logger.info(f'Destroyed runtime with ID: {sid}')
             return True
         return False
 

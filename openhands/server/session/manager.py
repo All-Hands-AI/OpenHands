@@ -10,6 +10,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.stream import EventStream
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.session import ROOM_KEY, Session
+from openhands.server.shared import runtime_manager
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
@@ -117,6 +118,7 @@ class SessionManager:
             # Session closing event - We only get this in the event of graceful shutdown,
             # which can't be guaranteed - nodes can simply vanish unexpectedly!
             logger.debug(f'session_closing:{sid}')
+            await call_sync_from_async(runtime_manager.destroy_runtime, sid)
             for (
                 connection_id,
                 local_sid,
@@ -298,6 +300,7 @@ class SessionManager:
     async def _cleanup_session(self, sid: str) -> bool:
         # Get local connections
         logger.info(f'_cleanup_session:{sid}')
+        await call_sync_from_async(runtime_manager.destroy_runtime, sid)
         has_local_connections = next(
             (True for v in self.local_connection_id_to_session_id.values() if v == sid),
             False,
