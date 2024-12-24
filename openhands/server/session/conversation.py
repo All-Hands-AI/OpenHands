@@ -30,15 +30,20 @@ class Conversation:
                 config.security.security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
-        self.runtime = None
+        # Try to get existing runtime first
+        self.runtime = runtime_manager.get_runtime(self.sid)
 
     async def connect(self):
-        self.runtime = await runtime_manager.get_runtime(
-            self.sid,
-            create_if_not_exists=True,
-            event_stream=self.event_stream,
-            headless_mode=False,
-        )
+        if self.runtime is None:
+            # If no existing runtime found, create one with attach_to_existing=True
+            self.runtime = await runtime_manager.create_runtime(
+                event_stream=self.event_stream,
+                sid=self.sid,
+                attach_to_existing=True,
+                headless_mode=False,
+            )
+        else:
+            await self.runtime.connect()
 
     async def disconnect(self):
         if self.runtime:
