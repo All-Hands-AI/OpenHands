@@ -24,13 +24,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
     ActionConfirmationStatus,
-    BrowseInteractiveAction,
-    BrowseURLAction,
-    CmdRunAction,
     FileEditAction,
-    FileReadAction,
-    FileWriteAction,
-    IPythonRunCellAction,
 )
 from openhands.events.action.action import Action
 from openhands.events.observation import (
@@ -460,24 +454,6 @@ class EventStreamRuntime(Runtime):
                 )
 
             return obs
-
-    def run(self, action: CmdRunAction) -> Observation:
-        return self.run_action(action)
-
-    def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        return self.run_action(action)
-
-    def read(self, action: FileReadAction) -> Observation:
-        return self.run_action(action)
-
-    def write(self, action: FileWriteAction) -> Observation:
-        return self.run_action(action)
-
-    def browse(self, action: BrowseURLAction) -> Observation:
-        return self.run_action(action)
-
-    def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        return self.run_action(action)
 
     # ====================================================================
     # Implement these methods (for file operations) in the subclass
