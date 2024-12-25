@@ -14,7 +14,6 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 )
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
-from openhands.runtime.utils.request import send_request
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
@@ -185,42 +184,22 @@ class RunloopRuntime(ActionExecutionClient):
 
     @property
     def vscode_url(self) -> str | None:
-        if self.vscode_enabled and self.devbox and self.devbox.status == 'running':
-            if self._vscode_url is not None:
-                return self._vscode_url
-
-            try:
-                with send_request(
-                    self.session,
-                    'GET',
-                    f'{self.api_url}/vscode/connection_token',
-                    timeout=10,
-                ) as response:
-                    response_json = response.json()
-                    assert isinstance(response_json, dict)
-                    if response_json['token'] is None:
-                        return None
-                    token = response_json['token']
-
-                self._vscode_url = (
-                    self.runloop_api_client.devboxes.create_tunnel(
-                        id=self.devbox.id,
-                        port=self._vscode_port,
-                    ).url
-                    + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
-                )
-
-                self.log(
-                    'debug',
-                    f'VSCode URL: {self._vscode_url}',
-                )
-
-                return self._vscode_url
-            except Exception as e:
-                self.log(
-                    'error',
-                    f'Failed to create vscode tunnel {e}',
-                )
-                return None
-        else:
+        token = super().get_vscode_token()
+        if not token:
             return None
+        if not self.devbox:
+            return None
+        self._vscode_url = (
+            self.runloop_api_client.devboxes.create_tunnel(
+                id=self.devbox.id,
+                port=self._vscode_port,
+            ).url
+            + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        )
+
+        self.log(
+            'debug',
+            f'VSCode URL: {self._vscode_url}',
+        )
+
+        return self._vscode_url
