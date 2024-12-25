@@ -31,7 +31,7 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
   const { settings } = useUserPrefs();
 
   const { selectedRepository, files } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const [text, setText] = React.useState("");
