@@ -406,27 +406,8 @@ class EventStreamRuntime(ActionExecutionClient):
 
     @property
     def vscode_url(self) -> str | None:
-        if self.vscode_enabled and self._runtime_initialized:
-            if (
-                hasattr(self, '_vscode_url') and self._vscode_url is not None
-            ):  # cached value
-                return self._vscode_url
-
-            with send_request(
-                self.session,
-                'GET',
-                f'{self.api_url}/vscode/connection_token',
-                timeout=10,
-            ) as response:
-                response_json = response.json()
-                assert isinstance(response_json, dict)
-                if response_json['token'] is None:
-                    return None
-                self._vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={response_json["token"]}&folder={self.config.workspace_mount_path_in_sandbox}'
-                self.log(
-                    'debug',
-                    f'VSCode URL: {self._vscode_url}',
-                )
-                return self._vscode_url
-        else:
+        token = super().get_vscode_token()
+        if not token:
             return None
+        self._vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        return self._vscode_url

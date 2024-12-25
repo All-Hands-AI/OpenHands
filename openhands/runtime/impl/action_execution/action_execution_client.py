@@ -41,6 +41,7 @@ class ActionExecutionClient(Runtime):
         self.session = requests.Session()
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
         self._runtime_initialized: bool = False
+        self._vscode_url: str | None = None  # initial dummy value
         super().__init__(
             config,
             event_stream,
@@ -184,3 +185,24 @@ class ActionExecutionClient(Runtime):
             self.log(
                 'debug', f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}'
             )
+
+    def get_vscode_token(self) -> str:
+        if self.vscode_enabled and self._runtime_initialized:
+            if (
+                hasattr(self, '_vscode_url') and self._vscode_url is not None
+            ):  # cached value
+                return self._vscode_url
+
+            with send_request(
+                self.session,
+                'GET',
+                f'{self._get_api_url()}/vscode/connection_token',
+                timeout=10,
+            ) as response:
+                response_json = response.json()
+                assert isinstance(response_json, dict)
+                if response_json['token'] is None:
+                    return ''
+                return response_json['token']
+        else:
+            return ''
