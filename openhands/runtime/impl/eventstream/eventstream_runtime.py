@@ -378,57 +378,7 @@ class EventStreamRuntime(ActionExecutionClient):
         )
         remove_all_containers(close_prefix)
 
-    def run_action(self, action: Action) -> Observation:
-        if isinstance(action, FileEditAction):
-            return self.edit(action)
 
-        # set timeout to default if not set
-        if action.timeout is None:
-            action.timeout = self.config.sandbox.timeout
-
-        with self.action_semaphore:
-            if not action.runnable:
-                return NullObservation('')
-            if (
-                hasattr(action, 'confirmation_state')
-                and action.confirmation_state
-                == ActionConfirmationStatus.AWAITING_CONFIRMATION
-            ):
-                return NullObservation('')
-            action_type = action.action  # type: ignore[attr-defined]
-            if action_type not in ACTION_TYPE_TO_CLASS:
-                raise ValueError(f'Action {action_type} does not exist.')
-            if not hasattr(self, action_type):
-                return ErrorObservation(
-                    f'Action {action_type} is not supported in the current runtime.',
-                    error_id='AGENT_ERROR$BAD_ACTION',
-                )
-            if (
-                getattr(action, 'confirmation_state', None)
-                == ActionConfirmationStatus.REJECTED
-            ):
-                return UserRejectObservation(
-                    'Action has been rejected by the user! Waiting for further user input.'
-                )
-
-            assert action.timeout is not None
-
-            try:
-                with self._send_request(
-                    'POST',
-                    f'{self.api_url}/execute_action',
-                    json={'action': event_to_dict(action)},
-                    # wait a few more seconds to get the timeout error from client side
-                    timeout=action.timeout + 5,
-                ) as response:
-                    output = response.json()
-                    obs = observation_from_dict(output)
-                    obs._cause = action.id  # type: ignore[attr-defined]
-                    return obs
-            except requests.Timeout:
-                raise AgentRuntimeTimeoutError(
-                    f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
-                )
 
     def run(self, action: CmdRunAction) -> Observation:
         return self.run_action(action)

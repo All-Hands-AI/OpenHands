@@ -442,38 +442,7 @@ class RemoteRuntime(ActionExecutionClient):
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return self.run_action(action)
 
-    def run_action(self, action: Action) -> Observation:
-        """Override run_action to use runtime_url instead of api_url."""
-        if isinstance(action, FileEditAction):
-            return self.edit(action)
 
-        # set timeout to default if not set
-        if action.timeout is None:
-            action.timeout = self.config.sandbox.timeout
-
-        with self.action_semaphore:
-            if not action.runnable:
-                return NullObservation("")
-
-            try:
-                request_body = {'action': event_to_dict(action)}
-                self.log('debug', f'Request body: {request_body}')
-                with self._send_request(
-                    'POST',
-                    f'{self.runtime_url}/execute_action',
-                    is_retry=False,
-                    json=request_body,
-                    # wait a few more seconds to get the timeout error from client side
-                    timeout=action.timeout + 5,
-                ) as response:
-                    output = response.json()
-                obs = observation_from_dict(output)
-                obs._cause = action.id  # type: ignore[attr-defined]
-                return obs
-            except requests.Timeout:
-                raise AgentRuntimeTimeoutError(
-                    f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
-                )
 
     def copy_to(
         self, host_src: str, sandbox_dest: str, recursive: bool = False

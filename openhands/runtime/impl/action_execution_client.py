@@ -113,27 +113,49 @@ class ActionExecutionClient(Runtime):
         with self.action_semaphore:
             if not action.runnable:
                 return NullObservation("")
+            if (
+                hasattr(action, 'confirmation_state')
+                and action.confirmation_state
+                == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            ):
+                return NullObservation('')
+            action_type = action.action  # type: ignore[attr-defined]
+            if action_type not in ACTION_TYPE_TO_CLASS:
+                raise ValueError(f'Action {action_type} does not exist.')
+            if not hasattr(self, action_type):
+                return ErrorObservation(
+                    f'Action {action_type} is not supported in the current runtime.',
+                    error_id='AGENT_ERROR$BAD_ACTION',
+                )
+            if (
+                getattr(action, 'confirmation_state', None)
+                == ActionConfirmationStatus.REJECTED
+            ):
+                return UserRejectObservation(
+                    'Action has been rejected by the user! Waiting for further user input.'
+                )
+
+            assert action.timeout is not None
 
             try:
+                request_body = {'action': event_to_dict(action)}
+                self.log('debug', f'Request body: {request_body}')
+                url = f"{self.runtime_url}/execute_action" if hasattr(self, "runtime_url") else f"{self.api_url}/execute_action"
                 with self._send_request(
-                    "POST",
-                    f"{self.api_url}/run",
-                    json={"action": event_to_dict(action)},
-                    timeout=action.timeout,
+                    'POST',
+                    url,
+                    json=request_body,
+                    # wait a few more seconds to get the timeout error from client side
+                    timeout=action.timeout + 5,
                 ) as response:
-                    observation_dict = response.json()
-                    observation = observation_from_dict(observation_dict)
-                    return observation
-            except requests.exceptions.Timeout:
-                return ErrorObservation(
-                    f"Action timed out after {action.timeout} seconds: {action}"
+                    output = response.json()
+                    obs = observation_from_dict(output)
+                    obs._cause = action.id  # type: ignore[attr-defined]
+                    return obs
+            except requests.Timeout:
+                raise AgentRuntimeTimeoutError(
+                    f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
-            except requests.exceptions.ConnectionError as e:
-                raise AgentRuntimeDisconnectedError(
-                    f"Lost connection to runtime client: {e}"
-                ) from e
-            except Exception as e:
-                return ErrorObservation(f"Failed to run action: {e}")
 
     def _wait_until_alive(self):
         """Wait until the action execution server is alive and ready.
