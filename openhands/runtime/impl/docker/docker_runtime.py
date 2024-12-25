@@ -20,7 +20,7 @@ from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
-from openhands.runtime.impl.eventstream.containers import remove_all_containers
+from openhands.runtime.impl.docker.containers import remove_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.log_streamer import LogStreamer
@@ -38,7 +38,7 @@ def remove_all_runtime_containers():
 _atexit_registered = False
 
 
-class EventStreamRuntime(ActionExecutionClient):
+class DockerRuntime(ActionExecutionClient):
     """This runtime will subscribe the event stream.
     When receive an event, it will send the event to runtime-client which run inside the docker environment.
 
@@ -51,7 +51,7 @@ class EventStreamRuntime(ActionExecutionClient):
     """
 
     # Need to provide this method to allow inheritors to init the Runtime
-    # without initting the EventStreamRuntime.
+    # without initting the DockerRuntime.
     def init_base_runtime(
         self,
         config: AppConfig,
@@ -359,7 +359,7 @@ class EventStreamRuntime(ActionExecutionClient):
         self.check_if_alive()
 
     def close(self, rm_all_containers: bool | None = None):
-        """Closes the EventStreamRuntime and associated objects
+        """Closes the DockerRuntime and associated objects
 
         Parameters:
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix

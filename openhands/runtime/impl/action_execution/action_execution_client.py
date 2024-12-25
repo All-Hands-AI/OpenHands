@@ -43,7 +43,7 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 class ActionExecutionClient(Runtime):
     """Base class for runtimes that interact with the action execution server.
 
-    This class contains shared logic between EventStreamRuntime and RemoteRuntime
+    This class contains shared logic between DockerRuntime and RemoteRuntime
     for interacting with the HTTP server defined in action_execution_server.py.
     """
 
