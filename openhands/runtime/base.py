@@ -294,23 +294,29 @@ class Runtime(FileEditRuntimeMixin):
     # Action execution
     # ====================================================================
 
+    @abstractmethod
     def run(self, action: CmdRunAction) -> Observation:
-        return self.run_action(action)
+        pass
 
+    @abstractmethod
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        return self.run_action(action)
+        pass
 
+    @abstractmethod
     def read(self, action: FileReadAction) -> Observation:
-        return self.run_action(action)
+        pass
 
+    @abstractmethod
     def write(self, action: FileWriteAction) -> Observation:
-        return self.run_action(action)
+        pass
 
+    @abstractmethod
     def browse(self, action: BrowseURLAction) -> Observation:
-        return self.run_action(action)
+        pass
 
+    @abstractmethod
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        return self.run_action(action)
+        pass
 
     # ====================================================================
     # File operations
