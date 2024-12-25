@@ -148,7 +148,7 @@ class EventStreamRuntime(ActionExecutionClient):
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
             )
 
-    async def _get_api_url(self):
+    def _get_api_url(self):
         return self.api_url
 
     async def connect(self):

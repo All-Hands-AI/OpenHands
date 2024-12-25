@@ -93,7 +93,7 @@ class RemoteRuntime(ActionExecutionClient):
         self._runtime_initialized: bool = False
         self._vscode_url: str | None = None  # initial dummy value
 
-    async def _get_api_url(self):
+    def _get_api_url(self):
         return self.runtime_url
 
     async def connect(self):
