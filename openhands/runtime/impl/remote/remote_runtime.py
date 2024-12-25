@@ -363,9 +363,9 @@ class RemoteRuntime(ActionExecutionClient):
     def _send_runtime_api_request(self, method, url, **kwargs):
         return send_request(self.session, method, url, **kwargs)
 
-    def _send_request(self, method, url, **kwargs):
+    def _send_action_server_request(self, method, url, **kwargs):
         try:
-            super()._send_request(method, url, **kwargs)
+            super()._send_action_server_request(method, url, **kwargs)
         except requests.Timeout:
             self.log('error', 'No response received within the timeout period.')
             raise
@@ -378,6 +378,6 @@ class RemoteRuntime(ActionExecutionClient):
                 self.log('warning', 'Runtime appears to be paused. Resuming...')
                 self._resume_runtime()
                 self._wait_until_alive()
-                return super()._send_request(method, url, **kwargs)
+                return super()._send_action_server_request(method, url, **kwargs)
             else:
                 raise e
