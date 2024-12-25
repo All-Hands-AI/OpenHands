@@ -4,17 +4,14 @@ from datetime import datetime, timedelta
 from typing import Callable
 from urllib.parse import urlparse
 
-import jwt
-from fastapi import APIRouter, Request, status
+from fastapi import Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from openhands.core.logger import openhands_logger as logger
-from openhands.server.auth import get_sid_from_token
-from openhands.server.github_utils import UserVerifier
-from openhands.server.shared import config, session_manager
+from openhands.server.shared import session_manager
+from openhands.server.types import SessionMiddlewareInterface
 
 
 class LocalhostCORSMiddleware(CORSMiddleware):
@@ -109,69 +106,63 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-class AttachSessionMiddleware:
-    def __init__(self, app, target_router: APIRouter):
+class AttachConversationMiddleware(SessionMiddlewareInterface):
+    def __init__(self, app):
         self.app = app
-        self.target_router = target_router
-        self.target_paths = {route.path for route in target_router.routes}
 
-    async def __call__(self, request: Request, call_next: Callable):
-        do_attach = False
-        if request.url.path in self.target_paths:
-            do_attach = True
-
+    def _should_attach(self, request) -> bool:
+        """
+        Determine if the middleware should attach a session for the given request.
+        """
         if request.method == 'OPTIONS':
-            do_attach = False
+            return False
 
-        if not do_attach:
-            return await call_next(request)
+        conversation_id = ''
+        if request.url.path.startswith('/api/conversation'):
+            # FIXME: we should be able to use path_params
+            path_parts = request.url.path.split('/')
+            if len(path_parts) > 3:
+                conversation_id = request.url.path.split('/')[3]
+        if not conversation_id:
+            return False
 
-        user_verifier = UserVerifier()
-        if user_verifier.is_active():
-            signed_token = request.cookies.get('github_auth')
-            if not signed_token:
-                return JSONResponse(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    content={'error': 'Not authenticated'},
-                )
-            try:
-                jwt.decode(signed_token, config.jwt_secret, algorithms=['HS256'])
-            except Exception as e:
-                logger.warning(f'Invalid token: {e}')
-                return JSONResponse(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    content={'error': 'Invalid token'},
-                )
+        request.state.sid = conversation_id
 
-        if not request.headers.get('Authorization'):
-            logger.warning('Missing Authorization header')
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'error': 'Missing Authorization header'},
-            )
+        return True
 
-        auth_token = request.headers.get('Authorization')
-        if 'Bearer' in auth_token:
-            auth_token = auth_token.split('Bearer')[1].strip()
-
-        request.state.sid = get_sid_from_token(auth_token, config.jwt_secret)
-        if request.state.sid == '':
-            logger.warning('Invalid token')
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'error': 'Invalid token'},
-            )
-
+    async def _attach_conversation(self, request: Request) -> JSONResponse | None:
+        """
+        Attach the user's session based on the provided authentication token.
+        """
         request.state.conversation = await session_manager.attach_to_conversation(
             request.state.sid
         )
-        if request.state.conversation is None:
+        if not request.state.conversation:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content={'error': 'Session not found'},
             )
+        return None
+
+    async def _detach_session(self, request: Request) -> None:
+        """
+        Detach the user's session.
+        """
+        await session_manager.detach_from_conversation(request.state.conversation)
+
+    async def __call__(self, request: Request, call_next: Callable):
+        if not self._should_attach(request):
+            return await call_next(request)
+
+        response = await self._attach_conversation(request)
+        if response:
+            return response
+
         try:
+            # Continue processing the request
             response = await call_next(request)
         finally:
-            await session_manager.detach_from_conversation(request.state.conversation)
+            # Ensure the session is detached
+            await self._detach_session(request)
+
         return response

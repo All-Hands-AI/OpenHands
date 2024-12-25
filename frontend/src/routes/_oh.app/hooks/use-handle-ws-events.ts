@@ -1,11 +1,10 @@
 import React from "react";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
-import { useAuth } from "#/context/auth-context";
 import { useWsClient } from "#/context/ws-client-provider";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { addErrorMessage } from "#/state/chat-slice";
-import AgentState from "#/types/agent-state";
+import { AgentState } from "#/types/agent-state";
 import { ErrorObservation } from "#/types/core/observations";
 import { useEndSession } from "../../../hooks/use-end-session";
 
@@ -22,7 +21,6 @@ const isErrorObservation = (data: object): data is ErrorObservation =>
 
 export const useHandleWSEvents = () => {
   const { events, send } = useWsClient();
-  const { setToken } = useAuth();
   const endSession = useEndSession();
   const dispatch = useDispatch();
 
@@ -31,10 +29,6 @@ export const useHandleWSEvents = () => {
       return;
     }
     const event = events[events.length - 1];
-    if (event.token && typeof event.token === "string") {
-      setToken(event.token);
-      return;
-    }
 
     if (isServerError(event)) {
       if (event.error_code === 401) {
