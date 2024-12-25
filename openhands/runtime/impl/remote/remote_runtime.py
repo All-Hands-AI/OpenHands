@@ -1,10 +1,7 @@
 import os
-import tempfile
 import threading
-from pathlib import Path
 from typing import Callable, Optional
 from urllib.parse import urlparse
-from zipfile import ZipFile
 
 import requests
 import tenacity
@@ -95,6 +92,9 @@ class RemoteRuntime(ActionExecutionClient):
         self.runtime_url: str | None = None
         self._runtime_initialized: bool = False
         self._vscode_url: str | None = None  # initial dummy value
+
+    async def _get_api_url(self):
+        return self.runtime_url
 
     async def connect(self):
         try:
@@ -467,95 +467,3 @@ class RemoteRuntime(ActionExecutionClient):
 
             else:
                 raise e
-
-    def copy_to(
-        self, host_src: str, sandbox_dest: str, recursive: bool = False
-    ) -> None:
-        if not os.path.exists(host_src):
-            raise FileNotFoundError(f'Source file {host_src} does not exist')
-
-        try:
-            if recursive:
-                with tempfile.NamedTemporaryFile(
-                    suffix='.zip', delete=False
-                ) as temp_zip:
-                    temp_zip_path = temp_zip.name
-
-                with ZipFile(temp_zip_path, 'w') as zipf:
-                    for root, _, files in os.walk(host_src):
-                        for file in files:
-                            file_path = os.path.join(root, file)
-                            arcname = os.path.relpath(
-                                file_path, os.path.dirname(host_src)
-                            )
-                            zipf.write(file_path, arcname)
-
-                upload_data = {'file': open(temp_zip_path, 'rb')}
-            else:
-                upload_data = {'file': open(host_src, 'rb')}
-
-            params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
-
-            with self._send_request(
-                'POST',
-                f'{self.runtime_url}/upload_file',
-                is_retry=False,
-                files=upload_data,
-                params=params,
-                timeout=300,
-            ) as response:
-                self.log(
-                    'debug',
-                    f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}',
-                )
-        finally:
-            if recursive:
-                os.unlink(temp_zip_path)
-            self.log(
-                'debug', f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}'
-            )
-
-    def list_files(self, path: str | None = None) -> list[str]:
-        """List files in the sandbox.
-
-        If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
-        """
-
-        try:
-            data = {}
-            if path is not None:
-                data['path'] = path
-
-            with send_request(
-                self.session,
-                'POST',
-                f'{self.api_url}/list_files',
-                json=data,
-                timeout=10,
-            ) as response:
-                response_json = response.json()
-                assert isinstance(response_json, list)
-                return response_json
-        except requests.Timeout:
-            raise TimeoutError('List files operation timed out')
-
-    def copy_from(self, path: str) -> Path:
-        """Zip all files in the sandbox and return as a stream of bytes."""
-
-        try:
-            params = {'path': path}
-            with send_request(
-                self.session,
-                'GET',
-                f'{self.api_url}/download_files',
-                params=params,
-                stream=True,
-                timeout=30,
-            ) as response:
-                temp_file = tempfile.NamedTemporaryFile(delete=False)
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:  # filter out keep-alive new chunks
-                        temp_file.write(chunk)
-                return Path(temp_file.name)
-        except requests.Timeout:
-            raise TimeoutError('Copy operation timed out')

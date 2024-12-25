@@ -1,7 +1,10 @@
+import os
 import tempfile
 import threading
+from abc import abstractmethod
 from pathlib import Path
 from typing import Any
+from zipfile import ZipFile
 
 import requests
 import tenacity
@@ -35,6 +38,9 @@ class ActionExecutionClient(Runtime):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
     ):
+        self.session = requests.Session()
+        self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
+        self._runtime_initialized: bool = False
         super().__init__(
             config,
             event_stream,
@@ -45,10 +51,10 @@ class ActionExecutionClient(Runtime):
             attach_to_existing,
             headless_mode,
         )
-        self.session = requests.Session()
-        self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
-        self._runtime_initialized: bool = False
-        self.api_url: str | None = None
+
+    @abstractmethod
+    def _get_api_url(self) -> str:
+        pass
 
     def _send_request(
         self,
@@ -101,7 +107,7 @@ class ActionExecutionClient(Runtime):
             with send_request(
                 self.session,
                 'POST',
-                f'{self.api_url}/list_files',
+                f'{self._get_api_url()}/list_files',
                 json=data,
                 timeout=10,
             ) as response:
@@ -119,7 +125,7 @@ class ActionExecutionClient(Runtime):
             with send_request(
                 self.session,
                 'GET',
-                f'{self.api_url}/download_files',
+                f'{self._get_api_url()}/download_files',
                 params=params,
                 stream=True,
                 timeout=30,
@@ -131,3 +137,50 @@ class ActionExecutionClient(Runtime):
                 return Path(temp_file.name)
         except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
+
+    def copy_to(
+        self, host_src: str, sandbox_dest: str, recursive: bool = False
+    ) -> None:
+        if not os.path.exists(host_src):
+            raise FileNotFoundError(f'Source file {host_src} does not exist')
+
+        try:
+            if recursive:
+                with tempfile.NamedTemporaryFile(
+                    suffix='.zip', delete=False
+                ) as temp_zip:
+                    temp_zip_path = temp_zip.name
+
+                with ZipFile(temp_zip_path, 'w') as zipf:
+                    for root, _, files in os.walk(host_src):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            arcname = os.path.relpath(
+                                file_path, os.path.dirname(host_src)
+                            )
+                            zipf.write(file_path, arcname)
+
+                upload_data = {'file': open(temp_zip_path, 'rb')}
+            else:
+                upload_data = {'file': open(host_src, 'rb')}
+
+            params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
+
+            with self._send_request(
+                'POST',
+                f'{self._get_api_url()}/upload_file',
+                is_retry=False,
+                files=upload_data,
+                params=params,
+                timeout=300,
+            ) as response:
+                self.log(
+                    'debug',
+                    f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}',
+                )
+        finally:
+            if recursive:
+                os.unlink(temp_zip_path)
+            self.log(
+                'debug', f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}'
+            )
