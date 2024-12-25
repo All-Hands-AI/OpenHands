@@ -1,19 +1,12 @@
 import logging
-import threading
-import time
 from typing import Callable
 
-import requests
 import tenacity
 from runloop_api_client import Runloop
 from runloop_api_client.types import DevboxView
 from runloop_api_client.types.shared_params import LaunchParameters
 
 from openhands.core.config import AppConfig
-from openhands.core.exceptions import (
-    AgentRuntimeNotReadyError,
-    AgentRuntimeUnavailableError,
-)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.impl.action_execution.action_execution_client import (
@@ -21,60 +14,10 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 )
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
-from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.request import send_request
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
-
-
-class RunloopLogStreamer(LogStreamer):
-    """Streams Runloop devbox logs to stdout.
-
-    This class provides a way to stream logs from a Runloop devbox directly to stdout
-    through the provided logging function.
-    """
-
-    def __init__(
-        self,
-        runloop_api_client: Runloop,
-        devbox_id: str,
-        logFn: Callable,
-    ):
-        self.runloop_api_client = runloop_api_client
-        self.devbox_id = devbox_id
-        self.log = logFn
-        self.log_index = 0
-        self._stop_event = threading.Event()
-
-        # Start the stdout streaming thread
-        self.stdout_thread = threading.Thread(target=self._stream_logs)
-        self.stdout_thread.daemon = True
-        self.stdout_thread.start()
-
-    def _stream_logs(self):
-        """Stream logs from the Runloop devbox."""
-        try:
-            while True:
-                raw_logs = self.runloop_api_client.devboxes.logs.list(
-                    self.devbox_id
-                ).logs[self.log_index :]
-                logs = [
-                    log.message
-                    for log in raw_logs
-                    if log.message and log.cmd_id is None
-                ]
-
-                self.log_index += len(raw_logs)
-                if self._stop_event.is_set():
-                    break
-                if logs:
-                    for log_line in logs:
-                        self.log('debug', f'[inside devbox] {log_line}')
-
-                time.sleep(1)
-        except Exception as e:
-            self.log('error', f'Error streaming runloop logs: {e}')
 
 
 class RunloopRuntime(ActionExecutionClient):
@@ -100,9 +43,7 @@ class RunloopRuntime(ActionExecutionClient):
         self.runloop_api_client = Runloop(
             bearer_token=config.runloop_api_key,
         )
-        self.session = requests.Session()
         self.container_name = CONTAINER_NAME_PREFIX + sid
-        self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
         super().__init__(
             config,
             event_stream,
@@ -114,7 +55,6 @@ class RunloopRuntime(ActionExecutionClient):
             headless_mode,
         )
         # Buffer for container logs
-        self.log_streamer: LogStreamer | None = None
         self._vscode_url: str | None = None
 
     def _get_action_execution_server_host(self):
@@ -208,10 +148,6 @@ class RunloopRuntime(ActionExecutionClient):
             port=self._sandbox_port,
         )
 
-        # Hook up logs
-        self.log_streamer = RunloopLogStreamer(
-            self.runloop_api_client, self.devbox.id, logger.info
-        )
         self.api_url = tunnel.url
         logger.info(f'Container started. Server url: {self.api_url}')
 
@@ -235,25 +171,9 @@ class RunloopRuntime(ActionExecutionClient):
         reraise=(ConnectionRefusedError,),
     )
     def _wait_until_alive(self):
-        if not self.log_streamer:
-            raise AgentRuntimeNotReadyError('Runtime client is not ready.')
-        response = send_request(
-            self.session,
-            'GET',
-            f'{self.api_url}/alive',
-            timeout=5,
-        )
-        if response.status_code == 200:
-            return
-        else:
-            msg = f'Action execution API is not alive. Response: {response}'
-            logger.error(msg)
-            raise AgentRuntimeUnavailableError(msg)
+        super().check_if_alive()
 
     def close(self, rm_all_containers: bool | None = True):
-        if self.log_streamer:
-            self.log_streamer.close()
-
         if self.session:
             self.session.close()
 

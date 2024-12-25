@@ -1,6 +1,5 @@
 import os
 import tempfile
-import threading
 from pathlib import Path
 from typing import Callable
 
@@ -76,11 +75,9 @@ class ModalRuntime(ActionExecutionClient):
         # This value is arbitrary as it's private to the container
         self.container_port = 3000
 
-        self.session = requests.Session()
         self.status_callback = status_callback
         self.base_container_image_id = self.config.sandbox.base_container_image
         self.runtime_container_image_id = self.config.sandbox.runtime_container_image
-        self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
         if self.config.sandbox.runtime_extra_deps:
             self.log(

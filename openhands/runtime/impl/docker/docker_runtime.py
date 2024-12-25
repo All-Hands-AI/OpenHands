@@ -1,5 +1,4 @@
 import atexit
-import threading
 from functools import lru_cache
 from typing import Callable
 
@@ -96,7 +95,6 @@ class DockerRuntime(ActionExecutionClient):
         self._vscode_url: str | None = None  # initial dummy value
         self._runtime_initialized: bool = False
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
-        self.session = requests.Session()
         self.status_callback = status_callback
 
         self.docker_client: docker.DockerClient = self._init_docker_client()
@@ -104,7 +102,6 @@ class DockerRuntime(ActionExecutionClient):
         self.runtime_container_image = self.config.sandbox.runtime_container_image
         self.container_name = CONTAINER_NAME_PREFIX + sid
         self.container = None
-        self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
         self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
 

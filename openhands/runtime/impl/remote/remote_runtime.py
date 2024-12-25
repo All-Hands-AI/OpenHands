@@ -1,5 +1,4 @@
 import os
-import threading
 from typing import Callable, Optional
 from urllib.parse import urlparse
 
@@ -44,10 +43,6 @@ class RemoteRuntime(ActionExecutionClient):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
     ):
-        # We need to set session and action_semaphore before the __init__ below, or we get odd errors
-        self.session = requests.Session()
-        self.action_semaphore = threading.Semaphore(1)
-
         super().__init__(
             config,
             event_stream,
