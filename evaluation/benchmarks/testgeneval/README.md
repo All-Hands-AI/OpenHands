@@ -1,60 +1,75 @@
-# SWE-Bench Evaluation with OpenHands SWE-Bench Docker Image
+# TestGenEval Benchmark Evaluation
 
-This folder contains the evaluation harness that we built on top of the original TestGenEval benchmark ([paper](https://arxiv.org/abs/2410.00752)).
+This folder contains the evaluation harness for the TestGenEval benchmark, which is based on the original TestGenEval benchmark ([paper](https://arxiv.org/abs/2410.00752)). TestGenEval is designed to evaluate the ability of language models to generate unit tests for given Python functions.
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow the instructions [here](../../README.md#setup) to set up your local development environment and configure your LLM.
 
-### Run Inference
+## Run Inference
+
+To generate tests using your model, run the following command:
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
+./evaluation/benchmarks/testgeneval/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
 
-
-### Specify a subset of tasks to run infer
-
-If you would like to specify a list of tasks you'd like to benchmark on, you could
-create a `config.toml` under `./evaluation/swe_bench/` folder, and put a list
-attribute named `selected_ids`, e.g.
-
-```toml
-selected_ids = ['sphinx-doc__sphinx-8721', 'sympy__sympy-14774', 'scikit-learn__scikit-learn-10508']
+# Example
+./evaluation/benchmarks/testgeneval/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 100 30 1 kjain14/testgenevallite test
 ```
 
-Then only these tasks (rows whose `instance_id` is in the above list) will be evaluated.
-In this case, `eval_limit` option applies to tasks that are in the `selected_ids` list.
+Parameters:
+- `model_config`: The config group name for your LLM settings (e.g., `eval_gpt4_1106_preview`)
+- `git-version`: The git commit hash or release tag of OpenHands to evaluate (e.g., `HEAD` or `0.6.2`)
+- `agent`: The name of the agent for benchmarks (default: `CodeActAgent`)
+- `eval_limit`: Limit the evaluation to the first N instances (optional)
+- `max_iter`: Maximum number of iterations for the agent to run (default: 30)
+- `num_workers`: Number of parallel workers for evaluation (default: 1)
+- `dataset`: HuggingFace dataset name (default: `kjain14/testgenevallite`)
+- `dataset_split`: Dataset split to use (default: `test`)
 
-After running the inference, you will obtain a `output.jsonl` (by default it will be saved to `evaluation/evaluation_outputs`).
+After running the inference, you will obtain an `output.jsonl` file (by default saved to `evaluation/evaluation_outputs`).
 
 ## Evaluate Generated Tests
 
-### Run evaluation
-
-With `output.jsonl` file, you can run `eval_infer.sh` to evaluate generated patches, and produce a fine-grained report.
+To evaluate the generated tests, use the `eval_infer.sh` script:
 
 ```bash
-./evaluation/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL [instance_id] [dataset_name] [split] [num_workers] [skip_mutation]
+./evaluation/benchmarks/testgeneval/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL [instance_id] [dataset_name] [split] [num_workers] [skip_mutation]
 
 # Example
-./evaluation/swe_bench/scripts/eval_infer.sh evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.jsonl
+./evaluation/benchmarks/testgeneval/scripts/eval_infer.sh evaluation/evaluation_outputs/outputs/testgeneval/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.jsonl
 ```
 
-The script now accepts optional arguments:
-- `instance_id`: Specify a single instance to evaluate (optional)
-- `dataset_name`: The name of the dataset to use (default: `"kjain14/testgenevallite"`)
-- `split`: The split of the dataset to use (default: `"test"`)
-- `num_workers`: The number of workers to use when running docker (default: 1)
-- `skip_mutation`: Whether to skip mutation testing (enter true if so)
+Optional arguments:
+- `instance_id`: Evaluate a single instance (optional)
+- `dataset_name`: Name of the dataset to use (default: `kjain14/testgenevallite`)
+- `split`: Dataset split to use (default: `test`)
+- `num_workers`: Number of workers for running docker (default: 1)
+- `skip_mutation`: Skip mutation testing (enter `true` if desired)
 
-For example, to evaluate a specific instance with a custom dataset and split:
+The evaluation results will be saved to `evaluation/evaluation_outputs/outputs/testgeneval/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/` with `output.testgeneval.jsonl` containing the metrics.
 
-```bash
-./evaluation/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL instance_123 kjain14/testgenevallite
-```
+## Metrics
 
-The final results will be saved to `evaluation/evaluation_outputs/outputs/testgeneval/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/` with the `output.testgeneval.jsonl` containing the metrics.
+The TestGenEval benchmark evaluates generated tests based on the following metrics:
 
-## Submit your evaluation results
+1. Correctness: Measures if the generated tests are syntactically correct and run without errors.
+2. Coverage: Assesses the code coverage achieved by the generated tests.
+3. Mutation Score: Evaluates the effectiveness of the tests in detecting intentionally introduced bugs (mutations).
+4. Readability: Analyzes the readability of the generated tests using various metrics.
 
-You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenHands/evaluation) and submit a PR of your evaluation results following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).
+## Submit Your Evaluation Results
+
+To contribute your evaluation results:
+
+1. Fork [our HuggingFace evaluation outputs](https://huggingface.co/spaces/OpenHands/evaluation).
+2. Add your results to the forked repository.
+3. Submit a Pull Request with your evaluation results following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).
+
+## Additional Resources
+
+- [TestGenEval Paper](https://arxiv.org/abs/2410.00752)
+- [OpenHands Documentation](https://github.com/All-Hands-AI/OpenHands)
+- [HuggingFace Datasets](https://huggingface.co/datasets)
+
+For any questions or issues, please open an issue in the [OpenHands repository](https://github.com/All-Hands-AI/OpenHands/issues).
