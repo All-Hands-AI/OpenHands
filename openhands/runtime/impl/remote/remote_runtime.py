@@ -7,6 +7,7 @@ import tenacity
 
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import (
+    AgentRuntimeDisconnectedError,
     AgentRuntimeError,
     AgentRuntimeNotFoundError,
     AgentRuntimeNotReadyError,
@@ -20,6 +21,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
 from openhands.runtime.utils.request import (
+    RequestHTTPError,
     send_request,
 )
 from openhands.runtime.utils.runtime_build import build_runtime_image
@@ -360,3 +362,22 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _send_runtime_api_request(self, method, url, **kwargs):
         return send_request(self.session, method, url, **kwargs)
+
+    def _send_request(self, method, url, **kwargs):
+        try:
+            super()._send_request(method, url, **kwargs)
+        except requests.Timeout:
+            self.log('error', 'No response received within the timeout period.')
+            raise
+        except RequestHTTPError as e:
+            if e.response.status_code in (404, 502):
+                raise AgentRuntimeDisconnectedError(
+                    f'{e.response.status_code} error while connecting to {self.runtime_url}'
+                ) from e
+            elif e.response.status_code == 503:
+                self.log('warning', 'Runtime appears to be paused. Resuming...')
+                self._resume_runtime()
+                self._wait_until_alive()
+                return super()._send_request(method, url, **kwargs)
+            else:
+                raise e
