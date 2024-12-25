@@ -359,8 +359,4 @@ class RemoteRuntime(ActionExecutionClient):
                 self.session.close()
 
     def _send_runtime_api_request(self, method, url, **kwargs):
-        try:
-            return send_request(self.session, method, url, **kwargs)
-        except requests.Timeout:
-            self.log('error', 'No response received within the timeout period.')
-            raise
+        return send_request(self.session, method, url, **kwargs)
