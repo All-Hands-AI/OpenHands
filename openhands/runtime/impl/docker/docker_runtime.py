@@ -49,30 +49,6 @@ class DockerRuntime(ActionExecutionClient):
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
     """
 
-    # Need to provide this method to allow inheritors to init the Runtime
-    # without initting the DockerRuntime.
-    def init_base_runtime(
-        self,
-        config: AppConfig,
-        event_stream: EventStream,
-        sid: str = 'default',
-        plugins: list[PluginRequirement] | None = None,
-        env_vars: dict[str, str] | None = None,
-        status_callback: Callable | None = None,
-        attach_to_existing: bool = False,
-        headless_mode: bool = True,
-    ):
-        super().__init__(
-            config,
-            event_stream,
-            sid,
-            plugins,
-            env_vars,
-            status_callback,
-            attach_to_existing,
-            headless_mode,
-        )
-
     def __init__(
         self,
         config: AppConfig,
@@ -108,7 +84,7 @@ class DockerRuntime(ActionExecutionClient):
         # Buffer for container logs
         self.log_streamer: LogStreamer | None = None
 
-        self.init_base_runtime(
+        super().__init__(
             config,
             event_stream,
             sid,
