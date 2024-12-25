@@ -344,21 +344,20 @@ class RemoteRuntime(ActionExecutionClient):
 
     def close(self, timeout: int = 10):
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
-            self.session.close()
+            super().close()
             return
-        if self.runtime_id and self.session:
-            try:
-                with self._send_runtime_api_request(
-                    'POST',
-                    f'{self.config.sandbox.remote_runtime_api_url}/stop',
-                    json={'runtime_id': self.runtime_id},
-                    timeout=timeout,
-                ):
-                    self.log('debug', 'Runtime stopped.')
-            except Exception as e:
-                raise e
-            finally:
-                self.session.close()
+        try:
+            with self._send_runtime_api_request(
+                'POST',
+                f'{self.config.sandbox.remote_runtime_api_url}/stop',
+                json={'runtime_id': self.runtime_id},
+                timeout=timeout,
+            ):
+                self.log('debug', 'Runtime stopped.')
+        except Exception as e:
+            raise e
+        finally:
+            super().close()
 
     def _send_runtime_api_request(self, method, url, **kwargs):
         return send_request(self.session, method, url, **kwargs)

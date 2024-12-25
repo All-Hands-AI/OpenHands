@@ -361,11 +361,9 @@ class DockerRuntime(ActionExecutionClient):
         Parameters:
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix
         """
+        super().close()
         if self.log_streamer:
             self.log_streamer.close()
-
-        if self.session:
-            self.session.close()
 
         if rm_all_containers is None:
             rm_all_containers = self.config.sandbox.rm_all_containers

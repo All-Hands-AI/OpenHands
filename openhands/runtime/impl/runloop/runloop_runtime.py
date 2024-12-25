@@ -173,8 +173,7 @@ class RunloopRuntime(ActionExecutionClient):
         super().check_if_alive()
 
     def close(self, rm_all_containers: bool | None = True):
-        if self.session:
-            self.session.close()
+        super().close()
 
         if self.attach_to_existing:
             return

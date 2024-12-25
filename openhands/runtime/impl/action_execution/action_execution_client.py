@@ -286,3 +286,6 @@ class ActionExecutionClient(Runtime):
 
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return self.send_action_for_execution(action)
+
+    def close(self) -> None:
+        self.session.close()

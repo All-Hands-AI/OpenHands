@@ -259,8 +259,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
 
     def close(self):
         """Closes the ModalRuntime and associated objects."""
-        if self.session:
-            self.session.close()
+        super().close()
 
         if not self.attach_to_existing and self.sandbox:
             self.sandbox.terminate()
