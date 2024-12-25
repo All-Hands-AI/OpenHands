@@ -1904,6 +1904,20 @@
     "en": "(Optional)",
     "es": "(Opcional)"
   },
+  "SETTINGS_FORM$RUNTIME_SIZE_LABEL": {
+    "en": "Runtime Size",
+    "zh-CN": "运行时大小",
+    "de": "Laufzeitgröße",
+    "ko-KR": "런타임 크기",
+    "no": "Kjøretidsstørrelse",
+    "zh-TW": "執行環境大小",
+    "it": "Dimensione Runtime",
+    "pt": "Tamanho do Runtime",
+    "es": "Tamaño del Runtime",
+    "ar": "حجم وقت التشغيل",
+    "fr": "Taille du Runtime",
+    "tr": "Çalışma Zamanı Boyutu"
+  },
   "SETTINGS_FORM$ADVANCED_OPTIONS_LABEL": {
     "en": "Advanced Options",
     "es": "Opciones avanzadas"

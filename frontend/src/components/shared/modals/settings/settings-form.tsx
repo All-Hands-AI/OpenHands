@@ -21,6 +21,7 @@ import { APIKeyInput } from "../../inputs/api-key-input";
 import { BaseUrlInput } from "../../inputs/base-url-input";
 import { ConfirmationModeSwitch } from "../../inputs/confirmation-mode-switch";
 import { CustomModelInput } from "../../inputs/custom-model-input";
+import { RuntimeSizeInput } from "../../inputs/runtime-size-input";
 import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
@@ -218,6 +219,11 @@ export function SettingsForm({
               <ConfirmationModeSwitch
                 isDisabled={!!disabled}
                 defaultSelected={settings.CONFIRMATION_MODE}
+              />
+
+              <RuntimeSizeInput
+                isDisabled={!!disabled}
+                defaultValue={settings.RUNTIME_SIZE}
               />
             </>
           )}

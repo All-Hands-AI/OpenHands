@@ -60,6 +60,11 @@ class SandboxConfig:
     close_delay: int = 15
     remote_runtime_resource_factor: int = 1
 
+    def update_from_settings(self, settings: 'Settings'):
+        """Update sandbox config from settings."""
+        if settings.runtime_size == '2x':
+            self.remote_runtime_resource_factor = 2
+
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
         dict = {}

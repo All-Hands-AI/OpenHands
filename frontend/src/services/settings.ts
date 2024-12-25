@@ -8,6 +8,7 @@ export type Settings = {
   LLM_API_KEY: string;
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
+  RUNTIME_SIZE: string;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -18,6 +19,7 @@ export const DEFAULT_SETTINGS: Settings = {
   LLM_API_KEY: "",
   CONFIRMATION_MODE: false,
   SECURITY_ANALYZER: "",
+  RUNTIME_SIZE: "1x",
 };
 
 const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
@@ -76,6 +78,7 @@ export const getSettings = (): Settings => {
   const apiKey = localStorage.getItem("LLM_API_KEY");
   const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
   const securityAnalyzer = localStorage.getItem("SECURITY_ANALYZER");
+  const runtimeSize = localStorage.getItem("RUNTIME_SIZE");
 
   return {
     LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
@@ -85,6 +88,7 @@ export const getSettings = (): Settings => {
     LLM_API_KEY: apiKey || DEFAULT_SETTINGS.LLM_API_KEY,
     CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
     SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
+    RUNTIME_SIZE: runtimeSize || DEFAULT_SETTINGS.RUNTIME_SIZE,
   };
 };
 
