@@ -2,22 +2,16 @@ import os
 import tempfile
 import threading
 from pathlib import Path
-from typing import Callable, Generator
+from typing import Callable
 
 import modal
 import requests
 import tenacity
 
 from openhands.core.config import AppConfig
-from openhands.core.exceptions import (
-    AgentRuntimeNotReadyError,
-)
 from openhands.events import EventStream
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
-)
-from openhands.runtime.impl.eventstream.eventstream_runtime import (
-    LogStreamer,
 )
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
@@ -30,46 +24,6 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 
 # FIXME: this will not work in HA mode. We need a better way to track IDs
 MODAL_RUNTIME_IDS: dict[str, str] = {}
-
-
-# Modal's log generator returns strings, but the upstream LogBuffer expects bytes.
-def bytes_shim(string_generator) -> Generator[bytes, None, None]:
-    for line in string_generator:
-        yield line.encode('utf-8')
-
-
-class ModalLogStreamer(LogStreamer):
-    """Streams Modal sandbox logs to stdout.
-
-    This class provides a way to stream logs from a Modal sandbox directly to stdout
-    through the provided logging function.
-    """
-
-    def __init__(
-        self,
-        sandbox: modal.Sandbox,
-        logFn: Callable,
-    ):
-        self.log = logFn
-        self._stop_event = threading.Event()
-        self.log_generator = bytes_shim(sandbox.stderr)
-
-        # Start the stdout streaming thread
-        self.stdout_thread = threading.Thread(target=self._stream_logs)
-        self.stdout_thread.daemon = True
-        self.stdout_thread.start()
-
-    def _stream_logs(self):
-        """Stream logs from the Modal sandbox."""
-        try:
-            for log_line in self.log_generator:
-                if self._stop_event.is_set():
-                    break
-                if log_line:
-                    decoded_line = log_line.decode('utf-8').rstrip()
-                    self.log('debug', f'[inside sandbox] {decoded_line}')
-        except Exception as e:
-            self.log('error', f'Error streaming modal logs: {e}')
 
 
 class ModalRuntime(ActionExecutionClient):
@@ -128,9 +82,6 @@ class ModalRuntime(ActionExecutionClient):
         self.runtime_container_image_id = self.config.sandbox.runtime_container_image
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
-        # Buffer for container logs
-        self.log_streamer: LogStreamer | None = None
-
         if self.config.sandbox.runtime_extra_deps:
             self.log(
                 'debug',
@@ -176,7 +127,6 @@ class ModalRuntime(ActionExecutionClient):
 
             self.send_status_message('STATUS$CONTAINER_STARTED')
 
-        self.log_streamer = ModalLogStreamer(self.sandbox, self.log)
         if self.sandbox is None:
             raise Exception('Sandbox not initialized')
         tunnel = self.sandbox.tunnels()[self.container_port]
@@ -205,9 +155,6 @@ class ModalRuntime(ActionExecutionClient):
         wait=tenacity.wait_fixed(2),
     )
     def _wait_until_alive(self):
-        if not self.log_streamer:
-            raise AgentRuntimeNotReadyError('Runtime client is not ready.')
-
         self.check_if_alive()
 
     def _get_image_definition(
@@ -315,9 +262,6 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
 
     def close(self):
         """Closes the ModalRuntime and associated objects."""
-        if self.log_streamer:
-            self.log_streamer.close()
-
         if self.session:
             self.session.close()
 
