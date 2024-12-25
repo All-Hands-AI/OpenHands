@@ -9,9 +9,14 @@ import requests
 import tenacity
 
 from openhands.core.config import AppConfig
+from openhands.core.exceptions import (
+    AgentRuntimeNotReadyError,
+)
 from openhands.events import EventStream
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
 from openhands.runtime.impl.eventstream.eventstream_runtime import (
-    EventStreamRuntime,
     LogStreamer,
 )
 from openhands.runtime.plugins import PluginRequirement
@@ -21,6 +26,7 @@ from openhands.runtime.utils.runtime_build import (
     prep_build_folder,
 )
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.tenacity_stop import stop_if_should_exit
 
 # FIXME: this will not work in HA mode. We need a better way to track IDs
 MODAL_RUNTIME_IDS: dict[str, str] = {}
@@ -66,7 +72,7 @@ class ModalLogStreamer(LogStreamer):
             self.log('error', f'Error streaming modal logs: {e}')
 
 
-class ModalRuntime(EventStreamRuntime):
+class ModalRuntime(ActionExecutionClient):
     """This runtime will subscribe the event stream.
 
     When receive an event, it will send the event to runtime-client which run inside the Modal sandbox environment.
@@ -131,7 +137,7 @@ class ModalRuntime(EventStreamRuntime):
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
             )
 
-        self.init_base_runtime(
+        super().__init__(
             config,
             event_stream,
             sid,
@@ -186,6 +192,23 @@ class ModalRuntime(EventStreamRuntime):
 
         if not self.attach_to_existing:
             self.send_status_message(' ')
+
+    def _get_action_execution_server_host(self):
+        return self.api_url
+
+    @tenacity.retry(
+        stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
+        retry=tenacity.retry_if_exception_type(
+            (ConnectionError, requests.exceptions.ConnectionError)
+        ),
+        reraise=True,
+        wait=tenacity.wait_fixed(2),
+    )
+    def _wait_until_alive(self):
+        if not self.log_streamer:
+            raise AgentRuntimeNotReadyError('Runtime client is not ready.')
+
+        self.check_if_alive()
 
     def _get_image_definition(
         self,

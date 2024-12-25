@@ -74,7 +74,7 @@ class ActionExecutionClient(Runtime):
         )
 
     @abstractmethod
-    def _get_api_url(self) -> str:
+    def _get_action_execution_server_host(self) -> str:
         pass
 
     def _send_request(
@@ -114,6 +114,14 @@ class ActionExecutionClient(Runtime):
         else:
             return send_request(self.session, method, url, **kwargs)
 
+    def check_if_alive(self) -> None:
+        with self._send_request(
+            'GET',
+            f'{self._get_action_execution_server_host()}/alive',
+            timeout=5,
+        ):
+            pass
+
     def list_files(self, path: str | None = None) -> list[str]:
         """List files in the sandbox.
 
@@ -128,7 +136,7 @@ class ActionExecutionClient(Runtime):
             with send_request(
                 self.session,
                 'POST',
-                f'{self._get_api_url()}/list_files',
+                f'{self._get_action_execution_server_host()}/list_files',
                 json=data,
                 timeout=10,
             ) as response:
@@ -146,7 +154,7 @@ class ActionExecutionClient(Runtime):
             with send_request(
                 self.session,
                 'GET',
-                f'{self._get_api_url()}/download_files',
+                f'{self._get_action_execution_server_host()}/download_files',
                 params=params,
                 stream=True,
                 timeout=30,
@@ -189,7 +197,7 @@ class ActionExecutionClient(Runtime):
 
             with self._send_request(
                 'POST',
-                f'{self._get_api_url()}/upload_file',
+                f'{self._get_action_execution_server_host()}/upload_file',
                 is_retry=False,
                 files=upload_data,
                 params=params,
@@ -216,7 +224,7 @@ class ActionExecutionClient(Runtime):
             with send_request(
                 self.session,
                 'GET',
-                f'{self._get_api_url()}/vscode/connection_token',
+                f'{self._get_action_execution_server_host()}/vscode/connection_token',
                 timeout=10,
             ) as response:
                 response_json = response.json()
@@ -266,7 +274,7 @@ class ActionExecutionClient(Runtime):
                 with send_request(
                     self.session,
                     'POST',
-                    f'{self._get_api_url()}/execute_action',
+                    f'{self._get_action_execution_server_host()}/execute_action',
                     json={'action': event_to_dict(action)},
                     # wait a few more seconds to get the timeout error from client side
                     timeout=action.timeout + 5,

@@ -79,7 +79,7 @@ class RemoteRuntime(ActionExecutionClient):
         self._runtime_initialized: bool = False
         self._vscode_url: str | None = None  # initial dummy value
 
-    def _get_api_url(self):
+    def _get_action_execution_server_host(self):
         return self.runtime_url
 
     async def connect(self):
@@ -317,12 +317,7 @@ class RemoteRuntime(ActionExecutionClient):
         # Retry a period of time to give the cluster time to start the pod
         if pod_status == 'ready':
             try:
-                with self._send_request(
-                    'GET',
-                    f'{self.runtime_url}/alive',
-                    timeout=60,
-                ):  # will raise exception if we don't get 200 back.
-                    pass
+                self.check_if_alive()
             except requests.HTTPError as e:
                 self.log(
                     'warning', f"Runtime /alive failed, but pod says it's ready: {e}"

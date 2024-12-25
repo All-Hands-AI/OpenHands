@@ -24,7 +24,6 @@ from openhands.runtime.impl.eventstream.containers import remove_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.log_streamer import LogStreamer
-from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
@@ -130,7 +129,7 @@ class EventStreamRuntime(ActionExecutionClient):
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
             )
 
-    def _get_api_url(self):
+    def _get_action_execution_server_host(self):
         return self.api_url
 
     async def connect(self):
@@ -357,13 +356,7 @@ class EventStreamRuntime(ActionExecutionClient):
         if not self.log_streamer:
             raise AgentRuntimeNotReadyError('Runtime client is not ready.')
 
-        with send_request(
-            self.session,
-            'GET',
-            f'{self.api_url}/alive',
-            timeout=5,
-        ):
-            pass
+        self.check_if_alive()
 
     def close(self, rm_all_containers: bool | None = None):
         """Closes the EventStreamRuntime and associated objects
