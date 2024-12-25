@@ -128,7 +128,6 @@ class RemoteRuntime(ActionExecutionClient):
             with self._send_runtime_api_request(
                 'GET',
                 f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
-                is_retry=False,
                 timeout=60,
             ) as response:
                 data = response.json()
@@ -159,7 +158,6 @@ class RemoteRuntime(ActionExecutionClient):
         with self._send_runtime_api_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
-            is_retry=False,
             timeout=60,
         ) as response:
             response_json = response.json()
@@ -190,7 +188,6 @@ class RemoteRuntime(ActionExecutionClient):
         with self._send_runtime_api_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
-            is_retry=False,
             params={'image': self.container_image},
             timeout=60,
         ) as response:
@@ -232,7 +229,6 @@ class RemoteRuntime(ActionExecutionClient):
             with self._send_runtime_api_request(
                 'POST',
                 f'{self.config.sandbox.remote_runtime_api_url}/start',
-                is_retry=False,
                 json=start_request,
                 timeout=60,
             ) as response:
@@ -249,7 +245,6 @@ class RemoteRuntime(ActionExecutionClient):
         with self._send_runtime_api_request(
             'POST',
             f'{self.config.sandbox.remote_runtime_api_url}/resume',
-            is_retry=False,
             json={'runtime_id': self.runtime_id},
             timeout=60,
         ):
@@ -354,7 +349,6 @@ class RemoteRuntime(ActionExecutionClient):
                 with self._send_runtime_api_request(
                     'POST',
                     f'{self.config.sandbox.remote_runtime_api_url}/stop',
-                    is_retry=False,
                     json={'runtime_id': self.runtime_id},
                     timeout=timeout,
                 ):
@@ -364,7 +358,7 @@ class RemoteRuntime(ActionExecutionClient):
             finally:
                 self.session.close()
 
-    def _send_runtime_api_request(self, method, url, is_retry=False, **kwargs):
+    def _send_runtime_api_request(self, method, url, **kwargs):
         try:
             return send_request(self.session, method, url, **kwargs)
         except requests.Timeout:
