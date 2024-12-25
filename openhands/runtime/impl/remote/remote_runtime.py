@@ -30,8 +30,10 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.base import Runtime
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
 from openhands.runtime.utils.request import (
@@ -43,7 +45,7 @@ from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
-class RemoteRuntime(Runtime):
+class RemoteRuntime(ActionExecutionClient):
     """This runtime will connect to a remote oh-runtime-client."""
 
     port: int = 60000  # default port for the remote runtime client
@@ -514,34 +516,46 @@ class RemoteRuntime(Runtime):
             )
 
     def list_files(self, path: str | None = None) -> list[str]:
-        data = {}
-        if path is not None:
-            data['path'] = path
+        """List files in the sandbox.
 
-        with self._send_request(
-            'POST',
-            f'{self.runtime_url}/list_files',
-            is_retry=False,
-            json=data,
-            timeout=30,
-        ) as response:
-            response_json = response.json()
-        assert isinstance(response_json, list)
-        return response_json
+        If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
+        """
+
+        try:
+            data = {}
+            if path is not None:
+                data['path'] = path
+
+            with send_request(
+                self.session,
+                'POST',
+                f'{self.api_url}/list_files',
+                json=data,
+                timeout=10,
+            ) as response:
+                response_json = response.json()
+                assert isinstance(response_json, list)
+                return response_json
+        except requests.Timeout:
+            raise TimeoutError('List files operation timed out')
 
     def copy_from(self, path: str) -> Path:
         """Zip all files in the sandbox and return as a stream of bytes."""
-        params = {'path': path}
-        with self._send_request(
-            'GET',
-            f'{self.runtime_url}/download_files',
-            is_retry=False,
-            params=params,
-            stream=True,
-            timeout=30,
-        ) as response:
-            temp_file = tempfile.NamedTemporaryFile(delete=False)
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:  # filter out keep-alive new chunks
-                    temp_file.write(chunk)
-            return Path(temp_file.name)
+
+        try:
+            params = {'path': path}
+            with send_request(
+                self.session,
+                'GET',
+                f'{self.api_url}/download_files',
+                params=params,
+                stream=True,
+                timeout=30,
+            ) as response:
+                temp_file = tempfile.NamedTemporaryFile(delete=False)
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:  # filter out keep-alive new chunks
+                        temp_file.write(chunk)
+                return Path(temp_file.name)
+        except requests.Timeout:
+            raise TimeoutError('Copy operation timed out')

@@ -3,7 +3,6 @@ import os
 import tempfile
 import threading
 from functools import lru_cache
-from pathlib import Path
 from typing import Callable
 from zipfile import ZipFile
 
@@ -35,8 +34,10 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.base import Runtime
 from openhands.runtime.builder import DockerRuntimeBuilder
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
 from openhands.runtime.impl.eventstream.containers import remove_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
@@ -56,7 +57,7 @@ def remove_all_runtime_containers():
 _atexit_registered = False
 
 
-class EventStreamRuntime(Runtime):
+class EventStreamRuntime(ActionExecutionClient):
     """This runtime will subscribe the event stream.
     When receive an event, it will send the event to runtime-client which run inside the docker environment.
 
@@ -509,51 +510,6 @@ class EventStreamRuntime(Runtime):
             self.log(
                 'debug', f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}'
             )
-
-    def list_files(self, path: str | None = None) -> list[str]:
-        """List files in the sandbox.
-
-        If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
-        """
-
-        try:
-            data = {}
-            if path is not None:
-                data['path'] = path
-
-            with send_request(
-                self.session,
-                'POST',
-                f'{self.api_url}/list_files',
-                json=data,
-                timeout=10,
-            ) as response:
-                response_json = response.json()
-                assert isinstance(response_json, list)
-                return response_json
-        except requests.Timeout:
-            raise TimeoutError('List files operation timed out')
-
-    def copy_from(self, path: str) -> Path:
-        """Zip all files in the sandbox and return as a stream of bytes."""
-
-        try:
-            params = {'path': path}
-            with send_request(
-                self.session,
-                'GET',
-                f'{self.api_url}/download_files',
-                params=params,
-                stream=True,
-                timeout=30,
-            ) as response:
-                temp_file = tempfile.NamedTemporaryFile(delete=False)
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:  # filter out keep-alive new chunks
-                        temp_file.write(chunk)
-                return Path(temp_file.name)
-        except requests.Timeout:
-            raise TimeoutError('Copy operation timed out')
 
     def _is_port_in_use_docker(self, port):
         containers = self.docker_client.containers.list()
