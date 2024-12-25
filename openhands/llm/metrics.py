@@ -46,7 +46,13 @@ class Metrics:
 
     @property
     def response_latencies(self) -> list[ResponseLatency]:
+        if not hasattr(self, '_response_latencies'):
+            self._response_latencies = []
         return self._response_latencies
+
+    @response_latencies.setter
+    def response_latencies(self, value: list[ResponseLatency]) -> None:
+        self._response_latencies = value
 
     def add_cost(self, value: float) -> None:
         if value < 0:

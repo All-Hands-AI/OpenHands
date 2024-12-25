@@ -31,13 +31,15 @@ function Home() {
     gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   });
 
+  const latestConversation = localStorage.getItem("latest_conversation_id");
+
   return (
     <div
       data-testid="root-index"
       className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto"
     >
       <HeroHeading />
-      <div className="flex flex-col gap-16 w-[600px] items-center">
+      <div className="flex flex-col gap-8 w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
           <TaskForm ref={formRef} />
         </div>
@@ -67,6 +69,19 @@ function Home() {
           />
         </div>
       </div>
+      {latestConversation && (
+        <div className="flex gap-4 w-full text-center mt-8">
+          <p className="text-center w-full">
+            Or&nbsp;
+            <a
+              className="underline"
+              href={`/conversations/${latestConversation}`}
+            >
+              jump back to your most recent conversation
+            </a>
+          </p>
+        </div>
+      )}
     </div>
   );
 }
