@@ -183,6 +183,10 @@ class RunloopRuntime(ActionExecutionClient):
 
     @property
     def vscode_url(self) -> str | None:
+        if (
+            hasattr(self, '_vscode_url') and self._vscode_url is not None
+        ):  # cached value
+            return self._vscode_url
         token = super().get_vscode_token()
         if not token:
             return None

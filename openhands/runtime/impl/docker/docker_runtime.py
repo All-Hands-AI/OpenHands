@@ -68,7 +68,6 @@ class DockerRuntime(ActionExecutionClient):
         self.config = config
         self._host_port = 30000  # initial dummy value
         self._container_port = 30001  # initial dummy value
-        self._vscode_url: str | None = None  # initial dummy value
         self._runtime_initialized: bool = False
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.status_callback = status_callback
@@ -371,7 +370,8 @@ class DockerRuntime(ActionExecutionClient):
     @property
     def vscode_url(self) -> str | None:
         token = super().get_vscode_token()
+        print('got token', token)
         if not token:
             return None
-        self._vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
-        return self._vscode_url
+        vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        return vscode_url

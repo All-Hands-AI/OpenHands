@@ -74,7 +74,6 @@ class RemoteRuntime(ActionExecutionClient):
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
         self._runtime_initialized: bool = False
-        self._vscode_url: str | None = None  # initial dummy value
 
     def _get_action_execution_server_host(self):
         return self.runtime_url
@@ -271,12 +270,12 @@ class RemoteRuntime(ActionExecutionClient):
         assert isinstance(_parsed_url.scheme, str) and isinstance(
             _parsed_url.netloc, str
         )
-        self._vscode_url = f'{_parsed_url.scheme}://vscode-{_parsed_url.netloc}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        vscode_url = f'{_parsed_url.scheme}://vscode-{_parsed_url.netloc}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         self.log(
             'debug',
-            f'VSCode URL: {self._vscode_url}',
+            f'VSCode URL: {vscode_url}',
         )
-        return self._vscode_url
+        return vscode_url
 
     def _wait_until_alive(self):
         retry_decorator = tenacity.retry(
