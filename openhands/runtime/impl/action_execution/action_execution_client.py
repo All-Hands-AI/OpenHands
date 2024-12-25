@@ -7,11 +7,9 @@ from typing import Any
 from zipfile import ZipFile
 
 import requests
-import tenacity
 
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import (
-    AgentRuntimeNotReadyError,
     AgentRuntimeTimeoutError,
 )
 from openhands.events import EventStream
@@ -37,7 +35,6 @@ from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
-from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 class ActionExecutionClient(Runtime):
@@ -81,7 +78,6 @@ class ActionExecutionClient(Runtime):
         self,
         method: str,
         url: str,
-        is_retry: bool = True,
         **kwargs,
     ) -> requests.Response:
         """Send a request to the action execution server.
@@ -89,7 +85,6 @@ class ActionExecutionClient(Runtime):
         Args:
             method: HTTP method (GET, POST, etc.)
             url: URL to send the request to
-            is_retry: Whether to retry the request on failure
             **kwargs: Additional arguments to pass to requests.request()
 
         Returns:
@@ -98,21 +93,7 @@ class ActionExecutionClient(Runtime):
         Raises:
             AgentRuntimeError: If the request fails
         """
-        if not self._runtime_initialized and not url.endswith('/alive'):
-            raise AgentRuntimeNotReadyError('Runtime client is not ready.')
-
-        if is_retry:
-            retry_decorator = tenacity.retry(
-                stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
-                retry=tenacity.retry_if_exception_type(
-                    (ConnectionError, requests.exceptions.ConnectionError)
-                ),
-                reraise=True,
-                wait=tenacity.wait_fixed(2),
-            )
-            return retry_decorator(send_request)(self.session, method, url, **kwargs)
-        else:
-            return send_request(self.session, method, url, **kwargs)
+        return send_request(self.session, method, url, **kwargs)
 
     def check_if_alive(self) -> None:
         with self._send_request(
@@ -198,7 +179,6 @@ class ActionExecutionClient(Runtime):
             with self._send_request(
                 'POST',
                 f'{self._get_action_execution_server_host()}/upload_file',
-                is_retry=False,
                 files=upload_data,
                 params=params,
                 timeout=300,
