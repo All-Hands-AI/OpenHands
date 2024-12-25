@@ -21,24 +21,36 @@ Your `.openhands_instructions` file should contain:
 
 ### Example `.openhands_instructions` File
 
+Your `.openhands_instructions` file can contain information like the following:
+
 ```
-Repository: MyProject
-Description: A web application for task management
+This repository is a Python package that provides utilities for data processing.
 
-Directory Structure:
-- src/: Main application code
-- tests/: Test files
-- docs/: Documentation
+Key directories:
+- src/data_utils/: Core data processing modules
+- tests/: Test files organized by module
+- docs/: API documentation and usage guides
 
-Setup:
-- Run `npm install` to install dependencies
-- Use `npm run dev` for development
-- Run `npm test` for testing
+Development setup:
+1. Create a virtual environment: python -m venv venv
+2. Activate: source venv/bin/activate (Linux/Mac) or venv\Scripts\activate (Windows)
+3. Install dev dependencies: pip install -e ".[dev]"
 
-Guidelines:
-- Follow ESLint configuration
-- Write tests for all new features
-- Use TypeScript for new code
+Code guidelines:
+- Follow PEP 8 style guide
+- All new code must have type hints
+- Maintain 90% test coverage for new features
+- Document public APIs using Google docstring format
+
+Testing:
+- Run tests: pytest tests/
+- Run type checks: mypy src/
+- Run linting: flake8 src/
+
+Common gotchas:
+- The data_loader module requires pandas>=2.0
+- Test data files must be placed in tests/fixtures/
+- Large data operations should use chunked processing
 ```
 
 ### Best Practices
@@ -51,76 +63,7 @@ Guidelines:
 
 ## The `.openhands` Directory
 
-The `.openhands` directory allows you to create repository-specific micro-agents that extend OpenHands' capabilities for your project. These micro-agents are defined in markdown files within this directory.
-
-### Structure
-
-Each micro-agent file in the `.openhands` directory should follow this format:
-
-```markdown
----
-name: agent_name
-agent: CodeActAgent
-triggers:
-- trigger_word1
-- trigger_word2
----
-
-Instructions and capabilities for the micro-agent...
-```
-
-### Example Custom Micro-Agent
-
-Here's an example of a custom micro-agent for a project using a specific testing framework:
-
-```markdown
----
-name: custom_test_agent
-agent: CodeActAgent
-triggers:
-- test
-- spec
----
-
-You are responsible for managing tests in this project.
-
-Key responsibilities:
-1. Create and modify test files following project conventions
-2. Ensure proper test coverage
-3. Follow testing best practices
-
-Guidelines:
-- Place unit tests in `tests/unit/`
-- Name test files with `test_` prefix
-- Include both positive and negative test cases
-- Use the project's testing utilities from `tests/utils/`
-
-Example test structure:
-```python
-from tests.utils import TestBase
-
-def test_feature_success():
-    # Test successful case
-    ...
-
-def test_feature_failure():
-    # Test error handling
-    ...
-```
-
-Remember to:
-- Run the full test suite before submitting
-- Update test documentation when adding new test cases
-- Follow the project's assertion style
-```
-
-### Best Practices for Custom Micro-Agents
-
-1. **Clear Scope**: Keep each micro-agent focused on a specific domain or task
-2. **Explicit Instructions**: Provide clear, unambiguous guidelines
-3. **Useful Examples**: Include practical examples of common use cases
-4. **Safety First**: Include necessary warnings and constraints
-5. **Integration Awareness**: Consider how the agent interacts with other components
+The `.openhands` directory allows you to create repository-specific micro-agents that extend OpenHands' capabilities for your project. For detailed information about creating and using micro-agents, please refer to the [Micro-Agents documentation](../micro-agents.md).
 
 ## Using Both Features Together
 
