@@ -131,7 +131,7 @@ class ModalRuntime(EventStreamRuntime):
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
             )
 
-        self.init_base_runtime(
+        super().__init__(
             config,
             event_stream,
             sid,

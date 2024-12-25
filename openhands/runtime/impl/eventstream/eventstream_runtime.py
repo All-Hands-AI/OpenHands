@@ -1,7 +1,6 @@
 import atexit
 import os
 import tempfile
-import threading
 from functools import lru_cache
 from pathlib import Path
 from typing import Callable
@@ -23,6 +22,7 @@ from openhands.core.logger import DEBUG
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
+    Action,
     ActionConfirmationStatus,
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -32,8 +32,8 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from openhands.events.action.action import Action
 from openhands.events.observation import (
+    CmdOutputObservation,
     ErrorObservation,
     NullObservation,
     Observation,
@@ -41,8 +41,8 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.base import Runtime
 from openhands.runtime.builder import DockerRuntimeBuilder
+from openhands.runtime.impl.action_execution_client import ActionExecutionClient
 from openhands.runtime.impl.eventstream.containers import remove_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
@@ -62,7 +62,7 @@ def remove_all_runtime_containers():
 _atexit_registered = False
 
 
-class EventStreamRuntime(Runtime):
+class EventStreamRuntime(ActionExecutionClient):
     """This runtime will subscribe the event stream.
     When receive an event, it will send the event to runtime-client which run inside the docker environment.
 
@@ -73,30 +73,6 @@ class EventStreamRuntime(Runtime):
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
     """
-
-    # Need to provide this method to allow inheritors to init the Runtime
-    # without initting the EventStreamRuntime.
-    def init_base_runtime(
-        self,
-        config: AppConfig,
-        event_stream: EventStream,
-        sid: str = 'default',
-        plugins: list[PluginRequirement] | None = None,
-        env_vars: dict[str, str] | None = None,
-        status_callback: Callable | None = None,
-        attach_to_existing: bool = False,
-        headless_mode: bool = True,
-    ):
-        super().__init__(
-            config,
-            event_stream,
-            sid,
-            plugins,
-            env_vars,
-            status_callback,
-            attach_to_existing,
-            headless_mode,
-        )
 
     def __init__(
         self,
@@ -114,28 +90,7 @@ class EventStreamRuntime(Runtime):
             _atexit_registered = True
             atexit.register(remove_all_runtime_containers)
 
-        self.config = config
-        self._host_port = 30000  # initial dummy value
-        self._container_port = 30001  # initial dummy value
-        self._vscode_url: str | None = None  # initial dummy value
-        self._runtime_initialized: bool = False
-        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
-        self.session = requests.Session()
-        self.status_callback = status_callback
-
-        self.docker_client: docker.DockerClient = self._init_docker_client()
-        self.base_container_image = self.config.sandbox.base_container_image
-        self.runtime_container_image = self.config.sandbox.runtime_container_image
-        self.container_name = CONTAINER_NAME_PREFIX + sid
-        self.container = None
-        self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
-
-        self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
-
-        # Buffer for container logs
-        self.log_streamer: LogStreamer | None = None
-
-        self.init_base_runtime(
+        super().__init__(
             config,
             event_stream,
             sid,
@@ -145,6 +100,22 @@ class EventStreamRuntime(Runtime):
             attach_to_existing,
             headless_mode,
         )
+
+        self._host_port = 30000  # initial dummy value
+        self._container_port = 30001  # initial dummy value
+        self._vscode_url: str | None = None  # initial dummy value
+        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
+
+        self.docker_client: docker.DockerClient = self._init_docker_client()
+        self.base_container_image = self.config.sandbox.base_container_image
+        self.runtime_container_image = self.config.sandbox.runtime_container_image
+        self.container_name = CONTAINER_NAME_PREFIX + sid
+        self.container = None
+
+        self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
+
+        # Buffer for container logs
+        self.log_streamer: LogStreamer | None = None
 
         # Log runtime_extra_deps after base class initialization so self.sid is available
         if self.config.sandbox.runtime_extra_deps:
@@ -443,8 +414,7 @@ class EventStreamRuntime(Runtime):
             assert action.timeout is not None
 
             try:
-                with send_request(
-                    self.session,
+                with self._send_request(
                     'POST',
                     f'{self.api_url}/execute_action',
                     json={'action': event_to_dict(action)},
@@ -454,12 +424,11 @@ class EventStreamRuntime(Runtime):
                     output = response.json()
                     obs = observation_from_dict(output)
                     obs._cause = action.id  # type: ignore[attr-defined]
+                    return obs
             except requests.Timeout:
                 raise AgentRuntimeTimeoutError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
-
-            return obs
 
     def run(self, action: CmdRunAction) -> Observation:
         return self.run_action(action)

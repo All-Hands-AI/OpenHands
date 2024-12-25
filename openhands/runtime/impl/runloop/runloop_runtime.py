@@ -101,7 +101,7 @@ class RunloopRuntime(EventStreamRuntime):
         self.session = requests.Session()
         self.container_name = CONTAINER_NAME_PREFIX + sid
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
-        self.init_base_runtime(
+        super().__init__(
             config,
             event_stream,
             sid,

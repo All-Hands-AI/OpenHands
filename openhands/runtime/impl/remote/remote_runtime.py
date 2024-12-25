@@ -1,6 +1,5 @@
 import os
 import tempfile
-import threading
 from pathlib import Path
 from typing import Callable, Optional
 from urllib.parse import urlparse
@@ -20,6 +19,7 @@ from openhands.core.exceptions import (
 )
 from openhands.events import EventStream
 from openhands.events.action import (
+    Action,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -28,28 +28,23 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from openhands.events.action.action import Action
 from openhands.events.observation import (
     ErrorObservation,
     NullObservation,
     Observation,
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
-from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.base import Runtime
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
+from openhands.runtime.impl.action_execution_client import ActionExecutionClient
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
-from openhands.runtime.utils.request import (
-    RequestHTTPError,
-    send_request,
-)
+from openhands.runtime.utils.request import RequestHTTPError, send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
-class RemoteRuntime(Runtime):
+class RemoteRuntime(ActionExecutionClient):
     """This runtime will connect to a remote oh-runtime-client."""
 
     port: int = 60000  # default port for the remote runtime client
@@ -65,10 +60,6 @@ class RemoteRuntime(Runtime):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
     ):
-        # We need to set session and action_semaphore before the __init__ below, or we get odd errors
-        self.session = requests.Session()
-        self.action_semaphore = threading.Semaphore(1)
-
         super().__init__(
             config,
             event_stream,
@@ -79,6 +70,7 @@ class RemoteRuntime(Runtime):
             attach_to_existing,
             headless_mode,
         )
+
         if self.config.sandbox.api_key is None:
             raise ValueError(
                 'API key is required to use the remote runtime. '
@@ -97,7 +89,6 @@ class RemoteRuntime(Runtime):
         )
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
-        self._runtime_initialized: bool = False
         self._vscode_url: str | None = None  # initial dummy value
 
     async def connect(self):
@@ -407,45 +398,6 @@ class RemoteRuntime(Runtime):
             finally:
                 self.session.close()
 
-    def run_action(self, action: Action, is_retry: bool = False) -> Observation:
-        if action.timeout is None:
-            action.timeout = self.config.sandbox.timeout
-        if isinstance(action, FileEditAction):
-            return self.edit(action)
-        with self.action_semaphore:
-            if not action.runnable:
-                return NullObservation('')
-            action_type = action.action  # type: ignore[attr-defined]
-            if action_type not in ACTION_TYPE_TO_CLASS:
-                raise ValueError(f'Action {action_type} does not exist.')
-            if not hasattr(self, action_type):
-                return ErrorObservation(
-                    f'[Runtime (ID={self.runtime_id})] Action {action_type} is not supported in the current runtime.',
-                    error_id='AGENT_ERROR$BAD_ACTION',
-                )
-
-            assert action.timeout is not None
-
-            try:
-                request_body = {'action': event_to_dict(action)}
-                self.log('debug', f'Request body: {request_body}')
-                with self._send_request(
-                    'POST',
-                    f'{self.runtime_url}/execute_action',
-                    is_retry=False,
-                    json=request_body,
-                    # wait a few more seconds to get the timeout error from client side
-                    timeout=action.timeout + 5,
-                ) as response:
-                    output = response.json()
-                obs = observation_from_dict(output)
-                obs._cause = action.id  # type: ignore[attr-defined]
-            except requests.Timeout:
-                raise AgentRuntimeTimeoutError(
-                    f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
-                )
-            return obs
-
     def _send_request(self, method, url, is_retry=False, **kwargs):
         is_runtime_request = self.runtime_url and self.runtime_url in url
         try:
@@ -489,6 +441,39 @@ class RemoteRuntime(Runtime):
 
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return self.run_action(action)
+
+    def run_action(self, action: Action) -> Observation:
+        """Override run_action to use runtime_url instead of api_url."""
+        if isinstance(action, FileEditAction):
+            return self.edit(action)
+
+        # set timeout to default if not set
+        if action.timeout is None:
+            action.timeout = self.config.sandbox.timeout
+
+        with self.action_semaphore:
+            if not action.runnable:
+                return NullObservation("")
+
+            try:
+                request_body = {'action': event_to_dict(action)}
+                self.log('debug', f'Request body: {request_body}')
+                with self._send_request(
+                    'POST',
+                    f'{self.runtime_url}/execute_action',
+                    is_retry=False,
+                    json=request_body,
+                    # wait a few more seconds to get the timeout error from client side
+                    timeout=action.timeout + 5,
+                ) as response:
+                    output = response.json()
+                obs = observation_from_dict(output)
+                obs._cause = action.id  # type: ignore[attr-defined]
+                return obs
+            except requests.Timeout:
+                raise AgentRuntimeTimeoutError(
+                    f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
+                )
 
     def copy_to(
         self, host_src: str, sandbox_dest: str, recursive: bool = False
