@@ -16,7 +16,9 @@ from openhands.core.exceptions import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
-from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
 from openhands.runtime.utils.log_streamer import LogStreamer
@@ -75,7 +77,7 @@ class RunloopLogStreamer(LogStreamer):
             self.log('error', f'Error streaming runloop logs: {e}')
 
 
-class RunloopRuntime(DockerRuntime):
+class RunloopRuntime(ActionExecutionClient):
     """The RunloopRuntime class is an DockerRuntime that utilizes Runloop Devbox as a runtime environment."""
 
     _sandbox_port: int = 4444
@@ -101,7 +103,7 @@ class RunloopRuntime(DockerRuntime):
         self.session = requests.Session()
         self.container_name = CONTAINER_NAME_PREFIX + sid
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
-        self.init_base_runtime(
+        super().__init__(
             config,
             event_stream,
             sid,
@@ -114,6 +116,9 @@ class RunloopRuntime(DockerRuntime):
         # Buffer for container logs
         self.log_streamer: LogStreamer | None = None
         self._vscode_url: str | None = None
+
+    def _get_action_execution_server_host(self):
+        return self.api_url
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(120),
