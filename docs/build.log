@@ -1,0 +1,108 @@
+
+> docs@0.0.0 build
+> docusaurus build
+
+[INFO] Website will be built for all these locales: 
+- en
+- fr
+- zh-Hans
+[INFO] [en] Creating an optimized production build...
+[webpackbar] ℹ Compiling Client
+[webpackbar] ℹ Compiling Server
+[webpackbar] ✔ Server: Compiled successfully in 15.10s
+[webpackbar] ✔ Client: Compiled successfully in 2.79m
+[WARNING] Docusaurus found broken anchors!
+
+Please check the pages of your site in the list below, and make sure you don't reference any anchor that does not exist.
+Note: it's possible to ignore broken anchors with the 'onBrokenAnchors' Docusaurus configuration, and let the build pass.
+
+Exhaustive list of all broken anchors found:
+- Broken anchor on source page path = /modules/usage/configuration-options:
+   -> linking to #api-keys (resolved as: /modules/usage/configuration-options#api-keys)
+   -> linking to #workspace (resolved as: /modules/usage/configuration-options#workspace)
+   -> linking to #debugging-and-logging (resolved as: /modules/usage/configuration-options#debugging-and-logging)
+   -> linking to #session-management (resolved as: /modules/usage/configuration-options#session-management)
+   -> linking to #trajectories (resolved as: /modules/usage/configuration-options#trajectories)
+   -> linking to #file-store (resolved as: /modules/usage/configuration-options#file-store)
+   -> linking to #task-management (resolved as: /modules/usage/configuration-options#task-management)
+   -> linking to #miscellaneous (resolved as: /modules/usage/configuration-options#miscellaneous)
+   -> linking to #aws-credentials (resolved as: /modules/usage/configuration-options#aws-credentials)
+   -> linking to #api-configuration (resolved as: /modules/usage/configuration-options#api-configuration)
+   -> linking to #custom-llm-provider (resolved as: /modules/usage/configuration-options#custom-llm-provider)
+   -> linking to #embeddings (resolved as: /modules/usage/configuration-options#embeddings)
+   -> linking to #message-handling (resolved as: /modules/usage/configuration-options#message-handling)
+   -> linking to #model-selection (resolved as: /modules/usage/configuration-options#model-selection)
+   -> linking to #retrying (resolved as: /modules/usage/configuration-options#retrying)
+   -> linking to #advanced-options (resolved as: /modules/usage/configuration-options#advanced-options)
+   -> linking to #microagent-configuration (resolved as: /modules/usage/configuration-options#microagent-configuration)
+   -> linking to #memory-configuration (resolved as: /modules/usage/configuration-options#memory-configuration)
+   -> linking to #llm-configuration-2 (resolved as: /modules/usage/configuration-options#llm-configuration-2)
+   -> linking to #actionspace-configuration (resolved as: /modules/usage/configuration-options#actionspace-configuration)
+   -> linking to #microagent-usage (resolved as: /modules/usage/configuration-options#microagent-usage)
+   -> linking to #sandbox-configuration-2 (resolved as: /modules/usage/configuration-options#sandbox-configuration-2)
+   -> linking to #execution (resolved as: /modules/usage/configuration-options#execution)
+   -> linking to #container-image (resolved as: /modules/usage/configuration-options#container-image)
+   -> linking to #networking (resolved as: /modules/usage/configuration-options#networking)
+   -> linking to #linting-and-plugins (resolved as: /modules/usage/configuration-options#linting-and-plugins)
+   -> linking to #dependencies-and-environment (resolved as: /modules/usage/configuration-options#dependencies-and-environment)
+   -> linking to #evaluation (resolved as: /modules/usage/configuration-options#evaluation)
+   -> linking to #confirmation-mode (resolved as: /modules/usage/configuration-options#confirmation-mode)
+   -> linking to #security-analyzer (resolved as: /modules/usage/configuration-options#security-analyzer)
+
+[SUCCESS] Generated static files in "build".
+[INFO] [fr] Creating an optimized production build...
+[webpackbar] ℹ Compiling Client
+[webpackbar] ℹ Compiling Server
+[webpackbar] ✔ Server: Compiled successfully in 12.21s
+[webpackbar] ✔ Client: Compiled successfully in 1.38m
+[WARNING] Docusaurus found broken anchors!
+
+Please check the pages of your site in the list below, and make sure you don't reference any anchor that does not exist.
+Note: it's possible to ignore broken anchors with the 'onBrokenAnchors' Docusaurus configuration, and let the build pass.
+
+Exhaustive list of all broken anchors found:
+- Broken anchor on source page path = /fr/modules/usage/configuration-options:
+   -> linking to #api-keys (resolved as: /fr/modules/usage/configuration-options#api-keys)
+   -> linking to #workspace (resolved as: /fr/modules/usage/configuration-options#workspace)
+   -> linking to #debugging-and-logging (resolved as: /fr/modules/usage/configuration-options#debugging-and-logging)
+   -> linking to #session-management (resolved as: /fr/modules/usage/configuration-options#session-management)
+   -> linking to #trajectories (resolved as: /fr/modules/usage/configuration-options#trajectories)
+   -> linking to #file-store (resolved as: /fr/modules/usage/configuration-options#file-store)
+   -> linking to #task-management (resolved as: /fr/modules/usage/configuration-options#task-management)
+   -> linking to #miscellaneous (resolved as: /fr/modules/usage/configuration-options#miscellaneous)
+   -> linking to #aws-credentials (resolved as: /fr/modules/usage/configuration-options#aws-credentials)
+   -> linking to #api-configuration (resolved as: /fr/modules/usage/configuration-options#api-configuration)
+   -> linking to #custom-llm-provider (resolved as: /fr/modules/usage/configuration-options#custom-llm-provider)
+   -> linking to #embeddings (resolved as: /fr/modules/usage/configuration-options#embeddings)
+   -> linking to #message-handling (resolved as: /fr/modules/usage/configuration-options#message-handling)
+   -> linking to #model-selection (resolved as: /fr/modules/usage/configuration-options#model-selection)
+   -> linking to #retrying (resolved as: /fr/modules/usage/configuration-options#retrying)
+   -> linking to #advanced-options (resolved as: /fr/modules/usage/configuration-options#advanced-options)
+   -> linking to #microagent-configuration (resolved as: /fr/modules/usage/configuration-options#microagent-configuration)
+   -> linking to #memory-configuration (resolved as: /fr/modules/usage/configuration-options#memory-configuration)
+   -> linking to #llm-configuration-2 (resolved as: /fr/modules/usage/configuration-options#llm-configuration-2)
+   -> linking to #actionspace-configuration (resolved as: /fr/modules/usage/configuration-options#actionspace-configuration)
+   -> linking to #microagent-usage (resolved as: /fr/modules/usage/configuration-options#microagent-usage)
+   -> linking to #sandbox-configuration-2 (resolved as: /fr/modules/usage/configuration-options#sandbox-configuration-2)
+   -> linking to #execution (resolved as: /fr/modules/usage/configuration-options#execution)
+   -> linking to #container-image (resolved as: /fr/modules/usage/configuration-options#container-image)
+   -> linking to #networking (resolved as: /fr/modules/usage/configuration-options#networking)
+   -> linking to #linting-and-plugins (resolved as: /fr/modules/usage/configuration-options#linting-and-plugins)
+   -> linking to #dependencies-and-environment (resolved as: /fr/modules/usage/configuration-options#dependencies-and-environment)
+   -> linking to #evaluation (resolved as: /fr/modules/usage/configuration-options#evaluation)
+   -> linking to #confirmation-mode (resolved as: /fr/modules/usage/configuration-options#confirmation-mode)
+   -> linking to #security-analyzer (resolved as: /fr/modules/usage/configuration-options#security-analyzer)
+- Broken anchor on source page path = /fr/modules/usage/getting-started:
+   -> linking to ./installation#setup (resolved as: /fr/modules/usage/installation#setup)
+- Broken anchor on source page path = /fr/modules/usage/llms:
+   -> linking to /fr/modules/usage/installation#start-the-app
+- Broken anchor on source page path = /fr/modules/usage/llms/azure-llms:
+   -> linking to /fr/modules/usage/installation#start-the-app
+- Broken anchor on source page path = /fr/modules/usage/llms/google-llms:
+   -> linking to /fr/modules/usage/installation#start-the-app
+
+[SUCCESS] Generated static files in "build/fr".
+[INFO] [zh-Hans] Creating an optimized production build...
+[webpackbar] ℹ Compiling Client
+[webpackbar] ℹ Compiling Server
+[webpackbar] ✔ Server: Compiled successfully in 12.00s
