@@ -129,7 +129,7 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
 # Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
 def get_runtime_classes() -> list[type[Runtime]]:
     runtime = TEST_RUNTIME
-    if runtime.lower() == 'docker':
+    if runtime.lower() == 'docker' or runtime.lower() == 'eventstream':
         return [DockerRuntime]
     elif runtime.lower() == 'remote':
         return [RemoteRuntime]
