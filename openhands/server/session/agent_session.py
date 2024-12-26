@@ -53,7 +53,6 @@ class AgentSession:
         """
 
         self.sid = sid
-        self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
         self._status_callback = status_callback
 
@@ -117,6 +116,8 @@ class AgentSession:
         github_token: str | None = None,
         selected_repository: str | None = None,
     ):
+        is_existing_conversation = await conversation_exists(self.sid, self.file_store)
+        self.event_stream = EventStream(self.sid, self.file_store)
         if self._closed:
             logger.warning('Session closed before starting')
             return
@@ -137,6 +138,7 @@ class AgentSession:
             max_budget_per_task=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
+            is_existing_conversation=is_existing_conversation,
         )
         self.event_stream.add_event(
             ChangeAgentStateAction(AgentState.INIT), EventSource.ENVIRONMENT
@@ -252,6 +254,7 @@ class AgentSession:
         agent: Agent,
         confirmation_mode: bool,
         max_iterations: int,
+        is_existing_conversation: bool,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
@@ -262,6 +265,7 @@ class AgentSession:
         - agent:
         - confirmation_mode: Whether to use confirmation mode
         - max_iterations:
+        - is_existing_conversation:
         - max_budget_per_task:
         - agent_to_llm_config:
         - agent_configs:
@@ -304,7 +308,7 @@ class AgentSession:
             headless_mode=False,
             status_callback=self._status_callback,
         )
-        if await conversation_exists(self.sid, self.file_store):
+        if is_existing_conversation:
             logger.info(f'Restoring agent state from conversation: {self.sid}')
             try:
                 agent_state = await State.restore_from_conversation_files(
