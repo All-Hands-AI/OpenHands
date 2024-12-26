@@ -5,10 +5,15 @@ import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
 import { searchPublicRepositories } from "#/api/github";
+import { useDebounce } from "#/hooks/use-debounce";
+
+interface GitHubRepositoryWithFlag extends GitHubRepository {
+  fromPublicRepoSearch?: boolean;
+}
 
 interface GitHubRepositorySelectorProps {
   onSelect: () => void;
-  repositories: GitHubRepository[];
+  repositories: GitHubRepositoryWithFlag[];
 }
 
 export function GitHubRepositorySelector({
@@ -18,29 +23,34 @@ export function GitHubRepositorySelector({
   const { data: config } = useConfig();
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
-  const [searchedRepos, setSearchedRepos] = React.useState<GitHubRepository[]>(
-    [],
-  );
+  const [searchedRepos, setSearchedRepos] = React.useState<GitHubRepositoryWithFlag[]>([]);
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   React.useEffect(() => {
     const searchPublicRepo = async () => {
-      const repos = await searchPublicRepositories(searchQuery);
-      setSearchedRepos(repos);
+      if (!debouncedSearchQuery) {
+        setSearchedRepos([]);
+        return;
+      }
+      const repos = await searchPublicRepositories(debouncedSearchQuery);
+      // Sort by stars in descending order
+      const sortedRepos = repos
+        .sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0))
+        .slice(0, 5) // Take top 5 results
+        .map(repo => ({
+          ...repo,
+          fromPublicRepoSearch: true,
+        }));
+      setSearchedRepos(sortedRepos);
     };
 
-    const debounceTimeout = setTimeout(searchPublicRepo, 300);
-    return () => clearTimeout(debounceTimeout);
-  }, [searchQuery]);
+    searchPublicRepo();
+  }, [debouncedSearchQuery]);
 
-  const finalRepositories = repositories;
-  searchedRepos.forEach((repo) => {
-    if (!repositories.find((r) => r.id === repo.id)) {
-      finalRepositories.unshift({
-        ...repo,
-        fromPublicRepoSearch: true,
-      });
-    }
-  });
+  const finalRepositories: GitHubRepositoryWithFlag[] = [
+    ...searchedRepos.filter(repo => !repositories.find(r => r.id === repo.id)),
+    ...repositories,
+  ];
 
   const dispatch = useDispatch();
 
