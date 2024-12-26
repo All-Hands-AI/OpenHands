@@ -1,4 +1,4 @@
-Voici la traduction en français :
+
 
 # Persistance des données de session
 

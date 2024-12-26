@@ -1,4 +1,4 @@
-Voici la traduction en français du contenu fourni, en préservant le formatage Markdown, les blocs de code et le front matter, ainsi que les balises {% jsx %} et autres éléments similaires. Les exemples de code, les URLs et les termes techniques n'ont pas été traduits.
+
 
 # Options de configuration
 

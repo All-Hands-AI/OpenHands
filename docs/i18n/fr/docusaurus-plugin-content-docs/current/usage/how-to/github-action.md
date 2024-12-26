@@ -1,4 +1,4 @@
-Voici la traduction en français :
+
 
 # Utilisation de l'Action GitHub OpenHands
 

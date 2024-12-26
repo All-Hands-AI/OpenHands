@@ -1,4 +1,4 @@
-Voici la traduction en français :
+
 
 # Micro-Agents
 
