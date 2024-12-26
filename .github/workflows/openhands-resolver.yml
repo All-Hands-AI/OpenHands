@@ -91,7 +91,7 @@ jobs:
         )
       ) ||
       github.workflow_ref != ''
-    # Note: github.workflow_ref != '' allows workflow_call to be triggered any type of event
+    #   Note: github.workflow_ref != '' allows workflow_call to be triggered any by type of event
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
