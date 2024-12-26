@@ -32,7 +32,7 @@ export function GitHubRepositorySelector({
     return () => clearTimeout(debounceTimeout);
   }, [searchQuery]);
 
-  const finalRepositories = repositories.map((i) => i);
+  const finalRepositories = repositories;
   searchedRepos.forEach((repo) => {
     if (!repositories.find((r) => r.id === repo.id)) {
       finalRepositories.unshift({
