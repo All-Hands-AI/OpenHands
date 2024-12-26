@@ -225,12 +225,11 @@ class Runtime(FileEditRuntimeMixin):
             dir_name = str(
                 Path(selected_repository.split('/')[1]) / custom_microagents_dir
             )
-        oh_instructions_header = '---\nname: openhands_instructions\nagent: CodeActAgent\ntriggers:\n- ""\n---\n'
         obs = self.read(FileReadAction(path='.openhands_instructions'))
         if isinstance(obs, ErrorObservation):
-            self.log('error', 'Failed to read openhands_instructions')
+            self.log('debug', 'openhands_instructions not present')
         else:
-            openhands_instructions = oh_instructions_header + obs.content
+            openhands_instructions = obs.content
             self.log('info', f'openhands_instructions: {openhands_instructions}')
             custom_microagents_content.append(openhands_instructions)
 
