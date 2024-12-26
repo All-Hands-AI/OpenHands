@@ -463,7 +463,7 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
             assert result.base_commit == base_commit
             assert result.git_patch == 'test patch'
             assert result.success == test_case['expected_success']
-            assert result.success_explanation == test_case['expected_explanation']
+            assert result.result_explanation == test_case['expected_explanation']
             assert result.error == test_case['expected_error']
 
             # Assert that the mocked functions were called

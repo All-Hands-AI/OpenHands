@@ -1,10 +1,18 @@
 import { render, screen } from "@testing-library/react";
-import { it, describe, expect, vi } from "vitest";
+import { it, describe, expect, vi, beforeAll, afterAll } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
 import * as CaptureConsent from "#/utils/handle-capture-consent";
 
 describe("WaitlistModal", () => {
+  beforeAll(() => {
+    vi.stubGlobal("location", { href: "" });
+  });
+
+  afterAll(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("should render a tos checkbox that is unchecked by default", () => {
     render(<WaitlistModal ghToken={null} githubAuthUrl={null} />);
     const checkbox = screen.getByRole("checkbox");

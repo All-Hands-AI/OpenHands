@@ -8,7 +8,7 @@ from openhands.server.settings import Settings
 
 class SettingsStore(ABC):
     """
-    Storage for SessionInitData. May or may not support multiple users depending on the environment
+    Storage for ConversationInitData. May or may not support multiple users depending on the environment
     """
 
     @abstractmethod

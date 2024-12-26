@@ -109,11 +109,4 @@ describe("ModelSelector", () => {
     expect(screen.getByLabelText("LLM Provider")).toHaveValue("Azure");
     expect(screen.getByLabelText("LLM Model")).toHaveValue("ada");
   });
-
-  it.todo("should disable provider if isDisabled is true");
-
-  it.todo(
-    "should display the verified models in the correct order",
-    async () => {},
-  );
 });

@@ -2009,10 +2009,13 @@
     "en": "Running a bash command"
   },
   "ACTION_MESSAGE$RUN_IPYTHON": {
-    "en": "Running a Jupyter command"
+    "en": "Running a Python command"
   },
   "ACTION_MESSAGE$READ": {
     "en": "Reading the contents of a file"
+  },
+  "ACTION_MESSAGE$EDIT": {
+    "en": "Editing the contents of a file"
   },
   "ACTION_MESSAGE$WRITE": {
     "en": "Writing to a file"
@@ -2024,10 +2027,13 @@
     "en": "Ran a bash command"
   },
   "OBSERVATION_MESSAGE$RUN_IPYTHON": {
-    "en": "Ran a Jupyter command"
+    "en": "Ran a Python command"
   },
   "OBSERVATION_MESSAGE$READ": {
     "en": "Read the contents of a file"
+  },
+  "OBSERVATION_MESSAGE$EDIT": {
+    "en": "Edited the contents of a file"
   },
   "OBSERVATION_MESSAGE$WRITE": {
     "en": "Wrote to a file"

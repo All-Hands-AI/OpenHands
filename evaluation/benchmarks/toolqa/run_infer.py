@@ -171,7 +171,7 @@ if __name__ == '__main__':
         default='easy',
     )
     parser.add_argument(
-        '--wolfram_alpha_appid',
+        '--wolfram-alpha-appid',
         type=str,
         help='wolfram alpha appid to use for wolfram alpha related tests',
         default='YOUR_WOLFRAMALPHA_APPID',

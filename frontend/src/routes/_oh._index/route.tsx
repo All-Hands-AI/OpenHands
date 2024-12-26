@@ -1,4 +1,3 @@
-import { useLocation, useNavigate } from "react-router";
 import React from "react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
@@ -17,12 +16,8 @@ import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
 
 function Home() {
-  const { token, gitHubToken } = useAuth();
-
+  const { gitHubToken } = useAuth();
   const dispatch = useDispatch();
-  const location = useLocation();
-  const navigate = useNavigate();
-
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const { data: config } = useConfig();
@@ -36,9 +31,7 @@ function Home() {
     gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   });
 
-  React.useEffect(() => {
-    if (token) navigate("/app");
-  }, [location.pathname]);
+  const latestConversation = localStorage.getItem("latest_conversation_id");
 
   return (
     <div
@@ -46,7 +39,7 @@ function Home() {
       className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto"
     >
       <HeroHeading />
-      <div className="flex flex-col gap-16 w-[600px] items-center">
+      <div className="flex flex-col gap-8 w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
           <TaskForm ref={formRef} />
         </div>
@@ -76,6 +69,19 @@ function Home() {
           />
         </div>
       </div>
+      {latestConversation && (
+        <div className="flex gap-4 w-full text-center mt-8">
+          <p className="text-center w-full">
+            Or&nbsp;
+            <a
+              className="underline"
+              href={`/conversations/${latestConversation}`}
+            >
+              jump back to your most recent conversation
+            </a>
+          </p>
+        </div>
+      )}
     </div>
   );
 }

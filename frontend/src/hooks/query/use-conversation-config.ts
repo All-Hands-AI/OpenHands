@@ -4,15 +4,20 @@ import {
   useWsClient,
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
+import { useConversation } from "#/context/conversation-context";
 import OpenHands from "#/api/open-hands";
 
 export const useConversationConfig = () => {
   const { status } = useWsClient();
+  const { conversationId } = useConversation();
 
   const query = useQuery({
-    queryKey: ["conversation_config"],
-    queryFn: OpenHands.getRuntimeId,
-    enabled: status === WsClientProviderStatus.ACTIVE,
+    queryKey: ["conversation_config", conversationId],
+    queryFn: () => {
+      if (!conversationId) throw new Error("No conversation ID");
+      return OpenHands.getRuntimeId(conversationId);
+    },
+    enabled: status === WsClientProviderStatus.CONNECTED && !!conversationId,
   });
 
   React.useEffect(() => {

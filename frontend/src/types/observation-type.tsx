@@ -2,6 +2,9 @@ enum ObservationType {
   // The contents of a file
   READ = "read",
 
+  // The diff of a file edit
+  EDIT = "edit",
+
   // The HTML contents of a URL
   BROWSE = "browse",
 
