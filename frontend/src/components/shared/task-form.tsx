@@ -23,7 +23,11 @@ import { AttachImageLabel } from "../features/images/attach-image-label";
 import { ImageCarousel } from "../features/images/image-carousel";
 import { UploadImageInput } from "../features/images/upload-image-input";
 
-export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
+interface TaskFormProps {
+  ref: React.RefObject<HTMLFormElement>;
+}
+
+export function TaskForm({ ref }: TaskFormProps) {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const navigate = useNavigate();
@@ -157,6 +161,4 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
       )}
     </div>
   );
-});
-
-TaskForm.displayName = "TaskForm";
+}

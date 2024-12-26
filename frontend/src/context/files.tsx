@@ -111,9 +111,7 @@ function FilesProvider({ children }: FilesProviderProps) {
     ],
   );
 
-  return (
-    <FilesContext.Provider value={value}>{children}</FilesContext.Provider>
-  );
+  return <FilesContext value={value}>{children}</FilesContext>;
 }
 
 function useFiles() {
