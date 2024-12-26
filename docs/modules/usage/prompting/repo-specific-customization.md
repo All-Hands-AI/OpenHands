@@ -11,7 +11,7 @@ The `.openhands_instructions` file is a simple text file placed in the root dire
 
 ### What to Include
 
-Your `.openhands_instructions` file should contain:
+Your `.openhands_instructions` file can contain information like the following:
 
 1. **Repository Overview**: A brief description of your project's purpose and architecture
 2. **Directory Structure**: Key directories and their purposes
