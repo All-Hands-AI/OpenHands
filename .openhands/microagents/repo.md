@@ -1,10 +1,19 @@
 OpenHands is an automated AI software engineer. It is a repo with a Python backend
 (in the `openhands` directory) and TypeScript frontend (in the `frontend` directory).
 
-General Setup:
-- To set up the entire repo, including frontend and backend, run `make build`
-- To run linting and type-checking before finishing the job, run `poetry run pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml`
+## General Setup:
+To set up the entire repo, including frontend and backend, run `make build`.
+You don't need to do this unless the user asks you to, or if you're trying to run the entire application.
 
+Before pushing any changes, you should ensure that any lint errors or simple test errors have been fixed.
+
+* If you've made changes to the backend, you should run `pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml`
+* If you've made changes to the frontend, you should run `cd frontend && npm run lint:fix && npm run build ; cd ..`
+
+If either command fails, it may have automatically fixed some issues. You should fix any issues that weren't automatically fixed,
+then re-run the command to ensure it passes.
+
+## Repository Structure
 Backend:
 - Located in the `openhands` directory
 - Testing:
