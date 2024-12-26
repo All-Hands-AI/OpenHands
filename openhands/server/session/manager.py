@@ -8,7 +8,7 @@ import socketio
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.stream import EventStream, session_exists
+from openhands.events.stream import EventStream, conversation_exists
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.session import ROOM_KEY, Session
@@ -146,7 +146,7 @@ class SessionManager:
 
     async def attach_to_conversation(self, sid: str) -> Conversation | None:
         start_time = time.time()
-        if not await session_exists(sid, self.file_store):
+        if not await conversation_exists(sid, self.file_store):
             return None
 
         async with self._conversations_lock:

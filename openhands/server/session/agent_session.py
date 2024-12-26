@@ -10,7 +10,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction
 from openhands.events.event import EventSource
-from openhands.events.stream import EventStream
+from openhands.events.stream import EventStream, conversation_exists
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
@@ -130,7 +130,7 @@ class AgentSession:
             selected_repository=selected_repository,
         )
 
-        self.controller = self._create_controller(
+        self.controller = await self._create_controller(
             agent,
             config.security.confirmation_mode,
             max_iterations,
@@ -247,7 +247,7 @@ class AgentSession:
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
         )
 
-    def _create_controller(
+    async def _create_controller(
         self,
         agent: Agent,
         confirmation_mode: bool,
@@ -304,11 +304,18 @@ class AgentSession:
             headless_mode=False,
             status_callback=self._status_callback,
         )
-        try:
-            agent_state = State.restore_from_session(self.sid, self.file_store)
-            controller.set_initial_state(agent_state, max_iterations, confirmation_mode)
-            logger.debug(f'Restored agent state from session, sid: {self.sid}')
-        except Exception as e:
-            logger.debug(f'State could not be restored: {e}')
+        if await conversation_exists(self.sid, self.file_store):
+            logger.info(f'Restoring agent state from conversation: {self.sid}')
+            try:
+                agent_state = await State.restore_from_conversation_files(
+                    self.sid, self.file_store
+                )
+                controller.set_initial_state(
+                    agent_state, max_iterations, confirmation_mode
+                )
+                logger.debug(f'Restored agent state from session, sid: {self.sid}')
+            except Exception as e:
+                logger.error(f'State could not be restored: {e}')
+                raise
         logger.debug('Agent controller initialized.')
         return controller

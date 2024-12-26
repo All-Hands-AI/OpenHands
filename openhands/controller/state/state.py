@@ -14,6 +14,7 @@ from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
 from openhands.llm.metrics import Metrics
 from openhands.storage.files import FileStore
+from openhands.utils.async_utils import call_sync_from_async
 
 
 class TrafficControlState(str, Enum):
@@ -112,9 +113,13 @@ class State:
             raise e
 
     @staticmethod
-    def restore_from_session(sid: str, file_store: FileStore) -> 'State':
+    async def restore_from_conversation_files(
+        sid: str, file_store: FileStore
+    ) -> 'State':
         try:
-            encoded = file_store.read(f'sessions/{sid}/agent_state.pkl')
+            encoded = await call_sync_from_async(
+                file_store.read, f'sessions/{sid}/agent_state.pkl'
+            )
             pickled = base64.b64decode(encoded)
             state = pickle.loads(pickled)
         except Exception as e:

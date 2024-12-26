@@ -140,7 +140,7 @@ async def run_controller(
         logger.debug(
             f'Trying to restore agent state from cli session {event_stream.sid} if available'
         )
-        initial_state = State.restore_from_session(
+        initial_state = await State.restore_from_conversation_files(
             event_stream.sid, event_stream.file_store
         )
     except Exception as e:
