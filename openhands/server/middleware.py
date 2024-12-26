@@ -166,3 +166,27 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
             await self._detach_session(request)
 
         return response
+
+
+class HostCheckMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware to prevent connections with unapproved hosts.
+    """
+
+    approved_hostnames: set[str]
+
+    def __init__(self, app, approved_hostnames: set[str]):
+        super().__init__(app)
+        self.approved_hostnames = approved_hostnames
+
+    async def dispatch(self, request, call_next):
+        hostname = request.base_url.hostname
+        if hostname not in self.approved_hostnames:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={
+                    'error': f'Unapproved host: {hostname}. To permit this host, add either "{hostname}" or "*" to core.approved_hostnames in your config.toml.'
+                },
+            )
+        response = await call_next(request)
+        return response

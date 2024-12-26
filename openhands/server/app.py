@@ -11,6 +11,7 @@ from fastapi import (
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.server.middleware import (
     AttachConversationMiddleware,
+    HostCheckMiddleware,
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
     NoCacheMiddleware,
@@ -24,7 +25,7 @@ from openhands.server.routes.new_conversation import app as new_conversation_api
 from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.routes.settings import app as settings_router
-from openhands.server.shared import openhands_config, session_manager
+from openhands.server.shared import config, openhands_config, session_manager
 from openhands.utils.import_utils import get_impl
 
 
@@ -46,6 +47,9 @@ app.add_middleware(NoCacheMiddleware)
 app.add_middleware(
     RateLimitMiddleware, rate_limiter=InMemoryRateLimiter(requests=10, seconds=1)
 )
+approved_hostnames = config.approved_hostnames or ['localhost']
+if '*' not in approved_hostnames:
+    app.add_middleware(HostCheckMiddleware, approved_hostnames=approved_hostnames)
 
 
 @app.get('/health')
