@@ -98,6 +98,7 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
     log_dir: str | None = None,
+    runtime_failure_count: int = 0,
 ) -> EvalOutput:
     """
     Evaluate agent performance on a SWE-bench problem instance.
@@ -144,6 +145,16 @@ def process_instance(
             instance_id=instance_id,
             test_result=instance['test_result'],
             metadata=metadata,
+        )
+
+    # Increase resource_factor with increasing attempt_id
+    if runtime_failure_count > 0:
+        config.sandbox.remote_runtime_resource_factor = min(
+            config.sandbox.remote_runtime_resource_factor * (2**runtime_failure_count),
+            4,  # hardcode maximum resource factor to 4
+        )
+        logger.warning(
+            f'This is the second attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
         )
 
     runtime = create_runtime(config)
