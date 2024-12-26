@@ -1,5 +1,5 @@
 import React from "react";
-import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
+import { Autocomplete, AutocompleteItem, AutocompleteSection } from "@nextui-org/react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
@@ -38,11 +38,7 @@ export function GitHubRepositorySelector({
       // Sort by stars in descending order
       const sortedRepos = repos
         .sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0))
-        .slice(0, 5) // Take top 5 results
-        .map((repo) => ({
-          ...repo,
-          fromPublicRepoSearch: true,
-        }));
+        .slice(0, 3)
       setSearchedRepos(sortedRepos);
     };
 
@@ -114,22 +110,39 @@ export function GitHubRepositorySelector({
             </a>
           </AutocompleteItem> // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ) as any)}
-      {finalRepositories.map((repo) => (
-        <AutocompleteItem
-          data-testid="github-repo-item"
-          key={repo.id}
-          value={repo.id}
-          className="data-[selected=true]:bg-default-100"
-          textValue={repo.full_name}
-        >
-          {repo.full_name}
-          {repo.fromPublicRepoSearch && repo.stargazers_count !== undefined && (
-            <span className="ml-1 text-gray-400">
-              ({repo.stargazers_count}⭐)
-            </span>
-          )}
-        </AutocompleteItem>
-      ))}
+      {repositories.length > 0 && (
+        <AutocompleteSection showDivider title="Your Repos">
+          {repositories.map((repo) => (
+            <AutocompleteItem
+              data-testid="github-repo-item"
+              key={repo.id}
+              value={repo.id}
+              className="data-[selected=true]:bg-default-100"
+              textValue={repo.full_name}
+            >
+              {repo.full_name}
+            </AutocompleteItem>
+          ))}
+        </AutocompleteSection>
+      )}
+      {searchedRepos.length > 0 && (
+        <AutocompleteSection showDivider title="Public Repos">
+          {searchedRepos.map((repo) => (
+            <AutocompleteItem
+              data-testid="github-repo-item"
+              key={repo.id}
+              value={repo.id}
+              className="data-[selected=true]:bg-default-100"
+              textValue={repo.full_name}
+            >
+              {repo.full_name}
+              <span className="ml-1 text-gray-400">
+                ({repo.stargazers_count || 0}⭐)
+              </span>
+            </AutocompleteItem>
+          ))}
+        </AutocompleteSection>
+      )}
     </Autocomplete>
   );
 }
