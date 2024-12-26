@@ -32,6 +32,7 @@ jobs:
       - name: Fix frontend lint issues
         run: |
           cd frontend
+          npm run make-i18n
           npm run lint:fix
 
       # Commit and push changes if any
