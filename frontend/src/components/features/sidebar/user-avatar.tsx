@@ -2,6 +2,7 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import DefaultUserAvatar from "#/icons/default-user.svg?react";
 import { cn } from "#/utils/utils";
 import { Avatar } from "./avatar";
+import { Tooltip } from "@nextui-org/react";
 
 interface UserAvatarProps {
   onClick: () => void;
@@ -10,7 +11,7 @@ interface UserAvatarProps {
 }
 
 export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
-  return (
+  const buttonContent = (
     <button
       data-testid="user-avatar"
       type="button"
@@ -30,5 +31,11 @@ export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
       )}
       {isLoading && <LoadingSpinner size="small" />}
     </button>
+  );
+
+  return (
+    <Tooltip content="Account settings" closeDelay={100}>
+      {buttonContent}
+    </Tooltip>
   );
 }
