@@ -10,6 +10,7 @@ import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
+import { useAuth } from "#/context/auth-context";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -46,6 +47,7 @@ export function ErrorBoundary() {
 export default function MainApp() {
   const { gitHubToken } = useAuth();
   const { settings } = useSettings();
+  const { logout } = useAuth();
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
     !localStorage.getItem("analytics-consent"),
@@ -67,7 +69,7 @@ export default function MainApp() {
   }, [settings.LANGUAGE]);
 
   React.useEffect(() => {
-    updateSettingsVersion();
+    updateSettingsVersion(logout);
   }, []);
 
   const isInWaitlist =
