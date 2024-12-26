@@ -1,5 +1,9 @@
 import React from "react";
-import { Autocomplete, AutocompleteItem, AutocompleteSection } from "@nextui-org/react";
+import {
+  Autocomplete,
+  AutocompleteItem,
+  AutocompleteSection,
+} from "@nextui-org/react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
@@ -14,6 +18,14 @@ interface GitHubRepositoryWithFlag extends GitHubRepository {
 interface GitHubRepositorySelectorProps {
   onSelect: () => void;
   repositories: GitHubRepositoryWithFlag[];
+}
+
+function sanitizeQuery(query: string) {
+  let sanitizedQuery = query.replace(/https?:\/\//, "");
+  sanitizedQuery = sanitizedQuery.replace(/github.com\//, "");
+  sanitizedQuery = sanitizedQuery.replace(/\.git$/, "");
+  sanitizedQuery = sanitizedQuery.toLowerCase();
+  return sanitizedQuery;
 }
 
 export function GitHubRepositorySelector({
@@ -34,11 +46,11 @@ export function GitHubRepositorySelector({
         setSearchedRepos([]);
         return;
       }
-      const repos = await searchPublicRepositories(debouncedSearchQuery);
+      const repos = await searchPublicRepositories(sanitizeQuery(debouncedSearchQuery));
       // Sort by stars in descending order
       const sortedRepos = repos
         .sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0))
-        .slice(0, 3)
+        .slice(0, 3);
       setSearchedRepos(sortedRepos);
     };
 
@@ -57,7 +69,6 @@ export function GitHubRepositorySelector({
   const handleRepoSelection = (id: string | null) => {
     const repo = finalRepositories.find((r) => r.id.toString() === id);
     if (repo) {
-      // set query param
       dispatch(setSelectedRepository(repo.full_name));
       posthog.capture("repository_selected");
       onSelect();
@@ -66,7 +77,6 @@ export function GitHubRepositorySelector({
   };
 
   const handleClearSelection = () => {
-    // clear query param
     dispatch(setSelectedRepository(null));
   };
 
@@ -93,7 +103,7 @@ export function GitHubRepositorySelector({
       }}
       defaultFilter={(textValue, inputValue) =>
         !inputValue ||
-        textValue.toLowerCase().includes(inputValue.toLowerCase())
+        sanitizeQuery(textValue).includes(sanitizeQuery(inputValue))
       }
     >
       {config?.APP_MODE === "saas" &&

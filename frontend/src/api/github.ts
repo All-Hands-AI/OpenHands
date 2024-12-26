@@ -110,7 +110,8 @@ export const searchPublicRepositories = async (
   sort: "" | "updated" | "stars" | "forks" = "stars",
   order: "desc" | "asc" = "desc",
 ): Promise<GitHubRepository[]> => {
-  if (!query.trim()) {
+  query = query.trim();
+  if (!query) {
     return [];
   }
 
