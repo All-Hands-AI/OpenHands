@@ -6,13 +6,14 @@ from dataclasses import dataclass
 from typing import Any
 
 from pydantic import BaseModel
+from typing_extensions import override
 
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import (
     AmortizedForgettingCondenserConfig,
     CondenserConfig,
     LLMAttentionCondenserConfig,
-    LLMCondenserConfig,
+    LLMSummarizingCondenserConfig,
     NoOpCondenserConfig,
     RecentEventsCondenserConfig,
 )
@@ -23,10 +24,18 @@ from openhands.events.observation import Observation
 from openhands.llm.llm import LLM
 
 CONDENSER_METADATA_KEY = 'condenser_meta'
-"""The key identifying where metadata is stored in a state's extra_data."""
+"""Key identifying where metadata is stored in a `State` object's `extra_data` field."""
 
 
-def get_condensation_metadata(state: State) -> list[Any]:
+def get_condensation_metadata(state: State) -> list[dict[str, Any]]:
+    """Utility function to retrieve a list of metadata batches from a `State`.
+
+    Args:
+        state (State): The state to retrieve metadata from.
+
+    Returns:
+        list[dict[str, Any]]: A list of metadata batches, each representing a condensation.
+    """
     if CONDENSER_METADATA_KEY in state.extra_data:
         return state.extra_data[CONDENSER_METADATA_KEY]
     return []
@@ -35,14 +44,23 @@ def get_condensation_metadata(state: State) -> list[Any]:
 class Condenser(ABC):
     """Abstract condenser interface.
 
-    Condensers take a list of events and reduce them into a potentially smaller list. Agents can use condensers to reduce the amount of events they need to consider when deciding which action to take.
+    Condensers take a list of `Event` objects and reduce them into a potentially smaller list.
+
+    Agents can use condensers to reduce the amount of events they need to consider when deciding which action to take. To use a condenser, agents can call the `condensed_history` method on the current `State` being considered and use the results instead of the full history.
+
+    Example usage::
+
+        condenser = Condenser.from_config(condenser_config)
+        events = condenser.condensed_history(state)
     """
 
     def __init__(self):
         self._metadata_batch: dict[str, Any] = {}
 
     def add_metadata(self, key: str, value: Any) -> None:
-        """Record metadata about the current condensation.
+        """Add information to the current metadata batch.
+
+        Any key/value pairs added to the metadata batch will be recorded in the `State` at the end of the current condensation.
 
         Args:
             key (str): The key to store the metadata under.
@@ -52,39 +70,41 @@ class Condenser(ABC):
         self._metadata_batch[key] = value
 
     def write_metadata(self, state: State) -> None:
-        """Write the current batch of metadata to the state."""
+        """Write the current batch of metadata to the `State`.
+
+        Resets the current metadata batch: any metadata added after this call will be stored in a new batch and written to the `State` at the end of the next condensation.
+        """
         if CONDENSER_METADATA_KEY not in state.extra_data:
             state.extra_data[CONDENSER_METADATA_KEY] = []
         if self._metadata_batch:
             state.extra_data[CONDENSER_METADATA_KEY].append(self._metadata_batch)
 
-    def reset_metadata(self) -> None:
-        """Reset the metadata batch."""
+        # Since the batch has been written, clear it for the next condensation
         self._metadata_batch = {}
 
     @contextmanager
     def metadata_batch(self, state: State):
-        """Context manager to ensure batched metadata is always written."""
+        """Context manager to ensure batched metadata is always written to the `State`."""
         try:
             yield
         finally:
             self.write_metadata(state)
-            self.reset_metadata()
 
     @abstractmethod
     def condense(self, events: list[Event]) -> list[Event]:
         """Condense a sequence of events into a potentially smaller list.
 
+        New condenser strategies should override this method to implement their own condensation logic. Call `self.add_metadata` in the implementation to record any relevant per-condensation diagnostic information.
+
         Args:
-            events (list[Event]): A list of events to be condensed.
+            events (list[Event]): A list of events representing the entire history of the agent.
 
         Returns:
-            list[Event]: The condensed event sequence.
+            list[Event]: An event sequence representing a condensed history of the agent.
         """
-        pass
 
     def condensed_history(self, state: State) -> list[Event]:
-        """Condense the state's history into a potentially smaller list."""
+        """Condense the state's history."""
         with self.metadata_batch(state):
             return self.condense(state.history)
 
@@ -106,7 +126,7 @@ class Condenser(ABC):
                 return NoOpCondenser()
             case RecentEventsCondenserConfig():
                 return RecentEventsCondenser(**config.model_dump(exclude=['type']))
-            case LLMCondenserConfig(llm_config=llm_config):
+            case LLMSummarizingCondenserConfig(llm_config=llm_config):
                 return LLMSummarizingCondenser(llm=LLM(config=llm_config))
             case AmortizedForgettingCondenserConfig():
                 return AmortizedForgettingCondenser(
@@ -148,7 +168,7 @@ class RecentEventsCondenser(Condenser):
 
 @dataclass
 class CondensationObservation(Observation):
-    """Represents the output of a condensation action."""
+    """The output of a condensation action."""
 
     observation: str = ObservationType.RUN
 
@@ -176,9 +196,10 @@ class LLMSummarizingCondenser(Condenser):
             events_text = '\n'.join(f'{e.timestamp}: {e.message}' for e in events)
             summarize_prompt = f'Please summarize these events:\n{events_text}'
 
-            messages = [{'content': summarize_prompt, 'role': 'user'}]
-            resp = self.llm.completion(messages=messages)
-            summary_response = resp['choices'][0]['message']['content']
+            resp = self.llm.completion(
+                messages=[{'content': summarize_prompt, 'role': 'user'}]
+            )
+            summary_response = resp.choices[0].message.content
 
             # Create a new summary event with the condensed content
             summary_event = CondensationObservation(summary_response)
@@ -203,8 +224,8 @@ class RollingCondenser(Condenser, ABC):
 
         super().__init__()
 
+    @override
     def condensed_history(self, state: State) -> list[Event]:
-        """Condense the state's history into a potentially smaller list."""
         new_events = state.history[self._last_history_length :]
 
         with self.metadata_batch(state):
@@ -227,8 +248,7 @@ class AmortizedForgettingCondenser(RollingCondenser):
             keep_first (int, optional): Number of initial events to always keep. Defaults to 0.
 
         Raises:
-            ValueError: If keep_first is greater than max_size, keep_first is negative, or max_size is
-            non-positive.
+            ValueError: If keep_first is greater than max_size, keep_first is negative, or max_size is non-positive.
         """
         if keep_first >= max_size // 2:
             raise ValueError(
@@ -259,10 +279,14 @@ class AmortizedForgettingCondenser(RollingCondenser):
 
 
 class ImportantEventSelection(BaseModel):
+    """Utility class for the `LLMAttentionCondenser` that forces the LLM to return a list of integers."""
+
     ids: list[int]
 
 
 class LLMAttentionCondenser(RollingCondenser):
+    """Rolling condenser strategy that uses an LLM to select the most important events when condensing the history."""
+
     def __init__(self, llm: LLM, max_size: int = 100, keep_first: int = 0):
         if keep_first >= max_size // 2:
             raise ValueError(
@@ -280,6 +304,7 @@ class LLMAttentionCondenser(RollingCondenser):
         super().__init__()
 
     def condense(self, events: list[Event]) -> list[Event]:
+        """If the history is too long, use an LLM to select the most important events."""
         if len(events) <= self.max_size:
             return events
 

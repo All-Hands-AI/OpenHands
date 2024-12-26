@@ -8,7 +8,7 @@ from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import (
     AmortizedForgettingCondenserConfig,
     LLMAttentionCondenserConfig,
-    LLMCondenserConfig,
+    LLMSummarizingCondenserConfig,
     NoOpCondenserConfig,
     RecentEventsCondenserConfig,
 )
@@ -168,7 +168,7 @@ def test_recent_events_condenser():
 
 def test_llm_condenser_from_config():
     """Test that LLMCondensers can be made from config."""
-    config = LLMCondenserConfig(
+    config = LLMSummarizingCondenserConfig(
         llm_config=LLMConfig(
             model='gpt-4o',
             api_key='test_key',

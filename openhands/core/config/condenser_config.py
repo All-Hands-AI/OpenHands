@@ -24,7 +24,7 @@ class RecentEventsCondenserConfig(BaseModel):
     )
 
 
-class LLMCondenserConfig(BaseModel):
+class LLMSummarizingCondenserConfig(BaseModel):
     """Configuration for LLMCondenser."""
 
     type: Literal['llm'] = Field('llm')
@@ -71,7 +71,7 @@ class LLMAttentionCondenserConfig(BaseModel):
 CondenserConfig = (
     NoOpCondenserConfig
     | RecentEventsCondenserConfig
-    | LLMCondenserConfig
+    | LLMSummarizingCondenserConfig
     | AmortizedForgettingCondenserConfig
     | LLMAttentionCondenserConfig
 )

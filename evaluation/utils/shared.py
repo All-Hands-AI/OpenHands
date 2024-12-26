@@ -19,7 +19,7 @@ from openhands.controller.state.state import State
 from openhands.core.config import LLMConfig
 from openhands.core.config.condenser_config import (
     CondenserConfig,
-    LLMCondenserConfig,
+    LLMSummarizingCondenserConfig,
     NoOpCondenserConfig,
 )
 from openhands.core.exceptions import (
@@ -56,7 +56,7 @@ class EvalMetadata(BaseModel):
         dumped_dict = super().model_dump(*args, **kwargs)
         # avoid leaking sensitive information
         dumped_dict['llm_config'] = self.llm_config.to_safe_dict()
-        if isinstance(self.condenser_config, LLMCondenserConfig):
+        if isinstance(self.condenser_config, LLMSummarizingCondenserConfig):
             dumped_dict['condenser_config']['llm_config'] = (
                 self.condenser_config.llm_config.to_safe_dict()
             )
@@ -68,7 +68,7 @@ class EvalMetadata(BaseModel):
         dumped_dict = json.loads(dumped)
         # avoid leaking sensitive information
         dumped_dict['llm_config'] = self.llm_config.to_safe_dict()
-        if isinstance(self.condenser_config, LLMCondenserConfig):
+        if isinstance(self.condenser_config, LLMSummarizingCondenserConfig):
             dumped_dict['condenser_config']['llm_config'] = (
                 self.condenser_config.llm_config.to_safe_dict()
             )
