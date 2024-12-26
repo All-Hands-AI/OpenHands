@@ -116,7 +116,7 @@ class SessionManager:
                 await session.dispatch(data['data'])
         elif message_type == 'is_session_running':
             # Another node in the cluster is asking if the current node is running the session given.
-            rid = data['rid']
+            request_id = data['request_id']
             sids = [
                 sid for sid in data['sids'] if sid in self._local_agent_loops_by_sid
             ]
@@ -124,14 +124,18 @@ class SessionManager:
                 await self._get_redis_client().publish(
                     'oh_event',
                     json.dumps(
-                        {'rid': rid, 'sids': sids, 'message_type': 'session_is_running'}
+                        {
+                            'request_id': request_id,
+                            'sids': sids,
+                            'message_type': 'session_is_running',
+                        }
                     ),
                 )
         elif message_type == 'session_is_running':
-            rid = data['rid']
+            request_id = data['request_id']
             for sid in data['sids']:
                 self._last_alive_timestamps[sid] = time.time()
-            check = self._session_is_running_checks.get(rid)
+            check = self._session_is_running_checks.get(request_id)
             if check:
                 check.running_sids.update(data['sids'])
                 if len(check.request_sids) == len(check.running_sids):
@@ -287,16 +291,16 @@ class SessionManager:
             return set()
 
         flag = asyncio.Event()
-        rid = str(uuid4())
-        check = _SessionIsRunningCheck(request_id=rid, request_sids=sids)
-        self._session_is_running_checks[rid] = check
+        request_id = str(uuid4())
+        check = _SessionIsRunningCheck(request_id=request_id, request_sids=sids)
+        self._session_is_running_checks[request_id] = check
         try:
             logger.debug(f'publish:is_session_running:{sids}')
             await redis_client.publish(
                 'oh_event',
                 json.dumps(
                     {
-                        'rid': rid,
+                        'request_id': request_id,
                         'sids': sids,
                         'message_type': 'is_session_running',
                     }
@@ -310,7 +314,7 @@ class SessionManager:
             # Nobody replied in time
             return check.running_sids
         finally:
-            self._session_is_running_checks.pop(rid, None)
+            self._session_is_running_checks.pop(request_id, None)
 
     async def _has_remote_connections(self, sid: str) -> bool:
         """As the rest of the cluster if they still want this session running. Wait a for a short timeout for a reply"""
