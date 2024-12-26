@@ -77,7 +77,6 @@ jobs:
   auto-fix:
     if: |
       github.event_name == 'workflow_call' ||
-      github.event_name == 'workflow_dispatch' ||
       github.event.label.name == 'fix-me' ||
       github.event.label.name == 'fix-me-experimental' ||
       (
@@ -90,7 +89,9 @@ jobs:
         contains(github.event.review.body, inputs.macro || '@openhands-agent') &&
         (github.event.review.author_association == 'OWNER' || github.event.review.author_association == 'COLLABORATOR' || github.event.review.author_association == 'MEMBER')
         )
-      )
+      ) ||
+      github.workflow_ref != ''
+    # Note: github.workflow_ref != '' allows workflow_call to be triggered any type of event
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
