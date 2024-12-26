@@ -14,7 +14,8 @@ from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.session.manager import ConversationDoesNotExistError
-from openhands.server.shared import config, session_manager, sio
+from openhands.server.shared import config, openhands_config, session_manager, sio
+from openhands.server.types import AppMode
 from openhands.storage.conversation.conversation_store import (
     ConversationStore,
 )
@@ -31,23 +32,24 @@ async def connect(connection_id: str, environ, auth):
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
 
-    user_id = ''
-    if auth and 'github_token' in auth:
-        with Github(auth['github_token']) as g:
-            gh_user = await call_sync_from_async(g.get_user)
-            user_id = gh_user.id
+    if openhands_config.app_mode != AppMode.OSS:
+        user_id = ''
+        if auth and 'github_token' in auth:
+            with Github(auth['github_token']) as g:
+                gh_user = await call_sync_from_async(g.get_user)
+                user_id = gh_user.id
 
-    logger.info(f'User {user_id} is connecting to conversation {conversation_id}')
+        logger.info(f'User {user_id} is connecting to conversation {conversation_id}')
 
-    conversation_store = await ConversationStore.get_instance(config)
-    metadata = await conversation_store.get_metadata(conversation_id)
-    if metadata.github_user_id != user_id:
-        logger.error(
-            f'User {user_id} is not allowed to join conversation {conversation_id}'
-        )
-        raise ConnectionRefusedError(
-            f'User {user_id} is not allowed to join conversation {conversation_id}'
-        )
+        conversation_store = await ConversationStore.get_instance(config)
+        metadata = await conversation_store.get_metadata(conversation_id)
+        if metadata.github_user_id != user_id:
+            logger.error(
+                f'User {user_id} is not allowed to join conversation {conversation_id}'
+            )
+            raise ConnectionRefusedError(
+                f'User {user_id} is not allowed to join conversation {conversation_id}'
+            )
 
     try:
         event_stream = await session_manager.join_conversation(
