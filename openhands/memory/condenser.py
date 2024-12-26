@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any
 
@@ -37,6 +38,39 @@ class Condenser(ABC):
     Condensers take a list of events and reduce them into a potentially smaller list. Agents can use condensers to reduce the amount of events they need to consider when deciding which action to take.
     """
 
+    def __init__(self):
+        self._metadata_batch: dict[str, Any] = {}
+
+    def add_metadata(self, key: str, value: Any) -> None:
+        """Record metadata about the current condensation.
+
+        Args:
+            key (str): The key to store the metadata under.
+
+            value (Any): The metadata to store.
+        """
+        self._metadata_batch[key] = value
+
+    def write_metadata(self, state: State) -> None:
+        """Write the current batch of metadata to the state."""
+        if CONDENSER_METADATA_KEY not in state.extra_data:
+            state.extra_data[CONDENSER_METADATA_KEY] = []
+        if self._metadata_batch:
+            state.extra_data[CONDENSER_METADATA_KEY].append(self._metadata_batch)
+
+    def reset_metadata(self) -> None:
+        """Reset the metadata batch."""
+        self._metadata_batch = {}
+
+    @contextmanager
+    def metadata_batch(self, state: State):
+        """Context manager to ensure batched metadata is always written."""
+        try:
+            yield
+        finally:
+            self.write_metadata(state)
+            self.reset_metadata()
+
     @abstractmethod
     def condense(self, events: list[Event]) -> list[Event]:
         """Condense a sequence of events into a potentially smaller list.
@@ -51,16 +85,8 @@ class Condenser(ABC):
 
     def condensed_history(self, state: State) -> list[Event]:
         """Condense the state's history into a potentially smaller list."""
-        return self.condense(state.history)
-
-    def add_metadata(self, state: State, metadata: Any) -> None:
-        """Add metadata to the current state."""
-        # If there is no metadata in the state, initialize it.
-        if CONDENSER_METADATA_KEY not in state.extra_data:
-            state.extra_data[CONDENSER_METADATA_KEY] = []
-
-        # Add the existing metadata.
-        state.extra_data[CONDENSER_METADATA_KEY].append(metadata)
+        with self.metadata_batch(state):
+            return self.condense(state.history)
 
     @classmethod
     def from_config(cls, config: CondenserConfig) -> Condenser:
@@ -110,6 +136,8 @@ class RecentEventsCondenser(Condenser):
         self.keep_first = keep_first
         self.max_events = max_events
 
+        super().__init__()
+
     def condense(self, events: list[Event]) -> list[Event]:
         """Keep only the most recent events (up to `max_events`)."""
         head = events[: self.keep_first]
@@ -135,6 +163,8 @@ class LLMSummarizingCondenser(Condenser):
     def __init__(self, llm: LLM):
         self.llm = llm
 
+        super().__init__()
+
     def condense(self, events: list[Event]) -> list[Event]:
         """Applies an LLM to summarize the list of events.
 
@@ -154,19 +184,13 @@ class LLMSummarizingCondenser(Condenser):
             summary_event = CondensationObservation(summary_response)
 
             # Add metrics to state
-            # self.add_metadata(
-            #     state,
-            #     {
-            #         'response': resp.model_dump(),
-            #         'metrics': self.llm.metrics.get(),
-            #     },
-            # )
+            self.add_metadata('response', resp.model_dump())
+            self.add_metadata('metrics', self.llm.metrics.get())
 
             return [summary_event]
 
         except Exception as e:
             logger.error('Error condensing events: %s', str(e), exc_info=False)
-            # TODO If the llm fails with ContextWindowExceededError, we can try to condense the memory chunk by chunk
             raise e
 
 
@@ -180,10 +204,15 @@ class RollingCondenser(Condenser, ABC):
         super().__init__()
 
     def condensed_history(self, state: State) -> list[Event]:
+        """Condense the state's history into a potentially smaller list."""
         new_events = state.history[self._last_history_length :]
-        results = self.condense(self._condensation + new_events)
+
+        with self.metadata_batch(state):
+            results = self.condense(self._condensation + new_events)
+
         self._condensation = results
         self._last_history_length = len(state.history)
+
         return results
 
 
@@ -212,6 +241,7 @@ class AmortizedForgettingCondenser(RollingCondenser):
 
         self.max_size = max_size
         self.keep_first = keep_first
+
         super().__init__()
 
     def condense(self, events: list[Event]) -> list[Event]:
@@ -246,6 +276,7 @@ class LLMAttentionCondenser(RollingCondenser):
         self.max_size = max_size
         self.keep_first = keep_first
         self.llm = llm
+
         super().__init__()
 
     def condense(self, events: list[Event]) -> list[Event]:
@@ -256,12 +287,6 @@ class LLMAttentionCondenser(RollingCondenser):
         head = events[: self.keep_first]
 
         events_from_tail = target_size - len(head)
-
-        # Build a prompt using the local LLM that selects events_from_tail events from the tail
-        # The prompt should:
-        # 1. Provide the full list of events (represented as messages) paired with their ID
-        # 2. Ask the LLM to rank the events by importance, returning JUST the list of IDs
-        # Then we need to use that ranking to construct the tail
 
         message: str = """You will be given a list of actions, observations, and thoughts from a coding agent.
         Each item in the list has an identifier. Please sort the identifiers in order of how important the
@@ -283,6 +308,9 @@ class LLMAttentionCondenser(RollingCondenser):
         )
 
         response_ids = response.choices[0].message.content.ids
+
+        self.add_metadata('all_event_ids', [event.id for event in events])
+        self.add_metadata('response_ids', response_ids)
 
         # Filter out any IDs from the head and trim the results down
         head_ids = [event.id for event in head]
