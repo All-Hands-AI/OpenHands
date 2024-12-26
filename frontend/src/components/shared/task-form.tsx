@@ -11,7 +11,7 @@ import {
 } from "#/state/initial-query-slice";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
-import { useUserPrefs } from "#/context/user-prefs-context";
+import { useSettings } from "#/context/settings-context";
 
 import { SuggestionBubble } from "#/components/features/suggestions/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
@@ -22,16 +22,17 @@ import { cn } from "#/utils/utils";
 import { AttachImageLabel } from "../features/images/attach-image-label";
 import { ImageCarousel } from "../features/images/image-carousel";
 import { UploadImageInput } from "../features/images/upload-image-input";
+import { LoadingSpinner } from "./loading-spinner";
 
 export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const navigate = useNavigate();
   const { gitHubToken } = useAuth();
-  const { settings } = useUserPrefs();
+  const { settings } = useSettings();
 
   const { selectedRepository, files } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const [text, setText] = React.useState("");
@@ -110,32 +111,35 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
             "hover:border-neutral-500 focus-within:border-neutral-500",
           )}
         >
-          <ChatInput
-            name="q"
-            onSubmit={() => {
-              if (typeof ref !== "function") ref?.current?.requestSubmit();
-            }}
-            onChange={(message) => setText(message)}
-            onFocus={() => setInputIsFocused(true)}
-            onBlur={() => setInputIsFocused(false)}
-            onImagePaste={async (imageFiles) => {
-              const promises = imageFiles.map(convertImageToBase64);
-              const base64Images = await Promise.all(promises);
-              base64Images.forEach((base64) => {
-                dispatch(addFile(base64));
-              });
-            }}
-            placeholder={placeholder}
-            value={text}
-            maxRows={15}
-            showButton={!!text}
-            className="text-[17px] leading-5 py-[17px]"
-            buttonClassName="pb-[17px]"
-            disabled={
-              navigation.state === "submitting" ||
-              newConversationMutation.isPending
-            }
-          />
+          {newConversationMutation.isPending ? (
+            <div className="flex justify-center py-[17px]">
+              <LoadingSpinner size="small" />
+            </div>
+          ) : (
+            <ChatInput
+              name="q"
+              onSubmit={() => {
+                if (typeof ref !== "function") ref?.current?.requestSubmit();
+              }}
+              onChange={(message) => setText(message)}
+              onFocus={() => setInputIsFocused(true)}
+              onBlur={() => setInputIsFocused(false)}
+              onImagePaste={async (imageFiles) => {
+                const promises = imageFiles.map(convertImageToBase64);
+                const base64Images = await Promise.all(promises);
+                base64Images.forEach((base64) => {
+                  dispatch(addFile(base64));
+                });
+              }}
+              placeholder={placeholder}
+              value={text}
+              maxRows={15}
+              showButton={!!text}
+              className="text-[17px] leading-5 py-[17px]"
+              buttonClassName="pb-[17px]"
+              disabled={navigation.state === "submitting"}
+            />
+          )}
         </div>
       </form>
       <UploadImageInput
