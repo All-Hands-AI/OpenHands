@@ -2,10 +2,11 @@ import React from "react";
 import posthog from "posthog-js";
 import {
   getSettings,
-  Settings,
-  saveSettings as updateAndSaveSettingsToLocalStorage,
+  saveSettings as updateAndSaveSettingsToBackend,
   settingsAreUpToDate as checkIfSettingsAreUpToDate,
+  DEFAULT_SETTINGS,
 } from "#/services/settings";
+import { Settings } from "#/api/open-hands.types";
 
 interface UserPrefsContextType {
   settings: Settings;
@@ -18,16 +19,27 @@ const UserPrefsContext = React.createContext<UserPrefsContextType | undefined>(
 );
 
 function UserPrefsProvider({ children }: React.PropsWithChildren) {
-  const [settings, setSettings] = React.useState(getSettings());
+  const [settings, setSettings] = React.useState<Settings>(DEFAULT_SETTINGS);
   const [settingsAreUpToDate, setSettingsAreUpToDate] = React.useState(
     checkIfSettingsAreUpToDate(),
   );
 
-  const saveSettings = (newSettings: Partial<Settings>) => {
-    updateAndSaveSettingsToLocalStorage(newSettings);
-    setSettings(getSettings());
+  const saveSettings = async (newSettings: Partial<Settings>) => {
+    updateAndSaveSettingsToBackend(newSettings);
+    const retrievedSettings = await getSettings();
+    setSettings(retrievedSettings);
     setSettingsAreUpToDate(checkIfSettingsAreUpToDate());
   };
+
+  React.useEffect(() => {
+    const fetchSettings = async () => {
+      const initialSettings = await getSettings();
+      setSettings(initialSettings);
+      setSettingsAreUpToDate(checkIfSettingsAreUpToDate());
+    };
+
+    fetchSettings();
+  }, []);
 
   React.useEffect(() => {
     if (settings.LLM_API_KEY) {

@@ -57,3 +57,14 @@ export interface AuthenticateResponse {
   message?: string;
   error?: string;
 }
+
+export interface Settings {
+  LANGUAGE: string;
+  AGENT: string;
+  MAX_ITERATIONS: number;
+  SECURITY_ANALYZER: string;
+  CONFIRMATION_MODE: boolean;
+  LLM_MODEL: string;
+  LLM_API_KEY: string;
+  LLM_BASE_URL: string;
+}

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import React from "react";
 import posthog from "posthog-js";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
-import { getDefaultSettings, Settings } from "#/services/settings";
+import { getDefaultSettings } from "#/services/settings";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
 import { DangerModal } from "../confirmation-modals/danger-modal";
 import { I18nKey } from "#/i18n/declaration";
@@ -25,6 +25,7 @@ import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
 import { useAuth } from "#/context/auth-context";
+import { Settings } from "#/api/open-hands.types";
 
 interface SettingsFormProps {
   disabled?: boolean;

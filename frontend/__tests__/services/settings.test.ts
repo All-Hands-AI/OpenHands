@@ -1,10 +1,10 @@
 import { describe, expect, it, vi, Mock, afterEach } from "vitest";
 import {
   DEFAULT_SETTINGS,
-  Settings,
   getSettings,
   saveSettings,
 } from "../../src/services/settings";
+import { Settings } from "#/api/open-hands.types";
 
 Storage.prototype.getItem = vi.fn();
 Storage.prototype.setItem = vi.fn();
@@ -68,6 +68,7 @@ describe("saveSettings", () => {
       LLM_MODEL: "llm_value",
       LLM_BASE_URL: "base_url",
       AGENT: "agent_value",
+      MAX_ITERATIONS: 100,
       LANGUAGE: "language_value",
       LLM_API_KEY: "some_key",
       CONFIRMATION_MODE: true,
