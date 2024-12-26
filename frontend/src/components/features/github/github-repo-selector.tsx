@@ -46,7 +46,9 @@ export function GitHubRepositorySelector({
         setSearchedRepos([]);
         return;
       }
-      const repos = await searchPublicRepositories(sanitizeQuery(debouncedSearchQuery));
+      const repos = await searchPublicRepositories(
+        sanitizeQuery(debouncedSearchQuery),
+      );
       // Sort by stars in descending order
       const sortedRepos = repos
         .sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0))
