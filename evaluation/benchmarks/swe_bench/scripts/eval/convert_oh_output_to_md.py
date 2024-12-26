@@ -65,13 +65,13 @@ def write_row_to_md_file(row, instance_id_to_test_result):
     else:
         raise ValueError(f'Row {row} does not have a git_patch')
 
-    test_output = (
-        row['test_result'].get('test_output', None) if 'test_result' in row else None
-    )
+    test_output = None
     if row['instance_id'] in instance_id_to_test_result:
         report = instance_id_to_test_result[row['instance_id']].get('report', {})
         resolved = report.get('resolved', False)
-        test_output = report.get('test_output', None)
+        test_output = instance_id_to_test_result[row['instance_id']].get(
+            'test_output', None
+        )
     elif 'report' in row and row['report'] is not None:
         if not isinstance(row['report'], dict):
             resolved = None
