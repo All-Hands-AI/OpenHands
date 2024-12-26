@@ -11,6 +11,16 @@ class NoOpCondenserConfig(BaseModel):
     type: Literal['noop'] = Field('noop')
 
 
+class ObservationMaskingCondenserConfig(BaseModel):
+    """Configuration for ObservationMaskingCondenser."""
+
+    type: Literal['observation_masking'] = Field('observation_masking')
+    attention_window: int = Field(
+        default=10,
+        description='The number of most-recent events where observations will not be masked.',
+    )
+
+
 class RecentEventsCondenserConfig(BaseModel):
     """Configuration for RecentEventsCondenser."""
 
@@ -70,6 +80,7 @@ class LLMAttentionCondenserConfig(BaseModel):
 
 CondenserConfig = (
     NoOpCondenserConfig
+    | ObservationMaskingCondenserConfig
     | RecentEventsCondenserConfig
     | LLMSummarizingCondenserConfig
     | AmortizedForgettingCondenserConfig

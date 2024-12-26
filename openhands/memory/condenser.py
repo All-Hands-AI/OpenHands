@@ -124,21 +124,72 @@ class Condenser(ABC):
         match config:
             case NoOpCondenserConfig():
                 return NoOpCondenser()
+
             case RecentEventsCondenserConfig():
                 return RecentEventsCondenser(**config.model_dump(exclude=['type']))
+
             case LLMSummarizingCondenserConfig(llm_config=llm_config):
                 return LLMSummarizingCondenser(llm=LLM(config=llm_config))
+
             case AmortizedForgettingCondenserConfig():
                 return AmortizedForgettingCondenser(
                     **config.model_dump(exclude=['type'])
                 )
+
             case LLMAttentionCondenserConfig(llm_config=llm_config):
                 return LLMAttentionCondenser(
                     llm=LLM(config=llm_config),
                     **config.model_dump(exclude=['type', 'llm_config']),
                 )
+
             case _:
                 raise ValueError(f'Unknown condenser config: {config}')
+
+
+class RollingCondenser(Condenser, ABC):
+    """Base class for a specialized condenser strategy that applies condensation to a rolling history.
+
+    The rolling history is computed by appending new events to the most recent condensation. For example, the sequence of calls::
+
+        assert state.history == [event1, event2, event3]
+        condensation = condenser.condensed_history(state)
+
+        # ...new events are added to the state...
+
+        assert state.history == [event1, event2, event3, event4, event5]
+        condenser.condensed_history(state)
+
+    will result in second call to `condensed_history` passing `condensation + [event4, event5]` to the `condense` method.
+    """
+
+    def __init__(self) -> None:
+        self._condensation: list[Event] = []
+        self._last_history_length: int = 0
+
+        super().__init__()
+
+    @override
+    def condensed_history(self, state: State) -> list[Event]:
+        new_events = state.history[self._last_history_length :]
+
+        with self.metadata_batch(state):
+            results = self.condense(self._condensation + new_events)
+
+        self._condensation = results
+        self._last_history_length = len(state.history)
+
+        return results
+
+
+@dataclass
+class CondensationObservation(Observation):
+    """The output of a condensation action."""
+
+    observation: str = ObservationType.RUN
+
+    @property
+    def message(self) -> str:
+        return self.content
 
 
 class NoOpCondenser(Condenser):
@@ -147,6 +198,29 @@ class NoOpCondenser(Condenser):
     def condense(self, events: list[Event]) -> list[Event]:
         """Returns the list of events unchanged."""
         return events
+
+
+class ObservationMaskingCondenser(Condenser):
+    """A condenser that masks the values of observations outside of a recent attention window."""
+
+    def __init__(self, attention_window: int = 5):
+        self.attention_window = attention_window
+
+        super().__init__()
+
+    def condense(self, events: list[Event]) -> list[Event]:
+        """Replace the content of observations outside of the attention window with a placeholder."""
+        results: list[Event] = []
+        for i, event in enumerate(events):
+            if (
+                isinstance(event, Observation)
+                and i < len(events) - self.attention_window
+            ):
+                results.append(CondensationObservation('<MASKED>'))
+            else:
+                results.append(event)
+
+        return results
 
 
 class RecentEventsCondenser(Condenser):
@@ -164,17 +238,6 @@ class RecentEventsCondenser(Condenser):
         tail_length = max(0, self.max_events - len(head))
         tail = events[-tail_length:]
         return head + tail
-
-
-@dataclass
-class CondensationObservation(Observation):
-    """The output of a condensation action."""
-
-    observation: str = ObservationType.RUN
-
-    @property
-    def message(self) -> str:
-        return self.content
 
 
 class LLMSummarizingCondenser(Condenser):
@@ -213,28 +276,6 @@ class LLMSummarizingCondenser(Condenser):
         except Exception as e:
             logger.error('Error condensing events: %s', str(e), exc_info=False)
             raise e
-
-
-class RollingCondenser(Condenser, ABC):
-    """Base class for a specialized condenser strategy that applies condensation to a rolling history containing the old condensation and new values."""
-
-    def __init__(self) -> None:
-        self._condensation: list[Event] = []
-        self._last_history_length: int = 0
-
-        super().__init__()
-
-    @override
-    def condensed_history(self, state: State) -> list[Event]:
-        new_events = state.history[self._last_history_length :]
-
-        with self.metadata_batch(state):
-            results = self.condense(self._condensation + new_events)
-
-        self._condensation = results
-        self._last_history_length = len(state.history)
-
-        return results
 
 
 class AmortizedForgettingCondenser(RollingCondenser):
