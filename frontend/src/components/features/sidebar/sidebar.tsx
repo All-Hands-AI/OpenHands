@@ -59,18 +59,21 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="h-[40px] md:h-full px-1 flex flex-row md:flex-col gap-1 relative">
-        <div className="w-[34px] h-[34px] flex items-center justify-center">
+      <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
+        <nav className="flex flex-row md:flex-col items-center gap-[18px]">
+          <div className="w-[34px] h-[34px] flex items-center justify-center">
+            <AllHandsLogoButton onClick={handleClickLogo} />
+          </div>
           {user.isLoading && <LoadingSpinner size="small" />}
-          {!user.isLoading && <AllHandsLogoButton onClick={handleClickLogo} />}
-        </div>
-
-        <nav className="md:py-[18px] flex flex-row md:flex-col items-center gap-[18px]">
-          <UserActions
-            user={user.data ? { avatar_url: user.data.avatar_url } : undefined}
-            onLogout={logout}
-            onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
-          />
+          {!user.isLoading && (
+            <UserActions
+              user={
+                user.data ? { avatar_url: user.data.avatar_url } : undefined
+              }
+              onLogout={logout}
+              onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
+            />
+          )}
           <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
           <button
             data-testid="toggle-conversation-panel"

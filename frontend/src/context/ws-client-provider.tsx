@@ -79,6 +79,12 @@ export function WsClientProvider({
 
   function handleDisconnect() {
     setStatus(WsClientProviderStatus.DISCONNECTED);
+    const sio = sioRef.current;
+    if (!sio) {
+      return;
+    }
+    sio.io.opts.query = sio.io.opts.query || {};
+    sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
   }
 
   function handleError() {

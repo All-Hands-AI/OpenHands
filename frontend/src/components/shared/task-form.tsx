@@ -19,7 +19,7 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
   const navigation = useNavigation();
 
   const { selectedRepository, files } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const [text, setText] = React.useState("");
