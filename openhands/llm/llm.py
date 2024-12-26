@@ -71,8 +71,6 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-5-haiku-20241022',
     'gpt-4o-mini',
     'gpt-4o',
-    'deepseek-chat',
-    'deepseek-coder',
 ]
 
 
