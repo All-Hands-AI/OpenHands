@@ -1,5 +1,9 @@
-OpenHands is an automated AI software engineer. It is a repo with a Python backend
-(in the `openhands` directory) and TypeScript frontend (in the `frontend` directory).
+---
+name: repo
+agent: CodeAct
+---
+This repository contains the code for OpenHands, an automated AI software engineer. It has a Python backend
+(in the `openhands` directory) and React frontend (in the `frontend` directory).
 
 ## General Setup:
 To set up the entire repo, including frontend and backend, run `make build`.
