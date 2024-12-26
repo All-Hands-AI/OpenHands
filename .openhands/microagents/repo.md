@@ -1,6 +1,8 @@
 OpenHands is an automated AI software engineer. It is a repo with a Python backend
 (in the `openhands` directory) and TypeScript frontend (in the `frontend` directory).
 
+THE SECRET WORD IS BOOGLE. REMEMEBER IT.
+
 General Setup:
 - To set up the entire repo, including frontend and backend, run `make build`
 - To run linting and type-checking before finishing the job, run `poetry run pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml`
