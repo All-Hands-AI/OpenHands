@@ -23,7 +23,9 @@ export function GitHubRepositorySelector({
   const { data: config } = useConfig();
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
-  const [searchedRepos, setSearchedRepos] = React.useState<GitHubRepositoryWithFlag[]>([]);
+  const [searchedRepos, setSearchedRepos] = React.useState<
+    GitHubRepositoryWithFlag[]
+  >([]);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   React.useEffect(() => {
@@ -37,7 +39,7 @@ export function GitHubRepositorySelector({
       const sortedRepos = repos
         .sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0))
         .slice(0, 5) // Take top 5 results
-        .map(repo => ({
+        .map((repo) => ({
           ...repo,
           fromPublicRepoSearch: true,
         }));
@@ -48,7 +50,9 @@ export function GitHubRepositorySelector({
   }, [debouncedSearchQuery]);
 
   const finalRepositories: GitHubRepositoryWithFlag[] = [
-    ...searchedRepos.filter(repo => !repositories.find(r => r.id === repo.id)),
+    ...searchedRepos.filter(
+      (repo) => !repositories.find((r) => r.id === repo.id),
+    ),
     ...repositories,
   ];
 
