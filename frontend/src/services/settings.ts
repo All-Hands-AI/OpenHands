@@ -117,7 +117,7 @@ export const maybeMigrateSettings = async (logout: () => void) => {
 
   if (currentVersion < 5) {
     const localSettings = getLocalStorageSettings();
-    saveSettings(localSettings);
+    await saveSettings(localSettings);
   }
 };
 
