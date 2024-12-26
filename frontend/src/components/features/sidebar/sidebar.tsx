@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation } from "react-router";
 import { useAuth } from "#/context/auth-context";
-import { useUserPrefs } from "#/context/user-prefs-context";
+import { useSettings } from "#/context/settings-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { UserActions } from "./user-actions";
@@ -21,7 +21,7 @@ export function Sidebar() {
   const { data: isAuthed } = useIsAuthed();
 
   const { logout } = useAuth();
-  const { settingsAreUpToDate } = useUserPrefs();
+  const { settingsAreUpToDate } = useSettings();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
@@ -55,17 +55,20 @@ export function Sidebar() {
   return (
     <>
       <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
-        <div className="w-[34px] h-[34px] flex items-center justify-center">
+        <nav className="flex flex-row md:flex-col items-center gap-[18px]">
+          <div className="w-[34px] h-[34px] flex items-center justify-center">
+            <AllHandsLogoButton onClick={handleClickLogo} />
+          </div>
           {user.isLoading && <LoadingSpinner size="small" />}
-          {!user.isLoading && <AllHandsLogoButton onClick={handleClickLogo} />}
-        </div>
-
-        <nav className="md:py-[18px] flex flex-row md:flex-col items-center gap-[18px]">
-          <UserActions
-            user={user.data ? { avatar_url: user.data.avatar_url } : undefined}
-            onLogout={logout}
-            onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
-          />
+          {!user.isLoading && (
+            <UserActions
+              user={
+                user.data ? { avatar_url: user.data.avatar_url } : undefined
+              }
+              onLogout={logout}
+              onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
+            />
+          )}
           <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
           <DocsButton />
           <ExitProjectButton

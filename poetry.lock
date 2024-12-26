@@ -3256,13 +3256,13 @@ files = [
 
 [[package]]
 name = "json-repair"
-version = "0.33.0"
+version = "0.34.0"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "json_repair-0.33.0-py3-none-any.whl", hash = "sha256:6285148ef06d059a3ae5de2c665c441ac20999d1248f8795faaa864fa88b796d"},
-    {file = "json_repair-0.33.0.tar.gz", hash = "sha256:1796062b8acf3b081141cb0293c80cad5f5ad29be1cd141de601361ee3e533ac"},
+    {file = "json_repair-0.34.0-py3-none-any.whl", hash = "sha256:a0bb0d3993838b320adf6c82c11c92419d3df794901689bffb3abed208472adf"},
+    {file = "json_repair-0.34.0.tar.gz", hash = "sha256:401d454e039e24425659cfb41e1a7a3800123abfb0d81653282585dc289862cb"},
 ]
 
 [[package]]
@@ -5426,13 +5426,13 @@ numpy = {version = ">=1.26.0", markers = "python_version >= \"3.12\""}
 
 [[package]]
 name = "openhands-aci"
-version = "0.1.4"
+version = "0.1.5"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
 python-versions = "<4.0,>=3.12"
 files = [
-    {file = "openhands_aci-0.1.4-py3-none-any.whl", hash = "sha256:a7cefc969a856e971a5ecf3765de9ab2e8eb4e46c623aca9088f388b8f8d972f"},
-    {file = "openhands_aci-0.1.4.tar.gz", hash = "sha256:ae3207308f7757179ae77ce70a448deec9e2d77a1390ae0f5bede39925ec5446"},
+    {file = "openhands_aci-0.1.5-py3-none-any.whl", hash = "sha256:7b4238161ede81ba870efd5f30af654d432d03a74632746ba19147761ed21533"},
+    {file = "openhands_aci-0.1.5.tar.gz", hash = "sha256:3ed6d051c4944ba4dee1febcf2b41c3d95da1706102f53f61809a3aca0821afe"},
 ]
 
 [package.dependencies]
@@ -10048,4 +10048,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "bb04e2b874d01574ceb1ebb4110df1ed8fc4e46199cd40c05ca45f99870bf605"
+content-hash = "96bbb4630f74c240620aa5bc7801f195599368bd921cdf1a5fed4339d0cb19c3"
