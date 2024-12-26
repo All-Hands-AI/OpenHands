@@ -25,6 +25,7 @@ import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
 import { useAuth } from "#/context/auth-context";
+import { RuntimeSizeSelector } from "./runtime-size-selector";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -106,6 +107,7 @@ export function SettingsForm({
     posthog.capture("settings_saved", {
       LLM_MODEL: newSettings.LLM_MODEL,
       LLM_API_KEY: newSettings.LLM_API_KEY ? "SET" : "UNSET",
+      REMOTE_RUNTIME_RESOURCE_FACTOR: newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     });
   };
 
@@ -197,6 +199,11 @@ export function SettingsForm({
           <APIKeyInput
             isDisabled={!!disabled}
             defaultValue={settings.LLM_API_KEY}
+          />
+
+          <RuntimeSizeSelector
+            isDisabled={!!disabled}
+            defaultValue={settings.REMOTE_RUNTIME_RESOURCE_FACTOR}
           />
 
           {showAdvancedOptions && (

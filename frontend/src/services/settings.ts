@@ -1,4 +1,4 @@
-export const LATEST_SETTINGS_VERSION = 4;
+export const LATEST_SETTINGS_VERSION = 5;
 
 export type Settings = {
   LLM_MODEL: string;
@@ -8,6 +8,7 @@ export type Settings = {
   LLM_API_KEY: string;
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
+  REMOTE_RUNTIME_RESOURCE_FACTOR: number;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -18,6 +19,7 @@ export const DEFAULT_SETTINGS: Settings = {
   LLM_API_KEY: "",
   CONFIRMATION_MODE: false,
   SECURITY_ANALYZER: "",
+  REMOTE_RUNTIME_RESOURCE_FACTOR: 1,
 };
 
 const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
@@ -58,6 +60,10 @@ export const maybeMigrateSettings = (logout: () => void) => {
   if (currentVersion < 4) {
     logout();
   }
+
+  if (currentVersion < 5) {
+    localStorage.setItem("REMOTE_RUNTIME_RESOURCE_FACTOR", DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR.toString());
+  }
 };
 
 /**
@@ -76,6 +82,7 @@ export const getSettings = (): Settings => {
   const apiKey = localStorage.getItem("LLM_API_KEY");
   const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
   const securityAnalyzer = localStorage.getItem("SECURITY_ANALYZER");
+  const remoteRuntimeResourceFactor = localStorage.getItem("REMOTE_RUNTIME_RESOURCE_FACTOR");
 
   return {
     LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
@@ -85,6 +92,7 @@ export const getSettings = (): Settings => {
     LLM_API_KEY: apiKey || DEFAULT_SETTINGS.LLM_API_KEY,
     CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
     SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
+    REMOTE_RUNTIME_RESOURCE_FACTOR: remoteRuntimeResourceFactor ? parseInt(remoteRuntimeResourceFactor, 10) : DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
   };
 };
 

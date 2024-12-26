@@ -22,7 +22,8 @@ describe("getSettings", () => {
       .mockReturnValueOnce("language_value")
       .mockReturnValueOnce("api_key")
       .mockReturnValueOnce("true")
-      .mockReturnValueOnce("invariant");
+      .mockReturnValueOnce("invariant")
+      .mockReturnValueOnce("2");
 
     const settings = getSettings();
 
@@ -34,11 +35,13 @@ describe("getSettings", () => {
       LLM_API_KEY: "api_key",
       CONFIRMATION_MODE: true,
       SECURITY_ANALYZER: "invariant",
+      REMOTE_RUNTIME_RESOURCE_FACTOR: 2,
     });
   });
 
   it("should handle return defaults if localStorage key does not exist", () => {
     (localStorage.getItem as Mock)
+      .mockReturnValueOnce(null)
       .mockReturnValueOnce(null)
       .mockReturnValueOnce(null)
       .mockReturnValueOnce(null)
@@ -58,6 +61,7 @@ describe("getSettings", () => {
       LLM_BASE_URL: DEFAULT_SETTINGS.LLM_BASE_URL,
       CONFIRMATION_MODE: DEFAULT_SETTINGS.CONFIRMATION_MODE,
       SECURITY_ANALYZER: DEFAULT_SETTINGS.SECURITY_ANALYZER,
+      REMOTE_RUNTIME_RESOURCE_FACTOR: DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
     });
   });
 });
@@ -72,6 +76,7 @@ describe("saveSettings", () => {
       LLM_API_KEY: "some_key",
       CONFIRMATION_MODE: true,
       SECURITY_ANALYZER: "invariant",
+      REMOTE_RUNTIME_RESOURCE_FACTOR: 2,
     };
 
     saveSettings(settings);
@@ -86,6 +91,10 @@ describe("saveSettings", () => {
       "LLM_API_KEY",
       "some_key",
     );
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      "REMOTE_RUNTIME_RESOURCE_FACTOR",
+      "2",
+    );
   });
 
   it.skip("should save partial settings", () => {
@@ -97,7 +106,7 @@ describe("saveSettings", () => {
 
     expect(localStorage.setItem).toHaveBeenCalledTimes(2);
     expect(localStorage.setItem).toHaveBeenCalledWith("LLM_MODEL", "llm_value");
-    expect(localStorage.setItem).toHaveBeenCalledWith("SETTINGS_VERSION", "2");
+    expect(localStorage.setItem).toHaveBeenCalledWith("SETTINGS_VERSION", "5");
   });
 
   it("should not save invalid settings", () => {
