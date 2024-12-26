@@ -44,7 +44,9 @@ class AppConfig:
         file_uploads_allowed_extensions: Allowed file extensions. `['.*']` allows all.
     """
 
-    approved_hostnames: list[str] = field(default_factory=lambda: ['localhost'])
+    approved_hostnames: list[str] = field(
+        default_factory=lambda: ['localhost', '127.0.0.1']
+    )
     llms: dict[str, LLMConfig] = field(default_factory=dict)
     agents: dict = field(default_factory=dict)
     default_agent: str = OH_DEFAULT_AGENT

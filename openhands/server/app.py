@@ -47,9 +47,9 @@ app.add_middleware(NoCacheMiddleware)
 app.add_middleware(
     RateLimitMiddleware, rate_limiter=InMemoryRateLimiter(requests=10, seconds=1)
 )
-approved_hostnames = config.approved_hostnames or ['localhost']
-if '*' not in approved_hostnames:
-    app.add_middleware(HostCheckMiddleware, approved_hostnames=approved_hostnames)
+approved_hostnames = config.approved_hostnames
+if '*' not in config.approved_hostnames:
+    app.add_middleware(HostCheckMiddleware, approved_hostnames=set(approved_hostnames))
 
 
 @app.get('/health')
