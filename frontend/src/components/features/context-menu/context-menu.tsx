@@ -2,7 +2,7 @@ import React from "react";
 import { cn } from "#/utils/utils";
 
 interface ContextMenuProps {
-  ref: React.RefObject<HTMLUListElement>;
+  ref: React.RefObject<HTMLUListElement | null>;
   testId?: string;
   children: React.ReactNode;
   className?: React.HTMLAttributes<HTMLUListElement>["className"];

@@ -24,7 +24,7 @@ import { ImageCarousel } from "../features/images/image-carousel";
 import { UploadImageInput } from "../features/images/upload-image-input";
 
 interface TaskFormProps {
-  ref: React.RefObject<HTMLFormElement>;
+  ref: React.RefObject<HTMLFormElement | null>;
 }
 
 export function TaskForm({ ref }: TaskFormProps) {
