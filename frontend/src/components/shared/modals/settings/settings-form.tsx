@@ -7,11 +7,7 @@ import { getDefaultSettings, Settings } from "#/services/settings";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
 import { DangerModal } from "../confirmation-modals/danger-modal";
 import { I18nKey } from "#/i18n/declaration";
-import {
-  extractSettings,
-  saveSettingsView,
-  updateSettingsVersion,
-} from "#/utils/settings-utils";
+import { extractSettings, saveSettingsView } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
 import { useSettings } from "#/context/settings-context";
 import { ModalButton } from "../../buttons/modal-button";
@@ -24,7 +20,6 @@ import { CustomModelInput } from "../../inputs/custom-model-input";
 import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
-import { useAuth } from "#/context/auth-context";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -45,7 +40,6 @@ export function SettingsForm({
 }: SettingsFormProps) {
   const { saveSettings } = useSettings();
   const endSession = useEndSession();
-  const { logout } = useAuth();
 
   const location = useLocation();
   const { t } = useTranslation();
@@ -98,7 +92,6 @@ export function SettingsForm({
     const newSettings = extractSettings(formData);
 
     saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
-    updateSettingsVersion(logout);
     saveSettings(newSettings);
     resetOngoingSession();
 
