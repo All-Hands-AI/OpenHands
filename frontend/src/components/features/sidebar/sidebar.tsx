@@ -59,7 +59,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
+      <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1 relative">
         <nav className="flex flex-row md:flex-col items-center gap-[18px]">
           <div className="w-[34px] h-[34px] flex items-center justify-center">
             <AllHandsLogoButton onClick={handleClickLogo} />

@@ -16,7 +16,7 @@ export const useCreateConversation = () => {
   const queryClient = useQueryClient();
 
   const { selectedRepository, files } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   return useMutation({
