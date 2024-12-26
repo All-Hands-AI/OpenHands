@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import os
 
 import pandas as pd
 
@@ -65,3 +66,10 @@ print(df_diff_x_only['instance_id'].tolist())
 print('-' * 100)
 print('Instances that y resolved but x not:')
 print(df_diff_y_only['instance_id'].tolist())
+
+print('-' * 100)
+print('Visualize instances that y resolved but x not:')
+input_file2_folder = os.path.join(os.path.dirname(args.input_file_1), 'output.viz')
+for instance_id in df_diff_y_only['instance_id'].tolist():
+    instance_file = os.path.join(input_file2_folder, f'false.{instance_id}.md')
+    print(instance_file)
