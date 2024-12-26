@@ -20,7 +20,7 @@ from openhands.memory.condenser import (
     Condenser,
     ImportantEventSelection,
     LLMAttentionCondenser,
-    LLMCondenser,
+    LLMSummarizingCondenser,
     NoOpCondenser,
     RecentEventsCondenser,
 )
@@ -99,7 +99,7 @@ def test_noop_condenser():
     mock_state.history = events
 
     condenser = NoOpCondenser()
-    result = condenser.condense(mock_state)
+    result = condenser.condensed_history(mock_state)
 
     assert result == events
 
@@ -131,14 +131,14 @@ def test_recent_events_condenser():
 
     # If the max_events are larger than the number of events, equivalent to a NoOpCondenser.
     condenser = RecentEventsCondenser(max_events=len(events))
-    result = condenser.condense(mock_state)
+    result = condenser.condensed_history(mock_state)
 
     assert result == events
 
     # If the max_events are smaller than the number of events, only keep the last few.
     max_events = 2
     condenser = RecentEventsCondenser(max_events=max_events)
-    result = condenser.condense(mock_state)
+    result = condenser.condensed_history(mock_state)
 
     assert len(result) == max_events
     assert result[0]._message == 'Event 4'
@@ -148,7 +148,7 @@ def test_recent_events_condenser():
     keep_first = 1
     max_events = 2
     condenser = RecentEventsCondenser(keep_first=keep_first, max_events=max_events)
-    result = condenser.condense(mock_state)
+    result = condenser.condensed_history(mock_state)
 
     assert len(result) == max_events
     assert result[0]._message == 'Event 1'
@@ -158,7 +158,7 @@ def test_recent_events_condenser():
     keep_first = 2
     max_events = 3
     condenser = RecentEventsCondenser(keep_first=keep_first, max_events=max_events)
-    result = condenser.condense(mock_state)
+    result = condenser.condensed_history(mock_state)
 
     assert len(result) == max_events
     assert result[0]._message == 'Event 1'
@@ -176,7 +176,7 @@ def test_llm_condenser_from_config():
     )
     condenser = Condenser.from_config(config)
 
-    assert isinstance(condenser, LLMCondenser)
+    assert isinstance(condenser, LLMSummarizingCondenser)
     assert condenser.llm.config.model == 'gpt-4o'
     assert condenser.llm.config.api_key == 'test_key'
 
@@ -206,8 +206,8 @@ def test_llm_condenser():
     mock_llm.metrics = MagicMock()
     mock_llm.metrics.get.return_value = {'test_metric': 1.0}
 
-    condenser = LLMCondenser(llm=mock_llm)
-    result = condenser.condense(mock_state)
+    condenser = LLMSummarizingCondenser(llm=mock_llm)
+    result = condenser.condensed_history(mock_state)
 
     assert len(result) == 1
     assert result[0].content == 'Summary of events'
@@ -236,10 +236,10 @@ def test_llm_condenser_error():
     mock_llm = MagicMock()
     mock_llm.completion.side_effect = Exception('LLM error')
 
-    condenser = LLMCondenser(llm=mock_llm)
+    condenser = LLMSummarizingCondenser(llm=mock_llm)
 
     try:
-        condenser.condense(mock_state)
+        condenser.condensed_history(mock_state)
         raise AssertionError('Expected exception was not raised.')
     except Exception as e:
         assert str(e) == 'LLM error'
@@ -278,7 +278,7 @@ def test_amortized_forgetting_condenser_grows_to_max_size():
     for i in range(max_size):
         event = create_test_event(f'Event {i}')
         mock_state.history.append(event)
-        results = condenser.condense(mock_state)
+        results = condenser.condensed_history(mock_state)
         assert len(results) == i + 1
 
 
@@ -294,7 +294,7 @@ def test_amortized_forgetting_condenser_forgets_when_larger_than_max_size():
     for i in range(max_size * 10):
         event = create_test_event(f'Event {i}')
         mock_state.history.append(event)
-        results = condenser.condense(mock_state)
+        results = condenser.condensed_history(mock_state)
 
         # The last event in the results is always the event we just added.
         assert results[-1] == event
@@ -318,7 +318,7 @@ def test_amortized_forgetting_condenser_keeps_first_events():
     for i in range(max_size * 10):
         event = create_test_event(f'Event {i+1}', datetime(2024, 1, 1, 10, i + 1))
         mock_state.history.append(event)
-        results = condenser.condense(mock_state)
+        results = condenser.condensed_history(mock_state)
 
         # The last event is always the event we just added.
         assert results[-1] == event
@@ -365,7 +365,7 @@ def test_llm_attention_condenser_keeps_first_events(mock_llm, mock_state):
         mock_llm.set_mock_response_content(
             ImportantEventSelection(ids=[event.id for event in mock_state.history])
         )
-        results = condenser.condense(mock_state)
+        results = condenser.condensed_history(mock_state)
 
         # The first event is always the first event.
         assert results[0] == first_event
@@ -382,7 +382,7 @@ def test_llm_attention_condenser_grows_to_max_size(mock_llm, mock_state):
         mock_llm.set_mock_response_content(
             ImportantEventSelection(ids=[event.id for event in mock_state.history])
         )
-        results = condenser.condense(mock_state)
+        results = condenser.condensed_history(mock_state)
         assert len(results) == i + 1
 
 
@@ -401,7 +401,7 @@ def test_llm_attention_condenser_forgets_when_larger_than_max_size(
             ImportantEventSelection(ids=[event.id for event in mock_state.history])
         )
 
-        results = condenser.condense(mock_state)
+        results = condenser.condensed_history(mock_state)
 
         # The number of results should bounce back and forth between 1, 2, 1, 2, ...
         assert len(results) == (i % 2) + 1
@@ -421,7 +421,7 @@ def test_llm_attention_condenser_handles_events_outside_history(mock_llm, mock_s
                 ids=[event.id for event in mock_state.history] + [-1, -2, -3, -4]
             )
         )
-        results = condenser.condense(mock_state)
+        results = condenser.condensed_history(mock_state)
 
         # The number of results should bounce back and forth between 1, 2, 1, 2, ...
         assert len(results) == (i % 2) + 1
@@ -441,7 +441,7 @@ def test_llm_attention_condenser_handles_too_many_events(mock_llm, mock_state):
                 + [event.id for event in mock_state.history]
             )
         )
-        results = condenser.condense(mock_state)
+        results = condenser.condensed_history(mock_state)
 
         # The number of results should bounce back and forth between 1, 2, 1, 2, ...
         assert len(results) == (i % 2) + 1
@@ -458,7 +458,7 @@ def test_llm_attention_condenser_handles_too_few_events(mock_llm, mock_state):
 
         mock_llm.set_mock_response_content(ImportantEventSelection(ids=[]))
 
-        results = condenser.condense(mock_state)
+        results = condenser.condensed_history(mock_state)
 
         # The number of results should bounce back and forth between 1, 2, 1, 2, ...
         assert len(results) == (i % 2) + 1

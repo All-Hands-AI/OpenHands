@@ -34,21 +34,24 @@ def get_condensation_metadata(state: State) -> list[Any]:
 class Condenser(ABC):
     """Abstract condenser interface.
 
-    Condensers take a list of events and reduce them into a potentially smaller list. Agents can use
-    condensers to reduce the amount of events they need to consider when deciding which action to take.
+    Condensers take a list of events and reduce them into a potentially smaller list. Agents can use condensers to reduce the amount of events they need to consider when deciding which action to take.
     """
 
     @abstractmethod
-    def condense(self, state: State) -> list[Event]:
-        """Condense the state's history into a potentially smaller list.
+    def condense(self, events: list[Event]) -> list[Event]:
+        """Condense a sequence of events into a potentially smaller list.
 
         Args:
-            state (State): The state containing the event history to condense.
+            events (list[Event]): A list of events to be condensed.
 
         Returns:
             list[Event]: The condensed event sequence.
         """
         pass
+
+    def condensed_history(self, state: State) -> list[Event]:
+        """Condense the state's history into a potentially smaller list."""
+        return self.condense(state.history)
 
     def add_metadata(self, state: State, metadata: Any) -> None:
         """Add metadata to the current state."""
@@ -78,7 +81,7 @@ class Condenser(ABC):
             case RecentEventsCondenserConfig():
                 return RecentEventsCondenser(**config.model_dump(exclude=['type']))
             case LLMCondenserConfig(llm_config=llm_config):
-                return LLMCondenser(llm=LLM(config=llm_config))
+                return LLMSummarizingCondenser(llm=LLM(config=llm_config))
             case AmortizedForgettingCondenserConfig():
                 return AmortizedForgettingCondenser(
                     **config.model_dump(exclude=['type'])
@@ -95,13 +98,9 @@ class Condenser(ABC):
 class NoOpCondenser(Condenser):
     """A condenser that does nothing to the event sequence."""
 
-    def condense(self, state: State) -> list[Event]:
-        """Returns the state's history unchanged.
-
-        Args:
-            state (State): The state containing the event history to condense.
-        """
-        return state.history
+    def condense(self, events: list[Event]) -> list[Event]:
+        """Returns the list of events unchanged."""
+        return events
 
 
 class RecentEventsCondenser(Condenser):
@@ -111,13 +110,8 @@ class RecentEventsCondenser(Condenser):
         self.keep_first = keep_first
         self.max_events = max_events
 
-    def condense(self, state: State) -> list[Event]:
-        """Keep only the most recent events (up to `max_events`).
-
-        Args:
-            state (State): The state containing the event history to condense.
-        """
-        events = state.history
+    def condense(self, events: list[Event]) -> list[Event]:
+        """Keep only the most recent events (up to `max_events`)."""
         head = events[: self.keep_first]
         tail_length = max(0, self.max_events - len(head))
         tail = events[-tail_length:]
@@ -135,26 +129,21 @@ class CondensationObservation(Observation):
         return self.content
 
 
-class LLMCondenser(Condenser):
+class LLMSummarizingCondenser(Condenser):
     """A condenser that relies on a language model to summarize the event sequence as a single event."""
 
     def __init__(self, llm: LLM):
         self.llm = llm
 
-    def condense(self, state: State) -> list[Event]:
-        """Attempts to condense the state's history by using a LLM.
-
-        Args:
-            state (State): The state containing the event history to condense.
+    def condense(self, events: list[Event]) -> list[Event]:
+        """Applies an LLM to summarize the list of events.
 
         Raises:
             Exception: If the LLM is unable to summarize the event sequence.
         """
         try:
             # Convert events to a format suitable for summarization
-            events_text = '\n'.join(
-                f'{e.timestamp}: {e.message}' for e in state.history
-            )
+            events_text = '\n'.join(f'{e.timestamp}: {e.message}' for e in events)
             summarize_prompt = f'Please summarize these events:\n{events_text}'
 
             messages = [{'content': summarize_prompt, 'role': 'user'}]
@@ -165,13 +154,13 @@ class LLMCondenser(Condenser):
             summary_event = CondensationObservation(summary_response)
 
             # Add metrics to state
-            self.add_metadata(
-                state,
-                {
-                    'response': resp.model_dump(),
-                    'metrics': self.llm.metrics.get(),
-                },
-            )
+            # self.add_metadata(
+            #     state,
+            #     {
+            #         'response': resp.model_dump(),
+            #         'metrics': self.llm.metrics.get(),
+            #     },
+            # )
 
             return [summary_event]
 
@@ -181,21 +170,21 @@ class LLMCondenser(Condenser):
             raise e
 
 
-class RollingCondenser(Condenser):
+class RollingCondenser(Condenser, ABC):
+    """Base class for a specialized condenser strategy that applies condensation to a rolling history containing the old condensation and new values."""
+
     def __init__(self) -> None:
         self._condensation: list[Event] = []
         self._last_history_length: int = 0
 
-    @abstractmethod
-    def forget(self, events: list[Event]) -> list[Event]: ...
+        super().__init__()
 
-    def condense(self, state: State) -> list[Event]:
-        # Syncronize the current condensation and state history.
+    def condensed_history(self, state: State) -> list[Event]:
         new_events = state.history[self._last_history_length :]
-        self._condensation.extend(new_events)
-        self._condensation = self.forget(self._condensation)
+        results = self.condense(self._condensation + new_events)
+        self._condensation = results
         self._last_history_length = len(state.history)
-        return self._condensation
+        return results
 
 
 class AmortizedForgettingCondenser(RollingCondenser):
@@ -225,7 +214,7 @@ class AmortizedForgettingCondenser(RollingCondenser):
         self.keep_first = keep_first
         super().__init__()
 
-    def forget(self, events: list[Event]) -> list[Event]:
+    def condense(self, events: list[Event]) -> list[Event]:
         """Apply the amortized forgetting strategy to the given list of events."""
         if len(events) <= self.max_size:
             return events
@@ -259,7 +248,7 @@ class LLMAttentionCondenser(RollingCondenser):
         self.llm = llm
         super().__init__()
 
-    def forget(self, events: list[Event]) -> list[Event]:
+    def condense(self, events: list[Event]) -> list[Event]:
         if len(events) <= self.max_size:
             return events
 

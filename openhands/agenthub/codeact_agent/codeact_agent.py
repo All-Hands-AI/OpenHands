@@ -448,7 +448,7 @@ class CodeActAgent(Agent):
         tool_call_id_to_message: dict[str, Message] = {}
 
         # Condense the events from the state.
-        events = self.condenser.condense(state)
+        events = self.condenser.condensed_history(state)
 
         for event in events:
             # create a regular message from an event
