@@ -1,11 +1,9 @@
 import React from "react";
 import posthog from "posthog-js";
 import EllipsisH from "#/icons/ellipsis-h.svg?react";
-import { createChatMessage } from "#/services/chat-service";
 import { ProjectMenuCardContextMenu } from "./project.menu-card-context-menu";
 import { ProjectMenuDetailsPlaceholder } from "./project-menu-details-placeholder";
 import { ProjectMenuDetails } from "./project-menu-details";
-import { useWsClient } from "#/context/ws-client-provider";
 import { ConnectToGitHubModal } from "#/components/shared/modals/connect-to-github-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { DownloadModal } from "#/components/shared/download-modal";
@@ -23,8 +21,6 @@ export function ProjectMenuCard({
   isConnectedToGitHub,
   githubData,
 }: ProjectMenuCardProps) {
-  const { send } = useWsClient();
-
   const [contextMenuIsOpen, setContextMenuIsOpen] = React.useState(false);
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
@@ -32,26 +28,6 @@ export function ProjectMenuCard({
 
   const toggleMenuVisibility = () => {
     setContextMenuIsOpen((prev) => !prev);
-  };
-
-  const handlePushToGitHub = () => {
-    posthog.capture("push_to_github_button_clicked");
-    const rawEvent = {
-      content: `
-Please push the changes to GitHub and open a pull request.
-`,
-      imageUrls: [],
-      timestamp: new Date().toISOString(),
-      pending: false,
-    };
-    const event = createChatMessage(
-      rawEvent.content,
-      rawEvent.imageUrls,
-      rawEvent.timestamp,
-    );
-
-    send(event); // send to socket
-    setContextMenuIsOpen(false);
   };
 
   const handleDownloadWorkspace = () => {
@@ -69,7 +45,6 @@ Please push the changes to GitHub and open a pull request.
         <ProjectMenuCardContextMenu
           isConnectedToGitHub={isConnectedToGitHub}
           onConnectToGitHub={() => setConnectToGitHubModalOpen(true)}
-          onPushToGitHub={handlePushToGitHub}
           onDownloadWorkspace={handleDownloadWorkspace}
           onClose={() => setContextMenuIsOpen(false)}
         />
