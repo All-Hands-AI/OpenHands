@@ -626,7 +626,7 @@ class LLM(RetryMixin, DebugMixin):
             message.cache_enabled = self.is_caching_prompt_active()
             message.vision_enabled = self.vision_is_active()
             message.function_calling_enabled = self.is_function_calling_active()
-            if self._use_string_serializer:
+            if 'deepseek' in self.config.model:
                 message.force_string_serializer = True
 
         # let pydantic handle the serialization
