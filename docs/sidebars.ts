@@ -27,6 +27,11 @@ const sidebars: SidebarsConfig = {
           label: 'Micro-Agents',
           id: 'usage/micro-agents',
         },
+        {
+          type: 'doc',
+          label: 'Repository-Specific Customization',
+          id: 'usage/prompting/repo-specific-customization',
+        },
       ],
     },
     {

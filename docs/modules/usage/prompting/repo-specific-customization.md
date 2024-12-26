@@ -23,7 +23,7 @@ Your `.openhands_instructions` file can contain information like the following:
 
 Your `.openhands_instructions` file can contain information like the following:
 
-```
+```plaintext
 This repository is a Python package that provides utilities for data processing.
 
 Key directories:
