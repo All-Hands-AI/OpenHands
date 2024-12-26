@@ -38,4 +38,4 @@ Good prompts are:
 
 Remember, the more precise and informative your prompt is, the better the AI can assist you in developing or modifying the OpenHands software.
 
-See [Getting Started with OpenHands](./getting-started) for more examples of helpful prompts.
+See [Getting Started with OpenHands](../getting-started) for more examples of helpful prompts.
