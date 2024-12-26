@@ -71,6 +71,8 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-5-haiku-20241022',
     'gpt-4o-mini',
     'gpt-4o',
+    'deepseek-chat',
+    'deepseek-coder',
 ]
 
 
@@ -121,6 +123,12 @@ class LLM(RetryMixin, DebugMixin):
             logger.debug('LLM: caching prompt enabled')
         if self.is_function_calling_active():
             logger.debug('LLM: model supports function calling')
+
+        # Compatibility flag: use string serializer for DeepSeek models
+        # See this issue: https://github.com/All-Hands-AI/OpenHands/issues/5818
+        self._use_string_serializer = False
+        if 'deepseek' in self.config.model:
+            self._use_string_serializer = True
 
         # if using a custom tokenizer, make sure it's loaded and accessible in the format expected by litellm
         if self.config.custom_tokenizer is not None:
@@ -618,6 +626,8 @@ class LLM(RetryMixin, DebugMixin):
             message.cache_enabled = self.is_caching_prompt_active()
             message.vision_enabled = self.vision_is_active()
             message.function_calling_enabled = self.is_function_calling_active()
+            if self._use_string_serializer:
+                message.force_string_serializer = True
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]
