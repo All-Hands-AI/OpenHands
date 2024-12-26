@@ -71,6 +71,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-5-haiku-20241022',
     'gpt-4o-mini',
     'gpt-4o',
+    'deepseek',  # Add Deepseek support
 ]
 
 
@@ -183,7 +184,7 @@ class LLM(RetryMixin, DebugMixin):
                     'tools' in kwargs
                 ), "'tools' must be in kwargs when mock_function_calling is True"
                 messages = convert_fncall_messages_to_non_fncall_messages(
-                    messages, kwargs['tools']
+                    messages, kwargs['tools'], model=self.config.model
                 )
                 kwargs['messages'] = messages
                 kwargs['stop'] = STOP_WORDS

@@ -308,9 +308,19 @@ def convert_fncall_messages_to_non_fncall_messages(
     messages: list[dict],
     tools: list[ChatCompletionToolParam],
     add_in_context_learning_example: bool = True,
+    model: str = "",
 ) -> list[dict]:
     """Convert function calling messages to non-function calling messages."""
     messages = copy.deepcopy(messages)
+
+    # Handle Deepseek's message format
+    if 'deepseek' in model.lower():
+        for message in messages:
+            if isinstance(message.get('content'), list):
+                # Convert list of dicts to a single string
+                content = message['content']
+                if all(isinstance(c, dict) and 'type' in c and 'text' in c for c in content):
+                    message['content'] = ' '.join(c['text'] for c in content)
 
     formatted_tools = convert_tools_to_description(tools)
     system_prompt_suffix = SYSTEM_PROMPT_SUFFIX_TEMPLATE.format(
