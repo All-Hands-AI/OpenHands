@@ -5,6 +5,7 @@ import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useAuth } from "#/context/auth-context";
 import { useSettings } from "#/context/settings-context";
+import { updateSettingsVersion } from "#/utils/settings-utils";
 import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
@@ -64,6 +65,10 @@ export default function MainApp() {
       i18n.changeLanguage(settings.LANGUAGE);
     }
   }, [settings.LANGUAGE]);
+
+  React.useEffect(() => {
+    updateSettingsVersion();
+  }, []);
 
   const isInWaitlist =
     !isFetchingAuth && !isAuthed && config.data?.APP_MODE === "saas";

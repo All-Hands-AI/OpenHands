@@ -1,6 +1,6 @@
 import { openHands } from "#/api/open-hands-axios";
 
-export const LATEST_SETTINGS_VERSION = 4;
+export const LATEST_SETTINGS_VERSION = 5;
 
 export type Settings = {
   LLM_MODEL: string;
@@ -45,7 +45,7 @@ export const getCurrentSettingsVersion = () => {
 export const settingsAreUpToDate = () =>
   getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
 
-export const maybeMigrateSettings = (logout: () => void) => {
+export const maybeMigrateSettings = async (logout: () => void) => {
   // Sometimes we ship major changes, like a new default agent.
   // In this case, we may want to override a previous choice made by the user.
   const currentVersion = getCurrentSettingsVersion();
@@ -67,6 +67,11 @@ export const maybeMigrateSettings = (logout: () => void) => {
 
   if (currentVersion < 4) {
     logout();
+  }
+
+  if (currentVersion < 5) {
+    const localSettings = getLocalStorageSettings();
+    saveSettings(localSettings);
   }
 };
 
@@ -92,7 +97,10 @@ export const getSettings = async (): Promise<Settings> => {
       LLM_API_KEY: "",
     };
   }
+  return getLocalStorageSettings();
+}
 
+export const getLocalStorageSettings = (): Settings => {
   const llmModel = localStorage.getItem("LLM_MODEL");
   const baseUrl = localStorage.getItem("LLM_BASE_URL");
   const agent = localStorage.getItem("AGENT");
