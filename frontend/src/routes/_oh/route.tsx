@@ -4,7 +4,7 @@ import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useAuth } from "#/context/auth-context";
-import { useUserPrefs } from "#/context/user-prefs-context";
+import { useSettings } from "#/context/settings-context";
 import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
@@ -45,7 +45,7 @@ export function ErrorBoundary() {
 
 export default function MainApp() {
   const { gitHubToken } = useAuth();
-  const { settings, settingsAreUpToDate } = useUserPrefs();
+  const { settings, settingsAreUpToDate } = useSettings();
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
     !localStorage.getItem("analytics-consent"),
