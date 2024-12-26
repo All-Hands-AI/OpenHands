@@ -54,7 +54,7 @@ The component should use our shared styling from src/styles/components.
 
 ### Best Practices for Repository Customization
 
-1. **Keep Instructions Updated**: Regularly update your `.openhands_instructions` file as your project evolves
+1. **Keep Instructions Updated**: Regularly update your `.openhands` directory as your project evolves
 2. **Be Specific**: Include specific paths, patterns, and requirements unique to your project
 3. **Document Dependencies**: List all tools and dependencies required for development
 4. **Include Examples**: Provide examples of good code patterns from your project
