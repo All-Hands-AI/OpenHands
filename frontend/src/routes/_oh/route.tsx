@@ -10,7 +10,6 @@ import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
-import { useAuth } from "#/context/auth-context";
 
 export function ErrorBoundary() {
   const error = useRouteError();

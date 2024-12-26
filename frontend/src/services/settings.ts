@@ -45,6 +45,52 @@ export const getCurrentSettingsVersion = () => {
 export const settingsAreUpToDate = () =>
   getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
 
+// TODO: localStorage settings are deprecated. Remove this after 1/31/2025
+export const getLocalStorageSettings = (): Settings => {
+  const llmModel = localStorage.getItem("LLM_MODEL");
+  const baseUrl = localStorage.getItem("LLM_BASE_URL");
+  const agent = localStorage.getItem("AGENT");
+  const language = localStorage.getItem("LANGUAGE");
+  const llmApiKey = localStorage.getItem("LLM_API_KEY");
+  const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
+  const securityAnalyzer = localStorage.getItem("SECURITY_ANALYZER");
+
+  return {
+    LLM_MODEL: llmModel || DEFAULT_SETTINGS.LLM_MODEL,
+    LLM_BASE_URL: baseUrl || DEFAULT_SETTINGS.LLM_BASE_URL,
+    AGENT: agent || DEFAULT_SETTINGS.AGENT,
+    LANGUAGE: language || DEFAULT_SETTINGS.LANGUAGE,
+    LLM_API_KEY: llmApiKey || DEFAULT_SETTINGS.LLM_API_KEY,
+    CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
+    SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
+  };
+};
+
+/**
+ * Save the settings to the server. Only valid settings are saved.
+ * @param settings - the settings to save
+ */
+export const saveSettings = async (
+  settings: Partial<Settings>,
+): Promise<boolean> => {
+  try {
+    const apiSettings = {
+      llm_model: settings.LLM_MODEL || null,
+      llm_base_url: settings.LLM_BASE_URL || null,
+      agent: settings.AGENT || null,
+      language: settings.LANGUAGE || null,
+      confirmation_mode: settings.CONFIRMATION_MODE || null,
+      security_analyzer: settings.SECURITY_ANALYZER || null,
+      llm_api_key: settings.LLM_API_KEY || null,
+    };
+
+    const { data } = await openHands.post("/api/settings", apiSettings);
+    return data;
+  } catch (error) {
+    return false;
+  }
+};
+
 export const maybeMigrateSettings = async (logout: () => void) => {
   // Sometimes we ship major changes, like a new default agent.
   // In this case, we may want to override a previous choice made by the user.
@@ -98,50 +144,4 @@ export const getSettings = async (): Promise<Settings> => {
     };
   }
   return getLocalStorageSettings();
-}
-
-export const getLocalStorageSettings = (): Settings => {
-  const llmModel = localStorage.getItem("LLM_MODEL");
-  const baseUrl = localStorage.getItem("LLM_BASE_URL");
-  const agent = localStorage.getItem("AGENT");
-  const language = localStorage.getItem("LANGUAGE");
-  const llmApiKey = localStorage.getItem("LLM_API_KEY");
-  const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
-  const securityAnalyzer = localStorage.getItem("SECURITY_ANALYZER");
-
-  return {
-    LLM_MODEL: llmModel || DEFAULT_SETTINGS.LLM_MODEL,
-    LLM_BASE_URL: baseUrl || DEFAULT_SETTINGS.LLM_BASE_URL,
-    AGENT: agent || DEFAULT_SETTINGS.AGENT,
-    LANGUAGE: language || DEFAULT_SETTINGS.LANGUAGE,
-    LLM_API_KEY: llmApiKey || DEFAULT_SETTINGS.LLM_API_KEY,
-    CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
-    SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
-  };
-};
-
-/**
- * Save the settings to the server. Only valid settings are saved.
- * @param settings - the settings to save
- */
-export const saveSettings = async (
-  settings: Partial<Settings>,
-): Promise<boolean> => {
-  try {
-    const apiSettings = {
-      llm_model: settings.LLM_MODEL || null,
-      llm_base_url: settings.LLM_BASE_URL || null,
-      agent: settings.AGENT || null,
-      language: settings.LANGUAGE || null,
-      confirmation_mode: settings.CONFIRMATION_MODE || null,
-      security_analyzer: settings.SECURITY_ANALYZER || null,
-      llm_api_key: settings.LLM_API_KEY || null,
-    };
-
-    const { data } = await openHands.post("/api/settings", apiSettings);
-    return data;
-  } catch (error) {
-    console.error("Error saving settings:", error);
-    return false;
-  }
 };

@@ -7,10 +7,7 @@ import { getDefaultSettings, Settings } from "#/services/settings";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
 import { DangerModal } from "../confirmation-modals/danger-modal";
 import { I18nKey } from "#/i18n/declaration";
-import {
-  extractSettings,
-  saveSettingsView,
-} from "#/utils/settings-utils";
+import { extractSettings, saveSettingsView } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
 import { useSettings } from "#/context/settings-context";
 import { ModalButton } from "../../buttons/modal-button";
