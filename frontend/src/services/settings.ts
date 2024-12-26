@@ -79,24 +79,20 @@ export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
  * Get the settings from the server or use the default settings if not found
  */
 export const getSettings = async (): Promise<Settings> => {
-  try {
-    const { data: apiSettings } =
-      await openHands.get<ApiSettings>("/api/settings");
-    if (apiSettings != null) {
-      return {
-        LLM_MODEL: apiSettings.llm_model,
-        LLM_BASE_URL: apiSettings.llm_base_url,
-        AGENT: apiSettings.agent,
-        LANGUAGE: apiSettings.language,
-        CONFIRMATION_MODE: apiSettings.confirmation_mode,
-        SECURITY_ANALYZER: apiSettings.security_analyzer,
-        LLM_API_KEY: "",
-      };
-    }
-  } catch (error) {
-    console.error("Error loading settings:", error);
-    return DEFAULT_SETTINGS;
+  const { data: apiSettings } =
+    await openHands.get<ApiSettings>("/api/settings");
+  if (apiSettings != null) {
+    return {
+      LLM_MODEL: apiSettings.llm_model,
+      LLM_BASE_URL: apiSettings.llm_base_url,
+      AGENT: apiSettings.agent,
+      LANGUAGE: apiSettings.language,
+      CONFIRMATION_MODE: apiSettings.confirmation_mode,
+      SECURITY_ANALYZER: apiSettings.security_analyzer,
+      LLM_API_KEY: "",
+    };
   }
+
   const llmModel = localStorage.getItem("LLM_MODEL");
   const baseUrl = localStorage.getItem("LLM_BASE_URL");
   const agent = localStorage.getItem("AGENT");
