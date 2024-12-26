@@ -107,7 +107,8 @@ export function SettingsForm({
     posthog.capture("settings_saved", {
       LLM_MODEL: newSettings.LLM_MODEL,
       LLM_API_KEY: newSettings.LLM_API_KEY ? "SET" : "UNSET",
-      REMOTE_RUNTIME_RESOURCE_FACTOR: newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
+      REMOTE_RUNTIME_RESOURCE_FACTOR:
+        newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     });
   };
 
