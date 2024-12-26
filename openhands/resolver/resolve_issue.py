@@ -402,10 +402,10 @@ async def resolve_issue(
     logger.info(f'Base commit: {base_commit}')
 
     if repo_instruction is None:
-        # Check for .openhands_instructions file in the workspace directory
-        openhands_instructions_path = os.path.join(repo_dir, '.openhands_instructions')
-        if os.path.exists(openhands_instructions_path):
-            with open(openhands_instructions_path, 'r') as f:
+        # Check for repository instructions in .openhands/microagents/repo.md
+        repo_instructions_path = os.path.join(repo_dir, '.openhands/microagents/repo.md')
+        if os.path.exists(repo_instructions_path):
+            with open(repo_instructions_path, 'r') as f:
                 repo_instruction = f.read()
 
     # OUTPUT FILE

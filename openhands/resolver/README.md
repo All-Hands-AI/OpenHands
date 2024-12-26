@@ -180,7 +180,29 @@ python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --git
 
 ## Providing Custom Instructions
 
-You can customize how the AI agent approaches issue resolution by adding a `.openhands_instructions` file to the root of your repository. If present, this file's contents will be injected into the prompt for openhands edits.
+You can customize how the AI agent approaches issue resolution by adding repository instructions in `.openhands/microagents/repo.md` file. This file should contain repository-specific information and guidelines that will be injected into the prompt for OpenHands edits.
+
+Example structure for `.openhands/microagents/repo.md`:
+```markdown
+---
+name: repo
+agent: CodeActAgent
+---
+# Repository Instructions
+
+This repository contains [brief description of your project].
+
+## Directory Structure
+- src/: [description]
+- tests/: [description]
+...
+
+## Development Guidelines
+[Your specific coding standards and practices]
+
+## Testing Requirements
+[How to run tests and what types of tests are required]
+```
 
 ## Troubleshooting
 

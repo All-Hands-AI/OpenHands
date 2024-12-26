@@ -225,13 +225,15 @@ class Runtime(FileEditRuntimeMixin):
             dir_name = str(
                 Path(selected_repository.split('/')[1]) / custom_microagents_dir
             )
+        # Legacy support for .openhands_instructions
         obs = self.read(FileReadAction(path='.openhands_instructions'))
-        if isinstance(obs, ErrorObservation):
-            self.log('debug', 'openhands_instructions not present')
-        else:
+        if not isinstance(obs, ErrorObservation):
+            self.log('info', 'Found legacy .openhands_instructions file')
             openhands_instructions = obs.content
             self.log('info', f'openhands_instructions: {openhands_instructions}')
             custom_microagents_content.append(openhands_instructions)
+        else:
+            self.log('debug', '.openhands_instructions not present')
 
         files = self.list_files(dir_name)
 
