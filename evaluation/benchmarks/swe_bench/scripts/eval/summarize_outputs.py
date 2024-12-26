@@ -3,11 +3,11 @@ import argparse
 import glob
 import json
 import os
+import random
 from collections import Counter
 
-import pandas as pd
-import random
 import numpy as np
+import pandas as pd
 
 from openhands.events.serialization import event_from_dict
 from openhands.events.utils import get_pairs_from_events
@@ -20,12 +20,11 @@ ERROR_KEYWORDS = [
 ]
 
 
-def get_bootstrap_accuracy_error_bars(values: float | int | bool, num_samples: int = 1000, p_value=0.05) -> tuple[float, float]:
+def get_bootstrap_accuracy_error_bars(
+    values: float | int | bool, num_samples: int = 1000, p_value=0.05
+) -> tuple[float, float]:
     sorted_vals = np.sort(
-        [
-            np.mean(random.sample(values, len(values) // 2))
-            for _ in range(num_samples)
-        ]
+        [np.mean(random.sample(values, len(values) // 2)) for _ in range(num_samples)]
     )
     bottom_idx = int(num_samples * p_value / 2)
     top_idx = int(num_samples * (1.0 - p_value / 2))
@@ -118,7 +117,9 @@ def process_file(file_path):
         'resolved': {
             'count': num_resolved,
             'percentage': (num_resolved / num_lines * 100) if num_lines > 0 else 0,
-            'ci': tuple(x * 100 for x in get_bootstrap_accuracy_error_bars(resolved_arr)),
+            'ci': tuple(
+                x * 100 for x in get_bootstrap_accuracy_error_bars(resolved_arr)
+            ),
         },
         'empty_patches': {
             'count': num_empty_patch,
