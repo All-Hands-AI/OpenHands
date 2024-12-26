@@ -206,7 +206,7 @@ jobs:
               issue_number: ${{ env.ISSUE_NUMBER }},
               owner: process.env.TARGET_REPO_OWNER,
               repo: process.env.TARGET_REPO_NAME,
-              body: `[OpenHands](https://github.com/All-Hands-AI/OpenHands) started fixing the ${issueType}! You can monitor the progress [here](https://github.com/${process.env.TARGET_REPO_OWNER}/${process.env.TARGET_REPO_NAME}/actions/runs/${context.runId}).`
+              body: `[OpenHands](https://github.com/All-Hands-AI/OpenHands) started fixing the ${issueType}! You can monitor the progress [here](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`
             });
 
       - name: Install OpenHands
@@ -415,5 +415,5 @@ jobs:
               issue_number: issueNumber,
               owner: process.env.TARGET_REPO_OWNER,
               repo: process.env.TARGET_REPO_NAME,
-              body: `The workflow to fix this issue encountered an error. Please check the [workflow logs](https://github.com/${process.env.TARGET_REPO_OWNER}/${process.env.TARGET_REPO_NAME}/actions/runs/${context.runId}) for more information.`
+              body: `The workflow to fix this issue encountered an error. Please check the [workflow logs](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) for more information.`
             });
