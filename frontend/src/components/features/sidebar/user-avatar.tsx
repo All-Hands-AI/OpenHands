@@ -1,8 +1,8 @@
+import { Tooltip } from "@nextui-org/react";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import DefaultUserAvatar from "#/icons/default-user.svg?react";
 import { cn } from "#/utils/utils";
 import { Avatar } from "./avatar";
-import { Tooltip } from "@nextui-org/react";
 
 interface UserAvatarProps {
   onClick: () => void;
