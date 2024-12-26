@@ -12,7 +12,7 @@ from openhands.core.config import load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
-from openhands.runtime.impl.eventstream.eventstream_runtime import EventStreamRuntime
+from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
@@ -20,7 +20,7 @@ from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_async_from_sync
 
 TEST_IN_CI = os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes']
-TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream').lower()
+TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'docker').lower()
 RUN_AS_OPENHANDS = os.getenv('RUN_AS_OPENHANDS', 'True').lower() in ['true', '1', 'yes']
 test_mount_path = ''
 project_dir = os.path.dirname(
@@ -62,7 +62,7 @@ def _remove_folder(folder: str) -> bool:
 
 
 def _close_test_runtime(runtime: Runtime) -> None:
-    if isinstance(runtime, EventStreamRuntime):
+    if isinstance(runtime, DockerRuntime):
         runtime.close(rm_all_containers=False)
     else:
         runtime.close()
@@ -129,8 +129,8 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
 # Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
 def get_runtime_classes() -> list[type[Runtime]]:
     runtime = TEST_RUNTIME
-    if runtime.lower() == 'eventstream':
-        return [EventStreamRuntime]
+    if runtime.lower() == 'docker':
+        return [DockerRuntime]
     elif runtime.lower() == 'remote':
         return [RemoteRuntime]
     elif runtime.lower() == 'runloop':
@@ -173,7 +173,7 @@ def runtime_cls(request):
 
 
 # TODO: We will change this to `run_as_user` when `ServerRuntime` is deprecated.
-# since `EventStreamRuntime` supports running as an arbitrary user.
+# since `DockerRuntime` supports running as an arbitrary user.
 @pytest.fixture(scope='module', params=get_run_as_openhands())
 def run_as_openhands(request):
     time.sleep(1)
