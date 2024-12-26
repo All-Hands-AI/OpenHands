@@ -100,6 +100,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -129,6 +130,7 @@ ignore = ["D1"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
@@ -151,3 +153,8 @@ style = "semver"
 
 [tool.poetry.scripts]
 openhands = "openhands.core.cli:main"
+
+[tool.poetry.group.testgeneval.dependencies]
+fuzzywuzzy = "^0.18.0"
+rouge = "^1.0.1"
+python-levenshtein = "^0.26.1"
