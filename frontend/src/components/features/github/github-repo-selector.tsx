@@ -18,13 +18,13 @@ export function GitHubRepositorySelector({
   const { data: config } = useConfig();
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
-  const [searchedRepo, setSearchedRepo] =
-    React.useState<GitHubRepository | null>(null);
+  const [searchedRepos, setSearchedRepos] = 
+    React.useState<GitHubRepository[]>([]);
 
   React.useEffect(() => {
     const searchPublicRepo = async () => {
       const repos = await searchPublicRepositories(searchQuery);
-      setSearchedRepo(repos.length > 0 ? repos[0] : null);
+      setSearchedRepos(repos);
     };
 
     const debounceTimeout = setTimeout(searchPublicRepo, 300);
@@ -32,12 +32,14 @@ export function GitHubRepositorySelector({
   }, [searchQuery]);
 
   const finalRepositories = repositories.map((i) => i);
-  if (searchedRepo && !repositories.find((r) => r.id === searchedRepo.id)) {
-    finalRepositories.unshift({
-      ...searchedRepo,
-      fromPublicRepoSearch: true,
-    });
-  }
+  searchedRepos.forEach(repo => {
+    if (!repositories.find((r) => r.id === repo.id)) {
+      finalRepositories.unshift({
+        ...repo,
+        fromPublicRepoSearch: true,
+      });
+    }
+  });
 
   const dispatch = useDispatch();
 
