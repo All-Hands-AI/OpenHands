@@ -106,15 +106,22 @@ export const retrieveGitHubUser = async () => {
 
 export const retrieveLatestGitHubCommit = async (
   repository: string,
-): Promise<GitHubCommit> => {
-  const response = await github.get<GitHubCommit[]>(
-    `/repos/${repository}/commits`,
-    {
-      params: {
-        per_page: 1,
+): Promise<GitHubCommit | null> => {
+  try {
+    const response = await github.get<GitHubCommit[]>(
+      `/repos/${repository}/commits`,
+      {
+        params: {
+          per_page: 1,
+        },
       },
-    },
-  );
-
-  return response.data[0];
+    );
+    return response.data[0] || null;
+  } catch (error: any) {
+    if (error.response?.status === 409) {
+      // Repository is empty, no commits yet
+      return null;
+    }
+    throw error;
+  }
 };
