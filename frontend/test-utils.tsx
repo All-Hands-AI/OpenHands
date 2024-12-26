@@ -12,7 +12,7 @@ import { initReactI18next } from "react-i18next";
 import { AppStore, RootState, rootReducer } from "./src/store";
 import { vi } from "vitest";
 import { AuthProvider } from "#/context/auth-context";
-import { UserPrefsProvider } from "#/context/user-prefs-context";
+import { SettingsProvider } from "#/context/settings-context";
 import { ConversationProvider } from "#/context/conversation-context";
 
 // Mock useParams before importing components
@@ -70,17 +70,17 @@ export function renderWithProviders(
   function Wrapper({ children }: PropsWithChildren<object>): JSX.Element {
     return (
       <Provider store={store}>
-        <UserPrefsProvider>
-          <AuthProvider>
-            <ConversationProvider>
-              <QueryClientProvider client={new QueryClient()}>
+        <QueryClientProvider client={new QueryClient()}>
+          <SettingsProvider>
+            <AuthProvider>
+              <ConversationProvider>
                 <I18nextProvider i18n={i18n}>
                     {children}
                 </I18nextProvider>
-              </QueryClientProvider>
-            </ConversationProvider>
-          </AuthProvider>
-        </UserPrefsProvider>
+              </ConversationProvider>
+            </AuthProvider>
+          </SettingsProvider>
+        </QueryClientProvider>
       </Provider>
     );
   }
