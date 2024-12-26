@@ -64,7 +64,7 @@ modal = ">=0.66.26,<0.71.0"
 runloop-api-client = "0.11.0"
 pygithub = "^2.5.0"
 joblib = "*"
-openhands-aci = "0.1.4"
+openhands-aci = "0.1.5"
 python-socketio = "^5.11.4"
 redis = "^5.2.0"
 
@@ -100,6 +100,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -128,6 +129,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
