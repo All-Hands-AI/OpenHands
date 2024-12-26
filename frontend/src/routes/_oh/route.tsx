@@ -44,7 +44,7 @@ export function ErrorBoundary() {
 
 export default function MainApp() {
   const { gitHubToken } = useAuth();
-  const { settings } = useUserPrefs();
+  const { settings } = useSettings();
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
     !localStorage.getItem("analytics-consent"),
