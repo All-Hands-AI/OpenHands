@@ -38,7 +38,7 @@ export function SettingsForm({
   securityAnalyzers,
   onClose,
 }: SettingsFormProps) {
-  const { handleSaveSettings } = useSettings();
+  const { saveSettings } = useSettings();
   const endSession = useEndSession();
 
   const location = useLocation();
@@ -92,7 +92,7 @@ export function SettingsForm({
     const newSettings = extractSettings(formData);
 
     saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
-    await handleSaveSettings(newSettings);
+    await saveSettings(newSettings);
     resetOngoingSession();
 
     posthog.capture("settings_saved", {
@@ -102,7 +102,7 @@ export function SettingsForm({
   };
 
   const handleConfirmResetSettings = async () => {
-    await handleSaveSettings(getDefaultSettings());
+    await saveSettings(getDefaultSettings());
     resetOngoingSession();
     posthog.capture("settings_reset");
 

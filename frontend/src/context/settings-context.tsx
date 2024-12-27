@@ -49,7 +49,7 @@ function SettingsProvider({ children }: React.PropsWithChildren) {
     () => ({
       settings,
       settingsAreUpToDate,
-      handleSaveSettings,
+      saveSettings: handleSaveSettings,
     }),
     [settings, settingsAreUpToDate],
   );
