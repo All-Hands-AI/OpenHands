@@ -20,6 +20,7 @@ from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.runtime.base import Runtime
 from openhands.storage import get_file_store
+from openhands.storage.memory import InMemoryFileStore
 
 
 @pytest.fixture
@@ -168,7 +169,7 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
 @pytest.mark.asyncio
 async def test_run_controller_stop_with_stuck():
     config = AppConfig()
-    file_store = get_file_store(config.file_store, config.file_store_path)
+    file_store = InMemoryFileStore({})
     event_stream = EventStream(sid='test', file_store=file_store)
 
     agent = MagicMock(spec=Agent)
