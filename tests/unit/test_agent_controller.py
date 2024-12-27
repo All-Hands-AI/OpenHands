@@ -82,7 +82,8 @@ async def test_on_event_message_action(mock_agent, mock_event_stream):
     )
     controller.state.agent_state = AgentState.RUNNING
     message_action = MessageAction(content='Test message')
-    await controller.on_event(message_action)
+    controller.on_event(message_action)
+    await asyncio.sleep(1)  # Wait for the event to be processed
     assert controller.get_agent_state() == AgentState.RUNNING
     await controller.close()
 
@@ -99,7 +100,8 @@ async def test_on_event_change_agent_state_action(mock_agent, mock_event_stream)
     )
     controller.state.agent_state = AgentState.RUNNING
     change_state_action = ChangeAgentStateAction(agent_state=AgentState.PAUSED)
-    await controller.on_event(change_state_action)
+    controller.on_event(change_state_action)
+    await asyncio.sleep(1)  # Wait for the event to be processed
     assert controller.get_agent_state() == AgentState.PAUSED
     await controller.close()
 
@@ -141,7 +143,7 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
 
     runtime = MagicMock(spec=Runtime)
 
-    async def on_event(event: Event):
+    def on_event(event: Event):
         if isinstance(event, CmdRunAction):
             error_obs = ErrorObservation('You messed around with Jim')
             error_obs._cause = event.id
@@ -184,7 +186,7 @@ async def test_run_controller_stop_with_stuck():
     agent.llm.config = config.get_llm_config()
     runtime = MagicMock(spec=Runtime)
 
-    async def on_event(event: Event):
+    def on_event(event: Event):
         if isinstance(event, CmdRunAction):
             non_fatal_error_obs = ErrorObservation(
                 'Non fatal error here to trigger loop'
@@ -305,7 +307,8 @@ async def test_max_iterations_extension(mock_agent, mock_event_stream):
     # Simulate a new user message
     message_action = MessageAction(content='Test message')
     message_action._source = EventSource.USER
-    await controller.on_event(message_action)
+    controller.on_event(message_action)
+    await asyncio.sleep(1)  # Wait for the event to be processed
 
     # Max iterations should be extended to current iteration + initial max_iterations
     assert (
@@ -335,7 +338,8 @@ async def test_max_iterations_extension(mock_agent, mock_event_stream):
     # Simulate a new user message
     message_action = MessageAction(content='Test message')
     message_action._source = EventSource.USER
-    await controller.on_event(message_action)
+    controller.on_event(message_action)
+    await asyncio.sleep(1)
 
     # Max iterations should NOT be extended in headless mode
     assert controller.state.max_iterations == 10  # Original value unchanged
