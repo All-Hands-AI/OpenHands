@@ -159,6 +159,8 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     logger.openhands_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'
                     )
+                    cfg.extended.add_dict(key, value)
+
             except (TypeError, KeyError) as e:
                 logger.openhands_logger.warning(
                     f'Cannot parse config from toml, toml values have not been applied.\n Error: {e}',
