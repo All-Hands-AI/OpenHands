@@ -104,37 +104,45 @@ async def search_conversations(
         set(session_ids[start:end])
     )
     for session_id in session_ids:
-        try:
-            is_running = session_id in running_sessions
-            conversation_info = _get_conversation_info(session_id, is_running, file_store)
-            if conversation_info:
-                conversations.append(conversation_info)
-        except Exception:  # type: ignore
-            # If a conversation is corrupt, we simply log and skip.
-            logger.warning(
-                f'Error loading session: {session_id}',
-                exc_info=True,
-                stack_info=True,
-            )
+        is_running = session_id in running_sessions
+        conversation_info = _get_conversation_info(session_id, is_running, file_store)
+        if conversation_info:
+            conversations.append(conversation_info)
     return ConversationResultSet(results=conversations, next_page_id=next_page_id)
 
 
-def _get_conversation_info(session_id: str, is_running: bool, file_store: FileStore) -> ConversationInfo:
-    metadata = json.loads(
-        file_store.read(f'sessions/{session_id}/metadata.json')
-    )
-    events = file_store.list(f'sessions/{session_id}/events/')
-    events = sorted(events)
-    event_path = events[-1]
-    event = json.loads(file_store.read(event_path))
-    return ConversationInfo(
-        id=session_id,
-        title=metadata.get('title', ''),
-        last_updated_at=datetime.fromisoformat(
-            event.get('timestamp')
-        ),
-        selected_repository=metadata.get('selected_repository'),
-        status=ConversationStatus.RUNNING
-        if is_running
-        else ConversationStatus.STOPPED,
-    )
+def _get_conversation_info(session_id: str, is_running: bool, file_store: FileStore) -> ConversationInfo | None:
+    try:
+        metadata = json.loads(
+            file_store.read(f'sessions/{session_id}/metadata.json')
+        )
+        events = file_store.list(f'sessions/{session_id}/events/')
+        events = sorted(events)
+        event_path = events[-1]
+        event = json.loads(file_store.read(event_path))
+        return ConversationInfo(
+            id=session_id,
+            title=metadata.get('title', ''),
+            last_updated_at=datetime.fromisoformat(
+                event.get('timestamp')
+            ),
+            selected_repository=metadata.get('selected_repository'),
+            status=ConversationStatus.RUNNING
+            if is_running
+            else ConversationStatus.STOPPED,
+        )
+    except Exception:  # type: ignore
+        logger.warning(
+            f'Error loading conversation: {session_id}',
+            exc_info=True,
+            stack_info=True,
+        )
+        return None
+
+
+@app.get('/conversation/{conversation_id}')
+async def get_conversation(conversation_id: str) -> ConversationInfo | None:
+    file_store = session_manager.file_store
+    is_running = await session_manager.is_agent_loop_running(conversation_id)
+    conversation_info = _get_conversation_info(conversation_id, is_running, file_store)
+    return conversation_info
