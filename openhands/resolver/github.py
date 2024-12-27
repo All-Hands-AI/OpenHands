@@ -36,6 +36,10 @@ class IssueHandlerInterface(ABC):
         pass
 
     @abstractmethod
+    def get_graphql_url(self):
+        pass
+
+    @abstractmethod
     def get_headers(self):
         pass
 
@@ -96,6 +100,9 @@ class GithubIssueHandler(IssueHandlerInterface):
             else f'x-auth-token:{self.token}'
         )
         return f'https://{username_and_token}@github.com/{self.owner}/{self.repo}.git'
+
+    def get_graphql_url(self):
+        return self.get_base_url() + '/graphql'
 
     def get_compare_url(self, branch_name: str):
         return f'https://github.com/{self.owner}/{self.repo}/compare/{branch_name}?expand=1'

@@ -329,6 +329,9 @@ class ServiceContext:
     def get_clone_url(self):
         return self._strategy.get_clone_url()
 
+    def get_graphql_url(self):
+        return self._strategy.get_graphql_url()
+
     def get_headers(self):
         return self._strategy.get_headers()
 
