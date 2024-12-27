@@ -1,6 +1,6 @@
 import { RefObject, useEffect, useState } from "react";
 
-export function useScrollToBottom(scrollRef: RefObject<HTMLDivElement>) {
+export function useScrollToBottom(scrollRef: RefObject<HTMLDivElement | null>) {
   // for auto-scroll
 
   const [autoScroll, setAutoScroll] = useState(true);
