@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -19,29 +19,38 @@ async def test_search_conversations():
     file_store = InMemoryFileStore()
     file_store.write(
         'sessions/some_conversation_id/metadata.json',
-        json.dumps({'title': 'Some Conversation', 'selected_repository': 'foobar'}),
+        json.dumps({
+            'title': 'Some Conversation',
+            'selected_repository': 'foobar', 
+            'conversation_id': 'some_conversation_id',
+            'github_user_id': 'github_user',
+        }),
     )
     file_store.write(
         'sessions/some_conversation_id/events/0.json',
         json.dumps({'timestamp': '2025-01-01T00:00:00'}),
     )
     with patch(
-        'openhands.server.routes.new_conversation.session_manager.file_store',
-        file_store,
+        'openhands.storage.conversation.conversation_store.get_file_store',
+        MagicMock(return_value=file_store)
     ):
-        result_set = await search_conversations()
-        expected = ConversationResultSet(
-            results=[
-                ConversationInfo(
-                    id='some_conversation_id',
-                    title='Some Conversation',
-                    last_updated_at=datetime.fromisoformat('2025-01-01T00:00:00'),
-                    status=ConversationStatus.STOPPED,
-                    selected_repository='foobar',
-                )
-            ]
-        )
-        assert result_set == expected
+        with patch(
+            'openhands.server.routes.new_conversation.session_manager.file_store',
+            file_store,
+        ):
+            result_set = await search_conversations()
+            expected = ConversationResultSet(
+                results=[
+                    ConversationInfo(
+                        id='some_conversation_id',
+                        title='Some Conversation',
+                        last_updated_at=datetime.fromisoformat('2025-01-01T00:00:00'),
+                        status=ConversationStatus.STOPPED,
+                        selected_repository='foobar',
+                    )
+                ]
+            )
+            assert result_set == expected
 
 
 @pytest.mark.asyncio
@@ -49,25 +58,34 @@ async def test_get_conversation():
     file_store = InMemoryFileStore()
     file_store.write(
         'sessions/some_conversation_id/metadata.json',
-        json.dumps({'title': 'Some Conversation', 'selected_repository': 'foobar'}),
+        json.dumps({
+            'title': 'Some Conversation',
+            'selected_repository': 'foobar', 
+            'conversation_id': 'some_conversation_id',
+            'github_user_id': 'github_user',
+        }),
     )
     file_store.write(
         'sessions/some_conversation_id/events/0.json',
         json.dumps({'timestamp': '2025-01-01T00:00:00'}),
     )
     with patch(
-        'openhands.server.routes.new_conversation.session_manager.file_store',
-        file_store,
+        'openhands.storage.conversation.conversation_store.get_file_store',
+        MagicMock(return_value=file_store)
     ):
-        conversation = await get_conversation('some_conversation_id')
-        expected = ConversationInfo(
-            id='some_conversation_id',
-            title='Some Conversation',
-            last_updated_at=datetime.fromisoformat('2025-01-01T00:00:00'),
-            status=ConversationStatus.STOPPED,
-            selected_repository='foobar',
-        )
-        assert conversation == expected
+        with patch(
+            'openhands.server.routes.new_conversation.session_manager.file_store',
+            file_store,
+        ):
+            conversation = await get_conversation('some_conversation_id')
+            expected = ConversationInfo(
+                id='some_conversation_id',
+                title='Some Conversation',
+                last_updated_at=datetime.fromisoformat('2025-01-01T00:00:00'),
+                status=ConversationStatus.STOPPED,
+                selected_repository='foobar',
+            )
+            assert conversation == expected
 
 
 @pytest.mark.asyncio
