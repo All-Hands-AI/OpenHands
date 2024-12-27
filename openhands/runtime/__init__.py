@@ -3,9 +3,6 @@ from openhands.runtime.impl.e2b.sandbox import E2BBox
 from openhands.runtime.impl.eventstream.eventstream_runtime import (
     EventStreamRuntime,
 )
-from openhands.runtime.impl.ibmcodeengine.ibmcodeengine_runtime import (
-    IBMCodeEngineRuntime,
-)
 from openhands.runtime.impl.modal.modal_runtime import ModalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
