@@ -10,8 +10,8 @@ class ExtendedConfig:
     def __str__(self):
         attr_str = []
         for key_name, dict_value in self.extended.items():
-            for attr_name, attr_name in dict_value.items():
-                attr_str.append(f'[{key_name}]{attr_name}={repr(attr_name)}')
+            for attr_name, attr_value in dict_value.items():
+                attr_str.append(f'[{key_name}]{attr_name}={repr(attr_value)}')
         return f"ExtendedConfig({', '.join(attr_str)})"
 
     def add_dict(self, key: str, extended_config_dict: dict) -> 'ExtendedConfig':
