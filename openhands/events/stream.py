@@ -179,7 +179,6 @@ class EventStream:
         del self._subscribers[subscriber_id][callback_id]
 
     def add_event(self, event: Event, source: EventSource):
-        print('add_event', source, event)
         try:
             asyncio.get_running_loop().create_task(self._async_add_event(event, source))
         except RuntimeError:
