@@ -11,4 +11,5 @@ def offset_to_page_id(offset: int, has_next: bool) -> str | None:
 def page_id_to_offset(page_id: str | None) -> int:
     if not page_id:
         return 0
-    
+    offset = int(base64.b64decode(page_id).decode())
+    return offset
