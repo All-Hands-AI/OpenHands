@@ -9,8 +9,8 @@ IN_MEMORY_FILES: dict = {}
 class InMemoryFileStore(FileStore):
     files: dict[str, str]
 
-    def __init__(self):
-        self.files = IN_MEMORY_FILES
+    def __init__(self, files: dict[str, str] = IN_MEMORY_FILES):
+        self.files = files
 
     def write(self, path: str, contents: str) -> None:
         self.files[path] = contents

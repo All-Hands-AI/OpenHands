@@ -1,39 +1,49 @@
 import React from "react";
 import posthog from "posthog-js";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getSettings,
   Settings,
   saveSettings as updateAndSaveSettingsToLocalStorage,
   settingsAreUpToDate as checkIfSettingsAreUpToDate,
+  DEFAULT_SETTINGS,
 } from "#/services/settings";
 
-interface UserPrefsContextType {
+interface SettingsContextType {
   settings: Settings;
   settingsAreUpToDate: boolean;
   saveSettings: (settings: Partial<Settings>) => void;
 }
 
-const UserPrefsContext = React.createContext<UserPrefsContextType | undefined>(
+const SettingsContext = React.createContext<SettingsContextType | undefined>(
   undefined,
 );
 
-function UserPrefsProvider({ children }: React.PropsWithChildren) {
-  const [settings, setSettings] = React.useState(getSettings());
+const SETTINGS_QUERY_KEY = ["settings"];
+
+function SettingsProvider({ children }: React.PropsWithChildren) {
+  const { data: settings } = useQuery({
+    queryKey: SETTINGS_QUERY_KEY,
+    queryFn: getSettings,
+    initialData: DEFAULT_SETTINGS,
+  });
+
   const [settingsAreUpToDate, setSettingsAreUpToDate] = React.useState(
     checkIfSettingsAreUpToDate(),
   );
+  const queryClient = useQueryClient();
 
   const saveSettings = (newSettings: Partial<Settings>) => {
     updateAndSaveSettingsToLocalStorage(newSettings);
-    setSettings(getSettings());
+    queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY });
     setSettingsAreUpToDate(checkIfSettingsAreUpToDate());
   };
 
   React.useEffect(() => {
-    if (settings.LLM_API_KEY) {
+    if (settings?.LLM_API_KEY) {
       posthog.capture("user_activated");
     }
-  }, [settings.LLM_API_KEY]);
+  }, [settings?.LLM_API_KEY]);
 
   const value = React.useMemo(
     () => ({
@@ -44,19 +54,15 @@ function UserPrefsProvider({ children }: React.PropsWithChildren) {
     [settings, settingsAreUpToDate],
   );
 
-  return (
-    <UserPrefsContext.Provider value={value}>
-      {children}
-    </UserPrefsContext.Provider>
-  );
+  return <SettingsContext value={value}>{children}</SettingsContext>;
 }
 
-function useUserPrefs() {
-  const context = React.useContext(UserPrefsContext);
+function useSettings() {
+  const context = React.useContext(SettingsContext);
   if (context === undefined) {
-    throw new Error("useUserPrefs must be used within a UserPrefsProvider");
+    throw new Error("useSettings must be used within a SettingsProvider");
   }
   return context;
 }
 
-export { UserPrefsProvider, useUserPrefs };
+export { SettingsProvider, useSettings };
