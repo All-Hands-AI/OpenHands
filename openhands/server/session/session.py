@@ -121,7 +121,7 @@ class Session:
             )
             return
 
-    async def on_event(self, event: Event):
+    def on_event(self, event: Event):
         """Callback function for events that mainly come from the agent.
         Event is the base class for any agent action and observation.
 
@@ -133,9 +133,9 @@ class Session:
         if isinstance(event, NullObservation):
             return
         if event.source == EventSource.AGENT:
-            await self.send(event_to_dict(event))
+            self.send(event_to_dict(event))
         elif event.source == EventSource.USER:
-            await self.send(event_to_dict(event))
+            self.send(event_to_dict(event))
         # NOTE: ipython observations are not sent here currently
         elif event.source == EventSource.ENVIRONMENT and isinstance(
             event, (CmdOutputObservation, AgentStateChangedObservation)
@@ -143,12 +143,12 @@ class Session:
             # feedback from the environment to agent actions is understood as agent events by the UI
             event_dict = event_to_dict(event)
             event_dict['source'] = EventSource.AGENT
-            await self.send(event_dict)
+            self.send(event_dict)
         elif isinstance(event, ErrorObservation):
             # send error events as agent events to the UI
             event_dict = event_to_dict(event)
             event_dict['source'] = EventSource.AGENT
-            await self.send(event_dict)
+            self.send(event_dict)
 
     async def dispatch(self, data: dict):
         event = event_from_dict(data.copy())
@@ -168,11 +168,8 @@ class Session:
                     return
         self.agent_session.event_stream.add_event(event, EventSource.USER)
 
-    async def send(self, data: dict[str, object]):
-        if asyncio.get_running_loop() != self.loop:
-            self.loop.create_task(self._send(data))
-            return
-        await self._send(data)
+    def send(self, data: dict[str, object]):
+        self.loop.create_task(self._send(data))
 
     async def _send(self, data: dict[str, object]) -> bool:
         try:

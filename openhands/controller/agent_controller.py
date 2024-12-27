@@ -199,12 +199,15 @@ class AgentController:
     def step(self):
         asyncio.create_task(self._step())
 
-    async def on_event(self, event: Event) -> None:
+    def on_event(self, event: Event) -> None:
         """Callback from the event stream. Notifies the controller of incoming events.
 
         Args:
             event (Event): The incoming event to process.
         """
+        asyncio.create_task(self._on_event(event))
+
+    async def _on_event(self, event: Event) -> None:
         if hasattr(event, 'hidden') and event.hidden:
             return
 
@@ -214,9 +217,11 @@ class AgentController:
 
         if isinstance(event, Action):
             await self._handle_action(event)
+            if event.source == EventSource.USER:
+                self.step()
         elif isinstance(event, Observation):
             await self._handle_observation(event)
-        self.step()
+            self.step()
 
     async def _handle_action(self, action: Action) -> None:
         """Handles actions from the event stream.
@@ -444,6 +449,7 @@ class AgentController:
         await self.delegate.set_agent_state_to(AgentState.RUNNING)
 
     async def _step(self) -> None:
+        await asyncio.sleep(0.1)
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
         if self.get_agent_state() != AgentState.RUNNING:
             return
