@@ -2,6 +2,8 @@ import atexit
 import copy
 import json
 import os
+import random
+import string
 from abc import abstractmethod
 from pathlib import Path
 from typing import Callable
@@ -203,8 +205,13 @@ class Runtime(FileEditRuntimeMixin):
             return
         url = f'https://{github_token}@github.com/{selected_repository}.git'
         dir_name = selected_repository.split('/')[1]
+        # add random branch name to avoid conflicts
+        random_str = ''.join(
+            random.choices(string.ascii_lowercase + string.digits, k=8)
+        )
+        branch_name = f'openhands-workspace-{random_str}'
         action = CmdRunAction(
-            command=f'git clone {url} {dir_name} ; cd {dir_name} ; git checkout -b openhands-workspace'
+            command=f'git clone {url} {dir_name} ; cd {dir_name} ; git checkout -b {branch_name}',
         )
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
@@ -218,12 +225,11 @@ class Runtime(FileEditRuntimeMixin):
             dir_name = str(
                 Path(selected_repository.split('/')[1]) / custom_microagents_dir
             )
-        oh_instructions_header = '---\nname: openhands_instructions\nagent: CodeActAgent\ntriggers:\n- ""\n---\n'
         obs = self.read(FileReadAction(path='.openhands_instructions'))
         if isinstance(obs, ErrorObservation):
-            self.log('error', 'Failed to read openhands_instructions')
+            self.log('debug', 'openhands_instructions not present')
         else:
-            openhands_instructions = oh_instructions_header + obs.content
+            openhands_instructions = obs.content
             self.log('info', f'openhands_instructions: {openhands_instructions}')
             custom_microagents_content.append(openhands_instructions)
 

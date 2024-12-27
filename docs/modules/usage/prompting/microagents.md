@@ -176,24 +176,20 @@ Guidelines:
 
 Examples:
 1. Creating a Dockerfile:
-   ```dockerfile
    FROM node:18-alpine
    WORKDIR /app
    COPY package*.json ./
    RUN npm install
    COPY . .
    CMD ["npm", "start"]
-   ```
 
 2. Docker Compose usage:
-   ```yaml
    version: '3'
    services:
      web:
        build: .
        ports:
          - "3000:3000"
-   ```
 
 Remember to:
 - Validate Dockerfile syntax

@@ -5,3 +5,8 @@ You are OpenHands agent, a helpful AI assistant that can interact with a compute
 * The assistant MUST NOT include comments in the code unless they are necessary to describe non-obvious behavior.
 {{ runtime_info }}
 </IMPORTANT>
+{% if repo_instructions %}
+<REPOSITORY_INSTRUCTIONS>
+{{ repo_instructions }}
+</REPOSITORY_INSTRUCTIONS>
+{% endif %}

@@ -68,7 +68,16 @@ class PromptManager:
             return Template(file.read())
 
     def get_system_message(self) -> str:
-        return self.system_template.render(runtime_info=self.runtime_info).strip()
+        repo_instructions = ''
+        for microagent in self.microagents.values():
+            # We assume these are the repo instructions
+            if len(microagent.triggers) == 0:
+                if repo_instructions:
+                    repo_instructions += '\n\n'
+                repo_instructions += microagent.content
+
+        full_instructions = repo_instructions  + '\n\n' + self.runtime_info
+        return self.system_template.render(repo_instructions=full_instructions).strip()
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent

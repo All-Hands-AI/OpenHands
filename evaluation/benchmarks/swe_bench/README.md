@@ -80,7 +80,7 @@ ALLHANDS_API_KEY="YOUR-API-KEY" RUNTIME=remote SANDBOX_REMOTE_RUNTIME_API_URL="h
 To clean-up all existing runtime you've already started, run:
 
 ```bash
-ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
+ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/utils/scripts/cleanup_remote_runtime.sh
 ```
 
 ### Specify a subset of tasks to run infer
@@ -178,7 +178,7 @@ evaluation/benchmarks/swe_bench/scripts/eval_infer_remote.sh evaluation/evaluati
 To clean-up all existing runtimes that you've already started, run:
 
 ```bash
-ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
+ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/utils/scripts/cleanup_remote_runtime.sh
 ```
 
 ## Visualize Results

@@ -22,7 +22,7 @@ import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "./event-handler";
 import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 import { useAuth } from "#/context/auth-context";
-import { useUserPrefs } from "#/context/user-prefs-context";
+import { useSettings } from "#/context/settings-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
@@ -32,14 +32,14 @@ import { TerminalStatusLabel } from "#/components/features/terminal/terminal-sta
 
 function AppContent() {
   const { gitHubToken } = useAuth();
-  const { settings } = useUserPrefs();
+  const { settings } = useSettings();
   const { conversationId } = useConversation();
 
   const dispatch = useDispatch();
   useConversationConfig();
 
   const { selectedRepository } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const { updateCount } = useSelector((state: RootState) => state.browser);

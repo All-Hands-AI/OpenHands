@@ -1,8 +1,10 @@
 import posthog from "posthog-js";
 import React from "react";
+import { useSelector } from "react-redux";
 import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
 import { useAuth } from "#/context/auth-context";
 import { DownloadModal } from "#/components/shared/download-modal";
+import type { RootState } from "#/store";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -12,6 +14,9 @@ export function ActionSuggestions({
   onSuggestionsClick,
 }: ActionSuggestionsProps) {
   const { gitHubToken } = useAuth();
+  const { selectedRepository } = useSelector(
+    (state: RootState) => state.initialQuery,
+  );
 
   const [isDownloading, setIsDownloading] = React.useState(false);
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
@@ -27,7 +32,7 @@ export function ActionSuggestions({
         onClose={handleDownloadClose}
         isOpen={isDownloading}
       />
-      {gitHubToken ? (
+      {gitHubToken && selectedRepository ? (
         <div className="flex flex-row gap-2 justify-center w-full">
           {!hasPullRequest ? (
             <>
