@@ -32,7 +32,7 @@ async def test_search_conversations():
     )
     with patch(
         'openhands.storage.conversation.conversation_store.get_file_store',
-        MagicMock(return_value=file_store)
+        MagicMock(return_value=file_store),
     ):
         with patch(
             'openhands.server.routes.new_conversation.session_manager.file_store',
@@ -71,7 +71,7 @@ async def test_get_conversation():
     )
     with patch(
         'openhands.storage.conversation.conversation_store.get_file_store',
-        MagicMock(return_value=file_store)
+        MagicMock(return_value=file_store),
     ):
         with patch(
             'openhands.server.routes.new_conversation.session_manager.file_store',
