@@ -19,6 +19,7 @@ from openhands.storage.conversation.conversation_store import (
     ConversationStore,
 )
 from openhands.storage.files import FileStore
+from openhands.storage.locations import get_conversation_events_dir
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.search_utils import offset_to_page_id, page_id_to_offset
 
@@ -98,32 +99,33 @@ async def search_conversations(
     num_sessions = len(session_ids)
     start = page_id_to_offset(page_id)
     end = min(limit + start, num_sessions)
+    session_ids = session_ids[start:end]
     next_page_id = offset_to_page_id(end, end < num_sessions)
-    running_sessions = await session_manager.get_agent_loop_running(
-        set(session_ids[start:end])
-    )
+    running_sessions = await session_manager.get_agent_loop_running(set(session_ids))
     for session_id in session_ids:
         is_running = session_id in running_sessions
-        conversation_info = _get_conversation_info(session_id, is_running, file_store)
+        conversation_info = await _get_conversation_info(session_id, is_running, file_store)
         if conversation_info:
             conversations.append(conversation_info)
     return ConversationResultSet(results=conversations, next_page_id=next_page_id)
 
 
-def _get_conversation_info(
+async def _get_conversation_info(
     session_id: str, is_running: bool, file_store: FileStore
 ) -> ConversationInfo | None:
     try:
-        metadata = json.loads(file_store.read(f'sessions/{session_id}/metadata.json'))
-        events = file_store.list(f'sessions/{session_id}/events/')
+        conversation_store = await ConversationStore.get_instance(config)
+        metadata = await conversation_store.get_metadata(session_id)
+        events_dir = get_conversation_events_dir(session_id)
+        events = file_store.list(events_dir)
         events = sorted(events)
         event_path = events[-1]
         event = json.loads(file_store.read(event_path))
         return ConversationInfo(
             id=session_id,
-            title=metadata.get('title', ''),
+            title=metadata.title,
             last_updated_at=datetime.fromisoformat(event.get('timestamp')),
-            selected_repository=metadata.get('selected_repository'),
+            selected_repository=metadata.selected_repository,
             status=ConversationStatus.RUNNING
             if is_running
             else ConversationStatus.STOPPED,
@@ -137,9 +139,33 @@ def _get_conversation_info(
         return None
 
 
-@app.get('/conversation/{conversation_id}')
+@app.get('/conversations/{conversation_id}')
 async def get_conversation(conversation_id: str) -> ConversationInfo | None:
     file_store = session_manager.file_store
     is_running = await session_manager.is_agent_loop_running(conversation_id)
-    conversation_info = _get_conversation_info(conversation_id, is_running, file_store)
+    conversation_info = await _get_conversation_info(conversation_id, is_running, file_store)
     return conversation_info
+
+
+@app.post('/conversations/{conversation_id}')
+async def update_conversation(conversation_id: str, title: str) -> bool:
+    conversation_store = await ConversationStore.get_instance(config)
+    metadata = await conversation_store.get_metadata(conversation_id)
+    if not metadata:
+        return False
+    metadata.title = title
+    await conversation_store.save_metadata(metadata)
+    return True
+
+
+@app.delete('/conversations/{conversation_id}')
+async def delete_conversation(conversation_id: str) -> bool:
+    conversation_store = await ConversationStore.get_instance(config)
+    metadata = await conversation_store.get_metadata(conversation_id)
+    if not metadata or metadata:
+        return False
+    is_running = await session_manager.is_agent_loop_running(conversation_id)
+    if is_running:
+        return False
+    await conversation_store.delete_metadata(conversation_id)
+    return True
