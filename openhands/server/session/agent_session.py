@@ -142,6 +142,7 @@ class AgentSession:
             ChangeAgentStateAction(AgentState.INIT), EventSource.ENVIRONMENT
         )
         print('SET TO RUNNING')
+        await asyncio.sleep(1)
         self._initializing = False
 
     def close(self):
