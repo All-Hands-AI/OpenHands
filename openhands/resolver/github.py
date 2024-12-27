@@ -181,6 +181,11 @@ class GithubIssueHandler(IssueHandlerInterface):
     def get_pull_url(self, pr_number: int):
         return f'https://github.com/{self.owner}/{self.repo}/pull/{pr_number}'
 
+    def get_default_branch_name(self, headers: dict) -> str:
+        response = requests.get(f'{self.base_url}', headers=headers)
+        response.raise_for_status()
+        return response.json()['default_branch']
+
     def create_pull_request(self, data=dict, headers=dict) -> str:
         response = requests.post(f'{self.base_url}/pulls', headers=headers, json=data)
         if response.status_code == 403:

@@ -224,9 +224,7 @@ def send_pull_request(
         if not exists:
             raise ValueError(f'Target branch {target_branch} does not exist')
     else:
-        response = requests.get(f'{base_url}', headers=headers)
-        response.raise_for_status()
-        base_branch = response.json()['default_branch']
+        base_branch = handler.get_default_branch_name(headers=headers)
     print(f'Base branch: {base_branch}')
 
     # Create and checkout the new branch

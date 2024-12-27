@@ -354,6 +354,9 @@ class ServiceContext:
     def branch_exists(self, branch_name: str, headers: dict):
         return self._strategy.branch_exists(branch_name, headers)
 
+    def get_default_branch_name(self, headers: dict) -> str:
+        return self._strategy.get_default_branch_name(headers)
+
     def create_pull_request(self, data=dict, headers=dict):
         return self._strategy.create_pull_request(data, headers)
 
