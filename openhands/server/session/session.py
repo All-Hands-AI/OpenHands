@@ -122,20 +122,24 @@ class Session:
             return
 
     def on_event(self, event: Event):
+        asyncio.get_event_loop().create_task(self._on_event(event))
+
+    async def _on_event(self, event: Event):
         """Callback function for events that mainly come from the agent.
         Event is the base class for any agent action and observation.
 
         Args:
             event: The agent event (Observation or Action).
         """
+        print('server on event', event)
         if isinstance(event, NullAction):
             return
         if isinstance(event, NullObservation):
             return
         if event.source == EventSource.AGENT:
-            self.send(event_to_dict(event))
+            await self.send(event_to_dict(event))
         elif event.source == EventSource.USER:
-            self.send(event_to_dict(event))
+            await self.send(event_to_dict(event))
         # NOTE: ipython observations are not sent here currently
         elif event.source == EventSource.ENVIRONMENT and isinstance(
             event, (CmdOutputObservation, AgentStateChangedObservation)
@@ -143,12 +147,13 @@ class Session:
             # feedback from the environment to agent actions is understood as agent events by the UI
             event_dict = event_to_dict(event)
             event_dict['source'] = EventSource.AGENT
-            self.send(event_dict)
+            await self.send(event_dict)
         elif isinstance(event, ErrorObservation):
             # send error events as agent events to the UI
             event_dict = event_to_dict(event)
             event_dict['source'] = EventSource.AGENT
-            self.send(event_dict)
+            await self.send(event_dict)
+        print('done server on event', event)
 
     async def dispatch(self, data: dict):
         event = event_from_dict(data.copy())
@@ -168,15 +173,21 @@ class Session:
                     return
         self.agent_session.event_stream.add_event(event, EventSource.USER)
 
-    def send(self, data: dict[str, object]):
-        self.loop.create_task(self._send(data))
+    async def send(self, data: dict[str, object]):
+        if asyncio.get_running_loop() != self.loop:
+            self.loop.create_task(self._send(data))
+            return
+        await self._send(data)
 
     async def _send(self, data: dict[str, object]) -> bool:
+        print('server _send', data)
         try:
             if not self.is_alive:
                 return False
             if self.sio:
+                print('emitting', data)
                 await self.sio.emit('oh_event', data, to=ROOM_KEY.format(sid=self.sid))
+                print('done emit', data)
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True

@@ -170,7 +170,7 @@ class Runtime(FileEditRuntimeMixin):
 
     def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
-            asyncio.create_task(self._handle_action(event))
+            asyncio.get_event_loop().run_until_complete(self._handle_action(event))
 
     async def _handle_action(self, event: Action) -> None:
         if event.timeout is None:

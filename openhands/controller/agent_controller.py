@@ -205,7 +205,7 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
-        asyncio.create_task(self._on_event(event))
+        asyncio.get_event_loop().run_until_complete(self._on_event(event))
 
     async def _on_event(self, event: Event) -> None:
         if hasattr(event, 'hidden') and event.hidden:

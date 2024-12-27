@@ -1,6 +1,7 @@
 import asyncio
 import threading
-from dataclasses import dataclass, field
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import field
 from datetime import datetime
 from enum import Enum
 from typing import Callable, Iterable
@@ -52,7 +53,6 @@ class AsyncEventStreamWrapper:
             yield await loop.run_in_executor(None, lambda e=event: e)  # type: ignore
 
 
-@dataclass
 class EventStream:
     sid: str
     file_store: FileStore
@@ -61,6 +61,20 @@ class EventStream:
     _subscribers: dict[str, dict[str, Callable]] = field(default_factory=dict)
     _cur_id: int = 0
     _lock: threading.Lock = field(default_factory=threading.Lock)
+
+    def __init__(self, sid: str, file_store: FileStore, num_workers: int = 1):
+        self.sid = sid
+        self.file_store = file_store
+        self._queue = asyncio.Queue()
+        self._thread_pool = ThreadPoolExecutor(
+            max_workers=num_workers,
+            thread_name_prefix='EventStream',
+            initializer=self._init_thread_loop,
+        )
+        self._task = asyncio.create_task(self._process_queue())
+        self._subscribers = {}
+        self._lock = threading.Lock()
+        self._cur_id = 0
 
     def __post_init__(self) -> None:
         try:
@@ -75,6 +89,10 @@ class EventStream:
             id = self._get_id_from_filename(event_str)
             if id >= self._cur_id:
                 self._cur_id = id + 1
+
+    def _init_thread_loop(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
     def _get_filename_for_id(self, id: int) -> str:
         return get_conversation_event_filename(self.sid, id)
@@ -179,13 +197,6 @@ class EventStream:
         del self._subscribers[subscriber_id][callback_id]
 
     def add_event(self, event: Event, source: EventSource):
-        try:
-            asyncio.get_running_loop().create_task(self._async_add_event(event, source))
-        except RuntimeError:
-            # No event loop running...
-            asyncio.run(self._async_add_event(event, source))
-
-    async def _async_add_event(self, event: Event, source: EventSource):
         if hasattr(event, '_id') and event.id is not None:
             raise ValueError(
                 'Event already has an ID. It was probably added back to the EventStream from inside a handler, trigging a loop.'
@@ -199,11 +210,23 @@ class EventStream:
         data = event_to_dict(event)
         if event.id is not None:
             self.file_store.write(self._get_filename_for_id(event.id), json.dumps(data))
-        for key in sorted(self._subscribers.keys()):
-            callbacks = self._subscribers[key]
-            for callback_id in callbacks:
-                callback = callbacks[callback_id]
-                callback(event)
+        asyncio.create_task(self._queue.put(event))
+
+    async def _process_queue(self):
+        while True:
+            print('Waiting for event')
+            event = await self._queue.get()
+            print('got event')
+            for key in sorted(self._subscribers.keys()):
+                callbacks = self._subscribers[key]
+                for callback_id in callbacks:
+                    callback = callbacks[callback_id]
+                    print('submitting callback')
+                    try:
+                        self._thread_pool.submit(callback, event)
+                    except Exception as e:
+                        print(f'Error submitting callback: {e}')
+                    print('done callback')
 
     def _callback(self, callback: Callable, event: Event):
         asyncio.run(callback(event))
