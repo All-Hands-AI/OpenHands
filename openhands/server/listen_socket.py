@@ -13,6 +13,7 @@ from openhands.events.observation import (
 from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
+from openhands.server.routes.settings import SettingsStoreImpl
 from openhands.server.session.manager import ConversationDoesNotExistError
 from openhands.server.shared import config, openhands_config, session_manager, sio
 from openhands.server.types import AppMode
@@ -32,10 +33,12 @@ async def connect(connection_id: str, environ, auth):
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
 
+    github_token = ''
     if openhands_config.app_mode != AppMode.OSS:
         user_id = ''
         if auth and 'github_token' in auth:
-            with Github(auth['github_token']) as g:
+            github_token = auth['github_token']
+            with Github(github_token) as g:
                 gh_user = await call_sync_from_async(g.get_user)
                 user_id = gh_user.id
 
@@ -51,9 +54,15 @@ async def connect(connection_id: str, environ, auth):
                 f'User {user_id} is not allowed to join conversation {conversation_id}'
             )
 
+    settings_store = await SettingsStoreImpl.get_instance(config, github_token)
+    settings = await settings_store.load()
+
+    if not settings:
+        raise ConnectionRefusedError('Settings not found')
+
     try:
         event_stream = await session_manager.join_conversation(
-            conversation_id, connection_id
+            conversation_id, connection_id, settings
         )
     except ConversationDoesNotExistError:
         logger.error(f'Conversation {conversation_id} does not exist')
