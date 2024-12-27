@@ -1,3 +1,4 @@
+import base64
 import json
 import uuid
 from datetime import datetime
@@ -82,35 +83,60 @@ async def new_conversation(request: Request, data: InitSessionRequest):
 
 
 @app.get('/conversations')
-async def search_conversations(request: Request) -> ConversationResultSet:
+async def search_conversations(
+    request: Request,
+    page_id: str | None = None,
+    limit: int = 20,
+) -> ConversationResultSet:
     file_store = session_manager.file_store
     conversations = []
     try:
-        for path in file_store.list('sessions/') or []:
+        session_ids = [
+            path.split('/')[1]
+            for path in file_store.list('sessions/')
+            if not path.startswith('sessions/.')
+        ]
+        start = 0
+        if page_id:
+            start = int(base64.b64decode(page_id.encode()).decode())
+        end = limit + start
+        next_page_id = None
+        if len(session_ids) > end:
+            next_page_id = base64.b64encode(str(end).encode()).decode()
+        else:
+            end = len(session_ids)
+        running_sessions = await session_manager.get_agent_loop_running(
+            set(session_ids[start:end])
+        )
+        for session_id in session_ids:
             try:
-                session_id = path.split('/')[1]
                 if not session_id.startswith('.'):
-                    events = file_store.list(f'{path}events/')
+                    metadata = json.loads(
+                        file_store.read(f'sessions/{session_id}/metadata.json')
+                    )
+                    title = metadata.get('title', '')
+                    events = file_store.list(f'sessions/{session_id}/events/')
                     events = sorted(events)
                     event_path = events[-1]
                     event = json.loads(file_store.read(event_path))
-                    running = await session_manager.is_agent_loop_running(session_id)
                     conversations.append(
                         ConversationInfo(
                             id=session_id,
-                            title='TODO',
+                            title=title,
                             last_updated_at=datetime.fromisoformat(
                                 event.get('timestamp')
                             ),
                             status=ConversationStatus.RUNNING
-                            if running
+                            if session_id in running_sessions
                             else ConversationStatus.STOPPED,
                         )
                     )
             except Exception:  # type: ignore
                 logger.warning(
-                    f'Error loading path: {path}', exc_info=True, stack_info=True
+                    f'Error loading session: {session_id}',
+                    exc_info=True,
+                    stack_info=True,
                 )
     except Exception:  # type: ignore
         logger.warning('Error loading conversation', exc_info=True, stack_info=True)
-    return ConversationResultSet(results=conversations, next_page_id=None)
+    return ConversationResultSet(results=conversations, next_page_id=next_page_id)
