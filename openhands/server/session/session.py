@@ -133,7 +133,6 @@ class Session:
         Args:
             event: The agent event (Observation or Action).
         """
-        print('server on event', event)
         if isinstance(event, NullAction):
             return
         if isinstance(event, NullObservation):
@@ -155,7 +154,6 @@ class Session:
             event_dict = event_to_dict(event)
             event_dict['source'] = EventSource.AGENT
             await self.send(event_dict)
-        print('done server on event', event)
 
     async def dispatch(self, data: dict):
         event = event_from_dict(data.copy())
@@ -182,14 +180,11 @@ class Session:
         await self._send(data)
 
     async def _send(self, data: dict[str, object]) -> bool:
-        print('server _send', data)
         try:
             if not self.is_alive:
                 return False
             if self.sio:
-                print('emitting', data)
                 await self.sio.emit('oh_event', data, to=ROOM_KEY.format(sid=self.sid))
-                print('done emit', data)
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True

@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import field
 from datetime import datetime
 from enum import Enum
+from queue import Queue
 from typing import Callable, Iterable
 
 from openhands.core.logger import openhands_logger as logger
@@ -65,9 +66,11 @@ class EventStream:
     def __init__(self, sid: str, file_store: FileStore, num_workers: int = 1):
         self.sid = sid
         self.file_store = file_store
-        self._queue: asyncio.Queue[Event] = asyncio.Queue()
+        self._queue: Queue[Event] = Queue()
         self._thread_pools: dict[str, dict[str, ThreadPoolExecutor]] = {}
-        self._task = asyncio.create_task(self._process_queue())
+        self._queue_thread = threading.Thread(target=self._run_queue_loop)
+        self._queue_thread.daemon = True
+        self._queue_thread.start()
         self._subscribers = {}
         self._lock = threading.Lock()
         self._cur_id = 0
@@ -209,12 +212,21 @@ class EventStream:
         data = event_to_dict(event)
         if event.id is not None:
             self.file_store.write(self._get_filename_for_id(event.id), json.dumps(data))
-        asyncio.create_task(self._queue.put(event))
+        print('adding event')
+        self._queue.put(event)
+        print('done add event')
+
+    def _run_queue_loop(self):
+        print('RUN QUEUE LOOP')
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self._process_queue())
 
     async def _process_queue(self):
+        print('PROCESS QUEUE')
         while True:
             print('Waiting for event')
-            event = await self._queue.get()
+            event = self._queue.get()
             print('GOT EVENT', event)
             for key in sorted(self._subscribers.keys()):
                 callbacks = self._subscribers[key]
