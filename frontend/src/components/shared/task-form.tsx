@@ -11,7 +11,6 @@ import {
 } from "#/state/initial-query-slice";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
-import { useSettings } from "#/context/settings-context";
 
 import { SuggestionBubble } from "#/components/features/suggestions/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
@@ -29,7 +28,6 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
   const navigation = useNavigation();
   const navigate = useNavigate();
   const { gitHubToken } = useAuth();
-  const { settings } = useSettings();
 
   const { selectedRepository, files } = useSelector(
     (state: RootState) => state.initialQuery,
@@ -46,7 +44,6 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
       return OpenHands.newConversation({
         githubToken: gitHubToken || undefined,
         selectedRepository: selectedRepository || undefined,
-        args: settings || undefined,
       });
     },
     onSuccess: ({ conversation_id: conversationId }, { q }) => {
