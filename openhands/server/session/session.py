@@ -155,7 +155,6 @@ class Session:
         Args:
             event: The agent event (Observation or Action).
         """
-        print('SERVER ON EVENT')
         if isinstance(event, NullAction):
             return
         if isinstance(event, NullObservation):
@@ -177,7 +176,6 @@ class Session:
             event_dict = event_to_dict(event)
             event_dict['source'] = EventSource.AGENT
             await self.send(event_dict)
-        print('SERVER DONE ON EVENT')
 
     async def dispatch(self, data: dict):
         event = event_from_dict(data.copy())

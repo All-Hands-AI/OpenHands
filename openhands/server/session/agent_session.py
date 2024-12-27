@@ -141,7 +141,6 @@ class AgentSession:
         self.event_stream.add_event(
             ChangeAgentStateAction(AgentState.INIT), EventSource.ENVIRONMENT
         )
-        print('SET TO RUNNING')
         await asyncio.sleep(1)
         self._initializing = False
 
