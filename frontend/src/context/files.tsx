@@ -55,9 +55,7 @@ function FilesProvider({ children }: FilesProviderProps) {
     [paths, setPaths, files, setFileContent, selectedPath, setSelectedPath],
   );
 
-  return (
-    <FilesContext.Provider value={value}>{children}</FilesContext.Provider>
-  );
+  return <FilesContext value={value}>{children}</FilesContext>;
 }
 
 function useFiles() {
