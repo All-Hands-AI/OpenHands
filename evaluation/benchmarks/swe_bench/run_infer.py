@@ -7,6 +7,10 @@ from typing import Any
 import pandas as pd
 import toml
 from datasets import load_dataset
+from swebench.harness.test_spec import (
+    MAP_REPO_VERSION_TO_SPECS,
+)
+from swebench.harness.utils import get_test_directives
 
 import openhands.agenthub
 from evaluation.utils.shared import (
@@ -56,6 +60,15 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     # Prepare instruction
 
+    test_command = ' '.join(
+        [
+            MAP_REPO_VERSION_TO_SPECS[instance['repo']][instance['version']][
+                'test_cmd'
+            ],
+            *get_test_directives(instance),
+        ]
+    )
+
     # Instruction based on Anthropic's official trajectory
     # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
     instruction = (
@@ -75,6 +88,9 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         '3. Edit the sourcecode of the repo to resolve the issue\n'
         '4. Rerun your reproduce script and confirm that the error is fixed!\n'
         '5. Think about edgecases and make sure your fix handles them as well\n'
+        '6. Once you are done, run the test command: `'
+        + test_command
+        + '` to verify your changes. If the test file does not exist, you can skip this step.\n'
         "Your thinking should be thorough and so it's fine if it's very long.\n"
     )
 
