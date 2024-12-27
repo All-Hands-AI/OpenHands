@@ -12,7 +12,7 @@ class S3FileStore(FileStore):
         secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
         endpoint = os.getenv('AWS_S3_ENDPOINT', 's3.amazonaws.com')
         secure = os.getenv('AWS_S3_SECURE', 'true').lower() == 'true'
-        self.bucket = os.getenv('AWS_S3_BUCKET')
+        self.bucket = os.getenv('FILE_STORE_PATH')
         self.client = Minio(endpoint, access_key, secret_key, secure=secure)
 
     def write(self, path: str, contents: str) -> None:
