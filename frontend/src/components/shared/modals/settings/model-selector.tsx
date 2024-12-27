@@ -68,6 +68,7 @@ export function ModelSelector({
             LLM Provider
           </label>
           <Autocomplete
+            data-testid="llm-provider"
             isRequired
             isVirtualized={false}
             name="llm-provider"
@@ -91,7 +92,11 @@ export function ModelSelector({
               {Object.keys(models)
                 .filter((provider) => VERIFIED_PROVIDERS.includes(provider))
                 .map((provider) => (
-                  <AutocompleteItem key={provider} value={provider}>
+                  <AutocompleteItem
+                    data-testid={`provider-item-${provider}`}
+                    key={provider}
+                    value={provider}
+                  >
                     {mapProvider(provider)}
                   </AutocompleteItem>
                 ))}
@@ -113,6 +118,7 @@ export function ModelSelector({
             LLM Model
           </label>
           <Autocomplete
+            data-testid="llm-model"
             isRequired
             isVirtualized={false}
             name="llm-model"
@@ -144,7 +150,11 @@ export function ModelSelector({
               {models[selectedProvider || ""]?.models
                 .filter((model) => !VERIFIED_MODELS.includes(model))
                 .map((model) => (
-                  <AutocompleteItem key={model} value={model}>
+                  <AutocompleteItem
+                    data-testid={`model-item-${model}`}
+                    key={model}
+                    value={model}
+                  >
                     {model}
                   </AutocompleteItem>
                 ))}

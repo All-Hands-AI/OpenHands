@@ -1,10 +1,27 @@
 import { delay, http, HttpResponse } from "msw";
 import { GetConfigResponse } from "#/api/open-hands.types";
-import { ApiSettings } from "#/services/settings";
+import { DEFAULT_SETTINGS } from "#/services/settings";
+
+const userPreferences = {
+  settings: {
+    llm_model: DEFAULT_SETTINGS.LLM_MODEL,
+    llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
+    llm_api_key: DEFAULT_SETTINGS.LLM_API_KEY,
+    agent: DEFAULT_SETTINGS.AGENT,
+    language: DEFAULT_SETTINGS.LANGUAGE,
+    confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,
+    security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
+  },
+};
 
 const openHandsHandlers = [
   http.get("/api/options/models", async () =>
-    HttpResponse.json(["gpt-3.5-turbo", "gpt-4o", "anthropic/claude-3.5"]),
+    HttpResponse.json([
+      "gpt-3.5-turbo",
+      "gpt-4o",
+      "anthropic/claude-3.5",
+      "anthropic/claude-3-5-sonnet-20241022",
+    ]),
   ),
 
   http.get("/api/options/agents", async () =>
@@ -107,17 +124,22 @@ export const handlers = [
 
     return HttpResponse.json(config);
   }),
-  http.get("/api/settings", async () => {
-    const settings: ApiSettings = {
-      llm_model: "anthropic/claude-3.5",
-      llm_base_url: "",
-      llm_api_key: "fake-api-key",
-      agent: "CodeActAgent",
-      language: "en",
-      confirmation_mode: false,
-      security_analyzer: "",
-    };
+  http.get("/api/settings", async () =>
+    HttpResponse.json(userPreferences.settings),
+  ),
+  http.post("/api/settings", async ({ request }) => {
+    const body = await request.json();
 
-    return HttpResponse.json(settings);
+    if (body) {
+      userPreferences.settings = {
+        ...userPreferences.settings,
+        // @ts-expect-error - We know this is a settings object
+        ...body,
+      };
+
+      return HttpResponse.json(null, { status: 200 });
+    }
+
+    return HttpResponse.json(null, { status: 400 });
   }),
 ];
