@@ -347,18 +347,17 @@ class ServiceContext:
     def get_branch_name(
         self,
         base_branch_name: str,
-        headers: dict,
     ):
-        return self._strategy.get_branch_name(base_branch_name, headers)
+        return self._strategy.get_branch_name(base_branch_name)
 
-    def branch_exists(self, branch_name: str, headers: dict):
-        return self._strategy.branch_exists(branch_name, headers)
+    def branch_exists(self, branch_name: str):
+        return self._strategy.branch_exists(branch_name)
 
-    def get_default_branch_name(self, headers: dict) -> str:
-        return self._strategy.get_default_branch_name(headers)
+    def get_default_branch_name(self) -> str:
+        return self._strategy.get_default_branch_name()
 
-    def create_pull_request(self, data=dict, headers=dict):
-        return self._strategy.create_pull_request(data, headers)
+    def create_pull_request(self, data=dict):
+        return self._strategy.create_pull_request(data)
 
     def get_issue_comments(
         self, issue_number: int, comment_id: int | None = None

@@ -205,26 +205,22 @@ def send_pull_request(
     handler = ServiceContext(
         GithubIssueHandler(issue.owner, issue.repo, token, username), llm_config
     )
-    # Set up headers and base URL for GitHub API
-    headers = handler.get_headers()
-    base_url = handler.get_base_url()
 
     # Create a new branch with a unique name
     base_branch_name = f'openhands-fix-issue-{issue.number}'
     branch_name = handler.get_branch_name(
         base_branch_name=base_branch_name,
-        headers=headers,
     )
 
     # Get the default branch or use specified target branch
     print('Getting base branch...')
     if target_branch:
         base_branch = target_branch
-        exists = handler.branch_exists(branch_name=target_branch, headers=headers)
+        exists = handler.branch_exists(branch_name=target_branch)
         if not exists:
             raise ValueError(f'Target branch {target_branch} does not exist')
     else:
-        base_branch = handler.get_default_branch_name(headers=headers)
+        base_branch = handler.get_default_branch_name()
     print(f'Base branch: {base_branch}')
 
     # Create and checkout the new branch
@@ -274,7 +270,7 @@ def send_pull_request(
             'base': base_branch,
             'draft': pr_type == 'draft',
         }
-        url = handler.create_pull_request(data, headers)
+        url = handler.create_pull_request(data)
 
     print(f'{pr_type} created: {url}\n\n--- Title: {pr_title}\n\n--- Body:\n{pr_body}')
 

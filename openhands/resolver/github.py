@@ -44,11 +44,11 @@ class IssueHandlerInterface(ABC):
         pass
 
     @abstractmethod
-    def get_branch_name(self, base_branch_name: str, headers: dict):
+    def get_branch_name(self, base_branch_name: str):
         pass
 
     @abstractmethod
-    def branch_exists(self, branch_name: str, headers: dict) -> bool:
+    def branch_exists(self, branch_name: str) -> bool:
         pass
 
     @abstractmethod
@@ -56,7 +56,7 @@ class IssueHandlerInterface(ABC):
         pass
 
     @abstractmethod
-    def create_pull_request(self, data=dict, headers=dict) -> str:
+    def create_pull_request(self, data=dict) -> str:
         pass
 
 
@@ -161,19 +161,19 @@ class GithubIssueHandler(IssueHandlerInterface):
 
         return all_comments if all_comments else None
 
-    def branch_exists(self, branch_name: str, headers: dict) -> bool:
+    def branch_exists(self, branch_name: str) -> bool:
         print(f'Checking if branch {branch_name} exists...')
         response = requests.get(
-            f'{self.base_url}/branches/{branch_name}', headers=headers
+            f'{self.base_url}/branches/{branch_name}', headers=self.headers
         )
         exists = response.status_code == 200
         print(f'Branch {branch_name} exists: {exists}')
         return exists
 
-    def get_branch_name(self, base_branch_name: str, headers: dict):
+    def get_branch_name(self, base_branch_name: str):
         branch_name = base_branch_name
         attempt = 1
-        while self.branch_exists(branch_name, headers):
+        while self.branch_exists(branch_name):
             attempt += 1
             branch_name = f'{base_branch_name}-try{attempt}'
         return branch_name
@@ -181,13 +181,15 @@ class GithubIssueHandler(IssueHandlerInterface):
     def get_pull_url(self, pr_number: int):
         return f'https://github.com/{self.owner}/{self.repo}/pull/{pr_number}'
 
-    def get_default_branch_name(self, headers: dict) -> str:
-        response = requests.get(f'{self.base_url}', headers=headers)
+    def get_default_branch_name(self) -> str:
+        response = requests.get(f'{self.base_url}', headers=self.headers)
         response.raise_for_status()
         return response.json()['default_branch']
 
-    def create_pull_request(self, data=dict, headers=dict) -> str:
-        response = requests.post(f'{self.base_url}/pulls', headers=headers, json=data)
+    def create_pull_request(self, data=dict) -> str:
+        response = requests.post(
+            f'{self.base_url}/pulls', headers=self.headers, json=data
+        )
         if response.status_code == 403:
             raise RuntimeError(
                 'Failed to create pull request due to missing permissions. '
