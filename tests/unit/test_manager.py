@@ -2,6 +2,7 @@ import asyncio
 import json
 from dataclasses import dataclass
 from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
 
 import pytest
 
@@ -35,8 +36,10 @@ def get_mock_sio(get_message: GetMessageMock | None = None):
 @pytest.mark.asyncio
 async def test_session_not_running_in_cluster():
     sio = get_mock_sio()
+    id = uuid4()
     with (
         patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01),
+        patch('openhands.server.session.manager.uuid4', MagicMock(return_value=id)),
     ):
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
@@ -48,19 +51,27 @@ async def test_session_not_running_in_cluster():
             assert sio.manager.redis.publish.await_count == 1
             sio.manager.redis.publish.assert_called_once_with(
                 'oh_event',
-                '{"sid": "non-existant-session", "message_type": "is_session_running"}',
+                '{"request_id": "'
+                + str(id)
+                + '", "sids": ["non-existant-session"], "message_type": "is_session_running"}',
             )
 
 
 @pytest.mark.asyncio
 async def test_session_is_running_in_cluster():
+    id = uuid4()
     sio = get_mock_sio(
         GetMessageMock(
-            {'sid': 'existing-session', 'message_type': 'session_is_running'}
+            {
+                'request_id': str(id),
+                'sids': ['existing-session'],
+                'message_type': 'session_is_running',
+            }
         )
     )
     with (
         patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.1),
+        patch('openhands.server.session.manager.uuid4', MagicMock(return_value=id)),
     ):
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
@@ -72,7 +83,9 @@ async def test_session_is_running_in_cluster():
             assert sio.manager.redis.publish.await_count == 1
             sio.manager.redis.publish.assert_called_once_with(
                 'oh_event',
-                '{"sid": "existing-session", "message_type": "is_session_running"}',
+                '{"request_id": "'
+                + str(id)
+                + '", "sids": ["existing-session"], "message_type": "is_session_running"}',
             )
 
 
