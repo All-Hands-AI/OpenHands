@@ -449,7 +449,6 @@ class AgentController:
         await self.delegate.set_agent_state_to(AgentState.RUNNING)
 
     async def _step(self) -> None:
-        await asyncio.sleep(0.1)
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
         if self.get_agent_state() != AgentState.RUNNING:
             return
