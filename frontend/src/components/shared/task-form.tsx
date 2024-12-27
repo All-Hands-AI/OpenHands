@@ -22,6 +22,7 @@ import { cn } from "#/utils/utils";
 import { AttachImageLabel } from "../features/images/attach-image-label";
 import { ImageCarousel } from "../features/images/image-carousel";
 import { UploadImageInput } from "../features/images/upload-image-input";
+import { LoadingSpinner } from "./loading-spinner";
 
 interface TaskFormProps {
   ref: React.RefObject<HTMLFormElement | null>;
@@ -114,32 +115,35 @@ export function TaskForm({ ref }: TaskFormProps) {
             "hover:border-neutral-500 focus-within:border-neutral-500",
           )}
         >
-          <ChatInput
-            name="q"
-            onSubmit={() => {
-              if (typeof ref !== "function") ref?.current?.requestSubmit();
-            }}
-            onChange={(message) => setText(message)}
-            onFocus={() => setInputIsFocused(true)}
-            onBlur={() => setInputIsFocused(false)}
-            onImagePaste={async (imageFiles) => {
-              const promises = imageFiles.map(convertImageToBase64);
-              const base64Images = await Promise.all(promises);
-              base64Images.forEach((base64) => {
-                dispatch(addFile(base64));
-              });
-            }}
-            placeholder={placeholder}
-            value={text}
-            maxRows={15}
-            showButton={!!text}
-            className="text-[17px] leading-5 py-[17px]"
-            buttonClassName="pb-[17px]"
-            disabled={
-              navigation.state === "submitting" ||
-              newConversationMutation.isPending
-            }
-          />
+          {newConversationMutation.isPending ? (
+            <div className="flex justify-center py-[17px]">
+              <LoadingSpinner size="small" />
+            </div>
+          ) : (
+            <ChatInput
+              name="q"
+              onSubmit={() => {
+                if (typeof ref !== "function") ref?.current?.requestSubmit();
+              }}
+              onChange={(message) => setText(message)}
+              onFocus={() => setInputIsFocused(true)}
+              onBlur={() => setInputIsFocused(false)}
+              onImagePaste={async (imageFiles) => {
+                const promises = imageFiles.map(convertImageToBase64);
+                const base64Images = await Promise.all(promises);
+                base64Images.forEach((base64) => {
+                  dispatch(addFile(base64));
+                });
+              }}
+              placeholder={placeholder}
+              value={text}
+              maxRows={15}
+              showButton={!!text}
+              className="text-[17px] leading-5 py-[17px]"
+              buttonClassName="pb-[17px]"
+              disabled={navigation.state === "submitting"}
+            />
+          )}
         </div>
       </form>
       <UploadImageInput

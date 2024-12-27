@@ -1,6 +1,6 @@
 import { openHands } from "#/api/open-hands-axios";
 
-export const LATEST_SETTINGS_VERSION = 4;
+export const LATEST_SETTINGS_VERSION = 5;
 
 export type Settings = {
   LLM_MODEL: string;
@@ -45,54 +45,8 @@ export const getCurrentSettingsVersion = () => {
 export const settingsAreUpToDate = () =>
   getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
 
-export const maybeMigrateSettings = (logout: () => void) => {
-  // Sometimes we ship major changes, like a new default agent.
-  // In this case, we may want to override a previous choice made by the user.
-  const currentVersion = getCurrentSettingsVersion();
-
-  if (currentVersion < 1) {
-    localStorage.setItem("AGENT", DEFAULT_SETTINGS.AGENT);
-  }
-  if (currentVersion < 2) {
-    const customModel = localStorage.getItem("CUSTOM_LLM_MODEL");
-    if (customModel) {
-      localStorage.setItem("LLM_MODEL", customModel);
-    }
-    localStorage.removeItem("CUSTOM_LLM_MODEL");
-    localStorage.removeItem("USING_CUSTOM_MODEL");
-  }
-  if (currentVersion < 3) {
-    localStorage.removeItem("token");
-  }
-
-  if (currentVersion < 4) {
-    logout();
-  }
-};
-
-/**
- * Get the default settings
- */
-export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
-
-/**
- * Get the settings from the server or use the default settings if not found
- */
-export const getSettings = async (): Promise<Settings> => {
-  const { data: apiSettings } =
-    await openHands.get<ApiSettings>("/api/settings");
-  if (apiSettings != null) {
-    return {
-      LLM_MODEL: apiSettings.llm_model,
-      LLM_BASE_URL: apiSettings.llm_base_url,
-      AGENT: apiSettings.agent,
-      LANGUAGE: apiSettings.language,
-      CONFIRMATION_MODE: apiSettings.confirmation_mode,
-      SECURITY_ANALYZER: apiSettings.security_analyzer,
-      LLM_API_KEY: "",
-    };
-  }
-
+// TODO: localStorage settings are deprecated. Remove this after 1/31/2025
+export const getLocalStorageSettings = (): Settings => {
   const llmModel = localStorage.getItem("LLM_MODEL");
   const baseUrl = localStorage.getItem("LLM_BASE_URL");
   const agent = localStorage.getItem("AGENT");
@@ -133,7 +87,61 @@ export const saveSettings = async (
     const { data } = await openHands.post("/api/settings", apiSettings);
     return data;
   } catch (error) {
-    console.error("Error saving settings:", error);
     return false;
   }
+};
+
+export const maybeMigrateSettings = async (logout: () => void) => {
+  // Sometimes we ship major changes, like a new default agent.
+  // In this case, we may want to override a previous choice made by the user.
+  const currentVersion = getCurrentSettingsVersion();
+
+  if (currentVersion < 1) {
+    localStorage.setItem("AGENT", DEFAULT_SETTINGS.AGENT);
+  }
+  if (currentVersion < 2) {
+    const customModel = localStorage.getItem("CUSTOM_LLM_MODEL");
+    if (customModel) {
+      localStorage.setItem("LLM_MODEL", customModel);
+    }
+    localStorage.removeItem("CUSTOM_LLM_MODEL");
+    localStorage.removeItem("USING_CUSTOM_MODEL");
+  }
+  if (currentVersion < 3) {
+    localStorage.removeItem("token");
+  }
+
+  if (currentVersion < 4) {
+    logout();
+  }
+
+  if (currentVersion < 5) {
+    const localSettings = getLocalStorageSettings();
+    await saveSettings(localSettings);
+  }
+};
+
+/**
+ * Get the default settings
+ */
+export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
+
+/**
+ * Get the settings from the server or use the default settings if not found
+ */
+export const getSettings = async (): Promise<Settings> => {
+  const { data: apiSettings } =
+    await openHands.get<ApiSettings>("/api/settings");
+  if (apiSettings != null) {
+    return {
+      LLM_MODEL: apiSettings.llm_model,
+      LLM_BASE_URL: apiSettings.llm_base_url,
+      AGENT: apiSettings.agent,
+      LANGUAGE: apiSettings.language,
+      CONFIRMATION_MODE: apiSettings.confirmation_mode,
+      SECURITY_ANALYZER: apiSettings.security_analyzer,
+      LLM_API_KEY: "",
+    };
+  }
+  return getLocalStorageSettings();
 };
