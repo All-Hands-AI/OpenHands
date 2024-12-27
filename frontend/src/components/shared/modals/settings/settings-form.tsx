@@ -86,13 +86,13 @@ export function SettingsForm({
     }
   };
 
-  const handleFormSubmission = (formData: FormData) => {
+  const handleFormSubmission = async (formData: FormData) => {
     const keys = Array.from(formData.keys());
     const isUsingAdvancedOptions = keys.includes("use-advanced-options");
     const newSettings = extractSettings(formData);
 
     saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
-    saveSettings(newSettings);
+    await saveSettings(newSettings);
     resetOngoingSession();
 
     posthog.capture("settings_saved", {
@@ -101,8 +101,8 @@ export function SettingsForm({
     });
   };
 
-  const handleConfirmResetSettings = () => {
-    saveSettings(getDefaultSettings());
+  const handleConfirmResetSettings = async () => {
+    await saveSettings(getDefaultSettings());
     resetOngoingSession();
     posthog.capture("settings_reset");
 
