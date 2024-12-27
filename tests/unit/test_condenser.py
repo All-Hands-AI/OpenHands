@@ -10,10 +10,12 @@ from openhands.core.config.condenser_config import (
     LLMAttentionCondenserConfig,
     LLMSummarizingCondenserConfig,
     NoOpCondenserConfig,
+    ObservationMaskingCondenserConfig,
     RecentEventsCondenserConfig,
 )
 from openhands.core.config.llm_config import LLMConfig
 from openhands.events.event import Event, EventSource
+from openhands.events.observation.observation import Observation
 from openhands.llm import LLM
 from openhands.memory.condenser import (
     AmortizedForgettingCondenser,
@@ -22,6 +24,7 @@ from openhands.memory.condenser import (
     LLMAttentionCondenser,
     LLMSummarizingCondenser,
     NoOpCondenser,
+    ObservationMaskingCondenser,
     RecentEventsCondenser,
 )
 
@@ -102,6 +105,45 @@ def test_noop_condenser():
     result = condenser.condensed_history(mock_state)
 
     assert result == events
+
+
+def test_observation_masking_condenser_from_config():
+    """Test that ObservationMaskingCondenser objects can be made from config."""
+    attention_window = 5
+    config = ObservationMaskingCondenserConfig(attention_window=attention_window)
+    condenser = Condenser.from_config(config)
+
+    assert isinstance(condenser, ObservationMaskingCondenser)
+    assert condenser.attention_window == attention_window
+
+
+def test_observation_masking_condenser_respects_attention_window(mock_state):
+    """Test that ObservationMaskingCondenser only masks events outside the attention window."""
+    attention_window = 3
+    condenser = ObservationMaskingCondenser(attention_window=attention_window)
+
+    events = [
+        create_test_event('Event 1'),
+        Observation('Observation 1'),
+        create_test_event('Event 3'),
+        create_test_event('Event 4'),
+        Observation('Observation 2'),
+    ]
+
+    mock_state.history = events
+    result = condenser.condensed_history(mock_state)
+
+    assert len(result) == len(events)
+
+    for index, (event, condensed_event) in enumerate(zip(events, result)):
+        # If we're outside the attention window, observations should be masked.
+        if index < len(events) - attention_window:
+            if isinstance(event, Observation):
+                assert '<MASKED>' in str(condensed_event)
+
+        # If we're within the attention window, events are unchanged.
+        else:
+            assert event == condensed_event
 
 
 def test_recent_events_condenser_from_config():
