@@ -123,17 +123,17 @@ def _get_conversation_info(session_id: str, is_running: bool, file_store: FileSt
     metadata = json.loads(
         file_store.read(f'sessions/{session_id}/metadata.json')
     )
-    title = metadata.get('title', '')
     events = file_store.list(f'sessions/{session_id}/events/')
     events = sorted(events)
     event_path = events[-1]
     event = json.loads(file_store.read(event_path))
     return ConversationInfo(
         id=session_id,
-        title=title,
+        title=metadata.get('title', ''),
         last_updated_at=datetime.fromisoformat(
             event.get('timestamp')
         ),
+        selected_repository=metadata.get('selected_repository'),
         status=ConversationStatus.RUNNING
         if is_running
         else ConversationStatus.STOPPED,
