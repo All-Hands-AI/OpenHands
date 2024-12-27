@@ -24,7 +24,7 @@ import { useGetTraces } from "#/hooks/query/use-get-traces";
 
 type SectionType = "logs" | "policy" | "settings";
 
-function SecurityInvariant(): JSX.Element {
+function SecurityInvariant() {
   const { t } = useTranslation();
   const { logs } = useSelector((state: RootState) => state.securityAnalyzer);
 
@@ -122,7 +122,7 @@ function SecurityInvariant(): JSX.Element {
     [],
   );
 
-  const sections: { [key in SectionType]: JSX.Element } = {
+  const sections: Record<SectionType, React.ReactNode> = {
     logs: (
       <>
         <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
