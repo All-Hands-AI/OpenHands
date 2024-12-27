@@ -61,6 +61,7 @@ class SessionManager:
     )
 
     async def __aenter__(self):
+        print('CREATE SESSION MAN')
         redis_client = self._get_redis_client()
         if redis_client:
             self._redis_listen_task = asyncio.create_task(self._redis_subscribe())
@@ -227,6 +228,7 @@ class SessionManager:
                     self._detached_conversations[sid] = (conversation, time.time())
 
     async def _cleanup_detached_conversations(self):
+        print('SET UP CLEANUP')
         while should_continue():
             if self._get_redis_client():
                 # Debug info for HA envs
