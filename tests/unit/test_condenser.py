@@ -181,30 +181,18 @@ def test_llm_condenser_from_config():
     assert condenser.llm.config.api_key == 'test_key'
 
 
-def test_llm_condenser():
+def test_llm_condenser(mock_llm, mock_state):
     """Test that LLMCondensers use the LLM to generate a summary event."""
     events = [
         create_test_event('Event 1'),
         create_test_event('Event 2'),
     ]
-
-    mock_state = MagicMock()
     mock_state.history = events
-    mock_state.extra_data = {}
 
-    mock_llm = MagicMock()
-
-    # The LLM returns an object that we index into and treat as a pydantic model, so we have a couple of access patterns to mock.
-    mock_response = MagicMock()
-    mock_response.model_dump.return_value = {
-        'choices': [{'message': {'content': 'Summary of events'}}]
-    }
-    mock_response.__getitem__.return_value = [
-        {'message': {'content': 'Summary of events'}}
-    ]
-    mock_llm.completion.return_value = mock_response
     mock_llm.metrics = MagicMock()
     mock_llm.metrics.get.return_value = {'test_metric': 1.0}
+
+    mock_llm.set_mock_response_content('Summary of events')
 
     condenser = LLMSummarizingCondenser(llm=mock_llm)
     result = condenser.condensed_history(mock_state)
@@ -363,7 +351,9 @@ def test_llm_attention_condenser_keeps_first_events(mock_llm, mock_state):
         mock_state.history.append(event)
 
         mock_llm.set_mock_response_content(
-            ImportantEventSelection(ids=[event.id for event in mock_state.history])
+            ImportantEventSelection(
+                ids=[event.id for event in mock_state.history]
+            ).model_dump_json()
         )
         results = condenser.condensed_history(mock_state)
 
@@ -398,7 +388,9 @@ def test_llm_attention_condenser_forgets_when_larger_than_max_size(
         mock_state.history.append(event)
 
         mock_llm.set_mock_response_content(
-            ImportantEventSelection(ids=[event.id for event in mock_state.history])
+            ImportantEventSelection(
+                ids=[event.id for event in mock_state.history]
+            ).model_dump_json()
         )
 
         results = condenser.condensed_history(mock_state)
@@ -419,7 +411,7 @@ def test_llm_attention_condenser_handles_events_outside_history(mock_llm, mock_s
         mock_llm.set_mock_response_content(
             ImportantEventSelection(
                 ids=[event.id for event in mock_state.history] + [-1, -2, -3, -4]
-            )
+            ).model_dump_json()
         )
         results = condenser.condensed_history(mock_state)
 
@@ -439,7 +431,7 @@ def test_llm_attention_condenser_handles_too_many_events(mock_llm, mock_state):
             ImportantEventSelection(
                 ids=[event.id for event in mock_state.history]
                 + [event.id for event in mock_state.history]
-            )
+            ).model_dump_json()
         )
         results = condenser.condensed_history(mock_state)
 
@@ -456,7 +448,9 @@ def test_llm_attention_condenser_handles_too_few_events(mock_llm, mock_state):
         event = create_test_event(f'Event {i}', id=i)
         mock_state.history.append(event)
 
-        mock_llm.set_mock_response_content(ImportantEventSelection(ids=[]))
+        mock_llm.set_mock_response_content(
+            ImportantEventSelection(ids=[]).model_dump_json()
+        )
 
         results = condenser.condensed_history(mock_state)
 

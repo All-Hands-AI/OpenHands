@@ -15,6 +15,7 @@ from openhands.core.config.condenser_config import (
     LLMAttentionCondenserConfig,
     LLMSummarizingCondenserConfig,
     NoOpCondenserConfig,
+    ObservationMaskingCondenserConfig,
     RecentEventsCondenserConfig,
 )
 from openhands.core.logger import openhands_logger as logger
@@ -124,6 +125,11 @@ class Condenser(ABC):
         match config:
             case NoOpCondenserConfig():
                 return NoOpCondenser()
+
+            case ObservationMaskingCondenserConfig():
+                return ObservationMaskingCondenser(
+                    **config.model_dump(exclude=['type'])
+                )
 
             case RecentEventsCondenserConfig():
                 return RecentEventsCondenser(**config.model_dump(exclude=['type']))
@@ -370,10 +376,19 @@ class LLMAttentionCondenser(RollingCondenser):
                     for e in events
                 ],
             ],
-            response_format=ImportantEventSelection,
+            response_format={
+                'type': 'json_schema',
+                'json_schema': {
+                    'name': 'ImportantEventSelection',
+                    'schema': ImportantEventSelection.model_json_schema(),
+                },
+            },
+            # response_format=ImportantEventSelection,
         )
 
-        response_ids = response.choices[0].message.content.ids
+        response_ids = ImportantEventSelection.model_validate_json(
+            response.choices[0].message.content
+        ).ids
 
         self.add_metadata('all_event_ids', [event.id for event in events])
         self.add_metadata('response_ids', response_ids)
