@@ -4,7 +4,10 @@ from dataclasses import dataclass
 from openhands.core.config.app_config import AppConfig
 from openhands.storage import get_file_store
 from openhands.storage.files import FileStore
-from openhands.storage.locations import get_conversation_dir, get_conversation_metadata_filename
+from openhands.storage.locations import (
+    get_conversation_dir,
+    get_conversation_metadata_filename,
+)
 from openhands.utils.async_utils import call_sync_from_async
 
 
@@ -29,7 +32,7 @@ class ConversationStore:
         path = get_conversation_metadata_filename(conversation_id)
         json_str = await call_sync_from_async(self.file_store.read, path)
         return ConversationMetadata(**json.loads(json_str))
-    
+
     async def delete_metadata(self, conversation_id: str) -> None:
         conversation_dir = get_conversation_dir(conversation_id)
         await call_sync_from_async(self.file_store.delete, conversation_dir)

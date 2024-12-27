@@ -104,7 +104,9 @@ async def search_conversations(
     running_sessions = await session_manager.get_agent_loop_running(set(session_ids))
     for session_id in session_ids:
         is_running = session_id in running_sessions
-        conversation_info = await _get_conversation_info(session_id, is_running, file_store)
+        conversation_info = await _get_conversation_info(
+            session_id, is_running, file_store
+        )
         if conversation_info:
             conversations.append(conversation_info)
     return ConversationResultSet(results=conversations, next_page_id=next_page_id)
@@ -143,7 +145,9 @@ async def _get_conversation_info(
 async def get_conversation(conversation_id: str) -> ConversationInfo | None:
     file_store = session_manager.file_store
     is_running = await session_manager.is_agent_loop_running(conversation_id)
-    conversation_info = await _get_conversation_info(conversation_id, is_running, file_store)
+    conversation_info = await _get_conversation_info(
+        conversation_id, is_running, file_store
+    )
     return conversation_info
 
 
