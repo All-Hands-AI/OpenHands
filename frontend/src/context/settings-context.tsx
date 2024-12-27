@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getSettings,
   Settings,
-  saveSettings as updateAndSaveSettingsToLocalStorage,
+  saveSettings,
   settingsAreUpToDate as checkIfSettingsAreUpToDate,
   DEFAULT_SETTINGS,
 } from "#/services/settings";
@@ -33,8 +33,9 @@ function SettingsProvider({ children }: React.PropsWithChildren) {
   );
   const queryClient = useQueryClient();
 
-  const saveSettings = (newSettings: Partial<Settings>) => {
-    updateAndSaveSettingsToLocalStorage(newSettings);
+  const handleSaveSettings = async (newSettings: Partial<Settings>) => {
+    console.log('handle save');
+    await saveSettings(newSettings);
     queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY });
     setSettingsAreUpToDate(checkIfSettingsAreUpToDate());
   };
@@ -49,7 +50,7 @@ function SettingsProvider({ children }: React.PropsWithChildren) {
     () => ({
       settings,
       settingsAreUpToDate,
-      saveSettings,
+      handleSaveSettings,
     }),
     [settings, settingsAreUpToDate],
   );
