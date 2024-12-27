@@ -333,25 +333,27 @@ def update_existing_pull_request(
 
     Args:
         issue: The issue to update.
-        token: The GitHub token to use for authentication.
-        username: The GitHub username to use for authentication.
+        token: The  token to use for authentication.
+        username: The username to use for authentication.
         patch_dir: The directory containing the patches to apply.
         llm_config: The LLM configuration to use for summarizing changes.
         comment_message: The main message to post as a comment on the PR.
         additional_message: The additional messages to post as a comment on the PR in json list format.
     """
     # Set up headers and base URL for GitHub API
-    headers = {
-        'Authorization': f'token {token}',
-        'Accept': 'application/vnd.github.v3+json',
-    }
-    base_url = f'https://api.github.com/repos/{issue.owner}/{issue.repo}'
+
+    handler = ServiceContext(
+        GithubIssueHandler(issue.owner, issue.repo, token, username), llm_config
+    )
+
+    headers = handler.get_headers()
+    base_url = handler.get_base_url()
     branch_name = issue.head_branch
 
     # Push the changes to the existing branch
     push_command = (
         f'git -C {patch_dir} push '
-        f'https://{username}:{token}@github.com/'
+        f'{handler.get_authorize_url()}'
         f'{issue.owner}/{issue.repo}.git {branch_name}'
     )
 
@@ -360,7 +362,7 @@ def update_existing_pull_request(
         print(f'Error pushing changes: {result.stderr}')
         raise RuntimeError('Failed to push changes to the remote repository')
 
-    pr_url = f'https://github.com/{issue.owner}/{issue.repo}/pull/{issue.number}'
+    pr_url = handler.get_pull_url(issue.number)
     print(f'Updated pull request {pr_url} with new patches.')
 
     # Generate a summary of all comment success indicators for PR message
