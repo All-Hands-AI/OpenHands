@@ -276,16 +276,7 @@ def send_pull_request(
             'base': base_branch,
             'draft': pr_type == 'draft',
         }
-        response = requests.post(f'{base_url}/pulls', headers=headers, json=data)
-        if response.status_code == 403:
-            raise RuntimeError(
-                'Failed to create pull request due to missing permissions. '
-                'Make sure that the provided token has push permissions for the repository.'
-            )
-        response.raise_for_status()
-        pr_data = response.json()
-
-        url = pr_data['html_url']
+        url = handler.create_pull_request(data, headers)
 
     print(f'{pr_type} created: {url}\n\n--- Title: {pr_title}\n\n--- Body:\n{pr_body}')
 

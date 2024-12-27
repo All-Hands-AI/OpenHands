@@ -54,7 +54,10 @@ class IssueHandlerInterface(ABC):
     @abstractmethod
     def get_authorize_url(self):
         pass
-
+    
+    @abstractmethod
+    def create_pull_request(self, data=dict, headers=dict) -> str:
+        pass
 
 class GithubIssueHandler(IssueHandlerInterface):
     def __init__(self, owner: str, repo: str, token: str, username: str | None = None):
@@ -177,6 +180,16 @@ class GithubIssueHandler(IssueHandlerInterface):
     def get_pull_url(self, pr_number: int):
         return f'https://github.com/{self.owner}/{self.repo}/pull/{pr_number}'
 
+    def create_pull_request(self, data=dict, headers=dict) -> str:
+        response = requests.post(f'{self.base_url}/pulls', headers=headers, json=data)
+        if response.status_code == 403:
+            raise RuntimeError(
+                'Failed to create pull request due to missing permissions. '
+                'Make sure that the provided token has push permissions for the repository.'
+            )
+        response.raise_for_status()
+        pr_data = response.json()
+        return pr_data['html_url']
 
 class GithubPRHandler(GithubIssueHandler):
     def __init__(self, owner: str, repo: str, token: str):
