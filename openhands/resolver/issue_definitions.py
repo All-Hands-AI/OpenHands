@@ -320,6 +320,9 @@ class ServiceContext:
     def get_base_url(self):
         return self._strategy.get_base_url()
 
+    def get_branch_url(self, branch_name):
+        return self._strategy.get_branch_url(branch_name)
+
     def get_download_url(self):
         return self._strategy.get_download_url()
 
