@@ -221,6 +221,7 @@ export function SettingsForm({
       {confirmResetDefaultsModalOpen && (
         <ModalBackdrop>
           <DangerModal
+            testId="reset-defaults-modal"
             title={t(I18nKey.SETTINGS_FORM$ARE_YOU_SURE_LABEL)}
             description={t(
               I18nKey.SETTINGS_FORM$ALL_INFORMATION_WILL_BE_DELETED_MESSAGE,
