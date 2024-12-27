@@ -34,7 +34,6 @@ function SettingsProvider({ children }: React.PropsWithChildren) {
   const queryClient = useQueryClient();
 
   const handleSaveSettings = async (newSettings: Partial<Settings>) => {
-    console.log('handle save');
     await saveSettings(newSettings);
     queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY });
     setSettingsAreUpToDate(checkIfSettingsAreUpToDate());
