@@ -65,7 +65,7 @@ class EventStream:
     def __init__(self, sid: str, file_store: FileStore, num_workers: int = 1):
         self.sid = sid
         self.file_store = file_store
-        self._queue = asyncio.Queue()
+        self._queue: asyncio.Queue[Event] = asyncio.Queue()
         self._thread_pool = ThreadPoolExecutor(
             max_workers=num_workers,
             thread_name_prefix='EventStream',
@@ -216,17 +216,17 @@ class EventStream:
         while True:
             print('Waiting for event')
             event = await self._queue.get()
-            print('got event')
+            print('GOT EVENT', event)
             for key in sorted(self._subscribers.keys()):
                 callbacks = self._subscribers[key]
                 for callback_id in callbacks:
                     callback = callbacks[callback_id]
-                    print('submitting callback')
+                    print('DO CALLBACK', key, callback_id, event)
                     try:
                         self._thread_pool.submit(callback, event)
                     except Exception as e:
                         print(f'Error submitting callback: {e}')
-                    print('done callback')
+                    print('DONE CALLBACK', key, callback_id, event)
 
     def _callback(self, callback: Callable, event: Event):
         asyncio.run(callback(event))
