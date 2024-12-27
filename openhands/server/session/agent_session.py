@@ -139,10 +139,10 @@ class AgentSession:
             agent_configs=agent_configs,
         )
         self.event_stream.add_event(
-            ChangeAgentStateAction(AgentState.RUNNING), EventSource.ENVIRONMENT
+            ChangeAgentStateAction(AgentState.INIT), EventSource.ENVIRONMENT
         )
+        print('SET TO RUNNING')
         self._initializing = False
-        self.controller.step()
 
     def close(self):
         """Closes the Agent session"""

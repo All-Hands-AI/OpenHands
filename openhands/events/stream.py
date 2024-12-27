@@ -179,6 +179,7 @@ class EventStream:
         del self._subscribers[subscriber_id][callback_id]
 
     def add_event(self, event: Event, source: EventSource):
+        print('ADD EVENT', event)
         try:
             asyncio.get_running_loop().create_task(self._async_add_event(event, source))
         except RuntimeError:
@@ -193,6 +194,7 @@ class EventStream:
         with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
+        print('ID', event.id)
         logger.debug(f'Adding {type(event).__name__} id={event.id} from {source.name}')
         event._timestamp = datetime.now().isoformat()
         event._source = source  # type: ignore [attr-defined]
@@ -203,10 +205,13 @@ class EventStream:
         for key in sorted(self._subscribers.keys()):
             callbacks = self._subscribers[key]
             for callback_id in callbacks:
+                print('CALLBACK ID', key, callback_id)
                 callback = callbacks[callback_id]
                 tasks.append(asyncio.create_task(callback(event)))
         if tasks:
+            print('waiting')
             await asyncio.wait(tasks)
+            print('done waiting')
 
     def _callback(self, callback: Callable, event: Event):
         asyncio.run(callback(event))
