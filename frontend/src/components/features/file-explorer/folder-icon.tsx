@@ -4,7 +4,7 @@ interface FolderIconProps {
   isOpen: boolean;
 }
 
-export function FolderIcon({ isOpen }: FolderIconProps): JSX.Element {
+export function FolderIcon({ isOpen }: FolderIconProps) {
   return isOpen ? (
     <FaFolderOpen color="D9D3D0" className="icon" />
   ) : (

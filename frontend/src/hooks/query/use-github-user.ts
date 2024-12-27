@@ -6,7 +6,7 @@ import { useAuth } from "#/context/auth-context";
 import { useConfig } from "./use-config";
 
 export const useGitHubUser = () => {
-  const { gitHubToken } = useAuth();
+  const { gitHubToken, setUserId } = useAuth();
   const { data: config } = useConfig();
 
   const user = useQuery({
@@ -18,6 +18,7 @@ export const useGitHubUser = () => {
 
   React.useEffect(() => {
     if (user.data) {
+      setUserId(user.data.id.toString());
       posthog.identify(user.data.login, {
         company: user.data.company,
         name: user.data.name,
