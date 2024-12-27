@@ -151,11 +151,7 @@ export function WsClientProvider({
     [status, messageRateHandler.isUnderThreshold, events],
   );
 
-  return (
-    <WsClientContext.Provider value={value}>
-      {children}
-    </WsClientContext.Provider>
-  );
+  return <WsClientContext value={value}>{children}</WsClientContext>;
 }
 
 export function useWsClient() {
