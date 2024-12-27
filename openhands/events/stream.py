@@ -66,11 +66,7 @@ class EventStream:
         self.sid = sid
         self.file_store = file_store
         self._queue: asyncio.Queue[Event] = asyncio.Queue()
-        self._thread_pool = ThreadPoolExecutor(
-            max_workers=num_workers,
-            thread_name_prefix='EventStream',
-            initializer=self._init_thread_loop,
-        )
+        self._thread_pools: dict[str, dict[str, ThreadPoolExecutor]] = {}
         self._task = asyncio.create_task(self._process_queue())
         self._subscribers = {}
         self._lock = threading.Lock()
@@ -175,8 +171,10 @@ class EventStream:
     def subscribe(
         self, subscriber_id: EventStreamSubscriber, callback: Callable, callback_id: str
     ):
+        pool = ThreadPoolExecutor(max_workers=1, initializer=self._init_thread_loop)
         if subscriber_id not in self._subscribers:
             self._subscribers[subscriber_id] = {}
+            self._thread_pools[subscriber_id] = {}
 
         if callback_id in self._subscribers[subscriber_id]:
             raise ValueError(
@@ -184,6 +182,7 @@ class EventStream:
             )
 
         self._subscribers[subscriber_id][callback_id] = callback
+        self._thread_pools[subscriber_id][callback_id] = pool
 
     def unsubscribe(self, subscriber_id: EventStreamSubscriber, callback_id: str):
         if subscriber_id not in self._subscribers:
@@ -221,9 +220,10 @@ class EventStream:
                 callbacks = self._subscribers[key]
                 for callback_id in callbacks:
                     callback = callbacks[callback_id]
+                    pool = self._thread_pools[key][callback_id]
                     print('DO CALLBACK', key, callback_id, event)
                     try:
-                        self._thread_pool.submit(callback, event)
+                        pool.submit(callback, event)
                     except Exception as e:
                         print(f'Error submitting callback: {e}')
                     print('DONE CALLBACK', key, callback_id, event)
