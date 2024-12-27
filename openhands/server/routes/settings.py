@@ -38,7 +38,7 @@ async def load_settings(
 async def store_settings(
     request: Request,
     settings: Settings,
-) -> bool:
+) -> JSONResponse:
     github_token = ''
     if hasattr(request.state, 'github_token'):
         github_token = request.state.github_token
@@ -50,7 +50,10 @@ async def store_settings(
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
         await settings_store.store(settings)
-        return True
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings stored'},
+        )
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
         return JSONResponse(
