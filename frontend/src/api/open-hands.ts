@@ -250,16 +250,16 @@ class OpenHands {
 
   static async newConversation(params: {
     githubToken?: string;
-    args?: Record<string, unknown>;
     selectedRepository?: string;
   }): Promise<{ conversation_id: string }> {
     const { data } = await openHands.post<{
       conversation_id: string;
     }>("/api/conversations", {
       github_token: params.githubToken,
-      args: params.args,
       selected_repository: params.selectedRepository,
     });
+    // TODO: remove this once we have a multi-conversation UI
+    localStorage.setItem("latest_conversation_id", data.conversation_id);
     return data;
   }
 }

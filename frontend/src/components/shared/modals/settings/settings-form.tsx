@@ -7,13 +7,9 @@ import { getDefaultSettings, Settings } from "#/services/settings";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
 import { DangerModal } from "../confirmation-modals/danger-modal";
 import { I18nKey } from "#/i18n/declaration";
-import {
-  extractSettings,
-  saveSettingsView,
-  updateSettingsVersion,
-} from "#/utils/settings-utils";
+import { extractSettings, saveSettingsView } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
-import { useUserPrefs } from "#/context/user-prefs-context";
+import { useSettings } from "#/context/settings-context";
 import { ModalButton } from "../../buttons/modal-button";
 import { AdvancedOptionSwitch } from "../../inputs/advanced-option-switch";
 import { AgentInput } from "../../inputs/agent-input";
@@ -24,7 +20,6 @@ import { CustomModelInput } from "../../inputs/custom-model-input";
 import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
-import { useAuth } from "#/context/auth-context";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -43,9 +38,8 @@ export function SettingsForm({
   securityAnalyzers,
   onClose,
 }: SettingsFormProps) {
-  const { saveSettings } = useUserPrefs();
+  const { saveSettings } = useSettings();
   const endSession = useEndSession();
-  const { logout } = useAuth();
 
   const location = useLocation();
   const { t } = useTranslation();
@@ -84,7 +78,6 @@ export function SettingsForm({
     React.useState(false);
   const [confirmEndSessionModalOpen, setConfirmEndSessionModalOpen] =
     React.useState(false);
-  const [showWarningModal, setShowWarningModal] = React.useState(false);
 
   const resetOngoingSession = () => {
     if (location.pathname.startsWith("/conversations/")) {
@@ -93,14 +86,13 @@ export function SettingsForm({
     }
   };
 
-  const handleFormSubmission = (formData: FormData) => {
+  const handleFormSubmission = async (formData: FormData) => {
     const keys = Array.from(formData.keys());
     const isUsingAdvancedOptions = keys.includes("use-advanced-options");
     const newSettings = extractSettings(formData);
 
     saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
-    updateSettingsVersion(logout);
-    saveSettings(newSettings);
+    await saveSettings(newSettings);
     resetOngoingSession();
 
     posthog.capture("settings_saved", {
@@ -109,8 +101,8 @@ export function SettingsForm({
     });
   };
 
-  const handleConfirmResetSettings = () => {
-    saveSettings(getDefaultSettings());
+  const handleConfirmResetSettings = async () => {
+    await saveSettings(getDefaultSettings());
     resetOngoingSession();
     posthog.capture("settings_reset");
 
@@ -125,36 +117,13 @@ export function SettingsForm({
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const apiKey = formData.get("api-key");
 
-    if (!apiKey) {
-      setShowWarningModal(true);
-    } else if (location.pathname.startsWith("/conversations/")) {
+    if (location.pathname.startsWith("/conversations/")) {
       setConfirmEndSessionModalOpen(true);
     } else {
       handleFormSubmission(formData);
       onClose();
     }
-  };
-
-  const handleCloseClick = () => {
-    const formData = new FormData(formRef.current ?? undefined);
-    const apiKey = formData.get("api-key");
-
-    if (!apiKey) setShowWarningModal(true);
-    else onClose();
-  };
-
-  const handleWarningConfirm = () => {
-    setShowWarningModal(false);
-    const formData = new FormData(formRef.current ?? undefined);
-    formData.set("api-key", ""); // Set null value for API key
-    handleFormSubmission(formData);
-    onClose();
-  };
-
-  const handleWarningCancel = () => {
-    setShowWarningModal(false);
   };
 
   return (
@@ -196,7 +165,7 @@ export function SettingsForm({
 
           <APIKeyInput
             isDisabled={!!disabled}
-            defaultValue={settings.LLM_API_KEY}
+            defaultValue={settings.LLM_API_KEY || ""}
           />
 
           {showAdvancedOptions && (
@@ -234,7 +203,7 @@ export function SettingsForm({
             <ModalButton
               text={t(I18nKey.SETTINGS_FORM$CLOSE_LABEL)}
               className="bg-[#737373] w-full"
-              onClick={handleCloseClick}
+              onClick={onClose}
             />
           </div>
           <ModalButton
@@ -284,24 +253,6 @@ export function SettingsForm({
               cancel: {
                 text: t(I18nKey.SETTINGS_FORM$CANCEL_LABEL),
                 onClick: () => setConfirmEndSessionModalOpen(false),
-              },
-            }}
-          />
-        </ModalBackdrop>
-      )}
-      {showWarningModal && (
-        <ModalBackdrop>
-          <DangerModal
-            title="Are you sure?"
-            description="You haven't set an API key. Without an API key, you won't be able to use the AI features. Are you sure you want to close the settings?"
-            buttons={{
-              danger: {
-                text: "Yes, close settings",
-                onClick: handleWarningConfirm,
-              },
-              cancel: {
-                text: "Cancel",
-                onClick: handleWarningCancel,
               },
             }}
           />
