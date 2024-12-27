@@ -165,8 +165,9 @@ async def update_conversation(conversation_id: str, title: str) -> bool:
 @app.delete('/conversations/{conversation_id}')
 async def delete_conversation(conversation_id: str) -> bool:
     conversation_store = await ConversationStore.get_instance(config)
-    metadata = await conversation_store.get_metadata(conversation_id)
-    if not metadata:
+    try:
+        await conversation_store.get_metadata(conversation_id)
+    except FileNotFoundError:
         return False
     is_running = await session_manager.is_agent_loop_running(conversation_id)
     if is_running:
