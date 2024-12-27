@@ -277,34 +277,6 @@ def send_pull_request(
     return url
 
 
-def reply_to_comment(token: str, comment_id: str, reply: str):
-    # Opting for graphql as REST API doesn't allow reply to replies in comment threads
-    query = """
-            mutation($body: String!, $pullRequestReviewThreadId: ID!) {
-                addPullRequestReviewThreadReply(input: { body: $body, pullRequestReviewThreadId: $pullRequestReviewThreadId }) {
-                    comment {
-                        id
-                        body
-                        createdAt
-                    }
-                }
-            }
-            """
-
-    comment_reply = f'Openhands fix success summary\n\n\n{reply}'
-    variables = {'body': comment_reply, 'pullRequestReviewThreadId': comment_id}
-    url = 'https://api.github.com/graphql'
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Content-Type': 'application/json',
-    }
-
-    response = requests.post(
-        url, json={'query': query, 'variables': variables}, headers=headers
-    )
-    response.raise_for_status()
-
-
 def update_existing_pull_request(
     issue: Issue,
     token: str,
@@ -402,7 +374,7 @@ def update_existing_pull_request(
         explanations = json.loads(additional_message)
         for count, reply_comment in enumerate(explanations):
             comment_id = issue.thread_ids[count]
-            reply_to_comment(token, comment_id, reply_comment)
+            handler.reply_to_comment(token, comment_id, reply_comment)
 
     return pr_url
 

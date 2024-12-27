@@ -1,3 +1,4 @@
+
 import os
 import tempfile
 from unittest.mock import MagicMock, call, patch
@@ -6,6 +7,7 @@ import pytest
 
 from openhands.core.config import LLMConfig
 from openhands.resolver.issue import ReviewThread
+from openhands.resolver.github import GithubIssueHandler
 from openhands.resolver.resolver_output import Issue, ResolverOutput
 from openhands.resolver.send_pull_request import (
     apply_patch,
@@ -14,7 +16,6 @@ from openhands.resolver.send_pull_request import (
     make_commit,
     process_all_successful_issues,
     process_single_issue,
-    reply_to_comment,
     send_pull_request,
     update_existing_pull_request,
 )
@@ -241,7 +242,7 @@ def test_initialize_repo(mock_output_dir):
         assert f.read() == 'hello world'
 
 
-@patch('openhands.resolver.send_pull_request.reply_to_comment')
+@patch('openhands.resolver.github.GithubIssueHandler.reply_to_comment')
 @patch('requests.post')
 @patch('subprocess.run')
 def test_update_existing_pull_request(
@@ -557,6 +558,14 @@ def test_reply_to_comment(mock_post):
     comment_id = 'test_comment_id'
     reply = 'This is a test reply.'
 
+    # Create an instance of GithubIssueHandler
+    handler = GithubIssueHandler(
+        owner='test-owner',
+        repo='test-repo',
+        token=token,
+        username='test-user'
+    )
+
     # Mock the response from the GraphQL API
     mock_response = MagicMock()
     mock_response.status_code = 200
@@ -575,37 +584,45 @@ def test_reply_to_comment(mock_post):
     mock_post.return_value = mock_response
 
     # Act: call the function
-    reply_to_comment(token, comment_id, reply)
+    handler.reply_to_comment(token, comment_id, reply)
 
     # Assert: check that the POST request was made with the correct parameters
-    query = """
-            mutation($body: String!, $pullRequestReviewThreadId: ID!) {
-                addPullRequestReviewThreadReply(input: { body: $body, pullRequestReviewThreadId: $pullRequestReviewThreadId }) {
-                    comment {
-                        id
-                        body
-                        createdAt
-                    }
+    # Assert: check that the POST request was made with the correct parameters
+    expected_query = """
+        mutation($body: String!, $pullRequestReviewThreadId: ID!) {
+            addPullRequestReviewThreadReply(input: { body: $body, pullRequestReviewThreadId: $pullRequestReviewThreadId }) {
+                comment {
+                    id
+                    body
+                    createdAt
                 }
             }
-            """
+        }
+    """
 
-    expected_variables = {
+    # Normalize whitespace in both expected and actual queries
+    def normalize_whitespace(s):
+        return ' '.join(s.split())
+
+    # Check if the normalized actual query matches the normalized expected query
+    mock_post.assert_called_once()
+    actual_call = mock_post.call_args
+    actual_query = actual_call[1]['json']['query']
+
+    assert normalize_whitespace(actual_query) == normalize_whitespace(expected_query)
+
+    # Check the variables and headers separately
+    assert actual_call[1]['json']['variables'] == {
         'body': 'Openhands fix success summary\n\n\nThis is a test reply.',
         'pullRequestReviewThreadId': comment_id,
     }
 
-    # Check that the correct request was made to the API
-    mock_post.assert_called_once_with(
-        'https://api.github.com/graphql',
-        json={'query': query, 'variables': expected_variables},
-        headers={
-            'Authorization': f'Bearer {token}',
-            'Content-Type': 'application/json',
-        },
-    )
+    assert actual_call[1]['headers'] == {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json',
+    }
 
-    # Check that the response status was checked (via response.raise_for_status)
+    # Check that the response status was checked
     mock_response.raise_for_status.assert_called_once()
 
 

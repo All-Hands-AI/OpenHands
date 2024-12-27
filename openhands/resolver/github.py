@@ -54,7 +54,11 @@ class IssueHandlerInterface(ABC):
     @abstractmethod
     def branch_exists(self, branch_name: str) -> bool:
         pass
-
+    
+    @abstractmethod
+    def reply_to_comment(self, token: str, comment_id: str, reply: str):
+        pass
+    
     @abstractmethod
     def get_authorize_url(self):
         pass
@@ -184,6 +188,33 @@ class GithubIssueHandler(IssueHandlerInterface):
             attempt += 1
             branch_name = f'{base_branch_name}-try{attempt}'
         return branch_name
+
+    def reply_to_comment(self, token: str, comment_id: str, reply: str):
+        # Opting for graphql as REST API doesn't allow reply to replies in comment threads
+        query = """
+                mutation($body: String!, $pullRequestReviewThreadId: ID!) {
+                    addPullRequestReviewThreadReply(input: { body: $body, pullRequestReviewThreadId: $pullRequestReviewThreadId }) {
+                        comment {
+                            id
+                            body
+                            createdAt
+                        }
+                    }
+                }
+                """
+
+        comment_reply = f'Openhands fix success summary\n\n\n{reply}'
+        variables = {'body': comment_reply, 'pullRequestReviewThreadId': comment_id}
+        url = self.get_base_url()
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json',
+        }
+
+        response = requests.post(
+            url, json={'query': query, 'variables': variables}, headers=headers
+        )
+        response.raise_for_status()
 
     def get_pull_url(self, pr_number: int):
         return f'https://github.com/{self.owner}/{self.repo}/pull/{pr_number}'

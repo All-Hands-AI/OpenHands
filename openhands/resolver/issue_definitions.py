@@ -362,6 +362,9 @@ class ServiceContext:
     def create_pull_request(self, data=dict):
         return self._strategy.create_pull_request(data)
 
+    def reply_to_comment(self, token, comment_id, reply):
+        return self._strategy.reply_to_comment(token, comment_id, reply)
+        
     def get_issue_comments(
         self, issue_number: int, comment_id: int | None = None
     ) -> list[str] | None:
