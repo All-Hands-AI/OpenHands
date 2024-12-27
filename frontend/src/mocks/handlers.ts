@@ -1,24 +1,19 @@
 import { delay, http, HttpResponse } from "msw";
+import { GetConfigResponse } from "#/api/open-hands.types";
+import { ApiSettings } from "#/services/settings";
 
 const openHandsHandlers = [
-  http.get("/api/options/models", async () => {
-    await delay();
-    return HttpResponse.json([
-      "gpt-3.5-turbo",
-      "gpt-4o",
-      "anthropic/claude-3.5",
-    ]);
-  }),
+  http.get("/api/options/models", async () =>
+    HttpResponse.json(["gpt-3.5-turbo", "gpt-4o", "anthropic/claude-3.5"]),
+  ),
 
-  http.get("/api/options/agents", async () => {
-    await delay();
-    return HttpResponse.json(["CodeActAgent", "CoActAgent"]);
-  }),
+  http.get("/api/options/agents", async () =>
+    HttpResponse.json(["CodeActAgent", "CoActAgent"]),
+  ),
 
-  http.get("/api/options/security-analyzers", async () => {
-    await delay();
-    return HttpResponse.json(["mock-invariant"]);
-  }),
+  http.get("/api/options/security-analyzers", async () =>
+    HttpResponse.json(["mock-invariant"]),
+  ),
 
   http.get("http://localhost:3001/api/list-files", async ({ request }) => {
     await delay();
@@ -103,5 +98,26 @@ export const handlers = [
   http.post("https://us.i.posthog.com/e", async () =>
     HttpResponse.json(null, { status: 200 }),
   ),
-  http.get("/config.json", () => HttpResponse.json({ APP_MODE: "oss" })),
+  http.get("/api/options/config", () => {
+    const config: GetConfigResponse = {
+      APP_MODE: "oss",
+      GITHUB_CLIENT_ID: "fake-github-client-id",
+      POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
+    };
+
+    return HttpResponse.json(config);
+  }),
+  http.get("/api/settings", async () => {
+    const settings: ApiSettings = {
+      llm_model: "anthropic/claude-3.5",
+      llm_base_url: "",
+      llm_api_key: "fake-api-key",
+      agent: "CodeActAgent",
+      language: "en",
+      confirmation_mode: false,
+      security_analyzer: "",
+    };
+
+    return HttpResponse.json(settings);
+  }),
 ];
