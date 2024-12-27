@@ -1,6 +1,4 @@
-from typing import Annotated
-
-from fastapi import APIRouter, Header, status
+from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
@@ -16,10 +14,13 @@ SettingsStoreImpl = get_impl(SettingsStore, openhands_config.settings_store_clas
 
 @app.get('/settings')
 async def load_settings(
-    github_auth: Annotated[str | None, Header()] = None,
+    request: Request,
 ) -> Settings | None:
+    github_token = ''
+    if hasattr(request.state, 'github_token'):
+        github_token = request.state.github_token
     try:
-        settings_store = await SettingsStoreImpl.get_instance(config, github_auth)
+        settings_store = await SettingsStoreImpl.get_instance(config, github_token)
         settings = await settings_store.load()
         if settings:
             # For security reasons we don't ever send the api key to the client
@@ -35,18 +36,24 @@ async def load_settings(
 
 @app.post('/settings')
 async def store_settings(
+    request: Request,
     settings: Settings,
-    github_auth: Annotated[str | None, Header()] = None,
-) -> bool:
+) -> JSONResponse:
+    github_token = ''
+    if hasattr(request.state, 'github_token'):
+        github_token = request.state.github_token
     try:
-        settings_store = await SettingsStoreImpl.get_instance(config, github_auth)
+        settings_store = await SettingsStoreImpl.get_instance(config, github_token)
         existing_settings = await settings_store.load()
         if existing_settings:
             settings = Settings(**{**existing_settings.__dict__, **settings.__dict__})
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
         await settings_store.store(settings)
-        return True
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings stored'},
+        )
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
         return JSONResponse(

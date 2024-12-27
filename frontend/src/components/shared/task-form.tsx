@@ -11,7 +11,6 @@ import {
 } from "#/state/initial-query-slice";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
-import { useSettings } from "#/context/settings-context";
 
 import { SuggestionBubble } from "#/components/features/suggestions/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
@@ -24,12 +23,15 @@ import { ImageCarousel } from "../features/images/image-carousel";
 import { UploadImageInput } from "../features/images/upload-image-input";
 import { LoadingSpinner } from "./loading-spinner";
 
-export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
+interface TaskFormProps {
+  ref: React.RefObject<HTMLFormElement | null>;
+}
+
+export function TaskForm({ ref }: TaskFormProps) {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const navigate = useNavigate();
   const { gitHubToken } = useAuth();
-  const { settings } = useSettings();
 
   const { selectedRepository, files } = useSelector(
     (state: RootState) => state.initialQuery,
@@ -46,7 +48,6 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
       return OpenHands.newConversation({
         githubToken: gitHubToken || undefined,
         selectedRepository: selectedRepository || undefined,
-        args: settings || undefined,
       });
     },
     onSuccess: ({ conversation_id: conversationId }, { q }) => {
@@ -89,7 +90,9 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
     const formData = new FormData(event.currentTarget);
 
     const q = formData.get("q")?.toString();
-    newConversationMutation.mutate({ q });
+    if (q?.trim()) {
+      newConversationMutation.mutate({ q });
+    }
   };
 
   return (
@@ -161,6 +164,4 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
       )}
     </div>
   );
-});
-
-TaskForm.displayName = "TaskForm";
+}
