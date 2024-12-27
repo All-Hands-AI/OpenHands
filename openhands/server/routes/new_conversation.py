@@ -19,7 +19,9 @@ from openhands.storage.conversation.conversation_store import (
     ConversationMetadata,
     ConversationStore,
 )
+from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.search_utils import offset_to_page_id, page_id_to_offset
 
 app = APIRouter(prefix='/api')
 
@@ -84,59 +86,55 @@ async def new_conversation(request: Request, data: InitSessionRequest):
 
 @app.get('/conversations')
 async def search_conversations(
-    request: Request,
     page_id: str | None = None,
     limit: int = 20,
 ) -> ConversationResultSet:
     file_store = session_manager.file_store
     conversations = []
-    try:
-        session_ids = [
-            path.split('/')[1]
-            for path in file_store.list('sessions/')
-            if not path.startswith('sessions/.')
-        ]
-        start = 0
-        if page_id:
-            start = int(base64.b64decode(page_id.encode()).decode())
-        end = limit + start
-        next_page_id = None
-        if len(session_ids) > end:
-            next_page_id = base64.b64encode(str(end).encode()).decode()
-        else:
-            end = len(session_ids)
-        running_sessions = await session_manager.get_agent_loop_running(
-            set(session_ids[start:end])
-        )
-        for session_id in session_ids:
-            try:
-                if not session_id.startswith('.'):
-                    metadata = json.loads(
-                        file_store.read(f'sessions/{session_id}/metadata.json')
-                    )
-                    title = metadata.get('title', '')
-                    events = file_store.list(f'sessions/{session_id}/events/')
-                    events = sorted(events)
-                    event_path = events[-1]
-                    event = json.loads(file_store.read(event_path))
-                    conversations.append(
-                        ConversationInfo(
-                            id=session_id,
-                            title=title,
-                            last_updated_at=datetime.fromisoformat(
-                                event.get('timestamp')
-                            ),
-                            status=ConversationStatus.RUNNING
-                            if session_id in running_sessions
-                            else ConversationStatus.STOPPED,
-                        )
-                    )
-            except Exception:  # type: ignore
-                logger.warning(
-                    f'Error loading session: {session_id}',
-                    exc_info=True,
-                    stack_info=True,
-                )
-    except Exception:  # type: ignore
-        logger.warning('Error loading conversation', exc_info=True, stack_info=True)
+    session_ids = [
+        path.split('/')[1]
+        for path in file_store.list('sessions/')
+        if not path.startswith('sessions/.')
+    ]
+    num_sessions = len(session_ids)
+    start = page_id_to_offset(page_id)
+    end = min(limit + start, num_sessions)
+    next_page_id = offset_to_page_id(end, end < num_sessions)
+    running_sessions = await session_manager.get_agent_loop_running(
+        set(session_ids[start:end])
+    )
+    for session_id in session_ids:
+        try:
+            is_running = session_id in running_sessions
+            conversation_info = _get_conversation_info(session_id, is_running, file_store)
+            if conversation_info:
+                conversations.append(conversation_info)
+        except Exception:  # type: ignore
+            # If a conversation is corrupt, we simply log and skip.
+            logger.warning(
+                f'Error loading session: {session_id}',
+                exc_info=True,
+                stack_info=True,
+            )
     return ConversationResultSet(results=conversations, next_page_id=next_page_id)
+
+
+def _get_conversation_info(session_id: str, is_running: bool, file_store: FileStore) -> ConversationInfo:
+    metadata = json.loads(
+        file_store.read(f'sessions/{session_id}/metadata.json')
+    )
+    title = metadata.get('title', '')
+    events = file_store.list(f'sessions/{session_id}/events/')
+    events = sorted(events)
+    event_path = events[-1]
+    event = json.loads(file_store.read(event_path))
+    return ConversationInfo(
+        id=session_id,
+        title=title,
+        last_updated_at=datetime.fromisoformat(
+            event.get('timestamp')
+        ),
+        status=ConversationStatus.RUNNING
+        if is_running
+        else ConversationStatus.STOPPED,
+    )
