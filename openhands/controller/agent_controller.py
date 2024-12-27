@@ -205,7 +205,6 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
-        print('ON EVENT', event)
         if hasattr(event, 'hidden') and event.hidden:
             return
 
@@ -217,7 +216,6 @@ class AgentController:
             await self._handle_action(event)
         elif isinstance(event, Observation):
             await self._handle_observation(event)
-        print('STEPPING')
         self.step()
 
     async def _handle_action(self, action: Action) -> None:
@@ -446,7 +444,6 @@ class AgentController:
         await self.delegate.set_agent_state_to(AgentState.RUNNING)
 
     async def _step(self) -> None:
-        print('_step', self.get_agent_state())
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
         if self.get_agent_state() != AgentState.RUNNING:
             return
