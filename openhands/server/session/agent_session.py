@@ -178,7 +178,7 @@ class AgentSession:
         if self.controller is not None:
             await self.controller.set_agent_state_to(AgentState.ERROR)
 
-    def get_app_pprts(self):
+    def get_runtime_info_prompts(self):
         if self.runtime is not None:
             return f'* If you need to run a web application, use one of these ports whenever possible: {",".join(self.runtime.web_hosts)}'
 
@@ -241,7 +241,7 @@ class AgentSession:
             return
 
         # Add port mapping instructions based on runtime type
-        port_instructions = self.get_app_pprts()
+        port_instructions = self.get_runtime_info_prompts()
 
         if agent.prompt_manager:
             agent.prompt_manager.set_runtime_info(port_instructions or '')
