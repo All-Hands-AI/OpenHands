@@ -142,9 +142,9 @@ describe("ModelSelector", () => {
       console.log("All list items:", allListItems.map(item => item.textContent));
       
       const allElements = screen.queryAllByText((content, element) => {
-        const hasText = (element) => element.textContent === "command-r-v1:0";
-        const hasTextInChildren = (element) => Array.from(element.children).some(hasText);
-        return hasText(element) || hasTextInChildren(element);
+        const hasText = (element: Element | null): boolean => element?.textContent === "command-r-v1:0";
+        const hasTextInChildren = (element: Element | null): boolean => element ? Array.from(element.children).some(hasText) : false;
+        return element ? hasText(element) || hasTextInChildren(element) : false;
       });
       console.log("All elements with 'command-r-v1:0':", allElements);
       
