@@ -127,7 +127,7 @@ function SecurityInvariant(): JSX.Element {
       <>
         <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
           <h2 className="text-2xl">{t(I18nKey.INVARIANT$LOG_LABEL)}</h2>
-          <Button onClick={() => exportTraces()} className="bg-neutral-700">
+          <Button onPress={() => exportTraces()} className="bg-neutral-700">
             {t(I18nKey.INVARIANT$EXPORT_TRACE_LABEL)}
           </Button>
         </div>
@@ -162,7 +162,7 @@ function SecurityInvariant(): JSX.Element {
           <h2 className="text-2xl">{t(I18nKey.INVARIANT$POLICY_LABEL)}</h2>
           <Button
             className="bg-neutral-700"
-            onClick={() => updatePolicy({ policy })}
+            onPress={() => updatePolicy({ policy })}
           >
             {t(I18nKey.INVARIANT$UPDATE_POLICY_LABEL)}
           </Button>
@@ -184,7 +184,7 @@ function SecurityInvariant(): JSX.Element {
           <h2 className="text-2xl">{t(I18nKey.INVARIANT$SETTINGS_LABEL)}</h2>
           <Button
             className="bg-neutral-700"
-            onClick={() => updateRiskSeverity({ riskSeverity: selectedRisk })}
+            onPress={() => updateRiskSeverity({ riskSeverity: selectedRisk })}
           >
             {t(I18nKey.INVARIANT$UPDATE_SETTINGS_LABEL)}
           </Button>
