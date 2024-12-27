@@ -40,11 +40,11 @@ class IssueHandlerInterface(ABC):
         pass
 
     @abstractmethod
-    def get_branch_name(self, headers, base_url, base_branch_name):
+    def get_branch_name(self, base_branch_name: str, headers: dict):
         pass
 
     @abstractmethod
-    def branch_exists(self, base_url: str, branch_name: str, headers: dict) -> bool:
+    def branch_exists(self, branch_name: str, headers: dict) -> bool:
         pass
 
 
