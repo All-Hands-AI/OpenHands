@@ -110,11 +110,11 @@ async def search_conversations(
     return ConversationResultSet(results=conversations, next_page_id=next_page_id)
 
 
-def _get_conversation_info(session_id: str, is_running: bool, file_store: FileStore) -> ConversationInfo | None:
+def _get_conversation_info(
+    session_id: str, is_running: bool, file_store: FileStore
+) -> ConversationInfo | None:
     try:
-        metadata = json.loads(
-            file_store.read(f'sessions/{session_id}/metadata.json')
-        )
+        metadata = json.loads(file_store.read(f'sessions/{session_id}/metadata.json'))
         events = file_store.list(f'sessions/{session_id}/events/')
         events = sorted(events)
         event_path = events[-1]
@@ -122,9 +122,7 @@ def _get_conversation_info(session_id: str, is_running: bool, file_store: FileSt
         return ConversationInfo(
             id=session_id,
             title=metadata.get('title', ''),
-            last_updated_at=datetime.fromisoformat(
-                event.get('timestamp')
-            ),
+            last_updated_at=datetime.fromisoformat(event.get('timestamp')),
             selected_repository=metadata.get('selected_repository'),
             status=ConversationStatus.RUNNING
             if is_running
