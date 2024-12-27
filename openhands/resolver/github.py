@@ -54,10 +54,11 @@ class IssueHandlerInterface(ABC):
     @abstractmethod
     def get_authorize_url(self):
         pass
-    
+
     @abstractmethod
     def create_pull_request(self, data=dict, headers=dict) -> str:
         pass
+
 
 class GithubIssueHandler(IssueHandlerInterface):
     def __init__(self, owner: str, repo: str, token: str, username: str | None = None):
@@ -190,6 +191,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         response.raise_for_status()
         pr_data = response.json()
         return pr_data['html_url']
+
 
 class GithubPRHandler(GithubIssueHandler):
     def __init__(self, owner: str, repo: str, token: str):
