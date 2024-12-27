@@ -220,7 +220,7 @@ class EventStream:
         loop.run_until_complete(self._process_queue())
 
     async def _process_queue(self):
-        while True:
+        while should_continue():
             event = self._queue.get()
             for key in sorted(self._subscribers.keys()):
                 callbacks = self._subscribers[key]
