@@ -110,7 +110,7 @@ export const searchPublicRepositories = async (
   sort: "" | "updated" | "stars" | "forks" = "stars",
   order: "desc" | "asc" = "desc",
 ): Promise<GitHubRepository[]> => {
-  let sanitizedQuery = query.trim();
+  const sanitizedQuery = query.trim();
   if (!sanitizedQuery) {
     return [];
   }
