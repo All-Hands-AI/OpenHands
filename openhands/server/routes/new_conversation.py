@@ -1,4 +1,3 @@
-import base64
 import json
 import uuid
 from datetime import datetime
