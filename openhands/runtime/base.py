@@ -168,7 +168,6 @@ class Runtime(FileEditRuntimeMixin):
             )
 
     async def on_event(self, event: Event) -> None:
-        print('RUNTIME ON EVENT')
         if isinstance(event, Action):
             # set timeout to default if not set
             if event.timeout is None:
@@ -200,7 +199,6 @@ class Runtime(FileEditRuntimeMixin):
             # this might be unnecessary, since source should be set by the event stream when we're here
             source = event.source if event.source else EventSource.AGENT
             self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
-        print('DONE RUNTIME ON EVENT')
 
     def clone_repo(self, github_token: str | None, selected_repository: str | None):
         if not github_token or not selected_repository:
