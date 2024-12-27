@@ -188,8 +188,6 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
         raise RuntimeError(f'Failed to commit changes: {result}')
 
 
-
-
 def send_pull_request(
     issue: Issue,
     token: str,
@@ -213,8 +211,9 @@ def send_pull_request(
 
     # Create a new branch with a unique name
     base_branch_name = f'openhands-fix-issue-{issue.number}'
-    branch_name = handler.get_branch_name(headers=headers, base_url=base_url, base_branch=base_branch_name)
-  
+    branch_name = handler.get_branch_name(
+        headers=headers, base_url=base_url, base_branch=base_branch_name
+    )
 
     # Get the default branch or use specified target branch
     print('Getting base branch...')

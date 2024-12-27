@@ -38,14 +38,16 @@ class IssueHandlerInterface(ABC):
     @abstractmethod
     def get_compare_url(self, branch_name):
         pass
-    
+
     @abstractmethod
     def get_branch_name(self, headers, base_url, base_branch_name):
         pass
-    
+
     @abstractmethod
     def branch_exists(self, base_url: str, branch_name: str, headers: dict) -> bool:
         pass
+
+
 class GithubIssueHandler(IssueHandlerInterface):
     def __init__(self, owner: str, repo: str, token: str, username: str | None = None):
         self.owner = owner
@@ -147,8 +149,8 @@ class GithubIssueHandler(IssueHandlerInterface):
         exists = response.status_code == 200
         print(f'Branch {branch_name} exists: {exists}')
         return exists
-    
-    def get_branch_name(self, headers:dict, base_url:str, base_branch_name:str):
+
+    def get_branch_name(self, headers: dict, base_url: str, base_branch_name: str):
         branch_name = base_branch_name
         attempt = 1
         while self.branch_exists(base_url, branch_name, headers):
