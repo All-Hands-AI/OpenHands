@@ -188,14 +188,6 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
         raise RuntimeError(f'Failed to commit changes: {result}')
 
 
-def branch_exists(base_url: str, branch_name: str, headers: dict) -> bool:
-    print(f'Checking if branch {branch_name} exists...')
-    response = requests.get(f'{base_url}/branches/{branch_name}', headers=headers)
-    exists = response.status_code == 200
-    print(f'Branch {branch_name} exists: {exists}')
-    return exists
-
-
 def send_pull_request(
     issue: Issue,
     token: str,
@@ -219,21 +211,17 @@ def send_pull_request(
 
     # Create a new branch with a unique name
     base_branch_name = f'openhands-fix-issue-{issue.number}'
-    branch_name = base_branch_name
-    attempt = 1
-
-    print('Checking if branch exists...')
-    while branch_exists(base_url, branch_name, headers):
-        attempt += 1
-        branch_name = f'{base_branch_name}-try{attempt}'
+    branch_name = handler.get_branch_name(
+        base_branch_name=base_branch_name,
+        headers=headers,
+    )
 
     # Get the default branch or use specified target branch
     print('Getting base branch...')
     if target_branch:
         base_branch = target_branch
-        # Verify the target branch exists
-        response = requests.get(f'{base_url}/branches/{target_branch}', headers=headers)
-        if response.status_code != 200:
+        exists = handler.branch_exists(branch_name=target_branch, headers=headers)
+        if not exists:
             raise ValueError(f'Target branch {target_branch} does not exist')
     else:
         response = requests.get(f'{base_url}', headers=headers)

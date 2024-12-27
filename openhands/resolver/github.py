@@ -40,6 +40,14 @@ class IssueHandlerInterface(ABC):
         pass
 
     @abstractmethod
+    def get_branch_name(self, base_branch_name: str, headers: dict):
+        pass
+
+    @abstractmethod
+    def branch_exists(self, branch_name: str, headers: dict) -> bool:
+        pass
+      
+    @abstractmethod
     def get_authorize_url(self):
         pass
 
@@ -142,8 +150,27 @@ class GithubIssueHandler(IssueHandlerInterface):
 
         return all_comments if all_comments else None
 
+
+    def branch_exists(self, branch_name: str, headers: dict) -> bool:
+        print(f'Checking if branch {branch_name} exists...')
+        response = requests.get(
+            f'{self.base_url}/branches/{branch_name}', headers=headers
+        )
+        exists = response.status_code == 200
+        print(f'Branch {branch_name} exists: {exists}')
+        return exists
+
+    def get_branch_name(self, base_branch_name: str, headers: dict):
+        branch_name = base_branch_name
+        attempt = 1
+        while self.branch_exists(branch_name, headers):
+            attempt += 1
+            branch_name = f'{base_branch_name}-try{attempt}'
+        return branch_name
+    
     def get_pull_url(self, pr_number: int):
         return f'https://github.com/{self.owner}/{self.repo}/pull/{pr_number}'
+
 
 
 class GithubPRHandler(GithubIssueHandler):
