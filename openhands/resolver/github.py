@@ -39,6 +39,10 @@ class IssueHandlerInterface(ABC):
     def get_compare_url(self, branch_name):
         pass
 
+    @abstractmethod
+    def get_authorize_url(self):
+        pass
+
 
 class GithubIssueHandler(IssueHandlerInterface):
     def __init__(self, owner: str, repo: str, token: str, username: str | None = None):
@@ -59,6 +63,9 @@ class GithubIssueHandler(IssueHandlerInterface):
 
     def get_base_url(self):
         return f'https://api.github.com/repos/{self.owner}/{self.repo}'
+
+    def get_authorize_url(self):
+        return f'https://{self.username}:{self.token}@github.com/'
 
     def get_download_url(self):
         return f'{self.base_url}/issues'
@@ -134,6 +141,9 @@ class GithubIssueHandler(IssueHandlerInterface):
             params['page'] += 1
 
         return all_comments if all_comments else None
+
+    def get_pull_url(self, pr_number: int):
+        return f'https://github.com/{self.owner}/{self.repo}/pull/{pr_number}'
 
 
 class GithubPRHandler(GithubIssueHandler):

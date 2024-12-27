@@ -329,6 +329,12 @@ class ServiceContext:
     def get_headers(self):
         return self._strategy.get_headers()
 
+    def get_authorize_url(self):
+        return self._strategy.get_authorize_url()
+
+    def get_pull_url(self, pr_number):
+        return self._strategy.get_pull_url(pr_number)
+
     def get_compare_url(self, branch_name):
         return self._strategy.get_compare_url(branch_name)
 
