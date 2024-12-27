@@ -236,7 +236,9 @@ def main():
     print('\n*Sorted by score (⭐ indicates perfect completion)*\n')
 
     # Print table header
-    print('| Filename | Total | Result | Score | Steps | Cost |')
+    print(
+        '| Filename | Total | Result | Score | Steps | Cost (assuming no prompt caching)|'
+    )
     print('|----------|--------|---------|-------|-------|------|')
 
     # Print individual file results
