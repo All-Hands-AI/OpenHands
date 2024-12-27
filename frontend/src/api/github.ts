@@ -117,11 +117,17 @@ export const retrieveLatestGitHubCommit = async (
       },
     );
     return response.data[0] || null;
-  } catch (error: any) {
-    if (error.response?.status === 409) {
+  } catch (error) {
+    if (!error || typeof error !== "object") {
+      throw new Error("Unknown error occurred");
+    }
+    const axiosError = error as { response?: { status: number } };
+    if (axiosError.response?.status === 409) {
       // Repository is empty, no commits yet
       return null;
     }
-    throw error;
+    throw new Error(
+      error instanceof Error ? error.message : "Unknown error occurred",
+    );
   }
 };
