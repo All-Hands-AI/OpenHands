@@ -122,9 +122,7 @@ class Session:
             return
 
     def on_event(self, event: Event):
-        print('SERVER REC', event)
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
-        print('SERVER REC DONE', event)
 
     async def _on_event(self, event: Event):
         """Callback function for events that mainly come from the agent.

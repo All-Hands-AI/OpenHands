@@ -197,7 +197,6 @@ class AgentController:
             self.status_callback('error', err_id, type(e).__name__ + ': ' + str(e))
 
     def step(self):
-        print('stepping agent with create task')
         asyncio.create_task(self._step())
 
     def on_event(self, event: Event) -> None:
@@ -206,12 +205,9 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
-        print('AGENT REC', event)
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
-        print('AGENT REC DONE', event)
 
     async def _on_event(self, event: Event) -> None:
-        print('agent on event', event)
         if hasattr(event, 'hidden') and event.hidden:
             return
 
@@ -496,9 +492,7 @@ class AgentController:
         self.update_state_before_step()
         action: Action = NullAction()
         try:
-            print('getting action')
             action = self.agent.step(self.state)
-            print('got action', action)
             if action is None:
                 raise LLMNoActionError('No action was returned')
         except (

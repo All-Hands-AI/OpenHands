@@ -212,33 +212,22 @@ class EventStream:
         data = event_to_dict(event)
         if event.id is not None:
             self.file_store.write(self._get_filename_for_id(event.id), json.dumps(data))
-        print('adding event')
         self._queue.put(event)
-        print('done add event')
 
     def _run_queue_loop(self):
-        print('RUN QUEUE LOOP')
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self._process_queue())
 
     async def _process_queue(self):
-        print('PROCESS QUEUE')
         while True:
-            print('Waiting for event')
             event = self._queue.get()
-            print('GOT EVENT', event)
             for key in sorted(self._subscribers.keys()):
                 callbacks = self._subscribers[key]
                 for callback_id in callbacks:
                     callback = callbacks[callback_id]
                     pool = self._thread_pools[key][callback_id]
-                    print('DO CALLBACK', key, callback_id, event)
-                    try:
-                        pool.submit(callback, event)
-                    except Exception as e:
-                        print(f'Error submitting callback: {e}')
-                    print('DONE CALLBACK', key, callback_id, event)
+                    pool.submit(callback, event)
 
     def _callback(self, callback: Callable, event: Event):
         asyncio.run(callback(event))
