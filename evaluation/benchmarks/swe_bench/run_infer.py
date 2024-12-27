@@ -30,7 +30,6 @@ from openhands.core.config import (
     get_llm_config_arg,
     get_parser,
 )
-from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
@@ -521,7 +520,6 @@ if __name__ == '__main__':
         args.eval_note,
         args.eval_output_dir,
         details=details,
-        condenser_config=AmortizedForgettingCondenserConfig(keep_first=1, max_size=10),
     )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
