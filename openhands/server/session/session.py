@@ -82,7 +82,6 @@ class Session:
             settings.security_analyzer or self.config.security.security_analyzer
         )
         max_iterations = settings.max_iterations or self.config.max_iterations
-        # override default LLM config
 
         default_llm_config = self.config.get_llm_config()
         default_llm_config.model = settings.llm_model or default_llm_config.model

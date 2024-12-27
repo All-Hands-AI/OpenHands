@@ -351,7 +351,7 @@ class SessionManager:
                 sid=sid, file_store=self.file_store, config=self.config, sio=self.sio
             )
             self._local_agent_loops_by_sid[sid] = session
-            await session.initialize_agent(settings)
+            asyncio.create_task(session.initialize_agent(settings))
 
         event_stream = await self._get_event_stream(sid)
         if not event_stream:
