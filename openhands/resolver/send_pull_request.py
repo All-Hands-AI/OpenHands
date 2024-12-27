@@ -212,14 +212,15 @@ def send_pull_request(
     # Create a new branch with a unique name
     base_branch_name = f'openhands-fix-issue-{issue.number}'
     branch_name = handler.get_branch_name(
-        headers=headers, base_url=base_url, base_branch=base_branch_name
+        base_branch_name=base_branch_name,
+        headers=headers,
     )
 
     # Get the default branch or use specified target branch
     print('Getting base branch...')
     if target_branch:
         base_branch = target_branch
-        exists = handler.branch_exists(base_url, target_branch, headers)
+        exists = handler.branch_exists(branch_name=target_branch, headers=headers)
         if not exists:
             raise ValueError(f'Target branch {target_branch} does not exist')
     else:
