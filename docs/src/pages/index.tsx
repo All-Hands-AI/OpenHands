@@ -1,10 +1,9 @@
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import { HomepageHeader } from '../components/HomepageHeader/HomepageHeader';
-import { Welcome } from '../components/Welcome/Welcome';
 import { translate } from '@docusaurus/Translate';
 
-export function Header({ title, summary }) {
+export function Header({ title, summary }): JSX.Element {
   return (
     <div>
       <h1>{title}</h1>
@@ -13,7 +12,7 @@ export function Header({ title, summary }) {
   );
 }
 
-export default function Home() {
+export default function Home(): JSX.Element {
   const { siteConfig } = useDocusaurusContext();
   return (
     <Layout

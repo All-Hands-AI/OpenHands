@@ -63,7 +63,7 @@ export function renderWithProviders(
     ...renderOptions
   }: ExtendedRenderOptions = {},
 ) {
-  function Wrapper({ children }: PropsWithChildren<object>) {
+  function Wrapper({ children }: PropsWithChildren) {
     return (
       <Provider store={store}>
         <QueryClientProvider client={new QueryClient()}>
