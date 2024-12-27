@@ -54,11 +54,7 @@ function SettingsProvider({ children }: React.PropsWithChildren) {
     [settings, settingsAreUpToDate],
   );
 
-  return (
-    <SettingsContext.Provider value={value}>
-      {children}
-    </SettingsContext.Provider>
-  );
+  return <SettingsContext value={value}>{children}</SettingsContext>;
 }
 
 function useSettings() {
