@@ -116,7 +116,6 @@ class AgentController:
         self.event_stream.subscribe(
             EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
         )
-        print('SUBSCRIBED TO ES')
 
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
