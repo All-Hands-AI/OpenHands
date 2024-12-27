@@ -89,7 +89,7 @@ def test_pr_title_with_quotes(monkeypatch):
     monkeypatch.setattr('requests.post', mock_post)
     monkeypatch.setattr('requests.get', lambda *args, **kwargs: MockGetResponse())
     monkeypatch.setattr(
-        'openhands.resolver.send_pull_request.branch_exists',
+        'openhands.resolver.github.GithubIssueHandler.branch_exists',
         lambda *args, **kwargs: False,
     )
 

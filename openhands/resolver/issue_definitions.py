@@ -335,6 +335,10 @@ class ServiceContext:
     def download_issues(self) -> list[Any]:
         return self._strategy.download_issues()
 
+    def get_branch_name(self, headers:dict, base_url:str, base_branch:str):
+        return self._strategy.get_branch_name(headers, base_url, base_branch,)
+    def branch_exists(self, base_url: str, branch_name: str, headers: dict):
+        return self._strategy.branch_exists(base_url, branch_name, headers)
     def get_issue_comments(
         self, issue_number: int, comment_id: int | None = None
     ) -> list[str] | None:
