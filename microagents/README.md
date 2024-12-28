@@ -138,35 +138,67 @@ inputs:
 
 ### Format Guidelines
 
-1. **Required Fields**:
-   ```yaml
+All microagents use markdown files with YAML frontmatter:
+
+1. **Knowledge Agent Format**:
+   ```markdown
+   ---
    name: unique_name         # Lowercase, descriptive
    version: 1.0.0           # Semantic versioning
    author: your_name        # Your GitHub username
    agent: CodeActAgent      # Agent type
-   description: "..."       # Clear, concise purpose
-   ```
-
-2. **Knowledge Agents Also Need**:
-   ```yaml
    trigger_type: keyword
-   triggers: [...]         # List of trigger words
-   file_patterns: [...]    # Optional file patterns
-   knowledge: |           # Markdown-formatted content
-     # Title
-     Content...
+   triggers:                # List of trigger words
+     - trigger1
+     - trigger2
+   file_patterns:           # Optional file patterns
+     - "*.ts"
+     - "*.js"
+   ---
+
+   # Title
+
+   ## Overview
+   Clear description of the agent's purpose...
+
+   ## Guidelines
+   - Guideline 1
+   - Guideline 2
+
+   ## Examples
+   ```bash
+   example command
+   ```
    ```
 
-3. **Task Agents Also Need**:
-   ```yaml
+2. **Task Agent Format**:
+   ```markdown
+   ---
+   name: unique_name
+   version: 1.0.0
+   author: your_name
+   agent: CodeActAgent
    task_type: workflow
-   prompt: |              # The task workflow
-     Steps...
-   inputs:               # Required user inputs
+   inputs:
      - name: INPUT_NAME
        description: "..."
        type: string|number|boolean
        required: true|false
+   ---
+
+   # Task Title
+
+   I'll help you with ${INPUT_NAME}...
+
+   ## Steps
+   1. First step...
+   2. Second step...
+
+   ## Example Usage
+   ```yaml
+   inputs:
+     INPUT_NAME: "example value"
+   ```
    ```
 
 ### Testing Your Agent
