@@ -748,6 +748,10 @@ class PRHandler(IssueHandler):
             for check in issue.failed_checks:
                 pr_status += f"- {check['name']}: {check['description']}\n"
             pr_status += '\nPlease examine the GitHub workflow files, reproduce the problem locally, and fix and test it locally.'
+        if not issue.has_merge_conflicts and not issue.failed_checks:
+            pr_status += (
+                '\nThis PR has no merge conflicts and all CI checks have passed.'
+            )
 
         instruction = template.render(
             issues=issues_str,

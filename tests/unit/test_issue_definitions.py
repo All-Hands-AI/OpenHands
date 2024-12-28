@@ -85,3 +85,28 @@ def test_get_instruction_with_pr_status(pr_handler):
     assert 'test-ci: Tests failed' in instruction
     assert 'build: Build failed' in instruction
     assert 'examine the GitHub workflow files' in instruction
+
+
+def test_get_instruction_without_pr_status(pr_handler):
+    # Create a test issue without merge conflicts or failed checks
+    issue = GithubIssue(
+        owner='test-owner',
+        repo='test-repo',
+        number=123,
+        title='Test PR',
+        body='Test body',
+        has_merge_conflicts=False,
+        failed_checks=[],
+    )
+
+    # Test template that includes pr_status
+    template = '{{ pr_status }}'
+
+    instruction, _ = pr_handler.get_instruction(issue, template)
+
+    # Verify the instruction includes the message for no merge conflicts and passed CI checks
+    assert (
+        'This PR has no merge conflicts and all CI checks have passed.' in instruction
+    )
+    assert 'merge conflicts that need to be resolved' not in instruction
+    assert 'CI checks have failed' not in instruction
