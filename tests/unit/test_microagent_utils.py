@@ -5,7 +5,6 @@ import tempfile
 from pathlib import Path
 
 import pytest
-import yaml
 from pydantic import ValidationError
 from pytest import MonkeyPatch
 
@@ -13,13 +12,13 @@ import openhands.agenthub  # noqa: F401
 from openhands.core.microagents import (
     InputValidation,
     KnowledgeAgent,
+    MicroAgent,
     MicroAgentHub,
-    TemplateAgent,
-    TemplateInput,
-    TemplateType,
+    TaskAgent,
+    TaskInput,
+    TaskType,
     TriggerType,
 )
-from openhands.utils.microagent import MicroAgent
 
 
 CONTENT = (
@@ -44,7 +43,7 @@ def test_legacy_micro_agent_load(tmp_path, monkeypatch: MonkeyPatch):
     # Patch the required environment variable
     monkeypatch.setenv('SANDBOX_OPENHANDS_TEST_ENV_VAR', 'dummy_value')
 
-    micro_agent = MicroAgent(os.path.join(tmp_path, 'dummy.md'))
+    micro_agent = MicroAgent.from_markdown(os.path.join(tmp_path, 'dummy.md'))
     assert micro_agent is not None
     assert micro_agent.content == CONTENT.strip()
 
@@ -55,71 +54,77 @@ def temp_microagents_dir():
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create directory structure
         root = Path(temp_dir)
-        (root / "official/knowledge/repo").mkdir(parents=True)
-        (root / "official/knowledge/keyword").mkdir(parents=True)
-        (root / "official/templates/workflows").mkdir(parents=True)
+        (root / "knowledge").mkdir(parents=True)
+        (root / "tasks").mkdir(parents=True)
 
         # Create test agents
-        repo_agent = {
-            "name": "test_repo_agent",
-            "version": "1.0.0",
-            "author": "test",
-            "agent": "CodeActAgent",
-            "category": "testing",
-            "trigger_type": "repository",
-            "trigger_pattern": "test-org/*",
-            "priority": 100,
-            "description": "Test repo agent",
-            "knowledge": "Test repo knowledge",
-        }
-        with open(root / "official/knowledge/repo/test.yaml", "w") as f:
-            yaml.dump(repo_agent, f)
+        repo_agent = """---
+name: test_repo_agent
+version: 1.0.0
+author: test
+agent: CodeActAgent
+category: testing
+trigger_type: repository
+trigger_pattern: test-org/*
+priority: 100
+---
 
-        keyword_agent = {
-            "name": "test_keyword_agent",
-            "version": "1.0.0",
-            "author": "test",
-            "agent": "CodeActAgent",
-            "category": "testing",
-            "trigger_type": "keyword",
-            "triggers": ["test", "pytest"],
-            "file_patterns": ["*.py", "*.test.js"],
-            "description": "Test keyword agent",
-            "knowledge": "Test keyword knowledge",
-            "require_env_var": {
-                "SANDBOX_OPENHANDS_TEST_ENV_VAR": "Set this environment variable for testing purposes"
-            },
-        }
-        with open(root / "official/knowledge/keyword/test.yaml", "w") as f:
-            yaml.dump(keyword_agent, f)
+# Test Repository Agent
 
-        template_agent = {
-            "name": "test_template",
-            "version": "1.0.0",
-            "author": "test",
-            "agent": "CodeActAgent",
-            "category": "testing",
-            "template_type": "workflow",
-            "description": "Test template agent",
-            "template": "Test ${VAR1} and ${VAR2}",
-            "inputs": [
-                {
-                    "name": "VAR1",
-                    "description": "First variable",
-                    "type": "string",
-                    "required": True,
-                },
-                {
-                    "name": "VAR2",
-                    "description": "Second variable",
-                    "type": "string",
-                    "required": False,
-                    "default": "default",
-                },
-            ],
-        }
-        with open(root / "official/templates/workflows/test.yaml", "w") as f:
-            yaml.dump(template_agent, f)
+Repository-specific test instructions.
+"""
+        with open(root / "knowledge/repo_test.md", "w") as f:
+            f.write(repo_agent)
+
+        keyword_agent = """---
+name: test_keyword_agent
+version: 1.0.0
+author: test
+agent: CodeActAgent
+category: testing
+trigger_type: keyword
+triggers:
+  - test
+  - pytest
+file_patterns:
+  - "*.py"
+  - "*.test.js"
+require_env_var:
+  SANDBOX_OPENHANDS_TEST_ENV_VAR: "Set this environment variable for testing purposes"
+---
+
+# Test Guidelines
+
+Testing best practices and guidelines.
+"""
+        with open(root / "knowledge/testing.md", "w") as f:
+            f.write(keyword_agent)
+
+        task_agent = """---
+name: test_task
+version: 1.0.0
+author: test
+agent: CodeActAgent
+category: testing
+task_type: workflow
+inputs:
+  - name: VAR1
+    description: First variable
+    type: string
+    required: true
+  - name: VAR2
+    description: Second variable
+    type: string
+    required: false
+    default: default
+---
+
+# Test Task
+
+Testing ${VAR1} and ${VAR2}...
+"""
+        with open(root / "tasks/test.md", "w") as f:
+            f.write(task_agent)
 
         yield root
 
@@ -139,8 +144,7 @@ def test_knowledge_agent_validation(monkeypatch: MonkeyPatch):
             agent="CodeActAgent",
             category="testing",
             trigger_type=TriggerType.REPOSITORY,
-            description="Test",
-            knowledge="Test",
+            content="Test",
         )
 
     # Test keyword agent validation
@@ -153,8 +157,7 @@ def test_knowledge_agent_validation(monkeypatch: MonkeyPatch):
             agent="CodeActAgent",
             category="testing",
             trigger_type=TriggerType.KEYWORD,
-            description="Test",
-            knowledge="Test",
+            content="Test",
         )
 
     # Valid repository agent
@@ -166,8 +169,7 @@ def test_knowledge_agent_validation(monkeypatch: MonkeyPatch):
         category="testing",
         trigger_type=TriggerType.REPOSITORY,
         trigger_pattern="org/*",
-        description="Test",
-        knowledge="Test",
+        content="Test",
     )
     assert agent.trigger_pattern == "org/*"
 
@@ -180,16 +182,15 @@ def test_knowledge_agent_validation(monkeypatch: MonkeyPatch):
         category="testing",
         trigger_type=TriggerType.KEYWORD,
         triggers=["test"],
-        description="Test",
-        knowledge="Test",
+        content="Test",
     )
     assert agent.triggers == ["test"]
 
 
-def test_template_agent_validation():
-    """Test validation of template agents."""
+def test_task_agent_validation():
+    """Test validation of task agents."""
     # Test input validation
-    input1 = TemplateInput(
+    input1 = TaskInput(
         name="test",
         description="Test input",
         type="string",
@@ -198,19 +199,18 @@ def test_template_agent_validation():
     )
     assert input1.validation.pattern == r"^test.*"
 
-    # Test template agent
-    agent = TemplateAgent(
+    # Test task agent
+    agent = TaskAgent(
         name="test",
         version="1.0.0",
         author="test",
         agent="CodeActAgent",
         category="testing",
-        template_type=TemplateType.WORKFLOW,
-        description="Test",
-        template="Test ${VAR}",
+        task_type=TaskType.WORKFLOW,
+        content="Test ${VAR}",
         inputs=[input1],
     )
-    assert agent.template == "Test ${VAR}"
+    assert "${VAR}" in agent.content
     assert len(agent.inputs) == 1
 
 
@@ -233,10 +233,10 @@ def test_microagent_hub_loading(temp_microagents_dir, monkeypatch: MonkeyPatch):
     assert "test" in agent.triggers
     assert "*.py" in agent.file_patterns
 
-    # Check template agents
-    assert len(hub.template_agents) == 1
-    agent = hub.template_agents["test_template"]
-    assert agent.template_type == TemplateType.WORKFLOW
+    # Check task agents
+    assert len(hub.task_agents) == 1
+    agent = hub.task_agents["test_task"]
+    assert agent.task_type == TaskType.WORKFLOW
     assert len(agent.inputs) == 2
 
 
@@ -282,39 +282,39 @@ def test_keyword_agent_matching(temp_microagents_dir, monkeypatch: MonkeyPatch):
     assert len(agents) == 0
 
 
-def test_template_processing(temp_microagents_dir):
-    """Test processing of templates."""
+def test_task_processing(temp_microagents_dir):
+    """Test processing of tasks."""
     hub = MicroAgentHub.load(temp_microagents_dir)
 
     # Test with all variables
-    result = hub.process_template(
-        "test_template", {"VAR1": "value1", "VAR2": "value2"}
+    result = hub.process_task(
+        "test_task", {"VAR1": "value1", "VAR2": "value2"}
     )
-    assert result == "Test value1 and value2"
+    assert "Testing value1 and value2" in result
 
     # Test with default value
-    result = hub.process_template("test_template", {"VAR1": "value1"})
-    assert result == "Test value1 and default"
+    result = hub.process_task("test_task", {"VAR1": "value1"})
+    assert "Testing value1 and default" in result
 
     # Test missing required variable
     with pytest.raises(ValueError):
-        hub.process_template("test_template", {"VAR2": "value2"})
+        hub.process_task("test_task", {"VAR2": "value2"})
 
-    # Test non-existent template
-    result = hub.process_template("non_existent", {})
+    # Test non-existent task
+    result = hub.process_task("non_existent", {})
     assert result is None
 
 
-def test_template_listing(temp_microagents_dir):
-    """Test listing of template agents."""
+def test_task_listing(temp_microagents_dir):
+    """Test listing of task agents."""
     hub = MicroAgentHub.load(temp_microagents_dir)
 
-    # Test listing all templates
-    templates = hub.list_template_agents()
-    assert len(templates) == 1
+    # Test listing all tasks
+    tasks = hub.list_task_agents()
+    assert len(tasks) == 1
 
     # Test listing by type
-    templates = hub.list_template_agents(TemplateType.WORKFLOW)
-    assert len(templates) == 1
-    templates = hub.list_template_agents(TemplateType.SNIPPET)
-    assert len(templates) == 0
+    tasks = hub.list_task_agents(TaskType.WORKFLOW)
+    assert len(tasks) == 1
+    tasks = hub.list_task_agents(TaskType.SNIPPET)
+    assert len(tasks) == 0

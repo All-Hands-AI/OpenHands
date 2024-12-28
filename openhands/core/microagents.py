@@ -1,13 +1,35 @@
 """MicroAgent system for OpenHands."""
 
 import os
+import re
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Tuple
 
 import yaml
 from pydantic import BaseModel, Field, validator
+
+
+def parse_markdown_with_frontmatter(content: str) -> Tuple[dict, str]:
+    """Parse markdown file with YAML frontmatter.
+    
+    Format:
+    ```
+    ---
+    key: value
+    ---
+    markdown content
+    ```
+    """
+    pattern = r'^---\s*\n(.*?)\n---\s*\n(.*)$'
+    match = re.match(pattern, content, re.DOTALL)
+    if not match:
+        raise ValueError("Invalid markdown format. Expected YAML frontmatter.")
+    
+    frontmatter = yaml.safe_load(match.group(1))
+    markdown = match.group(2).strip()
+    return frontmatter, markdown
 
 
 class TriggerType(str, Enum):
@@ -16,22 +38,22 @@ class TriggerType(str, Enum):
     KEYWORD = "keyword"
 
 
-class TemplateType(str, Enum):
-    """Type of template-based agent."""
+class TaskType(str, Enum):
+    """Type of task-based agent."""
     WORKFLOW = "workflow"
     SNIPPET = "snippet"
     GUIDE = "guide"
 
 
 class InputValidation(BaseModel):
-    """Validation rules for template inputs."""
+    """Validation rules for task inputs."""
     pattern: Optional[str] = None
     min: Optional[float] = None
     max: Optional[float] = None
 
 
-class TemplateInput(BaseModel):
-    """Input parameter for template-based agents."""
+class TaskInput(BaseModel):
+    """Input parameter for task-based agents."""
     name: str
     description: str
     type: str
@@ -49,10 +71,22 @@ class MicroAgent(BaseModel):
     category: str
     tags: List[str] = Field(default_factory=list)
     requires: List[str] = Field(default_factory=list)
-    description: str
-    capabilities: List[str] = Field(default_factory=list)
-    guidelines: List[str] = Field(default_factory=list)
-    examples: List[Dict[str, str]] = Field(default_factory=list)
+
+    @classmethod
+    def from_markdown(cls, path: Union[str, Path]) -> 'MicroAgent':
+        """Load a microagent from a markdown file with frontmatter."""
+        with open(path) as f:
+            content = f.read()
+        
+        frontmatter, markdown = parse_markdown_with_frontmatter(content)
+        
+        # Determine agent type from frontmatter
+        if 'trigger_type' in frontmatter:
+            return KnowledgeAgent(content=markdown, **frontmatter)
+        elif 'task_type' in frontmatter:
+            return TaskAgent(content=markdown, **frontmatter)
+        else:
+            raise ValueError("Unknown agent type. Expected trigger_type or task_type in frontmatter.")
 
 
 class KnowledgeAgent(MicroAgent):
@@ -62,7 +96,7 @@ class KnowledgeAgent(MicroAgent):
     triggers: Optional[List[str]] = None   # For keyword triggers
     priority: Optional[int] = None         # For repository triggers
     file_patterns: Optional[List[str]] = None
-    knowledge: str
+    content: str  # The markdown content
 
     @validator('trigger_pattern')
     def validate_repo_trigger(cls, v, values):
@@ -79,11 +113,11 @@ class KnowledgeAgent(MicroAgent):
         return v
 
 
-class TemplateAgent(MicroAgent):
-    """Template-based microagent with user inputs."""
-    template_type: TemplateType
-    template: str
-    inputs: List[TemplateInput]
+class TaskAgent(MicroAgent):
+    """Task-based microagent with user inputs."""
+    task_type: TaskType
+    inputs: List[TaskInput]
+    content: str  # The markdown content
 
 
 @dataclass
@@ -92,7 +126,7 @@ class MicroAgentHub:
     root_dir: Path
     repo_agents: Dict[str, KnowledgeAgent]
     keyword_agents: Dict[str, KnowledgeAgent]
-    template_agents: Dict[str, TemplateAgent]
+    task_agents: Dict[str, TaskAgent]
 
     @classmethod
     def load(cls, root_dir: Union[str, Path] = None) -> 'MicroAgentHub':
@@ -105,52 +139,34 @@ class MicroAgentHub:
 
         repo_agents = {}
         keyword_agents = {}
-        template_agents = {}
+        task_agents = {}
 
-        # Load official agents
-        official_dir = root_dir / 'official'
-        if official_dir.exists():
-            # Load knowledge agents
-            knowledge_dir = official_dir / 'knowledge'
-            if knowledge_dir.exists():
-                # Load repository-triggered agents
-                repo_dir = knowledge_dir / 'repo'
-                if repo_dir.exists():
-                    for file in repo_dir.glob('*.yaml'):
-                        with open(file) as f:
-                            data = yaml.safe_load(f)
-                            agent = KnowledgeAgent(**data)
-                            repo_agents[agent.name] = agent
+        # Load knowledge agents
+        knowledge_dir = root_dir / 'knowledge'
+        if knowledge_dir.exists():
+            for file in knowledge_dir.glob('*.md'):
+                agent = MicroAgent.from_markdown(file)
+                if not isinstance(agent, KnowledgeAgent):
+                    continue
+                
+                if agent.trigger_type == TriggerType.REPOSITORY:
+                    repo_agents[agent.name] = agent
+                else:
+                    keyword_agents[agent.name] = agent
 
-                # Load keyword-triggered agents
-                keyword_dir = knowledge_dir / 'keyword'
-                if keyword_dir.exists():
-                    for file in keyword_dir.glob('*.yaml'):
-                        with open(file) as f:
-                            data = yaml.safe_load(f)
-                            agent = KnowledgeAgent(**data)
-                            keyword_agents[agent.name] = agent
-
-            # Load template agents
-            template_dir = official_dir / 'templates'
-            if template_dir.exists():
-                for file in template_dir.rglob('*.yaml'):
-                    with open(file) as f:
-                        data = yaml.safe_load(f)
-                        agent = TemplateAgent(**data)
-                        template_agents[agent.name] = agent
-
-        # Load community agents if they exist
-        community_dir = root_dir / 'community'
-        if community_dir.exists():
-            # Similar loading logic for community agents...
-            pass
+        # Load task agents
+        tasks_dir = root_dir / 'tasks'
+        if tasks_dir.exists():
+            for file in tasks_dir.glob('*.md'):
+                agent = MicroAgent.from_markdown(file)
+                if isinstance(agent, TaskAgent):
+                    task_agents[agent.name] = agent
 
         return cls(
             root_dir=root_dir,
             repo_agents=repo_agents,
             keyword_agents=keyword_agents,
-            template_agents=template_agents,
+            task_agents=task_agents,
         )
 
     def get_repo_agents(self, repo_name: str) -> List[KnowledgeAgent]:
@@ -184,20 +200,20 @@ class MicroAgentHub:
         
         return matching_agents
 
-    def get_template_agent(self, name: str) -> Optional[TemplateAgent]:
-        """Get a template agent by name."""
-        return self.template_agents.get(name)
+    def get_task_agent(self, name: str) -> Optional[TaskAgent]:
+        """Get a task agent by name."""
+        return self.task_agents.get(name)
 
-    def list_template_agents(self, template_type: Optional[TemplateType] = None) -> List[TemplateAgent]:
-        """List all template agents, optionally filtered by type."""
-        if template_type is None:
-            return list(self.template_agents.values())
-        return [agent for agent in self.template_agents.values() 
-                if agent.template_type == template_type]
+    def list_task_agents(self, task_type: Optional[TaskType] = None) -> List[TaskAgent]:
+        """List all task agents, optionally filtered by type."""
+        if task_type is None:
+            return list(self.task_agents.values())
+        return [agent for agent in self.task_agents.values() 
+                if agent.task_type == task_type]
 
-    def process_template(self, template_name: str, inputs: Dict[str, Any]) -> Optional[str]:
-        """Process a template with the given inputs."""
-        agent = self.get_template_agent(template_name)
+    def process_task(self, task_name: str, inputs: Dict[str, Any]) -> Optional[str]:
+        """Process a task with the given inputs."""
+        agent = self.get_task_agent(task_name)
         if not agent:
             return None
 
@@ -206,8 +222,25 @@ class MicroAgentHub:
             if input_def.required and input_def.name not in inputs:
                 raise ValueError(f"Missing required input: {input_def.name}")
 
-        # Process template
-        result = agent.template
+            # Apply validation if specified
+            if input_def.name in inputs and input_def.validation:
+                value = inputs[input_def.name]
+                if input_def.validation.pattern:
+                    if not re.match(input_def.validation.pattern, str(value)):
+                        raise ValueError(
+                            f"Input {input_def.name} does not match pattern: {input_def.validation.pattern}"
+                        )
+                if input_def.validation.min is not None and value < input_def.validation.min:
+                    raise ValueError(
+                        f"Input {input_def.name} must be >= {input_def.validation.min}"
+                    )
+                if input_def.validation.max is not None and value > input_def.validation.max:
+                    raise ValueError(
+                        f"Input {input_def.name} must be <= {input_def.validation.max}"
+                    )
+
+        # Process content
+        result = agent.content
         for name, value in inputs.items():
             result = result.replace(f"${{{name}}}", str(value))
 
