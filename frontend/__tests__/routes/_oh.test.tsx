@@ -1,5 +1,4 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import * as router from "react-router";
 import { createRoutesStub } from "react-router";
 import { screen, waitFor, within } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
@@ -36,6 +35,12 @@ describe("frontend/routes/_oh", () => {
   });
 
   it("should render", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+      GITHUB_CLIENT_ID: "test-id",
+      POSTHOG_CLIENT_KEY: "test-key",
+    });
     renderWithProviders(<RouteStub />);
     await screen.findByTestId("root-layout");
   });
@@ -48,6 +53,13 @@ describe("frontend/routes/_oh", () => {
   });
 
   it("should not render the AI config modal if the settings are up-to-date", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+      GITHUB_CLIENT_ID: "test-id",
+      POSTHOG_CLIENT_KEY: "test-key",
+    });
+
     settingsAreUpToDateMock.mockReturnValue(true);
     renderWithProviders(<RouteStub />);
 
@@ -108,6 +120,13 @@ describe("frontend/routes/_oh", () => {
   });
 
   it("should not render the user consent form if the user has already made a decision", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+      GITHUB_CLIENT_ID: "test-id",
+      POSTHOG_CLIENT_KEY: "test-key",
+    });
+
     localStorage.setItem("analytics-consent", "true");
     renderWithProviders(<RouteStub />);
 
