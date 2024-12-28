@@ -66,7 +66,7 @@ async def test_store_and_load_data(session_init_store):
 
 @pytest.mark.asyncio
 async def test_get_instance():
-    config = AppConfig(file_store='local', file_store_path='/test/path')
+    config = AppConfig(file_store='local', file_store_location='/test/path')
 
     with patch(
         'openhands.storage.file_settings_store.get_file_store'

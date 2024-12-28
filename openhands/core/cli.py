@@ -122,7 +122,7 @@ async def main():
         config=agent_config,
     )
 
-    file_store = get_file_store(config.file_store, config.file_store_path)
+    file_store = get_file_store(config.file_store, config.file_store_location)
     event_stream = EventStream(sid, file_store)
 
     runtime_cls = get_runtime_cls(config.runtime)

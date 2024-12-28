@@ -124,7 +124,7 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
 @pytest.mark.asyncio
 async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
     config = AppConfig()
-    file_store = get_file_store(config.file_store, config.file_store_path)
+    file_store = get_file_store(config.file_store, config.file_store_location)
     event_stream = EventStream(sid='test', file_store=file_store)
 
     agent = MagicMock(spec=Agent)

@@ -26,7 +26,7 @@ class AppConfig:
         sandbox: Sandbox configuration settings.
         runtime: Runtime environment identifier.
         file_store: Type of file store to use.
-        file_store_path: Path to the file store.
+        file_store_location: Path to the file store.
         trajectories_path: Folder path to store trajectories.
         workspace_base: Base path for the workspace. Defaults to `./workspace` as absolute path.
         workspace_mount_path: Path to mount the workspace. Defaults to `workspace_base`.
@@ -51,7 +51,7 @@ class AppConfig:
     security: SecurityConfig = field(default_factory=SecurityConfig)
     runtime: str = 'eventstream'
     file_store: str = 'memory'
-    file_store_path: str = '/tmp/file_store'
+    file_store_location: str = '/tmp/file_store'
     trajectories_path: str | None = None
     workspace_base: str | None = None
     workspace_mount_path: str | None = None

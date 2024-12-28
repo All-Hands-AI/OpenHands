@@ -39,5 +39,5 @@ class ConversationStore:
 
     @classmethod
     async def get_instance(cls, config: AppConfig):
-        file_store = get_file_store(config.file_store, config.file_store_path)
+        file_store = get_file_store(config.file_store, config.file_store_location)
         return ConversationStore(file_store)

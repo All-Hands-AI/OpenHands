@@ -100,7 +100,7 @@ Les options de configuration de base sont définies dans la section `[core]` du 
   - Description : Chemin pour stocker les trajectoires (peut être un dossier ou un fichier). Si c'est un dossier, les trajectoires seront enregistrées dans un fichier nommé avec l'ID de session et l'extension .json, dans ce dossier.
 
 **Stockage de fichiers**
-- `file_store_path`
+- `file_store_location`
   - Type : `str`
   - Valeur par défaut : `"/tmp/file_store"`
   - Description : Chemin de stockage des fichiers
