@@ -118,31 +118,3 @@ export const retrieveLatestGitHubCommit = async (
 
   return response.data[0];
 };
-
-export const searchPublicRepositories = async (
-  query: string,
-  per_page = 3,
-  sort: "" | "updated" | "stars" | "forks" = "stars",
-  order: "desc" | "asc" = "desc",
-): Promise<GitHubRepository[]> => {
-  if (!query.trim()) {
-    return [];
-  }
-
-  try {
-    const response = await github.get<{ items: GitHubRepository[] }>(
-      "/search/repositories",
-      {
-        params: {
-          q: query,
-          per_page,
-          sort,
-          order,
-        },
-      },
-    );
-    return response.data.items;
-  } catch (error) {
-    return [];
-  }
-};
