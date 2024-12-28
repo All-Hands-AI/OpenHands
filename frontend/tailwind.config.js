@@ -28,9 +28,18 @@ export default {
         },
       },
       themes: {
+        light: {
+          colors: {
+            primary: "#4465DB",
+            background: "#FFFFFF",
+            foreground: "#11181C",
+          },
+        },
         dark: {
           colors: {
             primary: "#4465DB",
+            background: "#171717",
+            foreground: "#ECEDEE",
           },
         }
       }

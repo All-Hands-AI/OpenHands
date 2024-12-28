@@ -10,6 +10,7 @@ import "./tailwind.css";
 import "./index.css";
 import React from "react";
 import { Toaster } from "react-hot-toast";
+import { ThemeProvider } from "./context/theme-context";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -21,10 +22,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
-        <ScrollRestoration />
-        <Scripts />
-        <Toaster />
+        <ThemeProvider>
+          {children}
+          <ScrollRestoration />
+          <Scripts />
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
