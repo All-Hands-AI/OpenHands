@@ -1,13 +1,17 @@
-import pytest
 from unittest.mock import MagicMock, patch
-from openhands.resolver.issue_definitions import PRHandler
+
+import pytest
+
 from openhands.core.config import LLMConfig
 from openhands.resolver.github_issue import GithubIssue
+from openhands.resolver.issue_definitions import PRHandler
+
 
 @pytest.fixture
 def pr_handler():
     llm_config = LLMConfig(model='test-model')
     return PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+
 
 @patch('requests.post')
 def test_get_pr_status_pending(mock_post, pr_handler):
@@ -21,15 +25,11 @@ def test_get_pr_status_pending(mock_post, pr_handler):
                         'nodes': [
                             {
                                 'commit': {
-                                    'statusCheckRollup': {
-                                        'contexts': {
-                                            'nodes': []
-                                        }
-                                    }
+                                    'statusCheckRollup': {'contexts': {'nodes': []}}
                                 }
                             }
                         ]
-                    }
+                    },
                 }
             }
         }
@@ -40,6 +40,7 @@ def test_get_pr_status_pending(mock_post, pr_handler):
 
     assert has_conflicts is None
     assert failed_checks == []  # Changed from 'is None' to '== []'
+
 
 @patch('requests.post')
 def test_get_instruction_pending_status(mock_post, pr_handler):
@@ -53,15 +54,11 @@ def test_get_instruction_pending_status(mock_post, pr_handler):
                         'nodes': [
                             {
                                 'commit': {
-                                    'statusCheckRollup': {
-                                        'contexts': {
-                                            'nodes': []
-                                        }
-                                    }
+                                    'statusCheckRollup': {'contexts': {'nodes': []}}
                                 }
                             }
                         ]
-                    }
+                    },
                 }
             }
         }
@@ -75,7 +72,7 @@ def test_get_instruction_pending_status(mock_post, pr_handler):
         title='Test PR',
         body='Test body',
         has_merge_conflicts=None,
-        failed_checks=None
+        failed_checks=None,
     )
 
     template = '{{ pr_status }}'
@@ -84,6 +81,7 @@ def test_get_instruction_pending_status(mock_post, pr_handler):
 
     assert 'The merge status of this PR is currently unknown or pending.' in instruction
     assert 'The CI check status is currently unknown or pending.' in instruction
+
 
 @patch('requests.post')
 def test_get_instruction_with_linting_issues(mock_post, pr_handler):
@@ -103,7 +101,7 @@ def test_get_instruction_with_linting_issues(mock_post, pr_handler):
                                                 {
                                                     'name': 'lint',
                                                     'conclusion': 'FAILURE',
-                                                    'text': 'ESLint found 2 errors and 1 warning'
+                                                    'text': 'ESLint found 2 errors and 1 warning',
                                                 }
                                             ]
                                         }
@@ -111,7 +109,7 @@ def test_get_instruction_with_linting_issues(mock_post, pr_handler):
                                 }
                             }
                         ]
-                    }
+                    },
                 }
             }
         }
@@ -126,11 +124,8 @@ def test_get_instruction_with_linting_issues(mock_post, pr_handler):
         body='Test body',
         has_merge_conflicts=False,
         failed_checks=[
-            {
-                'name': 'lint',
-                'description': 'ESLint found 2 errors and 1 warning'
-            }
-        ]
+            {'name': 'lint', 'description': 'ESLint found 2 errors and 1 warning'}
+        ],
     )
 
     template = '{{ pr_status }}'
@@ -141,7 +136,11 @@ def test_get_instruction_with_linting_issues(mock_post, pr_handler):
     assert 'The following CI checks have failed:' in instruction
     assert 'Linting issues detected.' in instruction
     assert 'lint: ESLint found 2 errors and 1 warning' in instruction
-    assert 'Make sure to run the linter locally and address all issues before pushing changes.' in instruction
+    assert (
+        'Make sure to run the linter locally and address all issues before pushing changes.'
+        in instruction
+    )
+
 
 @patch('requests.post')
 def test_get_instruction_with_failed_lint_check(mock_post, pr_handler, capsys):
@@ -162,7 +161,7 @@ def test_get_instruction_with_failed_lint_check(mock_post, pr_handler, capsys):
                                                 {
                                                     'name': 'Lint',
                                                     'conclusion': 'FAILURE',
-                                                    'text': 'ESLint found issues'
+                                                    'text': 'ESLint found issues',
                                                 }
                                             ]
                                         }
@@ -170,7 +169,7 @@ def test_get_instruction_with_failed_lint_check(mock_post, pr_handler, capsys):
                                 }
                             }
                         ]
-                    }
+                    },
                 }
             }
         }
@@ -185,24 +184,20 @@ def test_get_instruction_with_failed_lint_check(mock_post, pr_handler, capsys):
         title='Fix issue #13: Add the option to sort PRs',
         body='This pull request fixes #13.\n\nThe issue has been successfully resolved. The AI implemented a complete sorting functionality for pull requests that addresses the original request.',
         has_merge_conflicts=False,
-        failed_checks=[
-            {
-                'name': 'Lint',
-                'description': 'ESLint found issues'
-            }
-        ]
+        failed_checks=[{'name': 'Lint', 'description': 'ESLint found issues'}],
     )
 
     template = '{{ pr_status }}'
 
     instruction, _ = pr_handler.get_instruction(issue, template)
 
-    # Capture the output
-    captured = capsys.readouterr()
-    print(f"\nGenerated instruction for PR #14:\n{instruction}")
+    print(f'\nGenerated instruction for PR #14:\n{instruction}')
 
     assert 'This PR has no merge conflicts.' in instruction
     assert 'The following CI checks have failed:' in instruction
     assert 'Lint: ESLint found issues' in instruction
     assert 'Linting issues detected.' in instruction
-    assert 'Make sure to run the linter locally and address all issues before pushing changes.' in instruction
+    assert (
+        'Make sure to run the linter locally and address all issues before pushing changes.'
+        in instruction
+    )

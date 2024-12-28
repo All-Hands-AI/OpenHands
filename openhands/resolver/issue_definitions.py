@@ -298,7 +298,7 @@ class PRHandler(IssueHandler):
 
     def __get_pr_status(
         self, pull_number: int
-    ) -> tuple[bool | None, list[dict[str, str | None]] | None]:
+    ) -> tuple[bool | None, list[dict[str, str | None]]]:
         """Get the PR's merge conflict status and CI check status.
 
         Args:
@@ -307,7 +307,7 @@ class PRHandler(IssueHandler):
         Returns:
             A tuple containing:
             - bool | None: Whether the PR has merge conflicts (None if unknown)
-            - list[dict[str, str | None]] | None: List of failed CI checks with their details (None if unknown)
+            - list[dict[str, str | None]]: List of failed CI checks with their details (empty list if no failures)
         """
         query = """
             query($owner: String!, $repo: String!, $pr: Int!) {
@@ -329,6 +329,8 @@ class PRHandler(IssueHandler):
                                                     name
                                                     conclusion
                                                     text
+                                                    summary
+                                                    title
                                                 }
                                             }
                                         }
@@ -354,6 +356,10 @@ class PRHandler(IssueHandler):
         response.raise_for_status()
         response_json = response.json()
 
+        # Print raw API response for debugging
+        print(f'Raw API response for PR #{pull_number}:')
+        print(json.dumps(response_json, indent=2))
+
         pr_data = (
             response_json.get('data', {}).get('repository', {}).get('pullRequest', {})
         )
@@ -363,32 +369,46 @@ class PRHandler(IssueHandler):
         has_conflicts = None if mergeable == 'UNKNOWN' else (mergeable == 'CONFLICTING')
 
         # Check CI status
-        failed_checks = None
+        failed_checks = []
         commits = pr_data.get('commits', {}).get('nodes', [])
         if commits:
             status_rollup = commits[0].get('commit', {}).get('statusCheckRollup', {})
             contexts = status_rollup.get('contexts', {}).get('nodes', [])
 
-            if contexts:
-                failed_checks = []
-                for context in contexts:
-                    # Handle both StatusContext and CheckRun types
-                    if 'state' in context:  # StatusContext
-                        if context['state'] == 'FAILURE':
-                            failed_checks.append(
-                                {
-                                    'name': context['context'],
-                                    'description': context.get('description'),
-                                }
-                            )
-                    elif 'conclusion' in context:  # CheckRun
-                        if context['conclusion'] in ['FAILURE', 'TIMED_OUT', 'CANCELLED']:
-                            failed_checks.append(
-                                {
-                                    'name': context['name'],
-                                    'description': context.get('text'),
-                                }
-                            )
+            for context in contexts:
+                # Handle both StatusContext and CheckRun types
+                if 'state' in context:  # StatusContext
+                    if context['state'] in ['FAILURE', 'ERROR']:
+                        failed_checks.append(
+                            {
+                                'name': context['context'],
+                                'description': context.get('description')
+                                or 'No description provided',
+                            }
+                        )
+                elif 'conclusion' in context:  # CheckRun
+                    if context['conclusion'] in [
+                        'FAILURE',
+                        'TIMED_OUT',
+                        'CANCELLED',
+                        'ACTION_REQUIRED',
+                    ]:
+                        description = (
+                            context.get('text')
+                            or context.get('summary')
+                            or context.get('title')
+                            or 'No description provided'
+                        )
+                        failed_checks.append(
+                            {
+                                'name': context['name'],
+                                'description': description,
+                            }
+                        )
+
+        print(f'Processed PR status for PR #{pull_number}:')
+        print(f'has_conflicts: {has_conflicts}')
+        print(f'failed_checks: {failed_checks}')
 
         return has_conflicts, failed_checks
 
@@ -743,11 +763,9 @@ class PRHandler(IssueHandler):
         # Add PR status information
         pr_status = ''
         if issue.has_merge_conflicts is None:
-            pr_status += '\nThe merge status of this PR is currently unknown or pending.'
+            pr_status += 'The merge status of this PR is currently unknown or pending.'
         elif issue.has_merge_conflicts:
-            pr_status += '\nThis PR has merge conflicts that need to be resolved.'
-        else:
-            pr_status += '\nThis PR has no merge conflicts.'
+            pr_status += 'This PR has merge conflicts that need to be resolved.'
 
         if issue.failed_checks is None:
             pr_status += '\nThe CI check status is currently unknown or pending.'
@@ -755,9 +773,35 @@ class PRHandler(IssueHandler):
             pr_status += '\nThe following CI checks have failed:\n'
             for check in issue.failed_checks:
                 pr_status += f"- {check['name']}: {check['description']}\n"
-            pr_status += '\nPlease examine the GitHub workflow files, reproduce the problem locally, and fix and test it locally.'
-        else:
+            pr_status += 'Please examine the GitHub workflow files, reproduce the problem locally, and fix and test it locally.'
+
+            # Specific handling for linting issues
+            lint_checks = [
+                check
+                for check in issue.failed_checks
+                if check['name'] and 'lint' in check['name'].lower()
+            ]
+            if lint_checks:
+                pr_status += (
+                    '\n\nLinting issues detected. Please review and fix the following:'
+                )
+                for lint_check in lint_checks:
+                    pr_status += (
+                        f"\n- {lint_check['name']}: {lint_check['description']}"
+                    )
+                pr_status += '\nMake sure to run the linter locally and address all issues before pushing changes.'
+        elif pr_status:  # Only add this if there's already some status information
             pr_status += '\nAll CI checks have passed.'
+
+        # Add a note about the lack of detailed information
+        if issue.failed_checks and all(
+            check['description'] == 'No description provided'
+            for check in issue.failed_checks
+        ):
+            pr_status += '\n\nNote: Detailed information about the failed checks is not available. Please check the GitHub Actions tab for more information.'
+
+        # Remove leading newline if present
+        pr_status = pr_status.lstrip()
 
         instruction = template.render(
             issues=issues_str,
