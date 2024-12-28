@@ -1,22 +1,19 @@
+from __future__ import annotations
+
 import json
 from dataclasses import dataclass
 
 from openhands.core.config.app_config import AppConfig
 from openhands.storage import get_file_store
+from openhands.storage.conversation_store import ConversationStore
+from openhands.server.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_metadata_filename
 from openhands.utils.async_utils import call_sync_from_async
 
 
 @dataclass
-class ConversationMetadata:
-    conversation_id: str
-    github_user_id: str
-    selected_repository: str | None
-
-
-@dataclass
-class ConversationStore:
+class FileConversationStore(ConversationStore):
     file_store: FileStore
 
     async def save_metadata(self, metadata: ConversationMetadata):
@@ -38,6 +35,6 @@ class ConversationStore:
             return False
 
     @classmethod
-    async def get_instance(cls, config: AppConfig):
+    async def get_instance(cls, config: AppConfig, token: str | None):
         file_store = get_file_store(config.file_store, config.file_store_path)
-        return ConversationStore(file_store)
+        return FileConversationStore(file_store)
