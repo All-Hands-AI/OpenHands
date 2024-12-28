@@ -13,9 +13,10 @@ export const speechSlice = createSlice({
   initialState,
   reducers: {
     toggleSpeech: (state) => {
-      state.enabled = !state.enabled;
+      const newState = !state.enabled;
+      state.enabled = newState;
       // Cancel any ongoing speech when disabled
-      if (!state.enabled) {
+      if (!newState && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
     },

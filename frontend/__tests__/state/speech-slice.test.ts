@@ -24,9 +24,9 @@ describe("speechSlice", () => {
 
   it("should handle toggleSpeech", () => {
     const actual = speechSlice.reducer(initialState, toggleSpeech());
-    expect(actual.enabled).toEqual(false);
+    expect(actual.enabled).toEqual(true);
 
     const actual2 = speechSlice.reducer(actual, toggleSpeech());
-    expect(actual2.enabled).toEqual(true);
+    expect(actual2.enabled).toEqual(false);
   });
 });

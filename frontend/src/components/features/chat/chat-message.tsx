@@ -11,7 +11,6 @@ import { RootState } from "#/store";
 // Function to speak text using Web Speech API
 function speakText(text: string) {
   if (!window.speechSynthesis) {
-    console.error('Speech synthesis not supported');
     return;
   }
 
@@ -23,23 +22,19 @@ function speakText(text: string) {
 
   // Get available voices and set a good English voice if available
   let voices = window.speechSynthesis.getVoices();
-  console.log('Available voices:', voices);
-  
-  // If voices array is empty, wait for the voiceschanged event
+
+  // If voices array is empty, try to get them again after a short delay
   if (voices.length === 0) {
-    window.speechSynthesis.addEventListener('voiceschanged', () => {
+    setTimeout(() => {
       voices = window.speechSynthesis.getVoices();
-      console.log('Voices after change:', voices);
       const englishVoice =
         voices.find(
-          (voice) => voice.lang.startsWith("en") && voice.name.includes("Google"),
+          (voice) =>
+            voice.lang.startsWith("en") && voice.name.includes("Google"),
         ) || voices.find((voice) => voice.lang.startsWith("en"));
 
       if (englishVoice) {
-        console.log('Selected voice:', englishVoice);
         utterance.voice = englishVoice;
-      } else {
-        console.log('No English voice found');
       }
 
       // Set properties
@@ -48,9 +43,8 @@ function speakText(text: string) {
       utterance.volume = 1.0; // Full volume
 
       // Speak the text
-      console.log('Speaking text:', text);
       window.speechSynthesis.speak(utterance);
-    }, { once: true });
+    }, 100);
   } else {
     const englishVoice =
       voices.find(
@@ -58,10 +52,7 @@ function speakText(text: string) {
       ) || voices.find((voice) => voice.lang.startsWith("en"));
 
     if (englishVoice) {
-      console.log('Selected voice:', englishVoice);
       utterance.voice = englishVoice;
-    } else {
-      console.log('No English voice found');
     }
 
     // Set properties
@@ -70,7 +61,6 @@ function speakText(text: string) {
     utterance.volume = 1.0; // Full volume
 
     // Speak the text
-    console.log('Speaking text:', text);
     window.speechSynthesis.speak(utterance);
   }
 }
@@ -109,15 +99,12 @@ export function ChatMessage({
 
   // Get speech enabled state from Redux
   const speechEnabled = useSelector((state: RootState) => state.speech.enabled);
-  console.log('Speech enabled state:', speechEnabled);
 
   // Speak assistant messages when they appear
   React.useEffect(() => {
-    console.log('Effect triggered. Speech enabled:', speechEnabled, 'Type:', type, 'Message:', message ? 'exists' : 'none');
     if (speechEnabled && type === "assistant" && message) {
       // Remove markdown formatting before speaking
       const plainText = message.replace(/[#*`]/g, "");
-      console.log('Speaking message:', plainText);
       speakText(plainText);
     }
   }, [type, message, speechEnabled]);

@@ -2,12 +2,10 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "#/store";
 import { toggleSpeech } from "#/state/speech-slice";
-import { cn } from "#/utils/utils";
 
 export function ToggleSpeechButton() {
   const dispatch = useDispatch();
   const enabled = useSelector((state: RootState) => state.speech.enabled);
-  console.log('Toggle button - Speech enabled state:', enabled);
 
   return (
     <button

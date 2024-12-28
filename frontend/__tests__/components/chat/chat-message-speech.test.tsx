@@ -11,7 +11,12 @@ const mockStore = configureStore([]);
 const mockSpeechSynthesis = {
   cancel: vi.fn(),
   speak: vi.fn(),
-  getVoices: vi.fn().mockReturnValue([]),
+  getVoices: vi.fn().mockReturnValue([
+    {
+      name: "Google US English",
+      lang: "en-US",
+    },
+  ]),
 };
 
 const mockUtterance = {
