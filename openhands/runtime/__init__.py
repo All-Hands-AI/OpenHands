@@ -33,6 +33,5 @@ __all__ = [
     'ModalRuntime',
     'RunloopRuntime',
     'EventStreamRuntime',
-    'IBMCodeEngineRuntime',
     'get_runtime_cls',
 ]
