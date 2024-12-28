@@ -216,15 +216,42 @@ class Runtime(FileEditRuntimeMixin):
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
 
-    def get_custom_microagents(self, selected_repository: str | None) -> list[str]:
-        custom_microagents_content = []
-        custom_microagents_dir = Path('.openhands') / 'microagents'
+    def get_custom_microagents(self, selected_repository: str | None, text: str | None = None, file_path: str | None = None) -> list[str]:
+        """Get custom microagents for the current context.
+        
+        This includes:
+        1. Repository-specific agents (from .openhands/microagents/repo/)
+        2. Legacy .openhands_instructions file
+        3. Local repository microagents
+        4. Keyword-triggered agents based on input text
+        
+        Args:
+            selected_repository: Repository name in format "org/repo"
+            text: Optional text to check for keyword triggers
+            file_path: Optional file path for file pattern matching
+        """
+        from openhands.core.microagents import MicroAgentHub
 
-        dir_name = str(custom_microagents_dir)
+        custom_microagents_content = []
+        
+        # Load the global microagents hub
+        hub = MicroAgentHub.load()
+        
+        # Get repository-specific agents if a repository is selected
         if selected_repository:
-            dir_name = str(
-                Path(selected_repository.split('/')[1]) / custom_microagents_dir
-            )
+            repo_agents = hub.get_repo_agents(selected_repository)
+            for agent in repo_agents:
+                self.log('info', f'Loading repository agent: {agent.name}')
+                custom_microagents_content.append(agent.knowledge)
+
+        # Get keyword-triggered agents if text is provided
+        if text:
+            keyword_agents = hub.get_keyword_agents(text, file_path)
+            for agent in keyword_agents:
+                self.log('info', f'Loading keyword agent: {agent.name}')
+                custom_microagents_content.append(agent.knowledge)
+
+        # Check for legacy .openhands_instructions file
         obs = self.read(FileReadAction(path='.openhands_instructions'))
         if isinstance(obs, ErrorObservation):
             self.log('debug', 'openhands_instructions not present')
@@ -233,9 +260,16 @@ class Runtime(FileEditRuntimeMixin):
             self.log('info', f'openhands_instructions: {openhands_instructions}')
             custom_microagents_content.append(openhands_instructions)
 
-        files = self.list_files(dir_name)
+        # Check for local repository microagents
+        custom_microagents_dir = Path('.openhands') / 'microagents'
+        dir_name = str(custom_microagents_dir)
+        if selected_repository:
+            dir_name = str(
+                Path(selected_repository.split('/')[1]) / custom_microagents_dir
+            )
 
-        self.log('info', f'Found {len(files)} custom microagents.')
+        files = self.list_files(dir_name)
+        self.log('info', f'Found {len(files)} local microagents.')
 
         for fname in files:
             content = self.read(
