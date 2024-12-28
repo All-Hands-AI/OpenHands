@@ -3,11 +3,17 @@ Given the following issue description and the last message from an AI agent atte
 Issue description:
 {{ issue_context }}
 
-Last message from AI agent:
+Last message from AI agent (including any patch content):
 {{ last_message }}
 
-(1) has the issue been successfully resolved?
-(2) If the issue has been resolved, please provide an explanation of what was done in the PR that can be sent to a human reviewer on github. If the issue has not been resolved, please provide an explanation of why.
+Please analyze:
+1. Has the issue been successfully resolved? Look for concrete evidence such as:
+   - Patch content showing actual code changes
+   - Clear description of what was fixed
+   - Specific files that were modified
+2. If patch content is present, carefully examine the changes to verify they address the issue
+3. If the issue has been resolved, provide an explanation of what was done in the PR that can be sent to a human reviewer on github
+4. If the issue has not been resolved, explain why
 
 Answer in exactly the format below, with only true or false for success, and an explanation of the result.
 
