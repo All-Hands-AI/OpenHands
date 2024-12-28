@@ -296,7 +296,9 @@ class PRHandler(IssueHandler):
         super().__init__(owner, repo, token, llm_config)
         self.download_url = 'https://api.github.com/repos/{}/{}/pulls'
 
-    def __get_pr_status(self, pull_number: int) -> tuple[bool, list[dict[str, str]]]:
+    def __get_pr_status(
+        self, pull_number: int
+    ) -> tuple[bool, list[dict[str, str | None]]]:
         """Get the PR's merge conflict status and CI check status.
 
         Args:
@@ -305,7 +307,7 @@ class PRHandler(IssueHandler):
         Returns:
             A tuple containing:
             - bool: Whether the PR has merge conflicts
-            - list[dict[str, str]]: List of failed CI checks with their details
+            - list[dict[str, str | None]]: List of failed CI checks with their details
         """
         query = """
             query($owner: String!, $repo: String!, $pr: Int!) {
@@ -373,9 +375,7 @@ class PRHandler(IssueHandler):
                         failed_checks.append(
                             {
                                 'name': context['context'],
-                                'description': context.get(
-                                    'description', 'No description available'
-                                ),
+                                'description': context.get('description'),
                             }
                         )
                 elif 'conclusion' in context:  # CheckRun
@@ -383,9 +383,7 @@ class PRHandler(IssueHandler):
                         failed_checks.append(
                             {
                                 'name': context['name'],
-                                'description': context.get(
-                                    'text', 'No description available'
-                                ),
+                                'description': context.get('text'),
                             }
                         )
 
