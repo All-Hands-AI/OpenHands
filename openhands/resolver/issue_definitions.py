@@ -298,7 +298,7 @@ class PRHandler(IssueHandler):
 
     def __get_pr_status(
         self, pull_number: int
-    ) -> tuple[bool, list[dict[str, str | None]]]:
+    ) -> tuple[bool | None, list[dict[str, str | None]] | None]:
         """Get the PR's merge conflict status and CI check status.
 
         Args:
@@ -306,8 +306,8 @@ class PRHandler(IssueHandler):
 
         Returns:
             A tuple containing:
-            - bool: Whether the PR has merge conflicts
-            - list[dict[str, str | None]]: List of failed CI checks with their details
+            - bool | None: Whether the PR has merge conflicts (None if unknown)
+            - list[dict[str, str | None]] | None: List of failed CI checks with their details (None if unknown)
         """
         query = """
             query($owner: String!, $repo: String!, $pr: Int!) {
@@ -359,33 +359,36 @@ class PRHandler(IssueHandler):
         )
 
         # Check mergeable status
-        has_conflicts = pr_data.get('mergeable') == 'CONFLICTING'
+        mergeable = pr_data.get('mergeable')
+        has_conflicts = None if mergeable == 'UNKNOWN' else (mergeable == 'CONFLICTING')
 
         # Check CI status
-        failed_checks = []
+        failed_checks = None
         commits = pr_data.get('commits', {}).get('nodes', [])
         if commits:
             status_rollup = commits[0].get('commit', {}).get('statusCheckRollup', {})
             contexts = status_rollup.get('contexts', {}).get('nodes', [])
 
-            for context in contexts:
-                # Handle both StatusContext and CheckRun types
-                if 'state' in context:  # StatusContext
-                    if context['state'] == 'FAILURE':
-                        failed_checks.append(
-                            {
-                                'name': context['context'],
-                                'description': context.get('description'),
-                            }
-                        )
-                elif 'conclusion' in context:  # CheckRun
-                    if context['conclusion'] in ['FAILURE', 'TIMED_OUT', 'CANCELLED']:
-                        failed_checks.append(
-                            {
-                                'name': context['name'],
-                                'description': context.get('text'),
-                            }
-                        )
+            if contexts:
+                failed_checks = []
+                for context in contexts:
+                    # Handle both StatusContext and CheckRun types
+                    if 'state' in context:  # StatusContext
+                        if context['state'] == 'FAILURE':
+                            failed_checks.append(
+                                {
+                                    'name': context['context'],
+                                    'description': context.get('description'),
+                                }
+                            )
+                    elif 'conclusion' in context:  # CheckRun
+                        if context['conclusion'] in ['FAILURE', 'TIMED_OUT', 'CANCELLED']:
+                            failed_checks.append(
+                                {
+                                    'name': context['name'],
+                                    'description': context.get('text'),
+                                }
+                            )
 
         return has_conflicts, failed_checks
 
@@ -739,17 +742,22 @@ class PRHandler(IssueHandler):
 
         # Add PR status information
         pr_status = ''
-        if issue.has_merge_conflicts:
+        if issue.has_merge_conflicts is None:
+            pr_status += '\nThe merge status of this PR is currently unknown or pending.'
+        elif issue.has_merge_conflicts:
             pr_status += '\nThis PR has merge conflicts that need to be resolved.'
-        if issue.failed_checks:
+        else:
+            pr_status += '\nThis PR has no merge conflicts.'
+
+        if issue.failed_checks is None:
+            pr_status += '\nThe CI check status is currently unknown or pending.'
+        elif issue.failed_checks:
             pr_status += '\nThe following CI checks have failed:\n'
             for check in issue.failed_checks:
                 pr_status += f"- {check['name']}: {check['description']}\n"
             pr_status += '\nPlease examine the GitHub workflow files, reproduce the problem locally, and fix and test it locally.'
-        if not issue.has_merge_conflicts and not issue.failed_checks:
-            pr_status += (
-                '\nThis PR has no merge conflicts and all CI checks have passed.'
-            )
+        else:
+            pr_status += '\nAll CI checks have passed.'
 
         instruction = template.render(
             issues=issues_str,
