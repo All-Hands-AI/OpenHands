@@ -75,7 +75,7 @@ class S3FileStore(FileStore):
                     f"Error: Access denied to bucket '{self.bucket}'."
                 )
             else:
-                raise FileNotFoundError(f'Error: {e.response['Error']['Message']}')
+                raise FileNotFoundError(f"Error: {e.response['Error']['Message']}")
         except Exception as e:
             raise FileNotFoundError(
                 f"Error: Failed to read from bucket '{self.bucket}' at path {path}: {e}"
