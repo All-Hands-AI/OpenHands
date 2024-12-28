@@ -21,8 +21,6 @@ def get_runtime_cls(name: str):
         return ModalRuntime
     elif name == 'runloop':
         return RunloopRuntime
-    elif name == 'ibmcodeengine':
-        return IBMCodeEngineRuntime
     else:
         raise ValueError(f'Runtime {name} not supported')
 
