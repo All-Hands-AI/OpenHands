@@ -1,111 +1,192 @@
 # OpenHands MicroAgents
 
-This directory contains MicroAgents that extend OpenHands' capabilities with specialized knowledge and workflow templates.
+OpenHands loads microagents from two distinct sources:
 
-## Directory Structure
+## 1. Repository Instructions (Private)
+Each repository can have its own instructions in `.openhands/microagents/repo.md`. These instructions are:
+- Private to that repository
+- Automatically loaded when working with that repository
+- Perfect for repository-specific guidelines and team practices
 
+Example repository structure:
 ```
-microagents/
-├── official/           # Official OpenHands microagents
-│   ├── knowledge/     # Knowledge-based agents
-│   │   ├── repo/     # Repository-triggered agents
-│   │   └── keyword/  # Keyword-triggered agents
-│   └── templates/    # Template-based agents
-│       └── workflows/
-└── community/         # Community-contributed agents
-    ├── knowledge/
-    └── templates/
+your-repository/
+└── .openhands/
+    └── microagents/
+        └── repo.md    # Repository-specific instructions
 ```
+
+## 2. Shareable Microagents (Public)
+This directory (`OpenHands/microagents/`) contains shareable microagents that are:
+- Available to all OpenHands users
+- Maintained in the OpenHands repository
+- Perfect for reusable knowledge and common workflows
+
+Directory structure:
+```
+OpenHands/microagents/
+├── knowledge/     # Keyword-triggered expertise
+│   ├── git.yaml      # Git operations
+│   ├── testing.yaml  # Testing practices
+│   └── docker.yaml   # Docker guidelines
+└── tasks/        # Interactive workflows
+    ├── pr_review.yaml   # PR review process
+    ├── bug_fix.yaml     # Bug fixing workflow
+    └── feature.yaml     # Feature implementation
+```
+
+## Loading Order
+
+When OpenHands works with a repository, it:
+1. Loads repository-specific instructions from `.openhands/microagents/repo.md` if present
+2. Loads relevant knowledge agents based on keywords in conversations
+3. Makes task agents available for user selection
 
 ## Types of MicroAgents
 
-### 1. Knowledge-based Agents
+### 1. Knowledge Agents
 
-These agents provide specialized knowledge and can be triggered in two ways:
+Knowledge agents provide specialized expertise that's triggered by keywords in conversations. They help with:
+- Language best practices
+- Framework guidelines
+- Common patterns
+- Tool usage
 
-#### Repository-based Triggers
-Activated based on repository name patterns:
+Example `knowledge/testing.yaml`:
 ```yaml
-trigger_type: repository
-trigger_pattern: "org/repo-*"
-priority: 100  # Higher number = higher priority
-```
-
-#### Keyword-based Triggers
-Activated by specific keywords in user input:
-```yaml
+name: testing_guidelines
+version: 1.0.0
+author: openhands
+agent: CodeActAgent
 trigger_type: keyword
-triggers:
-  - keyword1
-  - keyword2
+triggers: 
+  - test
+  - testing
+  - jest
+file_patterns:  # Optional: only trigger for specific files
+  - "*.test.ts"
+  - "*.spec.ts"
+description: "Testing best practices"
+knowledge: |
+  # Testing Guidelines
+  
+  ## Key Principles
+  1. Use Jest for unit tests
+  2. Follow AAA pattern...
 ```
 
-### 2. Template-based Agents
+### 2. Task Agents
 
-These require user selection and input:
+Task agents provide interactive workflows that guide users through common development tasks. They:
+- Accept user inputs
+- Follow predefined steps
+- Adapt to context
+- Provide consistent results
+
+Example `tasks/pr_review.yaml`:
 ```yaml
-template_type: workflow
-template: |
-  Template text with ${VARIABLES}
+name: pr_review
+version: 1.0.0
+author: openhands
+agent: CodeActAgent
+task_type: workflow
+description: "PR review workflow"
+prompt: |
+  I'll help you review PR ${PR_URL} with these steps:
+  1. Code Quality...
+  ${FOCUS_AREAS}
 inputs:
-  - name: VARIABLE_NAME
+  - name: PR_URL
+    description: "URL of the pull request"
     type: string
     required: true
+    validation:
+      pattern: "^https://github.com/.+/.+/pull/[0-9]+$"
 ```
 
 ## Contributing
 
-### Adding a New Agent
+### When to Contribute
 
-1. Choose the appropriate directory:
-   - `official/` for core OpenHands team
-   - `community/` for community contributions
+1. **Knowledge Agents** - When you have:
+   - Language/framework best practices
+   - Tool usage patterns
+   - Common problem solutions
+   - General development guidelines
 
-2. Select the agent type:
-   - Knowledge-based: `knowledge/repo/` or `knowledge/keyword/`
-   - Template-based: `templates/workflows/`
-
-3. Create a YAML file with the required fields:
-   ```yaml
-   name: agent_name
-   version: 1.0.0
-   author: username
-   agent: CodeActAgent
-   category: development|testing|deployment|etc
-   ...
-   ```
-
-4. Add comprehensive documentation:
-   - Clear description
-   - Detailed capabilities
-   - Usage examples
-   - Requirements
-
-5. Submit a pull request:
-   - Follow the standard PR template
-   - Include test cases
-   - Update relevant documentation
+2. **Task Agents** - When you have:
+   - Repeatable workflows
+   - Multi-step processes
+   - Common development tasks
+   - Standard procedures
 
 ### Best Practices
 
-1. **Naming**:
-   - Use descriptive, lowercase names
-   - Include the technology/domain in the name
+1. **For Knowledge Agents**:
+   - Choose distinctive triggers
+   - Focus on one area of expertise
+   - Include practical examples
+   - Use file patterns when relevant
+   - Keep knowledge general and reusable
 
-2. **Documentation**:
-   - Clear purpose and use cases
-   - Complete examples
-   - List all requirements
+2. **For Task Agents**:
+   - Break workflows into clear steps
+   - Validate user inputs
+   - Provide helpful defaults
+   - Include usage examples
+   - Make steps adaptable
 
-3. **Testing**:
-   - Test all trigger conditions
-   - Validate templates
-   - Check for conflicts
+### Format Guidelines
 
-4. **Maintenance**:
-   - Keep agents up to date
-   - Monitor for issues
-   - Respond to feedback
+1. **Required Fields**:
+   ```yaml
+   name: unique_name         # Lowercase, descriptive
+   version: 1.0.0           # Semantic versioning
+   author: your_name        # Your GitHub username
+   agent: CodeActAgent      # Agent type
+   description: "..."       # Clear, concise purpose
+   ```
+
+2. **Knowledge Agents Also Need**:
+   ```yaml
+   trigger_type: keyword
+   triggers: [...]         # List of trigger words
+   file_patterns: [...]    # Optional file patterns
+   knowledge: |           # Markdown-formatted content
+     # Title
+     Content...
+   ```
+
+3. **Task Agents Also Need**:
+   ```yaml
+   task_type: workflow
+   prompt: |              # The task workflow
+     Steps...
+   inputs:               # Required user inputs
+     - name: INPUT_NAME
+       description: "..."
+       type: string|number|boolean
+       required: true|false
+   ```
+
+### Testing Your Agent
+
+Before submitting:
+1. Test all trigger words (for knowledge agents)
+2. Try all input combinations (for task agents)
+3. Verify markdown formatting
+4. Check for clear, helpful output
+
+### Submission Process
+
+1. Create your agent file in the appropriate directory:
+   - `knowledge/` for expertise
+   - `tasks/` for workflows
+2. Test thoroughly
+3. Submit a pull request with:
+   - Clear description of the agent's purpose
+   - Example usage
+   - Test cases
 
 ## License
 
