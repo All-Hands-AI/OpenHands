@@ -252,9 +252,9 @@ def auto_continue_response(
     Tell the agent to proceed without asking for more input, or finish the interaction.
     """
     message = (
-        'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have solved the task, please first send your answer to user through message and then finish the interaction.\n'
-        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
+        'Please continue on whatever approach you think is suitable.\n'
+        'If you think you have solved the task, please finish the interaction.\n'
+        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN RESPONSE.\n'
     )
     return message
 
