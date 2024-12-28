@@ -1,0 +1,45 @@
+name: pr_review
+version: 1.0.0
+author: openhands
+agent: CodeActAgent
+category: development
+template_type: workflow
+
+description: |
+  A workflow template for reviewing and addressing pull request comments.
+
+capabilities:
+  - PR review automation
+  - Comment addressing
+  - Code changes based on feedback
+
+template: |
+  Can you look at this PR ${PR_URL}
+  And then check out to branch ${BRANCH_NAME} which corresponds to that PR
+  Then, read the diff against the main, understand the purpose of this PR, and then address the PR comments.
+  ${USER_MESSAGE}
+
+inputs:
+  - name: PR_URL
+    description: "URL of the pull request to review"
+    type: string
+    required: true
+    validation:
+      pattern: "^https://github.com/.+/.+/pull/[0-9]+$"
+
+  - name: BRANCH_NAME
+    description: "Name of the PR branch"
+    type: string
+    required: true
+
+  - name: USER_MESSAGE
+    description: "Additional context or specific instructions"
+    type: string
+    required: false
+
+examples:
+  - description: "Basic PR review"
+    code: |
+      PR_URL: https://github.com/org/repo/pull/123
+      BRANCH_NAME: feature-branch
+      USER_MESSAGE: "Please focus on the performance improvements"
