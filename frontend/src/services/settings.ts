@@ -1,4 +1,5 @@
 import { openHands } from "#/api/open-hands-axios";
+
 export const LATEST_SETTINGS_VERSION = 5;
 
 export type Settings = {
@@ -65,7 +66,8 @@ export const getLocalStorageSettings = (): Settings => {
     LLM_API_KEY: llmApiKey || DEFAULT_SETTINGS.LLM_API_KEY,
     CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
     SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
-    REMOTE_RUNTIME_RESOURCE_FACTOR: DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+    REMOTE_RUNTIME_RESOURCE_FACTOR:
+      DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
   };
 };
 
@@ -85,7 +87,8 @@ export const saveSettings = async (
       confirmation_mode: settings.CONFIRMATION_MODE || null,
       security_analyzer: settings.SECURITY_ANALYZER || null,
       llm_api_key: settings.LLM_API_KEY || null,
-      remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR || null,
+      remote_runtime_resource_factor:
+        settings.REMOTE_RUNTIME_RESOURCE_FACTOR || null,
     };
 
     const { data } = await openHands.post("/api/settings", apiSettings);
@@ -121,7 +124,8 @@ export const maybeMigrateSettings = async (logout: () => void) => {
 
   if (currentVersion < 5) {
     const localSettings = getLocalStorageSettings();
-    localSettings.REMOTE_RUNTIME_RESOURCE_FACTOR = DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR;
+    localSettings.REMOTE_RUNTIME_RESOURCE_FACTOR =
+      DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR;
     await saveSettings(localSettings);
   }
 };
@@ -146,7 +150,8 @@ export const getSettings = async (): Promise<Settings> => {
       CONFIRMATION_MODE: apiSettings.confirmation_mode,
       SECURITY_ANALYZER: apiSettings.security_analyzer,
       LLM_API_KEY: "",
-      REMOTE_RUNTIME_RESOURCE_FACTOR: DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+      REMOTE_RUNTIME_RESOURCE_FACTOR:
+        DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
     };
   }
   return getLocalStorageSettings();

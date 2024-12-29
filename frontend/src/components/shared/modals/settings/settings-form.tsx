@@ -20,7 +20,7 @@ import { CustomModelInput } from "../../inputs/custom-model-input";
 import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
-import { useAuth } from "#/context/auth-context";
+
 import { RuntimeSizeSelector } from "./runtime-size-selector";
 
 interface SettingsFormProps {
