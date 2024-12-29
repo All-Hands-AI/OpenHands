@@ -77,14 +77,14 @@ function FileViewer() {
   return (
     <div className="flex h-full bg-neutral-900 relative">
       <FileExplorer isOpen={fileExplorerIsOpen} onToggle={toggleFileExplorer} />
-      <div className="w-full">
+      <div className="w-full h-full flex flex-col">
         {selectedPath && (
           <div className="flex w-full items-center justify-between self-end p-2">
             <span className="text-sm text-neutral-500">{selectedPath}</span>
           </div>
         )}
         {selectedPath && files[selectedPath] && (
-          <div className="p-4">
+          <div className="p-4 flex-1 overflow-auto">
             <SyntaxHighlighter
               language={getLanguageFromPath(selectedPath)}
               style={vscDarkPlus}

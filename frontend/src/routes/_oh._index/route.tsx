@@ -36,15 +36,15 @@ function Home() {
   return (
     <div
       data-testid="root-index"
-      className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto"
+      className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto px-2"
     >
       <HeroHeading />
-      <div className="flex flex-col gap-8 w-[600px] items-center">
+      <div className="flex flex-col gap-8 w-full md:w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
           <TaskForm ref={formRef} />
         </div>
 
-        <div className="flex gap-4 w-full">
+        <div className="flex gap-4 w-full flex-col md:flex-row">
           <GitHubRepositoriesSuggestionBox
             handleSubmit={() => formRef.current?.requestSubmit()}
             repositories={
