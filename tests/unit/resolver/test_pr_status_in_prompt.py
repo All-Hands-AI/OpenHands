@@ -56,7 +56,7 @@ def test_pr_status_in_basic_followup_template(mock_post):
     )
 
     # Use the basic-followup template
-    with open('/workspace/OpenHands/openhands/resolver/prompts/resolve/basic-followup.jinja', 'r') as f:
+    with open('openhands/resolver/prompts/resolve/basic-followup.jinja', 'r') as f:
         template = f.read()
 
     # Generate instruction

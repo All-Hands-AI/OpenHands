@@ -773,6 +773,8 @@ class PRHandler(IssueHandler):
             pr_status += 'The merge status of this PR is currently unknown or pending.'
         elif issue.has_merge_conflicts:
             pr_status += 'This PR has merge conflicts that need to be resolved.'
+        elif not issue.has_merge_conflicts:
+            pr_status += 'This PR has no merge conflicts'
 
         if issue.failed_checks is None:
             pr_status += '\nThe CI check status is currently unknown or pending.'
@@ -784,8 +786,13 @@ class PRHandler(IssueHandler):
 
             # Add note about running tests locally
             pr_status += '\nPlease run the failing checks locally to fix the issues.'
-        elif pr_status:  # Only add this if there's already some status information
-            pr_status += '\nAll CI checks have passed.'
+        elif not issue.failed_checks:
+            if pr_status:
+                pr_status += ' and all CI checks have passed.'
+            else:
+                pr_status += (
+                    'This PR has no merge conflicts and all CI checks have passed.'
+                )
 
         # Add a note about the lack of detailed information
         if issue.failed_checks and all(
