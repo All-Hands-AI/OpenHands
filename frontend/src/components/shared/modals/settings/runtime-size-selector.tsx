@@ -1,5 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { Select, SelectItem } from "@nextui-org/react";
+import { useConfig } from "#/hooks/query/use-config";
 
 interface RuntimeSizeSelectorProps {
   isDisabled: boolean;
@@ -11,25 +13,38 @@ export function RuntimeSizeSelector({
   defaultValue,
 }: RuntimeSizeSelectorProps) {
   const { t } = useTranslation();
+  const { data: config } = useConfig();
+  const isSaasMode = config?.saas_mode ?? false;
+
+  if (!isSaasMode) {
+    return null;
+  }
 
   return (
-    <div className="flex flex-col gap-2">
+    <fieldset className="flex flex-col gap-2">
       <label
         htmlFor="runtime-size"
-        className="text-sm font-medium text-gray-700"
+        className="font-[500] text-[#A3A3A3] text-xs"
       >
         {t("Runtime Size")}
       </label>
-      <select
+      <Select
         id="runtime-size"
         name="runtime-size"
-        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-        defaultValue={defaultValue || 1}
-        disabled={isDisabled}
+        defaultSelectedKey={String(defaultValue || 1)}
+        isDisabled={isDisabled}
+        isClearable={false}
+        classNames={{
+          trigger: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
+        }}
       >
-        <option value={1}>{t("1x (2 core, 8G)")}</option>
-        <option value={2}>{t("2x (4 core, 16G)")}</option>
-      </select>
-    </div>
+        <SelectItem key="1" value={1}>
+          {t("1x (2 core, 8G)")}
+        </SelectItem>
+        <SelectItem key="2" value={2}>
+          {t("2x (4 core, 16G)")}
+        </SelectItem>
+      </Select>
+    </fieldset>
   );
 }
