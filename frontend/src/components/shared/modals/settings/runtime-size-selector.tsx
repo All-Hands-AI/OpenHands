@@ -26,7 +26,7 @@ export function RuntimeSizeSelector({
         htmlFor="runtime-size"
         className="font-[500] text-[#A3A3A3] text-xs"
       >
-        {t("Runtime Size")}
+        {t("SETTINGS_FORM$RUNTIME_SIZE_LABEL")}
       </label>
       <Select
         id="runtime-size"

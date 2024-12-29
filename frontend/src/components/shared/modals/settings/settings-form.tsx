@@ -172,21 +172,19 @@ export function SettingsForm({
             defaultValue={settings.LLM_API_KEY || ""}
           />
 
-          <RuntimeSizeSelector
-            isDisabled={!!disabled}
-            defaultValue={settings.REMOTE_RUNTIME_RESOURCE_FACTOR}
-          />
-
-          {showAdvancedOptions && (
-            <AgentInput
-              isDisabled={!!disabled}
-              defaultValue={settings.AGENT}
-              agents={agents}
-            />
-          )}
-
           {showAdvancedOptions && (
             <>
+              <AgentInput
+                isDisabled={!!disabled}
+                defaultValue={settings.AGENT}
+                agents={agents}
+              />
+
+              <RuntimeSizeSelector
+                isDisabled={!!disabled}
+                defaultValue={settings.REMOTE_RUNTIME_RESOURCE_FACTOR}
+              />
+
               <SecurityAnalyzerInput
                 isDisabled={!!disabled}
                 defaultValue={settings.SECURITY_ANALYZER}
