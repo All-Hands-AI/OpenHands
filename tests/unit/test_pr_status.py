@@ -135,8 +135,7 @@ def test_get_instruction_with_linting_issues(mock_post, pr_handler):
     assert 'The following CI checks have failed:' in instruction
     assert 'lint: ESLint found 2 errors and 1 warning' in instruction
     assert 'Please examine the GitHub workflow files' in instruction
-    assert 'Linting issues detected.' in instruction
-    assert 'Make sure to run the linter locally and address all issues before pushing changes.' in instruction
+    assert 'Please run the failing checks locally to fix the issues.' in instruction
 
 
 @patch('requests.post')
@@ -193,5 +192,4 @@ def test_get_instruction_with_failed_lint_check(mock_post, pr_handler, capsys):
     assert 'The following CI checks have failed:' in instruction
     assert 'Lint: ESLint found issues' in instruction
     assert 'Please examine the GitHub workflow files' in instruction
-    assert 'Linting issues detected.' in instruction
-    assert 'Make sure to run the linter locally and address all issues before pushing changes.' in instruction
+    assert 'Please run the failing checks locally to fix the issues.' in instruction

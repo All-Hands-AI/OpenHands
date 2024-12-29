@@ -66,8 +66,7 @@ def test_pr_status_in_basic_followup_template(mock_post):
     assert 'The following CI checks have failed:' in instruction
     assert 'lint: ESLint found issues' in instruction
     assert 'Please examine the GitHub workflow files' in instruction
-    assert 'Linting issues detected.' in instruction
-    assert 'Make sure to run the linter locally and address all issues before pushing changes.' in instruction
+    assert 'Please run the failing checks locally to fix the issues.' in instruction
 
 
 @patch('requests.post')
@@ -136,5 +135,4 @@ def test_pr_status_in_custom_template(mock_post):
     assert 'The following CI checks have failed:' in instruction
     assert 'lint: ESLint found issues' in instruction
     assert 'Please examine the GitHub workflow files' in instruction
-    assert 'Linting issues detected.' in instruction
-    assert 'Make sure to run the linter locally and address all issues before pushing changes.' in instruction
+    assert 'Please run the failing checks locally to fix the issues.' in instruction

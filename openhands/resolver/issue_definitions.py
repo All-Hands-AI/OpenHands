@@ -370,6 +370,7 @@ class PRHandler(IssueHandler):
 
         # Check CI status
         failed_checks = []
+        seen_checks = set()  # Track seen check names to avoid duplicates
         commits = pr_data.get('commits', {}).get('nodes', [])
         if commits:
             status_rollup = commits[0].get('commit', {}).get('statusCheckRollup', {})
@@ -379,13 +380,16 @@ class PRHandler(IssueHandler):
                 # Handle both StatusContext and CheckRun types
                 if 'state' in context:  # StatusContext
                     if context['state'] in ['FAILURE', 'ERROR']:
-                        failed_checks.append(
-                            {
-                                'name': context['context'],
-                                'description': context.get('description')
-                                or 'No description provided',
-                            }
-                        )
+                        name = context['context']
+                        if name not in seen_checks:
+                            seen_checks.add(name)
+                            failed_checks.append(
+                                {
+                                    'name': name,
+                                    'description': context.get('description')
+                                    or 'No description provided',
+                                }
+                            )
                 elif 'conclusion' in context:  # CheckRun
                     if context['conclusion'] in [
                         'FAILURE',
@@ -393,18 +397,21 @@ class PRHandler(IssueHandler):
                         'CANCELLED',
                         'ACTION_REQUIRED',
                     ]:
-                        description = (
-                            context.get('text')
-                            or context.get('summary')
-                            or context.get('title')
-                            or 'No description provided'
-                        )
-                        failed_checks.append(
-                            {
-                                'name': context['name'],
-                                'description': description,
-                            }
-                        )
+                        name = context['name']
+                        if name not in seen_checks:
+                            seen_checks.add(name)
+                            description = (
+                                context.get('text')
+                                or context.get('summary')
+                                or context.get('title')
+                                or 'No description provided'
+                            )
+                            failed_checks.append(
+                                {
+                                    'name': name,
+                                    'description': description,
+                                }
+                            )
 
         print(f'Processed PR status for PR #{pull_number}:')
         print(f'has_conflicts: {has_conflicts}')
@@ -775,21 +782,8 @@ class PRHandler(IssueHandler):
                 pr_status += f"- {check['name']}: {check['description']}\n"
             pr_status += 'Please examine the GitHub workflow files, reproduce the problem locally, and fix and test it locally.'
 
-            # Specific handling for linting issues
-            lint_checks = [
-                check
-                for check in issue.failed_checks
-                if check['name'] and 'lint' in check['name'].lower()
-            ]
-            if lint_checks:
-                pr_status += (
-                    '\n\nLinting issues detected. Please review and fix the following:'
-                )
-                for lint_check in lint_checks:
-                    pr_status += (
-                        f"\n- {lint_check['name']}: {lint_check['description']}"
-                    )
-                pr_status += '\nMake sure to run the linter locally and address all issues before pushing changes.'
+            # Add note about running tests locally
+            pr_status += '\nPlease run the failing checks locally to fix the issues.'
         elif pr_status:  # Only add this if there's already some status information
             pr_status += '\nAll CI checks have passed.'
 
