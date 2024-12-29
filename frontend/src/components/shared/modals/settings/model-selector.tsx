@@ -69,6 +69,7 @@ export function ModelSelector({
           </label>
           <Autocomplete
             isRequired
+            isVirtualized={false}
             name="llm-provider"
             isDisabled={isDisabled}
             aria-label="LLM Provider"
@@ -113,6 +114,7 @@ export function ModelSelector({
           </label>
           <Autocomplete
             isRequired
+            isVirtualized={false}
             name="llm-model"
             aria-label="LLM Model"
             placeholder="Select a model"

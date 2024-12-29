@@ -4,7 +4,8 @@ import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useAuth } from "#/context/auth-context";
-import { useUserPrefs } from "#/context/user-prefs-context";
+import { useSettings } from "#/context/settings-context";
+import { updateSettingsVersion } from "#/utils/settings-utils";
 import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
@@ -43,19 +44,16 @@ export function ErrorBoundary() {
 }
 
 export default function MainApp() {
-  const { gitHubToken, clearToken } = useAuth();
-  const { settings } = useUserPrefs();
+  const { gitHubToken } = useAuth();
+  const { settings } = useSettings();
+  const { logout } = useAuth();
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
     !localStorage.getItem("analytics-consent"),
   );
 
   const config = useConfig();
-  const {
-    data: isAuthed,
-    isFetched,
-    isFetching: isFetchingAuth,
-  } = useIsAuthed();
+  const { data: isAuthed, isFetching: isFetchingAuth } = useIsAuthed();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     gitHubToken,
@@ -64,14 +62,14 @@ export default function MainApp() {
   });
 
   React.useEffect(() => {
-    if (isFetched && !isAuthed) clearToken();
-  }, [isFetched, isAuthed]);
-
-  React.useEffect(() => {
     if (settings.LANGUAGE) {
       i18n.changeLanguage(settings.LANGUAGE);
     }
   }, [settings.LANGUAGE]);
+
+  React.useEffect(() => {
+    updateSettingsVersion(logout);
+  }, []);
 
   const isInWaitlist =
     !isFetchingAuth && !isAuthed && config.data?.APP_MODE === "saas";
@@ -79,11 +77,11 @@ export default function MainApp() {
   return (
     <div
       data-testid="root-layout"
-      className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3"
+      className="bg-root-primary p-3 h-screen md:min-w-[1024px] overflow-x-hidden flex flex-col md:flex-row gap-3"
     >
       <Sidebar />
 
-      <div className="h-full w-full relative">
+      <div className="h-[calc(100%-50px)] md:h-full w-full relative">
         <Outlet />
       </div>
 

@@ -332,14 +332,16 @@ def test_update_existing_pull_request(
 
 
 @pytest.mark.parametrize(
-    'pr_type,target_branch',
+    'pr_type,target_branch,pr_title',
     [
-        ('branch', None),
-        ('draft', None),
-        ('ready', None),
-        ('branch', 'feature'),
-        ('draft', 'develop'),
-        ('ready', 'staging'),
+        ('branch', None, None),
+        ('draft', None, None),
+        ('ready', None, None),
+        ('branch', 'feature', None),
+        ('draft', 'develop', None),
+        ('ready', 'staging', None),
+        ('ready', None, 'Custom PR Title'),
+        ('draft', 'develop', 'Another Custom Title'),
     ],
 )
 @patch('subprocess.run')
@@ -353,6 +355,7 @@ def test_send_pull_request(
     mock_output_dir,
     pr_type,
     target_branch,
+    pr_title,
 ):
     repo_path = os.path.join(mock_output_dir, 'repo')
 
@@ -386,6 +389,7 @@ def test_send_pull_request(
         patch_dir=repo_path,
         pr_type=pr_type,
         target_branch=target_branch,
+        pr_title=pr_title,
     )
 
     # Assert API calls
@@ -425,11 +429,75 @@ def test_send_pull_request(
         assert result == 'https://github.com/test-owner/test-repo/pull/1'
         mock_post.assert_called_once()
         post_data = mock_post.call_args[1]['json']
-        assert post_data['title'] == 'Fix issue #42: Test Issue'
+        expected_title = pr_title if pr_title else 'Fix issue #42: Test Issue'
+        assert post_data['title'] == expected_title
         assert post_data['body'].startswith('This pull request fixes #42.')
         assert post_data['head'] == 'openhands-fix-issue-42'
         assert post_data['base'] == (target_branch if target_branch else 'main')
         assert post_data['draft'] == (pr_type == 'draft')
+
+
+@patch('subprocess.run')
+@patch('requests.post')
+@patch('requests.get')
+def test_send_pull_request_with_reviewer(
+    mock_get, mock_post, mock_run, mock_github_issue, mock_output_dir
+):
+    repo_path = os.path.join(mock_output_dir, 'repo')
+    reviewer = 'test-reviewer'
+
+    # Mock API responses
+    mock_get.side_effect = [
+        MagicMock(status_code=404),  # Branch doesn't exist
+        MagicMock(json=lambda: {'default_branch': 'main'}),  # Get default branch
+    ]
+
+    # Mock PR creation response
+    mock_post.side_effect = [
+        MagicMock(
+            status_code=201,
+            json=lambda: {
+                'html_url': 'https://github.com/test-owner/test-repo/pull/1',
+                'number': 1,
+            },
+        ),  # PR creation
+        MagicMock(status_code=201),  # Reviewer request
+    ]
+
+    # Mock subprocess.run calls
+    mock_run.side_effect = [
+        MagicMock(returncode=0),  # git checkout -b
+        MagicMock(returncode=0),  # git push
+    ]
+
+    # Call the function with reviewer
+    result = send_pull_request(
+        github_issue=mock_github_issue,
+        github_token='test-token',
+        github_username='test-user',
+        patch_dir=repo_path,
+        pr_type='ready',
+        reviewer=reviewer,
+    )
+
+    # Assert API calls
+    assert mock_get.call_count == 2
+    assert mock_post.call_count == 2
+
+    # Check PR creation
+    pr_create_call = mock_post.call_args_list[0]
+    assert pr_create_call[1]['json']['title'] == 'Fix issue #42: Test Issue'
+
+    # Check reviewer request
+    reviewer_request_call = mock_post.call_args_list[1]
+    assert (
+        reviewer_request_call[0][0]
+        == 'https://api.github.com/repos/test-owner/test-repo/pulls/1/requested_reviewers'
+    )
+    assert reviewer_request_call[1]['json'] == {'reviewers': ['test-reviewer']}
+
+    # Check the result URL
+    assert result == 'https://github.com/test-owner/test-repo/pull/1'
 
 
 @patch('requests.get')
@@ -653,7 +721,7 @@ def test_process_single_pr_update(
         metrics={},
         success=True,
         comment_success=None,
-        success_explanation='[Test success 1]',
+        result_explanation='[Test success 1]',
         error=None,
     )
 
@@ -724,7 +792,7 @@ def test_process_single_issue(
         metrics={},
         success=True,
         comment_success=None,
-        success_explanation='Test success 1',
+        result_explanation='Test success 1',
         error=None,
     )
 
@@ -762,8 +830,10 @@ def test_process_single_issue(
         patch_dir=f'{mock_output_dir}/patches/issue_1',
         pr_type=pr_type,
         fork_owner=None,
-        additional_message=resolver_output.success_explanation,
+        additional_message=resolver_output.result_explanation,
         target_branch=None,
+        reviewer=None,
+        pr_title=None,
     )
 
 
@@ -800,7 +870,7 @@ def test_process_single_issue_unsuccessful(
         metrics={},
         success=False,
         comment_success=None,
-        success_explanation='',
+        result_explanation='',
         error='Test error',
     )
 
@@ -846,7 +916,7 @@ def test_process_all_successful_issues(
         metrics={},
         success=True,
         comment_success=None,
-        success_explanation='Test success 1',
+        result_explanation='Test success 1',
         error=None,
     )
 
@@ -866,7 +936,7 @@ def test_process_all_successful_issues(
         metrics={},
         success=False,
         comment_success=None,
-        success_explanation='',
+        result_explanation='',
         error='Test error 2',
     )
 
@@ -886,7 +956,7 @@ def test_process_all_successful_issues(
         metrics={},
         success=True,
         comment_success=None,
-        success_explanation='Test success 3',
+        result_explanation='Test success 3',
         error=None,
     )
 
@@ -1031,6 +1101,8 @@ def test_main(
     mock_args.llm_base_url = 'mock_url'
     mock_args.llm_api_key = 'mock_key'
     mock_args.target_branch = None
+    mock_args.reviewer = None
+    mock_args.pr_title = None
     mock_parser.return_value.parse_args.return_value = mock_args
 
     # Setup environment variables
@@ -1065,6 +1137,8 @@ def test_main(
         None,
         False,
         mock_args.target_branch,
+        mock_args.reviewer,
+        mock_args.pr_title,
     )
 
     # Other assertions

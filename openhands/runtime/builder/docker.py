@@ -6,6 +6,7 @@ import time
 import docker
 
 from openhands import __version__ as oh_version
+from openhands.core.exceptions import AgentRuntimeBuildError
 from openhands.core.logger import RollingLogger
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder.base import RuntimeBuilder
@@ -19,7 +20,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         version_info = self.docker_client.version()
         server_version = version_info.get('Version', '').replace('-', '.')
         if tuple(map(int, server_version.split('.')[:2])) < (18, 9):
-            raise RuntimeError('Docker server version must be >= 18.09 to use BuildKit')
+            raise AgentRuntimeBuildError(
+                'Docker server version must be >= 18.09 to use BuildKit'
+            )
 
         self.rolling_logger = RollingLogger(max_lines=10)
 
@@ -28,8 +31,8 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         path: str,
         tags: list[str],
         platform: str | None = None,
-        use_local_cache: bool = False,
         extra_build_args: list[str] | None = None,
+        use_local_cache: bool = False,
     ) -> str:
         """Builds a Docker image using BuildKit and handles the build logs appropriately.
 
@@ -44,7 +47,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             str: The name of the built Docker image.
 
         Raises:
-            RuntimeError: If the Docker server version is incompatible or if the build process fails.
+            AgentRuntimeBuildError: If the Docker server version is incompatible or if the build process fails.
 
         Note:
             This method uses Docker BuildKit for improved build performance and caching capabilities.
@@ -55,7 +58,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         version_info = self.docker_client.version()
         server_version = version_info.get('Version', '').replace('-', '.')
         if tuple(map(int, server_version.split('.'))) < (18, 9):
-            raise RuntimeError('Docker server version must be >= 18.09 to use BuildKit')
+            raise AgentRuntimeBuildError(
+                'Docker server version must be >= 18.09 to use BuildKit'
+            )
 
         target_image_hash_name = tags[0]
         target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
@@ -154,7 +159,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         # Check if the image is built successfully
         image = self.docker_client.images.get(target_image_hash_name)
         if image is None:
-            raise RuntimeError(
+            raise AgentRuntimeBuildError(
                 f'Build failed: Image {target_image_hash_name} not found'
             )
 

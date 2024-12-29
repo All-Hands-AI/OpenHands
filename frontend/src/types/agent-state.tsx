@@ -1,4 +1,4 @@
-enum AgentState {
+export enum AgentState {
   LOADING = "loading",
   INIT = "init",
   RUNNING = "running",
@@ -13,4 +13,8 @@ enum AgentState {
   USER_REJECTED = "user_rejected",
 }
 
-export default AgentState;
+export const RUNTIME_INACTIVE_STATES = [
+  AgentState.LOADING,
+  AgentState.STOPPED,
+  AgentState.ERROR,
+];

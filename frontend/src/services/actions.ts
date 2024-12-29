@@ -15,21 +15,16 @@ import {
   ObservationMessage,
   StatusMessage,
 } from "#/types/message";
-import EventLogger from "#/utils/event-logger";
 import { handleObservationMessage } from "./observations";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
-    if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
-    } else {
+    if (!message.args.thought && message.message) {
       store.dispatch(addAssistantMessage(message.message));
     }
   },
   [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
-    if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
-    } else {
+    if (!message.args.thought && message.message) {
       store.dispatch(addAssistantMessage(message.message));
     }
   },
@@ -43,7 +38,10 @@ const messageActions = {
       store.dispatch(
         addUserMessage({
           content: message.args.content,
-          imageUrls: [],
+          imageUrls:
+            typeof message.args.image_urls === "string"
+              ? [message.args.image_urls]
+              : message.args.image_urls,
           timestamp: message.timestamp,
           pending: false,
         }),
@@ -107,6 +105,10 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
   } else if (message.status_update) {
     handleStatusMessage(message as unknown as StatusMessage);
   } else {
-    EventLogger.error(`Unknown message type ${message}`);
+    store.dispatch(
+      addErrorMessage({
+        message: "Unknown message type received",
+      }),
+    );
   }
 }
