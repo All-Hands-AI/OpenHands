@@ -219,7 +219,7 @@ class BashSession:
         metadata = CmdOutputMetadata.from_ps1_match(ps1_matches[-1])
 
         # Special case where the previous command output is truncated due to history limit
-        # We should content BEFORE the last PS1 prompt
+        # We should get the content BEFORE the last PS1 prompt
         get_content_before_last_match = bool(len(ps1_matches) == 1)
 
         # Update the current working directory if it has changed
