@@ -14,9 +14,29 @@ import { rootReducer } from "#/store";
 vi.mock("#/hooks/query/use-config", () => ({
   useConfig: () => ({
     data: {
-      saas_mode: true,
+      APP_MODE: "saas",
     },
   }),
+}));
+
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+  }),
+  // This mock makes sure that using the I18nextProvider in the test works
+  I18nextProvider: ({ children }: { children: React.ReactNode }) => children,
+  initReactI18next: {
+    type: "3rdParty",
+    init: () => {},
+  },
+}));
+
+vi.mock("#/i18n", () => ({
+  default: {
+    use: () => ({
+      init: () => {},
+    }),
+  },
 }));
 
 const queryClient = new QueryClient();
@@ -52,12 +72,14 @@ describe("SettingsForm", () => {
     expect(screen.queryByText("Runtime Size")).not.toBeInTheDocument();
   });
 
-  it("should show runtime size selector when advanced options are enabled", () => {
+  it("should show runtime size selector when advanced options are enabled", async () => {
     renderSettingsForm();
     const advancedSwitch = screen.getByRole("switch", {
       name: "SETTINGS_FORM$ADVANCED_OPTIONS_LABEL",
     });
     fireEvent.click(advancedSwitch);
-    expect(screen.getByText("SETTINGS_FORM$RUNTIME_SIZE_LABEL")).toBeInTheDocument();
+    console.log("Advanced switch clicked");
+    screen.debug();
+    await screen.findByText("SETTINGS_FORM$RUNTIME_SIZE_LABEL");
   });
 });
