@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import ClassVar
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import ActionType
 from openhands.events.action.action import (
     Action,
@@ -23,28 +22,6 @@ class CmdRunAction(Action):
     runnable: ClassVar[bool] = True
     confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
     security_risk: ActionSecurityRisk | None = None
-
-    def __init__(
-        self,
-        command: str,
-        thought: str = '',
-        blocking: bool = False,
-        hidden: bool = False,
-        action: str = ActionType.RUN,
-        confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED,
-        security_risk: ActionSecurityRisk | None = None,
-        **kwargs,
-    ):
-        self.command = command
-        self.thought = thought
-        self.blocking = blocking
-        self.hidden = hidden
-        self.action = action
-        self.confirmation_state = confirmation_state
-        self.security_risk = security_risk
-        logger.debug(
-            f'CmdRunAction ignored kwargs (likely due to legacy serialization): {kwargs}'
-        )
 
     @property
     def message(self) -> str:

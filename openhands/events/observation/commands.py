@@ -149,7 +149,7 @@ class CmdOutputObservation(Observation):
             f'**CmdOutputObservation (source={self.source}, exit code={self.exit_code}, '
             f'metadata={json.dumps(self.metadata.model_dump(), indent=2)})**\n'
             '--BEGIN AGENT OBSERVATION--\n'
-            f'{self.to_agent_observation()}\n'
+            f'{self._to_agent_observation()}\n'
             '--END AGENT OBSERVATION--'
         )
 
