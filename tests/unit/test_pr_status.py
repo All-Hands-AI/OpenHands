@@ -132,14 +132,11 @@ def test_get_instruction_with_linting_issues(mock_post, pr_handler):
 
     instruction, _ = pr_handler.get_instruction(issue, template)
 
-    assert 'This PR has no merge conflicts.' in instruction
     assert 'The following CI checks have failed:' in instruction
-    assert 'Linting issues detected.' in instruction
     assert 'lint: ESLint found 2 errors and 1 warning' in instruction
-    assert (
-        'Make sure to run the linter locally and address all issues before pushing changes.'
-        in instruction
-    )
+    assert 'Please examine the GitHub workflow files' in instruction
+    assert 'Linting issues detected.' in instruction
+    assert 'Make sure to run the linter locally and address all issues before pushing changes.' in instruction
 
 
 @patch('requests.post')
@@ -193,11 +190,8 @@ def test_get_instruction_with_failed_lint_check(mock_post, pr_handler, capsys):
 
     print(f'\nGenerated instruction for PR #14:\n{instruction}')
 
-    assert 'This PR has no merge conflicts.' in instruction
     assert 'The following CI checks have failed:' in instruction
     assert 'Lint: ESLint found issues' in instruction
+    assert 'Please examine the GitHub workflow files' in instruction
     assert 'Linting issues detected.' in instruction
-    assert (
-        'Make sure to run the linter locally and address all issues before pushing changes.'
-        in instruction
-    )
+    assert 'Make sure to run the linter locally and address all issues before pushing changes.' in instruction
