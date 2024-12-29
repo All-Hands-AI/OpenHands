@@ -27,6 +27,7 @@ import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
 import { CountBadge } from "#/components/layout/count-badge";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
+import { ToggleWorkspaceIconButton } from "#/components/shared/buttons/toggle-workspace-icon-button";
 
 function AppContent() {
   const { gitHubToken } = useAuth();
@@ -62,6 +63,12 @@ function AppContent() {
     dispatch(clearJupyter());
   });
 
+  const [isWorkspaceHidden, setIsWorkspaceHidden] = React.useState(false);
+
+  const toggleWorkspace = React.useCallback(() => {
+    setIsWorkspaceHidden((prev) => !prev);
+  }, []);
+
   const {
     isOpen: securityModalIsOpen,
     onOpen: onSecurityModalOpen,
@@ -73,11 +80,16 @@ function AppContent() {
       <EventHandler>
         <div className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto gap-3">
-            <Container className="w-full md:w-[390px] max-h-full relative">
-              <ChatInterface />
+            <Container className={`w-full ${isWorkspaceHidden ? "" : "md:w-[390px]"} max-h-full relative`}>
+              <div className="flex items-center justify-between">
+                <ChatInterface />
+                <div className="hidden md:block absolute right-2 top-2">
+                  <ToggleWorkspaceIconButton onClick={toggleWorkspace} isHidden={isWorkspaceHidden} />
+                </div>
+              </div>
             </Container>
 
-            <div className="hidden md:flex flex-col grow gap-3">
+            <div className={`hidden md:flex flex-col grow gap-3 transition-all duration-300 ${isWorkspaceHidden ? "w-0 opacity-0 overflow-hidden" : ""}`}>
               <Container
                 className="h-2/3"
                 labels={[
