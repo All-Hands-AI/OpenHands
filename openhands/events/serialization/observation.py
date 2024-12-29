@@ -1,3 +1,5 @@
+import copy
+
 from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
@@ -70,7 +72,7 @@ def observation_from_dict(observation: dict) -> Observation:
     observation.pop('observation')
     observation.pop('message', None)
     content = observation.pop('content', '')
-    extras = observation.pop('extras', {})
+    extras = copy.deepcopy(observation.pop('extras', {}))
 
     # Handle legacy attributes for CmdOutputObservation
     if 'exit_code' in extras:
