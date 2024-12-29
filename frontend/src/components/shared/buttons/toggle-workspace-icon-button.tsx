@@ -14,12 +14,12 @@ export function ToggleWorkspaceIconButton({
     <IconButton
       icon={
         isHidden ? (
-          <IoIosArrowForward
+          <IoIosArrowBack
             size={20}
             className="text-neutral-400 hover:text-neutral-100 transition"
           />
         ) : (
-          <IoIosArrowBack
+          <IoIosArrowForward
             size={20}
             className="text-neutral-400 hover:text-neutral-100 transition"
           />
