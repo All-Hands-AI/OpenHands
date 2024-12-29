@@ -2,33 +2,117 @@
 
 ## System Requirements
 
-* Docker version 26.0.0+ or Docker Desktop 4.31.0+.
-* You must be using Linux or Mac OS.
-  * If you are on Windows, you must use [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+* **Docker version 26.0.0+ or Docker Desktop 4.31.0+**. You can check your docker version by running `docker --version` in a terminal. See the [Docker documentation for installing Docker Engine](https://docs.docker.com/engine/install/) if needed.
+* Supported Operation Systems
+    * **Debian/Ubuntu based Linux** - these instructions are written and tested in Debian/Ubuntu Linux systems and should work as expected.
+    * **Mac OS and non-Debian Linux** - these instructions should work as expected but aren't explicitly tested on these OSes.
+    * **Windows** - you must use Windows Subsystem for Linux (WSL). For more information on WSL see the [Microsoft Documentation for WSL](https://learn.microsoft.com/en-us/windows/wsl/install). If someone is able to test and document deploying OpenHands using Docker on native Windows it would be much appreciated.
 
-## Start the app
+## Choosing a Deployment Method
 
-The easiest way to run OpenHands is in Docker.
+There are two ways you can deploy the OpenHands app:
+
+* **Using the official Docker image (recommended)** - this method is the primary method for using OpenHands. It is the simplest and doesn't require any development experience.
+* **Building the OpenHands app from source (for developers only)** - this method is designed for developers working on the OpenHands application. It requires experience building applications from source and working with dependencies. If you only plan to use OpenHands you shouldn't use this method.
+
+## Deploying with Docker
+
+This is the easiest way to run OpenHands and can be easily setup to run in a bash script so you can quickly start and stop the OpenHands app. 
+
+We will run the commands below in a terminal window. First, we make a new directory called `openhands` in your home directory to store Openhands related data. We'll also create a sub-directory called `.openhands-state` that will store session history for Open Hands.
 
 ```bash
+mkdir ~/openhands
+mkdir ~/openhands/.openhands-state
+cd ~/openhands
+```
+
+Next, open a text editor and copy the commands below into a new file. 
+
+```bash
+#!/bin/bash
 docker pull docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik
 
 docker run -it --rm --pull=always \
     -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik \
+    -e JWT_SECRET=SECRET_STRING \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v ~/.openhands-state:/.openhands-state \
+    -v LOCAL_STATE_PATH:/.openhands-state \
+    -p LOCAL_PORT:3000 \
+    --add-host host.docker.internal:host-gateway \
+    --name openhands-app \
+    docker.all-hands.dev/all-hands-ai/openhands:0.17
+```
+
+Most of this can be left as the default but there are three common configuration options we need to set before we can run OpenHands. 
+
+* **SECRET_STRING** - this should be replaced with a string that will be used by OpenHands to create secure access tokens. If you're jsut playing with OpenHnads on your local system it probably doesn't matter too much but it's typically best practice to use a long, random string for this. You can get a rand UUID on your system by running `cat /proc/sys/kernel/random/uuid` in your terminal window or by going to an online UUId generator like [www.uuidgenerator.net](https://www.uuidgenerator.net/version4)
+* **LOCAL_STATE_PATH** - if you followed the setup instructions exactly this will be `~/openhands/.openhands-state`. If you made your own directory names or changes the path just replace it with those instead.
+* **LOCAL_PORT** - this is the local port number you want to access the OpenHands app on. The default is 3000 but this can be anything (make sure it is >1024 to avoid reserved system ports)
+
+Once we've replaced these values with our local configuration our file should look something like below:
+
+```bash
+#!/bin/bash
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik
+
+docker run -it --rm --pull=always \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik \
+    -e JWT_SECRET=07ae43ca-7b66-4d99-857a-a9d7126cce18 \
+    -e LOG_ALL_EVENTS=true \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v ~/openhands/.openhands-state:/.openhands-state \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
     docker.all-hands.dev/all-hands-ai/openhands:0.17
 ```
 
-You can also run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode), as an [interactive CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode), or using the [OpenHands GitHub Action](https://docs.all-hands.dev/modules/usage/how-to/github-action).
+We're now ready to save this to a file called `start_openhands.sh` in the new `~/openhands` directory. Finally, in the terminal window, we need to add execution permissions to the new script using the `chmod` command and then run it.
+
+```bash
+chmod +x start_openhands.sh
+./start_openhands.sh
+```
+
+After running the command above, you'll find OpenHands running at [http://localhost:3000](http://localhost:3000) (change the port number to your `LOCAL_PORT` value if you customised it).
+
+To close down the OpenHands app simply type `Ctrl+C` in the terminal window or close the terminal window.
+
+**TODO** - this is a bit nasty, is there a cleaner way to close down the app? Does a hard stop risk corrupting things liek session state?
+
+### Common Docker Errors
+
+It's possible you received an error from Docker when you tried to run `./start_openhands.sh`, there are two main reasons for this.
+
+#### Docker Permission Denied Error
+
+> docker: Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Post http://%2Fvar%2Frun%2Fdocker.sock/v1.35/containers/create: dial unix /var/run/docker.sock: connect: permission denied. See 'docker run --help'.
+
+This error is because your account was not properly setup to run Docker without `sudo` permissions. You can find the instructions for fixing this in the Docker documentation on [Linux post-installation steps for Docker Engine](https://docs.docker.com/engine/install/linux-postinstall/)
+
+#### Docker Address Already in Use Error
+
+> docker: Error response from daemon: driver failed programming external connectivity on endpoint openhands-app (4861aeaf94495bdc51444d2659579f03f705445393624e414b826c95558e2f46): failed to bind port :::3000/tcp: Error starting userland proxy: listen tcp6 [::]:3000: bind: address already in use.
+
+This error occurs because you have another application or service using the port you configured in `start_openhands.sh` as your `LOCAL_PORT`, change this to another port number >1024 and try again.
+
+#### Docker Client Failed
+
+>Launch docker client failed. Please make sure you have installed docker and started docker desktop/daemon.
+
+Either docker is not installed or it is not being found on your $PATH.
+
+Try the following stpes in order:
+
+* Confirm `docker` is running on your system. You should be able to run `docker ps` in the terminal successfully.
+* If using Docker Desktop
+    * Ensure `Settings > Advanced > Allow the default Docker socket to be used` is enabled.
+    * Depending on your configuration, you may need `Settings > Resources > Network > Enable host networking` enabled.
+* Reinstall Docker Desktop or Docker Engine
 
 ## Setup
-
-After running the command above, you'll find OpenHands running at [http://localhost:3000](http://localhost:3000).
 
 Upon launching OpenHands, you'll see a settings modal. You **must** select an `LLM Provider` and `LLM Model` and enter a corresponding `API Key`.
 These can be changed at any time by selecting the `Settings` button (gear icon) in the UI.
@@ -42,15 +126,16 @@ The `Advanced Options` also allow you to specify a `Base URL` if required.
   <img src="/img/settings-advanced.png" alt="settings-modal" width="335" />
 </div>
 
-## Versions
+**TODO** - I think custom LLM configuration needs more explanation then this (eg what is the syntax for the base URL?) and should be left until Getting Started where it can be addressed in more detail.
 
-The command above pulls the most recent stable release of OpenHands. You have other options as well:
-- For a specific release, use `docker.all-hands.dev/all-hands-ai/openhands:$VERSION`, replacing $VERSION with the version number.
-- We use semver, and release major, minor, and patch tags. So `0.9` will automatically point to the latest `0.9.x` release, and `0` will point to the latest `0.x.x` release.
-- For the most up-to-date development version, you can use `docker.all-hands.dev/all-hands-ai/openhands:main`. This version is unstable and is recommended for testing or development purposes only.
-
-You can choose the tag that best suits your needs based on stability requirements and desired features.
+## Building OpenHands from source
 
 For the development workflow, see [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
-Are you having trouble? Check out our [Troubleshooting Guide](https://docs.all-hands.dev/modules/usage/troubleshooting).
+## Still Having Trouble? 
+
+<a href="https://discord.gg/ESHStjSjD4">
+    <img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"/>
+</a>
+
+Click the button about to join our Discord Community and post details of your problem to the `#setup-help` channel.

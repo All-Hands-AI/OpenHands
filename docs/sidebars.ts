@@ -14,6 +14,11 @@ const sidebars: SidebarsConfig = {
       id: 'usage/getting-started',
     },
     {
+      type: 'doc',
+      label: 'Common Use Cases',
+      id: 'usage/common-use-cases',
+    },
+    {
       type: 'category',
       label: 'Prompting',
       items: [

@@ -1,0 +1,38 @@
+# Common Use Cases
+
+This page helps you map common use cases to the more detailed and advanced configuration available to achieve your requirements.
+
+## Changing OpenHands Versions
+
+The `start_openhands.sh` script in [Installation](https://docs.all-hands.dev/modules/usage/installation) pulls the most recent stable release of OpenHands. There may come a time when you want to change this (such as when a new version is released).
+
+Below is a copy og `start_openhands.sh` with the latest version number replaces by `VERSION` (it occurs in 3 places).
+```bash
+#!/bin/bash
+docker pull docker.all-hands.dev/all-hands-ai/runtime:VERSION-nikolaik
+
+docker run -it --rm --pull=always \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:VERSION-nikolaik \
+    -e JWT_SECRET=SECRET_STRING \
+    -e LOG_ALL_EVENTS=true \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v LOCAL_STATE_PATH:/.openhands-state \
+    -p LOCAL_PORT:3000 \
+    --add-host host.docker.internal:host-gateway \
+    --name openhands-app \
+    docker.all-hands.dev/all-hands-ai/openhands:VERSION
+```
+
+You can find the latest releases by checking the [OpenHands Github repository's tags](https://github.com/All-Hands-AI/OpenHands/tags). We use semver, and release major, minor, and patch tags. So `0.9` will automatically point to the latest `0.9.x` release, and `0` will point to the latest `0.x.x` release.
+
+For the most up-to-date development version, you can use `docker.all-hands.dev/all-hands-ai/openhands:main`. This version is unstable and is recommended for testing or development purposes only.
+
+## Setting Up Your Projects Development Environment
+
+Your project likely involves a bunch of dependencies and you may not be using the Python+NodeJS stack that exists in the default sandbox image. You can build your own Docker image containing all of your projects dependencies and have OpenHands use that instead. Checkout the [Custom Sandbox Guide](https://docs.all-hands.dev/modules/usage/how-to/custom-sandbox-guide) for details on this.
+
+## Alternative Usage Modes
+
+You may not want to use the Web UI so OpenHands can also be deployed as an [interactive CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode) or using the [OpenHands GitHub Action](https://docs.all-hands.dev/modules/usage/how-to/github-action) to address issue directly in Github.
+
+There is also a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode) but this requires a more advanced installation using Development Mode and is not recommended unless you have development experience.
