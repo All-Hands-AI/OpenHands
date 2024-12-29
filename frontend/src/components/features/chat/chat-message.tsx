@@ -1,11 +1,13 @@
 import React from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useSelector } from "react-redux";
 import { code } from "../markdown/code";
 import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
 import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
 import { anchor } from "../markdown/anchor";
+import { RootState } from "#/state/store";
 
 interface ChatMessageProps {
   type: "user" | "assistant";
@@ -19,6 +21,7 @@ export function ChatMessage({
 }: React.PropsWithChildren<ChatMessageProps>) {
   const [isHovering, setIsHovering] = React.useState(false);
   const [isCopy, setIsCopy] = React.useState(false);
+  const speechEnabled = useSelector((state: RootState) => state.speech.enabled);
 
   const handleCopyToClipboard = async () => {
     await navigator.clipboard.writeText(message);
@@ -38,6 +41,14 @@ export function ChatMessage({
       clearTimeout(timeout);
     };
   }, [isCopy]);
+
+  React.useEffect(() => {
+    if (speechEnabled && type === "assistant") {
+      const utterance = new SpeechSynthesisUtterance(message);
+      speechSynthesis.cancel(); // Cancel any ongoing speech
+      speechSynthesis.speak(utterance);
+    }
+  }, [message, type, speechEnabled]);
 
   return (
     <article

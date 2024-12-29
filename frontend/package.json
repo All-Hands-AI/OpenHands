@@ -27,8 +27,8 @@
     "jose": "^5.9.4",
     "monaco-editor": "^0.52.2",
     "posthog-js": "^1.203.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-highlight": "^0.15.0",
     "react-hot-toast": "^2.4.1",
     "react-i18next": "^15.2.0",
@@ -79,7 +79,8 @@
     "@react-router/dev": "^7.1.1",
     "@tailwindcss/typography": "^0.5.15",
     "@tanstack/eslint-plugin-query": "^5.62.9",
-    "@testing-library/jest-dom": "^6.6.1",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
     "@types/node": "^22.10.2",
@@ -87,6 +88,7 @@
     "@types/react-dom": "^19.0.2",
     "@types/react-highlight": "^0.12.8",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@types/redux-mock-store": "^1.5.0",
     "@types/testing-library__react": "^10.0.1",
     "@types/ws": "^8.5.12",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
@@ -103,21 +105,33 @@
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-react": "^7.37.3",
     "eslint-plugin-react-hooks": "^4.6.2",
+    "framer-motion": "^11.15.0",
     "husky": "^9.1.6",
     "jsdom": "^25.0.1",
     "lint-staged": "^15.2.11",
     "msw": "^2.6.6",
     "postcss": "^8.4.47",
     "prettier": "^3.4.2",
+    "redux-mock-store": "^1.5.5",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.6.3",
+    "typescript": "~5.5.3",
     "vite-plugin-svgr": "^4.2.0",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^1.6.0"
   },
   "packageManager": "npm@10.5.0",
+  "overrides": {
+    "@tanstack/react-virtual": {
+      "react": "^18.2.0",
+      "react-dom": "^18.2.0"
+    },
+    "react-textarea-autosize": {
+      "react": "^18.2.0",
+      "react-dom": "^18.2.0"
+    }
+  },
   "volta": {
-    "node": "18.20.1"
+    "node": "20.11.0"
   },
   "msw": {
     "workerDirectory": [

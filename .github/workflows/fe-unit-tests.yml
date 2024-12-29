@@ -35,7 +35,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install dependencies
         working-directory: ./frontend
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       - name: Run TypeScript compilation
         working-directory: ./frontend
         run: npm run make-i18n && tsc

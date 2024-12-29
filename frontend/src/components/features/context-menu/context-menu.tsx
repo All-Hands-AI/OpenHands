@@ -2,19 +2,13 @@ import React from "react";
 import { cn } from "#/utils/utils";
 
 interface ContextMenuProps {
-  ref: React.RefObject<HTMLUListElement | null>;
   testId?: string;
   children: React.ReactNode;
   className?: React.HTMLAttributes<HTMLUListElement>["className"];
 }
 
-export function ContextMenu({
-  testId,
-  children,
-  className,
-  ref,
-}: ContextMenuProps) {
-  return (
+export const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
+  ({ testId, children, className }, ref) => (
     <ul
       data-testid={testId}
       ref={ref}
@@ -22,5 +16,7 @@ export function ContextMenu({
     >
       {children}
     </ul>
-  );
-}
+  ),
+);
+
+ContextMenu.displayName = "ContextMenu";

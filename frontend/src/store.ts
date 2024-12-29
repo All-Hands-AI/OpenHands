@@ -9,6 +9,7 @@ import commandReducer from "./state/command-slice";
 import { jupyterReducer } from "./state/jupyter-slice";
 import securityAnalyzerReducer from "./state/security-analyzer-slice";
 import statusReducer from "./state/status-slice";
+import speechReducer from "./state/speech-slice";
 
 export const rootReducer = combineReducers({
   fileState: fileStateReducer,
@@ -21,6 +22,7 @@ export const rootReducer = combineReducers({
   jupyter: jupyterReducer,
   securityAnalyzer: securityAnalyzerReducer,
   status: statusReducer,
+  speech: speechReducer,
 });
 
 const store = configureStore({

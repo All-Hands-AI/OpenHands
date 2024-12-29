@@ -1,24 +1,46 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, test } from "vitest";
+import { describe, it, expect, test, beforeEach } from "vitest";
 import { ChatMessage } from "#/components/features/chat/chat-message";
+import { Provider } from "react-redux";
+import configureStore from "redux-mock-store";
+
+const mockStore = configureStore([]);
 
 describe("ChatMessage", () => {
+  let store;
+
+  beforeEach(() => {
+    store = mockStore({
+      speech: {
+        enabled: false,
+      },
+    });
+  });
+
+  const renderWithRedux = (component) => {
+    return render(
+      <Provider store={store}>
+        {component}
+      </Provider>
+    );
+  };
+
   it("should render a user message", () => {
-    render(<ChatMessage type="user" message="Hello, World!" />);
+    renderWithRedux(<ChatMessage type="user" message="Hello, World!" />);
     expect(screen.getByTestId("user-message")).toBeInTheDocument();
     expect(screen.getByText("Hello, World!")).toBeInTheDocument();
   });
 
   it("should render an assistant message", () => {
-    render(<ChatMessage type="assistant" message="Hello, World!" />);
+    renderWithRedux(<ChatMessage type="assistant" message="Hello, World!" />);
     expect(screen.getByTestId("assistant-message")).toBeInTheDocument();
     expect(screen.getByText("Hello, World!")).toBeInTheDocument();
   });
 
   it.skip("should support code syntax highlighting", () => {
     const code = "```js\nconsole.log('Hello, World!')\n```";
-    render(<ChatMessage type="user" message={code} />);
+    renderWithRedux(<ChatMessage type="user" message={code} />);
 
     // SyntaxHighlighter breaks the code blocks into "tokens"
     expect(screen.getByText("console")).toBeInTheDocument();
@@ -28,7 +50,7 @@ describe("ChatMessage", () => {
 
   it("should render the copy to clipboard button when the user hovers over the message", async () => {
     const user = userEvent.setup();
-    render(<ChatMessage type="user" message="Hello, World!" />);
+    renderWithRedux(<ChatMessage type="user" message="Hello, World!" />);
     const message = screen.getByText("Hello, World!");
 
     expect(screen.getByTestId("copy-to-clipboard")).not.toBeVisible();
@@ -40,7 +62,7 @@ describe("ChatMessage", () => {
 
   it("should copy content to clipboard", async () => {
     const user = userEvent.setup();
-    render(<ChatMessage type="user" message="Hello, World!" />);
+    renderWithRedux(<ChatMessage type="user" message="Hello, World!" />);
     const copyToClipboardButton = screen.getByTestId("copy-to-clipboard");
 
     await user.click(copyToClipboardButton);
@@ -54,7 +76,7 @@ describe("ChatMessage", () => {
     function Component() {
       return <div data-testid="custom-component">Custom Component</div>;
     }
-    render(
+    renderWithRedux(
       <ChatMessage type="user" message="Hello, World">
         <Component />
       </ChatMessage>,
@@ -63,7 +85,7 @@ describe("ChatMessage", () => {
   });
 
   it("should apply correct styles to inline code", () => {
-    render(
+    renderWithRedux(
       <ChatMessage
         type="assistant"
         message="Here is some `inline code` text"
