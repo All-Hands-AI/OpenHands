@@ -16,7 +16,7 @@ If you choose the first option, you can skip the `Create Your Docker Image` sect
 
 ## Create Your Docker Image
 
-To create a custom Docker image, you can use any base image that supports your requirements. While Debian-based images are common, they're not strictly required.
+To create a custom Docker image, it must be Debian based.
 
 For example, if you want OpenHands to have `ruby` installed, you could create a `Dockerfile` with the following content:
 
@@ -67,9 +67,9 @@ The `config.toml` file supports several other options for customizing your sandb
 
 ```toml
 [core]
-# Install additional dependencies at runtime build time
+# Install additional dependencies when the runtime is built
 # Can contain any valid shell commands
-# $OH_INTERPRETER_PATH is available as the path to the OH-specific Python interpreter
+# If you need the path to the Python interpreter in any of these commands, you can use the $OH_INTERPRETER_PATH variable
 runtime_extra_deps = """
 pip install numpy pandas
 apt-get update && apt-get install -y ffmpeg
