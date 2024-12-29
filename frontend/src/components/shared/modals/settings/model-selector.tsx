@@ -61,7 +61,7 @@ export function ModelSelector({
   const clear = () => {
     setSelectedProvider(null);
     setLitellmId(null);
-    onModelChange?.(null);
+    onModelChange?.("");
   };
 
   return (
