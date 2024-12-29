@@ -9,8 +9,8 @@ def find_version_references(directory: str) -> Tuple[Set[str], Set[str]]:
     openhands_versions = set()
     runtime_versions = set()
 
-    version_pattern_openhands = re.compile(r'openhands:0\.(\d{2})')
-    version_pattern_runtime = re.compile(r'runtime:0\.(\d{2})')
+    version_pattern_openhands = re.compile(r'openhands:(\d{1})\.(\d{2})')
+    version_pattern_runtime = re.compile(r'runtime:(\d{1})\.(\d{2})')
 
     for root, _, files in os.walk(directory):
         # Skip .git directory
