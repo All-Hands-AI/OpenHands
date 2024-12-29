@@ -1,4 +1,4 @@
-import AgentState from "./types/agent-state";
+import { AgentState } from "./types/agent-state";
 
 export const IGNORE_TASK_STATE_MAP: Record<string, AgentState[]> = {
   [AgentState.PAUSED]: [

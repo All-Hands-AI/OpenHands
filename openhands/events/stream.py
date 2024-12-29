@@ -10,6 +10,11 @@ from openhands.core.utils import json
 from openhands.events.event import Event, EventSource
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.storage import FileStore
+from openhands.storage.locations import (
+    get_conversation_dir,
+    get_conversation_event_filename,
+    get_conversation_events_dir,
+)
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
 
@@ -26,7 +31,7 @@ class EventStreamSubscriber(str, Enum):
 
 async def session_exists(sid: str, file_store: FileStore) -> bool:
     try:
-        await call_sync_from_async(file_store.list, f'sessions/{sid}')
+        await call_sync_from_async(file_store.list, get_conversation_dir(sid))
         return True
     except FileNotFoundError:
         return False
@@ -59,7 +64,7 @@ class EventStream:
 
     def __post_init__(self) -> None:
         try:
-            events = self.file_store.list(f'sessions/{self.sid}/events')
+            events = self.file_store.list(get_conversation_events_dir(self.sid))
         except FileNotFoundError:
             logger.debug(f'No events found for session {self.sid}')
             self._cur_id = 0
@@ -72,7 +77,7 @@ class EventStream:
                 self._cur_id = id + 1
 
     def _get_filename_for_id(self, id: int) -> str:
-        return f'sessions/{self.sid}/events/{id}.json'
+        return get_conversation_event_filename(self.sid, id)
 
     @staticmethod
     def _get_id_from_filename(filename: str) -> int:
@@ -299,9 +304,3 @@ class EventStream:
                 break
 
         return matching_events
-
-    def clear(self):
-        self.file_store.delete(f'sessions/{self.sid}')
-        self._cur_id = 0
-        # self._subscribers = {}
-        self.__post_init__()

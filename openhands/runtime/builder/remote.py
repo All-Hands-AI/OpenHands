@@ -5,6 +5,7 @@ import time
 
 import requests
 
+from openhands.core.exceptions import AgentRuntimeBuildError
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import RuntimeBuilder
 from openhands.runtime.utils.request import send_request
@@ -77,7 +78,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         while should_continue():
             if time.time() - start_time > timeout:
                 logger.error('Build timed out after 30 minutes')
-                raise RuntimeError('Build timed out after 30 minutes')
+                raise AgentRuntimeBuildError('Build timed out after 30 minutes')
 
             status_response = send_request(
                 self.session,
@@ -88,7 +89,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
 
             if status_response.status_code != 200:
                 logger.error(f'Failed to get build status: {status_response.text}')
-                raise RuntimeError(
+                raise AgentRuntimeBuildError(
                     f'Failed to get build status: {status_response.text}'
                 )
 
@@ -110,12 +111,14 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
                     'error', f'Build failed with status: {status}. Build ID: {build_id}'
                 )
                 logger.error(error_message)
-                raise RuntimeError(error_message)
+                raise AgentRuntimeBuildError(error_message)
 
             # Wait before polling again
             sleep_if_should_continue(30)
 
-        raise RuntimeError('Build interrupted (likely received SIGTERM or SIGINT).')
+        raise AgentRuntimeBuildError(
+            'Build interrupted (likely received SIGTERM or SIGINT).'
+        )
 
     def image_exists(self, image_name: str, pull_from_repo: bool = True) -> bool:
         """Checks if an image exists in the remote registry using the /image_exists endpoint."""
@@ -129,7 +132,9 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
 
         if response.status_code != 200:
             logger.error(f'Failed to check image existence: {response.text}')
-            raise RuntimeError(f'Failed to check image existence: {response.text}')
+            raise AgentRuntimeBuildError(
+                f'Failed to check image existence: {response.text}'
+            )
 
         result = response.json()
 

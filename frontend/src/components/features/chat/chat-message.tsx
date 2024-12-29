@@ -7,6 +7,7 @@ import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
 import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
 import { RootState } from "#/store";
+import { anchor } from "../markdown/anchor";
 
 // Function to speak text using Web Speech API
 function speakText(text: string) {
@@ -133,6 +134,7 @@ export function ChatMessage({
           code,
           ul,
           ol,
+          a: anchor,
         }}
         remarkPlugins={[remarkGfm]}
       >
