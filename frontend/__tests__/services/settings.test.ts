@@ -70,6 +70,7 @@ describe("getSettings", () => {
       LLM_API_KEY: "api_key",
       CONFIRMATION_MODE: true,
       SECURITY_ANALYZER: "invariant",
+      REMOTE_RUNTIME_RESOURCE_FACTOR: DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
     });
   });
 });
@@ -100,6 +101,7 @@ describe("saveSettings", () => {
       llm_api_key: "some_key",
       confirmation_mode: true,
       security_analyzer: "invariant",
+      remote_runtime_resource_factor: 2,
     });
   });
 

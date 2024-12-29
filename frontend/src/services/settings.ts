@@ -20,6 +20,7 @@ export type ApiSettings = {
   llm_api_key: string | null;
   confirmation_mode: boolean;
   security_analyzer: string;
+  remote_runtime_resource_factor: number;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -64,6 +65,7 @@ export const getLocalStorageSettings = (): Settings => {
     LLM_API_KEY: llmApiKey || DEFAULT_SETTINGS.LLM_API_KEY,
     CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
     SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
+    REMOTE_RUNTIME_RESOURCE_FACTOR: DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
   };
 };
 
@@ -83,6 +85,7 @@ export const saveSettings = async (
       confirmation_mode: settings.CONFIRMATION_MODE || null,
       security_analyzer: settings.SECURITY_ANALYZER || null,
       llm_api_key: settings.LLM_API_KEY || null,
+      remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR || null,
     };
 
     const { data } = await openHands.post("/api/settings", apiSettings);
