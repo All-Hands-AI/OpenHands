@@ -150,7 +150,7 @@ export const chatSlice = createSlice({
         const ipythonObs = observation.payload as IPythonObservation;
         causeMessage.success = !ipythonObs.content
           .toLowerCase()
-          .includes("error");
+          .includes("error:");
       }
 
       if (observationID === "run" || observationID === "run_ipython") {
