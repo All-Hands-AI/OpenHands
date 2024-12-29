@@ -8,7 +8,7 @@ Otherwise, you can clone the OpenHands project directly.
 * Linux, Mac OS, or [WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)  [Ubuntu <= 22.04]
 * [Docker](https://docs.docker.com/engine/install/) (For those on MacOS, make sure to allow the default Docker socket to be used from advanced settings!)
 * [Python](https://www.python.org/downloads/) = 3.12
-* [NodeJS](https://nodejs.org/en/download/package-manager) >= 18.17.1
+* [NodeJS](https://nodejs.org/en/download/package-manager) >= 20.x
 * [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) >= 1.8
 * OS-specific dependencies:
   - Ubuntu: build-essential => `sudo apt-get install build-essential`
