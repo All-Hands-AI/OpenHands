@@ -153,7 +153,7 @@ class CmdOutputObservation(Observation):
             '--END AGENT OBSERVATION--'
         )
 
-    def to_agent_observation(self) -> str:
+    def _to_agent_observation(self) -> str:
         ret = f'{self.metadata.prefix}{self.content}{self.metadata.suffix}'
         if self.metadata.working_dir:
             ret += f'\n[Current working directory: {self.metadata.working_dir}]'
