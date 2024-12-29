@@ -1,16 +1,9 @@
 import React from "react";
-import { useSelector } from "react-redux";
 import { useRouteError } from "react-router";
-import { editor } from "monaco-editor";
-import { EditorProps } from "@monaco-editor/react";
-import { RootState } from "#/store";
-import { AgentState } from "#/types/agent-state";
-import CodeEditorComponent from "../../components/features/editor/code-editor-component";
-import { useFiles } from "#/context/files";
-import { useSaveFile } from "#/hooks/mutation/use-save-file";
-import { ASSET_FILE_TYPES } from "./constants";
-import { EditorActions } from "#/components/features/editor/editor-actions";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { FileExplorer } from "#/components/features/file-explorer/file-explorer";
+import { useFiles } from "#/context/files";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -23,90 +16,91 @@ export function ErrorBoundary() {
   );
 }
 
-function CodeEditor() {
-  const {
-    selectedPath,
-    modifiedFiles,
-    saveFileContent: saveNewFileContent,
-    discardChanges,
-  } = useFiles();
+function getLanguageFromPath(path: string): string {
+  const extension = path.split(".").pop()?.toLowerCase();
+  switch (extension) {
+    case "js":
+    case "jsx":
+      return "javascript";
+    case "ts":
+    case "tsx":
+      return "typescript";
+    case "py":
+      return "python";
+    case "html":
+      return "html";
+    case "css":
+      return "css";
+    case "json":
+      return "json";
+    case "md":
+      return "markdown";
+    case "yml":
+    case "yaml":
+      return "yaml";
+    case "sh":
+    case "bash":
+      return "bash";
+    case "dockerfile":
+      return "dockerfile";
+    case "rs":
+      return "rust";
+    case "go":
+      return "go";
+    case "java":
+      return "java";
+    case "cpp":
+    case "cc":
+    case "cxx":
+      return "cpp";
+    case "c":
+      return "c";
+    case "rb":
+      return "ruby";
+    case "php":
+      return "php";
+    case "sql":
+      return "sql";
+    default:
+      return "text";
+  }
+}
 
+function FileViewer() {
   const [fileExplorerIsOpen, setFileExplorerIsOpen] = React.useState(true);
-  const editorRef = React.useRef<editor.IStandaloneCodeEditor | null>(null);
-
-  const { mutate: saveFile } = useSaveFile();
+  const { selectedPath, files } = useFiles();
 
   const toggleFileExplorer = () => {
     setFileExplorerIsOpen((prev) => !prev);
-    editorRef.current?.layout({ width: 0, height: 0 });
   };
-
-  const handleEditorDidMount: EditorProps["onMount"] = (e, monaco) => {
-    editorRef.current = e;
-
-    monaco.editor.defineTheme("oh-dark", {
-      base: "vs-dark",
-      inherit: true,
-      rules: [],
-      colors: {
-        "editor.background": "#171717",
-      },
-    });
-    monaco.editor.setTheme("oh-dark");
-  };
-
-  const agentState = useSelector(
-    (state: RootState) => state.agent.curAgentState,
-  );
-
-  // Code editing is only allowed when the agent is paused, finished, or awaiting user input (server rules)
-  const isEditingAllowed = React.useMemo(
-    () =>
-      agentState === AgentState.PAUSED ||
-      agentState === AgentState.FINISHED ||
-      agentState === AgentState.AWAITING_USER_INPUT,
-    [agentState],
-  );
-
-  const handleSave = async () => {
-    if (selectedPath) {
-      const content = modifiedFiles[selectedPath];
-      if (content) {
-        saveFile({ path: selectedPath, content });
-        saveNewFileContent(selectedPath);
-      }
-    }
-  };
-
-  const handleDiscard = () => {
-    if (selectedPath) discardChanges(selectedPath);
-  };
-
-  const isAssetFileType = selectedPath
-    ? ASSET_FILE_TYPES.some((ext) => selectedPath.endsWith(ext))
-    : false;
 
   return (
     <div className="flex h-full bg-neutral-900 relative">
       <FileExplorer isOpen={fileExplorerIsOpen} onToggle={toggleFileExplorer} />
-      <div className="w-full">
-        {selectedPath && !isAssetFileType && (
+      <div className="w-full h-full flex flex-col">
+        {selectedPath && (
           <div className="flex w-full items-center justify-between self-end p-2">
             <span className="text-sm text-neutral-500">{selectedPath}</span>
-            <EditorActions
-              onSave={handleSave}
-              onDiscard={handleDiscard}
-              isDisabled={!isEditingAllowed || !modifiedFiles[selectedPath]}
-            />
           </div>
         )}
-        <CodeEditorComponent
-          onMount={handleEditorDidMount}
-          isReadOnly={!isEditingAllowed}
-        />
+        {selectedPath && files[selectedPath] && (
+          <div className="p-4 flex-1 overflow-auto">
+            <SyntaxHighlighter
+              language={getLanguageFromPath(selectedPath)}
+              style={vscDarkPlus}
+              customStyle={{
+                margin: 0,
+                background: "#171717",
+                fontSize: "0.875rem",
+              }}
+            >
+              {files[selectedPath]}
+            </SyntaxHighlighter>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-export default CodeEditor;
+export default FileViewer;

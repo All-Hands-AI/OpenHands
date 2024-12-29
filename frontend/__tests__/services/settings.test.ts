@@ -4,7 +4,16 @@ import {
   Settings,
   getSettings,
   saveSettings,
+  getLocalStorageSettings,
 } from "../../src/services/settings";
+import { openHands } from "#/api/open-hands-axios";
+
+vi.mock("#/api/open-hands-axios", () => ({
+  openHands: {
+    get: vi.fn(),
+    post: vi.fn(),
+  },
+}));
 
 Storage.prototype.getItem = vi.fn();
 Storage.prototype.setItem = vi.fn();
@@ -14,7 +23,34 @@ describe("getSettings", () => {
     vi.resetAllMocks();
   });
 
-  it("should get the stored settings", () => {
+  it("should get settings from API", async () => {
+    const apiSettings = {
+      llm_model: "llm_value",
+      llm_base_url: "base_url",
+      agent: "agent_value",
+      language: "language_value",
+      confirmation_mode: true,
+      security_analyzer: "invariant",
+    };
+
+    (openHands.get as Mock).mockResolvedValueOnce({ data: apiSettings });
+
+    const settings = await getSettings();
+
+    expect(settings).toEqual({
+      LLM_MODEL: "llm_value",
+      LLM_BASE_URL: "base_url",
+      AGENT: "agent_value",
+      LANGUAGE: "language_value",
+      LLM_API_KEY: "",
+      CONFIRMATION_MODE: true,
+      SECURITY_ANALYZER: "invariant",
+      REMOTE_RUNTIME_RESOURCE_FACTOR: DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+    });
+  });
+
+  it("should fallback to localStorage if API fails", async () => {
+    (openHands.get as Mock).mockResolvedValueOnce({ data: null });
     (localStorage.getItem as Mock)
       .mockReturnValueOnce("llm_value")
       .mockReturnValueOnce("base_url")
@@ -22,10 +58,9 @@ describe("getSettings", () => {
       .mockReturnValueOnce("language_value")
       .mockReturnValueOnce("api_key")
       .mockReturnValueOnce("true")
-      .mockReturnValueOnce("invariant")
-      .mockReturnValueOnce("2");
+      .mockReturnValueOnce("invariant");
 
-    const settings = getSettings();
+    const settings = await getSettings();
 
     expect(settings).toEqual({
       LLM_MODEL: "llm_value",
@@ -35,39 +70,12 @@ describe("getSettings", () => {
       LLM_API_KEY: "api_key",
       CONFIRMATION_MODE: true,
       SECURITY_ANALYZER: "invariant",
-      REMOTE_RUNTIME_RESOURCE_FACTOR: 2,
-    });
-  });
-
-  it("should handle return defaults if localStorage key does not exist", () => {
-    (localStorage.getItem as Mock)
-      .mockReturnValueOnce(null)
-      .mockReturnValueOnce(null)
-      .mockReturnValueOnce(null)
-      .mockReturnValueOnce(null)
-      .mockReturnValueOnce(null)
-      .mockReturnValueOnce(null)
-      .mockReturnValueOnce(null)
-      .mockReturnValueOnce(null)
-      .mockReturnValueOnce(null);
-
-    const settings = getSettings();
-
-    expect(settings).toEqual({
-      LLM_MODEL: DEFAULT_SETTINGS.LLM_MODEL,
-      AGENT: DEFAULT_SETTINGS.AGENT,
-      LANGUAGE: DEFAULT_SETTINGS.LANGUAGE,
-      LLM_API_KEY: "",
-      LLM_BASE_URL: DEFAULT_SETTINGS.LLM_BASE_URL,
-      CONFIRMATION_MODE: DEFAULT_SETTINGS.CONFIRMATION_MODE,
-      SECURITY_ANALYZER: DEFAULT_SETTINGS.SECURITY_ANALYZER,
-      REMOTE_RUNTIME_RESOURCE_FACTOR: DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
     });
   });
 });
 
 describe("saveSettings", () => {
-  it("should save the settings", () => {
+  it("should save settings to API", async () => {
     const settings: Settings = {
       LLM_MODEL: "llm_value",
       LLM_BASE_URL: "base_url",
@@ -79,55 +87,38 @@ describe("saveSettings", () => {
       REMOTE_RUNTIME_RESOURCE_FACTOR: 2,
     };
 
-    saveSettings(settings);
+    (openHands.post as Mock).mockResolvedValueOnce({ data: true });
 
-    expect(localStorage.setItem).toHaveBeenCalledWith("LLM_MODEL", "llm_value");
-    expect(localStorage.setItem).toHaveBeenCalledWith("AGENT", "agent_value");
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      "LANGUAGE",
-      "language_value",
-    );
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      "LLM_API_KEY",
-      "some_key",
-    );
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      "REMOTE_RUNTIME_RESOURCE_FACTOR",
-      "2",
-    );
+    const result = await saveSettings(settings);
+
+    expect(result).toBe(true);
+    expect(openHands.post).toHaveBeenCalledWith("/api/settings", {
+      llm_model: "llm_value",
+      llm_base_url: "base_url",
+      agent: "agent_value",
+      language: "language_value",
+      llm_api_key: "some_key",
+      confirmation_mode: true,
+      security_analyzer: "invariant",
+    });
   });
 
-  it.skip("should save partial settings", () => {
-    const settings = {
+  it("should handle API errors", async () => {
+    const settings: Settings = {
       LLM_MODEL: "llm_value",
-    };
-
-    saveSettings(settings);
-
-    expect(localStorage.setItem).toHaveBeenCalledTimes(2);
-    expect(localStorage.setItem).toHaveBeenCalledWith("LLM_MODEL", "llm_value");
-    expect(localStorage.setItem).toHaveBeenCalledWith("SETTINGS_VERSION", "5");
-  });
-
-  it("should not save invalid settings", () => {
-    const settings = {
-      LLM_MODEL: "llm_value",
+      LLM_BASE_URL: "base_url",
       AGENT: "agent_value",
       LANGUAGE: "language_value",
-      INVALID: "invalid_value",
+      LLM_API_KEY: "some_key",
+      CONFIRMATION_MODE: true,
+      SECURITY_ANALYZER: "invariant",
+      REMOTE_RUNTIME_RESOURCE_FACTOR: 2,
     };
 
-    saveSettings(settings);
+    (openHands.post as Mock).mockRejectedValueOnce(new Error("API Error"));
 
-    expect(localStorage.setItem).toHaveBeenCalledWith("LLM_MODEL", "llm_value");
-    expect(localStorage.setItem).toHaveBeenCalledWith("AGENT", "agent_value");
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      "LANGUAGE",
-      "language_value",
-    );
-    expect(localStorage.setItem).not.toHaveBeenCalledWith(
-      "INVALID",
-      "invalid_value",
-    );
+    const result = await saveSettings(settings);
+
+    expect(result).toBe(false);
   });
 });
