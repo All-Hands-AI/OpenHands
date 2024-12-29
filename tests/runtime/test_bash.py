@@ -626,6 +626,31 @@ def test_long_output_from_nested_directories(temp_dir, runtime_cls, run_as_openh
         _close_test_runtime(runtime)
 
 
+def test_command_backslash(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Create a file with the content "implemented_function"
+        action = CmdRunAction(
+            'mkdir -p /tmp/test_dir && echo "implemented_function" > /tmp/test_dir/file_1.txt'
+        )
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.exit_code == 0
+
+        # This does not work (exposed in one of the evaluation tests)
+        # find /workspace/sympy__sympy__1.0 -type f -exec grep -l "implemented_function" {} \;
+        # find: missing argument to `-exec'
+        # action = CmdRunAction(r'find /tmp/test_dir -type f -exec grep -l "implemented_function" {} \\;')
+        cmd = r'find /tmp/test_dir -type f -exec grep -l "implemented_function" {} \;'
+        action = CmdRunAction(cmd)
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.exit_code == 0
+        assert '/tmp/test_dir/file_1.txt' in obs.content
+    finally:
+        _close_test_runtime(runtime)
+
+
 def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:

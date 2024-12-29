@@ -414,7 +414,9 @@ class BashSession:
             _ps1_matches = [_ps1_matches[-1]]
 
         if command != '':
-            logger.debug(f'SENDING COMMAND: {command}')
+            # convert command to raw string
+            command = command.replace('\\', '\\\\')
+            logger.debug(f'SENDING COMMAND: {command!r}')
             self.pane.send_keys(
                 command,
                 enter=not self._is_special_key(command),
