@@ -148,7 +148,7 @@ export const chatSlice = createSlice({
       } else if (observationID === "run_ipython") {
         // For IPython, we consider it successful if there's no error message
         const ipythonObs = observation.payload as IPythonObservation;
-        causeMessage.success = !ipythonObs.message
+        causeMessage.success = !ipythonObs.content
           .toLowerCase()
           .includes("error");
       }
