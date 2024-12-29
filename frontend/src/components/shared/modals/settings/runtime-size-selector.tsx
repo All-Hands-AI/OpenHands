@@ -14,7 +14,7 @@ export function RuntimeSizeSelector({
 }: RuntimeSizeSelectorProps) {
   const { t } = useTranslation();
   const { data: config } = useConfig();
-  const isSaasMode = config?.saas_mode ?? false;
+  const isSaasMode = config?.APP_MODE === "saas";
 
   if (!isSaasMode) {
     return null;
@@ -31,9 +31,8 @@ export function RuntimeSizeSelector({
       <Select
         id="runtime-size"
         name="runtime-size"
-        defaultSelectedKey={String(defaultValue || 1)}
+        defaultSelectedKeys={[String(defaultValue || 1)]}
         isDisabled={isDisabled}
-        isClearable={false}
         aria-label={t("SETTINGS_FORM$RUNTIME_SIZE_LABEL")}
         classNames={{
           trigger: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
