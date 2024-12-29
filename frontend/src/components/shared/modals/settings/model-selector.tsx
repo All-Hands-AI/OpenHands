@@ -12,12 +12,14 @@ interface ModelSelectorProps {
   isDisabled?: boolean;
   models: Record<string, { separator: string; models: string[] }>;
   currentModel?: string;
+  onModelChange?: (model: string) => void;
 }
 
 export function ModelSelector({
   isDisabled,
   models,
   currentModel,
+  onModelChange,
 }: ModelSelectorProps) {
   const [, setLitellmId] = React.useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = React.useState<string | null>(
@@ -53,11 +55,13 @@ export function ModelSelector({
     }
     setLitellmId(fullModel);
     setSelectedModel(model);
+    onModelChange?.(fullModel);
   };
 
   const clear = () => {
     setSelectedProvider(null);
     setLitellmId(null);
+    onModelChange?.(null);
   };
 
   return (
