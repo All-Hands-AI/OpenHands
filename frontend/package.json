@@ -119,6 +119,16 @@
     "vitest": "^1.6.0"
   },
   "packageManager": "npm@10.5.0",
+  "overrides": {
+    "@tanstack/react-virtual": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+    },
+    "react-textarea-autosize": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+    }
+  },
   "volta": {
     "node": "18.20.1"
   },
