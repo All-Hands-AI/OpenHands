@@ -102,7 +102,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     [gitHubTokenState],
   );
 
-  return <AuthContext value={value}>{children}</AuthContext>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 function useAuth() {
