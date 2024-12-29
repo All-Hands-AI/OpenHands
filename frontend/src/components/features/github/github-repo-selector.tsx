@@ -8,16 +8,12 @@ import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
-import { searchPublicRepositories } from "#/api/github";
 import { useDebounce } from "#/hooks/use-debounce";
-
-interface GitHubRepositoryWithFlag extends GitHubRepository {
-  fromPublicRepoSearch?: boolean;
-}
+import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
 
 interface GitHubRepositorySelectorProps {
   onSelect: () => void;
-  repositories: GitHubRepositoryWithFlag[];
+  repositories: GitHubRepository[];
 }
 
 function sanitizeQuery(query: string) {
@@ -35,31 +31,12 @@ export function GitHubRepositorySelector({
   const { data: config } = useConfig();
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
-  const [searchedRepos, setSearchedRepos] = React.useState<
-    GitHubRepositoryWithFlag[]
-  >([]);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const { data: searchedRepos = [] } = useSearchRepositories(
+    sanitizeQuery(debouncedSearchQuery),
+  );
 
-  React.useEffect(() => {
-    const searchPublicRepo = async () => {
-      if (!debouncedSearchQuery) {
-        setSearchedRepos([]);
-        return;
-      }
-      const repos = await searchPublicRepositories(
-        sanitizeQuery(debouncedSearchQuery),
-      );
-      // Sort by stars in descending order
-      const sortedRepos = repos
-        .sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0))
-        .slice(0, 3);
-      setSearchedRepos(sortedRepos);
-    };
-
-    searchPublicRepo();
-  }, [debouncedSearchQuery]);
-
-  const finalRepositories: GitHubRepositoryWithFlag[] = [
+  const finalRepositories: GitHubRepository[] = [
     ...searchedRepos.filter(
       (repo) => !repositories.find((r) => r.id === repo.id),
     ),

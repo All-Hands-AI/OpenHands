@@ -115,22 +115,18 @@ export const searchPublicRepositories = async (
     return [];
   }
 
-  try {
-    const response = await github.get<{ items: GitHubRepository[] }>(
-      "/search/repositories",
-      {
-        params: {
-          q: sanitizedQuery,
-          per_page,
-          sort,
-          order,
-        },
+  const response = await github.get<{ items: GitHubRepository[] }>(
+    "/search/repositories",
+    {
+      params: {
+        q: sanitizedQuery,
+        per_page,
+        sort,
+        order,
       },
-    );
-    return response.data.items;
-  } catch (error) {
-    return [];
-  }
+    },
+  );
+  return response.data.items;
 };
 
 export const retrieveLatestGitHubCommit = async (
