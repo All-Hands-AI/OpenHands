@@ -12,7 +12,8 @@ app = APIRouter(prefix='/api')
 
 SettingsStoreImpl = get_impl(SettingsStore, openhands_config.settings_store_class)  # type: ignore
 ConversationStoreImpl = get_impl(
-    ConversationStore, openhands_config.conversation_store_class  # type: ignore
+    ConversationStore,  # type: ignore
+    openhands_config.conversation_store_class,  # type: ignore
 )
 
 
@@ -26,9 +27,13 @@ async def load_settings(
     try:
         settings_store = await SettingsStoreImpl.get_instance(config, github_token)
         settings = await settings_store.load()
-        if settings:
-            # For security reasons we don't ever send the api key to the client
-            settings.llm_api_key = None
+        if not settings:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Settings not found'},
+            )
+        # For security reasons we don't ever send the api key to the client
+        settings.llm_api_key = None
         return settings
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
