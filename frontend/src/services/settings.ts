@@ -144,7 +144,7 @@ export const getSettings = async (): Promise<Settings> => {
       LLM_API_KEY: "",
     };
   } catch (error) {
-    // @ts-expect-error
+    // @ts-expect-error we don't have a type annotation for the response
     if (error.response?.status !== 404) {
       throw error;
     }
