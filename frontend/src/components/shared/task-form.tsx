@@ -44,7 +44,11 @@ export function TaskForm({ ref }: TaskFormProps) {
   const [inputIsFocused, setInputIsFocused] = React.useState(false);
   const newConversationMutation = useMutation({
     mutationFn: (variables: { q?: string }) => {
-      if (variables.q) dispatch(setInitialQuery(variables.q));
+      if (!variables.q?.trim() && !selectedRepository && files.length === 0) {
+        throw new Error("No query provided");
+      }
+
+      if (variables.q?.trim()) dispatch(setInitialQuery(variables.q));
       return OpenHands.newConversation({
         githubToken: gitHubToken || undefined,
         selectedRepository: selectedRepository || undefined,
@@ -90,9 +94,7 @@ export function TaskForm({ ref }: TaskFormProps) {
     const formData = new FormData(event.currentTarget);
 
     const q = formData.get("q")?.toString();
-    if (q?.trim() || selectedRepository || files.length > 0) {
-      newConversationMutation.mutate({ q });
-    }
+    newConversationMutation.mutate({ q });
   };
 
   return (
