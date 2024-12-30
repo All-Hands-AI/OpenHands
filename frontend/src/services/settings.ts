@@ -144,7 +144,8 @@ export const getSettings = async (): Promise<Settings> => {
       LLM_API_KEY: "",
     };
   } catch (error) {
-    if (error.response.status !== 404) {
+    // @ts-expect-error
+    if (error.response?.status !== 404) {
       throw error;
     }
   }

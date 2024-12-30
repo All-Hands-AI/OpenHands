@@ -80,7 +80,7 @@ export function Sidebar() {
       {accountSettingsModalOpen && (
         <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
       )}
-      {settingsModalIsOpen && (
+      {(!accountSettingsModalOpen && settingsModalIsOpen) && (
         <SettingsModal onClose={() => setSettingsModalIsOpen(false)} />
       )}
       {startNewProjectModalIsOpen && (
