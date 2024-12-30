@@ -637,12 +637,14 @@ def test_command_backslash(temp_dir, runtime_cls, run_as_openhands):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
 
-        # This does not work (exposed in one of the evaluation tests)
+        # Reproduce an issue we ran into during evaluation
         # find /workspace/sympy__sympy__1.0 -type f -exec grep -l "implemented_function" {} \;
         # find: missing argument to `-exec'
-        # action = CmdRunAction(r'find /tmp/test_dir -type f -exec grep -l "implemented_function" {} \\;')
-        cmd = r'find /tmp/test_dir -type f -exec grep -l "implemented_function" {} \;'
-        action = CmdRunAction(cmd)
+        # --> This is unexpected output due to incorrect escaping of \;
+        # This tests for correct escaping of \;
+        action = CmdRunAction(
+            'find /tmp/test_dir -type f -exec grep -l "implemented_function" {} \\;'
+        )
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
