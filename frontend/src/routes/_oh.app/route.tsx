@@ -46,16 +46,6 @@ function AppContent() {
     repository: selectedRepository,
   });
 
-  const secrets = React.useMemo(
-    () => [gitHubToken].filter((secret) => secret !== null),
-    [gitHubToken],
-  );
-
-  const Terminal = React.useMemo(
-    () => React.lazy(() => import("#/components/features/terminal/terminal")),
-    [],
-  );
-
   useEffectOnce(() => {
     dispatch(clearMessages());
     dispatch(clearTerminal());
@@ -79,9 +69,14 @@ function AppContent() {
 
             <div className="hidden md:flex flex-col grow gap-3">
               <Container
-                className="h-2/3"
+                className="h-full"
                 labels={[
-                  { label: "Workspace", to: "", icon: <CodeIcon /> },
+                  {
+                    label: <TerminalStatusLabel />,
+                    to: "",
+                    icon: <CodeIcon />,
+                  },
+                  { label: "Workspace", to: "workspace", icon: <CodeIcon /> },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
                   {
                     label: (
@@ -96,18 +91,12 @@ function AppContent() {
                 ]}
               >
                 <FilesProvider>
-                  <Outlet />
+                  {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
+                   * that it loads only in the client-side. */}
+                  <React.Suspense fallback={<div className="h-full" />}>
+                    <Outlet />
+                  </React.Suspense>
                 </FilesProvider>
-              </Container>
-              {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-               * that it loads only in the client-side. */}
-              <Container
-                className="h-1/3 overflow-scroll"
-                label={<TerminalStatusLabel />}
-              >
-                <React.Suspense fallback={<div className="h-full" />}>
-                  <Terminal secrets={secrets} />
-                </React.Suspense>
               </Container>
             </div>
           </div>
