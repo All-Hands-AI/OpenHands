@@ -90,7 +90,7 @@ export function TaskForm({ ref }: TaskFormProps) {
     const formData = new FormData(event.currentTarget);
 
     const q = formData.get("q")?.toString();
-    if (q?.trim()) {
+    if (q?.trim() || selectedRepository || files.length > 0) {
       newConversationMutation.mutate({ q });
     }
   };
