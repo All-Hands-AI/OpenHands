@@ -20,7 +20,7 @@ import toast from "react-hot-toast";
 import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
-import { SettingsProvider } from "./context/settings-context";
+import { SettingsUpToDateProvider } from "./context/settings-up-to-date-context";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -71,14 +71,14 @@ prepareApp().then(() =>
       document,
       <StrictMode>
         <Provider store={store}>
-          <QueryClientProvider client={queryClient}>
-            <SettingsProvider>
-              <AuthProvider>
+          <AuthProvider>
+            <SettingsUpToDateProvider>
+              <QueryClientProvider client={queryClient}>
                 <HydratedRouter />
                 <PosthogInit />
-              </AuthProvider>
-            </SettingsProvider>
-          </QueryClientProvider>
+              </QueryClientProvider>
+            </SettingsUpToDateProvider>
+          </AuthProvider>
         </Provider>
       </StrictMode>,
     );

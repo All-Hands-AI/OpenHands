@@ -1,5 +1,5 @@
-import { useSettings } from "#/context/settings-context";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
+import { useSettings } from "#/hooks/query/use-settings";
 import { LoadingSpinner } from "../../loading-spinner";
 import { ModalBackdrop } from "../modal-backdrop";
 import { SettingsForm } from "./settings-form";
@@ -9,7 +9,7 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ onClose }: SettingsModalProps) {
-  const { settings } = useSettings();
+  const { data: settings } = useSettings();
   const aiConfigOptions = useAIConfigOptions();
 
   return (

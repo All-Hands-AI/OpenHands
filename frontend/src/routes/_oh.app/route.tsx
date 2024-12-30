@@ -21,16 +21,16 @@ import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "./event-handler";
 import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 import { useAuth } from "#/context/auth-context";
-import { useSettings } from "#/context/settings-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
 import { CountBadge } from "#/components/layout/count-badge";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
+import { useSettings } from "#/hooks/query/use-settings";
 
 function AppContent() {
   const { gitHubToken } = useAuth();
-  const { settings } = useSettings();
+  const { data: settings } = useSettings();
   const { conversationId } = useConversation();
 
   const dispatch = useDispatch();

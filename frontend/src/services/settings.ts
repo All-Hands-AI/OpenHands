@@ -46,6 +46,11 @@ export const settingsAreUpToDate = () =>
   getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
 
 // TODO: localStorage settings are deprecated. Remove this after 1/31/2025
+/**
+ * Get the settings from local storage
+ * @returns the settings from local storage
+ * @deprecated
+ */
 export const getLocalStorageSettings = (): Settings => {
   const llmModel = localStorage.getItem("LLM_MODEL");
   const baseUrl = localStorage.getItem("LLM_BASE_URL");
@@ -74,14 +79,14 @@ export const saveSettings = async (
   settings: Partial<Settings>,
 ): Promise<boolean> => {
   try {
-    const apiSettings = {
-      llm_model: settings.LLM_MODEL || null,
-      llm_base_url: settings.LLM_BASE_URL || null,
-      agent: settings.AGENT || null,
-      language: settings.LANGUAGE || null,
-      confirmation_mode: settings.CONFIRMATION_MODE || null,
-      security_analyzer: settings.SECURITY_ANALYZER || null,
-      llm_api_key: settings.LLM_API_KEY || null,
+    const apiSettings: Partial<ApiSettings> = {
+      llm_model: settings.LLM_MODEL,
+      llm_base_url: settings.LLM_BASE_URL,
+      agent: settings.AGENT,
+      language: settings.LANGUAGE,
+      confirmation_mode: settings.CONFIRMATION_MODE,
+      security_analyzer: settings.SECURITY_ANALYZER,
+      llm_api_key: settings.LLM_API_KEY,
     };
 
     const { data } = await openHands.post("/api/settings", apiSettings);
