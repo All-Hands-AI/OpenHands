@@ -83,20 +83,18 @@ function AppContent() {
             <div
               className={`relative flex-grow ${isWorkspaceHidden ? "w-full" : "md:w-[390px]"}`}
             >
-              <Container className="w-full h-full">
+              <Container className="w-full h-full pr-4">
                 <ChatInterface />
               </Container>
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10">
-                <ToggleWorkspaceIconButton
-                  onClick={toggleWorkspace}
-                  isHidden={isWorkspaceHidden}
-                />
-              </div>
+              <ToggleWorkspaceIconButton
+                onClick={toggleWorkspace}
+                isHidden={isWorkspaceHidden}
+              />
             </div>
 
             <div
               className={`hidden md:flex flex-col flex-grow transition-all duration-300 ${
-                isWorkspaceHidden ? "w-0 opacity-0 overflow-hidden" : "ml-3"
+                isWorkspaceHidden ? "w-0 opacity-0 overflow-hidden" : ""
               }`}
             >
               <Container
