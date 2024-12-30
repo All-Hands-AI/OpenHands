@@ -90,12 +90,12 @@ async def test_msg(temp_dir: str):
             (MessageAction('Hello world!'), EventSource.USER),
             (MessageAction('ABC!'), EventSource.AGENT),
         ]
-        
+
         # Call on_event directly for each event
         for event, source in data:
             event._source = source  # Set the source on the event directly
             await analyzer.on_event(event)
-            
+
         for i in range(3):
             assert data[i][0].security_risk == ActionSecurityRisk.LOW
         assert data[3][0].security_risk == ActionSecurityRisk.MEDIUM
@@ -142,12 +142,12 @@ async def test_cmd(cmd, expected_risk, temp_dir: str):
             (MessageAction('Hello world!'), EventSource.USER),
             (CmdRunAction(cmd), EventSource.USER),
         ]
-        
+
         # Call on_event directly for each event
         for event, source in data:
             event._source = source  # Set the source on the event directly
             await analyzer.on_event(event)
-            
+
         assert data[0][0].security_risk == ActionSecurityRisk.LOW
         assert data[1][0].security_risk == expected_risk
 
@@ -200,12 +200,12 @@ async def test_leak_secrets(code, expected_risk, temp_dir: str):
             (IPythonRunCellAction(code), EventSource.AGENT),
             (IPythonRunCellAction('hello'), EventSource.AGENT),
         ]
-        
+
         # Call on_event directly for each event
         for event, source in data:
             event._source = source  # Set the source on the event directly
             await analyzer.on_event(event)
-            
+
         assert data[0][0].security_risk == ActionSecurityRisk.LOW
         assert data[1][0].security_risk == expected_risk
         assert data[2][0].security_risk == ActionSecurityRisk.LOW
@@ -246,12 +246,12 @@ async def test_unsafe_python_code(temp_dir: str):
             (MessageAction('Hello world!'), EventSource.USER),
             (IPythonRunCellAction(code), EventSource.AGENT),
         ]
-        
+
         # Call on_event directly for each event
         for event, source in data:
             event._source = source  # Set the source on the event directly
             await analyzer.on_event(event)
-            
+
         assert data[0][0].security_risk == ActionSecurityRisk.LOW
         assert data[1][0].security_risk == ActionSecurityRisk.MEDIUM
 
@@ -288,12 +288,12 @@ async def test_unsafe_bash_command(temp_dir: str):
             (MessageAction('Hello world!'), EventSource.USER),
             (CmdRunAction(code), EventSource.AGENT),
         ]
-        
+
         # Call on_event directly for each event
         for event, source in data:
             event._source = source  # Set the source on the event directly
             await analyzer.on_event(event)
-            
+
         assert data[0][0].security_risk == ActionSecurityRisk.LOW
         assert data[1][0].security_risk == ActionSecurityRisk.MEDIUM
 
@@ -590,13 +590,13 @@ async def test_check_usertask(
         data = [
             (MessageAction(usertask), EventSource.USER),
         ]
-        
+
         # Add events to the stream first
         for event, source in data:
             event._source = source  # Set the source on the event directly
             event_stream.add_event(event, source)
             await analyzer.on_event(event)
-            
+
         event_list = list(event_stream.get_events())
 
         if is_appropriate == 'No':
@@ -652,13 +652,13 @@ async def test_check_fillaction(
         data = [
             (BrowseInteractiveAction(browser_actions=fillaction), EventSource.AGENT),
         ]
-        
+
         # Add events to the stream first
         for event, source in data:
             event._source = source  # Set the source on the event directly
             event_stream.add_event(event, source)
             await analyzer.on_event(event)
-            
+
         event_list = list(event_stream.get_events())
 
         if is_harmful == 'Yes':
