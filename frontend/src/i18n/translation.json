@@ -2024,10 +2024,32 @@
     "en": "Browser Screenshot"
   },
   "ACCOUNT_SETTINGS$SETTINGS": {
-    "en": "Account Settings"
+    "en": "Account Settings",
+    "zh-CN": "账户设置",
+    "de": "Kontoeinstellungen",
+    "ko-KR": "계정 설정",
+    "no": "Kontoinnstillinger",
+    "zh-TW": "帳戶設定",
+    "it": "Impostazioni account",
+    "pt": "Configurações da conta",
+    "es": "Configuración de la cuenta",
+    "ar": "إعدادات الحساب",
+    "fr": "Paramètres du compte",
+    "tr": "Hesap Ayarları"
   },
   "ACCOUNT_SETTINGS$LOGOUT": {
-    "en": "Logout"
+    "en": "Logout",
+    "zh-CN": "退出登录",
+    "de": "Abmelden",
+    "ko-KR": "로그아웃",
+    "no": "Logg ut",
+    "zh-TW": "登出",
+    "it": "Esci",
+    "pt": "Sair",
+    "es": "Cerrar sesión",
+    "ar": "تسجيل الخروج",
+    "fr": "Déconnexion",
+    "tr": "Çıkış"
   },
   "ERROR_TOAST$CLOSE_BUTTON_LABEL": {
     "en": "Close"
