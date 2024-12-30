@@ -1,106 +1,190 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { cn } from "#/utils/cn";
-import ChevronLeftIcon from "#/icons/chevron-left";
-import ChevronRightIcon from "#/icons/chevron-right";
+import React, { CSSProperties, JSX, useEffect, useRef, useState } from "react";
+import {
+  VscChevronDown,
+  VscChevronLeft,
+  VscChevronRight,
+  VscChevronUp,
+} from "react-icons/vsc";
+import { twMerge } from "tailwind-merge";
+import { IconButton } from "../shared/buttons/icon-button";
 
-interface ResizablePanelProps {
-  children: React.ReactNode;
-  leftPanel: React.ReactNode;
-  defaultRightWidth?: number;
-  minRightWidth?: number;
-  maxRightWidth?: number;
-  className?: string;
+export enum Orientation {
+  HORIZONTAL = "horizontal",
+  VERTICAL = "vertical",
 }
 
+enum Collapse {
+  COLLAPSED = "collapsed",
+  SPLIT = "split",
+  FILLED = "filled",
+}
+
+type ResizablePanelProps = {
+  firstChild: React.ReactNode;
+  firstClassName: string | undefined;
+  secondChild: React.ReactNode;
+  secondClassName: string | undefined;
+  className: string | undefined;
+  orientation: Orientation;
+  initialSize: number;
+};
+
 export function ResizablePanel({
-  children,
-  leftPanel,
-  defaultRightWidth = 390,
-  minRightWidth = 300,
-  maxRightWidth = 600,
+  firstChild,
+  firstClassName,
+  secondChild,
+  secondClassName,
   className,
-}: ResizablePanelProps) {
-  const [rightWidth, setRightWidth] = useState(defaultRightWidth);
-  const [isResizing, setIsResizing] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [previousWidth, setPreviousWidth] = useState(defaultRightWidth);
-
-  const handleMouseDown = useCallback(() => {
-    setIsResizing(true);
-  }, []);
-
-  const handleMouseUp = useCallback(() => {
-    setIsResizing(false);
-  }, []);
-
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isResizing) return;
-
-      const containerWidth = window.innerWidth;
-      const fromRight = containerWidth - e.clientX;
-      const newWidth = Math.min(
-        Math.max(minRightWidth, fromRight),
-        maxRightWidth,
-      );
-      setRightWidth(newWidth);
-    },
-    [isResizing, minRightWidth, maxRightWidth],
-  );
-
-  const toggleCollapse = useCallback(() => {
-    if (isCollapsed) {
-      setRightWidth(previousWidth);
-    } else {
-      setPreviousWidth(rightWidth);
-      setRightWidth(0);
-    }
-    setIsCollapsed(!isCollapsed);
-  }, [isCollapsed, rightWidth, previousWidth]);
+  orientation,
+  initialSize,
+}: ResizablePanelProps): JSX.Element {
+  const [firstSize, setFirstSize] = useState<number>(initialSize);
+  const [dividerPosition, setDividerPosition] = useState<number | null>(null);
+  const firstRef = useRef<HTMLDivElement>(null);
+  const secondRef = useRef<HTMLDivElement>(null);
+  const [collapse, setCollapse] = useState<Collapse>(Collapse.SPLIT);
+  const isHorizontal = orientation === Orientation.HORIZONTAL;
 
   useEffect(() => {
-    if (isResizing) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
+    if (dividerPosition == null || !firstRef.current) {
+      return undefined;
     }
-
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+    const getFirstSizeFromEvent = (e: MouseEvent) => {
+      const position = isHorizontal ? e.clientX : e.clientY;
+      return firstSize + position - dividerPosition;
     };
-  }, [isResizing, handleMouseMove, handleMouseUp]);
+    const onMouseMove = (e: MouseEvent) => {
+      e.preventDefault();
+      const newFirstSize = `${getFirstSizeFromEvent(e)}px`;
+      const { current } = firstRef;
+      if (current) {
+        if (isHorizontal) {
+          current.style.width = newFirstSize;
+          current.style.minWidth = newFirstSize;
+        } else {
+          current.style.height = newFirstSize;
+          current.style.minHeight = newFirstSize;
+        }
+      }
+    };
+    const onMouseUp = (e: MouseEvent) => {
+      e.preventDefault();
+      if (firstRef.current) {
+        firstRef.current.style.transition = "";
+      }
+      if (secondRef.current) {
+        secondRef.current.style.transition = "";
+      }
+      setFirstSize(getFirstSizeFromEvent(e));
+      setDividerPosition(null);
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [dividerPosition, firstSize, orientation]);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (firstRef.current) {
+      firstRef.current.style.transition = "none";
+    }
+    if (secondRef.current) {
+      secondRef.current.style.transition = "none";
+    }
+    const position = isHorizontal ? e.clientX : e.clientY;
+    setDividerPosition(position);
+  };
+
+  const getStyleForFirst = () => {
+    const style: CSSProperties = { overflow: "hidden" };
+    if (collapse === Collapse.COLLAPSED) {
+      style.opacity = 0;
+      style.width = 0;
+      style.minWidth = 0;
+      style.height = 0;
+      style.minHeight = 0;
+    } else if (collapse === Collapse.SPLIT) {
+      const firstSizePx = `${firstSize}px`;
+      if (isHorizontal) {
+        style.width = firstSizePx;
+        style.minWidth = firstSizePx;
+      } else {
+        style.height = firstSizePx;
+        style.minHeight = firstSizePx;
+      }
+    } else {
+      style.flexGrow = 1;
+    }
+    return style;
+  };
+
+  const getStyleForSecond = () => {
+    const style: CSSProperties = { overflow: "hidden" };
+    if (collapse === Collapse.FILLED) {
+      style.opacity = 0;
+      style.width = 0;
+      style.minWidth = 0;
+      style.height = 0;
+      style.minHeight = 0;
+    } else if (collapse === Collapse.SPLIT) {
+      style.flexGrow = 1;
+    } else {
+      style.flexGrow = 1;
+    }
+    return style;
+  };
+
+  const onCollapse = () => {
+    if (collapse === Collapse.SPLIT) {
+      setCollapse(Collapse.COLLAPSED);
+    } else {
+      setCollapse(Collapse.SPLIT);
+    }
+  };
+
+  const onExpand = () => {
+    if (collapse === Collapse.SPLIT) {
+      setCollapse(Collapse.FILLED);
+    } else {
+      setCollapse(Collapse.SPLIT);
+    }
+  };
 
   return (
-    <div className={cn("flex h-full w-full relative", className)}>
-      <div className="flex-1 overflow-auto">{leftPanel}</div>
+    <div className={twMerge("flex", !isHorizontal && "flex-col", className)}>
       <div
-        className={cn(
-          "absolute h-full w-1 bg-gray-200 hover:bg-blue-500 cursor-col-resize flex items-center justify-center transition-[right,background-color] duration-300 ease-in-out",
-          isCollapsed && "right-0"
-        )}
-        style={!isCollapsed ? { right: rightWidth } : undefined}
-        onMouseDown={handleMouseDown}
+        ref={firstRef}
+        className={twMerge(firstClassName, "transition-all ease-soft-spring")}
+        style={getStyleForFirst()}
       >
-        <button
-          type="button"
-          onClick={toggleCollapse}
-          className="absolute z-10 -left-3 top-1/2 -translate-y-1/2 bg-white hover:bg-gray-100 rounded-full p-1 border border-gray-200 shadow-sm transition-colors duration-200"
-        >
-          {isCollapsed ? (
-            <ChevronLeftIcon className="w-4 h-4 text-gray-600" />
-          ) : (
-            <ChevronRightIcon className="w-4 h-4 text-gray-600" />
-          )}
-        </button>
+        {firstChild}
       </div>
       <div
-        className={cn(
-          "h-full overflow-auto transition-[width] duration-300 ease-in-out",
-          isCollapsed && "w-0 min-w-0"
-        )}
-        style={!isCollapsed ? { width: rightWidth, minWidth: rightWidth } : undefined}
+        className={`${isHorizontal ? "cursor-ew-resize w-3 flex-col" : "cursor-ns-resize h-3 flex-row"} shrink-0 flex justify-center items-center`}
+        onMouseDown={collapse === Collapse.SPLIT ? onMouseDown : undefined}
       >
-        {children}
+        <IconButton
+          icon={isHorizontal ? <VscChevronLeft /> : <VscChevronUp />}
+          ariaLabel="Collapse"
+          onClick={onCollapse}
+        />
+        <IconButton
+          icon={isHorizontal ? <VscChevronRight /> : <VscChevronDown />}
+          ariaLabel="Expand"
+          onClick={onExpand}
+        />
+      </div>
+      <div
+        ref={secondRef}
+        className={twMerge(secondClassName, "transition-all ease-soft-spring")}
+        style={getStyleForSecond()}
+      >
+        {secondChild}
       </div>
     </div>
   );
