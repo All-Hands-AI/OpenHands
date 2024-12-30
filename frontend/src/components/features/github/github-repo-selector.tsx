@@ -44,7 +44,9 @@ export function GitHubRepositorySelector({
     ...searchedRepos.filter(
       (repo) => !repositories.find((r) => r.id === repo.id),
     ),
-    ...repositories,
+    ...repositories.filter(
+      (repo) => !debouncedSearchQuery || sanitizeQuery(repo.full_name).includes(sanitizeQuery(debouncedSearchQuery))
+    ),
   ];
 
   const dispatch = useDispatch();
