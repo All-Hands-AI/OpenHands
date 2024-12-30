@@ -7,7 +7,7 @@ import OpenHands from "#/api/open-hands";
 const getSettingsQueryFn = async () => {
   const apiSettings = await OpenHands.getSettings();
 
-  if (apiSettings != null) {
+  if (apiSettings !== null) {
     return {
       LLM_MODEL: apiSettings.llm_model,
       LLM_BASE_URL: apiSettings.llm_base_url,
@@ -15,7 +15,7 @@ const getSettingsQueryFn = async () => {
       LANGUAGE: apiSettings.language,
       CONFIRMATION_MODE: apiSettings.confirmation_mode,
       SECURITY_ANALYZER: apiSettings.security_analyzer,
-      LLM_API_KEY: "",
+      LLM_API_KEY: apiSettings.llm_api_key,
     };
   }
 
@@ -27,6 +27,7 @@ export const useSettings = () => {
     queryKey: ["settings"],
     queryFn: getSettingsQueryFn,
     initialData: DEFAULT_SETTINGS,
+    refetchOnMount: false,
   });
 
   React.useEffect(() => {

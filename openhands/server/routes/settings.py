@@ -24,7 +24,7 @@ async def load_settings(
         settings = await settings_store.load()
         if settings:
             # For security reasons we don't ever send the api key to the client
-            settings.llm_api_key = None
+            settings.llm_api_key = 'SET' if settings.llm_api_key else None
         return settings
     except Exception as e:
         logger.warning(f'Invalid token: {e}')

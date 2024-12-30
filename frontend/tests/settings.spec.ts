@@ -21,7 +21,7 @@ const selectGpt4o = async (page: Page) => {
   const modelSelectElement = aiConfigModal.getByTestId("llm-model");
   await modelSelectElement.click();
 
-  const gpt4Option = page.getByText("gpt-4o");
+  const gpt4Option = page.getByText("gpt-4o", { exact: true });
   await gpt4Option.click();
 
   return {

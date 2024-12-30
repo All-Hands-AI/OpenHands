@@ -26,8 +26,8 @@ export const useSaveSettings = () => {
 
   return useMutation({
     mutationFn: saveSettingsMutationFn,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["settings"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["settings"] });
       updateSettingsVersion(logout);
       setIsUpToDate(true);
     },
