@@ -207,6 +207,15 @@ class AgentController:
         """
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
 
+    def should_step(self, event: Event) -> bool:
+        if isinstance(event, Action):
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                return True
+            return False
+        if isinstance(event, Observation):
+            return True
+        return False
+
     async def _on_event(self, event: Event) -> None:
         if hasattr(event, 'hidden') and event.hidden:
             return
@@ -217,10 +226,10 @@ class AgentController:
 
         if isinstance(event, Action):
             await self._handle_action(event)
-            if event.source == EventSource.USER:
-                self.step()
         elif isinstance(event, Observation):
             await self._handle_observation(event)
+
+        if self.should_step(event):
             self.step()
 
     async def _handle_action(self, action: Action) -> None:
