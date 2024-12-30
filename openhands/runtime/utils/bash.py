@@ -93,9 +93,13 @@ def escape_bash_special_chars(command: str) -> str:
                     is_quoted = (
                         word_text.startswith('"') and word_text.endswith('"')
                     ) or (word_text.startswith("'") and word_text.endswith("'"))
-                    # Check if word_text is a quoted string
-                    if is_quoted:
-                        # Preserve quoted strings as-is
+                    is_command_subst = (
+                        word_text.startswith('$(') and word_text.endswith(')')
+                    ) or (word_text.startswith('`') and word_text.endswith('`'))
+
+                    # Check if word_text is a quoted string or command substitution
+                    if is_quoted or is_command_subst:
+                        # Preserve quoted strings and command substitutions as-is
                         parts.append(word_text)
                     else:
                         # Escape special chars in unquoted text
