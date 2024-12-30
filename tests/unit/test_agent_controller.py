@@ -37,7 +37,10 @@ def event_loop():
 
 @pytest.fixture
 def mock_agent():
-    return MagicMock(spec=Agent)
+    agent = MagicMock(spec=Agent)
+    agent.llm = MagicMock(spec=LLM)
+    agent.llm.metrics = MagicMock(spec=Metrics)
+    return agent
 
 
 @pytest.fixture
