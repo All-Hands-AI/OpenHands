@@ -21,6 +21,10 @@ export const useCreateConversation = () => {
 
   return useMutation({
     mutationFn: (variables: { q?: string }) => {
+      if (!variables.q?.trim() && !selectedRepository && files.length === 0) {
+        throw new Error("No query provided");
+      }
+
       if (variables.q) dispatch(setInitialQuery(variables.q));
       return OpenHands.createConversation(
         settings,
