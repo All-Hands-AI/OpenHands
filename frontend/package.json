@@ -75,6 +75,7 @@
     ]
   },
   "devDependencies": {
+    "@mswjs/socket.io-binding": "^0.1.1",
     "@playwright/test": "^1.49.1",
     "@react-router/dev": "^7.1.1",
     "@tailwindcss/typography": "^0.5.15",

@@ -1,17 +1,8 @@
 import React from "react";
-import { useNavigate, useNavigation } from "react-router";
+import { useNavigation } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { useMutation } from "@tanstack/react-query";
-import posthog from "posthog-js";
 import { RootState } from "#/store";
-import {
-  addFile,
-  removeFile,
-  setInitialQuery,
-} from "#/state/initial-query-slice";
-import OpenHands from "#/api/open-hands";
-import { useAuth } from "#/context/auth-context";
-
+import { addFile, removeFile } from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/features/suggestions/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
@@ -21,6 +12,7 @@ import { cn } from "#/utils/utils";
 import { AttachImageLabel } from "../features/images/attach-image-label";
 import { ImageCarousel } from "../features/images/image-carousel";
 import { UploadImageInput } from "../features/images/upload-image-input";
+import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { LoadingSpinner } from "./loading-spinner";
 
 interface TaskFormProps {
@@ -30,8 +22,6 @@ interface TaskFormProps {
 export function TaskForm({ ref }: TaskFormProps) {
   const dispatch = useDispatch();
   const navigation = useNavigation();
-  const navigate = useNavigate();
-  const { gitHubToken } = useAuth();
 
   const { selectedRepository, files } = useSelector(
     (state: RootState) => state.initialQuery,
@@ -42,28 +32,7 @@ export function TaskForm({ ref }: TaskFormProps) {
     getRandomKey(SUGGESTIONS["non-repo"]),
   );
   const [inputIsFocused, setInputIsFocused] = React.useState(false);
-  const newConversationMutation = useMutation({
-    mutationFn: (variables: { q?: string }) => {
-      if (!variables.q?.trim() && !selectedRepository && files.length === 0) {
-        throw new Error("No query provided");
-      }
-
-      if (variables.q?.trim()) dispatch(setInitialQuery(variables.q));
-      return OpenHands.newConversation({
-        githubToken: gitHubToken || undefined,
-        selectedRepository: selectedRepository || undefined,
-      });
-    },
-    onSuccess: ({ conversation_id: conversationId }, { q }) => {
-      posthog.capture("initial_query_submitted", {
-        entry_point: "task_form",
-        query_character_length: q?.length,
-        has_repository: !!selectedRepository,
-        has_files: files.length > 0,
-      });
-      navigate(`/conversations/${conversationId}`);
-    },
-  });
+  const { mutate: createConversation, isPending } = useCreateConversation();
 
   const onRefreshSuggestion = () => {
     const suggestions = SUGGESTIONS["non-repo"];
@@ -94,7 +63,7 @@ export function TaskForm({ ref }: TaskFormProps) {
     const formData = new FormData(event.currentTarget);
 
     const q = formData.get("q")?.toString();
-    newConversationMutation.mutate({ q });
+    createConversation({ q });
   };
 
   return (
@@ -116,7 +85,7 @@ export function TaskForm({ ref }: TaskFormProps) {
             "hover:border-neutral-500 focus-within:border-neutral-500",
           )}
         >
-          {newConversationMutation.isPending ? (
+          {isPending ? (
             <div className="flex justify-center py-[17px]">
               <LoadingSpinner size="small" />
             </div>
