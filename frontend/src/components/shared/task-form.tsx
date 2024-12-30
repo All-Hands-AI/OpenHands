@@ -63,7 +63,9 @@ export function TaskForm({ ref }: TaskFormProps) {
     const formData = new FormData(event.currentTarget);
 
     const q = formData.get("q")?.toString();
-    createConversation({ q });
+    if (q?.trim()) {
+      createConversation({ q });
+    }
   };
 
   return (

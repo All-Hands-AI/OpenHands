@@ -249,9 +249,14 @@ def auto_continue_response(
     try_parse: Callable[[Action | None], str] | None = None,
 ) -> str:
     """Default function to generate user responses.
-    Returns 'continue' to tell the agent to proceed without asking for more input.
+    Tell the agent to proceed without asking for more input, or finish the interaction.
     """
-    return 'continue'
+    message = (
+        'Please continue on whatever approach you think is suitable.\n'
+        'If you think you have solved the task, please finish the interaction.\n'
+        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN RESPONSE.\n'
+    )
+    return message
 
 
 if __name__ == '__main__':

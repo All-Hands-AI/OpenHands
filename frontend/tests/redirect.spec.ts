@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => {
     localStorage.setItem("analytics-consent", "true");
-    localStorage.setItem("SETTINGS_VERSION", "4");
+    localStorage.setItem("SETTINGS_VERSION", "5");
   });
 });
 
