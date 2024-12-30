@@ -199,14 +199,6 @@ class AgentController:
     def step(self):
         asyncio.create_task(self._step())
 
-    def on_event(self, event: Event) -> None:
-        """Callback from the event stream. Notifies the controller of incoming events.
-
-        Args:
-            event (Event): The incoming event to process.
-        """
-        asyncio.get_event_loop().run_until_complete(self._on_event(event))
-
     def should_step(self, event: Event) -> bool:
         if isinstance(event, Action):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
@@ -215,6 +207,14 @@ class AgentController:
         if isinstance(event, Observation):
             return True
         return False
+
+    def on_event(self, event: Event) -> None:
+        """Callback from the event stream. Notifies the controller of incoming events.
+
+        Args:
+            event (Event): The incoming event to process.
+        """
+        asyncio.get_event_loop().run_until_complete(self._on_event(event))
 
     async def _on_event(self, event: Event) -> None:
         if hasattr(event, 'hidden') and event.hidden:
