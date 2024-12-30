@@ -5,6 +5,7 @@ import { screen, waitFor } from "@testing-library/react";
 import toast from "react-hot-toast";
 import App from "#/routes/_oh.app/route";
 import OpenHands from "#/api/open-hands";
+import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
 
 describe("App", () => {
   const RouteStub = createRoutesStub([
@@ -34,18 +35,23 @@ describe("App", () => {
     await screen.findByTestId("app-route");
   });
 
-  it("should call endSession if the user does not have permission", async () => {
-    const errorToastSpy = vi.spyOn(toast, "error");
-    const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
+  it.skipIf(!MULTI_CONVO_UI_IS_ENABLED)(
+    "should call endSession if the user does not have permission to view conversation",
+    async () => {
+      const errorToastSpy = vi.spyOn(toast, "error");
+      const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
 
-    getConversationSpy.mockResolvedValue(null);
-    renderWithProviders(<RouteStub initialEntries={["/conversation/9999"]} />);
+      getConversationSpy.mockResolvedValue(null);
+      renderWithProviders(
+        <RouteStub initialEntries={["/conversation/9999"]} />,
+      );
 
-    await waitFor(() => {
-      expect(endSessionMock).toHaveBeenCalledOnce();
-      expect(errorToastSpy).toHaveBeenCalledOnce();
-    });
-  });
+      await waitFor(() => {
+        expect(endSessionMock).toHaveBeenCalledOnce();
+        expect(errorToastSpy).toHaveBeenCalledOnce();
+      });
+    },
+  );
 
   it("should not call endSession if the user has permission", async () => {
     const errorToastSpy = vi.spyOn(toast, "error");
