@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, test, vi } from "vitest";
 import { AccountSettingsContextMenu } from "#/components/features/context-menu/account-settings-context-menu";
 
-const mockRef = { current: null };
+const mockRef = { current: null as HTMLElement | null };
 let clickListener: ((event: MouseEvent) => void) | null = null;
 
 vi.mock("#/hooks/use-click-outside-element", () => ({
@@ -116,7 +116,8 @@ describe("AccountSettingsContextMenu", () => {
       />,
     );
 
-    mockRef.current = screen.getByTestId("account-settings-context-menu");
+    const element = screen.getByTestId("account-settings-context-menu");
+    mockRef.current = element;
     await user.click(document.body);
 
     expect(onCloseMock).toHaveBeenCalledOnce();
