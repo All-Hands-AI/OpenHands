@@ -12,7 +12,8 @@ app = APIRouter(prefix='/api')
 
 SettingsStoreImpl = get_impl(SettingsStore, openhands_config.settings_store_class)  # type: ignore
 ConversationStoreImpl = get_impl(
-    ConversationStore, openhands_config.conversation_store_class  # type: ignore
+    ConversationStore,
+    openhands_config.conversation_store_class,  # type: ignore
 )
 
 
