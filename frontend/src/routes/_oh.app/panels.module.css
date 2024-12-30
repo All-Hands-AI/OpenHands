@@ -1,0 +1,23 @@
+.resizeHandle {
+  width: 8px;
+  background-color: var(--nextui-default-100);
+  transition: background-color 0.2s;
+  margin: 0 -2px;
+  cursor: col-resize;
+}
+
+.resizeHandle:hover {
+  background-color: var(--nextui-default-200);
+}
+
+.resizeHandle[data-resize-handle-active] {
+  background-color: var(--nextui-default-300);
+}
+
+.resizeHandleBar {
+  height: 100%;
+  width: 2px;
+  margin: 0 auto;
+  background-color: var(--nextui-default-300);
+  border-radius: 2px;
+}

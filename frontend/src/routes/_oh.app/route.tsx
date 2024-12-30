@@ -2,6 +2,7 @@ import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import {
   ConversationProvider,
   useConversation,
@@ -27,6 +28,7 @@ import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
 import { CountBadge } from "#/components/layout/count-badge";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
+import styles from "./panels.module.css";
 
 function AppContent() {
   const { gitHubToken } = useAuth();
@@ -62,43 +64,53 @@ function AppContent() {
     <WsClientProvider ghToken={gitHubToken} conversationId={conversationId}>
       <EventHandler>
         <div className="flex flex-col h-full gap-3">
-          <div className="flex h-full overflow-auto gap-3">
-            <Container className="w-full md:w-[390px] max-h-full relative">
-              <ChatInterface />
-            </Container>
+          <div className="flex h-full overflow-auto">
+            <PanelGroup direction="horizontal" className="w-full">
+              <Panel defaultSize={25} minSize={15} maxSize={50} collapsible>
+                <Container className="h-full relative">
+                  <ChatInterface />
+                </Container>
+              </Panel>
 
-            <div className="hidden md:flex flex-col grow gap-3">
-              <Container
-                className="h-full"
-                labels={[
-                  {
-                    label: <TerminalStatusLabel />,
-                    to: "",
-                    icon: <CodeIcon />,
-                  },
-                  { label: "Workspace", to: "workspace", icon: <CodeIcon /> },
-                  { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
-                  {
-                    label: (
-                      <div className="flex items-center gap-1">
-                        Browser
-                        {updateCount > 0 && <CountBadge count={updateCount} />}
-                      </div>
-                    ),
-                    to: "browser",
-                    icon: <GlobeIcon />,
-                  },
-                ]}
-              >
-                <FilesProvider>
-                  {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-                   * that it loads only in the client-side. */}
-                  <React.Suspense fallback={<div className="h-full" />}>
-                    <Outlet />
-                  </React.Suspense>
-                </FilesProvider>
-              </Container>
-            </div>
+              <PanelResizeHandle className={styles.resizeHandle}>
+                <div className={styles.resizeHandleBar} />
+              </PanelResizeHandle>
+
+              <Panel className="hidden md:block">
+                <Container
+                  className="h-full"
+                  labels={[
+                    {
+                      label: <TerminalStatusLabel />,
+                      to: "",
+                      icon: <CodeIcon />,
+                    },
+                    { label: "Workspace", to: "workspace", icon: <CodeIcon /> },
+                    { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
+                    {
+                      label: (
+                        <div className="flex items-center gap-1">
+                          Browser
+                          {updateCount > 0 && (
+                            <CountBadge count={updateCount} />
+                          )}
+                        </div>
+                      ),
+                      to: "browser",
+                      icon: <GlobeIcon />,
+                    },
+                  ]}
+                >
+                  <FilesProvider>
+                    {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
+                     * that it loads only in the client-side. */}
+                    <React.Suspense fallback={<div className="h-full" />}>
+                      <Outlet />
+                    </React.Suspense>
+                  </FilesProvider>
+                </Container>
+              </Panel>
+            </PanelGroup>
           </div>
 
           <div className="h-[60px]">
