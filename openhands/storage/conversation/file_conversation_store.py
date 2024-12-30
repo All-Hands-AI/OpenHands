@@ -18,21 +18,24 @@ class FileConversationStore(ConversationStore):
 
     async def save_metadata(self, metadata: ConversationMetadata):
         json_str = json.dumps(metadata.__dict__)
-        path = get_conversation_metadata_filename(metadata.conversation_id)
+        path = self.get_conversation_metadata_filename(metadata.conversation_id)
         await call_sync_from_async(self.file_store.write, path, json_str)
 
     async def get_metadata(self, conversation_id: str) -> ConversationMetadata:
-        path = get_conversation_metadata_filename(conversation_id)
+        path = self.get_conversation_metadata_filename(conversation_id)
         json_str = await call_sync_from_async(self.file_store.read, path)
         return ConversationMetadata(**json.loads(json_str))
 
     async def exists(self, conversation_id: str) -> bool:
-        path = get_conversation_metadata_filename(conversation_id)
+        path = self.get_conversation_metadata_filename(conversation_id)
         try:
             await call_sync_from_async(self.file_store.read, path)
             return True
         except FileNotFoundError:
             return False
+
+    def get_conversation_metadata_filename(self, conversation_id: str) -> str:
+        return get_conversation_metadata_filename(conversation_id)
 
     @classmethod
     async def get_instance(cls, config: AppConfig, token: str | None):
