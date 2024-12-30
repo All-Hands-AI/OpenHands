@@ -16,6 +16,7 @@ import { ExitProjectConfirmationModal } from "#/components/shared/modals/exit-pr
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { cn } from "#/utils/utils";
+import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
 
 export function Sidebar() {
   const location = useLocation();
@@ -31,8 +32,9 @@ export function Sidebar() {
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
-  const [conversationPanelIsOpen, setConversationPanelIsOpen] =
-    React.useState(true);
+  const [conversationPanelIsOpen, setConversationPanelIsOpen] = React.useState(
+    MULTI_CONVO_UI_IS_ENABLED,
+  );
 
   React.useEffect(() => {
     // If the github token is invalid, open the account settings modal again
@@ -75,16 +77,18 @@ export function Sidebar() {
             />
           )}
           <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
-          <button
-            data-testid="toggle-conversation-panel"
-            type="button"
-            onClick={() => setConversationPanelIsOpen((prev) => !prev)}
-            className={cn(
-              conversationPanelIsOpen ? "border-b-2 border-[#FFE165]" : "",
-            )}
-          >
-            <FolderIcon width={28} height={28} />
-          </button>
+          {MULTI_CONVO_UI_IS_ENABLED && (
+            <button
+              data-testid="toggle-conversation-panel"
+              type="button"
+              onClick={() => setConversationPanelIsOpen((prev) => !prev)}
+              className={cn(
+                conversationPanelIsOpen ? "border-b-2 border-[#FFE165]" : "",
+              )}
+            >
+              <FolderIcon width={28} height={28} />
+            </button>
+          )}
           <DocsButton />
           <ExitProjectButton
             onClick={() => setStartNewProjectModalIsOpen(true)}

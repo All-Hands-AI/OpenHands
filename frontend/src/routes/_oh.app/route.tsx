@@ -30,6 +30,7 @@ import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/get-conversation-permissions";
 import { CountBadge } from "#/components/layout/count-badge";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
+import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
 
 function AppContent() {
   const { gitHubToken } = useAuth();
@@ -66,7 +67,7 @@ function AppContent() {
   );
 
   React.useEffect(() => {
-    if (isFetched && !conversation) {
+    if (MULTI_CONVO_UI_IS_ENABLED && isFetched && !conversation) {
       toast.error("You do not have permission to write to this conversation.");
       endSession();
     }
