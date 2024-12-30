@@ -33,12 +33,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+      - name: Clear npm cache
+        run: npm cache clean --force
       - name: Install dependencies
         working-directory: ./frontend
         run: npm ci
       - name: Run TypeScript compilation
         working-directory: ./frontend
-        run: npm run make-i18n && tsc
+        run: npm run make-i18n && npx tsc --noEmit
       - name: Run tests and collect coverage
         working-directory: ./frontend
         run: npm run test:coverage
