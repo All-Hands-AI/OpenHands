@@ -83,7 +83,11 @@ def escape_bash_special_chars(command: str) -> str:
 
         def visit_node(node):
             nonlocal last_pos
-            if node.kind == 'redirect' and hasattr(node, 'heredoc'):
+            if (
+                node.kind == 'redirect'
+                and hasattr(node, 'heredoc')
+                and node.heredoc is not None
+            ):
                 # We're entering a heredoc - preserve everything as-is until we see EOF
                 # Store the heredoc end marker (usually 'EOF' but could be different)
                 between = command[last_pos : node.pos[0]]
