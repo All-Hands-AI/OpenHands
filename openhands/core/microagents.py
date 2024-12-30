@@ -81,7 +81,6 @@ class MicroAgent(BaseModel):
         'validate_assignment': True,
         'validate_default': True,
         'extra': 'allow',  # Allow extra fields like 'legacy'
-        'validate_all': True,  # Validate all fields, including inherited ones
     }
 
     @classmethod
