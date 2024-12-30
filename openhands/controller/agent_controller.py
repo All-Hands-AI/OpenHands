@@ -1,6 +1,7 @@
 import asyncio
 import copy
 import os
+import traceback
 from typing import Callable, ClassVar, Type
 
 import litellm
@@ -106,7 +107,6 @@ class AgentController:
             headless_mode: Whether the agent is run in headless mode.
             status_callback: Optional callback function to handle status updates.
         """
-        self._step_lock = asyncio.Lock()
         self.id = sid
         self.agent = agent
         self.headless_mode = headless_mode
@@ -197,7 +197,18 @@ class AgentController:
             self.status_callback('error', err_id, type(e).__name__ + ': ' + str(e))
 
     def step(self):
-        asyncio.create_task(self._step())
+        asyncio.create_task(self._step_with_exception_handling())
+
+    async def _step_with_exception_handling(self):
+        try:
+            await self._step()
+        except Exception as e:
+            traceback.print_exc()
+            self.log('error', f'Error while running the agent: {e}')
+            reported = RuntimeError(
+                'There was an unexpected error while running the agent.'
+            )
+            await self._react_to_exception(reported)
 
     def should_step(self, event: Event) -> bool:
         if isinstance(event, Action):
