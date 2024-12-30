@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from "vitest";
 import { ToggleWorkspaceIconButton } from "../toggle-workspace-icon-button";
 
 describe("ToggleWorkspaceIconButton", () => {
-  it("renders with correct placement and dimensions", () => {
+  it("renders with correct dimensions and styling", () => {
     const mockOnClick = vi.fn();
     render(
       <ToggleWorkspaceIconButton onClick={mockOnClick} isHidden={false} />,
@@ -12,12 +12,10 @@ describe("ToggleWorkspaceIconButton", () => {
 
     const button = screen.getByTestId("toggle");
     expect(button).toBeInTheDocument();
-    expect(button).toHaveClass("h-[80px] w-[16px]");
-    expect(button).toHaveClass(
-      "absolute -right-[16px] top-1/2 -translate-y-1/2",
-    );
-    expect(button).toHaveClass("rounded-r-md");
-    expect(button).toHaveClass("z-10");
+    expect(button).toHaveClass("h-[100px] w-[20px]");
+    expect(button).toHaveClass("bg-neutral-800");
+    expect(button).toHaveClass("hover:bg-neutral-700");
+    expect(button).toHaveClass("rounded-md");
   });
 
   it("displays the correct icon based on isHidden prop", () => {
