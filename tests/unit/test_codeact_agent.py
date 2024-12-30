@@ -16,7 +16,9 @@ from openhands.llm.llm import LLM
 
 @pytest.fixture
 def agent() -> CodeActAgent:
-    agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
+    config = AgentConfig()
+    config.use_microagents = False  # Disable microagents for these tests
+    agent = CodeActAgent(llm=LLM(LLMConfig()), config=config)
     agent.llm = Mock()
     agent.llm.config = Mock()
     agent.llm.config.max_message_chars = 100
