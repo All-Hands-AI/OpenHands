@@ -74,45 +74,68 @@ def escape_bash_special_chars(command: str) -> str:
     Escapes characters that have different interpretations in bash vs python.
     Specifically handles escape sequences like \;, \|, \&, etc.
     """
-    parts = []
-    last_pos = 0
     if command.strip() == '':
         return ''
 
     try:
-        for part in bashlex.parse(command):
-            if not hasattr(part, 'parts'):
-                continue
+        parts = []
+        last_pos = 0
+        in_heredoc = False
 
-            for word in part.parts:
-                if word and word.kind == 'word':
-                    # Get the raw text between the last position and current word
-                    between = command[last_pos : word.pos[0]]
-                    word_text = command[word.pos[0] : word.pos[1]]
+        def visit_node(node):
+            nonlocal last_pos, in_heredoc
+            if node.kind == 'redirect' and hasattr(node, 'heredoc'):
+                # We're entering a heredoc - preserve everything as-is until we see EOF
+                in_heredoc = True
+                between = command[last_pos : node.pos[0]]
+                if not in_heredoc:
+                    between = re.sub(r'\\([;&|><])', r'\\\\\1', between)
+                parts.append(between)
+                parts.append(command[node.pos[0] : node.pos[1]])
+                last_pos = node.pos[1]
+                return
 
-                    # Add the between text
-                    parts.append(between)
+            if node.kind == 'word':
+                # Get the raw text between the last position and current word
+                between = command[last_pos : node.pos[0]]
+                word_text = command[node.pos[0] : node.pos[1]]
 
-                    is_quoted = (
-                        word_text.startswith('"') and word_text.endswith('"')
-                    ) or (word_text.startswith("'") and word_text.endswith("'"))
-                    is_command_subst = (
-                        word_text.startswith('$(') and word_text.endswith(')')
-                    ) or (word_text.startswith('`') and word_text.endswith('`'))
+                # Add the between text, escaping special characters if not in heredoc
+                if not in_heredoc:
+                    between = re.sub(r'\\([;&|><])', r'\\\\\1', between)
+                parts.append(between)
 
-                    # Check if word_text is a quoted string or command substitution
-                    if is_quoted or is_command_subst:
-                        # Preserve quoted strings and command substitutions as-is
-                        parts.append(word_text)
-                    else:
-                        # Escape special chars in unquoted text
-                        word_text = re.sub(r'\\([;&|><])', r'\\\\\1', word_text)
-                        parts.append(word_text)
+                # Check if word_text is a quoted string or command substitution
+                if (
+                    in_heredoc
+                    or (word_text.startswith('"') and word_text.endswith('"'))
+                    or (word_text.startswith("'") and word_text.endswith("'"))
+                    or (word_text.startswith('$(') and word_text.endswith(')'))
+                    or (word_text.startswith('`') and word_text.endswith('`'))
+                ):
+                    # Preserve quoted strings, command substitutions, and heredoc content as-is
+                    parts.append(word_text)
+                else:
+                    # Escape special chars in unquoted text
+                    word_text = re.sub(r'\\([;&|><])', r'\\\\\1', word_text)
+                    parts.append(word_text)
 
-                    last_pos = word.pos[1]
+                last_pos = node.pos[1]
+                return
+
+            # Visit child nodes
+            if hasattr(node, 'parts'):
+                for part in node.parts:
+                    visit_node(part)
+
+        # Process all nodes in the AST
+        for node in bashlex.parse(command):
+            visit_node(node)
 
         # Handle any remaining text after the last word
         remaining = command[last_pos:]
+        if not in_heredoc:
+            remaining = re.sub(r'\\([;&|><])', r'\\\\\1', remaining)
         parts.append(remaining)
         return ''.join(parts)
     except bashlex.errors.ParsingError:
