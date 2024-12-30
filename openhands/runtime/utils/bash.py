@@ -81,12 +81,15 @@ def escape_bash_special_chars(command: str) -> str:
         parts = []
         last_pos = 0
         in_heredoc = False
+        heredoc_end = None
 
         def visit_node(node):
-            nonlocal last_pos, in_heredoc
+            nonlocal last_pos, in_heredoc, heredoc_end
             if node.kind == 'redirect' and hasattr(node, 'heredoc'):
                 # We're entering a heredoc - preserve everything as-is until we see EOF
                 in_heredoc = True
+                # Store the heredoc end marker (usually 'EOF' but could be different)
+                heredoc_end = node.heredoc
                 between = command[last_pos : node.pos[0]]
                 if not in_heredoc:
                     between = re.sub(r'\\([;&|><])', r'\\\\\1', between)
@@ -99,6 +102,11 @@ def escape_bash_special_chars(command: str) -> str:
                 # Get the raw text between the last position and current word
                 between = command[last_pos : node.pos[0]]
                 word_text = command[node.pos[0] : node.pos[1]]
+
+                # Check if this word is the heredoc end marker
+                if in_heredoc and word_text.strip() == heredoc_end:
+                    in_heredoc = False
+                    heredoc_end = None
 
                 # Add the between text, escaping special characters if not in heredoc
                 if not in_heredoc:
@@ -134,8 +142,9 @@ def escape_bash_special_chars(command: str) -> str:
 
         # Handle any remaining text after the last word
         remaining = command[last_pos:]
-        if not in_heredoc:
-            remaining = re.sub(r'\\([;&|><])', r'\\\\\1', remaining)
+        # If we're still in a heredoc at this point, something went wrong with the parsing
+        # (we should have seen the end marker), so we'll escape special chars to be safe
+        remaining = re.sub(r'\\([;&|><])', r'\\\\\1', remaining)
         parts.append(remaining)
         return ''.join(parts)
     except bashlex.errors.ParsingError:
