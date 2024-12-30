@@ -69,20 +69,22 @@ export function ResizablePanel({
   }, [isResizing, handleMouseMove, handleMouseUp]);
 
   return (
-    <div className={cn("flex h-full relative", className)}>
+    <div className={cn("flex h-full w-full relative", className)}>
       <div
         className={cn(
           "h-full overflow-auto transition-[width] duration-300 ease-in-out",
-          isCollapsed && "w-0 min-w-0"
+          isCollapsed && "w-0 min-w-0",
         )}
-        style={!isCollapsed ? { width: leftWidth, minWidth: leftWidth } : undefined}
+        style={
+          !isCollapsed ? { width: leftWidth, minWidth: leftWidth } : undefined
+        }
       >
         {leftPanel}
       </div>
       <div
         className={cn(
           "absolute h-full w-1 bg-gray-200 hover:bg-blue-500 cursor-col-resize flex items-center justify-center transition-[left,background-color] duration-300 ease-in-out",
-          isCollapsed && "left-0"
+          isCollapsed && "left-0",
         )}
         style={!isCollapsed ? { left: leftWidth } : undefined}
         onMouseDown={handleMouseDown}
