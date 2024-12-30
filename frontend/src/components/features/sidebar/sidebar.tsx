@@ -3,7 +3,6 @@ import { useLocation } from "react-router";
 import { useAuth } from "#/context/auth-context";
 import { useSettings } from "#/context/settings-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
-import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { DocsButton } from "#/components/shared/buttons/docs-button";
@@ -18,8 +17,6 @@ export function Sidebar() {
   const location = useLocation();
 
   const user = useGitHubUser();
-  const { data: isAuthed } = useIsAuthed();
-
   const { logout } = useAuth();
   const { settingsAreUpToDate, settings } = useSettings();
 
