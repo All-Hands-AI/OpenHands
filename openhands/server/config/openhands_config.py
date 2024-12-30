@@ -16,7 +16,7 @@ class OpenhandsConfig(OpenhandsConfigInterface):
         'openhands.server.middleware.AttachConversationMiddleware'
     )
     settings_store_class: str = (
-        'openhands.storage.file_settings_store.FileSettingsStore'
+        'openhands.storage.settings.file_settings_store.FileSettingsStore'
     )
 
     def verify_config(self):
