@@ -135,6 +135,7 @@ whatthepatch = "*"
 retry = "*"
 evaluate = "*"
 swebench = { git = "https://github.com/All-Hands-AI/SWE-bench.git" }
+visualswebench = { git = "https://github.com/luolin101/Visual-SWE-bench.git" }
 commit0 = "*"
 func_timeout = "*"
 sympy = "*"
