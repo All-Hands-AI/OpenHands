@@ -78,14 +78,12 @@ function AppContent() {
   return (
     <WsClientProvider ghToken={gitHubToken} conversationId={conversationId}>
       <EventHandler>
-        <div className="flex flex-col h-full gap-3">
-          <div className="flex h-full overflow-auto gap-3">
-            <div className="relative flex-grow">
-              <Container
-                className={`w-full ${
-                  isWorkspaceHidden ? "" : "md:w-[390px]"
-                } max-h-full`}
-              >
+        <div className="flex flex-col h-full">
+          <div className="flex flex-grow overflow-hidden">
+            <div
+              className={`relative flex-grow ${isWorkspaceHidden ? "w-full" : "md:w-[390px]"}`}
+            >
+              <Container className="w-full h-full">
                 <ChatInterface />
               </Container>
               <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10">
@@ -97,12 +95,12 @@ function AppContent() {
             </div>
 
             <div
-              className={`hidden md:flex flex-col grow gap-3 transition-all duration-300 ${
+              className={`hidden md:flex flex-col flex-grow transition-all duration-300 ${
                 isWorkspaceHidden ? "w-0 opacity-0 overflow-hidden" : ""
               }`}
             >
               <Container
-                className="h-2/3"
+                className="flex-grow"
                 labels={[
                   { label: "Workspace", to: "", icon: <CodeIcon /> },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
