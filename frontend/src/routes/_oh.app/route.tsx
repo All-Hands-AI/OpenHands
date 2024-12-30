@@ -24,6 +24,7 @@ import { useAuth } from "#/context/auth-context";
 import { useSettings } from "#/context/settings-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
+import { ResizablePanel } from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
 import { CountBadge } from "#/components/layout/count-badge";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
@@ -72,44 +73,50 @@ function AppContent() {
     <WsClientProvider ghToken={gitHubToken} conversationId={conversationId}>
       <EventHandler>
         <div className="flex flex-col h-full gap-3">
-          <div className="flex h-full overflow-auto gap-3">
-            <Container className="w-full md:w-[390px] max-h-full relative">
-              <ChatInterface />
-            </Container>
-
-            <div className="hidden md:flex flex-col grow gap-3">
-              <Container
-                className="h-2/3"
-                labels={[
-                  { label: "Workspace", to: "", icon: <CodeIcon /> },
-                  { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
-                  {
-                    label: (
-                      <div className="flex items-center gap-1">
-                        Browser
-                        {updateCount > 0 && <CountBadge count={updateCount} />}
-                      </div>
-                    ),
-                    to: "browser",
-                    icon: <GlobeIcon />,
-                  },
-                ]}
-              >
-                <FilesProvider>
-                  <Outlet />
-                </FilesProvider>
-              </Container>
-              {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-               * that it loads only in the client-side. */}
-              <Container
-                className="h-1/3 overflow-scroll"
-                label={<TerminalStatusLabel />}
-              >
-                <React.Suspense fallback={<div className="h-full" />}>
-                  <Terminal secrets={secrets} />
-                </React.Suspense>
-              </Container>
-            </div>
+          <div className="flex h-full overflow-auto">
+            <ResizablePanel
+              leftPanel={
+                <Container className="h-full relative">
+                  <ChatInterface />
+                </Container>
+              }
+            >
+              <div className="flex flex-col h-full gap-3">
+                <Container
+                  className="h-2/3"
+                  labels={[
+                    { label: "Workspace", to: "", icon: <CodeIcon /> },
+                    { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
+                    {
+                      label: (
+                        <div className="flex items-center gap-1">
+                          Browser
+                          {updateCount > 0 && (
+                            <CountBadge count={updateCount} />
+                          )}
+                        </div>
+                      ),
+                      to: "browser",
+                      icon: <GlobeIcon />,
+                    },
+                  ]}
+                >
+                  <FilesProvider>
+                    <Outlet />
+                  </FilesProvider>
+                </Container>
+                {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
+                 * that it loads only in the client-side. */}
+                <Container
+                  className="h-1/3 overflow-scroll"
+                  label={<TerminalStatusLabel />}
+                >
+                  <React.Suspense fallback={<div className="h-full" />}>
+                    <Terminal secrets={secrets} />
+                  </React.Suspense>
+                </Container>
+              </div>
+            </ResizablePanel>
           </div>
 
           <div className="h-[60px]">
