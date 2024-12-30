@@ -11,8 +11,8 @@ from openhands.utils.import_utils import get_impl
 app = APIRouter(prefix='/api')
 
 SettingsStoreImpl = get_impl(SettingsStore, openhands_config.settings_store_class)  # type: ignore
-ConversationStoreImpl = get_impl(  # type: ignore
-    ConversationStore, openhands_config.conversation_store_class
+ConversationStoreImpl = get_impl(
+    ConversationStore, openhands_config.conversation_store_class  # type: ignore
 )
 
 
