@@ -4,6 +4,7 @@ from github import Github
 from socketio.exceptions import ConnectionRefusedError
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema.agent import AgentState
 from openhands.events.action import (
     NullAction,
 )
@@ -79,10 +80,11 @@ async def connect(connection_id: str, environ, auth):
         ):
             continue
         elif isinstance(event, AgentStateChangedObservation):
+            if event.agent_state == AgentState.INIT:
+                await sio.emit('oh_event', event_to_dict(event), to=connection_id)
             agent_state_changed = event
-            continue
-        await sio.emit('oh_event', event_to_dict(event), to=connection_id)
-
+        else:
+            await sio.emit('oh_event', event_to_dict(event), to=connection_id)
     if agent_state_changed:
         await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
 
