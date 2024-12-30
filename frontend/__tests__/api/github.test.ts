@@ -1,44 +1,47 @@
-import { describe, expect, it, vi } from 'vitest';
-import { github } from '../../src/api/github-axios-instance';
-import { retrieveLatestGitHubCommit } from '../../src/api/github';
+import { describe, expect, it, vi } from "vitest";
+import { retrieveLatestGitHubCommit } from "../../src/api/github";
 
-vi.mock('../../src/api/github-axios-instance', () => ({
-  github: {
-    get: vi.fn(),
-  },
-}));
+describe("retrieveLatestGitHubCommit", () => {
+  const { githubGetMock } = vi.hoisted(() => ({
+    githubGetMock: vi.fn(),
+  }));
 
-describe('retrieveLatestGitHubCommit', () => {
-  it('should return the latest commit when repository has commits', async () => {
+  vi.mock("../../src/api/github-axios-instance", () => ({
+    github: {
+      get: githubGetMock,
+    },
+  }));
+
+  it("should return the latest commit when repository has commits", async () => {
     const mockCommit = {
-      sha: '123abc',
+      sha: "123abc",
       commit: {
-        message: 'Initial commit',
+        message: "Initial commit",
       },
     };
 
-    (github.get as any).mockResolvedValueOnce({
+    githubGetMock.mockResolvedValueOnce({
       data: [mockCommit],
     });
 
-    const result = await retrieveLatestGitHubCommit('user/repo');
+    const result = await retrieveLatestGitHubCommit("user/repo");
     expect(result).toEqual(mockCommit);
   });
 
-  it('should return null when repository is empty', async () => {
-    const error = new Error('Repository is empty');
+  it("should return null when repository is empty", async () => {
+    const error = new Error("Repository is empty");
     (error as any).response = { status: 409 };
-    (github.get as any).mockRejectedValueOnce(error);
+    githubGetMock.mockRejectedValueOnce(error);
 
-    const result = await retrieveLatestGitHubCommit('user/empty-repo');
+    const result = await retrieveLatestGitHubCommit("user/empty-repo");
     expect(result).toBeNull();
   });
 
-  it('should throw error for other error cases', async () => {
-    const error = new Error('Network error');
+  it("should throw error for other error cases", async () => {
+    const error = new Error("Network error");
     (error as any).response = { status: 500 };
-    (github.get as any).mockRejectedValueOnce(error);
+    githubGetMock.mockRejectedValueOnce(error);
 
-    await expect(retrieveLatestGitHubCommit('user/repo')).rejects.toThrow();
+    await expect(retrieveLatestGitHubCommit("user/repo")).rejects.toThrow();
   });
 });
