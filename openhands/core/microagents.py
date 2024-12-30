@@ -163,13 +163,14 @@ class MicroAgentHub:
     task_agents: Dict[str, TaskAgent]
 
     @classmethod
-    def load(cls, root_dir: Union[str, Path] = None) -> 'MicroAgentHub':
+    def load(cls, root_dir: Optional[Union[str, Path]] = None) -> 'MicroAgentHub':
         """Load all microagents from the given directory."""
-        if root_dir is None:
-            # Default to the package's microagents directory
-            root_dir = Path(__file__).parent.parent.parent / 'microagents'
-        elif isinstance(root_dir, str):
-            root_dir = Path(root_dir)
+        # Default to the package's microagents directory
+        root_dir = (
+            Path(__file__).parent.parent.parent / 'microagents'
+            if root_dir is None
+            else Path(root_dir)
+        )
 
         repo_agents = {}
         keyword_agents = {}
