@@ -45,7 +45,11 @@ export function GitHubRepositorySelector({
       (repo) => !repositories.find((r) => r.id === repo.id),
     ),
     ...repositories.filter(
-      (repo) => !debouncedSearchQuery || sanitizeQuery(repo.full_name).includes(sanitizeQuery(debouncedSearchQuery))
+      (repo) =>
+        !debouncedSearchQuery ||
+        sanitizeQuery(repo.full_name).includes(
+          sanitizeQuery(debouncedSearchQuery),
+        ),
     ),
   ];
 
