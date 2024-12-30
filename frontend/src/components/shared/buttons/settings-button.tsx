@@ -8,7 +8,7 @@ interface SettingsButtonProps {
 export function SettingsButton({ onClick }: SettingsButtonProps) {
   return (
     <TooltipButton
-      data-testid="settings-button"
+      testId="settings-button"
       tooltip="Settings"
       ariaLabel="Settings"
       onClick={onClick}
