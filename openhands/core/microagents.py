@@ -8,7 +8,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, Tuple
 
 import yaml
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
+from pydantic_core import ValidationError
 
 
 def parse_markdown_with_frontmatter(content: str) -> Tuple[dict, str]:
@@ -65,12 +66,20 @@ class TaskInput(BaseModel):
 class MicroAgent(BaseModel):
     """Base class for all microagents."""
     name: str
-    version: str
-    author: str
-    agent: str
-    category: str
+    version: str = Field(default="1.0.0")  # Default for legacy support
+    author: str = Field(default="openhands")  # Default for legacy support
+    agent: str = Field(default="CodeActAgent")  # Default for legacy support
+    category: str = Field(default="development")  # Default for legacy support
     tags: List[str] = Field(default_factory=list)
     requires: List[str] = Field(default_factory=list)
+    legacy: bool = Field(default=False, exclude=True)  # Internal field for validation
+
+    model_config = {
+        'validate_assignment': True,
+        'validate_default': True,
+        'extra': 'allow',  # Allow extra fields like 'legacy'
+        'validate_all': True,  # Validate all fields, including inherited ones
+    }
 
     @classmethod
     def from_markdown(cls, path: Union[str, Path]) -> 'MicroAgent':
@@ -86,31 +95,50 @@ class MicroAgent(BaseModel):
         elif 'task_type' in frontmatter:
             return TaskAgent(content=markdown, **frontmatter)
         else:
-            raise ValueError("Unknown agent type. Expected trigger_type or task_type in frontmatter.")
+            # Legacy format - infer from content/structure
+            if any(key in frontmatter for key in ['inputs', 'variables']):
+                frontmatter['task_type'] = 'workflow'
+                return TaskAgent(content=markdown, **frontmatter)
+            else:
+                return KnowledgeAgent.from_legacy(content=markdown, **frontmatter)
 
 
 class KnowledgeAgent(MicroAgent):
     """Knowledge-based microagent with repository or keyword triggers."""
-    trigger_type: TriggerType
-    trigger_pattern: Optional[str] = None  # For repository triggers
-    triggers: Optional[List[str]] = None   # For keyword triggers
-    priority: Optional[int] = None         # For repository triggers
+    trigger_type: TriggerType = Field(default=TriggerType.KEYWORD)
+    trigger_pattern: Optional[str] = Field(None, description="For repository triggers")
+    triggers: Optional[List[str]] = Field(None, description="For keyword triggers")
+    priority: Optional[int] = Field(None, description="For repository triggers")
     file_patterns: Optional[List[str]] = None
     content: str  # The markdown content
 
-    @validator('trigger_pattern')
-    def validate_repo_trigger(cls, v, values):
+    @field_validator('trigger_pattern', mode='before')
+    @classmethod
+    def validate_repo_trigger(cls, v: Optional[str], info):
         """Validate repository trigger pattern."""
-        if values.get('trigger_type') == TriggerType.REPOSITORY and not v:
+        trigger_type = info.data.get('trigger_type')
+        if trigger_type == TriggerType.REPOSITORY and not v:
             raise ValueError("trigger_pattern is required for repository triggers")
         return v
 
-    @validator('triggers')
-    def validate_keyword_trigger(cls, v, values):
+    @field_validator('triggers', mode='before')
+    @classmethod
+    def validate_keyword_trigger(cls, v: Optional[List[str]], info):
         """Validate keyword triggers."""
-        if values.get('trigger_type') == TriggerType.KEYWORD and not v:
-            raise ValueError("triggers is required for keyword triggers")
+        trigger_type = info.data.get('trigger_type')
+        if trigger_type == TriggerType.KEYWORD and not v:
+            # For legacy support, don't validate triggers for legacy agents
+            if not info.data.get('legacy', False):
+                raise ValueError("triggers is required for keyword triggers")
         return v
+
+    @classmethod
+    def from_legacy(cls, content: str, **kwargs):
+        """Create a KnowledgeAgent from legacy format."""
+        kwargs['trigger_type'] = TriggerType.KEYWORD
+        kwargs['triggers'] = None  # None for legacy agents
+        kwargs['legacy'] = True  # Mark as legacy agent
+        return cls(content=content, **kwargs)
 
 
 class TaskAgent(MicroAgent):
@@ -217,14 +245,18 @@ class MicroAgentHub:
         if not agent:
             return None
 
-        # Validate required inputs
+        # Prepare template variables with defaults
+        template_vars = {}
         for input_def in agent.inputs:
             if input_def.required and input_def.name not in inputs:
                 raise ValueError(f"Missing required input: {input_def.name}")
+            
+            # Get value from inputs or use default
+            value = inputs.get(input_def.name, input_def.default)
+            template_vars[input_def.name] = value
 
             # Apply validation if specified
-            if input_def.name in inputs and input_def.validation:
-                value = inputs[input_def.name]
+            if value is not None and input_def.validation:
                 if input_def.validation.pattern:
                     if not re.match(input_def.validation.pattern, str(value)):
                         raise ValueError(
@@ -241,7 +273,8 @@ class MicroAgentHub:
 
         # Process content
         result = agent.content
-        for name, value in inputs.items():
-            result = result.replace(f"${{{name}}}", str(value))
+        for name, value in template_vars.items():
+            if value is not None:  # Only replace if value is not None
+                result = result.replace(f"${{{name}}}", str(value))
 
         return result
