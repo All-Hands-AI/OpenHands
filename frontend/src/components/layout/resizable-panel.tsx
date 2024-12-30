@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { cn } from "#/utils/cn";
-import ChevronLeftIcon from "#/icons/chevron-left.svg?react";
-import ChevronRightIcon from "#/icons/chevron-right.svg?react";
+import ChevronLeftIcon from "#/icons/chevron-left";
+import ChevronRightIcon from "#/icons/chevron-right";
 
 interface ResizablePanelProps {
   children: React.ReactNode;
@@ -71,25 +71,31 @@ export function ResizablePanel({
   return (
     <div className={cn("flex h-full relative", className)}>
       <div
-        className="h-full overflow-auto"
-        style={{ width: leftWidth, minWidth: leftWidth }}
+        className={cn(
+          "h-full overflow-auto transition-[width] duration-300 ease-in-out",
+          isCollapsed && "w-0 min-w-0"
+        )}
+        style={!isCollapsed ? { width: leftWidth, minWidth: leftWidth } : undefined}
       >
         {leftPanel}
       </div>
       <div
-        className="absolute h-full w-1 bg-default-200 hover:bg-primary cursor-col-resize flex items-center justify-center"
-        style={{ left: leftWidth }}
+        className={cn(
+          "absolute h-full w-1 bg-gray-200 hover:bg-blue-500 cursor-col-resize flex items-center justify-center transition-[left,background-color] duration-300 ease-in-out",
+          isCollapsed && "left-0"
+        )}
+        style={!isCollapsed ? { left: leftWidth } : undefined}
         onMouseDown={handleMouseDown}
       >
         <button
           type="button"
           onClick={toggleCollapse}
-          className="absolute z-10 -right-3 top-1/2 -translate-y-1/2 bg-default-100 hover:bg-default-200 rounded-full p-1 border border-default-200"
+          className="absolute z-10 -right-3 top-1/2 -translate-y-1/2 bg-white hover:bg-gray-100 rounded-full p-1 border border-gray-200 shadow-sm transition-colors duration-200"
         >
           {isCollapsed ? (
-            <ChevronRightIcon className="w-4 h-4" />
+            <ChevronRightIcon className="w-4 h-4 text-gray-600" />
           ) : (
-            <ChevronLeftIcon className="w-4 h-4" />
+            <ChevronLeftIcon className="w-4 h-4 text-gray-600" />
           )}
         </button>
       </div>
