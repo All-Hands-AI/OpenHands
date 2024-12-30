@@ -28,16 +28,17 @@ Vous devrez vous assurer de définir votre modèle, votre clé API et d'autres p
 
 Pour exécuter OpenHands en mode CLI avec Docker, suivez ces étapes :
 
-1. Définissez `WORKSPACE_BASE` sur le répertoire que vous souhaitez qu'OpenHands modifie :
+1. Définissez `WORKSPACE_BASE` sur le répertoire que vous voulez qu'OpenHands modifie :
 
 ```bash
 WORKSPACE_BASE=$(pwd)/workspace
 ```
 
-2. Définissez `LLM_MODEL` sur le modèle que vous souhaitez utiliser :
+2. Définissez `LLM_MODEL` sur le modèle que vous voulez utiliser :
 
 ```bash
 LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"
+
 ```
 
 3. Définissez `LLM_API_KEY` sur votre clé API :
@@ -51,6 +52,7 @@ LLM_API_KEY="sk_test_12345"
 ```bash
 docker run -it \
     --pull=always \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -e LLM_API_KEY=$LLM_API_KEY \
@@ -59,7 +61,7 @@ docker run -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/openhands:0.11 \
+    docker.all-hands.dev/all-hands-ai/openhands:0.17 \
     python -m openhands.core.cli
 ```
 
@@ -72,7 +74,7 @@ Voici quelques exemples de commandes CLI et leurs sorties attendues :
 ### Exemple 1 : Tâche simple
 
 ```bash
-Comment puis-je vous aider ? >> Écrivez un script Python qui affiche "Hello, World!"
+How can I help? >> Écrivez un script Python qui affiche "Hello, World!"
 ```
 
 Sortie attendue :
@@ -86,7 +88,7 @@ Sortie attendue :
 ### Exemple 2 : Commande Bash
 
 ```bash
-Comment puis-je vous aider ? >> Créez un répertoire nommé "test_dir"
+How can I help? >> Créez un répertoire nommé "test_dir"
 ```
 
 Sortie attendue :
@@ -100,7 +102,7 @@ Sortie attendue :
 ### Exemple 3 : Gestion des erreurs
 
 ```bash
-Comment puis-je vous aider ? >> Supprimez un fichier inexistant
+How can I help? >> Supprimez un fichier inexistant
 ```
 
 Sortie attendue :

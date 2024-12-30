@@ -11,7 +11,7 @@ Please follow instruction [here](../../README.md#setup) to setup your local deve
 Make sure your Docker daemon is running, then run this bash script:
 
 ```bash
-bash evaluation/benchmarks/toolqa/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [dataset] [hardness] [wolfram_alpha_appid]
+bash evaluation/benchmarks/toolqa/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [dataset] [hardness] [wolfram-alpha-appid]
 ```
 
 where `model_config` is mandatory, while all other arguments are optional.
@@ -32,7 +32,7 @@ By default, the script evaluates 1 instance.
 
 `hardness`, the hardness to evaluate. You could choose from `easy` and `hard`. The default is `easy`.
 
-`wolfram_alpha_appid` is an optional argument. When given `wolfram_alpha_appid`, the agent will be able to access Wolfram Alpha's APIs.
+`wolfram-alpha-appid` is an optional argument. When given `wolfram-alpha-appid`, the agent will be able to access Wolfram Alpha's APIs.
 
 Note: in order to use `eval_limit`, you must also set `agent`; in order to use `dataset`, you must also set `eval_limit`; in order to use `hardness`, you must also set `dataset`.
 

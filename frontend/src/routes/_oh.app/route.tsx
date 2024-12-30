@@ -21,7 +21,7 @@ import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "./event-handler";
 import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 import { useAuth } from "#/context/auth-context";
-import { useUserPrefs } from "#/context/user-prefs-context";
+import { useSettings } from "#/context/settings-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
@@ -30,14 +30,14 @@ import { TerminalStatusLabel } from "#/components/features/terminal/terminal-sta
 
 function AppContent() {
   const { gitHubToken } = useAuth();
-  const { settings } = useUserPrefs();
+  const { settings } = useSettings();
   const { conversationId } = useConversation();
 
   const dispatch = useDispatch();
   useConversationConfig();
 
   const { selectedRepository } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const { updateCount } = useSelector((state: RootState) => state.browser);
@@ -69,12 +69,7 @@ function AppContent() {
   } = useDisclosure();
 
   return (
-    <WsClientProvider
-      enabled
-      ghToken={gitHubToken}
-      selectedRepository={selectedRepository}
-      conversationId={conversationId}
-    >
+    <WsClientProvider ghToken={gitHubToken} conversationId={conversationId}>
       <EventHandler>
         <div className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto gap-3">

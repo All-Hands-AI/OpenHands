@@ -1,13 +1,25 @@
-export const LATEST_SETTINGS_VERSION = 4;
+import { openHands } from "#/api/open-hands-axios";
+
+export const LATEST_SETTINGS_VERSION = 5;
 
 export type Settings = {
   LLM_MODEL: string;
   LLM_BASE_URL: string;
   AGENT: string;
   LANGUAGE: string;
-  LLM_API_KEY: string;
+  LLM_API_KEY: string | null;
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
+};
+
+export type ApiSettings = {
+  llm_model: string;
+  llm_base_url: string;
+  agent: string;
+  language: string;
+  llm_api_key: string | null;
+  confirmation_mode: boolean;
+  security_analyzer: string;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -15,12 +27,10 @@ export const DEFAULT_SETTINGS: Settings = {
   LLM_BASE_URL: "",
   AGENT: "CodeActAgent",
   LANGUAGE: "en",
-  LLM_API_KEY: "",
+  LLM_API_KEY: null,
   CONFIRMATION_MODE: false,
   SECURITY_ANALYZER: "",
 };
-
-const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
 
 export const getCurrentSettingsVersion = () => {
   const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
@@ -35,7 +45,54 @@ export const getCurrentSettingsVersion = () => {
 export const settingsAreUpToDate = () =>
   getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
 
-export const maybeMigrateSettings = (logout: () => void) => {
+// TODO: localStorage settings are deprecated. Remove this after 1/31/2025
+export const getLocalStorageSettings = (): Settings => {
+  const llmModel = localStorage.getItem("LLM_MODEL");
+  const baseUrl = localStorage.getItem("LLM_BASE_URL");
+  const agent = localStorage.getItem("AGENT");
+  const language = localStorage.getItem("LANGUAGE");
+  const llmApiKey = localStorage.getItem("LLM_API_KEY");
+  const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
+  const securityAnalyzer = localStorage.getItem("SECURITY_ANALYZER");
+
+  return {
+    LLM_MODEL: llmModel || DEFAULT_SETTINGS.LLM_MODEL,
+    LLM_BASE_URL: baseUrl || DEFAULT_SETTINGS.LLM_BASE_URL,
+    AGENT: agent || DEFAULT_SETTINGS.AGENT,
+    LANGUAGE: language || DEFAULT_SETTINGS.LANGUAGE,
+    LLM_API_KEY: llmApiKey || DEFAULT_SETTINGS.LLM_API_KEY,
+    CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
+    SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
+  };
+};
+
+/**
+ * Save the settings to the server. Only valid settings are saved.
+ * @param settings - the settings to save
+ */
+export const saveSettings = async (
+  settings: Partial<Settings>,
+): Promise<boolean> => {
+  try {
+    const apiSettings = {
+      llm_model: settings.LLM_MODEL || null,
+      llm_base_url: settings.LLM_BASE_URL || null,
+      agent: settings.AGENT || null,
+      language: settings.LANGUAGE || null,
+      confirmation_mode: settings.CONFIRMATION_MODE || null,
+      security_analyzer: settings.SECURITY_ANALYZER || null,
+      llm_api_key: settings.LLM_API_KEY || null,
+    };
+
+    const { data } = await openHands.post("/api/settings", apiSettings);
+    return data;
+  } catch (error) {
+    // Error handled by returning false
+    return false;
+  }
+};
+
+export const maybeMigrateSettings = async (logout: () => void) => {
   // Sometimes we ship major changes, like a new default agent.
   // In this case, we may want to override a previous choice made by the user.
   const currentVersion = getCurrentSettingsVersion();
@@ -58,6 +115,11 @@ export const maybeMigrateSettings = (logout: () => void) => {
   if (currentVersion < 4) {
     logout();
   }
+
+  if (currentVersion < 5) {
+    const localSettings = getLocalStorageSettings();
+    await saveSettings(localSettings);
+  }
 };
 
 /**
@@ -66,39 +128,21 @@ export const maybeMigrateSettings = (logout: () => void) => {
 export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
 
 /**
- * Get the settings from local storage or use the default settings if not found
+ * Get the settings from the server or use the default settings if not found
  */
-export const getSettings = (): Settings => {
-  const model = localStorage.getItem("LLM_MODEL");
-  const baseUrl = localStorage.getItem("LLM_BASE_URL");
-  const agent = localStorage.getItem("AGENT");
-  const language = localStorage.getItem("LANGUAGE");
-  const apiKey = localStorage.getItem("LLM_API_KEY");
-  const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
-  const securityAnalyzer = localStorage.getItem("SECURITY_ANALYZER");
-
-  return {
-    LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
-    LLM_BASE_URL: baseUrl || DEFAULT_SETTINGS.LLM_BASE_URL,
-    AGENT: agent || DEFAULT_SETTINGS.AGENT,
-    LANGUAGE: language || DEFAULT_SETTINGS.LANGUAGE,
-    LLM_API_KEY: apiKey || DEFAULT_SETTINGS.LLM_API_KEY,
-    CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
-    SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
-  };
-};
-
-/**
- * Save the settings to local storage. Only valid settings are saved.
- * @param settings - the settings to save
- */
-export const saveSettings = (settings: Partial<Settings>) => {
-  Object.keys(settings).forEach((key) => {
-    const isValid = validKeys.includes(key as keyof Settings);
-    if (!isValid) return;
-    let value = settings[key as keyof Settings];
-    if (value === undefined || value === null) value = "";
-    localStorage.setItem(key, value.toString().trim());
-  });
-  localStorage.setItem("SETTINGS_VERSION", LATEST_SETTINGS_VERSION.toString());
+export const getSettings = async (): Promise<Settings> => {
+  const { data: apiSettings } =
+    await openHands.get<ApiSettings>("/api/settings");
+  if (apiSettings != null) {
+    return {
+      LLM_MODEL: apiSettings.llm_model,
+      LLM_BASE_URL: apiSettings.llm_base_url,
+      AGENT: apiSettings.agent,
+      LANGUAGE: apiSettings.language,
+      CONFIRMATION_MODE: apiSettings.confirmation_mode,
+      SECURITY_ANALYZER: apiSettings.security_analyzer,
+      LLM_API_KEY: "",
+    };
+  }
+  return getLocalStorageSettings();
 };

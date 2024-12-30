@@ -2,7 +2,7 @@
 
 # Installation
 
-## Configuration requise
+## Configuration système requise
 
 * Docker version 26.0.0+ ou Docker Desktop 4.31.0+.
 * Vous devez utiliser Linux ou Mac OS.
@@ -10,39 +10,31 @@
 
 ## Démarrer l'application
 
-La façon la plus simple d'exécuter OpenHands est avec Docker. Vous pouvez modifier `WORKSPACE_BASE` ci-dessous pour pointer OpenHands vers
-du code existant que vous souhaitez modifier.
+La façon la plus simple d'exécuter OpenHands est avec Docker.
 
 ```bash
-export WORKSPACE_BASE=$(pwd)/workspace
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik
 
-docker pull ghcr.io/all-hands-ai/runtime:0.11-nikolaik
-
-docker run -it --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.11-nikolaik \
-    -e SANDBOX_USER_ID=$(id -u) \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
+docker run -it --rm --pull=always \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik \
+    -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
-    --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/openhands:0.11
+    --name openhands-app \
+    docker.all-hands.dev/all-hands-ai/openhands:0.17
 ```
 
-Vous pouvez également exécuter OpenHands en mode [headless scriptable](https://docs.all-hands.dev/modules/usage/how-to/headless-mode), comme un [CLI interactif](https://docs.all-hands.dev/modules/usage/how-to/cli-mode), ou en utilisant l'[Action GitHub OpenHands](https://docs.all-hands.dev/modules/usage/how-to/github-action).
+Vous pouvez également exécuter OpenHands en mode [headless scriptable](https://docs.all-hands.dev/modules/usage/how-to/headless-mode), en tant que [CLI interactive](https://docs.all-hands.dev/modules/usage/how-to/cli-mode), ou en utilisant l'[Action GitHub OpenHands](https://docs.all-hands.dev/modules/usage/how-to/github-action).
 
 ## Configuration
 
 Après avoir exécuté la commande ci-dessus, vous trouverez OpenHands en cours d'exécution à l'adresse [http://localhost:3000](http://localhost:3000).
 
-L'agent aura accès au dossier `./workspace` pour effectuer son travail. Vous pouvez copier du code existant ici, ou modifier `WORKSPACE_BASE` dans la
-commande pour pointer vers un dossier existant.
+Au lancement d'OpenHands, vous verrez une fenêtre modale de paramètres. Vous **devez** sélectionner un `Fournisseur LLM` et un `Modèle LLM`, et entrer une `Clé API` correspondante.
+Ces paramètres peuvent être modifiés à tout moment en sélectionnant le bouton `Paramètres` (icône d'engrenage) dans l'interface utilisateur.
 
-Au lancement d'OpenHands, vous verrez une fenêtre modale de paramètres. Vous **devez** sélectionner un `Fournisseur LLM` et un `Modèle LLM` et entrer une `Clé API` correspondante.
-Ceux-ci peuvent être modifiés à tout moment en sélectionnant le bouton `Paramètres` (icône d'engrenage) dans l'interface utilisateur.
-
-Si le `Modèle LLM` requis n'existe pas dans la liste, vous pouvez activer les `Options avancées` et le saisir manuellement avec le préfixe correct
+Si le `Modèle LLM` requis n'existe pas dans la liste, vous pouvez activer les `Options avancées` et l'entrer manuellement avec le préfixe correct
 dans la zone de texte `Modèle personnalisé`.
 Les `Options avancées` vous permettent également de spécifier une `URL de base` si nécessaire.
 
@@ -54,11 +46,11 @@ Les `Options avancées` vous permettent également de spécifier une `URL de bas
 ## Versions
 
 La commande ci-dessus récupère la version stable la plus récente d'OpenHands. Vous avez également d'autres options :
-- Pour une version spécifique, utilisez `ghcr.io/all-hands-ai/openhands:$VERSION`, en remplaçant $VERSION par le numéro de version.
-- Nous utilisons semver et publions des tags majeurs, mineurs et de correctifs. Ainsi, `0.9` pointera automatiquement vers la dernière version `0.9.x`, et `0` pointera vers la dernière version `0.x.x`.
-- Pour la version de développement la plus à jour, vous pouvez utiliser `ghcr.io/all-hands-ai/openhands:main`. Cette version est instable et n'est recommandée qu'à des fins de test ou de développement.
+- Pour une version spécifique, utilisez `docker.all-hands.dev/all-hands-ai/openhands:$VERSION`, en remplaçant $VERSION par le numéro de version.
+- Nous utilisons semver et publions des tags majeurs, mineurs et de patch. Ainsi, `0.9` pointera automatiquement vers la dernière version `0.9.x`, et `0` pointera vers la dernière version `0.x.x`.
+- Pour la version de développement la plus à jour, vous pouvez utiliser `docker.all-hands.dev/all-hands-ai/openhands:main`. Cette version est instable et n'est recommandée qu'à des fins de test ou de développement.
 
-Vous pouvez choisir le tag qui correspond le mieux à vos besoins en fonction des exigences de stabilité et des fonctionnalités souhaitées.
+Vous pouvez choisir le tag qui convient le mieux à vos besoins en fonction des exigences de stabilité et des fonctionnalités souhaitées.
 
 Pour le workflow de développement, consultez [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 

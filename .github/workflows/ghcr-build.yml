@@ -293,7 +293,7 @@ jobs:
           RUN_AS_OPENHANDS=false \
           poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -370,7 +370,7 @@ jobs:
           RUN_AS_OPENHANDS=true \
           poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 

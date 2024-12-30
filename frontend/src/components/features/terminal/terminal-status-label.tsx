@@ -1,20 +1,20 @@
-import {
-  useWsClient,
-  WsClientProviderStatus,
-} from "#/context/ws-client-provider";
+import { useSelector } from "react-redux";
 import { cn } from "#/utils/utils";
+import { AgentState } from "#/types/agent-state";
+import { RootState } from "#/store";
 
 export function TerminalStatusLabel() {
-  const { status } = useWsClient();
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   return (
     <div className="flex items-center gap-2">
       <div
         className={cn(
           "w-2 h-2 rounded-full",
-          status === WsClientProviderStatus.ACTIVE && "bg-green-500",
-          status !== WsClientProviderStatus.ACTIVE &&
-            "bg-red-500 animate-pulse",
+          curAgentState === AgentState.LOADING ||
+            curAgentState === AgentState.STOPPED
+            ? "bg-red-500 animate-pulse"
+            : "bg-green-500",
         )}
       />
       Terminal

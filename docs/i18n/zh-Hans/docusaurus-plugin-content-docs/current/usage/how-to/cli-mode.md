@@ -50,6 +50,7 @@ LLM_API_KEY="sk_test_12345"
 ```bash
 docker run -it \
     --pull=always \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -e LLM_API_KEY=$LLM_API_KEY \
@@ -58,17 +59,17 @@ docker run -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/openhands:0.11 \
+    docker.all-hands.dev/all-hands-ai/openhands:0.17 \
     python -m openhands.core.cli
 ```
 
 该命令将在 Docker 中启动一个交互式会话,你可以在其中输入任务并接收来自 OpenHands 的响应。
 
-## 命令行命令和预期输出示例
+## CLI 命令和预期输出示例
 
-以下是一些命令行命令及其预期输出的示例:
+以下是一些 CLI 命令及其预期输出的示例:
 
-### 示例 1: 简单任务
+### 示例 1:简单任务
 
 ```bash
 How can I help? >> Write a Python script that prints "Hello, World!"
@@ -77,12 +78,12 @@ How can I help? >> Write a Python script that prints "Hello, World!"
 预期输出:
 
 ```bash
-🤖 Sure! Here is a Python script that prints "Hello, World!":
+🤖 当然!这是一个打印 "Hello, World!" 的 Python 脚本:
 
 ❯ print("Hello, World!")
 ```
 
-### 示例 2: Bash 命令
+### 示例 2:Bash 命令
 
 ```bash
 How can I help? >> Create a directory named "test_dir"
@@ -91,12 +92,12 @@ How can I help? >> Create a directory named "test_dir"
 预期输出:
 
 ```bash
-🤖 Creating a directory named "test_dir":
+🤖 创建一个名为 "test_dir" 的目录:
 
 ❯ mkdir test_dir
 ```
 
-### 示例 3: 错误处理
+### 示例 3:错误处理
 
 ```bash
 How can I help? >> Delete a non-existent file
@@ -105,5 +106,5 @@ How can I help? >> Delete a non-existent file
 预期输出:
 
 ```bash
-🤖 An error occurred. Please try again.
+🤖 发生错误。请重试。
 ```

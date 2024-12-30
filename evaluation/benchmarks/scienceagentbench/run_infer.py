@@ -62,7 +62,7 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime=os.environ.get('RUNTIME', 'eventstream'),
+        runtime=os.environ.get('RUNTIME', 'docker'),
         max_budget_per_task=4,
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
@@ -251,7 +251,7 @@ If the program uses some packages that are incompatible, please figure out alter
 if __name__ == '__main__':
     parser = get_parser()
     parser.add_argument(
-        '--use_knowledge',
+        '--use-knowledge',
         type=str,
         default='false',
         choices=['true', 'false'],

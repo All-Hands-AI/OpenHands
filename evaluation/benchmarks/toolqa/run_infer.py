@@ -44,7 +44,7 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
+        runtime='docker',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             base_container_image='python:3.12-bookworm',
@@ -171,7 +171,7 @@ if __name__ == '__main__':
         default='easy',
     )
     parser.add_argument(
-        '--wolfram_alpha_appid',
+        '--wolfram-alpha-appid',
         type=str,
         help='wolfram alpha appid to use for wolfram alpha related tests',
         default='YOUR_WOLFRAMALPHA_APPID',
