@@ -216,15 +216,20 @@ class Runtime(FileEditRuntimeMixin):
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
 
-    def get_custom_microagents(self, selected_repository: str | None, text: str | None = None, file_path: str | None = None) -> list[str]:
+    def get_custom_microagents(
+        self,
+        selected_repository: str | None,
+        text: str | None = None,
+        file_path: str | None = None,
+    ) -> list[str]:
         """Get custom microagents for the current context.
-        
+
         This includes:
         1. Repository-specific agents (from .openhands/microagents/repo/)
         2. Legacy .openhands_instructions file
         3. Local repository microagents
         4. Keyword-triggered agents based on input text
-        
+
         Args:
             selected_repository: Repository name in format "org/repo"
             text: Optional text to check for keyword triggers
@@ -233,10 +238,10 @@ class Runtime(FileEditRuntimeMixin):
         from openhands.core.microagents import MicroAgentHub
 
         custom_microagents_content = []
-        
+
         # Load the global microagents hub
         hub = MicroAgentHub.load()
-        
+
         # Get repository-specific agents if a repository is selected
         if selected_repository:
             repo_agents = hub.get_repo_agents(selected_repository)

@@ -20,7 +20,6 @@ from openhands.core.microagents import (
     TriggerType,
 )
 
-
 CONTENT = (
     '# dummy header\n' 'dummy content\n' '## dummy subheader\n' 'dummy subcontent\n'
 )
@@ -54,8 +53,8 @@ def temp_microagents_dir():
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create directory structure
         root = Path(temp_dir)
-        (root / "knowledge").mkdir(parents=True)
-        (root / "tasks").mkdir(parents=True)
+        (root / 'knowledge').mkdir(parents=True)
+        (root / 'tasks').mkdir(parents=True)
 
         # Create test agents
         repo_agent = """---
@@ -73,7 +72,7 @@ priority: 100
 
 Repository-specific test instructions.
 """
-        with open(root / "knowledge/repo_test.md", "w") as f:
+        with open(root / 'knowledge/repo_test.md', 'w') as f:
             f.write(repo_agent)
 
         keyword_agent = """---
@@ -97,7 +96,7 @@ require_env_var:
 
 Testing best practices and guidelines.
 """
-        with open(root / "knowledge/testing.md", "w") as f:
+        with open(root / 'knowledge/testing.md', 'w') as f:
             f.write(keyword_agent)
 
         task_agent = """---
@@ -123,7 +122,7 @@ inputs:
 
 Testing ${VAR1} and ${VAR2}...
 """
-        with open(root / "tasks/test.md", "w") as f:
+        with open(root / 'tasks/test.md', 'w') as f:
             f.write(task_agent)
 
         yield root
@@ -138,79 +137,79 @@ def test_knowledge_agent_validation(monkeypatch: MonkeyPatch):
     with pytest.raises(ValidationError):
         # Missing trigger_pattern for repository agent
         KnowledgeAgent(
-            name="test",
-            version="1.0.0",
-            author="test",
-            agent="CodeActAgent",
-            category="testing",
+            name='test',
+            version='1.0.0',
+            author='test',
+            agent='CodeActAgent',
+            category='testing',
             trigger_type=TriggerType.REPOSITORY,
-            content="Test",
+            content='Test',
         )
 
     # Test keyword agent validation
     with pytest.raises(ValidationError):
         # Missing triggers for keyword agent
         KnowledgeAgent(
-            name="test",
-            version="1.0.0",
-            author="test",
-            agent="CodeActAgent",
-            category="testing",
+            name='test',
+            version='1.0.0',
+            author='test',
+            agent='CodeActAgent',
+            category='testing',
             trigger_type=TriggerType.KEYWORD,
-            content="Test",
+            content='Test',
         )
 
     # Valid repository agent
     agent = KnowledgeAgent(
-        name="test",
-        version="1.0.0",
-        author="test",
-        agent="CodeActAgent",
-        category="testing",
+        name='test',
+        version='1.0.0',
+        author='test',
+        agent='CodeActAgent',
+        category='testing',
         trigger_type=TriggerType.REPOSITORY,
-        trigger_pattern="org/*",
-        content="Test",
+        trigger_pattern='org/*',
+        content='Test',
     )
-    assert agent.trigger_pattern == "org/*"
+    assert agent.trigger_pattern == 'org/*'
 
     # Valid keyword agent
     agent = KnowledgeAgent(
-        name="test",
-        version="1.0.0",
-        author="test",
-        agent="CodeActAgent",
-        category="testing",
+        name='test',
+        version='1.0.0',
+        author='test',
+        agent='CodeActAgent',
+        category='testing',
         trigger_type=TriggerType.KEYWORD,
-        triggers=["test"],
-        content="Test",
+        triggers=['test'],
+        content='Test',
     )
-    assert agent.triggers == ["test"]
+    assert agent.triggers == ['test']
 
 
 def test_task_agent_validation():
     """Test validation of task agents."""
     # Test input validation
     input1 = TaskInput(
-        name="test",
-        description="Test input",
-        type="string",
+        name='test',
+        description='Test input',
+        type='string',
         required=True,
-        validation=InputValidation(pattern=r"^test.*"),
+        validation=InputValidation(pattern=r'^test.*'),
     )
-    assert input1.validation.pattern == r"^test.*"
+    assert input1.validation.pattern == r'^test.*'
 
     # Test task agent
     agent = TaskAgent(
-        name="test",
-        version="1.0.0",
-        author="test",
-        agent="CodeActAgent",
-        category="testing",
+        name='test',
+        version='1.0.0',
+        author='test',
+        agent='CodeActAgent',
+        category='testing',
         task_type=TaskType.WORKFLOW,
-        content="Test ${VAR}",
+        content='Test ${VAR}',
         inputs=[input1],
     )
-    assert "${VAR}" in agent.content
+    assert '${VAR}' in agent.content
     assert len(agent.inputs) == 1
 
 
@@ -223,19 +222,19 @@ def test_microagent_hub_loading(temp_microagents_dir, monkeypatch: MonkeyPatch):
 
     # Check repository agents
     assert len(hub.repo_agents) == 1
-    agent = hub.repo_agents["test_repo_agent"]
-    assert agent.trigger_pattern == "test-org/*"
+    agent = hub.repo_agents['test_repo_agent']
+    assert agent.trigger_pattern == 'test-org/*'
     assert agent.priority == 100
 
     # Check keyword agents
     assert len(hub.keyword_agents) == 1
-    agent = hub.keyword_agents["test_keyword_agent"]
-    assert "test" in agent.triggers
-    assert "*.py" in agent.file_patterns
+    agent = hub.keyword_agents['test_keyword_agent']
+    assert 'test' in agent.triggers
+    assert '*.py' in agent.file_patterns
 
     # Check task agents
     assert len(hub.task_agents) == 1
-    agent = hub.task_agents["test_task"]
+    agent = hub.task_agents['test_task']
     assert agent.task_type == TaskType.WORKFLOW
     assert len(agent.inputs) == 2
 
@@ -248,12 +247,12 @@ def test_repo_agent_matching(temp_microagents_dir, monkeypatch: MonkeyPatch):
     hub = MicroAgentHub.load(temp_microagents_dir)
 
     # Test matching repository
-    agents = hub.get_repo_agents("test-org/repo1")
+    agents = hub.get_repo_agents('test-org/repo1')
     assert len(agents) == 1
-    assert agents[0].name == "test_repo_agent"
+    assert agents[0].name == 'test_repo_agent'
 
     # Test non-matching repository
-    agents = hub.get_repo_agents("other-org/repo1")
+    agents = hub.get_repo_agents('other-org/repo1')
     assert len(agents) == 0
 
 
@@ -265,20 +264,20 @@ def test_keyword_agent_matching(temp_microagents_dir, monkeypatch: MonkeyPatch):
     hub = MicroAgentHub.load(temp_microagents_dir)
 
     # Test matching keyword
-    agents = hub.get_keyword_agents("Running test with pytest")
+    agents = hub.get_keyword_agents('Running test with pytest')
     assert len(agents) == 1
-    assert agents[0].name == "test_keyword_agent"
+    assert agents[0].name == 'test_keyword_agent'
 
     # Test matching keyword with file pattern
-    agents = hub.get_keyword_agents("Running test", "test.py")
+    agents = hub.get_keyword_agents('Running test', 'test.py')
     assert len(agents) == 1
 
     # Test matching keyword with non-matching file pattern
-    agents = hub.get_keyword_agents("Running test", "test.txt")
+    agents = hub.get_keyword_agents('Running test', 'test.txt')
     assert len(agents) == 0
 
     # Test non-matching keyword
-    agents = hub.get_keyword_agents("No matches here")
+    agents = hub.get_keyword_agents('No matches here')
     assert len(agents) == 0
 
 
@@ -287,21 +286,19 @@ def test_task_processing(temp_microagents_dir):
     hub = MicroAgentHub.load(temp_microagents_dir)
 
     # Test with all variables
-    result = hub.process_task(
-        "test_task", {"VAR1": "value1", "VAR2": "value2"}
-    )
-    assert "Testing value1 and value2" in result
+    result = hub.process_task('test_task', {'VAR1': 'value1', 'VAR2': 'value2'})
+    assert 'Testing value1 and value2' in result
 
     # Test with default value
-    result = hub.process_task("test_task", {"VAR1": "value1"})
-    assert "Testing value1 and default" in result
+    result = hub.process_task('test_task', {'VAR1': 'value1'})
+    assert 'Testing value1 and default' in result
 
     # Test missing required variable
     with pytest.raises(ValueError):
-        hub.process_task("test_task", {"VAR2": "value2"})
+        hub.process_task('test_task', {'VAR2': 'value2'})
 
     # Test non-existent task
-    result = hub.process_task("non_existent", {})
+    result = hub.process_task('non_existent', {})
     assert result is None
 
 
