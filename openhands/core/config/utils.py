@@ -156,9 +156,11 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     security_config = SecurityConfig.from_dict(value)
                     cfg.security = security_config
                 elif not key.startswith('sandbox') and key.lower() != 'core':
-                    logger.openhands_logger.warning(
-                        f'Unknown key in {toml_file}: "{key}"'
+                    logger.openhands_logger.debug(
+                        f'Adding extended section "{key}" from {toml_file} to config.'
                     )
+                    cfg.extended.add_dict(key, value)
+
             except (TypeError, KeyError) as e:
                 logger.openhands_logger.warning(
                     f'Cannot parse config from toml, toml values have not been applied.\n Error: {e}',
