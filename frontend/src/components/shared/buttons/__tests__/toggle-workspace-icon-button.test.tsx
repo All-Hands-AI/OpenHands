@@ -27,13 +27,21 @@ describe("ToggleWorkspaceIconButton", () => {
     );
     expect(screen.getByLabelText("Close workspace")).toBeInTheDocument();
     expect(screen.getByTestId("toggle")).toContainElement(
-      screen.getByTestId("arrow-back-icon"),
+      screen.getByTestId("arrow-forward-icon"),
     );
 
     rerender(<ToggleWorkspaceIconButton onClick={mockOnClick} isHidden />);
     expect(screen.getByLabelText("Open workspace")).toBeInTheDocument();
     expect(screen.getByTestId("toggle")).toContainElement(
-      screen.getByTestId("arrow-forward-icon"),
+      screen.getByTestId("arrow-back-icon"),
     );
+  });
+
+  it("remains visible when workspace is collapsed", () => {
+    const mockOnClick = vi.fn();
+    render(<ToggleWorkspaceIconButton onClick={mockOnClick} isHidden />);
+
+    const button = screen.getByTestId("toggle");
+    expect(button).toBeVisible();
   });
 });
