@@ -63,6 +63,6 @@ export const AGENT_STATUS_MAP: {
   },
   [AgentState.RATE_LIMITED]: {
     message: I18nKey.CHAT_INTERFACE$AGENT_RATE_LIMITED_MESSAGE,
-    indicator: IndicatorColor.RED,
+    indicator: IndicatorColor.YELLOW,
   },
 };
