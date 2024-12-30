@@ -16,9 +16,12 @@ export const useClickOutsideElement = <T extends HTMLElement>(
       }
     };
 
-    document.addEventListener("click", handleClickOutside);
+    setTimeout(() => {
+      document.addEventListener("click", handleClickOutside);
+    }, 0);
+
     return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
+  }, [callback]);
 
   return ref;
 };

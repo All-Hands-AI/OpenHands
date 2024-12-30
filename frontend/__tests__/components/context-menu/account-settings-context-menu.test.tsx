@@ -3,6 +3,27 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, test, vi } from "vitest";
 import { AccountSettingsContextMenu } from "#/components/features/context-menu/account-settings-context-menu";
 
+const mockRef = { current: null };
+let clickListener: ((event: MouseEvent) => void) | null = null;
+
+vi.mock("#/hooks/use-click-outside-element", () => ({
+  useClickOutsideElement: (callback: () => void) => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (event.target === document.body && mockRef.current) {
+        callback();
+      }
+    };
+
+    if (clickListener) {
+      document.removeEventListener("click", clickListener);
+    }
+    clickListener = handleClickOutside;
+    document.addEventListener("click", handleClickOutside);
+
+    return mockRef;
+  },
+}));
+
 describe("AccountSettingsContextMenu", () => {
   const user = userEvent.setup();
   const onClickAccountSettingsMock = vi.fn();
@@ -13,6 +34,11 @@ describe("AccountSettingsContextMenu", () => {
     onClickAccountSettingsMock.mockClear();
     onLogoutMock.mockClear();
     onCloseMock.mockClear();
+    mockRef.current = null;
+    if (clickListener) {
+      document.removeEventListener("click", clickListener);
+      clickListener = null;
+    }
   });
 
   it("should always render the right options", () => {
@@ -90,8 +116,7 @@ describe("AccountSettingsContextMenu", () => {
       />,
     );
 
-    const accountSettingsButton = screen.getByText("Account Settings");
-    await user.click(accountSettingsButton);
+    mockRef.current = screen.getByTestId("account-settings-context-menu");
     await user.click(document.body);
 
     expect(onCloseMock).toHaveBeenCalledOnce();
