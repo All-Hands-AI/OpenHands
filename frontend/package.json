@@ -42,7 +42,7 @@
     "sirv-cli": "^3.0.0",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^2.6.0",
-    "vite": "^6.0.6",
+    "vite": "^5.4.11",
     "web-vitals": "^3.5.2",
     "ws": "^8.18.0"
   },
