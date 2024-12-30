@@ -48,7 +48,7 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
+        runtime='docker',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             base_container_image='xingyaoww/od-eval-logic-reasoning:v1.0',
