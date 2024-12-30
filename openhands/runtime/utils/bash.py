@@ -69,6 +69,51 @@ def split_bash_commands(commands):
     return result
 
 
+def escape_bash_special_chars(command: str) -> str:
+    r"""
+    Escapes characters that have different interpretations in bash vs python.
+    Specifically handles escape sequences like \;, \|, \&, etc.
+    """
+    parts = []
+    last_pos = 0
+    if command.strip() == '':
+        return ''
+
+    try:
+        for part in bashlex.parse(command):
+            for word in part.parts:
+                if word and word.kind == 'word':
+                    # Get the raw text between the last position and current word
+                    between = command[last_pos : word.pos[0]]
+                    word_text = command[word.pos[0] : word.pos[1]]
+
+                    # Add the between text
+                    parts.append(between)
+
+                    is_quoted = (
+                        word_text.startswith('"') and word_text.endswith('"')
+                    ) or (word_text.startswith("'") and word_text.endswith("'"))
+                    # Check if word_text is a quoted string
+                    if is_quoted:
+                        # Preserve quoted strings as-is
+                        parts.append(word_text)
+                    else:
+                        # Escape special chars in unquoted text
+                        word_text = re.sub(r'\\([;&|><])', r'\\\\\1', word_text)
+                        parts.append(word_text)
+
+                    last_pos = word.pos[1]
+
+        # Handle any remaining text after the last word
+        remaining = command[last_pos:]
+        parts.append(remaining)
+        return ''.join(parts)
+    except bashlex.errors.ParsingError:
+        # Fallback if parsing fails
+        logger.warning(f'Failed to parse command: {command}')
+        return command
+
+
 class BashCommandStatus(Enum):
     CONTINUE = 'continue'
     COMPLETED = 'completed'
@@ -415,7 +460,7 @@ class BashSession:
 
         if command != '':
             # convert command to raw string
-            command = command.replace('\\', '\\\\')
+            command = escape_bash_special_chars(command)
             logger.debug(f'SENDING COMMAND: {command!r}')
             self.pane.send_keys(
                 command,
