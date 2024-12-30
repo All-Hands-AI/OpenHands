@@ -121,7 +121,7 @@ def get_config(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
-        runtime=os.environ.get('RUNTIME', 'eventstream'),
+        runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox=SandboxConfig(
             base_container_image=base_container_image,
             enable_auto_lint=True,
