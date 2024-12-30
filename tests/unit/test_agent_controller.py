@@ -52,6 +52,11 @@ def mock_status_callback():
     return AsyncMock()
 
 
+async def send_event_to_controller(controller, event):
+    await controller._on_event(event)
+    await asyncio.sleep(1)
+
+
 @pytest.mark.asyncio
 async def test_set_agent_state(mock_agent, mock_event_stream):
     controller = AgentController(
@@ -82,8 +87,7 @@ async def test_on_event_message_action(mock_agent, mock_event_stream):
     )
     controller.state.agent_state = AgentState.RUNNING
     message_action = MessageAction(content='Test message')
-    controller.on_event(message_action)
-    await asyncio.sleep(1)  # Wait for the event to be processed
+    await send_event_to_controller(controller, message_action)
     assert controller.get_agent_state() == AgentState.RUNNING
     await controller.close()
 
@@ -100,8 +104,7 @@ async def test_on_event_change_agent_state_action(mock_agent, mock_event_stream)
     )
     controller.state.agent_state = AgentState.RUNNING
     change_state_action = ChangeAgentStateAction(agent_state=AgentState.PAUSED)
-    controller.on_event(change_state_action)
-    await asyncio.sleep(1)  # Wait for the event to be processed
+    await send_event_to_controller(controller, change_state_action)
     assert controller.get_agent_state() == AgentState.PAUSED
     await controller.close()
 
@@ -307,8 +310,7 @@ async def test_max_iterations_extension(mock_agent, mock_event_stream):
     # Simulate a new user message
     message_action = MessageAction(content='Test message')
     message_action._source = EventSource.USER
-    controller.on_event(message_action)
-    await asyncio.sleep(1)  # Wait for the event to be processed
+    await send_event_to_controller(controller, message_action)
 
     # Max iterations should be extended to current iteration + initial max_iterations
     assert (
@@ -338,8 +340,7 @@ async def test_max_iterations_extension(mock_agent, mock_event_stream):
     # Simulate a new user message
     message_action = MessageAction(content='Test message')
     message_action._source = EventSource.USER
-    controller.on_event(message_action)
-    await asyncio.sleep(1)
+    await send_event_to_controller(controller, message_action)
 
     # Max iterations should NOT be extended in headless mode
     assert controller.state.max_iterations == 10  # Original value unchanged
