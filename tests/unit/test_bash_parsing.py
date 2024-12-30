@@ -316,3 +316,84 @@ EOF"""
     assert (
         result == expected
     ), f'Failed to handle heredoc correctly\nExpected: {expected}\nGot: {result}'
+
+
+def test_escape_bash_special_chars_with_parameter_expansion():
+    test_cases = [
+        # Parameter expansion should be preserved
+        ('echo $HOME', 'echo $HOME'),
+        ('echo ${HOME}', 'echo ${HOME}'),
+        ('echo ${HOME:-default}', 'echo ${HOME:-default}'),
+        # Mixed with special chars
+        ('echo $HOME \\; ls', 'echo $HOME \\\\; ls'),
+        ('echo ${PATH} \\| grep bin', 'echo ${PATH} \\\\| grep bin'),
+        # Quoted parameter expansion
+        ('echo "$HOME"', 'echo "$HOME"'),
+        ('echo "${HOME}"', 'echo "${HOME}"'),
+        # Complex parameter expansions
+        ('echo ${var:=default} \\; ls', 'echo ${var:=default} \\\\; ls'),
+        ('echo ${!prefix*} \\| sort', 'echo ${!prefix*} \\\\| sort'),
+    ]
+
+    for input_cmd, expected in test_cases:
+        result = escape_bash_special_chars(input_cmd)
+        assert (
+            result == expected
+        ), f'Failed on input "{input_cmd}"\nExpected: "{expected}"\nGot: "{result}"'
+
+
+def test_escape_bash_special_chars_with_command_substitution():
+    test_cases = [
+        # Basic command substitution
+        ('echo $(pwd)', 'echo $(pwd)'),
+        ('echo `pwd`', 'echo `pwd`'),
+        # Mixed with special chars
+        ('echo $(pwd) \\; ls', 'echo $(pwd) \\\\; ls'),
+        ('echo `pwd` \\| grep home', 'echo `pwd` \\\\| grep home'),
+        # Nested command substitution
+        ('echo $(echo `pwd`)', 'echo $(echo `pwd`)'),
+        # Complex command substitution
+        ('echo $(find . -name "*.txt" \\; ls)', 'echo $(find . -name "*.txt" \\; ls)'),
+        # Mixed with quotes
+        ('echo "$(pwd)"', 'echo "$(pwd)"'),
+        ('echo "`pwd`"', 'echo "`pwd`"'),
+    ]
+
+    for input_cmd, expected in test_cases:
+        result = escape_bash_special_chars(input_cmd)
+        assert (
+            result == expected
+        ), f'Failed on input "{input_cmd}"\nExpected: "{expected}"\nGot: "{result}"'
+
+
+def test_escape_bash_special_chars_mixed_nodes():
+    test_cases = [
+        # Mix of parameter expansion and command substitution
+        ('echo $HOME/$(pwd)', 'echo $HOME/$(pwd)'),
+        # Mix with special chars
+        ('echo $HOME/$(pwd) \\; ls', 'echo $HOME/$(pwd) \\\\; ls'),
+        # Complex mixed cases
+        (
+            'echo "${HOME}/$(basename `pwd`) \\; next"',
+            'echo "${HOME}/$(basename `pwd`) \\; next"',
+        ),
+        (
+            'VAR=${HOME} \\; echo $(pwd)',
+            'VAR=${HOME} \\\\; echo $(pwd)',
+        ),
+        # Real-world examples
+        (
+            'find . -name "*.txt" -exec grep "${PATTERN:-default}" {} \\;',
+            'find . -name "*.txt" -exec grep "${PATTERN:-default}" {} \\\\;',
+        ),
+        (
+            'echo "Current path: ${PWD}/$(basename `pwd`)" \\| grep home',
+            'echo "Current path: ${PWD}/$(basename `pwd`)" \\\\| grep home',
+        ),
+    ]
+
+    for input_cmd, expected in test_cases:
+        result = escape_bash_special_chars(input_cmd)
+        assert (
+            result == expected
+        ), f'Failed on input "{input_cmd}"\nExpected: "{expected}"\nGot: "{result}"'
