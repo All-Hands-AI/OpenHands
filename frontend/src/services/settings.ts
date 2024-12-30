@@ -87,6 +87,7 @@ export const saveSettings = async (
     const { data } = await openHands.post("/api/settings", apiSettings);
     return data;
   } catch (error) {
+    // Error handled by returning false
     return false;
   }
 };

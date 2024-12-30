@@ -42,7 +42,7 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime=os.environ.get('RUNTIME', 'eventstream'),
+        runtime=os.environ.get('RUNTIME', 'docker'),
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             # use default base_container_image
