@@ -9,15 +9,12 @@ from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.data_models.conversation_info import ConversationInfo
+from openhands.server.data_models.conversation_metadata import ConversationMetadata
 from openhands.server.data_models.conversation_result_set import ConversationResultSet
 from openhands.server.data_models.conversation_status import ConversationStatus
-from openhands.server.routes.settings import SettingsStoreImpl
+from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import config, session_manager
-from openhands.storage.conversation.conversation_store import (
-    ConversationMetadata,
-    ConversationStore,
-)
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_events_dir
 from openhands.utils.async_utils import call_sync_from_async
@@ -57,7 +54,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     session_init_args['selected_repository'] = data.selected_repository
     conversation_init_data = ConversationInitData(**session_init_args)
 
-    conversation_store = await ConversationStore.get_instance(config)
+    conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
 
     conversation_id = uuid.uuid4().hex
     while await conversation_store.exists(conversation_id):
@@ -116,7 +113,7 @@ async def _get_conversation_info(
     session_id: str, is_running: bool, file_store: FileStore
 ) -> ConversationInfo | None:
     try:
-        conversation_store = await ConversationStore.get_instance(config)
+        conversation_store = await ConversationStoreImpl.get_instance(config)
         metadata = await conversation_store.get_metadata(session_id)
         events_dir = get_conversation_events_dir(session_id)
         events = file_store.list(events_dir)
@@ -153,7 +150,7 @@ async def get_conversation(conversation_id: str) -> ConversationInfo | None:
 
 @app.post('/conversations/{conversation_id}')
 async def update_conversation(conversation_id: str, title: str) -> bool:
-    conversation_store = await ConversationStore.get_instance(config)
+    conversation_store = await ConversationStoreImpl.get_instance(config)
     metadata = await conversation_store.get_metadata(conversation_id)
     if not metadata:
         return False
@@ -164,7 +161,7 @@ async def update_conversation(conversation_id: str, title: str) -> bool:
 
 @app.delete('/conversations/{conversation_id}')
 async def delete_conversation(conversation_id: str) -> bool:
-    conversation_store = await ConversationStore.get_instance(config)
+    conversation_store = await ConversationStoreImpl.get_instance(config)
     try:
         await conversation_store.get_metadata(conversation_id)
     except FileNotFoundError:

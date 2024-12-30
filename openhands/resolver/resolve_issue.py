@@ -182,7 +182,7 @@ async def process_issue(
 
     config = AppConfig(
         default_agent='CodeActAgent',
-        runtime='eventstream',
+        runtime='docker',
         max_budget_per_task=4,
         max_iterations=max_iterations,
         sandbox=SandboxConfig(
