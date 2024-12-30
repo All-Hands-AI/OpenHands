@@ -96,7 +96,7 @@ function AppContent() {
 
             <div
               className={`hidden md:flex flex-col flex-grow transition-all duration-300 ${
-                isWorkspaceHidden ? "w-0 opacity-0 overflow-hidden" : ""
+                isWorkspaceHidden ? "w-0 opacity-0 overflow-hidden" : "ml-3"
               }`}
             >
               <Container
