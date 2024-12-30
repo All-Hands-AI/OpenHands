@@ -68,7 +68,7 @@ create a `config.toml` under `./evaluation/benchmarks/visual_swe_bench/` folder,
 attribute named `selected_ids`, e.g.
 
 ```toml
-selected_ids = ['sphinx-doc__sphinx-8721', 'sympy__sympy-14774', 'scikit-learn__scikit-learn-10508']
+selected_ids = ['astropy__astropy-13838', 'matplotlib__matplotlib-21617', 'plotly__plotly.py-1966']
 ```
 
 Then only these tasks (rows whose `instance_id` is in the above list) will be evaluated.
