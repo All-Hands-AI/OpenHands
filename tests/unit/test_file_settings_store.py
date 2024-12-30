@@ -5,8 +5,8 @@ import pytest
 
 from openhands.core.config.app_config import AppConfig
 from openhands.server.settings import Settings
-from openhands.storage.settings.file_settings_store import FileSettingsStore
 from openhands.storage.files import FileStore
+from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
 @pytest.fixture
