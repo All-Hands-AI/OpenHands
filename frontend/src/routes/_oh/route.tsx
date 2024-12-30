@@ -9,6 +9,7 @@ import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
+import { useMaybeMigrateSettings } from "#/hooks/use-maybe-migrate-settings";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -43,6 +44,8 @@ export function ErrorBoundary() {
 }
 
 export default function MainApp() {
+  useMaybeMigrateSettings();
+
   const { gitHubToken } = useAuth();
   const { data: settings } = useSettings();
 

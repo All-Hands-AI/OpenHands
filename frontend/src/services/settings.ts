@@ -69,31 +69,6 @@ export const getLocalStorageSettings = (): Settings => {
   };
 };
 
-export const maybeMigrateSettings = async (logout: () => void) => {
-  // Sometimes we ship major changes, like a new default agent.
-  // In this case, we may want to override a previous choice made by the user.
-  const currentVersion = getCurrentSettingsVersion();
-
-  if (currentVersion < 1) {
-    localStorage.setItem("AGENT", DEFAULT_SETTINGS.AGENT);
-  }
-  if (currentVersion < 2) {
-    const customModel = localStorage.getItem("CUSTOM_LLM_MODEL");
-    if (customModel) {
-      localStorage.setItem("LLM_MODEL", customModel);
-    }
-    localStorage.removeItem("CUSTOM_LLM_MODEL");
-    localStorage.removeItem("USING_CUSTOM_MODEL");
-  }
-  if (currentVersion < 3) {
-    localStorage.removeItem("token");
-  }
-
-  if (currentVersion < 4) {
-    logout();
-  }
-};
-
 /**
  * Get the default settings
  */

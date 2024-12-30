@@ -21,6 +21,8 @@ export function Sidebar() {
   const { logout } = useAuth();
   const { isUpToDate: settingsAreUpToDate } = useSettingsUpToDate();
 
+  console.warn({ settingsAreUpToDate });
+
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
