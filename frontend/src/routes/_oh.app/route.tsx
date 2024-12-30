@@ -39,6 +39,7 @@ import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
 function AppContent() {
   const { gitHubToken } = useAuth();
   const endSession = useEndSession();
+  const [width, setWidth] = React.useState(window.innerWidth);
 
   const { settings } = useSettings();
   const { conversationId } = useConversation();
@@ -91,76 +92,92 @@ function AppContent() {
     dispatch(clearJupyter());
   });
 
+  function handleResize() {
+    setWidth(window.innerWidth);
+  }
+
+  React.useEffect(() => {
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   const {
     isOpen: securityModalIsOpen,
     onOpen: onSecurityModalOpen,
     onOpenChange: onSecurityModalOpenChange,
   } = useDisclosure();
 
+  function renderMain() {
+    if (width <= 640) {
+      return (
+        <div className="rounded-xl overflow-hidden border border-neutral-600 w-full">
+          <ChatInterface />
+        </div>
+      );
+    }
+    return (
+      <ResizablePanel
+        orientation={Orientation.HORIZONTAL}
+        className="grow h-full min-h-0 min-w-0"
+        initialSize={500}
+        firstClassName="rounded-xl overflow-hidden border border-neutral-600"
+        secondClassName="flex flex-col overflow-hidden"
+        firstChild={<ChatInterface />}
+        secondChild={
+          <ResizablePanel
+            orientation={Orientation.VERTICAL}
+            className="grow h-full min-h-0 min-w-0"
+            initialSize={500}
+            firstClassName="rounded-xl overflow-hidden border border-neutral-600"
+            secondClassName="flex flex-col overflow-hidden"
+            firstChild={
+              <Container
+                className="h-full"
+                labels={[
+                  { label: "Workspace", to: "", icon: <CodeIcon /> },
+                  { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
+                  {
+                    label: (
+                      <div className="flex items-center gap-1">
+                        Browser
+                        {updateCount > 0 && <CountBadge count={updateCount} />}
+                      </div>
+                    ),
+                    to: "browser",
+                    icon: <GlobeIcon />,
+                  },
+                ]}
+              >
+                <FilesProvider>
+                  <Outlet />
+                </FilesProvider>
+              </Container>
+            }
+            secondChild={
+              <Container
+                className="h-full overflow-scroll"
+                label={<TerminalStatusLabel />}
+              >
+                {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
+                 * that it loads only in the client-side. */}
+                <React.Suspense fallback={<div className="h-full" />}>
+                  <Terminal secrets={secrets} />
+                </React.Suspense>
+              </Container>
+            }
+          />
+        }
+      />
+    );
+  }
+
   return (
     <WsClientProvider ghToken={gitHubToken} conversationId={conversationId}>
       <EventHandler>
         <div data-testid="app-route" className="flex flex-col h-full gap-3">
-          <div className="flex h-full overflow-auto">
-            <ResizablePanel
-              orientation={Orientation.HORIZONTAL}
-              className="grow h-full min-h-0 min-w-0"
-              initialSize={500}
-              firstClassName="rounded-xl overflow-hidden border border-neutral-600"
-              secondClassName="flex flex-col overflow-hidden"
-              firstChild={
-                <Container className="h-full relative">
-                  <ChatInterface />
-                </Container>
-              }
-              secondChild={
-                <ResizablePanel
-                  orientation={Orientation.VERTICAL}
-                  className="grow h-full min-h-0 min-w-0"
-                  initialSize={500}
-                  firstClassName="rounded-xl overflow-hidden border border-neutral-600"
-                  secondClassName="flex flex-col overflow-hidden"
-                  firstChild={
-                    <Container
-                      className="h-full"
-                      labels={[
-                        { label: "Workspace", to: "", icon: <CodeIcon /> },
-                        { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
-                        {
-                          label: (
-                            <div className="flex items-center gap-1">
-                              Browser
-                              {updateCount > 0 && (
-                                <CountBadge count={updateCount} />
-                              )}
-                            </div>
-                          ),
-                          to: "browser",
-                          icon: <GlobeIcon />,
-                        },
-                      ]}
-                    >
-                      <FilesProvider>
-                        <Outlet />
-                      </FilesProvider>
-                    </Container>
-                  }
-                  secondChild={
-                    <Container
-                      className="h-full overflow-scroll"
-                      label={<TerminalStatusLabel />}
-                    >
-                      {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-                       * that it loads only in the client-side. */}
-                      <React.Suspense fallback={<div className="h-full" />}>
-                        <Terminal secrets={secrets} />
-                      </React.Suspense>
-                    </Container>
-                  }
-                />
-              }
-            />
-          </div>
+          <div className="flex h-full overflow-auto">{renderMain()}</div>
 
           <div className="h-[60px]">
             <Controls
