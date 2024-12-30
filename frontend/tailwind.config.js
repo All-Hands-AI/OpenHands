@@ -1,7 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 import { nextui } from "@nextui-org/react";
 import typography from '@tailwindcss/typography';
-
 export default {
   content: [
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -14,6 +13,7 @@ export default {
         'root-secondary': '#262626',
         'hyperlink': '#007AFF',
         'danger': '#EF3744',
+        'success': '#4CAF50',
       },
     },
   },

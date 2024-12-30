@@ -8,27 +8,24 @@ import {
 import { createChatMessage } from "#/services/chat-service";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { addUserMessage } from "#/state/chat-slice";
-import {
-  clearSelectedRepository,
-  clearFiles,
-  clearInitialQuery,
-} from "#/state/initial-query-slice";
+import { clearFiles, clearInitialQuery } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
-import AgentState from "#/types/agent-state";
+import { AgentState } from "#/types/agent-state";
 
 export const useWSStatusChange = () => {
   const { send, status } = useWsClient();
   const { gitHubToken } = useAuth();
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
 
   const statusRef = React.useRef<WsClientProviderStatus | null>(null);
 
   const { selectedRepository } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const { files, importedProjectZip, initialQuery } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const sendInitialQuery = (query: string, base64Files: string[]) => {
@@ -47,11 +44,11 @@ export const useWSStatusChange = () => {
     dispatch(clearInitialQuery()); // reset initial query
   };
 
-  const handleOnWSActive = () => {
+  const handleAgentInit = () => {
     let additionalInfo = "";
 
     if (gitHubToken && selectedRepository) {
-      dispatch(clearSelectedRepository());
+      additionalInfo = `Repository ${selectedRepository} has been cloned to /workspace. Please check the /workspace for files.`;
     } else if (importedProjectZip) {
       // if there's an uploaded project zip, add it to the chat
       additionalInfo =
@@ -62,6 +59,11 @@ export const useWSStatusChange = () => {
       dispatchInitialQuery(initialQuery, additionalInfo);
     }
   };
+  React.useEffect(() => {
+    if (curAgentState === AgentState.INIT) {
+      handleAgentInit();
+    }
+  }, [curAgentState]);
 
   React.useEffect(() => {
     if (statusRef.current === status) {
@@ -69,11 +71,7 @@ export const useWSStatusChange = () => {
     }
     statusRef.current = status;
 
-    if (status === WsClientProviderStatus.ACTIVE) {
-      handleOnWSActive();
-    }
-
-    if (status === WsClientProviderStatus.OPENING && initialQuery) {
+    if (status === WsClientProviderStatus.CONNECTED && initialQuery) {
       dispatch(
         addUserMessage({
           content: initialQuery,
@@ -84,7 +82,7 @@ export const useWSStatusChange = () => {
       );
     }
 
-    if (status === WsClientProviderStatus.STOPPED) {
+    if (status === WsClientProviderStatus.DISCONNECTED) {
       dispatch(setCurrentAgentState(AgentState.STOPPED));
     }
   }, [status]);

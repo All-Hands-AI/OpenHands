@@ -1,10 +1,8 @@
 import posthog from "posthog-js";
 import React from "react";
 import { io, Socket } from "socket.io-client";
-import { Settings } from "#/services/settings";
-import ActionType from "#/types/action-type";
+
 import EventLogger from "#/utils/event-logger";
-import AgentState from "#/types/agent-state";
 import { handleAssistantMessage } from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
 
@@ -12,10 +10,8 @@ const isOpenHandsMessage = (event: Record<string, unknown>) =>
   event.action === "message";
 
 export enum WsClientProviderStatus {
-  STOPPED,
-  OPENING,
-  ACTIVE,
-  ERROR,
+  CONNECTED,
+  DISCONNECTED,
 }
 
 interface UseWsClient {
@@ -26,7 +22,7 @@ interface UseWsClient {
 }
 
 const WsClientContext = React.createContext<UseWsClient>({
-  status: WsClientProviderStatus.STOPPED,
+  status: WsClientProviderStatus.DISCONNECTED,
   isLoadingMessages: true,
   events: [],
   send: () => {
@@ -35,29 +31,20 @@ const WsClientContext = React.createContext<UseWsClient>({
 });
 
 interface WsClientProviderProps {
-  enabled: boolean;
-  token: string | null;
+  conversationId: string;
   ghToken: string | null;
-  selectedRepository: string | null;
-  settings: Settings | null;
 }
 
 export function WsClientProvider({
-  enabled,
-  token,
   ghToken,
-  selectedRepository,
-  settings,
+  conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const sioRef = React.useRef<Socket | null>(null);
-  const tokenRef = React.useRef<string | null>(token);
   const ghTokenRef = React.useRef<string | null>(ghToken);
-  const selectedRepositoryRef = React.useRef<string | null>(selectedRepository);
-  const disconnectRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null,
+  const [status, setStatus] = React.useState(
+    WsClientProviderStatus.DISCONNECTED,
   );
-  const [status, setStatus] = React.useState(WsClientProviderStatus.STOPPED);
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
 
@@ -72,26 +59,7 @@ export function WsClientProvider({
   }
 
   function handleConnect() {
-    setStatus(WsClientProviderStatus.OPENING);
-
-    const initEvent: Record<string, unknown> = {
-      action: ActionType.INIT,
-      args: settings,
-    };
-    if (token) {
-      initEvent.token = token;
-    }
-    if (ghToken) {
-      initEvent.github_token = ghToken;
-    }
-    if (selectedRepository) {
-      initEvent.selected_repository = selectedRepository;
-    }
-    const lastEvent = lastEventRef.current;
-    if (lastEvent) {
-      initEvent.latest_event_id = lastEvent.id;
-    }
-    send(initEvent);
+    setStatus(WsClientProviderStatus.CONNECTED);
   }
 
   function handleMessage(event: Record<string, unknown>) {
@@ -102,59 +70,48 @@ export function WsClientProvider({
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
     }
-    const extras = event.extras as Record<string, unknown>;
-    if (extras?.agent_state === AgentState.INIT) {
-      setStatus(WsClientProviderStatus.ACTIVE);
-    }
-    if (
-      status !== WsClientProviderStatus.ACTIVE &&
-      event?.observation === "error"
-    ) {
-      setStatus(WsClientProviderStatus.ERROR);
-      return;
-    }
 
-    if (!event.token) {
-      handleAssistantMessage(event);
-    }
+    handleAssistantMessage(event);
   }
 
   function handleDisconnect() {
-    setStatus(WsClientProviderStatus.STOPPED);
+    setStatus(WsClientProviderStatus.DISCONNECTED);
+    const sio = sioRef.current;
+    if (!sio) {
+      return;
+    }
+    sio.io.opts.query = sio.io.opts.query || {};
+    sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
   }
 
   function handleError() {
     posthog.capture("socket_error");
-    setStatus(WsClientProviderStatus.ERROR);
+    setStatus(WsClientProviderStatus.DISCONNECTED);
   }
 
-  // Connect websocket
   React.useEffect(() => {
+    if (!conversationId) {
+      throw new Error("No conversation ID provided");
+    }
+
     let sio = sioRef.current;
 
-    // If disabled disconnect any existing websockets...
-    if (!enabled) {
-      if (sio) {
-        sio.disconnect();
-      }
-      return () => {};
-    }
+    const lastEvent = lastEventRef.current;
+    const query = {
+      latest_event_id: lastEvent?.id ?? -1,
+      conversation_id: conversationId,
+    };
 
-    // If there is no websocket or the tokens have changed or the current websocket is disconnected,
-    // create a new one
-    if (
-      !sio ||
-      (tokenRef.current && token && token !== tokenRef.current) ||
-      ghToken !== ghTokenRef.current
-    ) {
-      sio?.disconnect();
+    const baseUrl =
+      import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
 
-      const baseUrl =
-        import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
-      sio = io(baseUrl, {
-        transports: ["websocket"],
-      });
-    }
+    sio = io(baseUrl, {
+      transports: ["websocket"],
+      auth: {
+        github_token: ghToken || undefined,
+      },
+      query,
+    });
     sio.on("connect", handleConnect);
     sio.on("oh_event", handleMessage);
     sio.on("connect_error", handleError);
@@ -162,9 +119,7 @@ export function WsClientProvider({
     sio.on("disconnect", handleDisconnect);
 
     sioRef.current = sio;
-    tokenRef.current = token;
     ghTokenRef.current = ghToken;
-    selectedRepositoryRef.current = selectedRepository;
 
     return () => {
       sio.off("connect", handleConnect);
@@ -173,26 +128,18 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [enabled, token, ghToken, selectedRepository]);
+  }, [ghToken, conversationId]);
 
-  // Strict mode mounts and unmounts each component twice, so we have to wait in the destructor
-  // before actually disconnecting the socket and cancel the operation if the component gets remounted.
-  React.useEffect(() => {
-    const timeout = disconnectRef.current;
-    if (timeout != null) {
-      clearTimeout(timeout);
-    }
-
-    return () => {
-      disconnectRef.current = setTimeout(() => {
-        const sio = sioRef.current;
-        if (sio) {
-          sio.off("disconnect", handleDisconnect);
-          sio.disconnect();
-        }
-      }, 100);
-    };
-  }, []);
+  React.useEffect(
+    () => () => {
+      const sio = sioRef.current;
+      if (sio) {
+        sio.off("disconnect", handleDisconnect);
+        sio.disconnect();
+      }
+    },
+    [],
+  );
 
   const value = React.useMemo<UseWsClient>(
     () => ({
@@ -204,11 +151,7 @@ export function WsClientProvider({
     [status, messageRateHandler.isUnderThreshold, events],
   );
 
-  return (
-    <WsClientContext.Provider value={value}>
-      {children}
-    </WsClientContext.Provider>
-  );
+  return <WsClientContext value={value}>{children}</WsClientContext>;
 }
 
 export function useWsClient() {

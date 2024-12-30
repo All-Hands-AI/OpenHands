@@ -1,7 +1,7 @@
 import { useDispatch } from "react-redux";
 import { useEndSession } from "#/hooks/use-end-session";
 import { setCurrentAgentState } from "#/state/agent-slice";
-import AgentState from "#/types/agent-state";
+import { AgentState } from "#/types/agent-state";
 import { DangerModal } from "./confirmation-modals/danger-modal";
 import { ModalBackdrop } from "./modal-backdrop";
 

@@ -1,4 +1,3 @@
-import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
 from typing import ClassVar
 
@@ -50,7 +49,7 @@ class AppConfig:
     default_agent: str = OH_DEFAULT_AGENT
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
-    runtime: str = 'eventstream'
+    runtime: str = 'docker'
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
     trajectories_path: str | None = None
@@ -66,10 +65,7 @@ class AppConfig:
     modal_api_token_id: str = ''
     modal_api_token_secret: str = ''
     disable_color: bool = False
-    jwt_secret: str = uuid.uuid4().hex
-    attach_session_middleware_class: str = (
-        'openhands.server.middleware.AttachSessionMiddleware'
-    )
+    jwt_secret: str = ''
     debug: bool = False
     file_uploads_max_file_size_mb: int = 0
     file_uploads_restrict_file_types: bool = False

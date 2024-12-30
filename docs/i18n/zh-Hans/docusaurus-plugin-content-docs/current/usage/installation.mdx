@@ -8,36 +8,32 @@
 
 ## 启动应用
 
-在 Docker 中运行 OpenHands 是最简单的方式。你可以将下面的 `WORKSPACE_BASE` 更改为指向你想要修改的现有代码。
+在 Docker 中运行 OpenHands 是最简单的方式。
 
 ```bash
-export WORKSPACE_BASE=$(pwd)/workspace
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik
 
-docker pull ghcr.io/all-hands-ai/runtime:0.11-nikolaik
-
-docker run -it --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.11-nikolaik \
-    -e SANDBOX_USER_ID=$(id -u) \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
+docker run -it --rm --pull=always \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik \
+    -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
-    --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/openhands:0.11
+    --name openhands-app \
+    docker.all-hands.dev/all-hands-ai/openhands:0.17
 ```
 
 你也可以在可脚本化的[无头模式](https://docs.all-hands.dev/modules/usage/how-to/headless-mode)下运行 OpenHands，作为[交互式 CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode)，或使用 [OpenHands GitHub Action](https://docs.all-hands.dev/modules/usage/how-to/github-action)。
 
 ## 设置
 
-运行上面的命令后，你会发现 OpenHands 运行在 [http://localhost:3000](http://localhost:3000)。
+运行上述命令后，你可以在 [http://localhost:3000](http://localhost:3000) 找到正在运行的 OpenHands。
 
-代理将可以访问 `./workspace` 文件夹来完成其工作。你可以将现有代码复制到这里，或在命令中更改 `WORKSPACE_BASE` 以指向现有文件夹。
+启动 OpenHands 后，你会看到一个设置模态框。你**必须**选择一个 `LLM Provider` 和 `LLM Model`，并输入相应的 `API Key`。
+这些设置可以随时通过选择 UI 中的 `Settings` 按钮（齿轮图标）进行更改。
 
-启动 OpenHands 后，你会看到一个设置模态框。你**必须**选择一个 `LLM Provider` 和 `LLM Model`，并输入相应的 `API Key`。这些可以随时通过在 UI 中选择 `Settings` 按钮（齿轮图标）来更改。
-
-如果所需的 `LLM Model` 不存在于列表中，你可以切换 `Advanced Options`，并在 `Custom Model` 文本框中使用正确的前缀手动输入它。`Advanced Options` 还允许你在需要时指定 `Base URL`。
+如果所需的 `LLM Model` 不在列表中，你可以切换 `Advanced Options`，并在 `Custom Model` 文本框中使用正确的前缀手动输入。
+`Advanced Options` 还允许你在需要时指定 `Base URL`。
 
 <div style={{ display: 'flex', justifyContent: 'center', gap: '20px' }}>
   <img src="/img/settings-screenshot.png" alt="settings-modal" width="340" />
@@ -46,10 +42,10 @@ docker run -it --pull=always \
 
 ## 版本
 
-上面的命令拉取最新的 OpenHands 稳定版本。你还有其他选择：
-- 对于特定版本，使用 `ghcr.io/all-hands-ai/openhands:$VERSION`，将 $VERSION 替换为版本号。
-- 我们使用语义化版本，并发布主要、次要和补丁标签。因此，`0.9` 将自动指向最新的 `0.9.x` 版本，而 `0` 将指向最新的 `0.x.x` 版本。
-- 对于最新的开发版本，你可以使用 `ghcr.io/all-hands-ai/openhands:main`。此版本不稳定，仅建议用于测试或开发目的。
+上述命令拉取最新的 OpenHands 稳定版本。你还有其他选择：
+- 对于特定版本，使用 `docker.all-hands.dev/all-hands-ai/openhands:$VERSION`，将 $VERSION 替换为版本号。
+- 我们使用语义化版本，并发布主要版本、次要版本和补丁标签。因此，`0.9` 将自动指向最新的 `0.9.x` 版本，而 `0` 将指向最新的 `0.x.x` 版本。
+- 对于最新的开发版本，你可以使用 `docker.all-hands.dev/all-hands-ai/openhands:main`。此版本不稳定，仅建议用于测试或开发目的。
 
 你可以根据稳定性要求和所需功能选择最适合你需求的标签。
 

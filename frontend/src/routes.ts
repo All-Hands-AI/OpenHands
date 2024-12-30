@@ -8,7 +8,7 @@ import {
 export default [
   layout("routes/_oh/route.tsx", [
     index("routes/_oh._index/route.tsx"),
-    route("app", "routes/_oh.app/route.tsx", [
+    route("conversations/:conversationId", "routes/_oh.app/route.tsx", [
       index("routes/_oh.app._index/route.tsx"),
       route("browser", "routes/_oh.app.browser.tsx"),
       route("jupyter", "routes/_oh.app.jupyter.tsx"),

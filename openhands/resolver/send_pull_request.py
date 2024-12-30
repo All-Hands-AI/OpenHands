@@ -239,6 +239,7 @@ def send_pull_request(
     additional_message: str | None = None,
     target_branch: str | None = None,
     reviewer: str | None = None,
+    pr_title: str | None = None,
 ) -> str:
     """Send a pull request to a GitHub repository.
 
@@ -251,6 +252,8 @@ def send_pull_request(
         fork_owner: The owner of the fork to push changes to (if different from the original repo owner)
         additional_message: The additional messages to post as a comment on the PR in json list format
         target_branch: The target branch to create the pull request against (defaults to repository default branch)
+        reviewer: The GitHub username of the reviewer to assign
+        pr_title: Custom title for the pull request (optional)
     """
     if pr_type not in ['branch', 'draft', 'ready']:
         raise ValueError(f'Invalid pr_type: {pr_type}')
@@ -321,7 +324,11 @@ def send_pull_request(
         raise RuntimeError('Failed to push changes to the remote repository')
 
     # Prepare the PR data: title and body
-    pr_title = f'Fix issue #{github_issue.number}: {github_issue.title}'
+    final_pr_title = (
+        pr_title
+        if pr_title
+        else f'Fix issue #{github_issue.number}: {github_issue.title}'
+    )
     pr_body = f'This pull request fixes #{github_issue.number}.'
     if additional_message:
         pr_body += f'\n\n{additional_message}'
@@ -334,7 +341,7 @@ def send_pull_request(
     else:
         # Prepare the PR for the GitHub API
         data = {
-            'title': pr_title,  # No need to escape title for GitHub API
+            'title': final_pr_title,  # No need to escape title for GitHub API
             'body': pr_body,
             'head': branch_name,
             'base': base_branch,
@@ -366,7 +373,9 @@ def send_pull_request(
 
         url = pr_data['html_url']
 
-    print(f'{pr_type} created: {url}\n\n--- Title: {pr_title}\n\n--- Body:\n{pr_body}')
+    print(
+        f'{pr_type} created: {url}\n\n--- Title: {final_pr_title}\n\n--- Body:\n{pr_body}'
+    )
 
     return url
 
@@ -535,6 +544,7 @@ def process_single_issue(
     send_on_failure: bool,
     target_branch: str | None = None,
     reviewer: str | None = None,
+    pr_title: str | None = None,
 ) -> None:
     if not resolver_output.success and not send_on_failure:
         print(
@@ -571,7 +581,7 @@ def process_single_issue(
             github_token=github_token,
             github_username=github_username,
             patch_dir=patched_repo_dir,
-            additional_message=resolver_output.success_explanation,
+            additional_message=resolver_output.result_explanation,
             llm_config=llm_config,
         )
     else:
@@ -582,9 +592,10 @@ def process_single_issue(
             patch_dir=patched_repo_dir,
             pr_type=pr_type,
             fork_owner=fork_owner,
-            additional_message=resolver_output.success_explanation,
+            additional_message=resolver_output.result_explanation,
             target_branch=target_branch,
             reviewer=reviewer,
+            pr_title=pr_title,
         )
 
 
@@ -687,6 +698,12 @@ def main():
         help='GitHub username of the person to request review from',
         default=None,
     )
+    parser.add_argument(
+        '--pr-title',
+        type=str,
+        help='Custom title for the pull request',
+        default=None,
+    )
     my_args = parser.parse_args()
 
     github_token = (
@@ -741,6 +758,7 @@ def main():
             my_args.send_on_failure,
             my_args.target_branch,
             my_args.reviewer,
+            my_args.pr_title,
         )
 
 
