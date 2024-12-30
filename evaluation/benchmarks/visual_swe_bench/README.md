@@ -1,4 +1,4 @@
-# Visual SWE-Bench Evaluation with OpenHands SWE-Bench Docker Image
+# Visual SWE-Bench Evaluation with Docker Image
 
 This folder contains the evaluation harness that we built on top of the original [Visual SWE-Bench benchmark](https://multi-swe-bench.github.io/#/) ([paper](https://arxiv.org/abs/2412.17315)).
 
