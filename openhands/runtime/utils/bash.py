@@ -80,26 +80,19 @@ def escape_bash_special_chars(command: str) -> str:
     try:
         parts = []
         last_pos = 0
-        in_heredoc = False
-        heredoc_end = None
 
         def visit_node(node):
-            nonlocal last_pos, in_heredoc, heredoc_end
+            nonlocal last_pos
             if node.kind == 'redirect' and hasattr(node, 'heredoc'):
                 # We're entering a heredoc - preserve everything as-is until we see EOF
-                in_heredoc = True
                 # Store the heredoc end marker (usually 'EOF' but could be different)
-                heredoc_end = node.heredoc
                 between = command[last_pos : node.pos[0]]
-                if not in_heredoc:
-                    between = re.sub(r'\\([;&|><])', r'\\\\\1', between)
                 parts.append(between)
                 # Add the heredoc start marker
                 parts.append(command[node.pos[0] : node.heredoc.pos[0]])
                 # Add the heredoc content as-is
                 parts.append(command[node.heredoc.pos[0] : node.heredoc.pos[1]])
                 last_pos = node.pos[1]
-                in_heredoc = False  # Reset after heredoc
                 return
 
             if node.kind == 'word':
@@ -107,15 +100,13 @@ def escape_bash_special_chars(command: str) -> str:
                 between = command[last_pos : node.pos[0]]
                 word_text = command[node.pos[0] : node.pos[1]]
 
-                # Add the between text, escaping special characters if not in heredoc
-                if not in_heredoc:
-                    between = re.sub(r'\\([;&|><])', r'\\\\\1', between)
+                # Add the between text, escaping special characters
+                between = re.sub(r'\\([;&|><])', r'\\\\\1', between)
                 parts.append(between)
 
                 # Check if word_text is a quoted string or command substitution
                 if (
-                    in_heredoc
-                    or (word_text.startswith('"') and word_text.endswith('"'))
+                    (word_text.startswith('"') and word_text.endswith('"'))
                     or (word_text.startswith("'") and word_text.endswith("'"))
                     or (word_text.startswith('$(') and word_text.endswith(')'))
                     or (word_text.startswith('`') and word_text.endswith('`'))
@@ -137,23 +128,15 @@ def escape_bash_special_chars(command: str) -> str:
 
         # Process all nodes in the AST
         nodes = list(bashlex.parse(command))
-        for i, node in enumerate(nodes):
-            # If this is a new command after a heredoc, we need to escape special chars
-            if i > 0:
-                between = command[last_pos : node.pos[0]]
-                # Only escape special chars if we're not in a heredoc
-                if not in_heredoc:
-                    between = re.sub(r'\\([;&|><])', r'\\\\\1', between)
-                parts.append(between)
-                last_pos = node.pos[0]
+        for node in nodes:
+            between = command[last_pos : node.pos[0]]
+            between = re.sub(r'\\([;&|><])', r'\\\\\1', between)
+            parts.append(between)
+            last_pos = node.pos[0]
             visit_node(node)
 
         # Handle any remaining text after the last word
         remaining = command[last_pos:]
-        # If we're still in a heredoc at this point, something went wrong with the parsing
-        # (we should have seen the end marker), so we'll escape special chars to be safe
-        if not in_heredoc:
-            remaining = re.sub(r'\\([;&|><])', r'\\\\\1', remaining)
         parts.append(remaining)
         return ''.join(parts)
     except bashlex.errors.ParsingError:
