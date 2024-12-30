@@ -68,7 +68,7 @@ function AppContent() {
 
   React.useEffect(() => {
     if (MULTI_CONVO_UI_IS_ENABLED && isFetched && !conversation) {
-      toast.error("You do not have permission to write to this conversation.");
+      toast.error("This conversation does not exist, or you do not have permission to access it.");
       endSession();
     }
   }, [conversation, isFetched]);
