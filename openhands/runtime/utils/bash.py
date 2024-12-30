@@ -94,19 +94,18 @@ def escape_bash_special_chars(command: str) -> str:
                 if not in_heredoc:
                     between = re.sub(r'\\([;&|><])', r'\\\\\1', between)
                 parts.append(between)
-                parts.append(command[node.pos[0] : node.pos[1]])
+                # Add the heredoc start marker
+                parts.append(command[node.pos[0] : node.heredoc.pos[0]])
+                # Add the heredoc content as-is
+                parts.append(command[node.heredoc.pos[0] : node.heredoc.pos[1]])
                 last_pos = node.pos[1]
+                in_heredoc = False  # Reset after heredoc
                 return
 
             if node.kind == 'word':
                 # Get the raw text between the last position and current word
                 between = command[last_pos : node.pos[0]]
                 word_text = command[node.pos[0] : node.pos[1]]
-
-                # Check if this word is the heredoc end marker
-                if in_heredoc and word_text.strip() == heredoc_end:
-                    in_heredoc = False
-                    heredoc_end = None
 
                 # Add the between text, escaping special characters if not in heredoc
                 if not in_heredoc:
@@ -137,14 +136,24 @@ def escape_bash_special_chars(command: str) -> str:
                     visit_node(part)
 
         # Process all nodes in the AST
-        for node in bashlex.parse(command):
+        nodes = list(bashlex.parse(command))
+        for i, node in enumerate(nodes):
+            # If this is a new command after a heredoc, we need to escape special chars
+            if i > 0:
+                between = command[last_pos : node.pos[0]]
+                # Only escape special chars if we're not in a heredoc
+                if not in_heredoc:
+                    between = re.sub(r'\\([;&|><])', r'\\\\\1', between)
+                parts.append(between)
+                last_pos = node.pos[0]
             visit_node(node)
 
         # Handle any remaining text after the last word
         remaining = command[last_pos:]
         # If we're still in a heredoc at this point, something went wrong with the parsing
         # (we should have seen the end marker), so we'll escape special chars to be safe
-        remaining = re.sub(r'\\([;&|><])', r'\\\\\1', remaining)
+        if not in_heredoc:
+            remaining = re.sub(r'\\([;&|><])', r'\\\\\1', remaining)
         parts.append(remaining)
         return ''.join(parts)
     except bashlex.errors.ParsingError:
