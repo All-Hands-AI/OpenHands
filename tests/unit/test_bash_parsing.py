@@ -397,3 +397,32 @@ def test_escape_bash_special_chars_mixed_nodes():
         assert (
             result == expected
         ), f'Failed on input "{input_cmd}"\nExpected: "{expected}"\nGot: "{result}"'
+
+
+def test_escape_bash_special_chars_with_chained_commands():
+    test_cases = [
+        # Basic chained commands
+        ('ls && pwd', 'ls && pwd'),
+        ('echo "hello" && ls', 'echo "hello" && ls'),
+        # Chained commands with special chars
+        ('ls \\; pwd && echo test', 'ls \\\\; pwd && echo test'),
+        ('echo test && grep pattern \\| sort', 'echo test && grep pattern \\\\| sort'),
+        # Complex chained cases
+        ('echo ${HOME} && ls \\; pwd', 'echo ${HOME} && ls \\\\; pwd'),
+        (
+            'echo "$(pwd)" && cat file \\> out.txt',
+            'echo "$(pwd)" && cat file \\\\> out.txt',
+        ),
+        # Multiple chains
+        ('cmd1 && cmd2 && cmd3', 'cmd1 && cmd2 && cmd3'),
+        (
+            'cmd1 \\; ls && cmd2 \\| grep && cmd3',
+            'cmd1 \\\\; ls && cmd2 \\\\| grep && cmd3',
+        ),
+    ]
+
+    for input_cmd, expected in test_cases:
+        result = escape_bash_special_chars(input_cmd)
+        assert (
+            result == expected
+        ), f'Failed on input "{input_cmd}"\nExpected: "{expected}"\nGot: "{result}"'
