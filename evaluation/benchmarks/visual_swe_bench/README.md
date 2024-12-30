@@ -5,8 +5,8 @@ This folder contains the evaluation harness that we built on top of the original
 The evaluation consists of three steps:
 
 1. Environment setup: [install python environment](../../README.md#development-environment), [configure LLM config](../../README.md#configure-openhands-and-your-llm), and [pull docker](#openhands-visual-swe-bench-instance-level-docker-support).
-2. [Run inference](#run-inference-on-visual-swe-bench-instances): Generate a edit patch for each Github issue
-3. [Evaluate patches using Visual SWE-Bench docker](#evaluate-generated-patches)
+2. [Run inference](#run-inference-on-visual-swe-bench-instances): Generate a edit patch for each Github issue.
+3. [Evaluate patches using Visual SWE-Bench docker](#evaluate-generated-patches).
 
 ## Setup Environment and LLM Configuration
 
