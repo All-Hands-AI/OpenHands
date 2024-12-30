@@ -15,15 +15,17 @@ export function ChatSuggestions({ onSuggestionsClick }: ChatSuggestionsProps) {
           Let&apos;s start building!
         </span>
       </div>
-      <Suggestions
-        suggestions={Object.entries(SUGGESTIONS.repo)
-          .slice(0, 4)
-          .map(([label, value]) => ({
-            label,
-            value,
-          }))}
-        onSuggestionClick={onSuggestionsClick}
-      />
+      <div className="w-full">
+        <Suggestions
+          suggestions={Object.entries(SUGGESTIONS.repo)
+            .slice(0, 4)
+            .map(([label, value]) => ({
+              label,
+              value,
+            }))}
+          onSuggestionClick={onSuggestionsClick}
+        />
+      </div>
     </div>
   );
 }
