@@ -1,5 +1,3 @@
-import { openHands } from "#/api/open-hands-axios";
-
 export const LATEST_SETTINGS_VERSION = 5;
 
 export type Settings = {
@@ -71,32 +69,6 @@ export const getLocalStorageSettings = (): Settings => {
   };
 };
 
-/**
- * Save the settings to the server. Only valid settings are saved.
- * @param settings - the settings to save
- */
-export const saveSettings = async (
-  settings: Partial<Settings>,
-): Promise<boolean> => {
-  try {
-    const apiSettings: Partial<ApiSettings> = {
-      llm_model: settings.LLM_MODEL,
-      llm_base_url: settings.LLM_BASE_URL,
-      agent: settings.AGENT,
-      language: settings.LANGUAGE,
-      confirmation_mode: settings.CONFIRMATION_MODE,
-      security_analyzer: settings.SECURITY_ANALYZER,
-      llm_api_key: settings.LLM_API_KEY,
-    };
-
-    const { data } = await openHands.post("/api/settings", apiSettings);
-    return data;
-  } catch (error) {
-    // Error handled by returning false
-    return false;
-  }
-};
-
 export const maybeMigrateSettings = async (logout: () => void) => {
   // Sometimes we ship major changes, like a new default agent.
   // In this case, we may want to override a previous choice made by the user.
@@ -120,34 +92,9 @@ export const maybeMigrateSettings = async (logout: () => void) => {
   if (currentVersion < 4) {
     logout();
   }
-
-  if (currentVersion < 5) {
-    const localSettings = getLocalStorageSettings();
-    await saveSettings(localSettings);
-  }
 };
 
 /**
  * Get the default settings
  */
 export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
-
-/**
- * Get the settings from the server or use the default settings if not found
- */
-export const getSettings = async (): Promise<Settings> => {
-  const { data: apiSettings } =
-    await openHands.get<ApiSettings>("/api/settings");
-  if (apiSettings != null) {
-    return {
-      LLM_MODEL: apiSettings.llm_model,
-      LLM_BASE_URL: apiSettings.llm_base_url,
-      AGENT: apiSettings.agent,
-      LANGUAGE: apiSettings.language,
-      CONFIRMATION_MODE: apiSettings.confirmation_mode,
-      SECURITY_ANALYZER: apiSettings.security_analyzer,
-      LLM_API_KEY: "",
-    };
-  }
-  return getLocalStorageSettings();
-};

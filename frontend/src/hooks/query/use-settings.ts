@@ -27,7 +27,6 @@ export const useSettings = () => {
     queryKey: ["settings"],
     queryFn: getSettingsQueryFn,
     initialData: DEFAULT_SETTINGS,
-    refetchOnMount: false,
   });
 
   React.useEffect(() => {
