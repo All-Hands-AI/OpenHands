@@ -61,7 +61,7 @@ class EventStream:
     # when there are multiple listeners
     _subscribers: dict[str, dict[str, Callable]] = field(default_factory=dict)
     _cur_id: int = 0
-    _lock: threading.Lock = field(default_factory=threading.Lock)
+    _lock: threading.Lock
 
     def __init__(self, sid: str, file_store: FileStore, num_workers: int = 1):
         self.sid = sid
