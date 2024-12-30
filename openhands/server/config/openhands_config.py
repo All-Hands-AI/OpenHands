@@ -18,6 +18,9 @@ class OpenhandsConfig(OpenhandsConfigInterface):
     settings_store_class: str = (
         'openhands.storage.settings.file_settings_store.FileSettingsStore'
     )
+    conversation_store_class: str = (
+        'openhands.storage.conversation.file_conversation_store.FileConversationStore'
+    )
 
     def verify_config(self):
         if self.config_cls:
