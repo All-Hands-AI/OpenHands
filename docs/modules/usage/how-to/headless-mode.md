@@ -12,7 +12,7 @@ To run OpenHands in headless mode with Python,
 and then run:
 
 ```bash
-poetry run python -m openhands.core.main -t "write a bash script that prints hi"
+poetry run python -m openhands.core.main -t "write a bash script that prints hi" --no-auto-continue
 ```
 
 You'll need to be sure to set your model, API key, and other settings via environment variables
