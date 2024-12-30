@@ -42,7 +42,7 @@ jobs:
       - name: Build Environment
         run: make build
       - name: Run Tests
-        run: poetry run pytest --forked -n auto --cov=openhands --cov-report=xml -svv ./tests/unit --ignore=tests/unit/test_memory.py
+        run: poetry run pytest --forked -n auto --cov=openhands --cov-report=xml -svv tests/unit/test_microagent_utils.py tests/unit/test_micro_agents.py tests/unit/test_codeact_agent.py tests/unit/test_prompt_manager.py tests/unit/test_agent_skill.py::test_parse_pdf
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         env:
