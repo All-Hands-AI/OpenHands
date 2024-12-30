@@ -90,7 +90,9 @@ export function TaskForm({ ref }: TaskFormProps) {
     const formData = new FormData(event.currentTarget);
 
     const q = formData.get("q")?.toString();
-    newConversationMutation.mutate({ q });
+    if (q?.trim()) {
+      newConversationMutation.mutate({ q });
+    }
   };
 
   return (
