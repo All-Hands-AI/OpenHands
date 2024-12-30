@@ -6,6 +6,7 @@ export interface IconButtonProps {
   onClick: () => void;
   ariaLabel: string;
   testId?: string;
+  className?: string;
 }
 
 export function IconButton({
@@ -13,13 +14,14 @@ export function IconButton({
   onClick,
   ariaLabel,
   testId = "",
+  className = "",
 }: IconButtonProps): React.ReactElement {
   return (
     <Button
       type="button"
       variant="flat"
       onPress={onClick}
-      className="cursor-pointer text-[12px] bg-transparent aspect-square px-0 min-w-[20px] h-[20px]"
+      className={`cursor-pointer text-[12px] bg-transparent aspect-square px-0 min-w-[20px] h-[20px] ${className}`}
       aria-label={ariaLabel}
       data-testid={testId}
     >
