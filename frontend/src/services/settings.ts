@@ -134,17 +134,15 @@ export const getSettings = async (): Promise<Settings> => {
   try {
     const { data: apiSettings } =
       await openHands.get<ApiSettings>("/api/settings");
-    if (apiSettings != null) {
-      return {
-        LLM_MODEL: apiSettings.llm_model,
-        LLM_BASE_URL: apiSettings.llm_base_url,
-        AGENT: apiSettings.agent,
-        LANGUAGE: apiSettings.language,
-        CONFIRMATION_MODE: apiSettings.confirmation_mode,
-        SECURITY_ANALYZER: apiSettings.security_analyzer,
-        LLM_API_KEY: "",
-      };
-    }
+    return {
+      LLM_MODEL: apiSettings.llm_model,
+      LLM_BASE_URL: apiSettings.llm_base_url,
+      AGENT: apiSettings.agent,
+      LANGUAGE: apiSettings.language,
+      CONFIRMATION_MODE: apiSettings.confirmation_mode,
+      SECURITY_ANALYZER: apiSettings.security_analyzer,
+      LLM_API_KEY: "",
+    };
   } catch (error) {
     if (error.response.status !== 404) {
       throw error;
