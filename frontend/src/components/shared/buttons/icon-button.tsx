@@ -21,7 +21,7 @@ export function IconButton({
       type="button"
       variant="flat"
       onPress={onClick}
-      className={`cursor-pointer text-[12px] bg-transparent aspect-square px-0 min-w-[20px] h-[20px] ${className}`}
+      className={`cursor-pointer text-[12px] bg-transparent aspect-square px-0 min-w-[12px] h-[20px] ${className}`}
       aria-label={ariaLabel}
       data-testid={testId}
     >

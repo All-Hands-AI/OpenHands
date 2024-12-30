@@ -81,13 +81,13 @@ function AppContent() {
         <div className="flex flex-col h-full">
           <div className="flex flex-grow overflow-hidden">
             <div
-              className={`relative flex-grow ${isWorkspaceHidden ? "w-full" : "md:w-[390px]"}`}
+              className={`relative flex-grow mr-5 ${isWorkspaceHidden ? "w-full" : "md:w-[390px]"}`}
             >
-              <Container className="w-full h-full">
+              <Container className="h-full">
                 <ChatInterface />
               </Container>
               <div
-                className={`absolute top-1/2 -translate-y-1/2 ${isWorkspaceHidden ? "-right-4" : "right-0"} z-10`}
+                className={`absolute top-1/2 -translate-y-1/2 ${isWorkspaceHidden ? "-right-4" : "-right-4"} z-10`}
               >
                 <ToggleWorkspaceIconButton
                   onClick={toggleWorkspace}
@@ -98,7 +98,7 @@ function AppContent() {
 
             <div
               className={`hidden md:flex flex-col flex-grow transition-all duration-300 ${
-                isWorkspaceHidden ? "w-0 opacity-0 overflow-hidden" : "ml-3"
+                isWorkspaceHidden ? "w-0 opacity-0 overflow-hidden" : ""
               }`}
             >
               <Container
