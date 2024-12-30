@@ -19,9 +19,9 @@ This is now the default behavior.
 
 ## Run Inference on Visual SWE-Bench Instances
 
-Make sure your Docker daemon is running, and you have ample disk space (at least 200-500GB, depends on the SWE-Bench set you are running on) for the [instance-level docker image](#openhands-visual-swe-bench-instance-level-docker-support).
+Make sure your Docker daemon is running, and you have ample disk space for the [instance-level docker image](#openhands-visual-swe-bench-instance-level-docker-support).
 
-When the `run_infer.sh` script is started, it will automatically pull the relevant SWE-Bench images. For example, for instance ID `django_django-11011`, it will try to pull our pre-build docker image `sweb.eval.x86_64.django_s_django-11011` from DockerHub. This image will be used create an OpenHands runtime image where the agent will operate on.
+When the `run_infer.sh` script is started, it will automatically pull the relevant Visual SWE-Bench images. For example, for instance ID `networkx__networkx-6503`, it will try to pull our pre-build docker image `sweb.eval.x86_64.networkx_s_networkx-6503` from DockerHub. This image will be used create an OpenHands runtime image where the agent will operate on.
 
 ```bash
 ./evaluation/benchmarks/visual_swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers]
