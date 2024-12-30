@@ -85,7 +85,7 @@ function AppContent() {
             </Container>
 
             <div className={`hidden md:flex flex-col grow gap-3 transition-all duration-300 relative ${isWorkspaceHidden ? "w-0 opacity-0 overflow-hidden" : ""}`}>
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 z-10">
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10">
                 <ToggleWorkspaceIconButton onClick={toggleWorkspace} isHidden={isWorkspaceHidden} />
               </div>
               <Container
