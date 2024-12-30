@@ -80,25 +80,27 @@ function AppContent() {
       <EventHandler>
         <div className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto gap-3">
-            <Container
-              className={`w-full ${
-                isWorkspaceHidden ? "" : "md:w-[390px]"
-              } max-h-full`}
-            >
-              <ChatInterface />
-            </Container>
-
-            <div
-              className={`hidden md:flex flex-col grow gap-3 transition-all duration-300 relative ${
-                isWorkspaceHidden ? "w-0 opacity-0 overflow-hidden" : ""
-              }`}
-            >
+            <div className="relative flex-grow">
+              <Container
+                className={`w-full ${
+                  isWorkspaceHidden ? "" : "md:w-[390px]"
+                } max-h-full`}
+              >
+                <ChatInterface />
+              </Container>
               <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10">
                 <ToggleWorkspaceIconButton
                   onClick={toggleWorkspace}
                   isHidden={isWorkspaceHidden}
                 />
               </div>
+            </div>
+
+            <div
+              className={`hidden md:flex flex-col grow gap-3 transition-all duration-300 ${
+                isWorkspaceHidden ? "w-0 opacity-0 overflow-hidden" : ""
+              }`}
+            >
               <Container
                 className="h-2/3"
                 labels={[

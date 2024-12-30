@@ -30,7 +30,7 @@ export function ToggleWorkspaceIconButton({
       testId="toggle"
       ariaLabel={isHidden ? "Open workspace" : "Close workspace"}
       onClick={onClick}
-      className="absolute right-0 top-1/2 transform -translate-y-1/2 h-[100px] w-[20px] bg-neutral-800 hover:bg-neutral-700 rounded-l-md z-10"
+      className="absolute right-0 top-1/2 -translate-y-1/2 h-[100px] w-[20px] bg-neutral-800 hover:bg-neutral-700 rounded-l-md z-10"
     />
   );
 }

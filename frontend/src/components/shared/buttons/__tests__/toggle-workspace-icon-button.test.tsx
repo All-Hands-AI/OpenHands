@@ -13,10 +13,9 @@ describe("ToggleWorkspaceIconButton", () => {
     const button = screen.getByTestId("toggle");
     expect(button).toBeInTheDocument();
     expect(button).toHaveClass("h-[100px] w-[20px]");
-    expect(button).toHaveClass(
-      "absolute right-0 top-1/2 transform -translate-y-1/2",
-    );
+    expect(button).toHaveClass("absolute right-0 top-1/2 -translate-y-1/2");
     expect(button).toHaveClass("rounded-l-md");
+    expect(button).toHaveClass("z-10");
   });
 
   it("displays the correct icon based on isHidden prop", () => {
