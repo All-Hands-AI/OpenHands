@@ -81,6 +81,9 @@ def escape_bash_special_chars(command: str) -> str:
 
     try:
         for part in bashlex.parse(command):
+            if not hasattr(part, 'parts'):
+                continue
+
             for word in part.parts:
                 if word and word.kind == 'word':
                     # Get the raw text between the last position and current word
