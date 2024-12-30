@@ -216,6 +216,10 @@ class AgentController:
                 return True
             return False
         if isinstance(event, Observation):
+            if isinstance(event, NullObservation) or isinstance(
+                event, AgentStateChangedObservation
+            ):
+                return False
             return True
         return False
 
