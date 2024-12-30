@@ -131,18 +131,27 @@ export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
  * Get the settings from the server or use the default settings if not found
  */
 export const getSettings = async (): Promise<Settings> => {
-  const { data: apiSettings } =
-    await openHands.get<ApiSettings>("/api/settings");
-  if (apiSettings != null) {
-    return {
-      LLM_MODEL: apiSettings.llm_model,
-      LLM_BASE_URL: apiSettings.llm_base_url,
-      AGENT: apiSettings.agent,
-      LANGUAGE: apiSettings.language,
-      CONFIRMATION_MODE: apiSettings.confirmation_mode,
-      SECURITY_ANALYZER: apiSettings.security_analyzer,
-      LLM_API_KEY: "",
-    };
+  try {
+    const { data: apiSettings } =
+      await openHands.get<ApiSettings>("/api/settings");
+    if (apiSettings != null) {
+      return {
+        LLM_MODEL: apiSettings.llm_model,
+        LLM_BASE_URL: apiSettings.llm_base_url,
+        AGENT: apiSettings.agent,
+        LANGUAGE: apiSettings.language,
+        CONFIRMATION_MODE: apiSettings.confirmation_mode,
+        SECURITY_ANALYZER: apiSettings.security_analyzer,
+        LLM_API_KEY: "",
+      };
+    }
+  } catch (error) {
+    if (error.response.status !== 404) {
+      throw error;
+    }
   }
-  return getLocalStorageSettings();
+  // FIXME: remove local storage settings after 1/31/2025
+  const localSettings = getLocalStorageSettings();
+  await saveSettings(localSettings);
+  return localSettings;
 };

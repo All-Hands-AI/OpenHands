@@ -21,10 +21,11 @@ export function Sidebar() {
   const { data: isAuthed } = useIsAuthed();
 
   const { logout } = useAuth();
-  const { settingsAreUpToDate } = useSettings();
+  const { settingsAreUpToDate, settings } = useSettings();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
+
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
@@ -35,6 +36,12 @@ export function Sidebar() {
       setAccountSettingsModalOpen(true);
     }
   }, [user.isError]);
+
+  React.useEffect(() => {
+    if (!settings || !settingsAreUpToDate) {
+      setSettingsModalIsOpen(true);
+    }
+  }, [settings, settingsAreUpToDate]);
 
   const handleAccountSettingsModalClose = () => {
     // If the user closes the modal without connecting to GitHub,
@@ -48,9 +55,6 @@ export function Sidebar() {
     if (location.pathname.startsWith("/conversations/"))
       setStartNewProjectModalIsOpen(true);
   };
-
-  const showSettingsModal =
-    isAuthed && (!settingsAreUpToDate || settingsModalIsOpen);
 
   return (
     <>
@@ -79,7 +83,7 @@ export function Sidebar() {
       {accountSettingsModalOpen && (
         <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
       )}
-      {showSettingsModal && (
+      {settingsModalIsOpen && (
         <SettingsModal onClose={() => setSettingsModalIsOpen(false)} />
       )}
       {startNewProjectModalIsOpen && (
