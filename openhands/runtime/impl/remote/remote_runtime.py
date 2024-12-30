@@ -365,7 +365,7 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _send_action_server_request(self, method, url, **kwargs):
         try:
-            super()._send_action_server_request(method, url, **kwargs)
+            return super()._send_action_server_request(method, url, **kwargs)
         except requests.Timeout:
             self.log(
                 'error',
