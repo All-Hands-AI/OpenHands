@@ -304,11 +304,24 @@ class AgentSession:
             headless_mode=False,
             status_callback=self._status_callback,
         )
+
+        # Note: We now attempt to restore the state from session here,
+        # but if it fails, we fall back to None and still initialize the controller
+        # with a fresh state. That way, the controller will always load events from the event stream
+        # even if the state file was corrupt.
+
+        restored_state = None
         try:
-            agent_state = State.restore_from_session(self.sid, self.file_store)
-            controller.set_initial_state(agent_state, max_iterations, confirmation_mode)
-            logger.debug(f'Restored agent state from session, sid: {self.sid}')
+            restored_state = State.restore_from_session(self.sid, self.file_store)
         except Exception as e:
             logger.debug(f'State could not be restored: {e}')
+
+        # Set the initial state through the controller.
+        controller.set_initial_state(restored_state, max_iterations, confirmation_mode)
+        if restored_state:
+            logger.debug(f'Restored agent state from session, sid: {self.sid}')
+        else:
+            logger.debug('New session state created.')
+
         logger.debug('Agent controller initialized.')
         return controller

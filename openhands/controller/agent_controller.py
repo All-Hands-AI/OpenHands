@@ -699,11 +699,19 @@ class AgentController:
         # - the previous session, in which case it has history
         # - from a parent agent, in which case it has no history
         # - None / a new state
+
+        # If state is None, we create a brand new state and still load the event stream so we can restore the history
         if state is None:
             self.state = State(
                 inputs={},
                 max_iterations=max_iterations,
                 confirmation_mode=confirmation_mode,
+            )
+            self.state.start_id = 0
+
+            self.log(
+                'debug',
+                f'AgentController {self.id} - created new state. start_id: {self.state.start_id}',
             )
         else:
             self.state = state
@@ -716,7 +724,8 @@ class AgentController:
                 f'AgentController {self.id} initializing history from event {self.state.start_id}',
             )
 
-            self._init_history()
+        # Always load from the event stream to avoid losing history
+        self._init_history()
 
     def _init_history(self) -> None:
         """Initializes the agent's history from the event stream.
