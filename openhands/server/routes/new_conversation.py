@@ -77,9 +77,9 @@ async def new_conversation(request: Request, data: InitSessionRequest):
 
 @app.get('/conversations')
 async def search_conversations(
+    request: Request,
     page_id: str | None = None,
     limit: int = 20,
-    request: Request,
 ) -> ConversationResultSet:
     file_store = session_manager.file_store
     conversations = []
