@@ -85,11 +85,9 @@ class Session:
         # override default LLM config
 
         default_llm_config = self.config.get_llm_config()
-        default_llm_config.model = settings.llm_model or default_llm_config.model
-        default_llm_config.api_key = settings.llm_api_key or default_llm_config.api_key
-        default_llm_config.base_url = (
-            settings.llm_base_url or default_llm_config.base_url
-        )
+        default_llm_config.model = settings.llm_model or ''
+        default_llm_config.api_key = settings.llm_api_key
+        default_llm_config.base_url = settings.llm_base_url
 
         # TODO: override other LLM config & agent config groups (#2075)
 

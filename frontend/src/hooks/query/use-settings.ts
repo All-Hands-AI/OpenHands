@@ -1,25 +1,36 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import posthog from "posthog-js";
+import { AxiosError } from "axios";
 import { DEFAULT_SETTINGS, getLocalStorageSettings } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
 
 const getSettingsQueryFn = async () => {
-  const apiSettings = await OpenHands.getSettings();
+  try {
+    const apiSettings = await OpenHands.getSettings();
 
-  if (apiSettings !== null) {
-    return {
-      LLM_MODEL: apiSettings.llm_model,
-      LLM_BASE_URL: apiSettings.llm_base_url,
-      AGENT: apiSettings.agent,
-      LANGUAGE: apiSettings.language,
-      CONFIRMATION_MODE: apiSettings.confirmation_mode,
-      SECURITY_ANALYZER: apiSettings.security_analyzer,
-      LLM_API_KEY: apiSettings.llm_api_key,
-    };
+    if (apiSettings !== null) {
+      return {
+        LLM_MODEL: apiSettings.llm_model,
+        LLM_BASE_URL: apiSettings.llm_base_url,
+        AGENT: apiSettings.agent,
+        LANGUAGE: apiSettings.language,
+        CONFIRMATION_MODE: apiSettings.confirmation_mode,
+        SECURITY_ANALYZER: apiSettings.security_analyzer,
+        LLM_API_KEY: apiSettings.llm_api_key,
+      };
+    }
+
+    return getLocalStorageSettings();
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      if (error.response?.status === 404) {
+        return DEFAULT_SETTINGS;
+      }
+    }
+
+    throw error;
   }
-
-  return getLocalStorageSettings();
 };
 
 export const useSettings = () => {
