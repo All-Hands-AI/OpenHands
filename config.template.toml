@@ -81,7 +81,8 @@ workspace_base = "./workspace"
 # List of allowed file extensions for uploads
 #file_uploads_allowed_extensions = [".*"]
 
-#approved_hostnames = ["*"]
+# Approved hostnames for incoming requests. Use "*" for any
+#approved_hostnames = ["localhost"]
 
 #################################### LLM #####################################
 # Configuration for LLM models (group name starts with 'llm')
