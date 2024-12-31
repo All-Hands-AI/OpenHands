@@ -370,7 +370,6 @@ class DockerRuntime(ActionExecutionClient):
     @property
     def vscode_url(self) -> str | None:
         token = super().get_vscode_token()
-        print('got token', token)
         if not token:
             return None
         vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
