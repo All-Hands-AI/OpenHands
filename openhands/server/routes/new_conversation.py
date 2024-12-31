@@ -107,11 +107,16 @@ async def search_conversations(
 
 
 async def _get_conversation_info(
-    session_id: str, is_running: bool, file_store: FileStore, request: Request,
+    session_id: str,
+    is_running: bool,
+    file_store: FileStore,
+    request: Request,
 ) -> ConversationInfo | None:
     try:
         github_token = getattr(request.state, 'github_token', '') or ''
-        conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
+        conversation_store = await ConversationStoreImpl.get_instance(
+            config, github_token
+        )
         metadata = await conversation_store.get_metadata(session_id)
         events_dir = get_conversation_events_dir(session_id)
         events = file_store.list(events_dir)
@@ -147,7 +152,9 @@ async def get_conversation(conversation_id: str) -> ConversationInfo | None:
 
 
 @app.post('/conversations/{conversation_id}')
-async def update_conversation(conversation_id: str, title: str, request: Request) -> bool:
+async def update_conversation(
+    conversation_id: str, title: str, request: Request
+) -> bool:
     github_token = getattr(request.state, 'github_token', '') or ''
     conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
     metadata = await conversation_store.get_metadata(conversation_id)
@@ -159,7 +166,10 @@ async def update_conversation(conversation_id: str, title: str, request: Request
 
 
 @app.delete('/conversations/{conversation_id}')
-async def delete_conversation(conversation_id: str, request: Request,) -> bool:
+async def delete_conversation(
+    conversation_id: str,
+    request: Request,
+) -> bool:
     github_token = getattr(request.state, 'github_token', '') or ''
     conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
     try:
