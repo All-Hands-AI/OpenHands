@@ -176,7 +176,6 @@ async def main():
         return user_confirmation.lower() == 'y'
 
     async def on_event_async(event: Event):
-        print('EVENT ASYNC', event)
         display_event(event, config)
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state in [
@@ -199,7 +198,6 @@ async def main():
                 )
 
     def on_event(event: Event) -> None:
-        print('EVENT', event, flush=True)
         if isinstance(event, Action):
             asyncio.get_event_loop().create_task(on_event_async(event))
 
