@@ -154,7 +154,7 @@ export const getSettings = async (): Promise<Settings> => {
         LANGUAGE: apiSettings.language,
         CONFIRMATION_MODE: apiSettings.confirmation_mode,
         SECURITY_ANALYZER: apiSettings.security_analyzer,
-        LLM_API_KEY: apiSettings.llm_api_key || "",
+        LLM_API_KEY: apiSettings.llm_api_key,
         REMOTE_RUNTIME_RESOURCE_FACTOR:
           apiSettings.remote_runtime_resource_factor ||
           DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,

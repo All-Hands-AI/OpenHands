@@ -83,7 +83,7 @@ describe("getSettings from API", () => {
       LLM_BASE_URL: apiSettings.llm_base_url,
       AGENT: apiSettings.agent,
       LANGUAGE: apiSettings.language,
-      LLM_API_KEY: apiSettings.llm_api_key || "",
+      LLM_API_KEY: apiSettings.llm_api_key,
       CONFIRMATION_MODE: apiSettings.confirmation_mode,
       SECURITY_ANALYZER: apiSettings.security_analyzer,
       REMOTE_RUNTIME_RESOURCE_FACTOR: apiSettings.remote_runtime_resource_factor,
