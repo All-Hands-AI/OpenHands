@@ -54,6 +54,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             If `use_local_cache` is True, it will attempt to use and update the build cache in a local directory.
             The `extra_build_args` parameter allows for passing additional Docker build arguments as needed.
         """
+        self.docker_client = docker.from_env()
         version_info = self.docker_client.version()
         server_version = version_info.get('Version', '').replace('-', '.')
         if tuple(map(int, server_version.split('.'))) < (18, 9):
@@ -65,35 +66,81 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
         target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
 
+        buildx_cmd = [
+            'docker',
+            'buildx',
+            'build',
+            '--progress=plain',
+            f'--build-arg=OPENHANDS_RUNTIME_VERSION={oh_version}',
+            f'--build-arg=OPENHANDS_RUNTIME_BUILD_TIME={datetime.datetime.now().isoformat()}',
+            f'--tag={target_image_hash_name}',
+            '--load',
+        ]
+
+        # Include the platform argument only if platform is specified
+        if platform:
+            buildx_cmd.append(f'--platform={platform}')
+
+        cache_dir = '/tmp/.buildx-cache'
+        if use_local_cache and self._is_cache_usable(cache_dir):
+            buildx_cmd.extend(
+                [
+                    f'--cache-from=type=local,src={cache_dir}',
+                    f'--cache-to=type=local,dest={cache_dir},mode=max',
+                ]
+            )
+
+        if extra_build_args:
+            buildx_cmd.extend(extra_build_args)
+
+        buildx_cmd.append(path)  # must be last!
+
         self.rolling_logger.start(
             '================ DOCKER BUILD STARTED ================'
         )
 
-        buildargs = {
-            'OPENHANDS_RUNTIME_VERSION': oh_version,
-            'OPENHANDS_RUNTIME_BUILD_TIME': datetime.datetime.now().isoformat(),
-        }
-
         try:
-            # Build the image using the Docker API
-            for line in self.docker_client.api.build(
-                path=path,
-                tag=target_image_hash_name,
-                buildargs=buildargs,
-                platform=platform,
-                decode=True,
-            ):
-                if 'stream' in line:
-                    self._output_logs(line['stream'].strip())
-                elif 'error' in line:
-                    raise AgentRuntimeBuildError(line['error'])
+            process = subprocess.Popen(
+                buildx_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True,
+                bufsize=1,
+            )
 
-        except docker.errors.BuildError as e:
+            if process.stdout:
+                for line in iter(process.stdout.readline, ''):
+                    line = line.strip()
+                    if line:
+                        self._output_logs(line)
+
+            return_code = process.wait()
+
+            if return_code != 0:
+                raise subprocess.CalledProcessError(
+                    return_code,
+                    process.args,
+                    output=process.stdout.read() if process.stdout else None,
+                    stderr=process.stderr.read() if process.stderr else None,
+                )
+
+        except subprocess.CalledProcessError as e:
             logger.error(f'Image build failed:\n{e}')
+            logger.error(f'Command output:\n{e.output}')
             raise
 
-        except docker.errors.APIError as e:
-            logger.error(f'Docker API error:\n{e}')
+        except subprocess.TimeoutExpired:
+            logger.error('Image build timed out')
+            raise
+
+        except FileNotFoundError as e:
+            logger.error(f'Python executable not found: {e}')
+            raise
+
+        except PermissionError as e:
+            logger.error(
+                f'Permission denied when trying to execute the build command:\n{e}'
+            )
             raise
 
         except Exception as e:
