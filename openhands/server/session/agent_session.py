@@ -314,7 +314,9 @@ class AgentSession:
         try:
             restored_state = State.restore_from_session(self.sid, self.file_store)
         except Exception as e:
-            logger.debug(f'State could not be restored: {e}')
+            if self.event_stream.get_latest_event_id() > 0:
+                # if we have events, we should have a state
+                logger.warning(f'State could not be restored: {e}')
 
         # Set the initial state through the controller.
         controller.set_initial_state(restored_state, max_iterations, confirmation_mode)
