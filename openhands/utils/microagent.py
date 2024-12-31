@@ -20,6 +20,7 @@ class TaskInput(BaseModel):
 
     name: str
     description: str
+    required: bool = True
 
 
 class MicroAgentType(str, Enum):
