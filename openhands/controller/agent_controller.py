@@ -208,7 +208,7 @@ class AgentController:
             reported = RuntimeError(
                 'There was an unexpected error while running the agent.'
             )
-            if isinstance(e, litellm.AuthenticationError):
+            if isinstance(e, litellm.LLMError):
                 reported = e
             await self._react_to_exception(reported)
 
