@@ -112,7 +112,7 @@ async def main():
 
     logger.setLevel(logging.WARNING)
     config = load_app_config(config_file=args.config_file)
-    sid = 'cli'
+    sid = str(uuid4())
 
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
@@ -151,9 +151,11 @@ async def main():
     async def prompt_for_next_task():
         # Run input() in a thread pool to avoid blocking the event loop
         loop = asyncio.get_event_loop()
+        print('prompting for message')
         next_message = await loop.run_in_executor(
             None, lambda: input('How can I help? >> ')
         )
+        print('next_message', next_message)
         if not next_message.strip():
             await prompt_for_next_task()
         if next_message == 'exit':
@@ -161,8 +163,10 @@ async def main():
                 ChangeAgentStateAction(AgentState.STOPPED), EventSource.ENVIRONMENT
             )
             return
+        print('got message', next_message)
         action = MessageAction(content=next_message)
         event_stream.add_event(action, EventSource.USER)
+        print('added event')
 
     async def prompt_for_user_confirmation():
         loop = asyncio.get_event_loop()
@@ -171,7 +175,8 @@ async def main():
         )
         return user_confirmation.lower() == 'y'
 
-    async def on_event(event: Event):
+    async def on_event_async(event: Event):
+        print('EVENT ASYNC', event)
         display_event(event, config)
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state in [
@@ -192,6 +197,11 @@ async def main():
                 event_stream.add_event(
                     ChangeAgentStateAction(AgentState.USER_REJECTED), EventSource.USER
                 )
+
+    def on_event(self, event: Event) -> None:
+        print('EVENT', event, flush=True)
+        if isinstance(event, Action):
+            asyncio.get_event_loop().create_task(on_event_async(event))
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
