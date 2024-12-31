@@ -2,7 +2,6 @@
 name: flarglebargle
 version: 1.0.0
 agent: CodeActAgent
-trigger_type: keyword
 triggers:
 - flarglebargle
 ---

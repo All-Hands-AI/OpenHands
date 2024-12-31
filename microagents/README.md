@@ -75,7 +75,6 @@ Example:
 name: github
 version: 1.0.0
 agent: CodeActAgent
-trigger_type: keyword
 triggers:
 - github
 - git
@@ -184,7 +183,6 @@ name: update_pr_description
 version: 1.0.0
 author: openhands
 agent: CodeActAgent
-task_type: workflow
 inputs:
   - name: PR_URL
     description: "URL of the pull request"

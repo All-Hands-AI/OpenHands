@@ -3,8 +3,6 @@ name: update_pr_description
 version: 1.0.0
 author: openhands
 agent: CodeActAgent
-category: development
-task_type: workflow
 inputs:
   - name: PR_URL
     description: "URL of the pull request"
