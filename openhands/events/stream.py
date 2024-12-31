@@ -226,7 +226,6 @@ class EventStream:
                 for callback_id in callbacks:
                     callback = callbacks[callback_id]
                     pool = self._thread_pools[key][callback_id]
-                    pool.submit(callback, event)
                     future = pool.submit(callback, event)
                     future.add_done_callback(self._make_error_handler(callback_id, key))
 
