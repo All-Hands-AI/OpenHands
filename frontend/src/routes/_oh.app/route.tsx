@@ -22,7 +22,6 @@ import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "./event-handler";
 import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 import { useAuth } from "#/context/auth-context";
-import { useSettings } from "#/context/settings-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import {
@@ -34,14 +33,16 @@ import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/get-conversation-permissions";
 import { CountBadge } from "#/components/layout/count-badge";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
+import { useSettings } from "#/hooks/query/use-settings";
 import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
 
 function AppContent() {
   const { gitHubToken } = useAuth();
+  const { data: settings } = useSettings();
+
   const endSession = useEndSession();
   const [width, setWidth] = React.useState(window.innerWidth);
 
-  const { settings } = useSettings();
   const { conversationId } = useConversation();
 
   const dispatch = useDispatch();
