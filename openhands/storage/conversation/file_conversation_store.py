@@ -51,7 +51,7 @@ class FileConversationStore(ConversationStore):
         page_id: str | None = None,
         limit: int = 20,
     ) -> ConversationMetadataResultSet:
-        conversations = []
+        conversations: list[ConversationMetadata] = []
         metadata_dir = self.get_conversation_metadata_dir()
         conversation_ids = [
             path.split('/')[-2]
