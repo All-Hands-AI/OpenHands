@@ -95,6 +95,8 @@ class Session:
 
         llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
         agent_config = self.config.get_agent_config(agent_cls)
+        # override agent config to enable microagents
+        agent_config.use_microagents = True
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
         github_token = None
