@@ -96,7 +96,7 @@ export const saveSettings = async (
     };
 
     const { data } = await openHands.post("/api/settings", apiSettings);
-    return data === null ? false : data;
+    return data === true;
   } catch (error) {
     return false;
   }
@@ -148,15 +148,17 @@ export const getSettings = async (): Promise<Settings> => {
       await openHands.get<ApiSettings>("/api/settings");
     if (apiSettings != null) {
       return {
-        LLM_MODEL: apiSettings.llm_model,
-        LLM_BASE_URL: apiSettings.llm_base_url,
-        AGENT: apiSettings.agent,
-        LANGUAGE: apiSettings.language,
-        CONFIRMATION_MODE: apiSettings.confirmation_mode,
-        SECURITY_ANALYZER: apiSettings.security_analyzer,
-        LLM_API_KEY: apiSettings.llm_api_key,
+        LLM_MODEL: apiSettings.llm_model || DEFAULT_SETTINGS.LLM_MODEL,
+        LLM_BASE_URL: apiSettings.llm_base_url || DEFAULT_SETTINGS.LLM_BASE_URL,
+        AGENT: apiSettings.agent || DEFAULT_SETTINGS.AGENT,
+        LANGUAGE: apiSettings.language || DEFAULT_SETTINGS.LANGUAGE,
+        CONFIRMATION_MODE:
+          apiSettings.confirmation_mode ?? DEFAULT_SETTINGS.CONFIRMATION_MODE,
+        SECURITY_ANALYZER:
+          apiSettings.security_analyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
+        LLM_API_KEY: apiSettings.llm_api_key ?? DEFAULT_SETTINGS.LLM_API_KEY,
         REMOTE_RUNTIME_RESOURCE_FACTOR:
-          apiSettings.remote_runtime_resource_factor ||
+          apiSettings.remote_runtime_resource_factor ??
           DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
       };
     }

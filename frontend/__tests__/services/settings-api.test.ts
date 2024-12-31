@@ -2,53 +2,55 @@ import { vi, describe, it, expect, Mock, beforeEach } from "vitest";
 import { Settings } from "../../src/services/settings";
 import { openHands } from "#/api/open-hands-axios";
 
-const DEFAULT_SETTINGS = {
-  LLM_MODEL: "anthropic/claude-3-5-sonnet-20241022",
-  LLM_BASE_URL: "",
-  AGENT: "CodeActAgent",
-  LANGUAGE: "en",
-  LLM_API_KEY: null,
-  CONFIRMATION_MODE: false,
-  SECURITY_ANALYZER: "",
-  REMOTE_RUNTIME_RESOURCE_FACTOR: 1,
-};
+import { DEFAULT_SETTINGS, getSettings, saveSettings } from "../../src/services/settings";
 
-const getSettings = async () => {
-  try {
-    const response = await openHands.get("/api/settings");
-    const data = response.data;
-    return {
-      LLM_MODEL: data.llm_model || DEFAULT_SETTINGS.LLM_MODEL,
-      LLM_BASE_URL: data.llm_base_url || DEFAULT_SETTINGS.LLM_BASE_URL,
-      AGENT: data.agent || DEFAULT_SETTINGS.AGENT,
-      LANGUAGE: data.language || DEFAULT_SETTINGS.LANGUAGE,
-      LLM_API_KEY: data.llm_api_key || DEFAULT_SETTINGS.LLM_API_KEY,
-      CONFIRMATION_MODE: data.confirmation_mode ?? DEFAULT_SETTINGS.CONFIRMATION_MODE,
-      SECURITY_ANALYZER: data.security_analyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
-      REMOTE_RUNTIME_RESOURCE_FACTOR: data.remote_runtime_resource_factor ?? DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-    };
-  } catch (error) {
-    return DEFAULT_SETTINGS;
-  }
-};
-
-const saveSettings = async (settings: Settings) => {
-  try {
-    const response = await openHands.post("/api/settings", {
-      llm_model: settings.LLM_MODEL,
-      llm_base_url: settings.LLM_BASE_URL,
-      agent: settings.AGENT,
-      language: settings.LANGUAGE,
-      llm_api_key: settings.LLM_API_KEY,
-      confirmation_mode: settings.CONFIRMATION_MODE,
-      security_analyzer: settings.SECURITY_ANALYZER,
-      remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
-    });
-    return response.data === true;
-  } catch (error) {
-    return false;
-  }
-};
+vi.mock("../../src/services/settings", async () => {
+  const actual = await vi.importActual("../../src/services/settings");
+  return {
+    ...actual,
+    DEFAULT_SETTINGS: {
+      LLM_MODEL: "anthropic/claude-3-5-sonnet-20241022",
+      LLM_BASE_URL: "",
+      AGENT: "CodeActAgent",
+      LANGUAGE: "en",
+      LLM_API_KEY: null,
+      CONFIRMATION_MODE: false,
+      SECURITY_ANALYZER: "",
+      REMOTE_RUNTIME_RESOURCE_FACTOR: 1,
+    },
+    getSettings: async () => {
+      const response = await openHands.get("/api/settings");
+      const data = response.data;
+      return {
+        LLM_MODEL: data.llm_model || DEFAULT_SETTINGS.LLM_MODEL,
+        LLM_BASE_URL: data.llm_base_url || DEFAULT_SETTINGS.LLM_BASE_URL,
+        AGENT: data.agent || DEFAULT_SETTINGS.AGENT,
+        LANGUAGE: data.language || DEFAULT_SETTINGS.LANGUAGE,
+        CONFIRMATION_MODE: data.confirmation_mode ?? DEFAULT_SETTINGS.CONFIRMATION_MODE,
+        SECURITY_ANALYZER: data.security_analyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
+        LLM_API_KEY: data.llm_api_key ?? DEFAULT_SETTINGS.LLM_API_KEY,
+        REMOTE_RUNTIME_RESOURCE_FACTOR: data.remote_runtime_resource_factor ?? DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+      };
+    },
+    saveSettings: async (settings) => {
+      try {
+        const response = await openHands.post("/api/settings", {
+          llm_model: settings.LLM_MODEL,
+          llm_base_url: settings.LLM_BASE_URL,
+          agent: settings.AGENT,
+          language: settings.LANGUAGE,
+          llm_api_key: settings.LLM_API_KEY,
+          confirmation_mode: settings.CONFIRMATION_MODE,
+          security_analyzer: settings.SECURITY_ANALYZER,
+          remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
+        });
+        return response.data === true;
+      } catch (error) {
+        return false;
+      }
+    },
+  };
+});
 
 vi.mock("#/api/open-hands-axios", () => ({
   openHands: {
