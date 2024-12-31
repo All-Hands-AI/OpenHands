@@ -150,11 +150,9 @@ async def main(loop):
 
     async def prompt_for_next_task():
         # Run input() in a thread pool to avoid blocking the event loop
-        print('prompting for message')
         next_message = await loop.run_in_executor(
             None, lambda: input('How can I help? >> ')
         )
-        print('next_message', next_message)
         if not next_message.strip():
             await prompt_for_next_task()
         if next_message == 'exit':
@@ -162,10 +160,8 @@ async def main(loop):
                 ChangeAgentStateAction(AgentState.STOPPED), EventSource.ENVIRONMENT
             )
             return
-        print('got message', next_message)
         action = MessageAction(content=next_message)
         event_stream.add_event(action, EventSource.USER)
-        print('added event')
 
     async def prompt_for_user_confirmation():
         user_confirmation = await loop.run_in_executor(
@@ -174,7 +170,6 @@ async def main(loop):
         return user_confirmation.lower() == 'y'
 
     async def on_event_async(event: Event):
-        print('on event async', event)
         display_event(event, config)
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state in [
@@ -197,8 +192,7 @@ async def main(loop):
                 )
 
     def on_event(event: Event) -> None:
-        if isinstance(event, Action):
-            loop.create_task(on_event_async(event))
+        loop.create_task(on_event_async(event))
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
