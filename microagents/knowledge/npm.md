@@ -7,14 +7,6 @@ category: development
 trigger_type: keyword
 triggers:
   - npm
-  - node
-tags:
-  - npm
-  - node
-  - package-management
-requires:
-  - npm
-  - yes
 ---
 
 When using npm to install packages, you will not be able to use an interactive shell, and it may be hard to confirm your actions.
