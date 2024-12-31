@@ -43,9 +43,6 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     session_init_args: dict = {}
     if settings:
         session_init_args = {**settings.__dict__, **session_init_args}
-    if data.args:
-        for key, value in data.args.items():
-            session_init_args[key.lower()] = value
 
     session_init_args['github_token'] = github_token
     session_init_args['selected_repository'] = data.selected_repository
@@ -82,6 +79,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
 async def search_conversations(
     page_id: str | None = None,
     limit: int = 20,
+    request: Request,
 ) -> ConversationResultSet:
     file_store = session_manager.file_store
     conversations = []
@@ -99,7 +97,7 @@ async def search_conversations(
     for session_id in session_ids:
         is_running = session_id in running_sessions
         conversation_info = await _get_conversation_info(
-            session_id, is_running, file_store
+            session_id, is_running, file_store, request
         )
         if conversation_info:
             conversations.append(conversation_info)
@@ -142,11 +140,11 @@ async def _get_conversation_info(
 
 
 @app.get('/conversations/{conversation_id}')
-async def get_conversation(conversation_id: str) -> ConversationInfo | None:
+async def get_conversation(conversation_id: str, request: Request) -> ConversationInfo | None:
     file_store = session_manager.file_store
     is_running = await session_manager.is_agent_loop_running(conversation_id)
     conversation_info = await _get_conversation_info(
-        conversation_id, is_running, file_store
+        conversation_id, is_running, file_store, request
     )
     return conversation_info
 
