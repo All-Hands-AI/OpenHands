@@ -1,22 +1,10 @@
 # OpenHands MicroAgents
 
+MicroAgents are specialized AI assistants that enhance OpenHands with domain-specific knowledge and task-specific workflows. They help developers by providing expert guidance, automating common tasks, and ensuring consistent practices across projects. Each microagent is designed to excel in a specific area, from Git operations to code review processes.
+
 OpenHands loads microagents from two distinct sources:
 
-## 1. Repository Instructions (Private)
-Each repository can have its own instructions in `.openhands/microagents/repo.md`. These instructions are:
-- Private to that repository
-- Automatically loaded when working with that repository
-- Perfect for repository-specific guidelines and team practices
-
-Example repository structure:
-```
-your-repository/
-└── .openhands/
-    └── microagents/
-        └── repo.md    # Repository-specific instructions
-```
-
-## 2. Shareable Microagents (Public)
+## 1. Shareable Microagents (Public)
 This directory (`OpenHands/microagents/`) contains shareable microagents that are:
 - Available to all OpenHands users
 - Maintained in the OpenHands repository
@@ -34,6 +22,22 @@ OpenHands/microagents/
     ├── bug_fix.yaml     # Bug fixing workflow
     └── feature.yaml     # Feature implementation
 ```
+
+## 2. Repository Instructions (Private)
+Each repository can have its own instructions in `.openhands/microagents/repo.md`. These instructions are:
+- Private to that repository
+- Automatically loaded when working with that repository
+- Perfect for repository-specific guidelines and team practices
+
+Example repository structure:
+```
+your-repository/
+└── .openhands/
+    └── microagents/
+        └── repo.md    # Repository-specific instructions
+```
+
+
 
 ## Loading Order
 
@@ -59,7 +63,7 @@ version: 1.0.0
 author: openhands
 agent: CodeActAgent
 trigger_type: keyword
-triggers: 
+triggers:
   - test
   - testing
   - jest
@@ -69,7 +73,7 @@ file_patterns:  # Optional: only trigger for specific files
 description: "Testing best practices"
 knowledge: |
   # Testing Guidelines
-  
+
   ## Key Principles
   1. Use Jest for unit tests
   2. Follow AAA pattern...
@@ -201,13 +205,6 @@ All microagents use markdown files with YAML frontmatter:
    ```
    ```
 
-### Testing Your Agent
-
-Before submitting:
-1. Test all trigger words (for knowledge agents)
-2. Try all input combinations (for task agents)
-3. Verify markdown formatting
-4. Check for clear, helpful output
 
 ### Submission Process
 
