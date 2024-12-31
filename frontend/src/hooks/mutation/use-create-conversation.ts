@@ -6,13 +6,13 @@ import OpenHands from "#/api/open-hands";
 import { setInitialQuery } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { useAuth } from "#/context/auth-context";
-import { useSettings } from "#/context/settings-context";
+import { useSettings } from "../query/use-settings";
 
 export const useCreateConversation = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { gitHubToken } = useAuth();
-  const { settings } = useSettings();
+  const { data: settings } = useSettings();
   const queryClient = useQueryClient();
 
   const { selectedRepository, files } = useSelector(

@@ -1,5 +1,18 @@
 import { delay, http, HttpResponse } from "msw";
-import { Conversation } from "#/api/open-hands.types";
+import { GetConfigResponse, Conversation } from "#/api/open-hands.types";
+import { DEFAULT_SETTINGS } from "#/services/settings";
+
+const userPreferences = {
+  settings: {
+    llm_model: DEFAULT_SETTINGS.LLM_MODEL,
+    llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
+    llm_api_key: DEFAULT_SETTINGS.LLM_API_KEY,
+    agent: DEFAULT_SETTINGS.AGENT,
+    language: DEFAULT_SETTINGS.LANGUAGE,
+    confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,
+    security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
+  },
+};
 
 const conversations: Conversation[] = [
   {
@@ -35,24 +48,22 @@ const CONVERSATIONS = new Map<string, Conversation>(
 );
 
 const openHandsHandlers = [
-  http.get("/api/options/models", async () => {
-    await delay();
-    return HttpResponse.json([
+  http.get("/api/options/models", async () =>
+    HttpResponse.json([
       "gpt-3.5-turbo",
       "gpt-4o",
       "anthropic/claude-3.5",
-    ]);
-  }),
+      "anthropic/claude-3-5-sonnet-20241022",
+    ]),
+  ),
 
-  http.get("/api/options/agents", async () => {
-    await delay();
-    return HttpResponse.json(["CodeActAgent", "CoActAgent"]);
-  }),
+  http.get("/api/options/agents", async () =>
+    HttpResponse.json(["CodeActAgent", "CoActAgent"]),
+  ),
 
-  http.get("/api/options/security-analyzers", async () => {
-    await delay();
-    return HttpResponse.json(["mock-invariant"]);
-  }),
+  http.get("/api/options/security-analyzers", async () =>
+    HttpResponse.json(["mock-invariant"]),
+  ),
 
   http.get(
     "http://localhost:3001/api/conversations/:conversationId/list-files",
@@ -137,6 +148,33 @@ export const handlers = [
   http.post("https://us.i.posthog.com/e", async () =>
     HttpResponse.json(null, { status: 200 }),
   ),
+  http.get("/api/options/config", () => {
+    const config: GetConfigResponse = {
+      APP_MODE: "oss",
+      GITHUB_CLIENT_ID: "fake-github-client-id",
+      POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
+    };
+
+    return HttpResponse.json(config);
+  }),
+  http.get("/api/settings", async () =>
+    HttpResponse.json(userPreferences.settings),
+  ),
+  http.post("/api/settings", async ({ request }) => {
+    const body = await request.json();
+
+    if (body) {
+      userPreferences.settings = {
+        ...userPreferences.settings,
+        // @ts-expect-error - We know this is a settings object
+        ...body,
+      };
+
+      return HttpResponse.json(null, { status: 200 });
+    }
+
+    return HttpResponse.json(null, { status: 400 });
+  }),
 
   http.post("/api/authenticate", async () =>
     HttpResponse.json({ message: "Authenticated" }),

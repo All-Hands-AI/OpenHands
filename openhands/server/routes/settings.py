@@ -12,8 +12,8 @@ app = APIRouter(prefix='/api')
 
 SettingsStoreImpl = get_impl(SettingsStore, openhands_config.settings_store_class)  # type: ignore
 ConversationStoreImpl = get_impl(
-    ConversationStore,
-    openhands_config.conversation_store_class,  # type: ignore
+    ConversationStore,  # type: ignore
+    openhands_config.conversation_store_class,
 )
 
 
@@ -29,7 +29,7 @@ async def load_settings(
         settings = await settings_store.load()
         if settings:
             # For security reasons we don't ever send the api key to the client
-            settings.llm_api_key = None
+            settings.llm_api_key = 'SET' if settings.llm_api_key else None
         return settings
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
@@ -51,7 +51,10 @@ async def store_settings(
         settings_store = await SettingsStoreImpl.get_instance(config, github_token)
         existing_settings = await settings_store.load()
         if existing_settings:
-            settings = Settings(**{**existing_settings.__dict__, **settings.__dict__})
+            # Only update settings that are not None with the new values
+            for key, value in settings.__dict__.items():
+                if value is None:
+                    setattr(settings, key, getattr(existing_settings, key))
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
         await settings_store.store(settings)
