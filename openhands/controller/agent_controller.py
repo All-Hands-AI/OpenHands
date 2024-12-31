@@ -484,6 +484,8 @@ class AgentController:
 
         if self.delegate is not None:
             assert self.delegate != self
+            # TODO this conditional will always be false, because the parent controllers are unsubscribed
+            # remove if it's still useless when delegation is reworked
             if self.delegate.get_agent_state() != AgentState.PAUSED:
                 await self._delegate_step()
             return
