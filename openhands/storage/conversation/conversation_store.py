@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 
 from openhands.core.config.app_config import AppConfig
 from openhands.server.data_models.conversation_metadata import ConversationMetadata
+from openhands.server.data_models.conversation_metadata_result_set import ConversationMetadataResultSet
 
 
 class ConversationStore(ABC):
@@ -26,6 +27,14 @@ class ConversationStore(ABC):
     @abstractmethod
     async def exists(self, conversation_id: str) -> bool:
         """Check if conversation exists"""
+
+    @abstractmethod
+    async def search(
+        self, 
+        page_id: str | None = None,
+        limit: int = 20,
+    ) -> ConversationMetadataResultSet:
+        """Search conversations"""
 
     @classmethod
     @abstractmethod

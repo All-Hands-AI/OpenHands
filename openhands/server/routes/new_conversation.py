@@ -10,14 +10,14 @@ from pydantic import BaseModel
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_metadata import ConversationMetadata
-from openhands.server.data_models.conversation_result_set import ConversationResultSet
+from openhands.server.data_models.conversation_info_result_set import ConversationInfoResultSet
 from openhands.server.data_models.conversation_status import ConversationStatus
 from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import config, session_manager
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_events_dir
-from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.async_utils import call_sync_from_async, wait_all
 from openhands.utils.search_utils import offset_to_page_id, page_id_to_offset
 
 app = APIRouter(prefix='/api')
@@ -47,9 +47,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     session_init_args['github_token'] = github_token
     session_init_args['selected_repository'] = data.selected_repository
     conversation_init_data = ConversationInitData(**session_init_args)
-
     conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
-
     conversation_id = uuid.uuid4().hex
     while await conversation_store.exists(conversation_id):
         logger.warning(f'Collision on conversation ID: {conversation_id}. Retrying...')
@@ -80,59 +78,48 @@ async def search_conversations(
     request: Request,
     page_id: str | None = None,
     limit: int = 20,
-) -> ConversationResultSet:
-    file_store = session_manager.file_store
-    conversations = []
-    session_ids = [
-        path.split('/')[1]
-        for path in file_store.list('sessions/')
-        if not path.startswith('sessions/.')
-    ]
-    num_sessions = len(session_ids)
-    start = page_id_to_offset(page_id)
-    end = min(limit + start, num_sessions)
-    session_ids = session_ids[start:end]
-    next_page_id = offset_to_page_id(end, end < num_sessions)
-    running_sessions = await session_manager.get_agent_loop_running(set(session_ids))
-    for session_id in session_ids:
-        is_running = session_id in running_sessions
-        conversation_info = await _get_conversation_info(
-            session_id, is_running, file_store, request
-        )
-        if conversation_info:
-            conversations.append(conversation_info)
-    return ConversationResultSet(results=conversations, next_page_id=next_page_id)
+) -> ConversationInfoResultSet:
+    github_token = getattr(request.state, 'github_token', '') or ''
+    conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
+    conversation_metadata_result_set = await conversation_store.search(page_id, limit)
+    conversation_ids = set(conversation.conversation_id for conversation in conversation_metadata_result_set.results)
+    running_conversations = await session_manager.get_agent_loop_running(set(conversation_ids))
+    result = ConversationInfoResultSet(
+        results=await wait_all(
+            _get_conversation_info(
+                conversation=conversation,
+                is_running=conversation.conversation_id in running_conversations
+            )
+            for conversation in conversation_metadata_result_set.results
+        ),
+        next_page_id=conversation_metadata_result_set.next_page_id
+    )
+    return result
 
 
 async def _get_conversation_info(
-    session_id: str,
+    conversation: ConversationMetadata,
     is_running: bool,
-    file_store: FileStore,
-    request: Request,
 ) -> ConversationInfo | None:
     try:
-        github_token = getattr(request.state, 'github_token', '') or ''
-        conversation_store = await ConversationStoreImpl.get_instance(
-            config, github_token
-        )
-        metadata = await conversation_store.get_metadata(session_id)
-        events_dir = get_conversation_events_dir(session_id)
+        file_store = session_manager.file_store
+        events_dir = get_conversation_events_dir(conversation.conversation_id)
         events = file_store.list(events_dir)
         events = sorted(events)
         event_path = events[-1]
         event = json.loads(file_store.read(event_path))
         return ConversationInfo(
-            id=session_id,
-            title=metadata.title,
+            id=conversation.conversation_id,
+            title=conversation.title,
             last_updated_at=datetime.fromisoformat(event.get('timestamp')),
-            selected_repository=metadata.selected_repository,
+            selected_repository=conversation.selected_repository,
             status=ConversationStatus.RUNNING
             if is_running
             else ConversationStatus.STOPPED,
         )
     except Exception:  # type: ignore
         logger.warning(
-            f'Error loading conversation: {session_id}',
+            f'Error loading conversation: {conversation.conversation_id}',
             exc_info=True,
             stack_info=True,
         )

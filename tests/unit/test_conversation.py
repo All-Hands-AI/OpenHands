@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from openhands.server.data_models.conversation_info import ConversationInfo
-from openhands.server.data_models.conversation_result_set import ConversationResultSet
+from openhands.server.data_models.conversation_info_result_set import ConversationResultSet
 from openhands.server.data_models.conversation_status import ConversationStatus
 from openhands.server.routes.new_conversation import (
     get_conversation,
