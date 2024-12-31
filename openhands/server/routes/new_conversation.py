@@ -6,13 +6,10 @@ from github import Github
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.routes.settings import SettingsStoreImpl
+from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import config, session_manager
-from openhands.storage.conversation.conversation_store import (
-    ConversationMetadata,
-    ConversationStore,
-)
+from openhands.server.data_models.conversation_metadata import ConversationMetadata
 from openhands.utils.async_utils import call_sync_from_async
 
 app = APIRouter(prefix='/api')
@@ -49,7 +46,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     session_init_args['selected_repository'] = data.selected_repository
     conversation_init_data = ConversationInitData(**session_init_args)
 
-    conversation_store = await ConversationStore.get_instance(config)
+    conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
 
     conversation_id = uuid.uuid4().hex
     while await conversation_store.exists(conversation_id):

@@ -1,4 +1,5 @@
 import CogTooth from "#/assets/cog-tooth";
+import { TooltipButton } from "./tooltip-button";
 
 interface SettingsButtonProps {
   onClick: () => void;
@@ -6,13 +7,8 @@ interface SettingsButtonProps {
 
 export function SettingsButton({ onClick }: SettingsButtonProps) {
   return (
-    <button
-      type="button"
-      aria-label="Settings"
-      className="w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center"
-      onClick={onClick}
-    >
+    <TooltipButton tooltip="Settings" ariaLabel="Settings" onClick={onClick}>
       <CogTooth />
-    </button>
+    </TooltipButton>
   );
 }
