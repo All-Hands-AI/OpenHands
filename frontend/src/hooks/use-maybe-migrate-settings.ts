@@ -1,7 +1,6 @@
 // Sometimes we ship major changes, like a new default agent.
 
 import React from "react";
-import { useAuth } from "#/context/auth-context";
 import { useSettingsUpToDate } from "#/context/settings-up-to-date-context";
 import {
   DEFAULT_SETTINGS,
@@ -12,7 +11,6 @@ import { useSaveSettings } from "./mutation/use-save-settings";
 
 // In this case, we may want to override a previous choice made by the user.
 export const useMaybeMigrateSettings = () => {
-  const { logout } = useAuth();
   const { mutateAsync: saveSettings } = useSaveSettings();
   const { isUpToDate } = useSettingsUpToDate();
 
