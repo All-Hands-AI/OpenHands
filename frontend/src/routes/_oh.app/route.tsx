@@ -24,6 +24,10 @@ import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 import { useAuth } from "#/context/auth-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
+import {
+  Orientation,
+  ResizablePanel,
+} from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/get-conversation-permissions";
@@ -37,6 +41,7 @@ function AppContent() {
   const { data: settings } = useSettings();
 
   const endSession = useEndSession();
+  const [width, setWidth] = React.useState(window.innerWidth);
 
   const { conversationId } = useConversation();
 
@@ -88,24 +93,49 @@ function AppContent() {
     dispatch(clearJupyter());
   });
 
+  function handleResize() {
+    setWidth(window.innerWidth);
+  }
+
+  React.useEffect(() => {
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   const {
     isOpen: securityModalIsOpen,
     onOpen: onSecurityModalOpen,
     onOpenChange: onSecurityModalOpenChange,
   } = useDisclosure();
 
-  return (
-    <WsClientProvider ghToken={gitHubToken} conversationId={conversationId}>
-      <EventHandler>
-        <div data-testid="app-route" className="flex flex-col h-full gap-3">
-          <div className="flex h-full overflow-auto gap-3">
-            <Container className="w-full md:w-[390px] max-h-full relative">
-              <ChatInterface />
-            </Container>
-
-            <div className="hidden md:flex flex-col grow gap-3">
+  function renderMain() {
+    if (width <= 640) {
+      return (
+        <div className="rounded-xl overflow-hidden border border-neutral-600 w-full">
+          <ChatInterface />
+        </div>
+      );
+    }
+    return (
+      <ResizablePanel
+        orientation={Orientation.HORIZONTAL}
+        className="grow h-full min-h-0 min-w-0"
+        initialSize={500}
+        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-neutral-800"
+        secondClassName="flex flex-col overflow-hidden"
+        firstChild={<ChatInterface />}
+        secondChild={
+          <ResizablePanel
+            orientation={Orientation.VERTICAL}
+            className="grow h-full min-h-0 min-w-0"
+            initialSize={500}
+            firstClassName="rounded-xl overflow-hidden border border-neutral-600"
+            secondClassName="flex flex-col overflow-hidden"
+            firstChild={
               <Container
-                className="h-2/3"
+                className="h-full"
                 labels={[
                   { label: "Workspace", to: "", icon: <CodeIcon /> },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
@@ -125,18 +155,30 @@ function AppContent() {
                   <Outlet />
                 </FilesProvider>
               </Container>
-              {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-               * that it loads only in the client-side. */}
+            }
+            secondChild={
               <Container
-                className="h-1/3 overflow-scroll"
+                className="h-full overflow-scroll"
                 label={<TerminalStatusLabel />}
               >
+                {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
+                 * that it loads only in the client-side. */}
                 <React.Suspense fallback={<div className="h-full" />}>
                   <Terminal secrets={secrets} />
                 </React.Suspense>
               </Container>
-            </div>
-          </div>
+            }
+          />
+        }
+      />
+    );
+  }
+
+  return (
+    <WsClientProvider ghToken={gitHubToken} conversationId={conversationId}>
+      <EventHandler>
+        <div data-testid="app-route" className="flex flex-col h-full gap-3">
+          <div className="flex h-full overflow-auto">{renderMain()}</div>
 
           <div className="h-[60px]">
             <Controls
