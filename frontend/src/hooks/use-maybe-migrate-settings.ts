@@ -35,7 +35,7 @@ export const useMaybeMigrateSettings = () => {
     }
 
     if (currentVersion < 4) {
-      logout();
+      // We used to log out here, but it's breaking things
     }
 
     // Only save settings if user already previously saved settings
