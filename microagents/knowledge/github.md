@@ -11,7 +11,6 @@ triggers:
 tags:
   - github
   - git
-  - version-control
 ---
 
 You have access to an environment variable, `GITHUB_TOKEN`, which allows you to interact with
