@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any
 
+import litellm
 from pydantic import BaseModel
 from typing_extensions import override
 
@@ -348,6 +349,22 @@ class LLMAttentionCondenser(RollingCondenser):
         self.keep_first = keep_first
         self.llm = llm
 
+        # This condenser relies on the `response_format` feature, which is not supported by all LLMs
+        try:
+            supports_response_format = (
+                'response_format'
+                in litellm.get_supported_openai_params(self.llm.config.model)
+            )
+        except Exception as e:
+            raise ValueError(
+                "Cannot determine if model supports 'response_format'"
+            ) from e
+
+        if not supports_response_format:
+            raise ValueError(
+                "The LLM model must support the 'response_format' parameter to use the LLMAttentionCondenser."
+            )
+
         super().__init__()
 
     def condense(self, events: list[Event]) -> list[Event]:
@@ -383,7 +400,6 @@ class LLMAttentionCondenser(RollingCondenser):
                     'schema': ImportantEventSelection.model_json_schema(),
                 },
             },
-            # response_format=ImportantEventSelection,
         )
 
         response_ids = ImportantEventSelection.model_validate_json(

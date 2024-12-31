@@ -46,7 +46,9 @@ def create_test_event(
 def mock_llm() -> LLM:
     """Mocks an LLM object with a utility function for setting and resetting response contents in unit tests."""
     # Create a MagicMock for the LLM object
-    mock_llm = MagicMock(spec=LLM)
+    mock_llm = MagicMock(
+        spec=LLM, config=MagicMock(spec=LLMConfig, model='gpt-4o', api_key='test_key')
+    )
     _mock_content = None
 
     # Set a mock message with the mocked content
@@ -378,6 +380,20 @@ def test_llm_attention_condenser_from_config():
     assert condenser.llm.config.api_key == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
+
+
+def test_llm_attention_condenser_invalid_config():
+    """Test that LLMAttentionCondenser raises an error if the configured LLM doesn't support response formats."""
+    config = LLMAttentionCondenserConfig(
+        max_size=50,
+        keep_first=10,
+        llm_config=LLMConfig(
+            model='claude-2',  # Older model that doesn't support response formats
+            api_key='test_key',
+        ),
+    )
+
+    pytest.raises(ValueError, LLMAttentionCondenser.from_config, config)
 
 
 def test_llm_attention_condenser_keeps_first_events(mock_llm, mock_state):
