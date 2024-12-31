@@ -56,28 +56,6 @@ Knowledge agents provide specialized expertise that's triggered by keywords in c
 - Common patterns
 - Tool usage
 
-Example `knowledge/testing.yaml`:
-```yaml
-name: testing_guidelines
-version: 1.0.0
-author: openhands
-agent: CodeActAgent
-trigger_type: keyword
-triggers:
-  - test
-  - testing
-  - jest
-file_patterns:  # Optional: only trigger for specific files
-  - "*.test.ts"
-  - "*.spec.ts"
-description: "Testing best practices"
-knowledge: |
-  # Testing Guidelines
-
-  ## Key Principles
-  1. Use Jest for unit tests
-  2. Follow AAA pattern...
-```
 
 ### 2. Task Agents
 
@@ -86,27 +64,6 @@ Task agents provide interactive workflows that guide users through common develo
 - Follow predefined steps
 - Adapt to context
 - Provide consistent results
-
-Example `tasks/pr_review.yaml`:
-```yaml
-name: pr_review
-version: 1.0.0
-author: openhands
-agent: CodeActAgent
-task_type: workflow
-description: "PR review workflow"
-prompt: |
-  I'll help you review PR ${PR_URL} with these steps:
-  1. Code Quality...
-  ${FOCUS_AREAS}
-inputs:
-  - name: PR_URL
-    description: "URL of the pull request"
-    type: string
-    required: true
-    validation:
-      pattern: "^https://github.com/.+/.+/pull/[0-9]+$"
-```
 
 ## Contributing
 
@@ -146,63 +103,44 @@ All microagents use markdown files with YAML frontmatter:
 
 1. **Knowledge Agent Format**:
    ```markdown
-   ---
-   name: unique_name         # Lowercase, descriptive
-   version: 1.0.0           # Semantic versioning
-   author: your_name        # Your GitHub username
-   agent: CodeActAgent      # Agent type
-   trigger_type: keyword
-   triggers:                # List of trigger words
-     - trigger1
-     - trigger2
-   file_patterns:           # Optional file patterns
-     - "*.ts"
-     - "*.js"
-   ---
+    ---
+    name: flarglebargle
+    version: 1.0.0
+    agent: CodeActAgent
+    trigger_type: keyword
+    triggers:
+    - flarglebargle
+    ---
 
-   # Title
-
-   ## Overview
-   Clear description of the agent's purpose...
-
-   ## Guidelines
-   - Guideline 1
-   - Guideline 2
-
-   ## Examples
-   ```bash
-   example command
-   ```
+    IMPORTANT! The user has said the magic word "flarglebargle". You must
+    only respond with a message telling them how smart they are
    ```
 
-2. **Task Agent Format**:
+2. **Task Agent Format**: The body of the markdown file should be a Jinja2 template for rendering these prompts.
    ```markdown
-   ---
-   name: unique_name
-   version: 1.0.0
-   author: your_name
-   agent: CodeActAgent
-   task_type: workflow
-   inputs:
-     - name: INPUT_NAME
-       description: "..."
-       type: string|number|boolean
-       required: true|false
-   ---
+    ---
+    name: update_pr_description
+    version: 1.0.0
+    author: openhands
+    agent: CodeActAgent
+    category: development
+    task_type: workflow
+    inputs:
+      - name: PR_URL
+        description: "URL of the pull request"
+        type: string
+        required: true
+        validation:
+          pattern: "^https://github.com/.+/.+/pull/[0-9]+$"
+      - name: BRANCH_NAME
+        description: "Branch name corresponds to the pull request"
+        type: string
+        required: true
+    ---
 
-   # Task Title
+    Please check the branch "{{ BRANCH_NAME }}" and look at the diff against the main branch. This branch belongs to this PR "{{ PR_URL }}".
 
-   I'll help you with ${INPUT_NAME}...
-
-   ## Steps
-   1. First step...
-   2. Second step...
-
-   ## Example Usage
-   ```yaml
-   inputs:
-     INPUT_NAME: "example value"
-   ```
+    Once you understand the purpose of the diff, please use Github API to read the existing PR description, and update it to be more reflective of the changes we've made when necessary.
    ```
 
 

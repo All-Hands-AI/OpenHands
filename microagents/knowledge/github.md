@@ -1,7 +1,6 @@
 ---
 name: github
 version: 1.0.0
-author: openhands
 agent: CodeActAgent
 category: development
 trigger_type: keyword
