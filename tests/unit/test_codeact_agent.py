@@ -15,6 +15,7 @@ from openhands.agenthub.codeact_agent.function_calling import (
     get_tools,
     response_to_actions,
 )
+from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import FunctionCallNotExistsError
 from openhands.core.message import ImageContent, TextContent
@@ -44,6 +45,15 @@ def agent() -> CodeActAgent:
     agent.llm.config = Mock()
     agent.llm.config.max_message_chars = 100
     return agent
+
+
+@pytest.fixture
+def mock_state() -> State:
+    state = Mock(spec=State)
+    state.history = []
+    state.extra_data = {}
+
+    return state
 
 
 def test_cmd_output_observation_message(agent: CodeActAgent):
@@ -475,7 +485,7 @@ def test_response_to_actions_invalid_tool():
         response_to_actions(mock_response)
 
 
-def test_step_with_no_pending_actions():
+def test_step_with_no_pending_actions(mock_state: State):
     # Mock the LLM response
     mock_response = Mock()
     mock_response.id = 'mock_id'
@@ -496,16 +506,44 @@ def test_step_with_no_pending_actions():
     agent = CodeActAgent(llm=llm, config=config)
 
     # Test step with no pending actions
-    state = Mock()
-    state.history = []
-    state.latest_user_message = None
-    state.latest_user_message_id = None
-    state.latest_user_message_timestamp = None
-    state.latest_user_message_cause = None
-    state.latest_user_message_timeout = None
-    state.latest_user_message_llm_metrics = None
-    state.latest_user_message_tool_call_metadata = None
+    mock_state.latest_user_message = None
+    mock_state.latest_user_message_id = None
+    mock_state.latest_user_message_timestamp = None
+    mock_state.latest_user_message_cause = None
+    mock_state.latest_user_message_timeout = None
+    mock_state.latest_user_message_llm_metrics = None
+    mock_state.latest_user_message_tool_call_metadata = None
 
-    action = agent.step(state)
+    action = agent.step(mock_state)
     assert isinstance(action, MessageAction)
     assert action.content == 'Task completed'
+
+
+def test_mismatched_tool_call_events(mock_state: State):
+    """Tests that the agent can convert mismatched tool call events (i.e., an observation with no corresponding action) into messages."""
+    agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
+
+    action = Mock(spec=CmdRunAction)
+    observation = Mock(spec=CmdOutputObservation)
+
+    # When both events are provided, the agent should get three messages:
+    # 1. The system message,
+    # 2. The action message, and
+    # 3. The observation message
+    mock_state.history = [action, observation]
+    messages = agent._get_messages(mock_state)
+    assert len(messages) == 3
+
+    # The same should hold if the events are presented out-of-order
+    mock_state.history = [observation, action]
+    messages = agent._get_messages(mock_state)
+    assert len(messages) == 3
+
+    # If only one of the two events is present, then we should just get the system message
+    mock_state.history = [action]
+    messages = agent._get_messages(mock_state)
+    assert len(messages) == 1
+
+    mock_state.history = [observation]
+    messages = agent._get_messages(mock_state)
+    assert len(messages) == 1
