@@ -20,8 +20,7 @@ from openhands.core.config.condenser_config import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event
-from openhands.events.observation import Observation
-from openhands.events.observation.condenser import AgentCondensationObservation
+from openhands.events.observation import AgentCondensationObservation, Observation
 from openhands.llm.llm import LLM
 
 CONDENSER_METADATA_KEY = 'condenser_meta'
