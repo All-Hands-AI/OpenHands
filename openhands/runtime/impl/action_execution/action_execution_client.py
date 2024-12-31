@@ -28,6 +28,7 @@ from openhands.events.observation import (
     ErrorObservation,
     NullObservation,
     Observation,
+    TimeoutObservation,
     UserRejectObservation,
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
@@ -261,7 +262,7 @@ class ActionExecutionClient(Runtime):
                     obs = observation_from_dict(output)
                     obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
-                raise AgentRuntimeTimeoutError(
+                return TimeoutObservation(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
 
