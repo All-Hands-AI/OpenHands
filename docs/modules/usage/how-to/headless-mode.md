@@ -12,7 +12,7 @@ To run OpenHands in headless mode with Python,
 and then run:
 
 ```bash
-poetry run python -m openhands.core.main -t "write a bash script that prints hi" --no-auto-continue
+poetry run python -m openhands.core.main -t "write a bash script that prints hi"
 ```
 
 You'll need to be sure to set your model, API key, and other settings via environment variables
@@ -52,8 +52,9 @@ docker run -it \
     -e LOG_ALL_EVENTS=true \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    -v ~/.openhands-state:/.openhands-state \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
     docker.all-hands.dev/all-hands-ai/openhands:0.17 \
-    python -m openhands.core.main -t "write a bash script that prints hi" --no-auto-continue
+    python -m openhands.core.main -t "write a bash script that prints hi"
 ```
