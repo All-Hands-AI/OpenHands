@@ -1,12 +1,11 @@
 ---
 name: npm
 version: 1.0.0
-author: openhands
 agent: CodeActAgent
 category: development
 trigger_type: keyword
 triggers:
-  - npm
+- npm
 ---
 
 When using npm to install packages, you will not be able to use an interactive shell, and it may be hard to confirm your actions.

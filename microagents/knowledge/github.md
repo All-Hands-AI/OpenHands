@@ -6,11 +6,8 @@ agent: CodeActAgent
 category: development
 trigger_type: keyword
 triggers:
-  - github
-  - git
-tags:
-  - github
-  - git
+- github
+- git
 ---
 
 You have access to an environment variable, `GITHUB_TOKEN`, which allows you to interact with
