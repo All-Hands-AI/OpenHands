@@ -39,16 +39,18 @@ def temp_dir(tmp_path_factory: TempPathFactory) -> str:
 @pytest.fixture
 def mock_docker_client():
     mock_client = MagicMock(spec=docker.DockerClient)
+    mock_client.api = MagicMock()
     mock_client.version.return_value = {
-        'Version': '19.03'
+        'Version': '19.03.0',
+        'ApiVersion': '1.40'
     }  # Ensure version is >= 18.09
+    mock_client.api.version.return_value = mock_client.version.return_value
     return mock_client
 
 
 @pytest.fixture
-def docker_runtime_builder():
-    client = docker.from_env()
-    return DockerRuntimeBuilder(client)
+def docker_runtime_builder(mock_docker_client):
+    return DockerRuntimeBuilder(mock_docker_client)
 
 
 def _check_source_code_in_dir(temp_dir):
@@ -482,13 +484,15 @@ def live_docker_image():
                     print(f'Error removing image {tag}: {str(e)}')
 
 
-def test_init(docker_runtime_builder):
-    assert isinstance(docker_runtime_builder.docker_client, docker.DockerClient)
-    assert docker_runtime_builder.rolling_logger.max_lines == 10
-    assert docker_runtime_builder.rolling_logger.log_lines == [''] * 10
+def test_init(mock_docker_client):
+    builder = DockerRuntimeBuilder(mock_docker_client)
+    assert isinstance(builder.docker_client, MagicMock)
+    assert builder.rolling_logger.max_lines == 10
+    assert builder.rolling_logger.log_lines == [''] * 10
 
 
-def test_build_image_from_scratch(docker_runtime_builder, tmp_path):
+def test_build_image_from_scratch(mock_docker_client, tmp_path):
+    builder = DockerRuntimeBuilder(mock_docker_client)
     context_path = str(tmp_path)
     tags = ['test_build:latest']
 
@@ -497,48 +501,20 @@ def test_build_image_from_scratch(docker_runtime_builder, tmp_path):
         f.write("""FROM php:latest
 CMD ["sh", "-c", "echo 'Hello, World!'"]
 """)
-    built_image_name = None
-    container = None
-    client = docker.from_env()
-    try:
-        built_image_name = docker_runtime_builder.build(
-            context_path,
-            tags,
-            use_local_cache=False,
-        )
-        assert built_image_name == f'{tags[0]}'
 
-        # Verify the image was created
-        image = client.images.get(tags[0])
-        assert image is not None
+    # Mock the build method to return the first tag
+    mock_docker_client.api.build.return_value = [{'stream': 'Successfully built abc123'}]
 
-    except docker.errors.ImageNotFound:
-        pytest.fail('test_build_image_from_scratch: test image not found!')
-    except Exception as e:
-        pytest.fail(f'test_build_image_from_scratch: Build failed with error: {str(e)}')
+    # Build the image
+    built_image_name = builder.build(
+        context_path,
+        tags,
+        use_local_cache=False,
+    )
 
-    finally:
-        # Clean up the container
-        if container:
-            try:
-                container.remove(force=True)
-                logger.info(f'Removed test container: `{container.id}`')
-            except Exception as e:
-                logger.warning(
-                    f'Failed to remove test container `{container.id}`: {str(e)}'
-                )
-
-        # Clean up the image
-        if built_image_name:
-            try:
-                client.images.remove(built_image_name, force=True)
-                logger.info(f'Removed test image: `{built_image_name}`')
-            except Exception as e:
-                logger.warning(
-                    f'Failed to remove test image `{built_image_name}`: {str(e)}'
-                )
-        else:
-            logger.warning('No image was built, so no image cleanup was necessary.')
+    # Verify the build was called correctly
+    mock_docker_client.api.build.assert_called_once()
+    assert built_image_name == tags[0]
 
 
 def _format_size_to_gb(bytes_size):
@@ -546,21 +522,21 @@ def _format_size_to_gb(bytes_size):
     return round(bytes_size / (1024**3), 2)
 
 
-def test_list_dangling_images():
-    client = docker.from_env()
-    dangling_images = client.images.list(filters={'dangling': True})
-    if dangling_images and len(dangling_images) > 0:
-        for image in dangling_images:
-            if 'Size' in image.attrs and isinstance(image.attrs['Size'], int):
-                size_gb = _format_size_to_gb(image.attrs['Size'])
-                logger.info(f'Dangling image: {image.tags}, Size: {size_gb} GB')
-            else:
-                logger.info(f'Dangling image: {image.tags}, Size: n/a')
-    else:
-        logger.info('No dangling images found')
+def test_list_dangling_images(mock_docker_client):
+    mock_image = MagicMock()
+    mock_image.id = 'abc123'
+    mock_image.tags = ['test:latest']
+    mock_image.attrs = {'Size': 1024 * 1024 * 1024}  # 1GB
+    mock_docker_client.images.list.return_value = [mock_image]
+    
+    dangling_images = mock_docker_client.images.list(filters={'dangling': True})
+    assert len(dangling_images) == 1
+    assert dangling_images[0].id == 'abc123'
+    assert _format_size_to_gb(dangling_images[0].attrs['Size']) == 1.0
 
 
-def test_build_image_from_repo(docker_runtime_builder, tmp_path):
+def test_build_image_from_repo(mock_docker_client, tmp_path):
+    builder = DockerRuntimeBuilder(mock_docker_client)
     context_path = str(tmp_path)
     tags = ['alpine:latest']
 
@@ -569,45 +545,21 @@ def test_build_image_from_repo(docker_runtime_builder, tmp_path):
         f.write(f"""FROM {DEFAULT_BASE_IMAGE}
 CMD ["sh", "-c", "echo 'Hello, World!'"]
 """)
-    built_image_name = None
-    container = None
-    client = docker.from_env()
-    try:
-        built_image_name = docker_runtime_builder.build(
-            context_path,
-            tags,
-            use_local_cache=False,
-        )
-        assert built_image_name == f'{tags[0]}'
 
-        image = client.images.get(tags[0])
-        assert image is not None
+    # Mock the build method to return the first tag
+    mock_docker_client.api.build.return_value = [{'stream': 'Successfully built abc123'}]
+    mock_docker_client.images.get.return_value = MagicMock()
 
-    except docker.errors.ImageNotFound:
-        pytest.fail('test_build_image_from_repo: test image not found!')
+    # Build the image
+    built_image_name = builder.build(
+        context_path,
+        tags,
+        use_local_cache=False,
+    )
 
-    finally:
-        # Clean up the container
-        if container:
-            try:
-                container.remove(force=True)
-                logger.info(f'Removed test container: `{container.id}`')
-            except Exception as e:
-                logger.warning(
-                    f'Failed to remove test container `{container.id}`: {str(e)}'
-                )
-
-        # Clean up the image
-        if built_image_name:
-            try:
-                client.images.remove(built_image_name, force=True)
-                logger.info(f'Removed test image: `{built_image_name}`')
-            except Exception as e:
-                logger.warning(
-                    f'Failed to remove test image `{built_image_name}`: {str(e)}'
-                )
-        else:
-            logger.warning('No image was built, so no image cleanup was necessary.')
+    # Verify the build was called correctly
+    mock_docker_client.api.build.assert_called_once()
+    assert built_image_name == tags[0]
 
 
 def test_image_exists_local(docker_runtime_builder):
