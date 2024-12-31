@@ -91,7 +91,7 @@ def display_event(event: Event, config: AppConfig):
         display_confirmation(event.confirmation_state)
 
 
-async def main():
+async def main(loop):
     """Runs the agent in CLI mode"""
 
     parser = get_parser()
@@ -150,7 +150,6 @@ async def main():
 
     async def prompt_for_next_task():
         # Run input() in a thread pool to avoid blocking the event loop
-        loop = asyncio.get_event_loop()
         print('prompting for message')
         next_message = await loop.run_in_executor(
             None, lambda: input('How can I help? >> ')
@@ -169,13 +168,13 @@ async def main():
         print('added event')
 
     async def prompt_for_user_confirmation():
-        loop = asyncio.get_event_loop()
         user_confirmation = await loop.run_in_executor(
             None, lambda: input('Confirm action (possible security risk)? (y/n) >> ')
         )
         return user_confirmation.lower() == 'y'
 
     async def on_event_async(event: Event):
+        print('on event async', event)
         display_event(event, config)
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state in [
@@ -199,7 +198,7 @@ async def main():
 
     def on_event(event: Event) -> None:
         if isinstance(event, Action):
-            asyncio.get_event_loop().create_task(on_event_async(event))
+            loop.create_task(on_event_async(event))
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
@@ -216,7 +215,7 @@ if __name__ == '__main__':
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(main())
+        loop.run_until_complete(main(loop))
     except KeyboardInterrupt:
         print('Received keyboard interrupt, shutting down...')
     except ConnectionRefusedError as e:
