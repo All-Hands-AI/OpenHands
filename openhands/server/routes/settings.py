@@ -18,12 +18,8 @@ ConversationStoreImpl = get_impl(
 
 
 @app.get('/settings')
-async def load_settings(
-    request: Request,
-) -> Settings | None:
-    github_token = ''
-    if hasattr(request.state, 'github_token'):
-        github_token = request.state.github_token
+async def load_settings(request: Request) -> Settings | None:
+    github_token = getattr(request.state, 'github_token', '') or ''
     try:
         settings_store = await SettingsStoreImpl.get_instance(config, github_token)
         settings = await settings_store.load()

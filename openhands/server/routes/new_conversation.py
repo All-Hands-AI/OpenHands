@@ -36,10 +36,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     After successful initialization, the client should connect to the WebSocket
     using the returned conversation ID
     """
-    github_token = ''
-    if data.github_token:
-        github_token = data.github_token
-
+    github_token = data.github_token or ''
     settings_store = await SettingsStoreImpl.get_instance(config, github_token)
     settings = await settings_store.load()
 
@@ -110,10 +107,11 @@ async def search_conversations(
 
 
 async def _get_conversation_info(
-    session_id: str, is_running: bool, file_store: FileStore
+    session_id: str, is_running: bool, file_store: FileStore, request: Request,
 ) -> ConversationInfo | None:
     try:
-        conversation_store = await ConversationStoreImpl.get_instance(config)
+        github_token = getattr(request.state, 'github_token', '') or ''
+        conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
         metadata = await conversation_store.get_metadata(session_id)
         events_dir = get_conversation_events_dir(session_id)
         events = file_store.list(events_dir)
@@ -149,8 +147,9 @@ async def get_conversation(conversation_id: str) -> ConversationInfo | None:
 
 
 @app.post('/conversations/{conversation_id}')
-async def update_conversation(conversation_id: str, title: str) -> bool:
-    conversation_store = await ConversationStoreImpl.get_instance(config)
+async def update_conversation(conversation_id: str, title: str, request: Request) -> bool:
+    github_token = getattr(request.state, 'github_token', '') or ''
+    conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
     metadata = await conversation_store.get_metadata(conversation_id)
     if not metadata:
         return False
@@ -160,8 +159,9 @@ async def update_conversation(conversation_id: str, title: str) -> bool:
 
 
 @app.delete('/conversations/{conversation_id}')
-async def delete_conversation(conversation_id: str) -> bool:
-    conversation_store = await ConversationStoreImpl.get_instance(config)
+async def delete_conversation(conversation_id: str, request: Request,) -> bool:
+    github_token = getattr(request.state, 'github_token', '') or ''
+    conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
     try:
         await conversation_store.get_metadata(conversation_id)
     except FileNotFoundError:
