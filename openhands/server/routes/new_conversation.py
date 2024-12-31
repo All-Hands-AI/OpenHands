@@ -52,9 +52,9 @@ async def new_conversation(request: Request, data: InitSessionRequest):
 
     user_id = ''
     if data.github_token:
-        g = Github(data.github_token)
-        gh_user = await call_sync_from_async(g.get_user)
-        user_id = gh_user.id
+        with Github(data.github_token) as g:
+            gh_user = await call_sync_from_async(g.get_user)
+            user_id = gh_user.id
 
     await conversation_store.save_metadata(
         ConversationMetadata(
