@@ -58,9 +58,6 @@ async def store_settings(
 
         if existing_settings:
             # Only update settings that are not None with the new values
-            for key, value in settings.__dict__.items():
-                if value is None:
-                    setattr(settings, key, getattr(existing_settings, key))
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
         await settings_store.store(settings)
