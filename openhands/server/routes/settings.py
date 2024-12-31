@@ -57,7 +57,7 @@ async def store_settings(
         existing_settings = await settings_store.load()
 
         if existing_settings:
-            # Only update settings that are not None with the new values
+            # LLM key isn't on the frontend, so we need to keep it if unset
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
         await settings_store.store(settings)
