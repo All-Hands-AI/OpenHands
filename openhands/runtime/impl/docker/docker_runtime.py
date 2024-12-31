@@ -1,11 +1,6 @@
 import atexit
-import os
-import tempfile
-import threading
 from functools import lru_cache
-from pathlib import Path
 from typing import Callable
-from zipfile import ZipFile
 
 import docker
 import requests
@@ -14,40 +9,20 @@ import tenacity
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import (
     AgentRuntimeDisconnectedError,
-    AgentRuntimeError,
     AgentRuntimeNotFoundError,
     AgentRuntimeNotReadyError,
-    AgentRuntimeTimeoutError,
 )
 from openhands.core.logger import DEBUG
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
-from openhands.events.action import (
-    ActionConfirmationStatus,
-    BrowseInteractiveAction,
-    BrowseURLAction,
-    CmdRunAction,
-    FileEditAction,
-    FileReadAction,
-    FileWriteAction,
-    IPythonRunCellAction,
-)
-from openhands.events.action.action import Action
-from openhands.events.observation import (
-    ErrorObservation,
-    NullObservation,
-    Observation,
-    UserRejectObservation,
-)
-from openhands.events.serialization import event_to_dict, observation_from_dict
-from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.base import Runtime
 from openhands.runtime.builder import DockerRuntimeBuilder
-from openhands.runtime.impl.eventstream.containers import remove_all_containers
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
+from openhands.runtime.impl.docker.containers import remove_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.log_streamer import LogStreamer
-from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
@@ -62,7 +37,7 @@ def remove_all_runtime_containers():
 _atexit_registered = False
 
 
-class EventStreamRuntime(Runtime):
+class DockerRuntime(ActionExecutionClient):
     """This runtime will subscribe the event stream.
     When receive an event, it will send the event to runtime-client which run inside the docker environment.
 
@@ -73,30 +48,6 @@ class EventStreamRuntime(Runtime):
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
     """
-
-    # Need to provide this method to allow inheritors to init the Runtime
-    # without initting the EventStreamRuntime.
-    def init_base_runtime(
-        self,
-        config: AppConfig,
-        event_stream: EventStream,
-        sid: str = 'default',
-        plugins: list[PluginRequirement] | None = None,
-        env_vars: dict[str, str] | None = None,
-        status_callback: Callable | None = None,
-        attach_to_existing: bool = False,
-        headless_mode: bool = True,
-    ):
-        super().__init__(
-            config,
-            event_stream,
-            sid,
-            plugins,
-            env_vars,
-            status_callback,
-            attach_to_existing,
-            headless_mode,
-        )
 
     def __init__(
         self,
@@ -121,7 +72,6 @@ class EventStreamRuntime(Runtime):
         self._vscode_url: str | None = None  # initial dummy value
         self._runtime_initialized: bool = False
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
-        self.session = requests.Session()
         self.status_callback = status_callback
 
         self.docker_client: docker.DockerClient = self._init_docker_client()
@@ -129,14 +79,13 @@ class EventStreamRuntime(Runtime):
         self.runtime_container_image = self.config.sandbox.runtime_container_image
         self.container_name = CONTAINER_NAME_PREFIX + sid
         self.container = None
-        self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
         self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
 
         # Buffer for container logs
         self.log_streamer: LogStreamer | None = None
 
-        self.init_base_runtime(
+        super().__init__(
             config,
             event_stream,
             sid,
@@ -153,6 +102,9 @@ class EventStreamRuntime(Runtime):
                 'debug',
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
             )
+
+    def _get_action_execution_server_host(self):
+        return self.api_url
 
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
@@ -399,25 +351,17 @@ class EventStreamRuntime(Runtime):
         if not self.log_streamer:
             raise AgentRuntimeNotReadyError('Runtime client is not ready.')
 
-        with send_request(
-            self.session,
-            'GET',
-            f'{self.api_url}/alive',
-            timeout=5,
-        ):
-            pass
+        self.check_if_alive()
 
     def close(self, rm_all_containers: bool | None = None):
-        """Closes the EventStreamRuntime and associated objects
+        """Closes the DockerRuntime and associated objects
 
         Parameters:
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix
         """
+        super().close()
         if self.log_streamer:
             self.log_streamer.close()
-
-        if self.session:
-            self.session.close()
 
         if rm_all_containers is None:
             rm_all_containers = self.config.sandbox.rm_all_containers
@@ -428,178 +372,6 @@ class EventStreamRuntime(Runtime):
             CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
         )
         remove_all_containers(close_prefix)
-
-    def run_action(self, action: Action) -> Observation:
-        if isinstance(action, FileEditAction):
-            return self.edit(action)
-
-        # set timeout to default if not set
-        if action.timeout is None:
-            action.timeout = self.config.sandbox.timeout
-
-        with self.action_semaphore:
-            if not action.runnable:
-                return NullObservation('')
-            if (
-                hasattr(action, 'confirmation_state')
-                and action.confirmation_state
-                == ActionConfirmationStatus.AWAITING_CONFIRMATION
-            ):
-                return NullObservation('')
-            action_type = action.action  # type: ignore[attr-defined]
-            if action_type not in ACTION_TYPE_TO_CLASS:
-                raise ValueError(f'Action {action_type} does not exist.')
-            if not hasattr(self, action_type):
-                return ErrorObservation(
-                    f'Action {action_type} is not supported in the current runtime.',
-                    error_id='AGENT_ERROR$BAD_ACTION',
-                )
-            if (
-                getattr(action, 'confirmation_state', None)
-                == ActionConfirmationStatus.REJECTED
-            ):
-                return UserRejectObservation(
-                    'Action has been rejected by the user! Waiting for further user input.'
-                )
-
-            assert action.timeout is not None
-
-            try:
-                with send_request(
-                    self.session,
-                    'POST',
-                    f'{self.api_url}/execute_action',
-                    json={'action': event_to_dict(action)},
-                    # wait a few more seconds to get the timeout error from client side
-                    timeout=action.timeout + 5,
-                ) as response:
-                    output = response.json()
-                    obs = observation_from_dict(output)
-                    obs._cause = action.id  # type: ignore[attr-defined]
-            except requests.Timeout:
-                raise AgentRuntimeTimeoutError(
-                    f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
-                )
-
-            return obs
-
-    def run(self, action: CmdRunAction) -> Observation:
-        return self.run_action(action)
-
-    def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        return self.run_action(action)
-
-    def read(self, action: FileReadAction) -> Observation:
-        return self.run_action(action)
-
-    def write(self, action: FileWriteAction) -> Observation:
-        return self.run_action(action)
-
-    def browse(self, action: BrowseURLAction) -> Observation:
-        return self.run_action(action)
-
-    def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        return self.run_action(action)
-
-    # ====================================================================
-    # Implement these methods (for file operations) in the subclass
-    # ====================================================================
-
-    def copy_to(
-        self, host_src: str, sandbox_dest: str, recursive: bool = False
-    ) -> None:
-        if not os.path.exists(host_src):
-            raise FileNotFoundError(f'Source file {host_src} does not exist')
-
-        try:
-            if recursive:
-                # For recursive copy, create a zip file
-                with tempfile.NamedTemporaryFile(
-                    suffix='.zip', delete=False
-                ) as temp_zip:
-                    temp_zip_path = temp_zip.name
-
-                with ZipFile(temp_zip_path, 'w') as zipf:
-                    for root, _, files in os.walk(host_src):
-                        for file in files:
-                            file_path = os.path.join(root, file)
-                            arcname = os.path.relpath(
-                                file_path, os.path.dirname(host_src)
-                            )
-                            zipf.write(file_path, arcname)
-
-                upload_data = {'file': open(temp_zip_path, 'rb')}
-            else:
-                # For single file copy
-                upload_data = {'file': open(host_src, 'rb')}
-
-            params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
-
-            with send_request(
-                self.session,
-                'POST',
-                f'{self.api_url}/upload_file',
-                files=upload_data,
-                params=params,
-                timeout=300,
-            ):
-                pass
-
-        except requests.Timeout:
-            raise AgentRuntimeTimeoutError('Copy operation timed out')
-        except Exception as e:
-            raise AgentRuntimeError(f'Copy operation failed: {str(e)}')
-        finally:
-            if recursive:
-                os.unlink(temp_zip_path)
-            self.log(
-                'debug', f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}'
-            )
-
-    def list_files(self, path: str | None = None) -> list[str]:
-        """List files in the sandbox.
-
-        If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
-        """
-
-        try:
-            data = {}
-            if path is not None:
-                data['path'] = path
-
-            with send_request(
-                self.session,
-                'POST',
-                f'{self.api_url}/list_files',
-                json=data,
-                timeout=10,
-            ) as response:
-                response_json = response.json()
-                assert isinstance(response_json, list)
-                return response_json
-        except requests.Timeout:
-            raise TimeoutError('List files operation timed out')
-
-    def copy_from(self, path: str) -> Path:
-        """Zip all files in the sandbox and return as a stream of bytes."""
-
-        try:
-            params = {'path': path}
-            with send_request(
-                self.session,
-                'GET',
-                f'{self.api_url}/download_files',
-                params=params,
-                stream=True,
-                timeout=30,
-            ) as response:
-                temp_file = tempfile.NamedTemporaryFile(delete=False)
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:  # filter out keep-alive new chunks
-                        temp_file.write(chunk)
-                return Path(temp_file.name)
-        except requests.Timeout:
-            raise TimeoutError('Copy operation timed out')
 
     def _is_port_in_use_docker(self, port):
         containers = self.docker_client.containers.list()
@@ -620,30 +392,12 @@ class EventStreamRuntime(Runtime):
 
     @property
     def vscode_url(self) -> str | None:
-        if self.vscode_enabled and self._runtime_initialized:
-            if (
-                hasattr(self, '_vscode_url') and self._vscode_url is not None
-            ):  # cached value
-                return self._vscode_url
-
-            with send_request(
-                self.session,
-                'GET',
-                f'{self.api_url}/vscode/connection_token',
-                timeout=10,
-            ) as response:
-                response_json = response.json()
-                assert isinstance(response_json, dict)
-                if response_json['token'] is None:
-                    return None
-                self._vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={response_json["token"]}&folder={self.config.workspace_mount_path_in_sandbox}'
-                self.log(
-                    'debug',
-                    f'VSCode URL: {self._vscode_url}',
-                )
-                return self._vscode_url
-        else:
+        token = super().get_vscode_token()
+        if not token:
             return None
+
+        vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        return vscode_url
 
     @property
     def web_hosts(self):

@@ -3,6 +3,7 @@ import React from "react";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FaServer } from "react-icons/fa";
+import toast from "react-hot-toast";
 import {
   ConversationProvider,
   useConversation,
@@ -22,21 +23,36 @@ import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "./event-handler";
 import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 import { useAuth } from "#/context/auth-context";
-import { useSettings } from "#/context/settings-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
+import {
+  Orientation,
+  ResizablePanel,
+} from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
+import { useEndSession } from "#/hooks/use-end-session";
+import { useUserConversation } from "#/hooks/query/get-conversation-permissions";
 import { CountBadge } from "#/components/layout/count-badge";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
+import { useSettings } from "#/hooks/query/use-settings";
+import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
 
 function AppContent() {
   const { gitHubToken } = useAuth();
-  const { settings } = useSettings();
+  const { data: settings } = useSettings();
+
+  const endSession = useEndSession();
+  const [width, setWidth] = React.useState(window.innerWidth);
+
   const { conversationId } = useConversation();
 
   const dispatch = useDispatch();
+
   useConversationConfig();
+  const { data: conversation, isFetched } = useUserConversation(
+    conversationId || null,
+  );
 
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initialQuery,
@@ -58,11 +74,37 @@ function AppContent() {
     [],
   );
 
+  React.useEffect(() => {
+    if (MULTI_CONVO_UI_IS_ENABLED && isFetched && !conversation) {
+      toast.error(
+        "This conversation does not exist, or you do not have permission to access it.",
+      );
+      endSession();
+    }
+  }, [conversation, isFetched]);
+
+  React.useEffect(() => {
+    dispatch(clearMessages());
+    dispatch(clearTerminal());
+    dispatch(clearJupyter());
+  }, [conversationId]);
+
   useEffectOnce(() => {
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
   });
+
+  function handleResize() {
+    setWidth(window.innerWidth);
+  }
+
+  React.useEffect(() => {
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   const {
     isOpen: securityModalIsOpen,
@@ -70,18 +112,32 @@ function AppContent() {
     onOpenChange: onSecurityModalOpenChange,
   } = useDisclosure();
 
-  return (
-    <WsClientProvider ghToken={gitHubToken} conversationId={conversationId}>
-      <EventHandler>
-        <div className="flex flex-col h-full gap-3">
-          <div className="flex h-full overflow-auto gap-3">
-            <Container className="w-full md:w-[390px] max-h-full relative">
-              <ChatInterface />
-            </Container>
-
-            <div className="hidden md:flex flex-col grow gap-3">
+  function renderMain() {
+    if (width <= 640) {
+      return (
+        <div className="rounded-xl overflow-hidden border border-neutral-600 w-full">
+          <ChatInterface />
+        </div>
+      );
+    }
+    return (
+      <ResizablePanel
+        orientation={Orientation.HORIZONTAL}
+        className="grow h-full min-h-0 min-w-0"
+        initialSize={500}
+        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-neutral-800"
+        secondClassName="flex flex-col overflow-hidden"
+        firstChild={<ChatInterface />}
+        secondChild={
+          <ResizablePanel
+            orientation={Orientation.VERTICAL}
+            className="grow h-full min-h-0 min-w-0"
+            initialSize={500}
+            firstClassName="rounded-xl overflow-hidden border border-neutral-600"
+            secondClassName="flex flex-col overflow-hidden"
+            firstChild={
               <Container
-                className="h-2/3"
+                className="h-full"
                 labels={[
                   { label: "Workspace", to: "", icon: <CodeIcon /> },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
@@ -106,18 +162,30 @@ function AppContent() {
                   <Outlet />
                 </FilesProvider>
               </Container>
-              {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-               * that it loads only in the client-side. */}
+            }
+            secondChild={
               <Container
-                className="h-1/3 overflow-scroll"
+                className="h-full overflow-scroll"
                 label={<TerminalStatusLabel />}
               >
+                {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
+                 * that it loads only in the client-side. */}
                 <React.Suspense fallback={<div className="h-full" />}>
                   <Terminal secrets={secrets} />
                 </React.Suspense>
               </Container>
-            </div>
-          </div>
+            }
+          />
+        }
+      />
+    );
+  }
+
+  return (
+    <WsClientProvider ghToken={gitHubToken} conversationId={conversationId}>
+      <EventHandler>
+        <div data-testid="app-route" className="flex flex-col h-full gap-3">
+          <div className="flex h-full overflow-auto">{renderMain()}</div>
 
           <div className="h-[60px]">
             <Controls

@@ -31,17 +31,6 @@ export function GitHubRepositoriesSuggestionBox({
     }
   };
 
-  if (isGitHubErrorReponse(repositories)) {
-    return (
-      <SuggestionBox
-        title="Error Fetching Repositories"
-        content={
-          <p className="text-danger text-center">{repositories.message}</p>
-        }
-      />
-    );
-  }
-
   const isLoggedIn = !!user && !isGitHubErrorReponse(user);
 
   return (
