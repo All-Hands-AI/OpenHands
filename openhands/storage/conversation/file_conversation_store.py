@@ -5,12 +5,17 @@ from dataclasses import dataclass
 
 from openhands.core.config.app_config import AppConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.data_models.conversation_metadata_result_set import ConversationMetadataResultSet
+from openhands.server.data_models.conversation_metadata_result_set import (
+    ConversationMetadataResultSet,
+)
 from openhands.storage import get_file_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.server.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.files import FileStore
-from openhands.storage.locations import CONVERSATION_BASE_DIR, get_conversation_metadata_filename
+from openhands.storage.locations import (
+    CONVERSATION_BASE_DIR,
+    get_conversation_metadata_filename,
+)
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.search_utils import offset_to_page_id, page_id_to_offset
 
@@ -40,9 +45,9 @@ class FileConversationStore(ConversationStore):
             return True
         except FileNotFoundError:
             return False
-        
+
     async def search(
-        self, 
+        self,
         page_id: str | None = None,
         limit: int = 20,
     ) -> ConversationMetadataResultSet:
@@ -69,7 +74,7 @@ class FileConversationStore(ConversationStore):
                 )
         next_page_id = offset_to_page_id(end, end < num_conversations)
         return ConversationMetadataResultSet(conversations, next_page_id)
-        
+
     def get_conversation_metadata_dir(self) -> str:
         return CONVERSATION_BASE_DIR
 

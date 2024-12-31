@@ -6,7 +6,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from openhands.server.data_models.conversation_info import ConversationInfo
-from openhands.server.data_models.conversation_info_result_set import ConversationInfoResultSet
+from openhands.server.data_models.conversation_info_result_set import (
+    ConversationInfoResultSet,
+)
 from openhands.server.data_models.conversation_status import ConversationStatus
 from openhands.server.routes.new_conversation import (
     get_conversation,
@@ -34,7 +36,7 @@ def _patch_store():
         json.dumps({'timestamp': '2025-01-01T00:00:00'}),
     )
     with patch(
-        'openhands.storage.conversation.conversation_store.get_file_store',
+        'openhands.storage.conversation.file_conversation_store.get_file_store',
         MagicMock(return_value=file_store),
     ):
         with patch(
@@ -47,7 +49,7 @@ def _patch_store():
 @pytest.mark.asyncio
 async def test_search_conversations():
     with _patch_store():
-        result_set = await search_conversations()
+        result_set = await search_conversations(MagicMock(state=MagicMock(github_token='')))
         expected = ConversationInfoResultSet(
             results=[
                 ConversationInfo(
@@ -65,7 +67,7 @@ async def test_search_conversations():
 @pytest.mark.asyncio
 async def test_get_conversation():
     with _patch_store():
-        conversation = await get_conversation('some_conversation_id')
+        conversation = await get_conversation('some_conversation_id', MagicMock(state=MagicMock(github_token='')))
         expected = ConversationInfo(
             id='some_conversation_id',
             title='Some Conversation',
@@ -82,4 +84,4 @@ async def test_get_missing_conversation():
         'openhands.server.routes.new_conversation.session_manager.file_store',
         InMemoryFileStore({}),
     ):
-        assert await get_conversation('no_such_conversation') is None
+        assert await get_conversation('no_such_conversation', MagicMock(state=MagicMock(github_token=''))) is None

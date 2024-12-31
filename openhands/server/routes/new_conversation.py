@@ -10,7 +10,9 @@ from pydantic import BaseModel
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_metadata import ConversationMetadata
-from openhands.server.data_models.conversation_info_result_set import ConversationInfoResultSet
+from openhands.server.data_models.conversation_info_result_set import (
+    ConversationInfoResultSet,
+)
 from openhands.server.data_models.conversation_status import ConversationStatus
 from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
@@ -94,17 +96,22 @@ async def search_conversations(
     github_token = getattr(request.state, 'github_token', '') or ''
     conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
-    conversation_ids = set(conversation.conversation_id for conversation in conversation_metadata_result_set.results)
-    running_conversations = await session_manager.get_agent_loop_running(set(conversation_ids))
+    conversation_ids = set(
+        conversation.conversation_id
+        for conversation in conversation_metadata_result_set.results
+    )
+    running_conversations = await session_manager.get_agent_loop_running(
+        set(conversation_ids)
+    )
     result = ConversationInfoResultSet(
         results=await wait_all(
             _get_conversation_info(
                 conversation=conversation,
-                is_running=conversation.conversation_id in running_conversations
+                is_running=conversation.conversation_id in running_conversations,
             )
             for conversation in conversation_metadata_result_set.results
         ),
-        next_page_id=conversation_metadata_result_set.next_page_id
+        next_page_id=conversation_metadata_result_set.next_page_id,
     )
     return result
 
@@ -139,13 +146,18 @@ async def _get_conversation_info(
 
 
 @app.get('/conversations/{conversation_id}')
-async def get_conversation(conversation_id: str, request: Request) -> ConversationInfo | None:
-    file_store = session_manager.file_store
-    is_running = await session_manager.is_agent_loop_running(conversation_id)
-    conversation_info = await _get_conversation_info(
-        conversation_id, is_running, file_store, request
-    )
-    return conversation_info
+async def get_conversation(
+    conversation_id: str, request: Request
+) -> ConversationInfo | None:
+    github_token = getattr(request.state, 'github_token', '') or ''
+    conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
+    try:
+        metadata = await conversation_store.get_metadata(conversation_id)
+        is_running = await session_manager.is_agent_loop_running(conversation_id)
+        conversation_info = await _get_conversation_info(metadata, is_running)
+        return conversation_info
+    except FileNotFoundError:
+        return None
 
 
 @app.post('/conversations/{conversation_id}')
