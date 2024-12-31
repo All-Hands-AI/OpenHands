@@ -1,6 +1,6 @@
 # OpenHands MicroAgents
 
-MicroAgents are specialized AI assistants that enhance OpenHands with domain-specific knowledge and task-specific workflows. They help developers by providing expert guidance, automating common tasks, and ensuring consistent practices across projects. Each microagent is designed to excel in a specific area, from Git operations to code review processes.
+MicroAgents are specialized prompts that enhance OpenHands with domain-specific knowledge and task-specific workflows. They help developers by providing expert guidance, automating common tasks, and ensuring consistent practices across projects. Each microagent is designed to excel in a specific area, from Git operations to code review processes.
 
 OpenHands loads microagents from two distinct sources:
 
