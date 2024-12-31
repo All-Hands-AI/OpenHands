@@ -11,7 +11,7 @@ import {
   Conversation,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings, Settings } from "#/services/settings";
+import { ApiSettings } from "#/services/settings";
 
 class OpenHands {
   /**
@@ -238,13 +238,11 @@ class OpenHands {
   }
 
   static async createConversation(
-    settings: Settings,
     githubToken?: string,
     selectedRepository?: string,
   ): Promise<Conversation> {
     const body = {
       github_token: githubToken,
-      args: settings,
       selected_repository: selectedRepository,
     };
 
