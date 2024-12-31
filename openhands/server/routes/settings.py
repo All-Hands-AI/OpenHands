@@ -4,12 +4,17 @@ from fastapi.responses import JSONResponse
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.settings import Settings
 from openhands.server.shared import config, openhands_config
-from openhands.storage.settings_store import SettingsStore
+from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.import_utils import get_impl
 
 app = APIRouter(prefix='/api')
 
 SettingsStoreImpl = get_impl(SettingsStore, openhands_config.settings_store_class)  # type: ignore
+ConversationStoreImpl = get_impl(
+    ConversationStore,
+    openhands_config.conversation_store_class,  # type: ignore
+)
 
 
 @app.get('/settings')
