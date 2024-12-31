@@ -74,6 +74,9 @@ class EventStream:
         self._lock = threading.Lock()
         self._cur_id = 0
 
+        # load the stream
+        self.__post_init__()
+
     def __post_init__(self) -> None:
         try:
             events = self.file_store.list(get_conversation_events_dir(self.sid))
