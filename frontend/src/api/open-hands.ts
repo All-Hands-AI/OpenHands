@@ -8,8 +8,10 @@ import {
   GetConfigResponse,
   GetVSCodeUrlResponse,
   AuthenticateResponse,
+  Conversation,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
+import { ApiSettings, Settings } from "#/services/settings";
 
 class OpenHands {
   /**
@@ -219,6 +221,54 @@ class OpenHands {
     return data;
   }
 
+  static async getUserConversations(): Promise<Conversation[]> {
+    const { data } = await openHands.get<Conversation[]>("/api/conversations");
+    return data;
+  }
+
+  static async deleteUserConversation(conversationId: string): Promise<void> {
+    await openHands.delete(`/api/conversations/${conversationId}`);
+  }
+
+  static async updateUserConversation(
+    conversationId: string,
+    conversation: Partial<Omit<Conversation, "id">>,
+  ): Promise<void> {
+    await openHands.put(`/api/conversations/${conversationId}`, conversation);
+  }
+
+  static async createConversation(
+    settings: Settings,
+    githubToken?: string,
+    selectedRepository?: string,
+  ): Promise<Conversation> {
+    const body = {
+      github_token: githubToken,
+      args: settings,
+      selected_repository: selectedRepository,
+    };
+
+    const { data } = await openHands.post<Conversation>(
+      "/api/conversations",
+      body,
+    );
+
+    // TODO: remove this once we have a multi-conversation UI
+    localStorage.setItem("latest_conversation_id", data.conversation_id);
+
+    return data;
+  }
+
+  static async getConversation(
+    conversationId: string,
+  ): Promise<Conversation | null> {
+    const { data } = await openHands.get<Conversation | null>(
+      `/api/conversations/${conversationId}`,
+    );
+
+    return data;
+  }
+
   static async searchEvents(
     conversationId: string,
     params: {
@@ -248,21 +298,21 @@ class OpenHands {
     return data;
   }
 
-  static async newConversation(params: {
-    githubToken?: string;
-    args?: Record<string, unknown>;
-    selectedRepository?: string;
-  }): Promise<{ conversation_id: string }> {
-    const { data } = await openHands.post<{
-      conversation_id: string;
-    }>("/api/conversations", {
-      github_token: params.githubToken,
-      args: params.args,
-      selected_repository: params.selectedRepository,
-    });
-    // TODO: remove this once we have a multi-conversation UI
-    localStorage.setItem("latest_conversation_id", data.conversation_id);
+  /**
+   * Get the settings from the server or use the default settings if not found
+   */
+  static async getSettings(): Promise<ApiSettings> {
+    const { data } = await openHands.get<ApiSettings>("/api/settings");
     return data;
+  }
+
+  /**
+   * Save the settings to the server. Only valid settings are saved.
+   * @param settings - the settings to save
+   */
+  static async saveSettings(settings: Partial<ApiSettings>): Promise<boolean> {
+    const data = await openHands.post("/api/settings", settings);
+    return data.status === 200;
   }
 }
 

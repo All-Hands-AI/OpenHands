@@ -122,6 +122,12 @@ class LLM(RetryMixin, DebugMixin):
         if self.is_function_calling_active():
             logger.debug('LLM: model supports function calling')
 
+        # Compatibility flag: use string serializer for DeepSeek models
+        # See this issue: https://github.com/All-Hands-AI/OpenHands/issues/5818
+        self._use_string_serializer = False
+        if 'deepseek' in self.config.model:
+            self._use_string_serializer = True
+
         # if using a custom tokenizer, make sure it's loaded and accessible in the format expected by litellm
         if self.config.custom_tokenizer is not None:
             self.tokenizer = create_pretrained_tokenizer(self.config.custom_tokenizer)
@@ -353,7 +359,9 @@ class LLM(RetryMixin, DebugMixin):
             # noinspection PyBroadException
             except Exception:
                 pass
-        logger.debug(f'Model info: {self.model_info}')
+        from openhands.core.utils import json
+
+        logger.debug(f'Model info: {json.dumps(self.model_info, indent=2)}')
 
         if self.config.model.startswith('huggingface'):
             # HF doesn't support the OpenAI default value for top_p (1)
@@ -618,6 +626,8 @@ class LLM(RetryMixin, DebugMixin):
             message.cache_enabled = self.is_caching_prompt_active()
             message.vision_enabled = self.vision_is_active()
             message.function_calling_enabled = self.is_function_calling_active()
+            if 'deepseek' in self.config.model:
+                message.force_string_serializer = True
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]
