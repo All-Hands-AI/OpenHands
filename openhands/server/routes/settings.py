@@ -27,9 +27,14 @@ async def load_settings(
     try:
         settings_store = await SettingsStoreImpl.get_instance(config, github_token)
         settings = await settings_store.load()
-        if settings:
-            # For security reasons we don't ever send the api key to the client
-            settings.llm_api_key = 'SET' if settings.llm_api_key else None
+        if not settings:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Settings not found'},
+            )
+
+        # For security reasons we don't ever send the api key to the client
+        settings.llm_api_key = 'SET' if settings.llm_api_key else None
         return settings
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
