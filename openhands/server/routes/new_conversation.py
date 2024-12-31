@@ -33,8 +33,10 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     if data.github_token:
         github_token = data.github_token
 
+    logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, github_token)
     settings = await settings_store.load()
+    logger.info('Settings loaded')
 
     session_init_args: dict = {}
     if settings:
@@ -44,7 +46,9 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     session_init_args['selected_repository'] = data.selected_repository
     conversation_init_data = ConversationInitData(**session_init_args)
 
+    logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
+    logger.info('Conversation store loaded')
 
     conversation_id = uuid.uuid4().hex
     while await conversation_store.exists(conversation_id):
