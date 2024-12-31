@@ -198,7 +198,7 @@ async def main():
                     ChangeAgentStateAction(AgentState.USER_REJECTED), EventSource.USER
                 )
 
-    def on_event(self, event: Event) -> None:
+    def on_event(event: Event) -> None:
         print('EVENT', event, flush=True)
         if isinstance(event, Action):
             asyncio.get_event_loop().create_task(on_event_async(event))
