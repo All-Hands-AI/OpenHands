@@ -2,7 +2,6 @@
 name: npm
 version: 1.0.0
 agent: CodeActAgent
-category: development
 trigger_type: keyword
 triggers:
 - npm

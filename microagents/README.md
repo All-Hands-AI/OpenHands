@@ -123,7 +123,6 @@ All microagents use markdown files with YAML frontmatter:
     version: 1.0.0
     author: openhands
     agent: CodeActAgent
-    category: development
     task_type: workflow
     inputs:
       - name: PR_URL
