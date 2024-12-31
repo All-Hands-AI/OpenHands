@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from openhands.server.data_models.conversation_info import ConversationInfo
-from openhands.server.data_models.conversation_info_result_set import ConversationResultSet
+from openhands.server.data_models.conversation_info_result_set import ConversationInfoResultSet
 from openhands.server.data_models.conversation_status import ConversationStatus
 from openhands.server.routes.new_conversation import (
     get_conversation,
@@ -48,7 +48,7 @@ def _patch_store():
 async def test_search_conversations():
     with _patch_store():
         result_set = await search_conversations()
-        expected = ConversationResultSet(
+        expected = ConversationInfoResultSet(
             results=[
                 ConversationInfo(
                     id='some_conversation_id',
