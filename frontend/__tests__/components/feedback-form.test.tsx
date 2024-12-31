@@ -1,11 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as router from "react-router";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 // Mock useParams before importing components
 vi.mock("react-router", async () => {
   const actual = await vi.importActual("react-router");
   return {
-    ...actual as object,
+    ...(actual as object),
     useParams: () => ({ conversationId: "test-conversation-id" }),
   };
 });
@@ -14,10 +13,20 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import { FeedbackForm } from "#/components/features/feedback/feedback-form";
+import OpenHands from "#/api/open-hands";
 
 describe("FeedbackForm", () => {
   const user = userEvent.setup();
   const onCloseMock = vi.fn();
+
+  beforeAll(() => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "oss",
+      GITHUB_CLIENT_ID: "test-id",
+      POSTHOG_CLIENT_KEY: "test-key",
+    });
+  });
 
   afterEach(() => {
     vi.clearAllMocks();
