@@ -101,7 +101,7 @@ class CodeActAgent(Agent):
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
         )
         logger.debug(
-            f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
+            f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2, ensure_ascii=False).replace("\\n", "\n")}'
         )
         self.prompt_manager = PromptManager(
             microagent_dir=os.path.join(os.path.dirname(__file__), 'micro')
@@ -482,18 +482,7 @@ class CodeActAgent(Agent):
                 if message:
                     if message.role == 'user':
                         self.prompt_manager.enhance_message(message)
-                    # handle error if the message is the SAME role as the previous message
-                    # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
-                    # there shouldn't be two consecutive messages from the same role
-                    # NOTE: we shouldn't combine tool messages because each of them has a different tool_call_id
-                    if (
-                        messages
-                        and messages[-1].role == message.role
-                        and message.role != 'tool'
-                    ):
-                        messages[-1].content.extend(message.content)
-                    else:
-                        messages.append(message)
+                    messages.append(message)
 
         if self.llm.is_caching_prompt_active():
             # NOTE: this is only needed for anthropic

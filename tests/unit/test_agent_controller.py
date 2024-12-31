@@ -387,3 +387,152 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
     # In headless mode, throttling results in an error
     assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_stream):
+    """Test reset() when there's a pending action with tool call metadata but no observation."""
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Create a pending action with tool call metadata
+    pending_action = CmdRunAction(command='test')
+    pending_action.tool_call_metadata = {
+        'function': 'test_function',
+        'args': {'arg1': 'value1'},
+    }
+    controller._pending_action = pending_action
+
+    # Call reset
+    controller._reset()
+
+    # Verify that an ErrorObservation was added to the event stream
+    mock_event_stream.add_event.assert_called_once()
+    args, kwargs = mock_event_stream.add_event.call_args
+    error_obs, source = args
+    assert isinstance(error_obs, ErrorObservation)
+    assert error_obs.content == 'The action has not been executed.'
+    assert error_obs.tool_call_metadata == pending_action.tool_call_metadata
+    assert error_obs._cause == pending_action.id
+    assert source == EventSource.AGENT
+
+    # Verify that pending action was reset
+    assert controller._pending_action is None
+
+    # Verify that agent.reset() was called
+    mock_agent.reset.assert_called_once()
+    await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_reset_with_pending_action_existing_observation(
+    mock_agent, mock_event_stream
+):
+    """Test reset() when there's a pending action with tool call metadata and an existing observation."""
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Create a pending action with tool call metadata
+    pending_action = CmdRunAction(command='test')
+    pending_action.tool_call_metadata = {
+        'function': 'test_function',
+        'args': {'arg1': 'value1'},
+    }
+    controller._pending_action = pending_action
+
+    # Add an existing observation to the history
+    existing_obs = ErrorObservation(content='Previous error')
+    existing_obs.tool_call_metadata = pending_action.tool_call_metadata
+    controller.state.history.append(existing_obs)
+
+    # Call reset
+    controller._reset()
+
+    # Verify that no new ErrorObservation was added to the event stream
+    mock_event_stream.add_event.assert_not_called()
+
+    # Verify that pending action was reset
+    assert controller._pending_action is None
+
+    # Verify that agent.reset() was called
+    mock_agent.reset.assert_called_once()
+    await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_reset_without_pending_action(mock_agent, mock_event_stream):
+    """Test reset() when there's no pending action."""
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Call reset
+    controller._reset()
+
+    # Verify that no ErrorObservation was added to the event stream
+    mock_event_stream.add_event.assert_not_called()
+
+    # Verify that pending action is None
+    assert controller._pending_action is None
+
+    # Verify that agent.reset() was called
+    mock_agent.reset.assert_called_once()
+    await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_reset_with_pending_action_no_metadata(
+    mock_agent, mock_event_stream, monkeypatch
+):
+    """Test reset() when there's a pending action without tool call metadata."""
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Create a pending action without tool call metadata
+    pending_action = CmdRunAction(command='test')
+    # Mock hasattr to return False for tool_call_metadata
+    original_hasattr = hasattr
+
+    def mock_hasattr(obj, name):
+        if obj == pending_action and name == 'tool_call_metadata':
+            return False
+        return original_hasattr(obj, name)
+
+    monkeypatch.setattr('builtins.hasattr', mock_hasattr)
+    controller._pending_action = pending_action
+
+    # Call reset
+    controller._reset()
+
+    # Verify that no ErrorObservation was added to the event stream
+    mock_event_stream.add_event.assert_not_called()
+
+    # Verify that pending action was reset
+    assert controller._pending_action is None
+
+    # Verify that agent.reset() was called
+    mock_agent.reset.assert_called_once()
+    await controller.close()

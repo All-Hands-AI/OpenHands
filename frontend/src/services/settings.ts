@@ -1,5 +1,3 @@
-import { openHands } from "#/api/open-hands-axios";
-
 export const LATEST_SETTINGS_VERSION = 5;
 
 export type Settings = {
@@ -49,6 +47,11 @@ export const settingsAreUpToDate = () =>
   getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
 
 // TODO: localStorage settings are deprecated. Remove this after 1/31/2025
+/**
+ * Get the settings from local storage
+ * @returns the settings from local storage
+ * @deprecated
+ */
 export const getLocalStorageSettings = (): Settings => {
   const llmModel = localStorage.getItem("LLM_MODEL");
   const baseUrl = localStorage.getItem("LLM_BASE_URL");
