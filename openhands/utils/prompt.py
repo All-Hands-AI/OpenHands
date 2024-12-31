@@ -36,11 +36,10 @@ class PromptManager:
 
         microagent_files = []
         if microagent_dir:
-            microagent_files = [
-                os.path.join(microagent_dir, f)
-                for f in os.listdir(microagent_dir)
-                if f.endswith('.md')
-            ]
+            for root, _, files in os.walk(microagent_dir):
+                for f in files:
+                    if f.endswith('.md') and f != 'README.md':
+                        microagent_files.append(os.path.join(root, f))
         for microagent_file in microagent_files:
             microagent = MicroAgent(path=microagent_file)
             if (

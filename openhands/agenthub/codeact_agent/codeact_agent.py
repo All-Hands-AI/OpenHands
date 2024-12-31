@@ -103,7 +103,12 @@ class CodeActAgent(Agent):
             f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
         )
         self.prompt_manager = PromptManager(
-            microagent_dir=os.path.join(os.path.dirname(__file__), 'micro')
+            microagent_dir=os.path.join(
+                os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                ),
+                'microagents',
+            )
             if self.config.use_microagents
             else None,
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
