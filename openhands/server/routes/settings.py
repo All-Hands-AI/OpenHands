@@ -54,14 +54,6 @@ async def store_settings(
         github_token = request.state.github_token
     try:
         settings_store = await SettingsStoreImpl.get_instance(config, github_token)
-        existing_settings = await settings_store.load()
-        if existing_settings:
-            # Only update settings that are not None with the new values
-            for key, value in settings.__dict__.items():
-                if value is None:
-                    setattr(settings, key, getattr(existing_settings, key))
-            if settings.llm_api_key is None:
-                settings.llm_api_key = existing_settings.llm_api_key
         await settings_store.store(settings)
         return JSONResponse(
             status_code=status.HTTP_200_OK,
