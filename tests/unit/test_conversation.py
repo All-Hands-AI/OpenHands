@@ -49,7 +49,9 @@ def _patch_store():
 @pytest.mark.asyncio
 async def test_search_conversations():
     with _patch_store():
-        result_set = await search_conversations(MagicMock(state=MagicMock(github_token='')))
+        result_set = await search_conversations(
+            MagicMock(state=MagicMock(github_token=''))
+        )
         expected = ConversationInfoResultSet(
             results=[
                 ConversationInfo(
@@ -67,7 +69,9 @@ async def test_search_conversations():
 @pytest.mark.asyncio
 async def test_get_conversation():
     with _patch_store():
-        conversation = await get_conversation('some_conversation_id', MagicMock(state=MagicMock(github_token='')))
+        conversation = await get_conversation(
+            'some_conversation_id', MagicMock(state=MagicMock(github_token=''))
+        )
         expected = ConversationInfo(
             id='some_conversation_id',
             title='Some Conversation',
@@ -84,4 +88,9 @@ async def test_get_missing_conversation():
         'openhands.server.routes.new_conversation.session_manager.file_store',
         InMemoryFileStore({}),
     ):
-        assert await get_conversation('no_such_conversation', MagicMock(state=MagicMock(github_token=''))) is None
+        assert (
+            await get_conversation(
+                'no_such_conversation', MagicMock(state=MagicMock(github_token=''))
+            )
+            is None
+        )
