@@ -16,13 +16,13 @@ Directory structure:
 ```
 OpenHands/microagents/
 ├── knowledge/     # Keyword-triggered expertise
-│   ├── git.yaml      # Git operations
-│   ├── testing.yaml  # Testing practices
-│   └── docker.yaml   # Docker guidelines
+│   ├── git.md      # Git operations
+│   ├── testing.md  # Testing practices
+│   └── docker.md   # Docker guidelines
 └── tasks/        # Interactive workflows
-    ├── pr_review.yaml   # PR review process
-    ├── bug_fix.yaml     # Bug fixing workflow
-    └── feature.yaml     # Feature implementation
+    ├── pr_review.md   # PR review process
+    ├── bug_fix.md     # Bug fixing workflow
+    └── feature.md     # Feature implementation
 ```
 
 ### 2. Repository Instructions (Private)
@@ -132,7 +132,7 @@ You don't need to do this unless the user asks you to, or if you're trying to ru
 
 Before pushing any changes, you should ensure that any lint errors or simple test errors have been fixed.
 
-* If you've made changes to the backend, you should run `pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml`
+* If you've made changes to the backend, you should run `pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.md`
 * If you've made changes to the frontend, you should run `cd frontend && npm run lint:fix && npm run build ; cd ..`
 
 If either command fails, it may have automatically fixed some issues. You should fix any issues that weren't automatically fixed,
