@@ -13,8 +13,8 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 
+from litellm import ChatCompletionMessageToolCall, ModelInfo, PromptTokensDetails
 from litellm import Message as LiteLLMMessage
-from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
@@ -246,7 +246,9 @@ class LLM(RetryMixin, DebugMixin):
                     resp.choices[0].message = fn_call_response_message
 
                 message_back: str = resp['choices'][0]['message']['content'] or ''
-                tool_calls = resp['choices'][0]['message'].get('tool_calls', [])
+                tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
+                    'message'
+                ].get('tool_calls', [])
                 if tool_calls:
                     for tool_call in tool_calls:
                         fn_name = tool_call.function.name
