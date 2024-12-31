@@ -47,7 +47,6 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
-from openhands.utils.shutdown_listener import should_continue
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -64,7 +63,6 @@ class AgentController:
     confirmation_mode: bool
     agent_to_llm_config: dict[str, LLMConfig]
     agent_configs: dict[str, AgentConfig]
-    agent_task: asyncio.Future | None = None
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
     _pending_action: Action | None = None
@@ -109,7 +107,6 @@ class AgentController:
             headless_mode: Whether the agent is run in headless mode.
             status_callback: Optional callback function to handle status updates.
         """
-        self._step_lock = asyncio.Lock()
         self.id = sid
         self.agent = agent
         self.headless_mode = headless_mode
@@ -199,32 +196,44 @@ class AgentController:
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
             self.status_callback('error', err_id, type(e).__name__ + ': ' + str(e))
 
-    async def start_step_loop(self):
-        """The main loop for the agent's step-by-step execution."""
-        self.log('info', 'Starting step loop...')
-        while True:
-            if not self._is_awaiting_observation() and not should_continue():
-                break
-            if self._closed:
-                break
-            try:
-                await self._step()
-            except asyncio.CancelledError:
-                self.log('debug', 'AgentController task was cancelled')
-                break
-            except Exception as e:
-                traceback.print_exc()
-                self.log('error', f'Error while running the agent: {e}')
-                await self._react_to_exception(e)
+    def step(self):
+        asyncio.create_task(self._step_with_exception_handling())
 
-            await asyncio.sleep(0.1)
+    async def _step_with_exception_handling(self):
+        try:
+            await self._step()
+        except Exception as e:
+            traceback.print_exc()
+            self.log('error', f'Error while running the agent: {e}')
+            reported = RuntimeError(
+                'There was an unexpected error while running the agent.'
+            )
+            if isinstance(e, litellm.LLMError):
+                reported = e
+            await self._react_to_exception(reported)
 
-    async def on_event(self, event: Event) -> None:
+    def should_step(self, event: Event) -> bool:
+        if isinstance(event, Action):
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                return True
+            return False
+        if isinstance(event, Observation):
+            if isinstance(event, NullObservation) or isinstance(
+                event, AgentStateChangedObservation
+            ):
+                return False
+            return True
+        return False
+
+    def on_event(self, event: Event) -> None:
         """Callback from the event stream. Notifies the controller of incoming events.
 
         Args:
             event (Event): The incoming event to process.
         """
+        asyncio.get_event_loop().run_until_complete(self._on_event(event))
+
+    async def _on_event(self, event: Event) -> None:
         if hasattr(event, 'hidden') and event.hidden:
             return
 
@@ -236,6 +245,9 @@ class AgentController:
             await self._handle_action(event)
         elif isinstance(event, Observation):
             await self._handle_observation(event)
+
+        if self.should_step(event):
+            self.step()
 
     async def _handle_action(self, action: Action) -> None:
         """Handles actions from the event stream.
@@ -335,6 +347,28 @@ class AgentController:
     def _reset(self) -> None:
         """Resets the agent controller"""
 
+        # make sure there is an Observation with the tool call metadata to be recognized by the agent
+        # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
+        if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata'):
+            # find out if there already is an observation with the same tool call metadata
+            found_observation = False
+            for event in self.state.history:
+                if (
+                    isinstance(event, Observation)
+                    and event.tool_call_metadata
+                    == self._pending_action.tool_call_metadata
+                ):
+                    found_observation = True
+                    break
+
+            # make a new ErrorObservation with the tool call metadata
+            if not found_observation:
+                obs = ErrorObservation(content='The action has not been executed.')
+                obs.tool_call_metadata = self._pending_action.tool_call_metadata
+                obs._cause = self._pending_action.id  # type: ignore[attr-defined]
+                self.event_stream.add_event(obs, EventSource.AGENT)
+
+        # reset the pending action, this will be called when the agent is STOPPED or ERROR
         self._pending_action = None
         self.agent.reset()
 
@@ -465,19 +499,16 @@ class AgentController:
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
         if self.get_agent_state() != AgentState.RUNNING:
-            await asyncio.sleep(1)
             return
 
         if self._pending_action:
-            await asyncio.sleep(1)
             return
 
         if self.delegate is not None:
             assert self.delegate != self
-            if self.delegate.get_agent_state() == AgentState.PAUSED:
-                # no need to check too often
-                await asyncio.sleep(1)
-            else:
+            # TODO this conditional will always be false, because the parent controllers are unsubscribed
+            # remove if it's still useless when delegation is reworked
+            if self.delegate.get_agent_state() != AgentState.PAUSED:
                 await self._delegate_step()
             return
 
@@ -487,7 +518,6 @@ class AgentController:
             extra={'msg_type': 'STEP'},
         )
 
-        # check if agent hit the resources limit
         stop_step = False
         if self.state.iteration >= self.state.max_iterations:
             stop_step = await self._handle_traffic_control(
@@ -500,6 +530,7 @@ class AgentController:
                     'budget', current_cost, self.max_budget_per_task
                 )
         if stop_step:
+            logger.warning('Stopping agent due to traffic control')
             return
 
         if self._is_stuck():
@@ -954,7 +985,7 @@ class AgentController:
         return (
             f'AgentController(id={self.id}, agent={self.agent!r}, '
             f'event_stream={self.event_stream!r}, '
-            f'state={self.state!r}, agent_task={self.agent_task!r}, '
+            f'state={self.state!r}, '
             f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
         )
 

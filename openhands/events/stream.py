@@ -1,8 +1,9 @@
 import asyncio
 import threading
-from dataclasses import dataclass, field
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from enum import Enum
+from queue import Queue
 from typing import Callable, Iterable
 
 from openhands.core.logger import openhands_logger as logger
@@ -52,15 +53,26 @@ class AsyncEventStreamWrapper:
             yield await loop.run_in_executor(None, lambda e=event: e)  # type: ignore
 
 
-@dataclass
 class EventStream:
     sid: str
     file_store: FileStore
     # For each subscriber ID, there is a map of callback functions - useful
     # when there are multiple listeners
-    _subscribers: dict[str, dict[str, Callable]] = field(default_factory=dict)
+    _subscribers: dict[str, dict[str, Callable]]
     _cur_id: int = 0
-    _lock: threading.Lock = field(default_factory=threading.Lock)
+    _lock: threading.Lock
+
+    def __init__(self, sid: str, file_store: FileStore, num_workers: int = 1):
+        self.sid = sid
+        self.file_store = file_store
+        self._queue: Queue[Event] = Queue()
+        self._thread_pools: dict[str, dict[str, ThreadPoolExecutor]] = {}
+        self._queue_thread = threading.Thread(target=self._run_queue_loop)
+        self._queue_thread.daemon = True
+        self._queue_thread.start()
+        self._subscribers = {}
+        self._lock = threading.Lock()
+        self._cur_id = 0
 
     def __post_init__(self) -> None:
         try:
@@ -75,6 +87,10 @@ class EventStream:
             id = self._get_id_from_filename(event_str)
             if id >= self._cur_id:
                 self._cur_id = id + 1
+
+    def _init_thread_loop(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
     def _get_filename_for_id(self, id: int) -> str:
         return get_conversation_event_filename(self.sid, id)
@@ -157,8 +173,10 @@ class EventStream:
     def subscribe(
         self, subscriber_id: EventStreamSubscriber, callback: Callable, callback_id: str
     ):
+        pool = ThreadPoolExecutor(max_workers=1, initializer=self._init_thread_loop)
         if subscriber_id not in self._subscribers:
             self._subscribers[subscriber_id] = {}
+            self._thread_pools[subscriber_id] = {}
 
         if callback_id in self._subscribers[subscriber_id]:
             raise ValueError(
@@ -166,6 +184,7 @@ class EventStream:
             )
 
         self._subscribers[subscriber_id][callback_id] = callback
+        self._thread_pools[subscriber_id][callback_id] = pool
 
     def unsubscribe(self, subscriber_id: EventStreamSubscriber, callback_id: str):
         if subscriber_id not in self._subscribers:
@@ -179,13 +198,6 @@ class EventStream:
         del self._subscribers[subscriber_id][callback_id]
 
     def add_event(self, event: Event, source: EventSource):
-        try:
-            asyncio.get_running_loop().create_task(self._async_add_event(event, source))
-        except RuntimeError:
-            # No event loop running...
-            asyncio.run(self._async_add_event(event, source))
-
-    async def _async_add_event(self, event: Event, source: EventSource):
         if hasattr(event, '_id') and event.id is not None:
             raise ValueError(
                 'Event already has an ID. It was probably added back to the EventStream from inside a handler, trigging a loop.'
@@ -199,14 +211,22 @@ class EventStream:
         data = event_to_dict(event)
         if event.id is not None:
             self.file_store.write(self._get_filename_for_id(event.id), json.dumps(data))
-        tasks = []
-        for key in sorted(self._subscribers.keys()):
-            callbacks = self._subscribers[key]
-            for callback_id in callbacks:
-                callback = callbacks[callback_id]
-                tasks.append(asyncio.create_task(callback(event)))
-        if tasks:
-            await asyncio.wait(tasks)
+        self._queue.put(event)
+
+    def _run_queue_loop(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self._process_queue())
+
+    async def _process_queue(self):
+        while should_continue():
+            event = self._queue.get()
+            for key in sorted(self._subscribers.keys()):
+                callbacks = self._subscribers[key]
+                for callback_id in callbacks:
+                    callback = callbacks[callback_id]
+                    pool = self._thread_pools[key][callback_id]
+                    pool.submit(callback, event)
 
     def _callback(self, callback: Callable, event: Event):
         asyncio.run(callback(event))

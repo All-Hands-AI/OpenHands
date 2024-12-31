@@ -84,39 +84,6 @@ class AgentSession:
                 'Session already started. You need to close this session and start a new one.'
             )
 
-        asyncio.get_event_loop().run_in_executor(
-            None,
-            self._start_thread,
-            runtime_name,
-            config,
-            agent,
-            max_iterations,
-            max_budget_per_task,
-            agent_to_llm_config,
-            agent_configs,
-            github_token,
-            selected_repository,
-        )
-
-    def _start_thread(self, *args):
-        try:
-            asyncio.run(self._start(*args), debug=True)
-        except RuntimeError:
-            logger.error(f'Error starting session: {RuntimeError}', exc_info=True)
-            logger.debug('Session Finished')
-
-    async def _start(
-        self,
-        runtime_name: str,
-        config: AppConfig,
-        agent: Agent,
-        max_iterations: int,
-        max_budget_per_task: float | None = None,
-        agent_to_llm_config: dict[str, LLMConfig] | None = None,
-        agent_configs: dict[str, AgentConfig] | None = None,
-        github_token: str | None = None,
-        selected_repository: str | None = None,
-    ):
         if self._closed:
             logger.warning('Session closed before starting')
             return
@@ -141,9 +108,7 @@ class AgentSession:
         self.event_stream.add_event(
             ChangeAgentStateAction(AgentState.INIT), EventSource.ENVIRONMENT
         )
-        self.controller.agent_task = self.controller.start_step_loop()
         self._initializing = False
-        await self.controller.agent_task  # type: ignore
 
     def close(self):
         """Closes the Agent session"""
