@@ -524,38 +524,32 @@ def test_mismatched_tool_call_events(mock_state: State):
     """Tests that the agent can convert mismatched tool call events (i.e., an observation with no corresponding action) into messages."""
     agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
 
-    action = Mock(
-        spec=CmdRunAction,
-        source='agent',
-        tool_call_metadata=Mock(
-            spec=ToolCallMetadata,
-            model_response=Mock(
-                id='model_response_0',
-                choices=[
-                    Mock(
-                        message=Mock(
-                            role='assistant',
-                            content='',
-                            tool_calls=[
-                                Mock(
-                                    spec=ChatCompletionMessageToolCall, id='tool_call_0'
-                                )
-                            ],
-                        )
+    tool_call_metadata = Mock(
+        spec=ToolCallMetadata,
+        model_response=Mock(
+            id='model_response_0',
+            choices=[
+                Mock(
+                    message=Mock(
+                        role='assistant',
+                        content='',
+                        tool_calls=[
+                            Mock(spec=ChatCompletionMessageToolCall, id='tool_call_0')
+                        ],
                     )
-                ],
-            ),
+                )
+            ],
         ),
+        tool_call_id='tool_call_0',
+        function_name='foo',
     )
 
-    observation = Mock(
-        spec=CmdOutputObservation,
-        content='observation',
-        interpreter_details='',
-        tool_call_metadata=Mock(
-            spec=ToolCallMetadata, tool_call_id='tool_call_0', function_name='foo'
-        ),
-    )
+    action = CmdRunAction('foo')
+    action._source = 'agent'
+    action.tool_call_metadata = tool_call_metadata
+
+    observation = CmdOutputObservation(content='', command_id=0, command='foo')
+    observation.tool_call_metadata = tool_call_metadata
 
     # When both events are provided, the agent should get three messages:
     # 1. The system message,
