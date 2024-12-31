@@ -72,7 +72,7 @@ describe("getSettings from localStorage", () => {
 
     // Mock localStorage values
     mockLocalStorage.getItem.mockImplementation((key) => {
-      const values = {
+      const values: Record<string, string> = {
         LLM_MODEL: "llm_value",
         LLM_BASE_URL: "base_url",
         AGENT: "agent_value",

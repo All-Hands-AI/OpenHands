@@ -32,7 +32,7 @@ vi.mock("../../src/services/settings", async () => {
         REMOTE_RUNTIME_RESOURCE_FACTOR: data.remote_runtime_resource_factor ?? DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
       };
     },
-    saveSettings: async (settings) => {
+    saveSettings: async (settings: Settings) => {
       try {
         const response = await openHands.post("/api/settings", {
           llm_model: settings.LLM_MODEL,
