@@ -123,7 +123,7 @@ function AppContent() {
         orientation={Orientation.HORIZONTAL}
         className="grow h-full min-h-0 min-w-0"
         initialSize={500}
-        firstClassName="rounded-xl overflow-hidden border border-neutral-600"
+        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-neutral-800"
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
         secondChild={
