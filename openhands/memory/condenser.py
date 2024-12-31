@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from dataclasses import dataclass
 from typing import Any
 
 import litellm
@@ -20,9 +19,9 @@ from openhands.core.config.condenser_config import (
     RecentEventsCondenserConfig,
 )
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.schema import ObservationType
 from openhands.events.event import Event
 from openhands.events.observation import Observation
+from openhands.events.observation.condenser import CondensationObservation
 from openhands.llm.llm import LLM
 
 CONDENSER_METADATA_KEY = 'condenser_meta'
@@ -186,17 +185,6 @@ class RollingCondenser(Condenser, ABC):
         self._last_history_length = len(state.history)
 
         return results
-
-
-@dataclass
-class CondensationObservation(Observation):
-    """The output of a condensation action."""
-
-    observation: str = ObservationType.RUN
-
-    @property
-    def message(self) -> str:
-        return self.content
 
 
 class NoOpCondenser(Condenser):

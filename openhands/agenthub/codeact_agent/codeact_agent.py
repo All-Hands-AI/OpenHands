@@ -26,6 +26,7 @@ from openhands.events.observation import (
     AgentDelegateObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
+    CondensationObservation,
     FileEditObservation,
     FileReadObservation,
     IPythonRunCellObservation,
@@ -35,10 +36,7 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
-from openhands.memory.condenser import (
-    CondensationObservation,
-    Condenser,
-)
+from openhands.memory.condenser import Condenser
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
