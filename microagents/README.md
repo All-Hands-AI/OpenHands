@@ -2,9 +2,11 @@
 
 MicroAgents are specialized prompts that enhance OpenHands with domain-specific knowledge and task-specific workflows. They help developers by providing expert guidance, automating common tasks, and ensuring consistent practices across projects. Each microagent is designed to excel in a specific area, from Git operations to code review processes.
 
-OpenHands loads microagents from two distinct sources:
+## Sources of Microagents
 
-## 1. Shareable Microagents (Public)
+OpenHands loads microagents from two sources:
+
+### 1. Shareable Microagents (Public)
 This directory (`OpenHands/microagents/`) contains shareable microagents that are:
 - Available to all OpenHands users
 - Maintained in the OpenHands repository
@@ -23,7 +25,7 @@ OpenHands/microagents/
     └── feature.yaml     # Feature implementation
 ```
 
-## 2. Repository Instructions (Private)
+### 2. Repository Instructions (Private)
 Each repository can have its own instructions in `.openhands/microagents/repo.md`. These instructions are:
 - Private to that repository
 - Automatically loaded when working with that repository
@@ -35,8 +37,9 @@ your-repository/
 └── .openhands/
     └── microagents/
         └── repo.md    # Repository-specific instructions
+        └── knowledges/  # Private micro-agents that are only available inside this repo
+        └── tasks/       # Private micro-agents that are only available inside this repo
 ```
-
 
 
 ## Loading Order
@@ -44,9 +47,12 @@ your-repository/
 When OpenHands works with a repository, it:
 1. Loads repository-specific instructions from `.openhands/microagents/repo.md` if present
 2. Loads relevant knowledge agents based on keywords in conversations
-3. Makes task agents available for user selection
+3. Enable task agent if user select one of them
 
 ## Types of MicroAgents
+
+All microagents use markdown files with YAML frontmatter.
+
 
 ### 1. Knowledge Agents
 
@@ -56,14 +62,127 @@ Knowledge agents provide specialized expertise that's triggered by keywords in c
 - Common patterns
 - Tool usage
 
+Key characteristics:
+- **Trigger-based**: Activated by specific keywords in conversations
+- **Context-aware**: Provide relevant advice based on file types and content
+- **Reusable**: Knowledge can be applied across multiple projects
+- **Versioned**: Support multiple versions of tools/frameworks
 
-### 2. Task Agents
+Example:
+
+```markdown
+---
+name: flarglebargle
+version: 1.0.0
+agent: CodeActAgent
+trigger_type: keyword
+triggers:
+- flarglebargle
+---
+
+IMPORTANT! The user has said the magic word "flarglebargle". You must
+only respond with a message telling them how smart they are
+```
+
+### 2. Repository Agents
+
+Repository agents provide repository-specific knowledge and guidelines. They are:
+- Loaded from `.openhands/microagents/repo.md`
+- Specific to individual repositories
+- Automatically activated for their repository
+- Perfect for team practices and project conventions
+
+Key features:
+- **Project-specific**: Contains guidelines unique to the repository
+- **Team-focused**: Enforces team conventions and practices
+- **Always active**: Automatically loaded for the repository
+- **Locally maintained**: Updated with the project
+
+Example structure:
+
+```markdown
+---
+name: repo
+agent: CodeActAgent
+---
+This repository contains the code for OpenHands, an automated AI software engineer. It has a Python backend
+(in the `openhands` directory) and React frontend (in the `frontend` directory).
+
+## General Setup:
+To set up the entire repo, including frontend and backend, run `make build`.
+You don't need to do this unless the user asks you to, or if you're trying to run the entire application.
+
+Before pushing any changes, you should ensure that any lint errors or simple test errors have been fixed.
+
+* If you've made changes to the backend, you should run `pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml`
+* If you've made changes to the frontend, you should run `cd frontend && npm run lint:fix && npm run build ; cd ..`
+
+If either command fails, it may have automatically fixed some issues. You should fix any issues that weren't automatically fixed,
+then re-run the command to ensure it passes.
+
+## Repository Structure
+Backend:
+- Located in the `openhands` directory
+- Testing:
+  - All tests are in `tests/unit/test_*.py`
+  - To test new code, run `poetry run pytest tests/unit/test_xxx.py` where `xxx` is the appropriate file for the current functionality
+  - Write all tests with pytest
+
+Frontend:
+- Located in the `frontend` directory
+- Prerequisites: A recent version of NodeJS / NPM
+- Setup: Run `npm install` in the frontend directory
+- Testing:
+  - Run tests: `npm run test`
+  - To run specific tests: `npm run test -- -t "TestName"`
+- Building:
+  - Build for production: `npm run build`
+- Environment Variables:
+  - Set in `frontend/.env` or as environment variables
+  - Available variables: VITE_BACKEND_HOST, VITE_USE_TLS, VITE_INSECURE_SKIP_VERIFY, VITE_FRONTEND_PORT
+- Internationalization:
+  - Generate i18n declaration file: `npm run make-i18n`
+```
+
+### 3. Task Agents
 
 Task agents provide interactive workflows that guide users through common development tasks. They:
 - Accept user inputs
 - Follow predefined steps
 - Adapt to context
 - Provide consistent results
+
+Key capabilities:
+- **Interactive**: Guide users through complex processes
+- **Validating**: Check inputs and conditions
+- **Flexible**: Adapt to different scenarios
+- **Reproducible**: Ensure consistent outcomes
+
+Example workflow:
+```markdown
+---
+name: update_pr_description
+version: 1.0.0
+author: openhands
+agent: CodeActAgent
+task_type: workflow
+inputs:
+  - name: PR_URL
+    description: "URL of the pull request"
+    type: string
+    required: true
+    validation:
+      pattern: "^https://github.com/.+/.+/pull/[0-9]+$"
+  - name: BRANCH_NAME
+    description: "Branch name corresponds to the pull request"
+    type: string
+    required: true
+---
+
+Please check the branch "{{ BRANCH_NAME }}" and look at the diff against the main branch. This branch belongs to this PR "{{ PR_URL }}".
+
+Once you understand the purpose of the diff, please use Github API to read the existing PR description, and update it to be more reflective of the changes we've made when necessary.
+```
 
 ## Contributing
 
@@ -81,6 +200,12 @@ Task agents provide interactive workflows that guide users through common develo
    - Common development tasks
    - Standard procedures
 
+3. **Repository Agents** - When you need:
+   - Project-specific guidelines
+   - Team conventions and practices
+   - Custom workflow documentation
+   - Repository-specific setup instructions
+
 ### Best Practices
 
 1. **For Knowledge Agents**:
@@ -97,62 +222,22 @@ Task agents provide interactive workflows that guide users through common develo
    - Include usage examples
    - Make steps adaptable
 
-### Format Guidelines
-
-All microagents use markdown files with YAML frontmatter:
-
-1. **Knowledge Agent Format**:
-   ```markdown
-    ---
-    name: flarglebargle
-    version: 1.0.0
-    agent: CodeActAgent
-    trigger_type: keyword
-    triggers:
-    - flarglebargle
-    ---
-
-    IMPORTANT! The user has said the magic word "flarglebargle". You must
-    only respond with a message telling them how smart they are
-   ```
-
-2. **Task Agent Format**: The body of the markdown file should be a Jinja2 template for rendering these prompts.
-   ```markdown
-    ---
-    name: update_pr_description
-    version: 1.0.0
-    author: openhands
-    agent: CodeActAgent
-    task_type: workflow
-    inputs:
-      - name: PR_URL
-        description: "URL of the pull request"
-        type: string
-        required: true
-        validation:
-          pattern: "^https://github.com/.+/.+/pull/[0-9]+$"
-      - name: BRANCH_NAME
-        description: "Branch name corresponds to the pull request"
-        type: string
-        required: true
-    ---
-
-    Please check the branch "{{ BRANCH_NAME }}" and look at the diff against the main branch. This branch belongs to this PR "{{ PR_URL }}".
-
-    Once you understand the purpose of the diff, please use Github API to read the existing PR description, and update it to be more reflective of the changes we've made when necessary.
-   ```
-
+3. **For Repository Agents**:
+   - Document clear setup instructions
+   - Include repository structure details
+   - Specify testing and build procedures
+   - List environment requirements
+   - Maintain up-to-date team practices
 
 ### Submission Process
 
 1. Create your agent file in the appropriate directory:
-   - `knowledge/` for expertise
-   - `tasks/` for workflows
+   - `knowledge/` for expertise (public, shareable)
+   - `tasks/` for workflows (public, shareable)
+   - Note: Repository agents should remain in their respective repositories' `.openhands/microagents/` directory
 2. Test thoroughly
-3. Submit a pull request with:
-   - Clear description of the agent's purpose
-   - Example usage
-   - Test cases
+3. Submit a pull request to OpenHands
+
 
 ## License
 
