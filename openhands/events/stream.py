@@ -59,7 +59,7 @@ class EventStream:
     file_store: FileStore
     # For each subscriber ID, there is a map of callback functions - useful
     # when there are multiple listeners
-    _subscribers: dict[str, dict[str, Callable]] = field(default_factory=dict)
+    _subscribers: dict[str, dict[str, Callable]]
     _cur_id: int = 0
     _lock: threading.Lock
 
