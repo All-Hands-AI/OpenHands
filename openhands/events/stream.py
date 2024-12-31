@@ -221,7 +221,6 @@ class EventStream:
     async def _process_queue(self):
         while should_continue():
             event = self._queue.get()
-            print('got event from queue', event)
             for key in sorted(self._subscribers.keys()):
                 callbacks = self._subscribers[key]
                 for callback_id in callbacks:
