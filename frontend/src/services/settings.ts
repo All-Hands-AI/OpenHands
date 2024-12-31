@@ -1,3 +1,5 @@
+import { openHands } from "#/api/open-hands-axios";
+
 export const LATEST_SETTINGS_VERSION = 5;
 
 export type Settings = {
@@ -83,19 +85,18 @@ export const saveSettings = async (
 ): Promise<boolean> => {
   try {
     const apiSettings = {
-      llm_model: settings.LLM_MODEL || null,
-      llm_base_url: settings.LLM_BASE_URL || null,
-      agent: settings.AGENT || null,
-      language: settings.LANGUAGE || null,
-      confirmation_mode: settings.CONFIRMATION_MODE || null,
-      security_analyzer: settings.SECURITY_ANALYZER || null,
-      llm_api_key: settings.LLM_API_KEY || null,
-      remote_runtime_resource_factor:
-        settings.REMOTE_RUNTIME_RESOURCE_FACTOR || null,
+      llm_model: settings.LLM_MODEL,
+      llm_base_url: settings.LLM_BASE_URL,
+      agent: settings.AGENT,
+      language: settings.LANGUAGE,
+      confirmation_mode: settings.CONFIRMATION_MODE,
+      security_analyzer: settings.SECURITY_ANALYZER,
+      llm_api_key: settings.LLM_API_KEY,
+      remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     };
 
     const { data } = await openHands.post("/api/settings", apiSettings);
-    return data;
+    return data === null ? false : data;
   } catch (error) {
     return false;
   }
@@ -142,20 +143,25 @@ export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
  * Get the settings from the server or use the default settings if not found
  */
 export const getSettings = async (): Promise<Settings> => {
-  const { data: apiSettings } =
-    await openHands.get<ApiSettings>("/api/settings");
-  if (apiSettings != null) {
-    return {
-      LLM_MODEL: apiSettings.llm_model,
-      LLM_BASE_URL: apiSettings.llm_base_url,
-      AGENT: apiSettings.agent,
-      LANGUAGE: apiSettings.language,
-      CONFIRMATION_MODE: apiSettings.confirmation_mode,
-      SECURITY_ANALYZER: apiSettings.security_analyzer,
-      LLM_API_KEY: "",
-      REMOTE_RUNTIME_RESOURCE_FACTOR:
-        DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-    };
+  try {
+    const { data: apiSettings } =
+      await openHands.get<ApiSettings>("/api/settings");
+    if (apiSettings != null) {
+      return {
+        LLM_MODEL: apiSettings.llm_model,
+        LLM_BASE_URL: apiSettings.llm_base_url,
+        AGENT: apiSettings.agent,
+        LANGUAGE: apiSettings.language,
+        CONFIRMATION_MODE: apiSettings.confirmation_mode,
+        SECURITY_ANALYZER: apiSettings.security_analyzer,
+        LLM_API_KEY: apiSettings.llm_api_key || "",
+        REMOTE_RUNTIME_RESOURCE_FACTOR:
+          apiSettings.remote_runtime_resource_factor ||
+          DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+      };
+    }
+  } catch (error) {
+    // If API fails, fallback to localStorage
   }
   return getLocalStorageSettings();
 };
