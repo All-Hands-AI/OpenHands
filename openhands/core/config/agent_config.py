@@ -27,7 +27,7 @@ class AgentConfig:
     memory_enabled: bool = False
     memory_max_threads: int = 3
     llm_config: str | None = None
-    use_microagents: bool = True
+    use_microagents: bool = False
     disabled_microagents: list[str] | None = None
 
     def defaults_to_dict(self) -> dict:
