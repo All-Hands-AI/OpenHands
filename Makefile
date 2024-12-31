@@ -81,10 +81,10 @@ check-nodejs:
 	@if command -v node > /dev/null; then \
 		NODE_VERSION=$(shell node --version | sed -E 's/v//g'); \
 		IFS='.' read -r -a NODE_VERSION_ARRAY <<< "$$NODE_VERSION"; \
-		if [ "$${NODE_VERSION_ARRAY[0]}" -gt 18 ] || ([ "$${NODE_VERSION_ARRAY[0]}" -eq 18 ] && [ "$${NODE_VERSION_ARRAY[1]}" -gt 17 ]) || ([ "$${NODE_VERSION_ARRAY[0]}" -eq 18 ] && [ "$${NODE_VERSION_ARRAY[1]}" -eq 17 ] && [ "$${NODE_VERSION_ARRAY[2]}" -ge 1 ]); then \
+		if [ "$${NODE_VERSION_ARRAY[0]}" -ge 20 ]; then \
 			echo "$(BLUE)Node.js $$NODE_VERSION is already installed.$(RESET)"; \
 		else \
-			echo "$(RED)Node.js 18.17.1 or later is required. Please install Node.js 18.17.1 or later to continue.$(RESET)"; \
+			echo "$(RED)Node.js 20.x or later is required. Please install Node.js 20.x or later to continue.$(RESET)"; \
 			exit 1; \
 		fi; \
 	else \
