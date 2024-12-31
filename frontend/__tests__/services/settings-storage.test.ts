@@ -64,7 +64,7 @@ describe("getSettings from localStorage", () => {
 
   it("should fallback to localStorage if API fails", async () => {
     (openHands.get as Mock).mockRejectedValueOnce(new Error("API Error"));
-    
+
     // Mock localStorage values
     mockLocalStorage.getItem.mockImplementation((key) => {
       const values = {
@@ -95,7 +95,7 @@ describe("getSettings from localStorage", () => {
 
   it("should use default values for missing localStorage values", async () => {
     (openHands.get as Mock).mockRejectedValueOnce(new Error("API Error"));
-    
+
     // Mock empty localStorage
     mockLocalStorage.getItem.mockReturnValue(null);
 

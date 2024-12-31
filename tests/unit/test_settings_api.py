@@ -1,11 +1,11 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock, AsyncMock
 
+from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.server.app import app
 from openhands.server.settings import Settings
-from openhands.core.config.app_config import AppConfig
-from openhands.core.config.sandbox_config import SandboxConfig
 
 
 @pytest.fixture
@@ -16,14 +16,14 @@ def test_client():
             self.app = app
 
         async def __call__(self, scope, receive, send):
-            if scope["type"] == "http":
-                scope["state"] = {"github_token": "test-token"}
+            if scope['type'] == 'http':
+                scope['state'] = {'github_token': 'test-token'}
             await self.app(scope, receive, send)
 
     # Replace the middleware
     app.middleware_stack = None  # Clear existing middleware
     app.add_middleware(MockMiddleware)
-    
+
     return TestClient(app)
 
 
@@ -44,21 +44,21 @@ async def test_settings_api_runtime_factor(test_client, mock_settings_store):
 
     # Test data with remote_runtime_resource_factor
     settings_data = {
-        "language": "en",
-        "agent": "test-agent",
-        "max_iterations": 100,
-        "security_analyzer": "default",
-        "confirmation_mode": True,
-        "llm_model": "test-model",
-        "llm_api_key": None,
-        "llm_base_url": "https://test.com",
-        "remote_runtime_resource_factor": 2
+        'language': 'en',
+        'agent': 'test-agent',
+        'max_iterations': 100,
+        'security_analyzer': 'default',
+        'confirmation_mode': True,
+        'llm_model': 'test-model',
+        'llm_api_key': None,
+        'llm_base_url': 'https://test.com',
+        'remote_runtime_resource_factor': 2,
     }
 
     # The test_client fixture already handles authentication
 
     # Make the POST request to store settings
-    response = test_client.post("/api/settings", json=settings_data)
+    response = test_client.post('/api/settings', json=settings_data)
     assert response.status_code == 200
 
     # Verify the settings were stored with the correct runtime factor
@@ -69,16 +69,16 @@ async def test_settings_api_runtime_factor(test_client, mock_settings_store):
     mock_settings_store.load.return_value = Settings(**settings_data)
 
     # Make a GET request to retrieve settings
-    response = test_client.get("/api/settings")
+    response = test_client.get('/api/settings')
     assert response.status_code == 200
-    assert response.json()["remote_runtime_resource_factor"] == 2
+    assert response.json()['remote_runtime_resource_factor'] == 2
 
     # Verify that the sandbox config gets updated when settings are loaded
     with patch('openhands.server.shared.config') as mock_config:
         mock_config.sandbox = SandboxConfig()
-        response = test_client.get("/api/settings")
+        response = test_client.get('/api/settings')
         assert response.status_code == 200
-        
+
         # Verify that the sandbox config was updated with the new value
         mock_settings_store.store.assert_called()
         stored_settings = mock_settings_store.store.call_args[0][0]
