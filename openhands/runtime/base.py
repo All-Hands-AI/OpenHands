@@ -28,6 +28,7 @@ from openhands.events.event import Event
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
+    FileReadObservation,
     NullObservation,
     Observation,
     UserRejectObservation,
@@ -40,6 +41,12 @@ from openhands.runtime.plugins import (
 )
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.microagent import (
+    BaseMicroAgent,
+    KnowledgeMicroAgent,
+    RepoMicroAgent,
+    TaskMicroAgent,
+)
 
 STATUS_MESSAGES = {
     'STATUS$STARTING_RUNTIME': 'Starting runtime...',
@@ -216,73 +223,73 @@ class Runtime(FileEditRuntimeMixin):
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
 
-    def get_custom_microagents(
-        self,
-        selected_repository: str | None,
-        text: str | None = None,
-        file_path: str | None = None,
-    ) -> list[str]:
-        """Get custom microagents for the current context.
-
-        This includes:
-        1. Repository-specific agents (from .openhands/microagents/repo/)
-        2. Legacy .openhands_instructions file
-        3. Local repository microagents
-        4. Keyword-triggered agents based on input text
-
-        Args:
-            selected_repository: Repository name in format "org/repo"
-            text: Optional text to check for keyword triggers
-            file_path: Optional file path for file pattern matching
-        """
-        from openhands.core.microagents import MicroAgentHub
-
-        custom_microagents_content = []
-
-        # Load the global microagents hub
-        hub = MicroAgentHub.load()
-
-        # Get repository-specific agents if a repository is selected
+    def get_microagents_from_selected_repo(
+        self, selected_repository: str | None
+    ) -> list[BaseMicroAgent]:
+        loaded_microagents: list[BaseMicroAgent] = []
+        dir_name = Path('.openhands') / 'microagents'
         if selected_repository:
-            repo_agents = hub.get_repo_agents(selected_repository)
-            for agent in repo_agents:
-                self.log('info', f'Loading repository agent: {agent.name}')
-                custom_microagents_content.append(agent.knowledge)
+            dir_name = Path('/workspace') / selected_repository.split('/')[1] / dir_name
 
-        # Get keyword-triggered agents if text is provided
-        if text:
-            keyword_agents = hub.get_keyword_agents(text, file_path)
-            for agent in keyword_agents:
-                self.log('info', f'Loading keyword agent: {agent.name}')
-                custom_microagents_content.append(agent.knowledge)
-
+        # Legacy Repo Instructions
         # Check for legacy .openhands_instructions file
         obs = self.read(FileReadAction(path='.openhands_instructions'))
         if isinstance(obs, ErrorObservation):
-            self.log('debug', 'openhands_instructions not present')
-        else:
-            openhands_instructions = obs.content
-            self.log('info', f'openhands_instructions: {openhands_instructions}')
-            custom_microagents_content.append(openhands_instructions)
-
-        # Check for local repository microagents
-        custom_microagents_dir = Path('.openhands') / 'microagents'
-        dir_name = str(custom_microagents_dir)
-        if selected_repository:
-            dir_name = str(
-                Path(selected_repository.split('/')[1]) / custom_microagents_dir
+            self.log(
+                'debug',
+                f'openhands_instructions not present, trying to load from {dir_name}',
+            )
+            obs = self.read(
+                FileReadAction(path=str(dir_name / '.openhands_instructions'))
             )
 
-        files = self.list_files(dir_name)
+        if isinstance(obs, FileReadObservation):
+            self.log('info', 'openhands_instructions microagent loaded.')
+            loaded_microagents.append(
+                BaseMicroAgent.load(
+                    path='.openhands_instructions', file_content=obs.content
+                )
+            )
+
+        # Check for local repository microagents
+        files = self.list_files(str(dir_name))
         self.log('info', f'Found {len(files)} local microagents.')
+        if 'repo.md' in files:
+            obs = self.read(FileReadAction(path=str(dir_name / 'repo.md')))
+            if isinstance(obs, FileReadObservation):
+                self.log('info', 'repo.md microagent loaded.')
+                loaded_microagents.append(
+                    RepoMicroAgent.load(
+                        path=str(dir_name / 'repo.md'), file_content=obs.content
+                    )
+                )
 
-        for fname in files:
-            content = self.read(
-                FileReadAction(path=str(custom_microagents_dir / fname))
-            ).content
-            custom_microagents_content.append(content)
+        if 'knowledge' in files:
+            knowledge_dir = dir_name / 'knowledge'
+            _knowledge_microagents_files = self.list_files(str(knowledge_dir))
+            for fname in _knowledge_microagents_files:
+                obs = self.read(FileReadAction(path=str(knowledge_dir / fname)))
+                if isinstance(obs, FileReadObservation):
+                    self.log('info', f'knowledge/{fname} microagent loaded.')
+                    loaded_microagents.append(
+                        KnowledgeMicroAgent.load(
+                            path=str(knowledge_dir / fname), file_content=obs.content
+                        )
+                    )
 
-        return custom_microagents_content
+        if 'tasks' in files:
+            tasks_dir = dir_name / 'tasks'
+            _tasks_microagents_files = self.list_files(str(tasks_dir))
+            for fname in _tasks_microagents_files:
+                obs = self.read(FileReadAction(path=str(tasks_dir / fname)))
+                if isinstance(obs, FileReadObservation):
+                    self.log('info', f'tasks/{fname} microagent loaded.')
+                    loaded_microagents.append(
+                        TaskMicroAgent.load(
+                            path=str(tasks_dir / fname), file_content=obs.content
+                        )
+                    )
+        return loaded_microagents
 
     def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.

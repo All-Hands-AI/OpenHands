@@ -1,32 +1,116 @@
-import os
+from enum import Enum
+from pathlib import Path
+from typing import Dict, Tuple, Union
 
 import frontmatter
-import pydantic
+from pydantic import BaseModel, Field
 
 
-class MicroAgentMetadata(pydantic.BaseModel):
+class MicroAgentMetadata(BaseModel):
+    """Metadata for all microagents."""
+
     name: str = 'default'
-    agent: str = ''
-    triggers: list[str] = []
+    version: str = Field(default='1.0.0')
+    agent: str = Field(default='CodeActAgent')
+    triggers: list[str] = []  # optional, only exists for knowledge microagents
 
 
-class MicroAgent:
-    def __init__(self, path: str | None = None, content: str | None = None):
-        if path and not content:
-            self.path = path
-            if not os.path.exists(path):
-                raise FileNotFoundError(f'Micro agent file {path} is not found')
-            with open(path, 'r') as file:
-                loaded = frontmatter.load(file)
-                self._content = loaded.content
-                self._metadata = MicroAgentMetadata(**loaded.metadata)
-        elif content and not path:
-            metadata, self._content = frontmatter.parse(content)
-            self._metadata = MicroAgentMetadata(**metadata)
+class TaskInput(BaseModel):
+    """Input parameter for task-based agents."""
+
+    name: str
+    description: str
+
+
+class MicroAgentType(str, Enum):
+    """Type of microagent."""
+
+    KNOWLEDGE = 'knowledge'
+    REPO_KNOWLEDGE = 'repo_knowledge'
+    TASK = 'task'
+
+
+class BaseMicroAgent(BaseModel):
+    """Base class for all microagents."""
+
+    name: str
+    content: str
+    metadata: MicroAgentMetadata
+    source: str  # path to the file
+    type: MicroAgentType
+
+    @classmethod
+    def load(
+        cls, path: Union[str, Path], file_content: str | None = None
+    ) -> 'BaseMicroAgent':
+        """Load a microagent from a markdown file with frontmatter."""
+        path = Path(path) if isinstance(path, str) else path
+
+        # Only load directly from path if file_content is not provided
+        if file_content is None:
+            with open(path) as f:
+                file_content = f.read()
+
+        # Legacy repo instructions are stored in .openhands_instructions
+        if path.name == '.openhands_instructions':
+            return RepoMicroAgent(
+                name='repo_legacy',
+                content=file_content,
+                metadata=MicroAgentMetadata(name='repo_legacy'),
+                source=str(path),
+                type=MicroAgentType.REPO_KNOWLEDGE,
+            )
+
+        agent_type = cls.infer_type_from_path(str(path))
+
+        loaded = frontmatter.load(file_content)
+        content = loaded.content
+        metadata = MicroAgentMetadata(**loaded.metadata)
+
+        # Create appropriate subclass based on type
+        subclass_map = {
+            MicroAgentType.KNOWLEDGE: KnowledgeMicroAgent,
+            MicroAgentType.REPO_KNOWLEDGE: RepoMicroAgent,
+            MicroAgentType.TASK: TaskMicroAgent,
+        }
+
+        agent_class = subclass_map[agent_type]
+        return agent_class(
+            name=path.stem,
+            content=content,
+            metadata=metadata,
+            source=str(path),
+            type=agent_type,
+        )
+
+    @staticmethod
+    def infer_type_from_path(path: str) -> MicroAgentType:
+        if 'knowledge/' in path:
+            return MicroAgentType.KNOWLEDGE
+        elif 'repo.md' in path:
+            return MicroAgentType.REPO_KNOWLEDGE
+        elif 'tasks/' in path:
+            return MicroAgentType.TASK
         else:
-            raise Exception('You must pass either path or file content, but not both.')
+            raise ValueError(
+                f'Unknown microagent type for path: {path}. Expected one of: {MicroAgentType.KNOWLEDGE} (knowledge/ in path), {MicroAgentType.REPO_KNOWLEDGE} (repo.md in path), {MicroAgentType.TASK} (tasks/ in path)'
+            )
 
-    def get_trigger(self, message: str) -> str | None:
+
+class KnowledgeMicroAgent(BaseMicroAgent):
+    """Knowledge micro-agents provide specialized expertise that's triggered by keywords in conversations. They help with:
+    - Language best practices
+    - Framework guidelines
+    - Common patterns
+    - Tool usage
+    """
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        if self.type != MicroAgentType.KNOWLEDGE:
+            raise ValueError('KnowledgeMicroAgent must have type KNOWLEDGE')
+
+    def match_trigger(self, message: str) -> str | None:
         message = message.lower()
         for trigger in self.triggers:
             if trigger.lower() in message:
@@ -34,21 +118,68 @@ class MicroAgent:
         return None
 
     @property
-    def content(self) -> str:
-        return self._content
-
-    @property
-    def metadata(self) -> MicroAgentMetadata:
-        return self._metadata
-
-    @property
-    def name(self) -> str:
-        return self._metadata.name
-
-    @property
     def triggers(self) -> list[str]:
-        return self._metadata.triggers
+        return self.metadata.triggers
 
-    @property
-    def agent(self) -> str:
-        return self._metadata.agent
+
+class RepoMicroAgent(BaseMicroAgent):
+    """MicroAgent specialized for repository-specific knowledge and guidelines.
+
+    RepoMicroAgents are loaded from `.openhands/microagents/repo.md` files within repositories
+    and contain private, repository-specific instructions that are automatically loaded when
+    working with that repository. They are ideal for:
+        - Repository-specific guidelines
+        - Team practices and conventions
+        - Project-specific workflows
+        - Custom documentation references
+    """
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        if self.type != MicroAgentType.REPO_KNOWLEDGE:
+            raise ValueError('RepoMicroAgent must have type REPO_KNOWLEDGE')
+
+
+class TaskMicroAgent(BaseMicroAgent):
+    """MicroAgent specialized for task-based operations."""
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        if self.type != MicroAgentType.TASK:
+            raise ValueError('TaskMicroAgent must have type TASK')
+
+
+def load_microagents_from_dir(
+    microagent_dir: Union[str, Path],
+) -> Tuple[
+    Dict[str, RepoMicroAgent], Dict[str, KnowledgeMicroAgent], Dict[str, TaskMicroAgent]
+]:
+    """Load all microagents from the given directory.
+
+    Args:
+        microagent_dir: Path to the microagents directory.
+
+    Returns:
+        Tuple of (repo_agents, knowledge_agents, task_agents) dictionaries
+    """
+    if isinstance(microagent_dir, str):
+        microagent_dir = Path(microagent_dir)
+
+    repo_agents = {}
+    knowledge_agents = {}
+    task_agents = {}
+
+    # Load all agents
+    for file in microagent_dir.rglob('*.md'):
+        try:
+            agent = BaseMicroAgent.load(file)
+            if isinstance(agent, RepoMicroAgent):
+                repo_agents[agent.name] = agent
+            elif isinstance(agent, KnowledgeMicroAgent):
+                knowledge_agents[agent.name] = agent
+            elif isinstance(agent, TaskMicroAgent):
+                task_agents[agent.name] = agent
+        except Exception as e:
+            raise ValueError(f'Error loading agent from {file}: {e}')
+
+    return repo_agents, knowledge_agents, task_agents
