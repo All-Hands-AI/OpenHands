@@ -28,6 +28,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     After successful initialization, the client should connect to the WebSocket
     using the returned conversation ID
     """
+    logger.info('Initializing new conversation')
     github_token = ''
     if data.github_token:
         github_token = data.github_token
@@ -49,13 +50,16 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     while await conversation_store.exists(conversation_id):
         logger.warning(f'Collision on conversation ID: {conversation_id}. Retrying...')
         conversation_id = uuid.uuid4().hex
+    logger.info(f'New conversation ID: {conversation_id}')
 
     user_id = ''
     if data.github_token:
+        logger.info('Fetching Github user ID')
         with Github(data.github_token) as g:
             gh_user = await call_sync_from_async(g.get_user)
             user_id = gh_user.id
 
+    logger.info(f'Saving metadata for conversation {conversation_id}')
     await conversation_store.save_metadata(
         ConversationMetadata(
             conversation_id=conversation_id,
@@ -64,7 +68,9 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         )
     )
 
+    logger.info(f'Starting agent loop for conversation {conversation_id}')
     await session_manager.maybe_start_agent_loop(
         conversation_id, conversation_init_data
     )
+    logger.info(f'Finished initializing conversation {conversation_id}')
     return JSONResponse(content={'status': 'ok', 'conversation_id': conversation_id})
