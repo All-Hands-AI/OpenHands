@@ -23,10 +23,10 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.observation import (
+    AgentCondensationObservation,
     AgentDelegateObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
-    CondensationObservation,
     FileEditObservation,
     FileReadObservation,
     IPythonRunCellObservation,
@@ -321,7 +321,7 @@ class CodeActAgent(Agent):
             text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
             text += '\n[Last action has been rejected by the user]'
             message = Message(role='user', content=[TextContent(text=text)])
-        elif isinstance(obs, CondensationObservation):
+        elif isinstance(obs, AgentCondensationObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         else:

@@ -21,7 +21,7 @@ from openhands.core.config.condenser_config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event
 from openhands.events.observation import Observation
-from openhands.events.observation.condenser import CondensationObservation
+from openhands.events.observation.condenser import AgentCondensationObservation
 from openhands.llm.llm import LLM
 
 CONDENSER_METADATA_KEY = 'condenser_meta'
@@ -211,7 +211,7 @@ class ObservationMaskingCondenser(Condenser):
                 isinstance(event, Observation)
                 and i < len(events) - self.attention_window
             ):
-                results.append(CondensationObservation('<MASKED>'))
+                results.append(AgentCondensationObservation('<MASKED>'))
             else:
                 results.append(event)
 
@@ -260,7 +260,7 @@ class LLMSummarizingCondenser(Condenser):
             summary_response = resp.choices[0].message.content
 
             # Create a new summary event with the condensed content
-            summary_event = CondensationObservation(summary_response)
+            summary_event = AgentCondensationObservation(summary_response)
 
             # Add metrics to state
             self.add_metadata('response', resp.model_dump())
