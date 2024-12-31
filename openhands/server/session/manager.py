@@ -357,6 +357,7 @@ class SessionManager:
         if not event_stream:
             logger.error(f'No event stream after starting agent loop: {sid}')
             raise RuntimeError(f'no_event_stream:{sid}')
+        asyncio.create_task(self._cleanup_session_later(sid))
         return event_stream
 
     async def _get_event_stream(self, sid: str) -> EventStream | None:
