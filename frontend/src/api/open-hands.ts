@@ -11,7 +11,7 @@ import {
   Conversation,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings, Settings } from "#/services/settings";
+import { ApiSettings } from "#/services/settings";
 
 class OpenHands {
   /**
