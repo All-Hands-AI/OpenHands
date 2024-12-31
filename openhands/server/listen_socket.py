@@ -56,6 +56,7 @@ async def connect(connection_id: str, environ, auth):
 
     settings_store = await SettingsStoreImpl.get_instance(config, github_token)
     settings = await settings_store.load()
+    print('SETTINGS', settings)
 
     if not settings:
         raise ConnectionRefusedError('Settings not found')

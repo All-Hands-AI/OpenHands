@@ -6,10 +6,10 @@ from github import Github
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.data_models.conversation_metadata import ConversationMetadata
 from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import config, session_manager
-from openhands.server.data_models.conversation_metadata import ConversationMetadata
 from openhands.utils.async_utils import call_sync_from_async
 
 app = APIRouter(prefix='/api')
@@ -38,9 +38,6 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     session_init_args: dict = {}
     if settings:
         session_init_args = {**settings.__dict__, **session_init_args}
-    if data.args:
-        for key, value in data.args.items():
-            session_init_args[key.lower()] = value
 
     session_init_args['github_token'] = github_token
     session_init_args['selected_repository'] = data.selected_repository

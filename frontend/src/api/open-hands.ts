@@ -238,13 +238,11 @@ class OpenHands {
   }
 
   static async createConversation(
-    settings: Settings,
     githubToken?: string,
     selectedRepository?: string,
   ): Promise<Conversation> {
     const body = {
       github_token: githubToken,
-      args: settings,
       selected_repository: selectedRepository,
     };
 

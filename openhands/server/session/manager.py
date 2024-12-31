@@ -211,6 +211,7 @@ class SessionManager:
         self.local_connection_id_to_session_id[connection_id] = sid
         event_stream = await self._get_event_stream(sid)
         if not event_stream:
+            print('START LOOP', settings)
             return await self.maybe_start_agent_loop(sid, settings)
         return event_stream
 
