@@ -1,3 +1,4 @@
+import asyncio
 import atexit
 import copy
 import json
@@ -167,38 +168,40 @@ class Runtime(FileEditRuntimeMixin):
                 f'Failed to add env vars [{env_vars}] to environment: {obs.content}'
             )
 
-    async def on_event(self, event: Event) -> None:
+    def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
-            # set timeout to default if not set
-            if event.timeout is None:
-                event.timeout = self.config.sandbox.timeout
-            assert event.timeout is not None
-            try:
-                observation: Observation = await call_sync_from_async(
-                    self.run_action, event
-                )
-            except Exception as e:
-                err_id = ''
-                if isinstance(e, ConnectionError) or isinstance(
-                    e, AgentRuntimeDisconnectedError
-                ):
-                    err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
-                logger.error(
-                    'Unexpected error while running action',
-                    exc_info=True,
-                    stack_info=True,
-                )
-                self.log('error', f'Problematic action: {str(event)}')
-                self.send_error_message(err_id, str(e))
-                self.close()
-                return
+            asyncio.get_event_loop().run_until_complete(self._handle_action(event))
 
-            observation._cause = event.id  # type: ignore[attr-defined]
-            observation.tool_call_metadata = event.tool_call_metadata
+    async def _handle_action(self, event: Action) -> None:
+        if event.timeout is None:
+            event.timeout = self.config.sandbox.timeout
+        assert event.timeout is not None
+        try:
+            observation: Observation = await call_sync_from_async(
+                self.run_action, event
+            )
+        except Exception as e:
+            err_id = ''
+            if isinstance(e, ConnectionError) or isinstance(
+                e, AgentRuntimeDisconnectedError
+            ):
+                err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
+            logger.error(
+                'Unexpected error while running action',
+                exc_info=True,
+                stack_info=True,
+            )
+            self.log('error', f'Problematic action: {str(event)}')
+            self.send_error_message(err_id, str(e))
+            self.close()
+            return
 
-            # this might be unnecessary, since source should be set by the event stream when we're here
-            source = event.source if event.source else EventSource.AGENT
-            self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
+        observation._cause = event.id  # type: ignore[attr-defined]
+        observation.tool_call_metadata = event.tool_call_metadata
+
+        # this might be unnecessary, since source should be set by the event stream when we're here
+        source = event.source if event.source else EventSource.AGENT
+        self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
     def clone_repo(self, github_token: str | None, selected_repository: str | None):
         if not github_token or not selected_repository:

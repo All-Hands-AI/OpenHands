@@ -91,7 +91,7 @@ def display_event(event: Event, config: AppConfig):
         display_confirmation(event.confirmation_state)
 
 
-async def main():
+async def main(loop):
     """Runs the agent in CLI mode"""
 
     parser = get_parser()
@@ -112,7 +112,7 @@ async def main():
 
     logger.setLevel(logging.WARNING)
     config = load_app_config(config_file=args.config_file)
-    sid = 'cli'
+    sid = str(uuid4())
 
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
@@ -150,7 +150,6 @@ async def main():
 
     async def prompt_for_next_task():
         # Run input() in a thread pool to avoid blocking the event loop
-        loop = asyncio.get_event_loop()
         next_message = await loop.run_in_executor(
             None, lambda: input('How can I help? >> ')
         )
@@ -165,13 +164,12 @@ async def main():
         event_stream.add_event(action, EventSource.USER)
 
     async def prompt_for_user_confirmation():
-        loop = asyncio.get_event_loop()
         user_confirmation = await loop.run_in_executor(
             None, lambda: input('Confirm action (possible security risk)? (y/n) >> ')
         )
         return user_confirmation.lower() == 'y'
 
-    async def on_event(event: Event):
+    async def on_event_async(event: Event):
         display_event(event, config)
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state in [
@@ -193,6 +191,9 @@ async def main():
                     ChangeAgentStateAction(AgentState.USER_REJECTED), EventSource.USER
                 )
 
+    def on_event(event: Event) -> None:
+        loop.create_task(on_event_async(event))
+
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
     await runtime.connect()
@@ -208,7 +209,7 @@ if __name__ == '__main__':
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(main())
+        loop.run_until_complete(main(loop))
     except KeyboardInterrupt:
         print('Received keyboard interrupt, shutting down...')
     except ConnectionRefusedError as e:
