@@ -12,10 +12,7 @@ export function ServedAppLabel() {
     <div className="flex items-center justify-between w-full">
       <div className="flex items-center gap-2">App</div>
       {activeHost && (
-        <span
-          onClick={openAppInNewTab}
-          className="flex items-center gap-2"
-        >
+        <span onClick={openAppInNewTab} className="flex items-center gap-2">
           <div className="flex items-center gap-1">
             <FaExternalLinkAlt fill="#a3a3a3" />
           </div>

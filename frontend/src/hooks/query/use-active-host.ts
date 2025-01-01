@@ -29,25 +29,23 @@ export const useActiveHost = () => {
     queries: data.hosts.map((host) => ({
       queryKey: [conversationId, "hosts", host],
       queryFn: async () => {
-        console.log('querying host', host);
         try {
           await axios.get(host);
           return host;
         } catch (e) {
-          return '';
+          return "";
         }
       },
       refetchInterval: 3000,
     })),
   });
 
+  const appsData = apps.map((app) => app.data);
+
   React.useEffect(() => {
-    console.log('apps', apps);
-    const successfulApp = apps.find((app) => app.data);
-    console.log('successfulApp', successfulApp);
-    // Here's the change - use empty string as fallback instead of null
-    setActiveHost(successfulApp?.data || '');
-  }, [apps]);
+    const successfulApp = appsData.find((app) => app);
+    setActiveHost(successfulApp || "");
+  }, [appsData]);
 
   return { activeHost };
 };
