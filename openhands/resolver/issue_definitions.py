@@ -748,12 +748,21 @@ class PRHandler(IssueHandler):
         # Extract git patch from history if available
         git_patch = None
         for event in reversed(history):
+            # First try to get it from metrics
             if (
                 hasattr(event, 'metrics')
                 and event.metrics
                 and 'git_patch' in event.metrics
             ):
                 git_patch = event.metrics['git_patch']
+                break
+            # Then try to get it from command output
+            elif (
+                hasattr(event, 'content')
+                and event.content
+                and 'diff --git' in event.content
+            ):
+                git_patch = event.content
                 break
         success_list = []
         explanation_list = []
