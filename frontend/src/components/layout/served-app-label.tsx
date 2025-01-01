@@ -5,6 +5,7 @@ export function ServedAppLabel() {
   const { activeHost } = useActiveHost();
 
   function openAppInNewTab() {
+    if (!activeHost) return;
     window.open(activeHost, "_blank");
   }
 
