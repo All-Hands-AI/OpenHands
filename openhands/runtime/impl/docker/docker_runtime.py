@@ -29,7 +29,8 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
 
-APP_PORT_RANGE = (40000, 49999)
+APP_PORT_RANGE = (50000, 59999)
+VSCODE_PORT_RANGE = (40000, 49999)
 EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
 
 
@@ -72,11 +73,12 @@ class DockerRuntime(ActionExecutionClient):
         self._runtime_initialized: bool = False
         self.status_callback = status_callback
 
+        self._host_port = -1
+        self._container_port = -1
+        self._vscode_port = -1
+        self._app_ports: list[int] = []
+
         self.docker_client: docker.DockerClient = self._init_docker_client()
-        self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
-        self._container_port = self._host_port
-        self._vscode_port = self._find_available_port(APP_PORT_RANGE)
-        self._app_ports = [self._find_available_port(APP_PORT_RANGE) for _ in range(2)]
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         self.base_container_image = self.config.sandbox.base_container_image
@@ -186,6 +188,10 @@ class DockerRuntime(ActionExecutionClient):
             plugin_arg = (
                 f'--plugins {" ".join([plugin.name for plugin in self.plugins])} '
             )
+        self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
+        self._container_port = self._host_port
+        self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
+        self._app_ports = [self._find_available_port(APP_PORT_RANGE) for _ in range(2)]
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
@@ -308,7 +314,10 @@ class DockerRuntime(ActionExecutionClient):
                 and port <= EXECUTION_SERVER_PORT_RANGE[1]
             ):
                 self._container_port = port
-            break
+            if port >= VSCODE_PORT_RANGE[0] and port <= VSCODE_PORT_RANGE[1]:
+                self._vscode_port = port
+            if port >= APP_PORT_RANGE[0] and port <= APP_PORT_RANGE[1]:
+                self._app_ports.append(port)
         self._host_port = self._container_port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(
