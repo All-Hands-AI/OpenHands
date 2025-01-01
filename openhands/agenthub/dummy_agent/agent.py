@@ -1,4 +1,4 @@
-from typing import TypedDict, Union
+from typing import TypedDict
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -17,6 +17,7 @@ from openhands.events.action import (
 )
 from openhands.events.observation import (
     AgentStateChangedObservation,
+    BrowserOutputObservation,
     CmdOutputObservation,
     FileReadObservation,
     FileWriteObservation,
@@ -89,7 +90,12 @@ class DummyAgent(Agent):
             {
                 'action': BrowseURLAction(url='https://google.com'),
                 'observations': [
-                    # BrowserOutputObservation('<html><body>Simulated Google page</body></html>',url='https://google.com',screenshot=''),
+                    BrowserOutputObservation(
+                        '<html><body>Simulated Google page</body></html>',
+                        url='https://google.com',
+                        screenshot='',
+                        trigger_by_action='',
+                    ),
                 ],
             },
             {
@@ -97,7 +103,12 @@ class DummyAgent(Agent):
                     browser_actions='goto("https://google.com")'
                 ),
                 'observations': [
-                    # BrowserOutputObservation('<html><body>Simulated Google page after interaction</body></html>',url='https://google.com',screenshot=''),
+                    BrowserOutputObservation(
+                        '<html><body>Simulated Google page after interaction</body></html>',
+                        url='https://google.com',
+                        screenshot='',
+                        trigger_by_action='',
+                    ),
                 ],
             },
             {
@@ -118,14 +129,6 @@ class DummyAgent(Agent):
 
         current_step = self.steps[state.iteration]
         action = current_step['action']
-
-        if isinstance(action, (BrowseURLAction, BrowseInteractiveAction)):
-            try:
-                return self.simulate_browser_action(action)
-            except (
-                Exception
-            ):  # This could be a specific exception for browser unavailability
-                return self.handle_browser_unavailable(action)
 
         if state.iteration > 0:
             prev_step = self.steps[state.iteration - 1]
@@ -158,22 +161,3 @@ class DummyAgent(Agent):
                         )
 
         return action
-
-    def simulate_browser_action(
-        self, action: Union[BrowseURLAction, BrowseInteractiveAction]
-    ) -> Action:
-        # Instead of simulating, we'll reject the browser action
-        return self.handle_browser_unavailable(action)
-
-    def handle_browser_unavailable(
-        self, action: Union[BrowseURLAction, BrowseInteractiveAction]
-    ) -> Action:
-        # Create a message action to inform that browsing is not available
-        message = 'Browser actions are not available in the DummyAgent environment.'
-        if isinstance(action, BrowseURLAction):
-            message += f' Unable to browse URL: {action.url}'
-        elif isinstance(action, BrowseInteractiveAction):
-            message += (
-                f' Unable to perform interactive browsing: {action.browser_actions}'
-            )
-        return MessageAction(content=message)
