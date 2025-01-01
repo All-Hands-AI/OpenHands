@@ -24,7 +24,13 @@ implement the solution. If the codebase is empty, you should call the `finish` a
 
 ## History
 {{ instructions.history_truncated }}
-{{ history_to_json(state.history, max_events=20) }}
+{% for event in state.history[-20:] %}
+{% if event.source == "agent" %}
+Agent: {{ event.action }} - {{ event.content if event.content else event.observation }}
+{% else %}
+User: {{ event.content if event.content else event.observation }}
+{% endif %}
+{% endfor %}
 
 ## Format
 {{ instructions.format.action }}

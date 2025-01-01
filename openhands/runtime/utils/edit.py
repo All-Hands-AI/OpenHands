@@ -107,7 +107,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        llm_config = self.config.get_llm_config()
+        llm_config = self.config.get_llm_config_from_agent(self.config.default_agent)
 
         if llm_config.draft_editor is None:
             llm_config.draft_editor = copy.deepcopy(llm_config)
