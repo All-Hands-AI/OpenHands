@@ -7,7 +7,6 @@ export function ServedAppLabel() {
   return (
     <div className="flex items-center justify-between w-full">
       <div className="flex items-center gap-2">App</div>
-      {!activeHost && <span className="text-red-500">Offline</span>}
       {activeHost && (
         <a
           href={activeHost}
