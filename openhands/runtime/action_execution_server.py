@@ -68,7 +68,7 @@ class ActionRequest(BaseModel):
 
 ROOT_GID = 0
 INIT_COMMANDS = [
-    'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"',
+    'git config --global user.name "Brad Edwards" && git config --global user.email "j.bradley.edwards@gmail.com" && alias git="git --no-pager"',
 ]
 
 SESSION_API_KEY = os.environ.get('SESSION_API_KEY')
