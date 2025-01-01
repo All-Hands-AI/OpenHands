@@ -12,7 +12,7 @@ from openhands.utils.microagent import MicroAgent
 
 @dataclass
 class RuntimeInfo:
-    available_hosts: list[str]
+    available_hosts: dict[str, int]
 
 
 class PromptManager:
@@ -40,7 +40,7 @@ class PromptManager:
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
         self.microagents: dict = {}
-        self.runtime_info = RuntimeInfo(available_hosts=[])
+        self.runtime_info = RuntimeInfo(available_hosts={})
 
         microagent_files = []
         if microagent_dir:

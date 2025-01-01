@@ -73,7 +73,7 @@ class RemoteRuntime(ActionExecutionClient):
         )
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
-        self.available_hosts: list[str] = []
+        self.available_hosts: dict[str, int] = {}
         self._runtime_initialized: bool = False
 
     def _get_action_execution_server_host(self):
@@ -257,6 +257,7 @@ class RemoteRuntime(ActionExecutionClient):
         start_response = response.json()
         self.runtime_id = start_response['runtime_id']
         self.runtime_url = start_response['url']
+        print('RESP', start_response)
         self.available_hosts = start_response.get('work_ports', [])
 
         if 'session_api_key' in start_response:
@@ -281,7 +282,7 @@ class RemoteRuntime(ActionExecutionClient):
         return vscode_url
 
     @property
-    def web_hosts(self) -> list[str]:
+    def web_hosts(self) -> dict[str, int]:
         return self.available_hosts
 
     def _wait_until_alive(self):

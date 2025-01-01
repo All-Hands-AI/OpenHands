@@ -14,8 +14,8 @@ You are OpenHands agent, a helpful AI assistant that can interact with a compute
 <RUNTIME_INFORMATION>
 The user has access to the following hosts for accessing a web application,
 each of which has a corresponding port:
-{% for host in runtime_info.available_hosts -%}
-* {{ host }}
+{% for host, port in runtime_info.available_hosts.items() -%}
+* {{ host }} (port {{ port }})
 {% endfor %}
 When starting a web server, use the corresponding ports. You should also
 set any options to allow iframes and CORS requests.

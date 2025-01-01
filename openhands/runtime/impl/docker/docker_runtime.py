@@ -398,9 +398,9 @@ class DockerRuntime(ActionExecutionClient):
 
     @property
     def web_hosts(self):
-        hosts = []
+        hosts: dict[str, int] = {}
 
         for port in self._app_ports:
-            hosts.append(f'http://localhost:{port}')
+            hosts[f'http://localhost:{port}'] = port
 
         return hosts

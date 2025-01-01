@@ -354,5 +354,5 @@ class Runtime(FileEditRuntimeMixin):
         raise NotImplementedError('This method is not implemented in the base class.')
 
     @property
-    def web_hosts(self) -> list[str]:
-        return []
+    def web_hosts(self) -> dict[str, int]:
+        return {}
