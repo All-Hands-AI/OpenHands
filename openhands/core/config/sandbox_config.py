@@ -62,7 +62,9 @@ class SandboxConfig:
     browsergym_eval_env: str | None = None
     platform: str | None = None
     close_delay: int = 15
-    port_mappings: dict[int, int] = field(default_factory=dict)
+    port_mappings: dict[int, int] = field(
+        default_factory=lambda: {4141: 4141, 4142: 4142}
+    )
     remote_runtime_resource_factor: int = 1
 
     def defaults_to_dict(self) -> dict:

@@ -1,11 +1,18 @@
 import os
+from dataclasses import dataclass
 from itertools import islice
 
 from jinja2 import Template
 
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
+from openhands.runtime.base import Runtime
 from openhands.utils.microagent import MicroAgent
+
+
+@dataclass
+class RuntimeInfo:
+    available_hosts: list[str]
 
 
 class PromptManager:
@@ -33,7 +40,7 @@ class PromptManager:
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
         self.microagents: dict = {}
-        self.runtime_info: str = ''
+        self.runtime_info = RuntimeInfo(available_hosts=[])
 
         microagent_files = []
         if microagent_dir:
@@ -55,8 +62,8 @@ class PromptManager:
             microagent = MicroAgent(content=microagent_file)
             self.microagents[microagent.name] = microagent
 
-    def set_runtime_info(self, runtime_info: str):
-        self.runtime_info = runtime_info
+    def set_runtime_info(self, runtime: Runtime):
+        self.runtime_info.available_hosts = runtime.web_hosts
 
     def _load_template(self, template_name: str) -> Template:
         if self.prompt_dir is None:
@@ -76,8 +83,10 @@ class PromptManager:
                     repo_instructions += '\n\n'
                 repo_instructions += microagent.content
 
-        full_instructions = repo_instructions + '\n\n' + self.runtime_info
-        return self.system_template.render(repo_instructions=full_instructions).strip()
+        full_instructions = repo_instructions
+        return self.system_template.render(
+            runtime_info=self.runtime_info, repo_instructions=full_instructions
+        ).strip()
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent

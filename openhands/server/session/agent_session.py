@@ -143,10 +143,6 @@ class AgentSession:
         if self.controller is not None:
             await self.controller.set_agent_state_to(AgentState.ERROR)
 
-    def get_runtime_info_prompts(self):
-        if self.runtime is not None:
-            return f'* If you need to run a web application, use one of these ports whenever possible: {",".join(self.runtime.web_hosts)}'
-
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
 
@@ -205,11 +201,12 @@ class AgentSession:
                 )
             return
 
-        # Add port mapping instructions based on runtime type
-        port_instructions = self.get_runtime_info_prompts()
+        await call_sync_from_async(
+            self.runtime.clone_repo, github_token, selected_repository
+        )
 
         if agent.prompt_manager:
-            agent.prompt_manager.set_runtime_info(port_instructions or '')
+            agent.prompt_manager.set_runtime_info(self.runtime)
             microagents = await call_sync_from_async(
                 self.runtime.get_custom_microagents, selected_repository
             )
