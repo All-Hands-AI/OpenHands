@@ -747,19 +747,6 @@ class PRHandler(IssueHandler):
         """Guess if the issue is fixed based on the history, issue description and git patch."""
         last_message = history[-1].message
         issues_context = json.dumps(issue.closing_issues, indent=4)
-        # If no git patch was provided, try to extract it from history
-        if git_patch is None:
-            for event in reversed(history):
-                # Look for git diff command output
-                if (
-                    hasattr(event, 'content')
-                    and event.content
-                    and 'diff --git' in event.content
-                    and isinstance(event, CmdOutputObservation)
-                    and event.exit_code == 0
-                ):
-                    git_patch = event.content
-                    break
         success_list = []
         explanation_list = []
 
