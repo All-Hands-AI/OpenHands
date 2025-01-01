@@ -19,7 +19,7 @@ export const useActiveHost = () => {
       const response = await openHands.get<{ hosts: string[] }>(
         `/api/conversations/${conversationId}/web-hosts`,
       );
-      return response.data;
+      return { hosts: Object.keys(response.data.hosts) };
     },
     enabled: !RUNTIME_INACTIVE_STATES.includes(curAgentState),
     initialData: { hosts: [] },
