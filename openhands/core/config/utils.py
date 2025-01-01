@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import pathlib
 import platform
@@ -66,9 +67,17 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
                     if get_origin(field_type) is UnionType:
                         field_type = get_optional_type(field_type)
 
+                    is_dict = get_origin(field_type) is dict
+                    has_int_keys = is_dict and get_args(field_type)[0] is int
+
+                    cast_value: Any = None
                     # Attempt to cast the env var to type hinted in the dataclass
                     if field_type is bool:
                         cast_value = str(value).lower() in ['true', '1']
+                    elif is_dict and isinstance(value, str):
+                        cast_value = json.loads(value)
+                        if has_int_keys:
+                            cast_value = {int(k): v for k, v in cast_value.items()}
                     else:
                         cast_value = field_type(value)
                     setattr(sub_config, field_name, cast_value)
