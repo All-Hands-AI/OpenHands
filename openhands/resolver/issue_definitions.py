@@ -684,7 +684,7 @@ class PRHandler(IssueHandler):
             feedback=review_thread.comment,
             files_context=files_context,
             last_message=last_message,
-            git_patch=git_patch or "No changes made yet",
+            git_patch=git_patch or 'No changes made yet',
         )
 
         return self._check_feedback_with_llm(prompt)
@@ -748,7 +748,11 @@ class PRHandler(IssueHandler):
         # Extract git patch from history if available
         git_patch = None
         for event in reversed(history):
-            if hasattr(event, 'metrics') and event.metrics and 'git_patch' in event.metrics:
+            if (
+                hasattr(event, 'metrics')
+                and event.metrics
+                and 'git_patch' in event.metrics
+            ):
                 git_patch = event.metrics['git_patch']
                 break
         success_list = []

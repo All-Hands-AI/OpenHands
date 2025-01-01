@@ -1,5 +1,4 @@
-import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -11,8 +10,8 @@ from openhands.resolver.issue_definitions import PRHandler
 
 @pytest.fixture
 def pr_handler():
-    llm_config = LLMConfig(model="test-model")
-    return PRHandler("test-owner", "test-repo", "test-token", llm_config)
+    llm_config = LLMConfig(model='test-model')
+    return PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
 
 @pytest.fixture
@@ -35,16 +34,16 @@ The changes look good"""
 def test_guess_success_includes_git_patch(pr_handler, mock_llm_response):
     # Mock the issue
     issue = GithubIssue(
-        owner="test-owner",
-        repo="test-repo",
+        owner='test-owner',
+        repo='test-repo',
         number=1,
-        title="Test PR",
-        body="Test body",
+        title='Test PR',
+        body='Test body',
         review_threads=[
             ReviewThread(
-                id="thread1",
-                comment="Please fix this",
-                files=["test.py"],
+                id='thread1',
+                comment='Please fix this',
+                files=['test.py'],
             )
         ],
         closing_issues=[],
@@ -52,12 +51,12 @@ def test_guess_success_includes_git_patch(pr_handler, mock_llm_response):
 
     # Mock the history with git patch
     event1 = Event()
-    event1._message = "Initial message"
-    event1.metrics = {"some_metric": "value"}
+    event1._message = 'Initial message'
+    event1.metrics = {'some_metric': 'value'}
 
     event2 = Event()
-    event2._message = "Final message"
-    event2.metrics = {"git_patch": "diff --git a/test.py b/test.py\n+test line"}
+    event2._message = 'Final message'
+    event2.metrics = {'git_patch': 'diff --git a/test.py b/test.py\n+test line'}
 
     history = [event1, event2]
 
@@ -69,24 +68,24 @@ def test_guess_success_includes_git_patch(pr_handler, mock_llm_response):
 
     # Verify that git patch was included in the prompt
     assert mock_llm.completion.call_count == 1
-    prompt = mock_llm.completion.call_args[1]["messages"][0]["content"]
-    assert "diff --git a/test.py b/test.py" in prompt
-    assert "+test line" in prompt
+    prompt = mock_llm.completion.call_args[1]['messages'][0]['content']
+    assert 'diff --git a/test.py b/test.py' in prompt
+    assert '+test line' in prompt
 
 
 def test_guess_success_handles_missing_git_patch(pr_handler, mock_llm_response):
     # Mock the issue
     issue = GithubIssue(
-        owner="test-owner",
-        repo="test-repo",
+        owner='test-owner',
+        repo='test-repo',
         number=1,
-        title="Test PR",
-        body="Test body",
+        title='Test PR',
+        body='Test body',
         review_threads=[
             ReviewThread(
-                id="thread1",
-                comment="Please fix this",
-                files=["test.py"],
+                id='thread1',
+                comment='Please fix this',
+                files=['test.py'],
             )
         ],
         closing_issues=[],
@@ -94,12 +93,12 @@ def test_guess_success_handles_missing_git_patch(pr_handler, mock_llm_response):
 
     # Mock the history without git patch
     event1 = Event()
-    event1._message = "Initial message"
-    event1.metrics = {"some_metric": "value"}
+    event1._message = 'Initial message'
+    event1.metrics = {'some_metric': 'value'}
 
     event2 = Event()
-    event2._message = "Final message"
-    event2.metrics = {"other_metric": "value"}
+    event2._message = 'Final message'
+    event2.metrics = {'other_metric': 'value'}
 
     history = [event1, event2]
 
@@ -111,5 +110,5 @@ def test_guess_success_handles_missing_git_patch(pr_handler, mock_llm_response):
 
     # Verify that "No changes made yet" was included in the prompt
     assert mock_llm.completion.call_count == 1
-    prompt = mock_llm.completion.call_args[1]["messages"][0]["content"]
-    assert "No changes made yet" in prompt
+    prompt = mock_llm.completion.call_args[1]['messages'][0]['content']
+    assert 'No changes made yet' in prompt
