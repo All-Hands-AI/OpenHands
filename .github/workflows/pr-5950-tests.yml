@@ -1,0 +1,37 @@
+name: PR #5950 Tests
+
+on:
+  pull_request:
+    paths:
+      - 'openhands/resolver/issue_definitions.py'
+      - 'openhands/resolver/prompts/guess_success/pr-feedback-check.jinja'
+      - 'tests/unit/test_pr_handler_guess_success.py'
+
+jobs:
+  test-changes:
+    name: Test PR #5950 Changes
+    runs-on: ubuntu-latest
+    env:
+      INSTALL_DOCKER: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Install poetry via pipx
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
+      - name: Install Python dependencies using Poetry
+        run: poetry install --without evaluation,llama-index
+      - name: Build Environment
+        run: make build
+      - name: Run Tests
+        run: poetry run pytest -svv tests/unit/test_pr_handler_guess_success.py
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
