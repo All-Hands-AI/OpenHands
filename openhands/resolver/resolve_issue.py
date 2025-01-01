@@ -247,9 +247,9 @@ async def process_issue(
     else:
         histories = [dataclasses.asdict(event) for event in state.history]
         metrics = state.metrics.get() if state.metrics else None
-        # determine success based on the history and the issue description
+        # determine success based on the history, issue description and git patch
         success, comment_success, result_explanation = issue_handler.guess_success(
-            issue, state.history
+            issue, state.history, git_patch
         )
 
         if issue_handler.issue_type == 'pr' and comment_success:

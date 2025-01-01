@@ -38,9 +38,9 @@ class IssueHandlerInterface(ABC):
 
     @abstractmethod
     def guess_success(
-        self, issue: GithubIssue, history: list[Event]
+        self, issue: GithubIssue, history: list[Event], git_patch: str | None = None
     ) -> tuple[bool, list[bool] | None, str]:
-        """Guess if the issue has been resolved based on the agent's output."""
+        """Guess if the issue has been resolved based on the agent's output and git patch."""
         pass
 
 
@@ -250,13 +250,14 @@ class IssueHandler(IssueHandlerInterface):
         )
 
     def guess_success(
-        self, issue: GithubIssue, history: list[Event]
+        self, issue: GithubIssue, history: list[Event], git_patch: str | None = None
     ) -> tuple[bool, None | list[bool], str]:
         """Guess if the issue is fixed based on the history and the issue description.
 
         Args:
             issue: The issue to check
             history: The agent's history
+            git_patch: Optional git patch showing the changes made
         """
         last_message = history[-1].message
 
@@ -741,24 +742,24 @@ class PRHandler(IssueHandler):
         return self._check_feedback_with_llm(prompt)
 
     def guess_success(
-        self, issue: GithubIssue, history: list[Event]
+        self, issue: GithubIssue, history: list[Event], git_patch: str | None = None
     ) -> tuple[bool, None | list[bool], str]:
-        """Guess if the issue is fixed based on the history and the issue description."""
+        """Guess if the issue is fixed based on the history, issue description and git patch."""
         last_message = history[-1].message
         issues_context = json.dumps(issue.closing_issues, indent=4)
-        # Extract git patch from history if available
-        git_patch = None
-        for event in reversed(history):
-            # Look for git diff command output
-            if (
-                hasattr(event, 'content')
-                and event.content
-                and 'diff --git' in event.content
-                and isinstance(event, CmdOutputObservation)
-                and event.exit_code == 0
-            ):
-                git_patch = event.content
-                break
+        # If no git patch was provided, try to extract it from history
+        if git_patch is None:
+            for event in reversed(history):
+                # Look for git diff command output
+                if (
+                    hasattr(event, 'content')
+                    and event.content
+                    and 'diff --git' in event.content
+                    and isinstance(event, CmdOutputObservation)
+                    and event.exit_code == 0
+                ):
+                    git_patch = event.content
+                    break
         success_list = []
         explanation_list = []
 
