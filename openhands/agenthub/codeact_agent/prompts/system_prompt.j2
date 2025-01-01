@@ -17,6 +17,7 @@ each of which has a corresponding port:
 {% for host in runtime_info.available_hosts -%}
 * {{ host }}
 {% endfor %}
-When starting a web server, use the corresponding ports.
+When starting a web server, use the corresponding ports. You should also
+set any options to allow iframes and CORS requests.
 </RUNTIME_INFORMATION>
 {% endif %}

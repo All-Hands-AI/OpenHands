@@ -26,25 +26,28 @@ export const useActiveHost = () => {
   });
 
   const apps = useQueries({
-    queries: data.hosts.map((port) => ({
-      queryKey: [conversationId, "hosts", port],
-      queryFn: async () => axios.get(port),
+    queries: data.hosts.map((host) => ({
+      queryKey: [conversationId, "hosts", host],
+      queryFn: async () => {
+        console.log('querying host', host);
+        try {
+          await axios.get(host);
+          return host;
+        } catch (e) {
+          return '';
+        }
+      },
       refetchInterval: 3000,
     })),
   });
 
-  const success = apps.map((app) => app.isSuccess);
-
   React.useEffect(() => {
-    const successfulApp = apps.find((app) => app.isSuccess);
-    if (successfulApp) {
-      const index = apps.indexOf(successfulApp);
-      const port = data.hosts[index];
-      setActiveHost(port);
-    } else {
-      setActiveHost(null);
-    }
-  }, [success, data]);
+    console.log('apps', apps);
+    const successfulApp = apps.find((app) => app.data);
+    console.log('successfulApp', successfulApp);
+    // Here's the change - use empty string as fallback instead of null
+    setActiveHost(successfulApp?.data || '');
+  }, [apps]);
 
   return { activeHost };
 };
