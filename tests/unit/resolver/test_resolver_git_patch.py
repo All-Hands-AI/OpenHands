@@ -10,8 +10,8 @@ from openhands.resolver.resolve_issue import process_issue
 
 
 @pytest.mark.asyncio
-async def test_resolver_git_patch_not_in_history():
-    """Test that git patches executed by resolver are not captured in event history."""
+async def test_resolver_git_patch_from_event_history():
+    """Test that git patches from complete_runtime are properly extracted from event history."""
     # Mock dependencies
     config = MagicMock()
     issue = GithubIssue(
@@ -51,25 +51,23 @@ The changes look good"""
     )
     pr_handler.llm = mock_llm
     
-    # Create history with a message but no git patch
+    # Create history with a message and a git patch from complete_runtime
     event = Event()
     event._message = 'Made changes to fix the issue'
+    cmd_output = CmdOutputObservation(
+        command='git diff',
+        output='diff --git a/test.py b/test.py\n+test line',
+        exit_code=0
+    )
+    event._observations = [cmd_output]
     history = [event]
     
-    # Execute git patch command directly (simulating resolver behavior)
-    with patch('subprocess.run') as mock_run:
-        mock_run.return_value = MagicMock(
-            stdout='diff --git a/test.py b/test.py\n+test line',
-            returncode=0
-        )
-        
-        # Call guess_success with git patch
-        git_patch = 'diff --git a/test.py b/test.py\n+test line'
-        success, success_list, explanation = pr_handler.guess_success(issue, history, git_patch)
-        
-        # Verify the prompt sent to LLM
-        prompt = mock_llm.completion.call_args[1]['messages'][0]['content']
-        
-        # The git patch should be in the prompt since we passed it directly
-        assert 'diff --git' in prompt
-        assert '+test line' in prompt
+    # Call guess_success without git patch - it should be extracted from the event history
+    success, success_list, explanation = pr_handler.guess_success(issue, history)
+    
+    # Verify the prompt sent to LLM
+    prompt = mock_llm.completion.call_args[1]['messages'][0]['content']
+    
+    # The git patch should be in the prompt since it was in the event history
+    assert 'diff --git' in prompt
+    assert '+test line' in prompt
