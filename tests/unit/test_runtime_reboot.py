@@ -40,10 +40,17 @@ def test_runtime_timeout_error(runtime, mock_session):
 
 
 @patch('openhands.runtime.impl.action_execution.action_execution_client.send_request')
-def test_runtime_reboot_error(mock_send_request, runtime, mock_session):
-    # Mock the request to return 502 (indicating runtime disconnected)
+@pytest.mark.parametrize(
+    "status_code,expected_message",
+    [
+        (404, "Runtime is not responding. This may be temporary, please try again."),
+        (502, "Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again."),
+    ],
+)
+def test_runtime_disconnected_error(mock_send_request, runtime, mock_session, status_code, expected_message):
+    # Mock the request to return the specified status code
     mock_response = Mock()
-    mock_response.status_code = 502
+    mock_response.status_code = status_code
     mock_response.raise_for_status = Mock(side_effect=requests.HTTPError(response=mock_response))
     mock_response.json = Mock(return_value={'observation': 'run', 'content': 'test', 'extras': {'command_id': 'test_id', 'command': 'test command'}})
 
@@ -54,7 +61,7 @@ def test_runtime_reboot_error(mock_send_request, runtime, mock_session):
 
         def __enter__(self):
             raise RequestHTTPError(
-                requests.HTTPError("502 error"),
+                requests.HTTPError(f"{status_code} error"),
                 response=self.response
             )
 
@@ -70,13 +77,8 @@ def test_runtime_reboot_error(mock_send_request, runtime, mock_session):
     action = CmdRunAction(command="test command")
     action.timeout = 120
 
-    # Mock the runtime to raise a reboot error
-    runtime.send_action_for_execution.side_effect = AgentRuntimeDisconnectedError(
-        "Runtime became unresponsive and was rebooted, potentially due to memory usage. Please try again."
-    )
-
-    # Verify that the error message indicates a reboot
+    # Verify that the error message is correct
     with pytest.raises(AgentRuntimeDisconnectedError) as exc_info:
         runtime.send_action_for_execution(action)
 
-    assert str(exc_info.value) == "Runtime became unresponsive and was rebooted, potentially due to memory usage. Please try again."
+    assert str(exc_info.value) == expected_message

@@ -328,9 +328,14 @@ class RemoteRuntime(ActionExecutionClient):
         elif pod_status in ('failed', 'unknown', 'crashloopbackoff'):
             # clean up the runtime
             self.close()
-            raise AgentRuntimeUnavailableError(
-                'Runtime became unresponsive and was rebooted, potentially due to memory usage. Please try again.'
-            )
+            if pod_status == 'crashloopbackoff':
+                raise AgentRuntimeUnavailableError(
+                    'Runtime crashed and is being restarted, potentially due to memory usage. Please try again.'
+                )
+            else:
+                raise AgentRuntimeUnavailableError(
+                    f'Runtime is unavailable (status: {pod_status}). Please try again.'
+                )
         else:
             # Maybe this should be a hard failure, but passing through in case the API changes
             self.log('warning', f'Unknown pod status: {pod_status}')
@@ -369,9 +374,14 @@ class RemoteRuntime(ActionExecutionClient):
             raise
         except RequestHTTPError as e:
             if e.response.status_code in (404, 502):
-                raise AgentRuntimeDisconnectedError(
-                    'Runtime became unresponsive and was rebooted, potentially due to memory usage. Please try again.'
-                ) from e
+                if e.response.status_code == 404:
+                    raise AgentRuntimeDisconnectedError(
+                        'Runtime is not responding. This may be temporary, please try again.'
+                    ) from e
+                else:  # 502
+                    raise AgentRuntimeDisconnectedError(
+                        'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again.'
+                    ) from e
             elif e.response.status_code == 503:
                 self.log('warning', 'Runtime appears to be paused. Resuming...')
                 self._resume_runtime()
