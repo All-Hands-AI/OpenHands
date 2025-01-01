@@ -32,10 +32,6 @@ class SandboxConfig:
         browsergym_eval_env: The BrowserGym environment to use for evaluation.
             Default is None for general purpose browsing. Check evaluation/miniwob and evaluation/webarena for examples.
         platform: The platform on which the image should be built. Default is None.
-        port_mappings: Custom port mappings from container ports to host ports. Default is empty dict.
-            This is a dictionary where keys are container ports and values are host ports.
-            For example, {8080: 8080} maps container port 8080 to host port 8080.
-            Note: Port 4141 is always mapped to host port 4141 by default.
         remote_runtime_resource_factor: Factor to scale the resource allocation for remote runtime.
             Must be one of [1, 2, 4, 8]. Will only be used if the runtime is remote.
     """
@@ -62,9 +58,6 @@ class SandboxConfig:
     browsergym_eval_env: str | None = None
     platform: str | None = None
     close_delay: int = 15
-    port_mappings: dict[int, int] = field(
-        default_factory=lambda: {4141: 4141, 4142: 4142}
-    )
     remote_runtime_resource_factor: int = 1
 
     def defaults_to_dict(self) -> dict:

@@ -182,6 +182,7 @@ class DockerRuntime(ActionExecutionClient):
                 f'--plugins {" ".join([plugin.name for plugin in self.plugins])} '
             )
         self._host_port = self._find_available_port()
+        self._app_ports = [self._find_available_port() for _ in range(2)]
         self._container_port = (
             self._host_port
         )  # in future this might differ from host port
@@ -198,9 +199,6 @@ class DockerRuntime(ActionExecutionClient):
             port_mapping = {
                 f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}],
             }
-
-            for container_port, host_port in self.config.sandbox.port_mappings.items():
-                port_mapping[f'{container_port}/tcp'] = [{'HostPort': str(host_port)}]
 
         if self.vscode_enabled:
             # vscode is on port +1 from container port
@@ -389,7 +387,7 @@ class DockerRuntime(ActionExecutionClient):
     def web_hosts(self):
         hosts = []
 
-        for port in self.config.sandbox.port_mappings.values():
+        for port in self._app_ports:
             hosts.append(f'http://localhost:{port}')
 
         return hosts
