@@ -6,7 +6,6 @@ from openhands.core.config import AgentConfig
 from openhands.core.schema import AgentState
 from openhands.events.action import (
     Action,
-    AddTaskAction,
     AgentFinishAction,
     AgentRejectAction,
     BrowseInteractiveAction,
@@ -15,7 +14,6 @@ from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
     MessageAction,
-    ModifyTaskAction,
 )
 from openhands.events.observation import (
     AgentStateChangedObservation,
@@ -49,20 +47,6 @@ class DummyAgent(Agent):
     def __init__(self, llm: LLM, config: AgentConfig):
         super().__init__(llm, config)
         self.steps: list[ActionObs] = [
-            {
-                'action': AddTaskAction(
-                    parent='None', goal='check the current directory'
-                ),
-                'observations': [],
-            },
-            {
-                'action': AddTaskAction(parent='0', goal='run ls'),
-                'observations': [],
-            },
-            {
-                'action': ModifyTaskAction(task_id='0', state='in_progress'),
-                'observations': [],
-            },
             {
                 'action': MessageAction('Time to get started!'),
                 'observations': [],
@@ -135,23 +119,7 @@ class DummyAgent(Agent):
         current_step = self.steps[state.iteration]
         action = current_step['action']
 
-        # If the action is AddTaskAction or ModifyTaskAction, update the parent ID or task_id
-        if isinstance(action, AddTaskAction):
-            if action.parent == 'None':
-                action.parent = ''  # Root task has no parent
-            elif action.parent == '0':
-                action.parent = state.root_task.id
-            elif action.parent.startswith('0.'):
-                action.parent = f'{state.root_task.id}{action.parent[1:]}'
-        elif isinstance(action, ModifyTaskAction):
-            if action.task_id == '0':
-                action.task_id = state.root_task.id
-            elif action.task_id.startswith('0.'):
-                action.task_id = f'{state.root_task.id}{action.task_id[1:]}'
-            # Ensure the task_id doesn't start with a dot
-            if action.task_id.startswith('.'):
-                action.task_id = action.task_id[1:]
-        elif isinstance(action, (BrowseURLAction, BrowseInteractiveAction)):
+        if isinstance(action, (BrowseURLAction, BrowseInteractiveAction)):
             try:
                 return self.simulate_browser_action(action)
             except (
