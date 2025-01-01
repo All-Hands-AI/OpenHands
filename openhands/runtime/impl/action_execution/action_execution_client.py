@@ -10,6 +10,7 @@ import requests
 
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import (
+    AgentRuntimeNotFoundError,
     AgentRuntimeTimeoutError,
 )
 from openhands.events import EventStream
@@ -264,6 +265,12 @@ class ActionExecutionClient(Runtime):
                 raise AgentRuntimeTimeoutError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
+            except requests.HTTPError as e:
+                if e.response.status_code in (404, 502, 503):
+                    raise AgentRuntimeNotFoundError(
+                        'Runtime unavailable: System resources may be exhausted due to running commands. This may be fixed by retrying.'
+                    ) from e
+                raise e
 
             return obs
 
