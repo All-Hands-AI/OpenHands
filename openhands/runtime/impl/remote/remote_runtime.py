@@ -258,7 +258,7 @@ class RemoteRuntime(ActionExecutionClient):
         self.runtime_id = start_response['runtime_id']
         self.runtime_url = start_response['url']
         print('RESP', start_response)
-        self.available_hosts = start_response.get('work_ports', [])
+        self.available_hosts = start_response.get('work_hosts', {})
 
         if 'session_api_key' in start_response:
             self.session.headers.update(
