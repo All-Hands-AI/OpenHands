@@ -291,6 +291,7 @@ class DockerRuntime(ActionExecutionClient):
                     f'Error: Instance {self.container_name} FAILED to start container!\n',
                 )
                 self.log('error', str(e))
+                raise e
         except Exception as e:
             self.log(
                 'error',
