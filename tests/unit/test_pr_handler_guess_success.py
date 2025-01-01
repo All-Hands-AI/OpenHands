@@ -73,7 +73,9 @@ def test_guess_success_includes_git_patch(pr_handler, mock_llm_response):
     assert '+test line' in prompt
 
 
-def test_guess_success_includes_git_patch_from_command_output(pr_handler, mock_llm_response):
+def test_guess_success_includes_git_patch_from_command_output(
+    pr_handler, mock_llm_response
+):
     # Mock the issue
     issue = GithubIssue(
         owner='test-owner',
