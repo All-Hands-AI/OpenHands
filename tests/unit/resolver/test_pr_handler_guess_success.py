@@ -6,6 +6,7 @@ import pytest
 from openhands.core.config import LLMConfig
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event
+from openhands.events.observation import CmdOutputObservation
 from openhands.llm.llm import LLM
 from openhands.resolver.github_issue import GithubIssue, ReviewThread
 from openhands.resolver.issue_definitions import PRHandler
@@ -62,11 +63,14 @@ def test_guess_success_includes_git_patch(pr_handler, mock_llm_response):
     # Mock the history with git patch
     event1 = Event()
     event1._message = 'Initial message'
-    event1.metrics = {'some_metric': 'value'}
 
-    event2 = Event()
+    event2 = CmdOutputObservation(
+        content='diff --git a/test.py b/test.py\n+test line',
+        exit_code=0,
+        command='git diff --no-color --cached HEAD',
+        command_id='test-command-1',
+    )
     event2._message = 'Final message'
-    event2.metrics = {'git_patch': 'diff --git a/test.py b/test.py\n+test line'}
 
     history = [event1, event2]
 
@@ -106,11 +110,14 @@ def test_guess_success_includes_git_patch_from_command_output(
     # Mock the history with git patch in command output
     event1 = Event()
     event1._message = 'Initial message'
-    event1.metrics = {'some_metric': 'value'}
 
-    event2 = Event()
+    event2 = CmdOutputObservation(
+        content='diff --git a/test.py b/test.py\n+test line',
+        exit_code=0,
+        command='git diff --no-color --cached HEAD',
+        command_id='test-command-2',
+    )
     event2._message = 'Final message'
-    event2.content = 'diff --git a/test.py b/test.py\n+test line'
 
     history = [event1, event2]
 
@@ -148,11 +155,14 @@ def test_guess_success_handles_missing_git_patch(pr_handler, mock_llm_response):
     # Mock the history without git patch
     event1 = Event()
     event1._message = 'Initial message'
-    event1.metrics = {'some_metric': 'value'}
 
-    event2 = Event()
+    event2 = CmdOutputObservation(
+        content='No changes made yet',
+        exit_code=1,
+        command='git diff --no-color --cached HEAD',
+        command_id='test-command-3',
+    )
     event2._message = 'Final message'
-    event2.metrics = {'other_metric': 'value'}
 
     history = [event1, event2]
 

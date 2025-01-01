@@ -10,6 +10,7 @@ import requests
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event
+from openhands.events.observation import CmdOutputObservation
 from openhands.llm.llm import LLM
 from openhands.resolver.github_issue import GithubIssue, ReviewThread
 
@@ -748,19 +749,13 @@ class PRHandler(IssueHandler):
         # Extract git patch from history if available
         git_patch = None
         for event in reversed(history):
-            # First try to get it from metrics
+            # Look for git diff command output
             if (
-                hasattr(event, 'metrics')
-                and event.metrics
-                and 'git_patch' in event.metrics
-            ):
-                git_patch = event.metrics['git_patch']
-                break
-            # Then try to get it from command output
-            elif (
                 hasattr(event, 'content')
                 and event.content
                 and 'diff --git' in event.content
+                and isinstance(event, CmdOutputObservation)
+                and event.exit_code == 0
             ):
                 git_patch = event.content
                 break
