@@ -665,6 +665,7 @@ class PRHandler(IssueHandler):
         review_thread: ReviewThread,
         issues_context: str,
         last_message: str,
+        git_patch: str | None = None,
     ) -> tuple[bool, str]:
         """Check if a review thread's feedback has been addressed."""
         files_context = json.dumps(review_thread.files, indent=4)
@@ -683,6 +684,7 @@ class PRHandler(IssueHandler):
             feedback=review_thread.comment,
             files_context=files_context,
             last_message=last_message,
+            git_patch=git_patch or "No changes made yet",
         )
 
         return self._check_feedback_with_llm(prompt)
@@ -743,6 +745,12 @@ class PRHandler(IssueHandler):
         """Guess if the issue is fixed based on the history and the issue description."""
         last_message = history[-1].message
         issues_context = json.dumps(issue.closing_issues, indent=4)
+        # Extract git patch from history if available
+        git_patch = None
+        for event in reversed(history):
+            if hasattr(event, 'metrics') and event.metrics and 'git_patch' in event.metrics:
+                git_patch = event.metrics['git_patch']
+                break
         success_list = []
         explanation_list = []
 
@@ -751,7 +759,7 @@ class PRHandler(IssueHandler):
             for review_thread in issue.review_threads:
                 if issues_context and last_message:
                     success, explanation = self._check_review_thread(
-                        review_thread, issues_context, last_message
+                        review_thread, issues_context, last_message, git_patch
                     )
                 else:
                     success, explanation = False, 'Missing context or message'
