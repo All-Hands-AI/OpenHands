@@ -29,6 +29,9 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
 
+APP_PORT_RANGE = (40000, 49999)
+EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
+
 
 def remove_all_runtime_containers():
     remove_all_containers(CONTAINER_NAME_PREFIX)
@@ -66,14 +69,16 @@ class DockerRuntime(ActionExecutionClient):
             atexit.register(remove_all_runtime_containers)
 
         self.config = config
-        self._host_port = 30000  # initial dummy value
-        self._container_port = 30001  # initial dummy value
-        self._vscode_url: str | None = None  # initial dummy value
         self._runtime_initialized: bool = False
-        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.status_callback = status_callback
 
         self.docker_client: docker.DockerClient = self._init_docker_client()
+        self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
+        self._container_port = self._host_port
+        self._vscode_port = self._find_available_port(APP_PORT_RANGE)
+        self._app_ports = [self._find_available_port(APP_PORT_RANGE) for _ in range(2)]
+        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
+
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
         self.container_name = CONTAINER_NAME_PREFIX + sid
@@ -181,11 +186,6 @@ class DockerRuntime(ActionExecutionClient):
             plugin_arg = (
                 f'--plugins {" ".join([plugin.name for plugin in self.plugins])} '
             )
-        self._host_port = self._find_available_port()
-        self._app_ports = [self._find_available_port() for _ in range(2)]
-        self._container_port = (
-            self._host_port
-        )  # in future this might differ from host port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
@@ -200,14 +200,14 @@ class DockerRuntime(ActionExecutionClient):
                 f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}],
             }
 
-        if self.vscode_enabled:
-            # vscode is on port +1 from container port
-            if isinstance(port_mapping, dict):
-                port_mapping[f'{self._container_port + 1}/tcp'] = [
-                    {'HostPort': str(self._host_port + 1)}
+            if self.vscode_enabled:
+                port_mapping[f'{self._vscode_port}/tcp'] = [
+                    {'HostPort': str(self._vscode_port)}
                 ]
 
-        if use_host_network:
+            for port in self._app_ports:
+                port_mapping[f'{port}/tcp'] = [{'HostPort': str(port)}]
+        else:
             self.log(
                 'warn',
                 'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
@@ -300,10 +300,14 @@ class DockerRuntime(ActionExecutionClient):
             raise e
 
     def _attach_to_container(self):
-        self._container_port = 0
         self.container = self.docker_client.containers.get(self.container_name)
         for port in self.container.attrs['NetworkSettings']['Ports']:  # type: ignore
-            self._container_port = int(port.split('/')[0])
+            port = int(port.split('/')[0])
+            if (
+                port >= EXECUTION_SERVER_PORT_RANGE[0]
+                and port <= EXECUTION_SERVER_PORT_RANGE[1]
+            ):
+                self._container_port = port
             break
         self._host_port = self._container_port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
@@ -365,10 +369,10 @@ class DockerRuntime(ActionExecutionClient):
                 return True
         return False
 
-    def _find_available_port(self, max_attempts=5):
-        port = 39999
+    def _find_available_port(self, port_range, max_attempts=5):
+        port = port_range[1]
         for _ in range(max_attempts):
-            port = find_available_tcp_port(30000, 39999)
+            port = find_available_tcp_port(port_range[0], port_range[1])
             if not self._is_port_in_use_docker(port):
                 return port
         # If no port is found after max_attempts, return the last tried port
@@ -380,7 +384,7 @@ class DockerRuntime(ActionExecutionClient):
         if not token:
             return None
 
-        vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        vscode_url = f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return vscode_url
 
     @property
