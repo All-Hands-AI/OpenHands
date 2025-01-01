@@ -329,7 +329,7 @@ class RemoteRuntime(ActionExecutionClient):
             # clean up the runtime
             self.close()
             raise AgentRuntimeUnavailableError(
-                f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}. Pod Logs:\n{runtime_data.get("pod_logs", "N/A")}'
+                'Runtime became unresponsive and was rebooted, potentially due to memory usage. Please try again.'
             )
         else:
             # Maybe this should be a hard failure, but passing through in case the API changes
@@ -370,7 +370,7 @@ class RemoteRuntime(ActionExecutionClient):
         except RequestHTTPError as e:
             if e.response.status_code in (404, 502):
                 raise AgentRuntimeDisconnectedError(
-                    f'{e.response.status_code} error while connecting to {self.runtime_url}'
+                    'Runtime became unresponsive and was rebooted, potentially due to memory usage. Please try again.'
                 ) from e
             elif e.response.status_code == 503:
                 self.log('warning', 'Runtime appears to be paused. Resuming...')
