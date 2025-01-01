@@ -223,6 +223,7 @@ class DockerRuntime(ActionExecutionClient):
         environment = {
             'port': str(self._container_port),
             'PYTHONUNBUFFERED': 1,
+            'VSCODE_PORT': str(self._vscode_port),
         }
         if self.config.debug or DEBUG:
             environment['DEBUG'] = 'true'
