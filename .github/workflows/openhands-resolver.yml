@@ -170,6 +170,19 @@ jobs:
           # Set branch variables
           echo "TARGET_BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
 
+          COMMENT_BODY=${{ github.event.comment.body || '' }}
+          REVIEW_BODY=${{ github.event.review.body || '' }}
+          LABEL_NAME=${{ github.event.label.name || '' }}
+          EVENT_NAME=${{ github.event_name }}
+
+          IS_EXPERIMENTAL_LABEL=$( [ "$LABEL_NAME" = "fix-me-experimental" ] && echo "true" || echo "false" )
+          IS_ISSUE_COMMENT_EXPERIMENTAL=$( [ "$EVENT_NAME" = "issue_comment" -o "$EVENT_NAME" = "pull_request_review_comment" ] && echo "$COMMENT_BODY" | grep -q "@openhands-agent-exp" && echo "true" || echo "false" )
+          IS_REVIEW_COMMENT_EXPERIMENTAL=$( [ "$EVENT_NAME" = "pull_request_review" ] && echo "$REVIEW_BODY" | grep -q "@openhands-agent-exp" && echo "true" || echo "false" )
+
+          echo "IS_EXPERIMENTAL_LABEL=$IS_EXPERIMENTAL_LABEL" >> $GITHUB_ENV
+          echo "IS_ISSUE_COMMENT_EXPERIMENTAL=$IS_ISSUE_COMMENT_EXPERIMENTAL" >> $GITHUB_ENV
+          echo "IS_REVIEW_COMMENT_EXPERIMENTAL=$IS_REVIEW_COMMENT_EXPERIMENTAL" >> $GITHUB_ENV
+
       - name: Comment on issue with start message
         uses: actions/github-script@v7
         with:
@@ -185,25 +198,11 @@ jobs:
 
       - name: Install OpenHands
         uses: actions/github-script@v7
-        env:
-          COMMENT_BODY: ${{ github.event.comment.body || '' }}
-          REVIEW_BODY: ${{ github.event.review.body || '' }}
-          LABEL_NAME: ${{ github.event.label.name || '' }}
-          EVENT_NAME: ${{ github.event_name }}
         with:
           script: |
-            const commentBody = process.env.COMMENT_BODY.trim();
-            const reviewBody = process.env.REVIEW_BODY.trim();
-            const labelName = process.env.LABEL_NAME.trim();
-            const eventName = process.env.EVENT_NAME.trim();
-
-            // Check conditions
-            const isExperimentalLabel = labelName === "fix-me-experimental";
-            const isIssueCommentExperimental =
-              (eventName === "issue_comment" || eventName === "pull_request_review_comment") &&
-              commentBody.includes("@openhands-agent-exp");
-            const isReviewCommentExperimental =
-              eventName === "pull_request_review" && reviewBody.includes("@openhands-agent-exp");
+            const isExperimentalLabel = process.env.IS_EXPERIMENTAL_LABEL === "true";
+            const isIssueCommentExperimental = process.env.IS_ISSUE_COMMENT_EXPERIMENTAL === "true";
+            const isReviewCommentExperimental = process.env.IS_REVIEW_COMMENT_EXPERIMENTAL === "true";
 
             // Perform package installation
             if (isExperimentalLabel || isIssueCommentExperimental || isReviewCommentExperimental) {
@@ -224,6 +223,7 @@ jobs:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
           PYTHONPATH: ""
+          IS_EXPERIMENTAL: ${{ (env.IS_EXPERIMENTAL_LABEL == 'true' || env.IS_ISSUE_COMMENT_EXPERIMENTAL == 'true' || env.IS_REVIEW_COMMENT_EXPERIMENTAL == 'true') && 'true' || 'false' }}
         run: |
           cd /tmp && python -m openhands.resolver.resolve_issue \
             --repo ${{ github.repository }} \
@@ -231,6 +231,7 @@ jobs:
             --issue-type ${{ env.ISSUE_TYPE }} \
             --max-iterations ${{ env.MAX_ITERATIONS }} \
             --comment-id ${{ env.COMMENT_ID }}
+            --is-experimental ${{ env.IS_EXPERIMENTAL }}
 
       - name: Check resolution result
         id: check_result
