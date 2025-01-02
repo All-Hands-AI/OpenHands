@@ -74,7 +74,7 @@ def test_load_from_old_style_env(monkeypatch, default_config):
     # Test loading configuration from old-style environment variables using monkeypatch
     monkeypatch.setenv('LLM_API_KEY', 'test-api-key')
     monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
-    monkeypatch.setenv('DEFAULT_AGENT', 'PlannerAgent')
+    monkeypatch.setenv('DEFAULT_AGENT', 'BrowsingAgent')
     monkeypatch.setenv('WORKSPACE_BASE', '/opt/files/workspace')
     monkeypatch.setenv('SANDBOX_BASE_CONTAINER_IMAGE', 'custom_image')
 
@@ -82,7 +82,7 @@ def test_load_from_old_style_env(monkeypatch, default_config):
 
     assert default_config.get_llm_config().api_key == 'test-api-key'
     assert default_config.get_agent_config().memory_enabled is True
-    assert default_config.default_agent == 'PlannerAgent'
+    assert default_config.default_agent == 'BrowsingAgent'
     assert default_config.workspace_base == '/opt/files/workspace'
     assert default_config.workspace_mount_path is None  # before finalize_config
     assert default_config.workspace_mount_path_in_sandbox is not None
@@ -372,8 +372,10 @@ def test_defaults_dict_after_updates(default_config):
     updated_config.get_llm_config().api_key = 'updated-api-key'
     updated_config.get_llm_config('llm').api_key = 'updated-api-key'
     updated_config.get_llm_config_from_agent('agent').api_key = 'updated-api-key'
-    updated_config.get_llm_config_from_agent('PlannerAgent').api_key = 'updated-api-key'
-    updated_config.default_agent = 'PlannerAgent'
+    updated_config.get_llm_config_from_agent(
+        'BrowsingAgent'
+    ).api_key = 'updated-api-key'
+    updated_config.default_agent = 'BrowsingAgent'
 
     defaults_after_updates = updated_config.defaults_dict
     assert defaults_after_updates['default_agent']['default'] == 'CodeActAgent'
@@ -584,6 +586,7 @@ def test_api_keys_repr_str():
         'aws_secret_access_key',
         'input_cost_per_token',
         'output_cost_per_token',
+        'custom_tokenizer',
     ]
     for attr_name in dir(LLMConfig):
         if (
@@ -702,7 +705,7 @@ max_budget_per_task = 4.0
 [agent.CodeActAgent]
 memory_enabled = true
 
-[agent.PlannerAgent]
+[agent.BrowsingAgent]
 memory_max_threads = 10
 """
 
@@ -713,5 +716,5 @@ memory_max_threads = 10
 
     codeact_config = default_config.get_agent_configs().get('CodeActAgent')
     assert codeact_config.memory_enabled is True
-    planner_config = default_config.get_agent_configs().get('PlannerAgent')
-    assert planner_config.memory_max_threads == 10
+    browsing_config = default_config.get_agent_configs().get('BrowsingAgent')
+    assert browsing_config.memory_max_threads == 10

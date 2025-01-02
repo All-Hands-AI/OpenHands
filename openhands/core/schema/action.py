@@ -62,10 +62,6 @@ class ActionTypeSchema(BaseModel):
 
     SUMMARIZE: str = Field(default='summarize')
 
-    ADD_TASK: str = Field(default='add_task')
-
-    MODIFY_TASK: str = Field(default='modify_task')
-
     PAUSE: str = Field(default='pause')
     """Pauses the task.
     """

@@ -12,6 +12,16 @@ class EventSource(str, Enum):
     ENVIRONMENT = 'environment'
 
 
+class FileEditSource(str, Enum):
+    LLM_BASED_EDIT = 'llm_based_edit'
+    OH_ACI = 'oh_aci'  # openhands-aci
+
+
+class FileReadSource(str, Enum):
+    OH_ACI = 'oh_aci'  # openhands-aci
+    DEFAULT = 'default'
+
+
 @dataclass
 class Event:
     @property

@@ -4,7 +4,7 @@ import tarfile
 from glob import glob
 
 from e2b import Sandbox as E2BSandbox
-from e2b.sandbox.exception import TimeoutException
+from e2b.exceptions import TimeoutException
 
 from openhands.core.config import SandboxConfig
 from openhands.core.logger import openhands_logger as logger

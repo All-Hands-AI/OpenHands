@@ -42,12 +42,17 @@ class PromptManager:
                 if f.endswith('.md')
             ]
         for microagent_file in microagent_files:
-            microagent = MicroAgent(microagent_file)
+            microagent = MicroAgent(path=microagent_file)
             if (
                 disabled_microagents is None
                 or microagent.name not in disabled_microagents
             ):
                 self.microagents[microagent.name] = microagent
+
+    def load_microagent_files(self, microagent_files: list[str]):
+        for microagent_file in microagent_files:
+            microagent = MicroAgent(content=microagent_file)
+            self.microagents[microagent.name] = microagent
 
     def _load_template(self, template_name: str) -> Template:
         if self.prompt_dir is None:
@@ -59,7 +64,14 @@ class PromptManager:
             return Template(file.read())
 
     def get_system_message(self) -> str:
-        return self.system_template.render().strip()
+        repo_instructions = ''
+        for microagent in self.microagents.values():
+            # We assume these are the repo instructions
+            if len(microagent.triggers) == 0:
+                if repo_instructions:
+                    repo_instructions += '\n\n'
+                repo_instructions += microagent.content
+        return self.system_template.render(repo_instructions=repo_instructions).strip()
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent

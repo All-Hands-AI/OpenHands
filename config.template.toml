@@ -95,10 +95,10 @@ workspace_base = "./workspace"
 # AWS secret access key
 #aws_secret_access_key = ""
 
-# API key to use
+# API key to use (For Headless / CLI only -  In Web this is overridden by Session Init)
 api_key = "your-api-key"
 
-# API base URL
+# API base URL (For Headless / CLI only -  In Web this is overridden by Session Init)
 #base_url = ""
 
 # API version
@@ -131,7 +131,7 @@ embedding_model = "local"
 # Maximum number of output tokens
 #max_output_tokens = 0
 
-# Model to use
+# Model to use. (For Headless / CLI only -  In Web this is overridden by Session Init)
 model = "gpt-4o"
 
 # Number of retries to attempt when an operation fails with the LLM.
@@ -154,6 +154,10 @@ model = "gpt-4o"
 # Drop any unmapped (unsupported) params without causing an exception
 #drop_params = false
 
+# Modify params for litellm to do transformations like adding a default message, when a message is empty.
+# Note: this setting is global, unlike drop_params, it cannot be overridden in each call to litellm.
+#modify_params = true
+
 # Using the prompt caching feature if provided by the LLM and supported
 #caching_prompt = true
 
@@ -171,6 +175,10 @@ model = "gpt-4o"
 
 # If model is vision capable, this option allows to disable image processing (useful for cost reduction).
 #disable_vision = true
+
+# Custom tokenizer to use for token counting
+# https://docs.litellm.ai/docs/completion/token_usage
+#custom_tokenizer = ""
 
 [llm.gpt4o-mini]
 api_key = "your-api-key"
@@ -217,6 +225,9 @@ llm_config = 'gpt3'
 # Use host network
 #use_host_network = false
 
+# runtime extra build args
+#runtime_extra_build_args = ["--network=host", "--add-host=host.docker.internal:host-gateway"]
+
 # Enable auto linting after editing
 #enable_auto_lint = false
 
@@ -237,10 +248,10 @@ llm_config = 'gpt3'
 ##############################################################################
 [security]
 
-# Enable confirmation mode
+# Enable confirmation mode (For Headless / CLI only -  In Web this is overridden by Session Init)
 #confirmation_mode = false
 
-# The security analyzer to use
+# The security analyzer to use (For Headless / CLI only -  In Web this is overridden by Session Init)
 #security_analyzer = ""
 
 #################################### Eval ####################################

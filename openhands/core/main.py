@@ -182,13 +182,15 @@ async def run_controller(
         # init with the provided actions
         event_stream.add_event(initial_user_action, EventSource.USER)
 
-    async def on_event(event: Event):
+    def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
                 if exit_on_message:
                     message = '/exit'
                 elif fake_user_response_fn is None:
-                    message = input('Request user input >> ')
+                    # read until EOF (Ctrl+D on Unix, Ctrl+Z on Windows)
+                    print('Request user input (press Ctrl+D/Z when done) >> ')
+                    message = sys.stdin.read().rstrip()
                 else:
                     message = fake_user_response_fn(controller.get_state())
                 action = MessageAction(content=message)
@@ -241,6 +243,22 @@ def generate_sid(config: AppConfig, session_name: str | None = None) -> str:
     return f'{session_name}-{hash_str[:16]}'
 
 
+def auto_continue_response(
+    state: State,
+    encapsulate_solution: bool = False,
+    try_parse: Callable[[Action | None], str] | None = None,
+) -> str:
+    """Default function to generate user responses.
+    Tell the agent to proceed without asking for more input, or finish the interaction.
+    """
+    message = (
+        'Please continue on whatever approach you think is suitable.\n'
+        'If you think you have solved the task, please finish the interaction.\n'
+        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN RESPONSE.\n'
+    )
+    return message
+
+
 if __name__ == '__main__':
     args = parse_arguments()
 
@@ -284,5 +302,8 @@ if __name__ == '__main__':
             config=config,
             initial_user_action=initial_user_action,
             sid=sid,
+            fake_user_response_fn=None
+            if args.no_auto_continue
+            else auto_continue_response,
         )
     )
