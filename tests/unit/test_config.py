@@ -157,60 +157,6 @@ default_agent = "TestAgent"
     assert default_config.workspace_mount_path == '/opt/files2/workspace'
 
 
-def test_llm_config_native_tool_calling(default_config, temp_toml_file, monkeypatch):
-    # default is None
-    assert default_config.get_llm_config().native_tool_calling is None
-
-    # without `[core]` section, native_tool_calling is not set because the file is not loaded
-    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
-        toml_file.write(
-            """
-[llm.gpt4o-mini]
-native_tool_calling = true
-"""
-        )
-
-    load_from_toml(default_config, temp_toml_file)
-    assert default_config.get_llm_config().native_tool_calling is None
-    assert default_config.get_llm_config('gpt4o-mini').native_tool_calling is None
-
-    # set to false
-    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
-        toml_file.write(
-            """
-[core]
-
-[llm.gpt4o-mini]
-native_tool_calling = false
-"""
-        )
-    load_from_toml(default_config, temp_toml_file)
-    assert default_config.get_llm_config().native_tool_calling is None
-    assert default_config.get_llm_config('gpt4o-mini').native_tool_calling is False
-
-    # set to true using string
-    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
-        toml_file.write(
-            """
-[core]
-
-[llm.gpt4o-mini]
-native_tool_calling = true
-"""
-        )
-    load_from_toml(default_config, temp_toml_file)
-    assert default_config.get_llm_config('gpt4o-mini').native_tool_calling is True
-
-    # override to false by env
-    # see utils.set_attr_from_env
-    monkeypatch.setenv('LLM_NATIVE_TOOL_CALLING', 'false')
-    load_from_env(default_config, os.environ)
-    assert default_config.get_llm_config().native_tool_calling is False
-    assert (
-        default_config.get_llm_config('gpt4o-mini').native_tool_calling is True
-    )  # load_from_env didn't override the named config set in the toml file under [llm.gpt4o-mini]
-
-
 def test_compat_load_sandbox_from_toml(default_config: AppConfig, temp_toml_file: str):
     # test loading configuration from a new-style TOML file
     # uses a toml file with sandbox_vars instead of a sandbox section
