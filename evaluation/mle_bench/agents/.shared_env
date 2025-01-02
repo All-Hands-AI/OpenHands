@@ -1,0 +1,4 @@
+SUBMISSION_DIR=/home/submission
+LOGS_DIR=/home/logs
+CODE_DIR=/home/code
+AGENT_DIR=/home/agent
