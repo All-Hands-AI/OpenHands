@@ -126,7 +126,7 @@ async def get_conversation(
         return None
 
 
-@app.post('/conversations/{conversation_id}')
+@app.put('/conversations/{conversation_id}')
 async def update_conversation(
     conversation_id: str, title: str, request: Request
 ) -> bool:
