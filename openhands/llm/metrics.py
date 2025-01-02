@@ -46,7 +46,13 @@ class Metrics:
 
     @property
     def response_latencies(self) -> list[ResponseLatency]:
+        if not hasattr(self, '_response_latencies'):
+            self._response_latencies = []
         return self._response_latencies
+
+    @response_latencies.setter
+    def response_latencies(self, value: list[ResponseLatency]) -> None:
+        self._response_latencies = value
 
     def add_cost(self, value: float) -> None:
         if value < 0:
@@ -55,11 +61,9 @@ class Metrics:
         self._costs.append(Cost(cost=value, model=self.model_name))
 
     def add_response_latency(self, value: float, response_id: str) -> None:
-        if value < 0:
-            raise ValueError('Response latency cannot be negative.')
         self._response_latencies.append(
             ResponseLatency(
-                latency=value, model=self.model_name, response_id=response_id
+                latency=max(0.0, value), model=self.model_name, response_id=response_id
             )
         )
 

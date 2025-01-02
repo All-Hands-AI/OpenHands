@@ -38,11 +38,13 @@ class LLMConfig:
         output_cost_per_token: The cost per output token. This will available in logs for the user to check.
         ollama_base_url: The base URL for the OLLAMA API.
         drop_params: Drop any unmapped (unsupported) params without causing an exception.
+        modify_params: Modify params allows litellm to do transformations like adding a default message, when a message is empty.
         disable_vision: If model is vision capable, this option allows to disable image processing (useful for cost reduction).
         caching_prompt: Use the prompt caching feature if provided by the LLM and supported by the provider.
         log_completions: Whether to log LLM completions to the state.
         log_completions_folder: The folder to log LLM completions to. Required if log_completions is True.
         draft_editor: A more efficient LLM to use for file editing. Introduced in [PR 3985](https://github.com/All-Hands-AI/OpenHands/pull/3985).
+        custom_tokenizer: A custom tokenizer to use for token counting.
     """
 
     model: str = 'claude-3-5-sonnet-20241022'
@@ -71,12 +73,16 @@ class LLMConfig:
     input_cost_per_token: float | None = None
     output_cost_per_token: float | None = None
     ollama_base_url: str | None = None
+    # This setting can be sent in each call to litellm
     drop_params: bool = True
+    # Note: this setting is actually global, unlike drop_params
+    modify_params: bool = True
     disable_vision: bool | None = None
     caching_prompt: bool = True
     log_completions: bool = False
     log_completions_folder: str = os.path.join(LOG_DIR, 'completions')
     draft_editor: Optional['LLMConfig'] = None
+    custom_tokenizer: str | None = None
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""

@@ -9,12 +9,12 @@ describe("Initial Query Behavior", () => {
   it("should clear initial query when clearInitialQuery is dispatched", () => {
     // Set up initial query in the store
     store.dispatch(setInitialQuery("test query"));
-    expect(store.getState().initalQuery.initialQuery).toBe("test query");
+    expect(store.getState().initialQuery.initialQuery).toBe("test query");
 
     // Clear the initial query
     store.dispatch(clearInitialQuery());
 
     // Verify initial query is cleared
-    expect(store.getState().initalQuery.initialQuery).toBeNull();
+    expect(store.getState().initialQuery.initialQuery).toBeNull();
   });
 });

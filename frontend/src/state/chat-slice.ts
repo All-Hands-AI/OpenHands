@@ -19,6 +19,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "write",
   "read",
   "browse",
+  "edit",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -101,8 +102,6 @@ export const chatSlice = createSlice({
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
         text = `${action.payload.args.path}\n${content}`;
-      } else if (actionID === "read") {
-        text = action.payload.args.path;
       } else if (actionID === "browse") {
         text = `Browsing ${action.payload.args.url}`;
       }
@@ -149,9 +148,9 @@ export const chatSlice = createSlice({
       } else if (observationID === "run_ipython") {
         // For IPython, we consider it successful if there's no error message
         const ipythonObs = observation.payload as IPythonObservation;
-        causeMessage.success = !ipythonObs.message
+        causeMessage.success = !ipythonObs.content
           .toLowerCase()
-          .includes("error");
+          .includes("error:");
       }
 
       if (observationID === "run" || observationID === "run_ipython") {
@@ -161,6 +160,9 @@ export const chatSlice = createSlice({
         }
         content = `\`\`\`\n${content}\n\`\`\``;
         causeMessage.content = content; // Observation content includes the action
+      } else if (observationID === "read" || observationID === "edit") {
+        const { content } = observation.payload;
+        causeMessage.content = `\`\`\`${observationID === "edit" ? "diff" : "python"}\n${content}\n\`\`\``; // Content is already truncated by the ACI
       } else if (observationID === "browse") {
         let content = `**URL:** ${observation.payload.extras.url}\n`;
         if (observation.payload.extras.error) {
