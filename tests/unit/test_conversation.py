@@ -53,7 +53,7 @@ async def test_search_conversations():
         expected = ConversationInfoResultSet(
             results=[
                 ConversationInfo(
-                    id='some_conversation_id',
+                    conversation_id='some_conversation_id',
                     title='Some Conversation',
                     last_updated_at=datetime.fromisoformat('2025-01-01T00:00:00'),
                     status=ConversationStatus.STOPPED,
