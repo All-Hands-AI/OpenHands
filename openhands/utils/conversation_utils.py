@@ -4,11 +4,10 @@ from typing import Callable
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.routes.settings import ConversationStoreImpl
-from openhands.server.shared import config, session_manager
+from openhands.server.shared import config
 from openhands.storage.data_models.conversation_info import ConversationInfo
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
-from openhands.storage.locations import get_conversation_events_dir
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
