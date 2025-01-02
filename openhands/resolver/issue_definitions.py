@@ -696,6 +696,7 @@ class PRHandler(IssueHandler):
         thread_comments: list[str],
         issues_context: str,
         last_message: str,
+        git_patch: str | None = None,
     ) -> tuple[bool, str]:
         """Check if thread comments feedback has been addressed."""
         thread_context = '\n---\n'.join(thread_comments)
@@ -712,6 +713,7 @@ class PRHandler(IssueHandler):
             issue_context=issues_context,
             thread_context=thread_context,
             last_message=last_message,
+            git_patch=git_patch or 'No changes made yet',
         )
 
         return self._check_feedback_with_llm(prompt)
@@ -721,6 +723,7 @@ class PRHandler(IssueHandler):
         review_comments: list[str],
         issues_context: str,
         last_message: str,
+        git_patch: str | None = None,
     ) -> tuple[bool, str]:
         """Check if review comments feedback has been addressed."""
         review_context = '\n---\n'.join(review_comments)
@@ -737,6 +740,7 @@ class PRHandler(IssueHandler):
             issue_context=issues_context,
             review_context=review_context,
             last_message=last_message,
+            git_patch=git_patch or 'No changes made yet',
         )
 
         return self._check_feedback_with_llm(prompt)
@@ -746,6 +750,26 @@ class PRHandler(IssueHandler):
     ) -> tuple[bool, None | list[bool], str]:
         """Guess if the issue is fixed based on the history, issue description and git patch."""
         last_message = history[-1].message
+        # If git_patch is not provided, try to find it in the history
+        if git_patch is None:
+            for event in history:
+                # Check if the event itself is a CmdOutputObservation
+                if (
+                    isinstance(event, CmdOutputObservation)
+                    and event.command == 'git diff --no-color --cached HEAD'
+                ):
+                    git_patch = event.content
+                    break
+                # Check if the event has observations
+                if hasattr(event, '_observations'):
+                    for obs in event._observations:
+                        if (
+                            isinstance(obs, CmdOutputObservation)
+                            and obs.command == 'git diff --no-color --cached HEAD'
+                        ):
+                            git_patch = obs.content
+                            break
+
         issues_context = json.dumps(issue.closing_issues, indent=4)
         success_list = []
         explanation_list = []
@@ -765,7 +789,7 @@ class PRHandler(IssueHandler):
         elif issue.thread_comments:
             if issue.thread_comments and issues_context and last_message:
                 success, explanation = self._check_thread_comments(
-                    issue.thread_comments, issues_context, last_message
+                    issue.thread_comments, issues_context, last_message, git_patch
                 )
             else:
                 success, explanation = (
@@ -778,7 +802,7 @@ class PRHandler(IssueHandler):
             # Handle PRs with only review comments (no file-specific review comments or thread comments)
             if issue.review_comments and issues_context and last_message:
                 success, explanation = self._check_review_comments(
-                    issue.review_comments, issues_context, last_message
+                    issue.review_comments, issues_context, last_message, git_patch
                 )
             else:
                 success, explanation = (
