@@ -249,8 +249,7 @@ class ActionExecutionClient(Runtime):
             assert action.timeout is not None
 
             try:
-                with send_request(
-                    self.session,
+                with self._send_action_server_request(
                     'POST',
                     f'{self._get_action_execution_server_host()}/execute_action',
                     json={'action': event_to_dict(action)},
