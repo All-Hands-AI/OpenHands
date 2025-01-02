@@ -11,14 +11,16 @@ use cases first and leaves more detailed or advanced configurations for later se
 
 ### Headers
 
-**First and Second-Level Headers**: Use **Title Case** for the first and second headers.
+Use **Title Case** for the first and second headers.
+
 Example:
   - **Basic Usage**
   - **Advanced Configuration Options**
 
 ### Lists
 
-**Bullet Points**: When listing items or options, use bullet points to enhance readability.
+When listing items or options, use bullet points to enhance readability.
+
 Example:
   - Option A
   - Option B
@@ -26,8 +28,9 @@ Example:
 
 ### Procedures
 
-**Numbered Steps**: For instructions or processes that need to be followed in a specific order, use numbered steps.
-  Example:
+For instructions or processes that need to be followed in a specific order, use numbered steps.
+
+Example:
   1. Step one: Do this.
   2. Step two: Complete this action.
   3. Step three: Verify the result.
