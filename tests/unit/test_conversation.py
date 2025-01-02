@@ -10,7 +10,7 @@ from openhands.storage.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
 from openhands.storage.data_models.conversation_status import ConversationStatus
-from openhands.server.routes.new_conversation import (
+from openhands.server.routes.manage_conversations import (
     get_conversation,
     search_conversations,
     update_conversation,
