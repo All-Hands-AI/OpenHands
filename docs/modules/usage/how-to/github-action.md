@@ -21,10 +21,10 @@ the [README for the OpenHands Resolver](https://github.com/All-Hands-AI/OpenHand
 ### Iterative resolution
 
 1. Create an issue in the repository.
-2. Add the `fix-me` label to the issue, or leave a comment starting with `@openhands-agent`
-3. Review the attempt to resolve the issue by checking the pull request
-4. Follow up with feedback through general comments, review comments, or inline thread comments
-5. Add the `fix-me` label to the pull request, or address a specific comment by starting with `@openhands-agent`
+2. Add the `fix-me` label to the issue, or leave a comment starting with `@openhands-agent`.
+3. Review the attempt to resolve the issue by checking the pull request.
+4. Follow up with feedback through general comments, review comments, or inline thread comments.
+5. Add the `fix-me` label to the pull request, or address a specific comment by starting with `@openhands-agent`.
 
 ### Label versus Macro
 
