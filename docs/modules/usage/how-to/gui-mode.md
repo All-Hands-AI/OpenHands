@@ -23,8 +23,8 @@ This mode offers an intuitive way to set up the environment, manage settings, an
 
 OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it is available. This can happen in two ways:
 
-* **Locally (OSS)**: The user directly inputs their GitHub token.
-* **Online (SaaS)**: The token is obtained through GitHub OAuth authentication.
+- **Locally (OSS)**: The user directly inputs their GitHub token.
+- **Online (SaaS)**: The token is obtained through GitHub OAuth authentication.
 
 #### Setting Up a Local GitHub Token
 
