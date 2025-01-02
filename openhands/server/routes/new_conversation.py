@@ -127,6 +127,9 @@ async def _get_conversation_info(
         events = sorted(events)
         event_path = events[-1]
         event = json.loads(file_store.read(event_path))
+        title = conversation.title
+        if not title:
+            title = f"Conversation {conversation.conversation_id}"
         return ConversationInfo(
             id=conversation.conversation_id,
             title=conversation.title,
