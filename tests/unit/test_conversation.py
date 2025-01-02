@@ -41,7 +41,7 @@ def _patch_store():
         MagicMock(return_value=file_store),
     ):
         with patch(
-            'openhands.server.routes.new_conversation.session_manager.file_store',
+            'openhands.server.routes.manage_conversations.session_manager.file_store',
             file_store,
         ):
             yield
