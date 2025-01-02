@@ -8,12 +8,12 @@ import { ModalBody } from "../modal-body";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { useAuth } from "#/context/auth-context";
-import { useSettings } from "#/context/settings-context";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { ModalButton } from "../../buttons/modal-button";
 import { CustomInput } from "../../custom-input";
 import { FormFieldset } from "../../form-fieldset";
 import { useConfig } from "#/hooks/query/use-config";
+import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
 interface AccountSettingsFormProps {
   onClose: () => void;
@@ -30,7 +30,7 @@ export function AccountSettingsForm({
 }: AccountSettingsFormProps) {
   const { gitHubToken, setGitHubToken, logout } = useAuth();
   const { data: config } = useConfig();
-  const { saveSettings } = useSettings();
+  const { mutate: saveSettings } = useSaveSettings();
   const { t } = useTranslation();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {

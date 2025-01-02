@@ -7,7 +7,12 @@ interface SettingsButtonProps {
 
 export function SettingsButton({ onClick }: SettingsButtonProps) {
   return (
-    <TooltipButton tooltip="Settings" ariaLabel="Settings" onClick={onClick}>
+    <TooltipButton
+      testId="settings-button"
+      tooltip="Settings"
+      ariaLabel="Settings"
+      onClick={onClick}
+    >
       <CogTooth />
     </TooltipButton>
   );
