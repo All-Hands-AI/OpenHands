@@ -62,17 +62,14 @@ For a complete list of available options, see the [LLM Configuration](../configu
 
 Custom LLM configurations are particularly useful in several scenarios:
 
-1. **Cost Optimization**: Use cheaper models for tasks that don't require high-quality responses, like repository exploration or simple file operations.
-
-2. **Task-Specific Tuning**: Configure different temperature and top_p values for tasks that require different levels of creativity or determinism.
-
-3. **Different Providers**: Use different LLM providers or API endpoints for different tasks.
-
-4. **Testing and Development**: Easily switch between different model configurations during development and testing.
+- **Cost Optimization**: Use cheaper models for tasks that don't require high-quality responses, like repository exploration or simple file operations.
+- **Task-Specific Tuning**: Configure different temperature and top_p values for tasks that require different levels of creativity or determinism.
+- **Different Providers**: Use different LLM providers or API endpoints for different tasks.
+- **Testing and Development**: Easily switch between different model configurations during development and testing.
 
 ## Example: Cost Optimization
 
-Here's a practical example of using custom LLM configurations to optimize costs:
+A practical example of using custom LLM configurations to optimize costs:
 
 ```toml
 # Default configuration using GPT-4 for high-quality responses
@@ -105,5 +102,5 @@ In this example:
 - The default configuration remains available for other tasks
 
 :::note
-Custom LLM configurations are only available when using OpenHands in development mode. For production deployments, use the standard configuration options.
+Custom LLM configurations are only available when using OpenHands in development mode, via `main.py` or `cli.py`. When running via `docker run`, please use the standard configuration options.
 :::
