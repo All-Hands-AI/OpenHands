@@ -440,27 +440,24 @@ class LLM(RetryMixin, DebugMixin):
         )
 
     def is_function_calling_active(self) -> bool:
-        # Check if model name is in supported list before checking model_info
+        # Check if model name is in our supported list
         model_name_supported = (
             self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
             or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
             or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
         )
 
-        logger.debug(
-            f'Model `{self.config.model}` native tool calling suggested after evaluation: {model_name_supported}'
-        )
-
-        # Handle native_tool_calling configuration
+        # Handle native_tool_calling user-defined configuration
         if self.config.native_tool_calling is None:
             logger.debug(
-                'Using suggested tool calling behavior based on model evaluation'
+                f'Using default tool calling behavior based on model evaluation: {model_name_supported}'
             )
             return model_name_supported
         elif self.config.native_tool_calling is False:
             logger.debug('Function calling explicitly disabled via configuration')
             return False
-        else:  # True case
+        else:
+            # try to enable native tool calling if supported by the model
             supports_fn_call = litellm.supports_function_calling(
                 model=self.config.model
             )

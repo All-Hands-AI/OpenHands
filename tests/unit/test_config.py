@@ -208,7 +208,7 @@ native_tool_calling = "true"
     assert default_config.get_llm_config().native_tool_calling is False
     assert (
         default_config.get_llm_config('gpt4o-mini').native_tool_calling == 'true'
-    )  # load_from_env didn't override the value from the toml file
+    )  # load_from_env didn't override the named config set in the toml file under [llm.gpt4o-mini]
 
 
 def test_compat_load_sandbox_from_toml(default_config: AppConfig, temp_toml_file: str):
