@@ -13,6 +13,7 @@ from openhands.server.data_models.conversation_status import ConversationStatus
 from openhands.server.routes.new_conversation import (
     get_conversation,
     search_conversations,
+    update_conversation,
 )
 from openhands.storage.memory import InMemoryFileStore
 
@@ -84,13 +85,31 @@ async def test_get_conversation():
 
 @pytest.mark.asyncio
 async def test_get_missing_conversation():
-    with patch(
-        'openhands.server.routes.new_conversation.session_manager.file_store',
-        InMemoryFileStore({}),
-    ):
+    with _patch_store():
         assert (
             await get_conversation(
                 'no_such_conversation', MagicMock(state=MagicMock(github_token=''))
             )
             is None
         )
+
+
+@pytest.mark.asyncio
+async def test_update_conversation():
+    with _patch_store():
+        await update_conversation(
+            'some_conversation_id',
+            'New Title',
+            MagicMock(state=MagicMock(github_token='')),
+        )
+        conversation = await get_conversation(
+            'some_conversation_id', MagicMock(state=MagicMock(github_token=''))
+        )
+        expected = ConversationInfo(
+            id='some_conversation_id',
+            title='New Title',
+            last_updated_at=datetime.fromisoformat('2025-01-01T00:00:00'),
+            status=ConversationStatus.STOPPED,
+            selected_repository='foobar',
+        )
+        assert conversation == expected
