@@ -53,7 +53,7 @@ async def test_search_conversations():
         expected = ConversationInfoResultSet(
             results=[
                 ConversationInfo(
-                    id='some_conversation_id',
+                    conversation_id='some_conversation_id',
                     title='Some Conversation',
                     last_updated_at=datetime.fromisoformat('2025-01-01T00:00:00'),
                     status=ConversationStatus.STOPPED,
@@ -71,7 +71,7 @@ async def test_get_conversation():
             'some_conversation_id', MagicMock(state=MagicMock(github_token=''))
         )
         expected = ConversationInfo(
-            id='some_conversation_id',
+            conversation_id='some_conversation_id',
             title='Some Conversation',
             last_updated_at=datetime.fromisoformat('2025-01-01T00:00:00'),
             status=ConversationStatus.STOPPED,
@@ -103,7 +103,7 @@ async def test_update_conversation():
             'some_conversation_id', MagicMock(state=MagicMock(github_token=''))
         )
         expected = ConversationInfo(
-            id='some_conversation_id',
+            conversation_id='some_conversation_id',
             title='New Title',
             last_updated_at=datetime.fromisoformat('2025-01-01T00:00:00'),
             status=ConversationStatus.STOPPED,
