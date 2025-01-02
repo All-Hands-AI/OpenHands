@@ -112,10 +112,12 @@ export function ResizablePanel({
       const firstSizePx = `${firstSize}px`;
       if (isHorizontal) {
         style.width = firstSizePx;
-        style.minWidth = firstSizePx;
+        style.minWidth = "250px";
+        style.maxWidth = "50%";
       } else {
         style.height = firstSizePx;
-        style.minHeight = firstSizePx;
+        style.minHeight = "150px";
+        style.maxHeight = "70%";
       }
     } else {
       style.flexGrow = 1;
