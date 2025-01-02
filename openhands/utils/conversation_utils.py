@@ -29,7 +29,7 @@ async def get_conversation_info(
         )
     except Exception:  # type: ignore
         logger.warning(
-            f'Error loading conversation: {conversation.conversation_id}',
+            f'Error loading conversation: {conversation.conversation_id[:5]}',
             exc_info=True,
             stack_info=True,
         )
