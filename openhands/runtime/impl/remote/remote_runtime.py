@@ -134,7 +134,7 @@ class RemoteRuntime(ActionExecutionClient):
                 status = data.get('status')
                 if status == 'running' or status == 'paused':
                     self._parse_runtime_response(response)
-        except RequestHTTPError as e:
+        except requests.HTTPError as e:
             if e.response.status_code == 404:
                 return False
             self.log('debug', f'Error while looking for remote runtime: {e}')
@@ -239,7 +239,7 @@ class RemoteRuntime(ActionExecutionClient):
                 'debug',
                 f'Runtime started. URL: {self.runtime_url}',
             )
-        except RequestHTTPError as e:
+        except requests.HTTPError as e:
             self.log('error', f'Unable to start runtime: {e}')
             raise AgentRuntimeUnavailableError() from e
 
