@@ -18,7 +18,7 @@ def test_parser_default_values():
     assert args.eval_num_workers == 4
     assert args.eval_note is None
     assert args.llm_config is None
-    assert args.name == 'default'
+    assert args.name == ''
     assert not args.no_auto_continue
 
 
