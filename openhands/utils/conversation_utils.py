@@ -1,5 +1,6 @@
-from datetime import datetime
 import json
+from datetime import datetime
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_metadata import ConversationMetadata
@@ -24,7 +25,7 @@ async def get_conversation_info(
             title = f'Conversation {conversation.conversation_id}'
         return ConversationInfo(
             id=conversation.conversation_id,
-            title=conversation.title,
+            title=title,
             last_updated_at=datetime.fromisoformat(event.get('timestamp')),
             selected_repository=conversation.selected_repository,
             status=ConversationStatus.RUNNING
