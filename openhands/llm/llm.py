@@ -122,12 +122,6 @@ class LLM(RetryMixin, DebugMixin):
         if self.is_function_calling_active():
             logger.debug('LLM: model supports function calling')
 
-        # Compatibility flag: use string serializer for DeepSeek models
-        # See this issue: https://github.com/All-Hands-AI/OpenHands/issues/5818
-        self._use_string_serializer = False
-        if 'deepseek' in self.config.model:
-            self._use_string_serializer = True
-
         # if using a custom tokenizer, make sure it's loaded and accessible in the format expected by litellm
         if self.config.custom_tokenizer is not None:
             self.tokenizer = create_pretrained_tokenizer(self.config.custom_tokenizer)
