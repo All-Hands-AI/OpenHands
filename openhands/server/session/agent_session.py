@@ -202,6 +202,7 @@ class AgentSession:
             return
 
         self.runtime.clone_repo(github_token, selected_repository)
+        self.runtime.maybe_run_setup_script(selected_repository)
         if agent.prompt_manager:
             microagents = await call_sync_from_async(
                 self.runtime.get_custom_microagents, selected_repository
