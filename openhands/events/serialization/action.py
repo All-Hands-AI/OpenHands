@@ -18,7 +18,6 @@ from openhands.events.action.files import (
     FileWriteAction,
 )
 from openhands.events.action.message import MessageAction
-from openhands.events.action.tasks import AddTaskAction, ModifyTaskAction
 
 actions = (
     NullAction,
@@ -32,8 +31,6 @@ actions = (
     AgentFinishAction,
     AgentRejectAction,
     AgentDelegateAction,
-    AddTaskAction,
-    ModifyTaskAction,
     ChangeAgentStateAction,
     MessageAction,
 )
