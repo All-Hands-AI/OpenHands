@@ -7,6 +7,7 @@ import tenacity
 
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import (
+    AgentRuntimeDisconnectedError,
     AgentRuntimeError,
     AgentRuntimeNotFoundError,
     AgentRuntimeNotReadyError,
@@ -366,9 +367,13 @@ class RemoteRuntime(ActionExecutionClient):
             self.log('error', 'No response received within the timeout period.')
             raise
         except requests.HTTPError as e:
-            if e.response.status_code in (404, 502):
+            if e.response.status_code == 404:
                 raise AgentRuntimeNotFoundError(
                     'Runtime unavailable: System resources may be exhausted due to running commands. This may be fixed by retrying.'
+                ) from e
+            elif e.response.status_code == 502:
+                raise AgentRuntimeDisconnectedError(
+                    'Runtime disconnected: System resources may be exhausted due to running commands. This may be fixed by retrying.'
                 ) from e
             elif e.response.status_code == 503:
                 self.log('warning', 'Runtime appears to be paused. Resuming...')
