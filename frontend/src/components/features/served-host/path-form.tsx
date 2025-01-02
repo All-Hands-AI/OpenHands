@@ -1,14 +1,16 @@
 interface PathFormProps {
   ref: React.RefObject<HTMLFormElement | null>;
   onBlur: () => void;
+  defaultValue: string;
 }
 
-export function PathForm({ ref, onBlur }: PathFormProps) {
+export function PathForm({ ref, onBlur, defaultValue }: PathFormProps) {
   return (
-    <form ref={ref} className="flex-1">
+    <form ref={ref} onSubmit={(e) => e.preventDefault()} className="flex-1">
       <input
-        name="path"
+        name="url"
         type="text"
+        defaultValue={defaultValue}
         className="w-full bg-transparent"
         onBlur={onBlur}
       />
