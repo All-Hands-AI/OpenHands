@@ -186,7 +186,7 @@ async def _get_conversation_info(
         if not title:
             title = f'Conversation {conversation.conversation_id[:5]}'
         return ConversationInfo(
-            id=conversation.conversation_id,
+            conversation_id=conversation.conversation_id,
             title=title,
             last_updated_at=conversation.last_updated_at,
             selected_repository=conversation.selected_repository,

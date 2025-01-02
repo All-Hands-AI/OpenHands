@@ -8,7 +8,7 @@ from openhands.storage.data_models.conversation_status import ConversationStatus
 class ConversationInfo:
     """Information about a conversation"""
 
-    id: str
+    conversation_id: str
     title: str
     last_updated_at: datetime | None = None
     status: ConversationStatus = ConversationStatus.STOPPED
