@@ -6,9 +6,9 @@ from github import Github
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.data_models.conversation_info import ConversationInfo
-from openhands.server.data_models.conversation_metadata import ConversationMetadata
-from openhands.server.data_models.conversation_info_result_set import (
+from openhands.storage.data_models.conversation_info import ConversationInfo
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
 from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl

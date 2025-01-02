@@ -3,8 +3,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from openhands.core.config.app_config import AppConfig
-from openhands.server.data_models.conversation_metadata import ConversationMetadata
-from openhands.server.data_models.conversation_metadata_result_set import (
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.conversation_metadata_result_set import (
     ConversationMetadataResultSet,
 )
 

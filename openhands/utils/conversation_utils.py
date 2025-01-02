@@ -2,9 +2,9 @@ import json
 from datetime import datetime
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.data_models.conversation_info import ConversationInfo
-from openhands.server.data_models.conversation_metadata import ConversationMetadata
-from openhands.server.data_models.conversation_status import ConversationStatus
+from openhands.storage.data_models.conversation_info import ConversationInfo
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.server.shared import session_manager
 from openhands.storage.locations import get_conversation_events_dir
 
