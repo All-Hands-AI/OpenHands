@@ -7,10 +7,19 @@ import frontmatter
 from pydantic import BaseModel, Field
 
 
+class MicroAgentType(str, Enum):
+    """Type of microagent."""
+
+    KNOWLEDGE = 'knowledge'
+    REPO_KNOWLEDGE = 'repo'
+    TASK = 'task'
+
+
 class MicroAgentMetadata(BaseModel):
     """Metadata for all microagents."""
 
     name: str = 'default'
+    type: MicroAgentType = Field(default=MicroAgentType.KNOWLEDGE)
     version: str = Field(default='1.0.0')
     agent: str = Field(default='CodeActAgent')
     triggers: list[str] = []  # optional, only exists for knowledge microagents
@@ -22,14 +31,6 @@ class TaskInput(BaseModel):
     name: str
     description: str
     required: bool = True
-
-
-class MicroAgentType(str, Enum):
-    """Type of microagent."""
-
-    KNOWLEDGE = 'knowledge'
-    REPO_KNOWLEDGE = 'repo_knowledge'
-    TASK = 'task'
 
 
 class BaseMicroAgent(BaseModel):
@@ -63,8 +64,6 @@ class BaseMicroAgent(BaseModel):
                 type=MicroAgentType.REPO_KNOWLEDGE,
             )
 
-        agent_type = cls.infer_type_from_path(str(path))
-
         file_io = io.StringIO(file_content)
         loaded = frontmatter.load(file_io)
         content = loaded.content
@@ -76,28 +75,17 @@ class BaseMicroAgent(BaseModel):
             MicroAgentType.REPO_KNOWLEDGE: RepoMicroAgent,
             MicroAgentType.TASK: TaskMicroAgent,
         }
+        if metadata.type not in subclass_map:
+            raise ValueError(f'Unknown microagent type: {metadata.type}')
 
-        agent_class = subclass_map[agent_type]
+        agent_class = subclass_map[metadata.type]
         return agent_class(
             name=path.stem,
             content=content,
             metadata=metadata,
             source=str(path),
-            type=agent_type,
+            type=metadata.type,
         )
-
-    @staticmethod
-    def infer_type_from_path(path: str) -> MicroAgentType:
-        if 'knowledge/' in path:
-            return MicroAgentType.KNOWLEDGE
-        elif 'repo.md' in path:
-            return MicroAgentType.REPO_KNOWLEDGE
-        elif 'tasks/' in path:
-            return MicroAgentType.TASK
-        else:
-            raise ValueError(
-                f'Unknown microagent type for path: {path}. Expected one of: {MicroAgentType.KNOWLEDGE} (knowledge/ in path), {MicroAgentType.REPO_KNOWLEDGE} (repo.md in path), {MicroAgentType.TASK} (tasks/ in path)'
-            )
 
 
 class KnowledgeMicroAgent(BaseMicroAgent):

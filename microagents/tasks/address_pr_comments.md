@@ -1,5 +1,6 @@
 ---
 name: address_pr_comments
+type: task
 version: 1.0.0
 author: openhands
 agent: CodeActAgent
