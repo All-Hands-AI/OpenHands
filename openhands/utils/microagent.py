@@ -1,3 +1,4 @@
+import io
 from enum import Enum
 from pathlib import Path
 from typing import Dict, Tuple, Union
@@ -64,7 +65,8 @@ class BaseMicroAgent(BaseModel):
 
         agent_type = cls.infer_type_from_path(str(path))
 
-        loaded = frontmatter.load(file_content)
+        file_io = io.StringIO(file_content)
+        loaded = frontmatter.load(file_io)
         content = loaded.content
         metadata = MicroAgentMetadata(**loaded.metadata)
 
@@ -172,6 +174,9 @@ def load_microagents_from_dir(
 
     # Load all agents
     for file in microagent_dir.rglob('*.md'):
+        # skip README.md
+        if file.name == 'README.md':
+            continue
         try:
             agent = BaseMicroAgent.load(file)
             if isinstance(agent, RepoMicroAgent):
