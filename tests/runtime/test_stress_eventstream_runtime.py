@@ -11,7 +11,7 @@ from openhands.events.action import CmdRunAction
     TEST_IN_CI,
     reason='This test should only be run locally, not in CI.',
 )
-def test_stress_eventstream_runtime(temp_dir, runtime_cls, repeat=10):
+def test_stress_eventstream_runtime(temp_dir, runtime_cls, repeat=100):
     runtime = _load_runtime(temp_dir, runtime_cls)
 
     action = CmdRunAction(
@@ -23,9 +23,7 @@ def test_stress_eventstream_runtime(temp_dir, runtime_cls, repeat=10):
     assert obs.exit_code == 0
 
     for _ in range(repeat):
-        action = CmdRunAction(
-            command='stress-ng --vm 4 --vm-bytes 1G --timeout 300s --metrics --verbose'
-        )
+        action = CmdRunAction(command='stress-ng --all 2 -t 5m --metrics --verbose')
         action.timeout = 600
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
