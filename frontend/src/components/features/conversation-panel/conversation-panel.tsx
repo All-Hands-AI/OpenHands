@@ -60,7 +60,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     if (oldTitle !== newTitle)
       updateConversation({
         id: conversationId,
-        conversation: { name: newTitle },
+        conversation: { title: newTitle },
       });
   };
 
@@ -98,11 +98,11 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           onClick={() => handleClickCard(project.conversation_id)}
           onDelete={() => handleDeleteProject(project.conversation_id)}
           onChangeTitle={(title) =>
-            handleChangeTitle(project.conversation_id, project.name, title)
+            handleChangeTitle(project.conversation_id, project.title, title)
           }
-          name={project.name}
+          name={project.title}
           repo={project.repo}
-          lastUpdated={project.lastUpdated}
+          lastUpdated={project.last_updated_at}
           state={project.state}
         />
       ))}

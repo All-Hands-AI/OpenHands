@@ -62,8 +62,13 @@ export interface AuthenticateResponse {
 
 export interface Conversation {
   conversation_id: string;
-  name: string;
+  title: string;
   repo: string | null;
-  lastUpdated: string;
+  last_updated_at: string;
   state: ProjectState;
+}
+
+export interface ResultSet<T> {
+  results: T[]
+  next_page_id: string | null
 }
