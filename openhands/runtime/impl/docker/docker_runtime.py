@@ -186,20 +186,14 @@ class DockerRuntime(ActionExecutionClient):
         )  # in future this might differ from host port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
-        use_host_network = self.config.sandbox.use_host_network
-        network_mode: str | None = 'host' if use_host_network else None
-
-        port_mapping: dict[str, list[dict[str, str]]] | None = (
-            None
-            if use_host_network
-            else {f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}]}
+        # Always use host network mode for better connectivity
+        network_mode = 'host'
+        port_mapping = None
+        
+        self.log(
+            'info',
+            'Using host network mode for container networking',
         )
-
-        if use_host_network:
-            self.log(
-                'warn',
-                'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
-            )
 
         # Combine environment variables
         environment = {
