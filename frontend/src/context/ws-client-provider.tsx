@@ -1,13 +1,10 @@
 import posthog from "posthog-js";
 import React from "react";
 import { io, Socket } from "socket.io-client";
-
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
-import { AgentStateChangeObservation } from "#/types/core/observations";
 import { OpenHandsParsedEvent } from "#/types/core";
-import { AgentState } from "#/types/agent-state";
 
 const isOpenHandsMessage = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -17,15 +14,9 @@ const isOpenHandsMessage = (event: unknown): event is OpenHandsParsedEvent =>
   "message" in event &&
   "timestamp" in event;
 
-const isStateChangeMessage = (
-  event: OpenHandsParsedEvent,
-): event is AgentStateChangeObservation =>
-  "observation" in event && event.observation === "agent_state_changed";
-
 export enum WsClientProviderStatus {
   CONNECTED,
   DISCONNECTED,
-  ACTIVE,
 }
 
 interface UseWsClient {
@@ -79,15 +70,6 @@ export function WsClientProvider({
   function handleMessage(event: Record<string, unknown>) {
     if (isOpenHandsMessage(event)) {
       messageRateHandler.record(new Date().getTime());
-
-      if (isStateChangeMessage(event)) {
-        if (
-          event.extras.agent_state !== AgentState.INIT &&
-          event.extras.agent_state !== AgentState.LOADING
-        ) {
-          setStatus(WsClientProviderStatus.ACTIVE);
-        }
-      }
     }
     setEvents((prevEvents) => [...prevEvents, event]);
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
