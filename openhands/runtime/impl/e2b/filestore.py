@@ -5,6 +5,11 @@ class E2BFileStore(FileStore):
     def __init__(self, filesystem):
         self.filesystem = filesystem
 
+    def get_full_path(self, path: str) -> str:
+        if path.startswith('/'):
+            path = path[1:]
+        return path
+
     def write(self, path: str, contents: str) -> None:
         self.filesystem.write(path, contents)
 

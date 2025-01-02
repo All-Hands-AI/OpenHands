@@ -15,6 +15,11 @@ class S3FileStore(FileStore):
         self.bucket = os.getenv('AWS_S3_BUCKET')
         self.client = Minio(endpoint, access_key, secret_key, secure=secure)
 
+    def get_full_path(self, path: str) -> str:
+        if path.startswith('/'):
+            path = path[1:]
+        return path
+
     def write(self, path: str, contents: str) -> None:
         as_bytes = contents.encode('utf-8')
         stream = io.BytesIO(as_bytes)

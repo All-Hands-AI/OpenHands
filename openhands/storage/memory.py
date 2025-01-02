@@ -12,6 +12,11 @@ class InMemoryFileStore(FileStore):
     def __init__(self, files: dict[str, str] = IN_MEMORY_FILES):
         self.files = files
 
+    def get_full_path(self, path: str) -> str:
+        if path.startswith('/'):
+            path = path[1:]
+        return path
+
     def write(self, path: str, contents: str) -> None:
         self.files[path] = contents
 

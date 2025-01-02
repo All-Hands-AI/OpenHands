@@ -19,6 +19,11 @@ class GoogleCloudFileStore(FileStore):
         self.storage_client = storage.Client()
         self.bucket = self.storage_client.bucket(bucket_name)
 
+    def get_full_path(self, path: str) -> str:
+        if path.startswith('/'):
+            path = path[1:]
+        return path
+
     def write(self, path: str, contents: str | bytes) -> None:
         blob = self.bucket.blob(path)
         with blob.open('w') as f:
