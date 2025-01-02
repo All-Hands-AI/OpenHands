@@ -29,12 +29,9 @@ def _patch_store():
                 'selected_repository': 'foobar',
                 'conversation_id': 'some_conversation_id',
                 'github_user_id': 'github_user',
+                'last_updated_at': '2025-01-01T00:00:00',
             }
         ),
-    )
-    file_store.write(
-        'sessions/some_conversation_id/events/0.json',
-        json.dumps({'timestamp': '2025-01-01T00:00:00'}),
     )
     with patch(
         'openhands.storage.conversation.file_conversation_store.get_file_store',
