@@ -17,6 +17,7 @@ from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
 )
+from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
@@ -155,6 +156,12 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     )
                     security_config = SecurityConfig.from_dict(value)
                     cfg.security = security_config
+                elif key is not None and key.lower() == 'extended':
+                    logger.openhands_logger.debug(
+                        'Attempt to load extended config from config toml'
+                    )
+                    extended_config = ExtendedConfig.from_dict(value)
+                    cfg.extended = extended_config
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.openhands_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'
