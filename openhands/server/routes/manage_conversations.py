@@ -7,14 +7,14 @@ from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.stream import EventStreamSubscriber
-from openhands.storage.data_models.conversation_info import ConversationInfo
-from openhands.storage.data_models.conversation_metadata import ConversationMetadata
-from openhands.storage.data_models.conversation_info_result_set import (
-    ConversationInfoResultSet,
-)
 from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import config, session_manager
+from openhands.storage.data_models.conversation_info import ConversationInfo
+from openhands.storage.data_models.conversation_info_result_set import (
+    ConversationInfoResultSet,
+)
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.utils.async_utils import call_sync_from_async, wait_all
 from openhands.utils.conversation_utils import (
     create_conversation_update_callback,
@@ -86,7 +86,9 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     try:
         event_stream.subscribe(
             EventStreamSubscriber.SERVER,
-            create_conversation_update_callback(data.github_token, conversation_id),
+            create_conversation_update_callback(
+                data.github_token or '', conversation_id
+            ),
             UPDATED_AT_CALLBACK_ID,
         )
     except ValueError:
