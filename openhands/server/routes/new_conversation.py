@@ -9,18 +9,16 @@ from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.data_models.conversation_info import ConversationInfo
-from openhands.server.data_models.conversation_metadata import ConversationMetadata
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
+from openhands.server.data_models.conversation_metadata import ConversationMetadata
 from openhands.server.data_models.conversation_status import ConversationStatus
 from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import config, session_manager
-from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_events_dir
 from openhands.utils.async_utils import call_sync_from_async, wait_all
-from openhands.utils.search_utils import offset_to_page_id, page_id_to_offset
 
 app = APIRouter(prefix='/api')
 
@@ -84,7 +82,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         conversation_id, conversation_init_data
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
-    return JSONResponse(content={'status': 'ok', 'conversation_id': conversation_id})
+    return JSONResponse(content={'status': 'ok', 'id': conversation_id})
 
 
 @app.get('/conversations')

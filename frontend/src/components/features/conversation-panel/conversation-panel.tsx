@@ -60,7 +60,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     if (oldTitle !== newTitle)
       updateConversation({
         id: conversationId,
-        conversation: { name: newTitle },
+        conversation: { title: newTitle },
       });
   };
 
@@ -87,23 +87,23 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           <p className="text-danger">{error.message}</p>
         </div>
       )}
-      {conversations?.length === 0 && (
+      {conversations?.results.length === 0 && (
         <div className="flex flex-col items-center justify-center h-full">
           <p className="text-neutral-400">No conversations found</p>
         </div>
       )}
-      {conversations?.map((project) => (
+      {conversations?.results.map((project) => (
         <ConversationCard
-          key={project.conversation_id}
-          onClick={() => handleClickCard(project.conversation_id)}
-          onDelete={() => handleDeleteProject(project.conversation_id)}
+          key={project.id}
+          onClick={() => handleClickCard(project.id)}
+          onDelete={() => handleDeleteProject(project.id)}
           onChangeTitle={(title) =>
-            handleChangeTitle(project.conversation_id, project.name, title)
+            handleChangeTitle(project.id, project.title, title)
           }
-          name={project.name}
-          repo={project.repo}
-          lastUpdated={project.lastUpdated}
-          state={project.state}
+          name={project.title}
+          repo={project.selected_repository}
+          lastUpdated={project.last_updated_at}
+          state={project.status}
         />
       ))}
 

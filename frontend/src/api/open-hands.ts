@@ -9,6 +9,7 @@ import {
   GetVSCodeUrlResponse,
   AuthenticateResponse,
   Conversation,
+  ConversationSearchResults,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings } from "#/services/settings";
@@ -221,13 +222,16 @@ class OpenHands {
     return data;
   }
 
-  static async getUserConversations(): Promise<Conversation[]> {
-    const { data } = await openHands.get<Conversation[]>("/api/conversations");
+  static async getUserConversations(): Promise<ConversationSearchResults> {
+    const { data } =
+      await openHands.get<ConversationSearchResults>("/api/conversations");
     return data;
   }
 
-  static async deleteUserConversation(conversationId: string): Promise<void> {
-    await openHands.delete(`/api/conversations/${conversationId}`);
+  static async deleteUserConversation(
+    conversationId: string,
+  ): Promise<boolean> {
+    return openHands.delete(`/api/conversations/${conversationId}`);
   }
 
   static async updateUserConversation(
@@ -252,7 +256,7 @@ class OpenHands {
     );
 
     // TODO: remove this once we have a multi-conversation UI
-    localStorage.setItem("latest_conversation_id", data.conversation_id);
+    localStorage.setItem("latest_conversation_id", data.id);
 
     return data;
   }

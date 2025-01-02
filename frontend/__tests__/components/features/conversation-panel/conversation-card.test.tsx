@@ -263,7 +263,7 @@ describe("ConversationCard", () => {
           name="Conversation 1"
           repo={null}
           lastUpdated="2021-10-01T12:00:00Z"
-          state="warm"
+          state="RUNNING"
         />,
       );
 

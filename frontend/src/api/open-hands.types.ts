@@ -61,9 +61,14 @@ export interface AuthenticateResponse {
 }
 
 export interface Conversation {
-  conversation_id: string;
-  name: string;
-  repo: string | null;
-  lastUpdated: string;
-  state: ProjectState;
+  id: string;
+  title: string;
+  selected_repository: string | null;
+  last_updated_at: string;
+  status: ProjectState;
+}
+
+export interface ConversationSearchResults {
+  results: Conversation[];
+  next_page_id: string | null;
 }
