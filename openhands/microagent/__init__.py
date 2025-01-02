@@ -6,6 +6,10 @@ from typing import Dict, Tuple, Union
 import frontmatter
 from pydantic import BaseModel, Field
 
+from openhands.core.exceptions import (
+    MicroAgentValidationError,
+)
+
 
 class MicroAgentType(str, Enum):
     """Type of microagent."""
@@ -67,7 +71,10 @@ class BaseMicroAgent(BaseModel):
         file_io = io.StringIO(file_content)
         loaded = frontmatter.load(file_io)
         content = loaded.content
-        metadata = MicroAgentMetadata(**loaded.metadata)
+        try:
+            metadata = MicroAgentMetadata(**loaded.metadata)
+        except Exception as e:
+            raise MicroAgentValidationError(f'Error loading metadata: {e}') from e
 
         # Create appropriate subclass based on type
         subclass_map = {
@@ -102,6 +109,10 @@ class KnowledgeMicroAgent(BaseMicroAgent):
             raise ValueError('KnowledgeMicroAgent must have type KNOWLEDGE')
 
     def match_trigger(self, message: str) -> str | None:
+        """Match a trigger in the message.
+
+        It returns the first trigger that matches the message.
+        """
         message = message.lower()
         for trigger in self.triggers:
             if trigger.lower() in message:
