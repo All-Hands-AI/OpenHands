@@ -337,11 +337,16 @@ class LLMAttentionCondenser(RollingCondenser):
         self.llm = llm
 
         # This condenser relies on the `response_format` feature, which is not supported by all LLMs
+        supports_response_format: bool = False
         try:
-            supports_response_format = (
-                'response_format'
-                in litellm.get_supported_openai_params(self.llm.config.model)
+            supported_parameters = litellm.get_supported_openai_params(
+                self.llm.config.model,
+                custom_llm_provider=self.llm.config.custom_llm_provider,
             )
+            # If the custom provider isn't mapped the `supported_parameters` will be `None`
+            if supported_parameters and 'repsonse_format' in supported_parameters:
+                supports_response_format = True
+
         except Exception as e:
             raise ValueError(
                 "Cannot determine if model supports 'response_format'"
@@ -395,6 +400,7 @@ class LLMAttentionCondenser(RollingCondenser):
 
         self.add_metadata('all_event_ids', [event.id for event in events])
         self.add_metadata('response_ids', response_ids)
+        self.add_metadata('metrics', self.llm.metrics.get())
 
         # Filter out any IDs from the head and trim the results down
         head_ids = [event.id for event in head]
