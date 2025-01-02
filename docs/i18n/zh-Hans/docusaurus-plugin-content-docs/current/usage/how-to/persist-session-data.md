@@ -12,6 +12,6 @@
 [core]
 ...
 file_store="local"
-file_store_path="/absolute/path/to/openhands/cache/directory"
+file_store_location="/absolute/path/to/openhands/cache/directory"
 jwt_secret="secretpass"
 ```

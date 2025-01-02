@@ -239,7 +239,7 @@ def finalize_config(cfg: AppConfig):
 
     if not cfg.jwt_secret:
         cfg.jwt_secret = get_or_create_jwt_secret(
-            get_file_store(cfg.file_store, cfg.file_store_path)
+            get_file_store(cfg.file_store, cfg.file_store_location)
         )
 
 
