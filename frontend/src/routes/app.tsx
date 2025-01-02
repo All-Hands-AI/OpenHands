@@ -1,12 +1,34 @@
 import React from "react";
 import { FaArrowRotateRight } from "react-icons/fa6";
+import { FaExternalLinkAlt } from "react-icons/fa";
 import { useActiveHost } from "#/hooks/query/use-active-host";
+import { PathForm } from "#/components/features/served-host/path-form";
 
 function ServedApp() {
   const { activeHost } = useActiveHost();
   const [refreshKey, setRefreshKey] = React.useState(0);
+  const [url, setUrl] = React.useState<string | null>(null);
+  const [path, setPath] = React.useState<string>("hello");
 
-  if (!activeHost) {
+  const formRef = React.useRef<HTMLFormElement>(null);
+
+  const handleOnBlur = () => {
+    if (formRef.current) {
+      const formData = new FormData(formRef.current);
+      const pathInputValue = formData.get("path")?.toString();
+
+      setPath(pathInputValue || "");
+    }
+  };
+
+  React.useEffect(() => {
+    setUrl(activeHost);
+    if (!activeHost) setPath("");
+  }, [activeHost]);
+
+  const fullUrl = `${url}/${path}`;
+
+  if (!url) {
     return (
       <div className="flex items-center justify-center w-full h-full p-10">
         <span className="text-neutral-400 font-bold">
@@ -22,23 +44,26 @@ function ServedApp() {
         <button
           type="button"
           onClick={() => setRefreshKey((prev) => prev + 1)}
-          className="rounded bg-neutral-700 hover:bg-neutral-600 text-sm"
+          className="text-sm"
         >
           <FaArrowRotateRight className="w-4 h-4" />
         </button>
-        <a
-          href={activeHost}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-neutral-300 hover:text-white cursor-pointer"
+        <button
+          type="button"
+          onClick={() => window.open(fullUrl, "_blank")}
+          className="text-sm"
         >
-          {activeHost}
-        </a>
+          <FaExternalLinkAlt className="w-4 h-4" />
+        </button>
+        <div className="w-full flex">
+          <span className="text-neutral-300">{url}/</span>
+          <PathForm ref={formRef} onBlur={handleOnBlur} />
+        </div>
       </div>
       <iframe
         key={refreshKey}
         title="Served App"
-        src={activeHost}
+        src={fullUrl}
         className="w-full h-full"
       />
     </div>
