@@ -12,8 +12,8 @@ from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.core.config import (
     AppConfig,
-    get_parser,
-    load_app_config,
+    parse_arguments,
+    setup_config_from_args,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
@@ -109,24 +109,16 @@ def read_input(config: AppConfig) -> str:
 async def main(loop: asyncio.AbstractEventLoop):
     """Runs the agent in CLI mode"""
 
-    parser = get_parser()
-    # Add the version argument
-    parser.add_argument(
-        '-v',
-        '--version',
-        action='version',
-        version=f'{__version__}',
-        help='Show the version number and exit',
-        default=None,
-    )
-    args = parser.parse_args()
+    args = parse_arguments()
 
     if args.version:
         print(f'OpenHands version: {__version__}')
         return
 
     logger.setLevel(logging.WARNING)
-    config = load_app_config(config_file=args.config_file)
+
+    config = setup_config_from_args(args)
+
     sid = str(uuid4())
 
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
