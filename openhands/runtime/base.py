@@ -223,19 +223,13 @@ class Runtime(FileEditRuntimeMixin):
         """Run .openhands/setup.sh if it exists in the workspace or repository."""
         setup_script = '.openhands/setup.sh'
         if selected_repository:
-            setup_script = f'{selected_repository.split("/")[1]}/.openhands/setup.sh'
+            repo_name = selected_repository.split('/')[1]
+            setup_script = f'{repo_name}/.openhands/setup.sh'
 
-        # Check if setup script exists
-        action = CmdRunAction(f'[ -f "{setup_script}" ] && echo "exists"')
+        # Check if setup script exists and run it
+        action = CmdRunAction(f'if [ -f "{setup_script}" ]; then chmod +x "{setup_script}" && "{setup_script}"; fi')
         obs = self.run_action(action)
-        if not isinstance(obs, CmdOutputObservation) or obs.content.strip() != 'exists':
-            return
-
-        # Make script executable and run it
-        self.log('info', f'Running setup script: {setup_script}')
-        action = CmdRunAction(f'chmod +x "{setup_script}" && "{setup_script}"')
-        obs = self.run_action(action)
-        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+        if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
 
     def get_custom_microagents(self, selected_repository: str | None) -> list[str]:
