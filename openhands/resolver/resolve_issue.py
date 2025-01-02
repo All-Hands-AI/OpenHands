@@ -202,7 +202,7 @@ async def process_issue(
     runtime = create_runtime(config)
     await runtime.connect()
 
-    async def on_event(evt):
+    def on_event(evt):
         logger.info(evt)
 
     runtime.event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
