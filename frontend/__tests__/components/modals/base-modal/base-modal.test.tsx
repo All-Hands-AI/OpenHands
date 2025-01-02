@@ -52,14 +52,10 @@ describe("BaseModal", () => {
     expect(screen.getByText("Save")).toBeInTheDocument();
     expect(screen.getByText("Cancel")).toBeInTheDocument();
 
-    await act(async () => {
-      await userEvent.click(screen.getByText("Save"));
-    });
+    await userEvent.click(screen.getByText("Save"));
     expect(onPrimaryClickMock).toHaveBeenCalledTimes(1);
 
-    await act(async () => {
-      await userEvent.click(screen.getByText("Cancel"));
-    });
+    await userEvent.click(screen.getByText("Cancel"));
     expect(onSecondaryClickMock).toHaveBeenCalledTimes(1);
   });
 
@@ -80,9 +76,7 @@ describe("BaseModal", () => {
       />,
     );
 
-    await act(async () => {
-      await userEvent.click(screen.getByText("Save"));
-    });
+    await userEvent.click(screen.getByText("Save"));
     expect(onOpenChangeMock).toHaveBeenCalledTimes(1);
   });
 

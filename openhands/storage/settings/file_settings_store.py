@@ -7,7 +7,7 @@ from openhands.core.config.app_config import AppConfig
 from openhands.server.settings import Settings
 from openhands.storage import get_file_store
 from openhands.storage.files import FileStore
-from openhands.storage.settings_store import SettingsStore
+from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import call_sync_from_async
 
 

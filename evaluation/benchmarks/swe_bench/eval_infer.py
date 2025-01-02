@@ -76,7 +76,7 @@ def get_config(instance: pd.Series) -> AppConfig:
     )
     config = AppConfig(
         run_as_openhands=False,
-        runtime=os.environ.get('RUNTIME', 'eventstream'),
+        runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox=SandboxConfig(
             base_container_image=base_container_image,
             use_host_network=False,

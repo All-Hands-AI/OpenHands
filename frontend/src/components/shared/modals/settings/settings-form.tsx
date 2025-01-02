@@ -9,7 +9,6 @@ import { DangerModal } from "../confirmation-modals/danger-modal";
 import { I18nKey } from "#/i18n/declaration";
 import { extractSettings, saveSettingsView } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
-import { useSettings } from "#/context/settings-context";
 import { ModalButton } from "../../buttons/modal-button";
 import { AdvancedOptionSwitch } from "../../inputs/advanced-option-switch";
 import { AgentInput } from "../../inputs/agent-input";
@@ -20,6 +19,7 @@ import { CustomModelInput } from "../../inputs/custom-model-input";
 import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
+import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -38,7 +38,7 @@ export function SettingsForm({
   securityAnalyzers,
   onClose,
 }: SettingsFormProps) {
-  const { saveSettings } = useSettings();
+  const { mutateAsync: saveSettings } = useSaveSettings();
   const endSession = useEndSession();
 
   const location = useLocation();
@@ -82,17 +82,16 @@ export function SettingsForm({
   const resetOngoingSession = () => {
     if (location.pathname.startsWith("/conversations/")) {
       endSession();
-      onClose();
     }
   };
 
-  const handleFormSubmission = (formData: FormData) => {
+  const handleFormSubmission = async (formData: FormData) => {
     const keys = Array.from(formData.keys());
     const isUsingAdvancedOptions = keys.includes("use-advanced-options");
     const newSettings = extractSettings(formData);
 
     saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
-    saveSettings(newSettings);
+    await saveSettings(newSettings, { onSuccess: onClose });
     resetOngoingSession();
 
     posthog.capture("settings_saved", {
@@ -101,12 +100,10 @@ export function SettingsForm({
     });
   };
 
-  const handleConfirmResetSettings = () => {
-    saveSettings(getDefaultSettings());
+  const handleConfirmResetSettings = async () => {
+    await saveSettings(getDefaultSettings(), { onSuccess: onClose });
     resetOngoingSession();
     posthog.capture("settings_reset");
-
-    onClose();
   };
 
   const handleConfirmEndSession = () => {
@@ -122,7 +119,6 @@ export function SettingsForm({
       setConfirmEndSessionModalOpen(true);
     } else {
       handleFormSubmission(formData);
-      onClose();
     }
   };
 
@@ -165,7 +161,7 @@ export function SettingsForm({
 
           <APIKeyInput
             isDisabled={!!disabled}
-            defaultValue={settings.LLM_API_KEY || ""}
+            isSet={settings.LLM_API_KEY === "SET"}
           />
 
           {showAdvancedOptions && (
@@ -221,6 +217,7 @@ export function SettingsForm({
       {confirmResetDefaultsModalOpen && (
         <ModalBackdrop>
           <DangerModal
+            testId="reset-defaults-modal"
             title={t(I18nKey.SETTINGS_FORM$ARE_YOU_SURE_LABEL)}
             description={t(
               I18nKey.SETTINGS_FORM$ALL_INFORMATION_WILL_BE_DELETED_MESSAGE,
