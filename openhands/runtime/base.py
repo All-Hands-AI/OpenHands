@@ -34,6 +34,12 @@ from openhands.events.observation import (
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.microagent import (
+    BaseMicroAgent,
+    KnowledgeMicroAgent,
+    RepoMicroAgent,
+    TaskMicroAgent,
+)
 from openhands.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
@@ -41,12 +47,6 @@ from openhands.runtime.plugins import (
 )
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands.utils.async_utils import call_sync_from_async
-from openhands.utils.microagent import (
-    BaseMicroAgent,
-    KnowledgeMicroAgent,
-    RepoMicroAgent,
-    TaskMicroAgent,
-)
 
 STATUS_MESSAGES = {
     'STATUS$STARTING_RUNTIME': 'Starting runtime...',

@@ -5,7 +5,7 @@ from jinja2 import Template
 
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
-from openhands.utils.microagent import (
+from openhands.microagent import (
     BaseMicroAgent,
     KnowledgeMicroAgent,
     RepoMicroAgent,
