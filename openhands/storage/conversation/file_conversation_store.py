@@ -53,11 +53,14 @@ class FileConversationStore(ConversationStore):
     ) -> ConversationMetadataResultSet:
         conversations: list[ConversationMetadata] = []
         metadata_dir = self.get_conversation_metadata_dir()
-        conversation_ids = [
-            path.split('/')[-2]
-            for path in self.file_store.list(metadata_dir)
-            if not path.startswith(f'{metadata_dir}/.')
-        ]
+        try:
+            conversation_ids = [
+                path.split('/')[-2]
+                for path in self.file_store.list(metadata_dir)
+                if not path.startswith(f'{metadata_dir}/.')
+            ]
+        except FileNotFoundError:
+            return ConversationMetadataResultSet([])
         num_conversations = len(conversation_ids)
         start = page_id_to_offset(page_id)
         end = min(limit + start, num_conversations)
