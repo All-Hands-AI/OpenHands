@@ -4,14 +4,14 @@
 
 - **Clarity & Conciseness**: Always prioritize clarity and brevity. Avoid unnecessary jargon or overly complex explanations.
 Keep sentences short and to the point.
-- **Stick to the Goal**: Focus on the topic's main objective. Ensure that the documentation addresses the most common
-use cases first and leaves more detailed or advanced configurations for later sections.
+- **Gradual Complexity**: Start the user with the simplest, most basic setup, and then gradually introduce more advanced
+concepts and configurations.
 
 ## Formatting Guidelines
 
 ### Headers
 
-Use **Title Case** for the first and second headers.
+Use **Title Case** for the first and second level headers.
 
 Example:
   - **Basic Usage**
@@ -34,3 +34,14 @@ Example:
   1. Step one: Do this.
   2. Step two: Complete this action.
   3. Step three: Verify the result.
+
+### Code Blocks
+
+* Use code blocks for multi-line inputs, outputs, commands and code samples.
+
+Example:
+```bash
+docker run # ...
+    -e THIS=this \
+    -e THAT=that
+```
