@@ -112,13 +112,12 @@ export function ResizablePanel({
       const firstSizePx = `${firstSize}px`;
       if (isHorizontal) {
         style.width = firstSizePx;
-        style.minWidth = "250px"; // Minimum width for chat panel
-        style.maxWidth = "50%"; // Maximum width for chat panel
+        style.minWidth = "300px"; // Minimum width for chat panel
+        style.maxWidth = "40%"; // Maximum width for chat panel (reduced from 50%)
       } else {
         style.height = firstSizePx;
-        style.minHeight = "150px"; // Minimum height for workspace panel
-        style.maxHeight = "70%"; // Maximum height for workspace panel
-      }
+        style.minHeight = "200px"; // Minimum height for workspace panel
+        style.maxHeight = "65%"; // Maximum height for workspace panel (reduced from 70%)
     } else {
       style.flexGrow = 1;
     }
@@ -136,9 +135,11 @@ export function ResizablePanel({
     } else if (collapse === Collapse.SPLIT) {
       style.flexGrow = 1;
       if (isHorizontal) {
-        style.minWidth = "400px"; // Minimum width for workspace panel
+        style.minWidth = "500px"; // Minimum width for workspace panel
+        style.maxWidth = "80%"; // Maximum width for workspace panel
       } else {
-        style.minHeight = "200px"; // Minimum height for terminal panel
+        style.minHeight = "250px"; // Minimum height for terminal panel
+        style.maxHeight = "70%"; // Maximum height for terminal panel
       }
     } else {
       style.flexGrow = 1;
