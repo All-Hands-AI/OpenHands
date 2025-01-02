@@ -32,25 +32,33 @@ export function GitHubRepositorySelector({
     sanitizeQuery(debouncedSearchQuery),
   );
 
+   const getSaaSPlaceholderRepository = (): GitHubRepository[] => {
+    if (config?.APP_MODE === "saas" && config?.APP_SLUG) {
+      return [
+        {
+          id: -1000,
+          full_name: "Add more repositories...",
+        } as GitHubRepository,
+      ];
+    }
+    return [];
+  };
+  
+  const filteredSearchedRepos = searchedRepos.filter(
+    (repo) => !repositories.some((r) => r.id === repo.id)
+  );
+  
+  const filteredRepositories = repositories.filter((repo) => {
+    return (
+      !debouncedSearchQuery ||
+      sanitizeQuery(repo.full_name).includes(sanitizeQuery(debouncedSearchQuery))
+    );
+  });
+  
   const finalRepositories: GitHubRepository[] = [
-    ...(config?.APP_MODE === "saas" && config?.APP_SLUG
-      ? [
-          {
-            id: -1000,
-            full_name: "Add more repositories...",
-          } as GitHubRepository,
-        ]
-      : []),
-    ...searchedRepos.filter(
-      (repo) => !repositories.find((r) => r.id === repo.id),
-    ),
-    ...repositories.filter(
-      (repo) =>
-        !debouncedSearchQuery ||
-        sanitizeQuery(repo.full_name).includes(
-          sanitizeQuery(debouncedSearchQuery),
-        ),
-    ),
+    ...getSaaSPlaceholderRepository(),
+    ...filteredSearchedRepos,
+    ...filteredRepositories,
   ];
 
   const dispatch = useDispatch();
