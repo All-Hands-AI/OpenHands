@@ -1,12 +1,15 @@
 import json
 from datetime import datetime
+from typing import Callable
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.shared import session_manager
+from openhands.server.routes.settings import ConversationStoreImpl
+from openhands.server.shared import config, session_manager
 from openhands.storage.data_models.conversation_info import ConversationInfo
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.locations import get_conversation_events_dir
+from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
 async def get_conversation_info(
@@ -14,19 +17,13 @@ async def get_conversation_info(
     is_running: bool,
 ) -> ConversationInfo | None:
     try:
-        file_store = session_manager.file_store
-        events_dir = get_conversation_events_dir(conversation.conversation_id)
-        events = file_store.list(events_dir)
-        events = sorted(events)
-        event_path = events[-1]
-        event = json.loads(file_store.read(event_path))
         title = conversation.title
         if not title:
             title = f'Conversation {conversation.conversation_id}'
         return ConversationInfo(
             id=conversation.conversation_id,
             title=title,
-            last_updated_at=datetime.fromisoformat(event.get('timestamp')),
+            last_updated_at=conversation.last_updated_at,
             selected_repository=conversation.selected_repository,
             status=ConversationStatus.RUNNING
             if is_running
@@ -39,3 +36,24 @@ async def get_conversation_info(
             stack_info=True,
         )
         return None
+
+
+def create_conversation_update_callback(
+    github_token: str, conversation_id: str
+) -> Callable:
+    def callback(*args, **kwargs):
+        call_async_from_sync(
+            update_timestamp_for_conversation,
+            GENERAL_TIMEOUT,
+            github_token,
+            conversation_id,
+        )
+
+    return callback
+
+
+async def update_timestamp_for_conversation(github_token: str, conversation_id: str):
+    conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
+    conversation = await conversation_store.get_metadata(conversation_id)
+    conversation.last_updated_at = datetime.now()
+    await conversation_store.save_metadata(conversation)

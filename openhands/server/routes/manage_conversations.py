@@ -6,6 +6,7 @@ from github import Github
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.stream import EventStreamSubscriber
 from openhands.storage.data_models.conversation_info import ConversationInfo
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_info_result_set import (
@@ -15,9 +16,13 @@ from openhands.server.routes.settings import ConversationStoreImpl, SettingsStor
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import config, session_manager
 from openhands.utils.async_utils import call_sync_from_async, wait_all
-from openhands.utils.conversation_utils import get_conversation_info
+from openhands.utils.conversation_utils import (
+    create_conversation_update_callback,
+    get_conversation_info,
+)
 
 app = APIRouter(prefix='/api')
+UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 
 class InitSessionRequest(BaseModel):
@@ -75,9 +80,17 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     )
 
     logger.info(f'Starting agent loop for conversation {conversation_id}')
-    await session_manager.maybe_start_agent_loop(
+    event_stream = await session_manager.maybe_start_agent_loop(
         conversation_id, conversation_init_data
     )
+    try:
+        event_stream.subscribe(
+            EventStreamSubscriber.SERVER,
+            create_conversation_update_callback(data.github_token, conversation_id),
+            UPDATED_AT_CALLBACK_ID,
+        )
+    except ValueError:
+        pass  # Already subscribed - take no action
     logger.info(f'Finished initializing conversation {conversation_id}')
     return JSONResponse(content={'status': 'ok', 'conversation_id': conversation_id})
 
