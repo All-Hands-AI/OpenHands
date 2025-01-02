@@ -219,6 +219,24 @@ class Runtime(FileEditRuntimeMixin):
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
 
+    def maybe_run_setup_script(self, selected_repository: str | None):
+        """Run .openhands/setup.sh if it exists in the workspace or repository."""
+        setup_script = '.openhands/setup.sh'
+        if selected_repository:
+            repo_name = selected_repository.split('/')[1]
+            setup_script = f'{repo_name}/.openhands/setup.sh'
+
+        # Try to read the setup script
+        read_obs = self.read(FileReadAction(path=setup_script))
+        if isinstance(read_obs, ErrorObservation):
+            return
+
+        # Execute the script
+        action = CmdRunAction(f'chmod +x {setup_script} && {setup_script}')
+        obs = self.run_action(action)
+        if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
+            self.log('error', f'Setup script failed: {obs.content}')
+
     def get_custom_microagents(self, selected_repository: str | None) -> list[str]:
         custom_microagents_content = []
         custom_microagents_dir = Path('.openhands') / 'microagents'
