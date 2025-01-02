@@ -23,8 +23,9 @@ def test_stress_eventstream_runtime(temp_dir, runtime_cls, repeat=1):
     assert obs.exit_code == 0
 
     for _ in range(repeat):
-        # run stress-ng stress tests for 5 minutes with verbose logging,
-        action = CmdRunAction(command='stress-ng --all 1 -t 5m --metrics --verbose')
+        # run stress-ng stress tests for 5 minutes
+        # This would make Docker daemon die
+        action = CmdRunAction(command='stress-ng --all 1 -t 5m')
         action.timeout = 600
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
