@@ -211,7 +211,6 @@ class AgentController:
             await self._react_to_exception(reported)
 
     def should_step(self, event: Event) -> bool:
-        print('should step?', event)
         if isinstance(event, Action):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 return True
@@ -536,9 +535,7 @@ class AgentController:
         self.update_state_before_step()
         action: Action = NullAction()
         try:
-            print('STEP AGENT')
             action = self.agent.step(self.state)
-            print('GOT ACTION', action)
             if action is None:
                 raise LLMNoActionError('No action was returned')
         except (
