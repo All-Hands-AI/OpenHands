@@ -231,15 +231,8 @@ class Runtime(FileEditRuntimeMixin):
         if isinstance(read_obs, ErrorObservation):
             return
 
-        # Write script to a temp file and execute it
-        action = CmdRunAction('mktemp')
-        obs = self.run_action(action)
-        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            return
-        tmp_script = obs.content.strip()
-
-        self.write(FileWriteAction(path=tmp_script, contents=read_obs.content))
-        action = CmdRunAction(f'chmod +x {tmp_script} && {tmp_script}')
+        # Execute the script
+        action = CmdRunAction(f'chmod +x {setup_script} && {setup_script}')
         obs = self.run_action(action)
         if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')

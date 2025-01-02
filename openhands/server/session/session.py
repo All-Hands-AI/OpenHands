@@ -1,6 +1,4 @@
 import asyncio
-import os
-import subprocess
 import time
 from copy import deepcopy
 
@@ -197,29 +195,6 @@ class Session:
     async def send_error(self, message: str):
         """Sends an error message to the client."""
         await self.send({'error': True, 'message': message})
-
-    async def _run_setup_script(self):
-        """Run the .openhands/setup.sh script if it exists."""
-        setup_script = self.file_store.get_full_path('.openhands/setup.sh')
-        if os.path.isfile(setup_script):
-            try:
-                # Make sure the script is executable
-                os.chmod(setup_script, 0o755)
-                process = await asyncio.create_subprocess_exec(
-                    setup_script,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    cwd=os.path.dirname(setup_script),
-                )
-                stdout, stderr = await process.communicate()
-
-                if process.returncode != 0:
-                    error_msg = stderr.decode() if stderr else stdout.decode()
-                    logger.error(f'Setup script failed: {error_msg}')
-                    await self.send_error(f'Setup script failed: {error_msg}')
-            except Exception as e:
-                logger.error(f'Failed to run setup script: {e}')
-                await self.send_error(f'Failed to run setup script: {e}')
 
     async def _send_status_message(self, msg_type: str, id: str, message: str):
         """Sends a status message to the client."""
