@@ -51,6 +51,21 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
+def read_input(config: AppConfig) -> str:
+    """Read input from user based on config settings."""
+    if config.cli_multiline_input:
+        print('Enter your message (enter "/exit" on a new line to finish):')
+        lines = []
+        while True:
+            line = input('>> ').rstrip()
+            if line == '/exit':  # finish input
+                break
+            lines.append(line)
+        return '\n'.join(lines)
+    else:
+        return input('>> ').rstrip()
+
+
 def create_runtime(
     config: AppConfig,
     sid: str | None = None,
@@ -188,9 +203,7 @@ async def run_controller(
                 if exit_on_message:
                     message = '/exit'
                 elif fake_user_response_fn is None:
-                    # read until EOF (Ctrl+D on Unix, Ctrl+Z on Windows)
-                    print('Request user input (press Ctrl+D/Z when done) >> ')
-                    message = sys.stdin.read().rstrip()
+                    message = read_input(config)
                 else:
                     message = fake_user_response_fn(controller.get_state())
                 action = MessageAction(content=message)

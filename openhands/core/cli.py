@@ -91,7 +91,22 @@ def display_event(event: Event, config: AppConfig):
         display_confirmation(event.confirmation_state)
 
 
-async def main(loop):
+def read_input(config: AppConfig) -> str:
+    """Read input from user based on config settings."""
+    if config.cli_multiline_input:
+        print('Enter your message (enter "/exit" on a new line to finish):')
+        lines = []
+        while True:
+            line = input('>> ').rstrip()
+            if line == '/exit':  # finish input
+                break
+            lines.append(line)
+        return '\n'.join(lines)
+    else:
+        return input('>> ').rstrip()
+
+
+async def main(loop: asyncio.AbstractEventLoop):
     """Runs the agent in CLI mode"""
 
     parser = get_parser()
@@ -150,9 +165,7 @@ async def main(loop):
 
     async def prompt_for_next_task():
         # Run input() in a thread pool to avoid blocking the event loop
-        next_message = await loop.run_in_executor(
-            None, lambda: input('How can I help? >> ')
-        )
+        next_message = await loop.run_in_executor(None, read_input, config)
         if not next_message.strip():
             await prompt_for_next_task()
         if next_message == 'exit':
