@@ -1,5 +1,7 @@
 ---
 name: github
+type: knowledge
+version: 1.0.0
 agent: CodeActAgent
 triggers:
 - github
@@ -26,4 +28,3 @@ git checkout -b create-widget && git add . && git commit -m "Create widget" && g
 curl -X POST "https://api.github.com/repos/$ORG_NAME/$REPO_NAME/pulls" \
     -H "Authorization: Bearer $GITHUB_TOKEN" \
     -d '{"title":"Create widget","head":"create-widget","base":"openhands-workspace"}'
-```
