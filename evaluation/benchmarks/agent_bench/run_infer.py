@@ -61,8 +61,6 @@ def get_config(
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
     agent_config.use_microagents = False
-    agent_config = config.get_agent_config(metadata.agent_class)
-    agent_config.use_microagents = False
     return config
 
 
