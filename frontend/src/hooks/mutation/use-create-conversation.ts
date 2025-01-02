@@ -6,13 +6,11 @@ import OpenHands from "#/api/open-hands";
 import { setInitialQuery } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { useAuth } from "#/context/auth-context";
-import { useSettings } from "../query/use-settings";
 
 export const useCreateConversation = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { gitHubToken } = useAuth();
-  const { data: settings } = useSettings();
   const queryClient = useQueryClient();
 
   const { selectedRepository, files } = useSelector(
@@ -27,7 +25,6 @@ export const useCreateConversation = () => {
 
       if (variables.q) dispatch(setInitialQuery(variables.q));
       return OpenHands.createConversation(
-        settings,
         gitHubToken || undefined,
         selectedRepository || undefined,
       );

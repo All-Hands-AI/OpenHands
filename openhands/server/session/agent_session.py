@@ -84,39 +84,6 @@ class AgentSession:
                 'Session already started. You need to close this session and start a new one.'
             )
 
-        asyncio.get_event_loop().run_in_executor(
-            None,
-            self._start_thread,
-            runtime_name,
-            config,
-            agent,
-            max_iterations,
-            max_budget_per_task,
-            agent_to_llm_config,
-            agent_configs,
-            github_token,
-            selected_repository,
-        )
-
-    def _start_thread(self, *args):
-        try:
-            asyncio.run(self._start(*args), debug=True)
-        except RuntimeError:
-            logger.error(f'Error starting session: {RuntimeError}', exc_info=True)
-            logger.debug('Session Finished')
-
-    async def _start(
-        self,
-        runtime_name: str,
-        config: AppConfig,
-        agent: Agent,
-        max_iterations: int,
-        max_budget_per_task: float | None = None,
-        agent_to_llm_config: dict[str, LLMConfig] | None = None,
-        agent_configs: dict[str, AgentConfig] | None = None,
-        github_token: str | None = None,
-        selected_repository: str | None = None,
-    ):
         if self._closed:
             logger.warning('Session closed before starting')
             return
@@ -141,9 +108,7 @@ class AgentSession:
         self.event_stream.add_event(
             ChangeAgentStateAction(AgentState.INIT), EventSource.ENVIRONMENT
         )
-        self.controller.agent_task = self.controller.start_step_loop()
         self._initializing = False
-        await self.controller.agent_task  # type: ignore
 
     def close(self):
         """Closes the Agent session"""
@@ -304,11 +269,26 @@ class AgentSession:
             headless_mode=False,
             status_callback=self._status_callback,
         )
+
+        # Note: We now attempt to restore the state from session here,
+        # but if it fails, we fall back to None and still initialize the controller
+        # with a fresh state. That way, the controller will always load events from the event stream
+        # even if the state file was corrupt.
+
+        restored_state = None
         try:
-            agent_state = State.restore_from_session(self.sid, self.file_store)
-            controller.set_initial_state(agent_state, max_iterations, confirmation_mode)
-            logger.debug(f'Restored agent state from session, sid: {self.sid}')
+            restored_state = State.restore_from_session(self.sid, self.file_store)
         except Exception as e:
-            logger.debug(f'State could not be restored: {e}')
+            if self.event_stream.get_latest_event_id() > 0:
+                # if we have events, we should have a state
+                logger.warning(f'State could not be restored: {e}')
+
+        # Set the initial state through the controller.
+        controller.set_initial_state(restored_state, max_iterations, confirmation_mode)
+        if restored_state:
+            logger.debug(f'Restored agent state from session, sid: {self.sid}')
+        else:
+            logger.debug('New session state created.')
+
         logger.debug('Agent controller initialized.')
         return controller
