@@ -5,15 +5,16 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from openhands.server.data_models.conversation_info import ConversationInfo
-from openhands.server.data_models.conversation_info_result_set import (
-    ConversationInfoResultSet,
-)
-from openhands.server.data_models.conversation_status import ConversationStatus
-from openhands.server.routes.new_conversation import (
+from openhands.server.routes.manage_conversations import (
     get_conversation,
     search_conversations,
+    update_conversation,
 )
+from openhands.storage.data_models.conversation_info import ConversationInfo
+from openhands.storage.data_models.conversation_info_result_set import (
+    ConversationInfoResultSet,
+)
+from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -40,7 +41,7 @@ def _patch_store():
         MagicMock(return_value=file_store),
     ):
         with patch(
-            'openhands.server.routes.new_conversation.session_manager.file_store',
+            'openhands.server.routes.manage_conversations.session_manager.file_store',
             file_store,
         ):
             yield
@@ -84,13 +85,31 @@ async def test_get_conversation():
 
 @pytest.mark.asyncio
 async def test_get_missing_conversation():
-    with patch(
-        'openhands.server.routes.new_conversation.session_manager.file_store',
-        InMemoryFileStore({}),
-    ):
+    with _patch_store():
         assert (
             await get_conversation(
                 'no_such_conversation', MagicMock(state=MagicMock(github_token=''))
             )
             is None
         )
+
+
+@pytest.mark.asyncio
+async def test_update_conversation():
+    with _patch_store():
+        await update_conversation(
+            'some_conversation_id',
+            'New Title',
+            MagicMock(state=MagicMock(github_token='')),
+        )
+        conversation = await get_conversation(
+            'some_conversation_id', MagicMock(state=MagicMock(github_token=''))
+        )
+        expected = ConversationInfo(
+            id='some_conversation_id',
+            title='New Title',
+            last_updated_at=datetime.fromisoformat('2025-01-01T00:00:00'),
+            status=ConversationStatus.STOPPED,
+            selected_repository='foobar',
+        )
+        assert conversation == expected

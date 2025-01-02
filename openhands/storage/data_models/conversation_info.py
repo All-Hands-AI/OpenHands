@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from openhands.server.data_models.conversation_status import ConversationStatus
+from openhands.storage.data_models.conversation_status import ConversationStatus
 
 
 @dataclass
