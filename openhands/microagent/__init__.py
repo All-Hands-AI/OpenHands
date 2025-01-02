@@ -80,7 +80,7 @@ class BaseMicroAgent(BaseModel):
 
         agent_class = subclass_map[metadata.type]
         return agent_class(
-            name=path.stem,
+            name=metadata.name,
             content=content,
             metadata=metadata,
             source=str(path),
