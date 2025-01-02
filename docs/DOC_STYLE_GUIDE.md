@@ -41,7 +41,8 @@ Example:
 
 Example:
 ```bash
-docker run # ...
+docker run -it \
     -e THIS=this \
     -e THAT=that
+    ...
 ```
