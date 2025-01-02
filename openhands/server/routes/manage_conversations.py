@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Callable
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Body, Request
 from fastapi.responses import JSONResponse
 from github import Github
 from pydantic import BaseModel
@@ -147,7 +147,7 @@ async def get_conversation(
 
 @app.patch('/conversations/{conversation_id}')
 async def update_conversation(
-    conversation_id: str, title: str, request: Request
+    request: Request, conversation_id: str, title: str = Body(embed=True)
 ) -> bool:
     github_token = getattr(request.state, 'github_token', '') or ''
     conversation_store = await ConversationStoreImpl.get_instance(config, github_token)

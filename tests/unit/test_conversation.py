@@ -95,9 +95,9 @@ async def test_get_missing_conversation():
 async def test_update_conversation():
     with _patch_store():
         await update_conversation(
+            MagicMock(state=MagicMock(github_token='')),
             'some_conversation_id',
             'New Title',
-            MagicMock(state=MagicMock(github_token='')),
         )
         conversation = await get_conversation(
             'some_conversation_id', MagicMock(state=MagicMock(github_token=''))
