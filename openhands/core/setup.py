@@ -66,8 +66,8 @@ def create_agent(runtime: Runtime, config: AppConfig) -> Agent:
         config=agent_config,
     )
     if agent.prompt_manager:
-        microagents = runtime.get_custom_microagents(None)
-        agent.prompt_manager.load_microagent_files(microagents)
+        microagents = runtime.get_microagents_from_selected_repo(None)
+        agent.prompt_manager.load_microagents(microagents)
 
     if config.security.security_analyzer:
         options.SecurityAnalyzers.get(
