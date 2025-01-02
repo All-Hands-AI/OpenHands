@@ -1,6 +1,5 @@
 from openhands.events.action import (
     Action,
-    AddTaskAction,
     AgentFinishAction,
     AgentRejectAction,
     BrowseInteractiveAction,
@@ -9,7 +8,6 @@ from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
     MessageAction,
-    ModifyTaskAction,
 )
 from openhands.events.action.action import ActionConfirmationStatus
 from openhands.events.serialization import (
@@ -156,24 +154,3 @@ def test_file_write_action_serialization_deserialization():
         },
     }
     serialization_deserialization(original_action_dict, FileWriteAction)
-
-
-def test_add_task_action_serialization_deserialization():
-    original_action_dict = {
-        'action': 'add_task',
-        'args': {
-            'parent': 'Test parent',
-            'goal': 'Test goal',
-            'subtasks': [],
-            'thought': '',
-        },
-    }
-    serialization_deserialization(original_action_dict, AddTaskAction)
-
-
-def test_modify_task_action_serialization_deserialization():
-    original_action_dict = {
-        'action': 'modify_task',
-        'args': {'task_id': 1, 'state': 'Test state.', 'thought': ''},
-    }
-    serialization_deserialization(original_action_dict, ModifyTaskAction)
