@@ -233,9 +233,9 @@ class OpenHands {
 
   static async updateUserConversation(
     conversationId: string,
-    conversation: Partial<Omit<Conversation, "id">>,
+    conversation: Partial<Omit<Conversation, "conversation_id">>,
   ): Promise<void> {
-    await openHands.put(`/api/conversations/${conversationId}`, conversation);
+    await openHands.patch(`/api/conversations/${conversationId}`, conversation);
   }
 
   static async createConversation(
