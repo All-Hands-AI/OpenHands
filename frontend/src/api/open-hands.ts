@@ -234,11 +234,13 @@ class OpenHands {
     return openHands.delete(`/api/conversations/${conversationId}`);
   }
 
-  static async updateUserConversation(
+  static async updateUserConversationTitle(
     conversationId: string,
-    conversation: Partial<Omit<Conversation, "id">>,
+    title: string,
   ): Promise<void> {
-    await openHands.put(`/api/conversations/${conversationId}`, conversation);
+    await openHands.put(
+      `/api/conversations/${conversationId}?title=${encodeURIComponent(title)}`,
+    );
   }
 
   static async createConversation(

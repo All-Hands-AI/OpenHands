@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router";
-import FolderIcon from "#/icons/docs.svg?react";
+import { FaListUl } from "react-icons/fa";
 import { useAuth } from "#/context/auth-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
@@ -16,7 +16,6 @@ import { SettingsModal } from "#/components/shared/modals/settings/settings-moda
 import { useSettingsUpToDate } from "#/context/settings-up-to-date-context";
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
-import { cn } from "#/utils/utils";
 import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
 
 export function Sidebar() {
@@ -82,11 +81,12 @@ export function Sidebar() {
               data-testid="toggle-conversation-panel"
               type="button"
               onClick={() => setConversationPanelIsOpen((prev) => !prev)}
-              className={cn(
-                conversationPanelIsOpen ? "border-b-2 border-[#FFE165]" : "",
-              )}
             >
-              <FolderIcon width={28} height={28} />
+              <FaListUl
+                width={28}
+                height={28}
+                fill={conversationPanelIsOpen ? "#FFE165" : "#FFFFFF"}
+              />
             </button>
           )}
           <DocsButton />

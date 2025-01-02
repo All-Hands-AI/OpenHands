@@ -60,7 +60,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     if (oldTitle !== newTitle)
       updateConversation({
         id: conversationId,
-        conversation: { title: newTitle },
+        title: newTitle,
       });
   };
 
