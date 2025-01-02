@@ -177,9 +177,10 @@ describe("ConversationPanel", () => {
     await user.tab();
 
     // Ensure the conversation is renamed
-    expect(updateUserConversationSpy).toHaveBeenCalledWith("3", {
-      name: "Conversation 1 Renamed",
-    });
+    expect(updateUserConversationSpy).toHaveBeenCalledWith(
+      "3",
+      "Conversation 1 Renamed",
+    );
   });
 
   it("should not rename a conversation when the name is unchanged", async () => {

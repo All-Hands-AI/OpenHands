@@ -1,5 +1,9 @@
 import { delay, http, HttpResponse } from "msw";
-import { GetConfigResponse, Conversation } from "#/api/open-hands.types";
+import {
+  GetConfigResponse,
+  Conversation,
+  ConversationSearchResults,
+} from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 
 const userPreferences = {
@@ -183,9 +187,15 @@ export const handlers = [
 
   http.get("/api/options/config", () => HttpResponse.json({ APP_MODE: "oss" })),
 
-  http.get("/api/conversations", async () =>
-    HttpResponse.json(Array.from(CONVERSATIONS.values())),
-  ),
+  http.get("/api/conversations", async () => {
+    const values = Array.from(CONVERSATIONS.values());
+    const results: ConversationSearchResults = {
+      results: values,
+      next_page_id: null,
+    };
+
+    return HttpResponse.json(results, { status: 200 });
+  }),
 
   http.delete("/api/conversations/:conversationId", async ({ params }) => {
     const { conversationId } = params;
@@ -201,20 +211,21 @@ export const handlers = [
   http.put(
     "/api/conversations/:conversationId",
     async ({ params, request }) => {
+      const url = new URL(request.url);
+      const titleParam = url.searchParams.get("title")?.toString();
+
       const { conversationId } = params;
 
       if (typeof conversationId === "string") {
         const conversation = CONVERSATIONS.get(conversationId);
 
-        if (conversation) {
-          const body = await request.json();
-          if (typeof body === "object" && body?.name) {
-            CONVERSATIONS.set(conversationId, {
-              ...conversation,
-              title: body.name,
-            });
-            return HttpResponse.json(null, { status: 200 });
-          }
+        if (conversation && titleParam) {
+          CONVERSATIONS.set(conversationId, {
+            ...conversation,
+            title: titleParam,
+          });
+
+          return HttpResponse.json(null, { status: 200 });
         }
       }
 
