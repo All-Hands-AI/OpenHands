@@ -154,6 +154,10 @@ model = "gpt-4o"
 # Drop any unmapped (unsupported) params without causing an exception
 #drop_params = false
 
+# Modify params for litellm to do transformations like adding a default message, when a message is empty.
+# Note: this setting is global, unlike drop_params, it cannot be overridden in each call to litellm.
+#modify_params = true
+
 # Using the prompt caching feature if provided by the LLM and supported
 #caching_prompt = true
 
@@ -171,6 +175,10 @@ model = "gpt-4o"
 
 # If model is vision capable, this option allows to disable image processing (useful for cost reduction).
 #disable_vision = true
+
+# Custom tokenizer to use for token counting
+# https://docs.litellm.ai/docs/completion/token_usage
+#custom_tokenizer = ""
 
 # Whether to use native tool calling if supported by the model. Can be true, false, or None by default, which chooses the model's default behavior based on the evaluation.
 # ATTENTION: Based on evaluation in PR #4711, enabling native function calling may lead to worse results
