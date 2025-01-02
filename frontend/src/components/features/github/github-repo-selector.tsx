@@ -13,11 +13,11 @@ interface GitHubRepositorySelectorProps {
 }
 
 function sanitizeQuery(query: string) {
-  let sanitizedQuery = query.replace(/https?:\/\//, "");
-  sanitizedQuery = sanitizedQuery.replace(/github.com\//, "");
-  sanitizedQuery = sanitizedQuery.replace(/\.git$/, "");
-  sanitizedQuery = sanitizedQuery.toLowerCase();
-  return sanitizedQuery;
+  return query
+    .replace(/https?:\/\//, "")
+    .replace(/github.com\//, "")
+    .replace(/\.git$/, "")
+    .toLowerCase();
 }
 
 export function GitHubRepositorySelector({
