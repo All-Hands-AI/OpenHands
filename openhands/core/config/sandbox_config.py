@@ -57,7 +57,7 @@ class SandboxConfig:
     runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
     browsergym_eval_env: str | None = None
     platform: str | None = None
-    close_delay: int = 15
+    close_delay: int = 900
     remote_runtime_resource_factor: int = 1
 
     def defaults_to_dict(self) -> dict:
