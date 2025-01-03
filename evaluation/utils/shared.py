@@ -37,6 +37,7 @@ from openhands.events.action.message import MessageAction
 from openhands.events.event import Event
 from openhands.events.serialization.event import event_to_dict
 from openhands.events.utils import get_pairs_from_events
+from openhands.memory.condenser import get_condensation_metadata
 
 
 class EvalMetadata(BaseModel):
@@ -570,3 +571,10 @@ def is_fatal_evaluation_error(error: str | None) -> bool:
         return True
 
     return False
+
+
+def get_metrics(state: State) -> dict[str, Any]:
+    """Extract metrics from the state."""
+    metrics = state.metrics.get() if state.metrics else {}
+    metrics['condenser'] = get_condensation_metadata(state)
+    return metrics
