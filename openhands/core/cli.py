@@ -32,6 +32,8 @@ from openhands.events.observation import (
     FileEditObservation,
     NullObservation,
 )
+from openhands.runtime.base import Runtime
+from openhands.runtime.runtime_manager import RuntimeManager
 
 
 def display_message(message: str):
@@ -161,8 +163,6 @@ async def main(loop):
         loop.create_task(on_event_async(event))
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
-
-    await runtime.connect()
 
     asyncio.create_task(prompt_for_next_task())
 

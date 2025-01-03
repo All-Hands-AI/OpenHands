@@ -14,9 +14,10 @@ from openhands.events.observation import (
 from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
+from openhands.server.middleware import session_manager
 from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
 from openhands.server.session.manager import ConversationDoesNotExistError
-from openhands.server.shared import config, openhands_config, session_manager, sio
+from openhands.server.shared import config, openhands_config, sio
 from openhands.server.types import AppMode
 from openhands.utils.async_utils import call_sync_from_async
 

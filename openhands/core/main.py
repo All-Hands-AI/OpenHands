@@ -29,6 +29,7 @@ from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.events.serialization.event import event_to_trajectory
 from openhands.runtime.base import Runtime
+from openhands.runtime.runtime_manager import RuntimeManager
 
 
 class FakeUserResponseFunc(Protocol):
@@ -49,6 +50,7 @@ def read_task_from_file(file_path: str) -> str:
 def read_task_from_stdin() -> str:
     """Read task from stdin."""
     return sys.stdin.read()
+
 
 
 async def run_controller(
@@ -79,8 +81,7 @@ async def run_controller(
     sid = sid or generate_sid(config)
 
     if runtime is None:
-        runtime = create_runtime(config, sid=sid, headless_mode=headless_mode)
-        await runtime.connect()
+        runtime = await create_runtime(config, sid=sid, headless_mode=headless_mode)
 
     event_stream = runtime.event_stream
 

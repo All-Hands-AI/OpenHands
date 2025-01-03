@@ -7,21 +7,19 @@ from uuid import uuid4
 import socketio
 
 from openhands.core.config import AppConfig
-from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.stream import EventStream, session_exists
 from openhands.server.session.conversation import Conversation
+from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.server.settings import Settings
+from openhands.server.shared import runtime_manager
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
 
 _REDIS_POLL_TIMEOUT = 1.5
 _CHECK_ALIVE_INTERVAL = 15
-
-_CLEANUP_INTERVAL = 15
-_CLEANUP_EXCEPTION_WAIT_TIME = 15
 
 
 class ConversationDoesNotExistError(Exception):
@@ -64,16 +62,12 @@ class SessionManager:
         redis_client = self._get_redis_client()
         if redis_client:
             self._redis_listen_task = asyncio.create_task(self._redis_subscribe())
-        self._cleanup_task = asyncio.create_task(self._cleanup_detached_conversations())
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         if self._redis_listen_task:
             self._redis_listen_task.cancel()
             self._redis_listen_task = None
-        if self._cleanup_task:
-            self._cleanup_task.cancel()
-            self._cleanup_task = None
 
     def _get_redis_client(self):
         redis_client = getattr(self.sio.manager, 'redis', None)
@@ -161,6 +155,7 @@ class SessionManager:
             # which can't be guaranteed - nodes can simply vanish unexpectedly!
             sid = data['sid']
             logger.debug(f'session_closing:{sid}')
+            await call_sync_from_async(runtime_manager.destroy_runtime, sid)
             for (
                 connection_id,
                 local_sid,
@@ -209,7 +204,7 @@ class SessionManager:
         logger.info(f'join_conversation:{sid}:{connection_id}')
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self.local_connection_id_to_session_id[connection_id] = sid
-        event_stream = await self._get_event_stream(sid)
+        event_stream = await self.get_event_stream(sid)
         if not event_stream:
             return await self.maybe_start_agent_loop(sid, settings)
         return event_stream
@@ -348,20 +343,23 @@ class SessionManager:
         if not await self.is_agent_loop_running(sid):
             logger.info(f'start_agent_loop:{sid}')
             session = Session(
-                sid=sid, file_store=self.file_store, config=self.config, sio=self.sio
+                sid=sid,
+                file_store=self.file_store,
+                config=self.config,
+                sio=self.sio,
             )
             self._local_agent_loops_by_sid[sid] = session
             asyncio.create_task(session.initialize_agent(settings))
 
-        event_stream = await self._get_event_stream(sid)
+        event_stream = await self.get_event_stream(sid)
         if not event_stream:
             logger.error(f'No event stream after starting agent loop: {sid}')
             raise RuntimeError(f'no_event_stream:{sid}')
         asyncio.create_task(self._cleanup_session_later(sid))
         return event_stream
 
-    async def _get_event_stream(self, sid: str) -> EventStream | None:
-        logger.info(f'_get_event_stream:{sid}')
+    async def get_event_stream(self, sid: str) -> EventStream | None:
+        logger.info(f'get_event_stream:{sid}')
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
             logger.info(f'found_local_agent_loop:{sid}')
@@ -444,6 +442,7 @@ class SessionManager:
         if redis_client and await self._has_remote_connections(sid):
             return False
 
+        await call_sync_from_async(runtime_manager.destroy_runtime, sid)
         # We alert the cluster in case they are interested
         if redis_client:
             await redis_client.publish(
