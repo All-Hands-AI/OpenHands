@@ -286,7 +286,7 @@ class BashSession:
             command_output = raw_command_output
         self.prev_output = raw_command_output  # update current command output anyway
         command_output = _remove_command_prefix(command_output, command)
-        return command_output
+        return command_output.rstrip()
 
     def _handle_completed_command(
         self, command: str, pane_content: str, ps1_matches: list[re.Match]
