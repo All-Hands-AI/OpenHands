@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Select, SelectItem } from "@nextui-org/react";
+import { Select, SelectItem, Tooltip } from "@nextui-org/react";
 import { useConfig } from "#/hooks/query/use-config";
 
 interface RuntimeSizeSelectorProps {
@@ -39,11 +39,16 @@ export function RuntimeSizeSelector({
         }}
       >
         <SelectItem key="1" value={1}>
-          {t("1x (2 core, 8G)")}
+          1x (2 core, 8G)
         </SelectItem>
-        <SelectItem key="2" value={2}>
-          {t("2x (4 core, 16G)")}
-        </SelectItem>
+        <Tooltip 
+          content="Runtime sizes over 1 are disabled by default, please contact contact@all-hands.dev to get access to larger runtimes."
+          placement="bottom"
+        >
+          <SelectItem key="2" value={2} isDisabled>
+            2x (4 core, 16G)
+          </SelectItem>
+        </Tooltip>
       </Select>
     </fieldset>
   );
