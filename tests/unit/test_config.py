@@ -13,6 +13,9 @@ from openhands.core.config import (
     load_from_env,
     load_from_toml,
 )
+from openhands.core.config.condenser_config import (
+    NoOpCondenserConfig,
+)
 from openhands.core.logger import openhands_logger
 
 
@@ -616,6 +619,13 @@ def test_cache_dir_creation(default_config, tmpdir):
     default_config.cache_dir = str(tmpdir.join('test_cache'))
     finalize_config(default_config)
     assert os.path.exists(default_config.cache_dir)
+
+
+def test_agent_config_condenser_default():
+    """Test that default agent condenser is NoOpCondenser."""
+    config = AppConfig()
+    agent_config = config.get_agent_config()
+    assert isinstance(agent_config.condenser, NoOpCondenserConfig)
 
 
 def test_api_keys_repr_str():

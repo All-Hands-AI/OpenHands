@@ -14,7 +14,7 @@ packages = [
 python = "^3.12"
 datasets = "*"
 pandas = "*"
-litellm = "^1.54.1"
+litellm = "^1.55.4"
 google-generativeai = "*" # To use litellm with Gemini Pro API
 google-api-python-client = "*" # For Google Sheets API
 google-auth-httplib2 = "*" # For Google Sheets authentication
@@ -100,6 +100,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -128,6 +129,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
