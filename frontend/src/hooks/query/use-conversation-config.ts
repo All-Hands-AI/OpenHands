@@ -17,7 +17,7 @@ export const useConversationConfig = () => {
       if (!conversationId) throw new Error("No conversation ID");
       return OpenHands.getRuntimeId(conversationId);
     },
-    enabled: status === WsClientProviderStatus.CONNECTED && !!conversationId,
+    enabled: status !== WsClientProviderStatus.DISCONNECTED && !!conversationId,
   });
 
   React.useEffect(() => {

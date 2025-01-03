@@ -24,7 +24,8 @@ def mock_llm():
 @pytest.fixture
 def codeact_agent(mock_llm):
     config = AgentConfig()
-    return CodeActAgent(mock_llm, config)
+    agent = CodeActAgent(mock_llm, config)
+    return agent
 
 
 def response_mock(content: str, tool_call_id: str):
