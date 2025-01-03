@@ -62,9 +62,9 @@ export function ConversationCard({
     <div
       data-testid="conversation-card"
       onClick={onClick}
-      className="h-[100px] w-full px-[18px] py-4 border-b border-neutral-600"
+      className="h-[100px] w-full px-[18px] py-4 border-b border-neutral-600 cursor-pointer"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between space-x-1">
         <input
           ref={inputRef}
           data-testid="conversation-card-title"
@@ -73,7 +73,7 @@ export function ConversationCard({
           onKeyUp={handleKeyUp}
           type="text"
           defaultValue={title}
-          className="text-sm leading-6 font-semibold bg-transparent"
+          className="text-sm leading-6 font-semibold bg-transparent w-full"
         />
 
         <div className="flex items-center gap-2 relative">
@@ -86,18 +86,18 @@ export function ConversationCard({
           />
         </div>
       </div>
-      {selectedRepository && (
-        <ConversationRepoLink
-          selectedRepository={selectedRepository}
-          onClick={(e) => e.stopPropagation()}
-        />
-      )}
       {contextMenuVisible && (
         <ContextMenu testId="context-menu" className="left-full float-right">
           <ContextMenuListItem testId="delete-button" onClick={handleDelete}>
             Delete
           </ContextMenuListItem>
         </ContextMenu>
+      )}
+      {selectedRepository && (
+        <ConversationRepoLink
+          selectedRepository={selectedRepository}
+          onClick={(e) => e.stopPropagation()}
+        />
       )}
       <p className="text-xs text-neutral-400">
         <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>
