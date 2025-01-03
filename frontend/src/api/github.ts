@@ -2,15 +2,6 @@ import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
 import { github } from "./github-axios-instance";
 import { openHands } from "./open-hands-axios";
 
-export const sanitizeQuery = (query: string): string => {
-  let sanitizedQuery = query.trim();
-  sanitizedQuery = query.replace(/https?:\/\//, "");
-  sanitizedQuery = sanitizedQuery.replace(/github.com\//, "");
-  sanitizedQuery = sanitizedQuery.replace(/\.git$/, "");
-  sanitizedQuery = sanitizedQuery.toLowerCase();
-  return sanitizedQuery;
-};
-
 /**
  * Given the user, retrieves app installations IDs for OpenHands Github App
  * Uses user access token for Github App
@@ -119,16 +110,11 @@ export const searchPublicRepositories = async (
   sort: "" | "updated" | "stars" | "forks" = "stars",
   order: "desc" | "asc" = "desc",
 ): Promise<GitHubRepository[]> => {
-  const sanitizedQuery = sanitizeQuery(query);
-  if (!sanitizedQuery) {
-    return [];
-  }
-
   const response = await github.get<{ items: GitHubRepository[] }>(
     "/search/repositories",
     {
       params: {
-        q: sanitizedQuery,
+        q: query,
         per_page,
         sort,
         order,
