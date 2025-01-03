@@ -485,24 +485,6 @@ tests = ["pytest (>=3.2.1,!=3.3.0)"]
 typecheck = ["mypy"]
 
 [[package]]
-name = "beartype"
-version = "0.12.0"
-description = "Unbearably fast runtime type checking in pure Python."
-optional = false
-python-versions = ">=3.7.0"
-files = [
-    {file = "beartype-0.12.0-py3-none-any.whl", hash = "sha256:3d9d5bec198bcf965c000d7b5120bebdd19a444ef6e39e97d0e93eb8832e10c8"},
-    {file = "beartype-0.12.0.tar.gz", hash = "sha256:3b7545b3f333a6b07042b68b102141554c9add2e979dab7b0f8ed6378f7af7d7"},
-]
-
-[package.extras]
-all = ["typing-extensions (>=3.10.0.0)"]
-dev = ["autoapi (>=0.9.0)", "coverage (>=5.5)", "mypy (>=0.800)", "numpy", "pytest (>=4.0.0)", "sphinx", "sphinx (>=4.1.0)", "tox (>=3.20.1)", "typing-extensions"]
-doc-rtd = ["furo (==2022.6.21)", "sphinx (==4.1.0)"]
-test-tox = ["mypy (>=0.800)", "numpy", "pytest (>=4.0.0)", "sphinx", "typing-extensions"]
-test-tox-coverage = ["coverage (>=5.5)"]
-
-[[package]]
 name = "beautifulsoup4"
 version = "4.12.3"
 description = "Screen-scraping library"
@@ -602,14 +584,12 @@ crt = ["awscrt (==0.22.0)"]
 
 [[package]]
 name = "browsergym-core"
-version = "0.10.2"
+version = "0.13.3"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
 optional = false
 python-versions = ">3.9"
-files = [
-    {file = "browsergym_core-0.10.2-py3-none-any.whl", hash = "sha256:0686a8e2ee7244e33c97326193f54df0ad08d99aad9a4ed9ac28baba5ca26d18"},
-    {file = "browsergym_core-0.10.2.tar.gz", hash = "sha256:7e93bad5cc3990badee77e9481413d625d2fce2ec8f7f9e195dbc194b6cfb4e9"},
-]
+files = []
+develop = false
 
 [package.dependencies]
 beautifulsoup4 = ">=4.12"
@@ -620,34 +600,12 @@ pillow = ">=10.1"
 playwright = ">=1.39,<2.0"
 pyparsing = ">=3"
 
-[[package]]
-name = "browsergym-miniwob"
-version = "0.10.2"
-description = "MiniWoB++ benchmark for BrowserGym"
-optional = false
-python-versions = ">3.7"
-files = [
-    {file = "browsergym_miniwob-0.10.2-py3-none-any.whl", hash = "sha256:b11b04378868a8f5dee34f721134baed4780fd55ccaebf9db4de6fcac48f3190"},
-    {file = "browsergym_miniwob-0.10.2.tar.gz", hash = "sha256:9109b8122a61b27e227d923861055f220c6ddd60f34f877c3a30444c6f8a7b05"},
-]
-
-[package.dependencies]
-browsergym-core = "0.10.2"
-
-[[package]]
-name = "browsergym-webarena"
-version = "0.10.2"
-description = "WebArena benchmark for BrowserGym"
-optional = false
-python-versions = ">3.7"
-files = [
-    {file = "browsergym_webarena-0.10.2-py3-none-any.whl", hash = "sha256:e9ca6d0ad263412ebb229fe1b66e1ab7f5841a3f838abedf3bf01b800a7c6597"},
-    {file = "browsergym_webarena-0.10.2.tar.gz", hash = "sha256:b4b9a38f144b6aaa56bbbbce9dd2c5565a39a1b55e3647d61e02458ca3f5fd24"},
-]
-
-[package.dependencies]
-browsergym-core = "0.10.2"
-libwebarena = "0.0.3"
+[package.source]
+type = "git"
+url = "https://github.com/ryanhoangt/BrowserGym"
+reference = "add-mouse-position"
+resolved_reference = "4202aab6a2b5a0d42f9c126452a6b6fb3231bb55"
+subdirectory = "browsergym/core"
 
 [[package]]
 name = "build"
@@ -1734,28 +1692,6 @@ files = [
 mccabe = ">=0.7.0,<0.8.0"
 pycodestyle = ">=2.12.0,<2.13.0"
 pyflakes = ">=3.2.0,<3.3.0"
-
-[[package]]
-name = "flask"
-version = "3.1.0"
-description = "A simple framework for building complex web applications."
-optional = false
-python-versions = ">=3.9"
-files = [
-    {file = "flask-3.1.0-py3-none-any.whl", hash = "sha256:d667207822eb83f1c4b50949b1623c8fc8d51f2341d65f72e1a1815397551136"},
-    {file = "flask-3.1.0.tar.gz", hash = "sha256:5f873c5184c897c8d9d1b05df1e3d01b14910ce69607a117bd3277098a5836ac"},
-]
-
-[package.dependencies]
-blinker = ">=1.9"
-click = ">=8.1.3"
-itsdangerous = ">=2.2"
-Jinja2 = ">=3.1.2"
-Werkzeug = ">=3.1"
-
-[package.extras]
-async = ["asgiref (>=3.2)"]
-dotenv = ["python-dotenv"]
 
 [[package]]
 name = "flatbuffers"
@@ -3115,17 +3051,6 @@ files = [
 arrow = ">=0.15.0"
 
 [[package]]
-name = "itsdangerous"
-version = "2.2.0"
-description = "Safely pass data to untrusted environments and back."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "itsdangerous-2.2.0-py3-none-any.whl", hash = "sha256:c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef"},
-    {file = "itsdangerous-2.2.0.tar.gz", hash = "sha256:e0050c0b7da1eea53ffaf149c0cfbb5c6e2e2b69c4bef22c81fa6eb73e5f6173"},
-]
-
-[[package]]
 name = "jedi"
 version = "0.19.2"
 description = "An autocompletion tool for Python that can be used for text editors."
@@ -3721,32 +3646,6 @@ websocket-client = ">=0.32.0,<0.40.0 || >0.40.0,<0.41.dev0 || >=0.43.dev0"
 
 [package.extras]
 adal = ["adal (>=1.0.2)"]
-
-[[package]]
-name = "libwebarena"
-version = "0.0.3"
-description = "This is an unofficial, use-at-your-own risks port of the webarena benchmark, for use as a standalone library package."
-optional = false
-python-versions = "<4,>=3.7"
-files = [
-    {file = "libwebarena-0.0.3-py3-none-any.whl", hash = "sha256:aa0a0879486e5c90b2b2ec1c3bf309b0c7f13ee2bf7c8945447ac15f7027d248"},
-    {file = "libwebarena-0.0.3.tar.gz", hash = "sha256:3d05fae6749931aaf26e6c80fd665725dfeab41ac4848f168c407dbe3de89baf"},
-]
-
-[package.dependencies]
-aiolimiter = "*"
-beartype = "0.12.0"
-evaluate = "*"
-flask = "*"
-gymnasium = "*"
-nltk = "*"
-openai = ">=1"
-Pillow = "*"
-playwright = ">=1.32,<1.40"
-text-generation = "*"
-tiktoken = "*"
-transformers = "*"
-types-tqdm = "*"
 
 [[package]]
 name = "litellm"
@@ -5442,13 +5341,13 @@ numpy = {version = ">=1.26.0", markers = "python_version >= \"3.12\""}
 
 [[package]]
 name = "openhands-aci"
-version = "0.1.1"
+version = "0.1.5"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
 python-versions = "<4.0,>=3.12"
 files = [
-    {file = "openhands_aci-0.1.1-py3-none-any.whl", hash = "sha256:8831f97b887571005dca0d70a9f6f0a4f9feb35d3d41f499e70d72b5fb68a599"},
-    {file = "openhands_aci-0.1.1.tar.gz", hash = "sha256:705b74a12a8f428e64295b5de125f553500f62ef5ab3a5a6284d8fcf638025e6"},
+    {file = "openhands_aci-0.1.5-py3-none-any.whl", hash = "sha256:7b4238161ede81ba870efd5f30af654d432d03a74632746ba19147761ed21533"},
+    {file = "openhands_aci-0.1.5.tar.gz", hash = "sha256:3ed6d051c4944ba4dee1febcf2b41c3d95da1706102f53f61809a3aca0821afe"},
 ]
 
 [package.dependencies]
@@ -8535,22 +8434,6 @@ test = ["pre-commit", "pytest (>=7.0)", "pytest-timeout"]
 typing = ["mypy (>=1.6,<2.0)", "traitlets (>=5.11.1)"]
 
 [[package]]
-name = "text-generation"
-version = "0.7.0"
-description = "Hugging Face Text Generation Python Client"
-optional = false
-python-versions = "<4.0,>=3.7"
-files = [
-    {file = "text_generation-0.7.0-py3-none-any.whl", hash = "sha256:02ab337a0ee0e7c70e04a607b311c261caae74bde46a7d837c6fdd150108f4d8"},
-    {file = "text_generation-0.7.0.tar.gz", hash = "sha256:689200cd1f0d4141562af2515393c2c21cdbd9fac21c8398bf3043cdcc14184e"},
-]
-
-[package.dependencies]
-aiohttp = ">=3.8,<4.0"
-huggingface-hub = ">=0.12,<1.0"
-pydantic = ">2,<3"
-
-[[package]]
 name = "threadpoolctl"
 version = "3.5.0"
 description = "threadpoolctl"
@@ -9121,20 +9004,6 @@ files = [
 ]
 
 [[package]]
-name = "types-requests"
-version = "2.32.0.20241016"
-description = "Typing stubs for requests"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "types-requests-2.32.0.20241016.tar.gz", hash = "sha256:0d9cad2f27515d0e3e3da7134a1b6f28fb97129d86b867f24d9c726452634d95"},
-    {file = "types_requests-2.32.0.20241016-py3-none-any.whl", hash = "sha256:4195d62d6d3e043a4eaaf08ff8a62184584d2e8684e9d2aa178c7915a7da3747"},
-]
-
-[package.dependencies]
-urllib3 = ">=2"
-
-[[package]]
 name = "types-toml"
 version = "0.10.8.20240310"
 description = "Typing stubs for toml"
@@ -9144,20 +9013,6 @@ files = [
     {file = "types-toml-0.10.8.20240310.tar.gz", hash = "sha256:3d41501302972436a6b8b239c850b26689657e25281b48ff0ec06345b8830331"},
     {file = "types_toml-0.10.8.20240310-py3-none-any.whl", hash = "sha256:627b47775d25fa29977d9c70dc0cbab3f314f32c8d8d0c012f2ef5de7aaec05d"},
 ]
-
-[[package]]
-name = "types-tqdm"
-version = "4.67.0.20241119"
-description = "Typing stubs for tqdm"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "types-tqdm-4.67.0.20241119.tar.gz", hash = "sha256:1769e0e94d5e6d8fa814965f9cf3d9928376dd15dabcbcb784bb8769081092b4"},
-    {file = "types_tqdm-4.67.0.20241119-py3-none-any.whl", hash = "sha256:a18d4eb62db0d35c52707ae13d821b5a57970755273ecb56e133ccc0ac7e7c79"},
-]
-
-[package.dependencies]
-types-requests = "*"
 
 [[package]]
 name = "typing-extensions"
@@ -9616,23 +9471,6 @@ files = [
 ]
 
 [[package]]
-name = "werkzeug"
-version = "3.1.3"
-description = "The comprehensive WSGI web application library."
-optional = false
-python-versions = ">=3.9"
-files = [
-    {file = "werkzeug-3.1.3-py3-none-any.whl", hash = "sha256:54b78bf3716d19a65be4fceccc0d1d7b89e608834989dfae50ea87564639213e"},
-    {file = "werkzeug-3.1.3.tar.gz", hash = "sha256:60723ce945c19328679790e3282cc758aa4a6040e4bb330f53d30fa546d44746"},
-]
-
-[package.dependencies]
-MarkupSafe = ">=2.1.1"
-
-[package.extras]
-watchdog = ["watchdog (>=2.3)"]
-
-[[package]]
 name = "whatthepatch"
 version = "1.0.7"
 description = "A patch parsing and application library."
@@ -10064,4 +9902,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "c69863e861b84a4af1cae314f85076448f011d1e347a46ce9d63843121e595eb"
+content-hash = "b82e3e70979818aebb2ff9a5c02b34c4c3f79936b4a4d97d11d3c09d8680264f"

@@ -28,7 +28,7 @@ uvicorn = "*"
 types-toml = "*"
 numpy = "*"
 json-repair = "*"
-browsergym-core = "0.10.2" # integrate browsergym-core as the browsing interface
+browsergym-core = { git = "https://github.com/ryanhoangt/BrowserGym", subdirectory = "browsergym/core", rev = "add-mouse-position" } # integrate browsergym-core as the browsing interface
 html2text = "*"
 e2b = ">=1.0.5,<1.1.0"
 pexpect = "*"
@@ -64,7 +64,7 @@ modal = ">=0.66.26,<0.71.0"
 runloop-api-client = "0.11.0"
 pygithub = "^2.5.0"
 joblib = "*"
-openhands-aci = "0.1.1"
+openhands-aci = "0.1.5"
 astor = "*"
 python-socketio = "^5.11.4"
 redis = "^5.2.0"
@@ -145,8 +145,8 @@ gdown = "*"
 matplotlib = "*"
 seaborn = "*"
 tabulate = "*"
-browsergym-webarena = "0.10.2"
-browsergym-miniwob = "0.10.2"
+# browsergym-webarena = "0.10.2"
+# browsergym-miniwob = "0.10.2"
 
 [tool.poetry-dynamic-versioning]
 enable = true
