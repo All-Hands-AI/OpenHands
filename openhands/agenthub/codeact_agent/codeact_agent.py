@@ -277,7 +277,9 @@ class CodeActAgent(Agent):
                 )
             else:
                 text = truncate_content(
-                    obs.content + obs.interpreter_details, max_message_chars
+                    obs.content
+                    + f'\n[Python Interpreter: {obs.metadata.py_interpreter_path}]',
+                    max_message_chars,
                 )
             text += f'\n[Command finished with exit code {obs.exit_code}]'
             message = Message(role='user', content=[TextContent(text=text)])

@@ -163,7 +163,7 @@ def complete_runtime(
     eval_script = os.path.join(task_path, 'run.sh')
     logger.info(f'Running evaluation script: {eval_script}')
 
-    action = CmdRunAction(command=f'cat {eval_script}', keep_prompt=False)
+    action = CmdRunAction(command=f'cat {eval_script}')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     if obs.exit_code == 0:

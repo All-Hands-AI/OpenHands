@@ -26,6 +26,7 @@ from openhands.events.action import (
 from openhands.events.event import EventSource, FileEditSource, FileReadSource
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
+    CmdOutputMetadata,
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
@@ -50,7 +51,11 @@ def agent() -> CodeActAgent:
 def test_cmd_output_observation_message(agent: CodeActAgent):
     agent.config.function_calling = False
     obs = CmdOutputObservation(
-        command='echo hello', content='Command output', command_id=1, exit_code=0
+        command='echo hello',
+        content='Command output',
+        metadata=CmdOutputMetadata(
+            exit_code=0,
+        ),
     )
 
     results = agent.get_observation_message(obs, tool_call_id_to_message={})
@@ -62,7 +67,7 @@ def test_cmd_output_observation_message(agent: CodeActAgent):
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
     assert 'Command output' in result.content[0].text
-    assert 'Command finished with exit code 0' in result.content[0].text
+    assert '[Command finished with exit code 0]' in result.content[0].text
 
 
 def test_ipython_run_cell_observation_message(agent: CodeActAgent):

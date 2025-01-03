@@ -137,7 +137,6 @@ def complete_runtime(
 
         action = CmdRunAction(
             command=f'chmod +x ./{script_name} && ./{script_name}',
-            keep_prompt=False,
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
@@ -164,8 +163,7 @@ def complete_runtime(
             logger.info(f'Running get ground truth cmd: {script_name}')
 
             action = CmdRunAction(
-                command=f'chmod +x ./{script_name} && ./{script_name}',
-                keep_prompt=False,
+                command=f'chmod +x ./{script_name} && ./{script_name}'
             )
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)

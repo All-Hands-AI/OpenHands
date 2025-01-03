@@ -219,7 +219,9 @@ class RemoteRuntime(ActionExecutionClient):
             'image': self.container_image,
             'command': command,
             'working_dir': '/openhands/code/',
-            'environment': {'DEBUG': 'true'} if self.config.debug else {},
+            'environment': {'DEBUG': 'true'}
+            if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
+            else {},
             'session_id': self.sid,
             'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
         }
@@ -364,7 +366,10 @@ class RemoteRuntime(ActionExecutionClient):
         try:
             return super()._send_action_server_request(method, url, **kwargs)
         except requests.Timeout:
-            self.log('error', 'No response received within the timeout period.')
+            self.log(
+                'error',
+                f'No response received within the timeout period for url: {url}',
+            )
             raise
         except requests.HTTPError as e:
             if e.response.status_code == 404:
