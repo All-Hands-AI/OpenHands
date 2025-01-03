@@ -426,6 +426,20 @@
     "fr": "Réinitialiser aux valeurs par défaut",
     "tr": "Varsayılanlara Sıfırla"
   },
+  "SETTINGS_FORM$RUNTIME_SIZE_LABEL": {
+    "en": "Runtime Settings",
+    "zh-CN": "运行时设置",
+    "de": "Laufzeiteinstellungen",
+    "ko-KR": "런타임 설정",
+    "no": "Kjøretidsinnstillinger",
+    "zh-TW": "運行時設定",
+    "it": "Impostazioni Runtime",
+    "pt": "Configurações de Runtime",
+    "es": "Configuración de Runtime",
+    "ar": "إعدادات وقت التشغيل",
+    "fr": "Paramètres d'exécution",
+    "tr": "Çalışma Zamanı Ayarları"
+  },
   "CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE": {
     "en": "We've changed some settings in the latest update. Take a minute to review.",
     "de": "Mit dem letzten Update haben wir ein paar Einstellungen geändert. Bitte kontrollieren Ihre Einstellungen.",

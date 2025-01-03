@@ -1,13 +1,19 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = [
+  "poetry-core",
+]
+
 [tool.poetry]
 name = "openhands-ai"
 version = "0.18.0"
 description = "OpenHands: Code Less, Make More"
-authors = ["OpenHands"]
+authors = [ "OpenHands" ]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/All-Hands-AI/OpenHands"
 packages = [
-  { include = "openhands/**/*" }
+  { include = "openhands/**/*" },
 ]
 
 [tool.poetry.dependencies]
@@ -15,10 +21,10 @@ python = "^3.12"
 datasets = "*"
 pandas = "*"
 litellm = "^1.54.1"
-google-generativeai = "*" # To use litellm with Gemini Pro API
-google-api-python-client = "*" # For Google Sheets API
-google-auth-httplib2 = "*" # For Google Sheets authentication
-google-auth-oauthlib = "*" # For Google Sheets OAuth
+google-generativeai = "*"                            # To use litellm with Gemini Pro API
+google-api-python-client = "*"                       # For Google Sheets API
+google-auth-httplib2 = "*"                           # For Google Sheets authentication
+google-auth-oauthlib = "*"                           # For Google Sheets OAuth
 termcolor = "*"
 seaborn = "*"
 docker = "*"
@@ -28,7 +34,7 @@ uvicorn = "*"
 types-toml = "*"
 numpy = "*"
 json-repair = "*"
-browsergym-core = "0.10.2" # integrate browsergym-core as the browsing interface
+browsergym-core = "0.10.2"                           # integrate browsergym-core as the browsing interface
 html2text = "*"
 e2b = ">=1.0.5,<1.1.0"
 pexpect = "*"
@@ -37,12 +43,12 @@ python-multipart = "*"
 boto3 = "*"
 minio = "^7.2.8"
 gevent = "^24.2.1"
-pyarrow = "18.1.0" # transitive dependency, pinned here to avoid conflicts
+pyarrow = "18.1.0"                                   # transitive dependency, pinned here to avoid conflicts
 tenacity = ">=8.5,<10.0"
 zope-interface = "7.2"
 pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
-anthropic = {extras = ["vertex"], version = "*"}
+anthropic = { extras = [ "vertex" ], version = "*" }
 grep-ast = "0.3.3"
 tree-sitter = "0.21.3"
 bashlex = "^0.18"
@@ -57,7 +63,7 @@ tornado = "*"
 python-dotenv = "*"
 pylcs = "^0.1.1"
 whatthepatch = "^1.0.6"
-protobuf = "^4.21.6,<5.0.0" # chromadb currently fails on 5.0+
+protobuf = "^4.21.6,<5.0.0"                          # chromadb currently fails on 5.0+
 opentelemetry-api = "1.25.0"
 opentelemetry-exporter-otlp-proto-grpc = "1.25.0"
 modal = ">=0.66.26,<0.71.0"
@@ -97,37 +103,12 @@ opencv-python = "*"
 pandas = "*"
 reportlab = "*"
 
-[tool.coverage.run]
-concurrency = ["gevent"]
-
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
 jupyter_kernel_gateway = "*"
 flake8 = "*"
 opencv-python = "*"
-
-[build-system]
-build-backend = "poetry.core.masonry.api"
-requires = [
-  "poetry-core",
-]
-
-[tool.autopep8]
-# autopep8 fights with mypy on line length issue
-ignore = [ "E501" ]
-
-[tool.black]
-# prevent black (if installed) from changing single quotes to double quotes
-skip-string-normalization = true
-
-[tool.ruff.lint]
-select = ["D"]
-# ignore warnings for missing docstrings
-ignore = ["D1"]
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
@@ -145,9 +126,26 @@ tabulate = "*"
 browsergym-webarena = "0.10.2"
 browsergym-miniwob = "0.10.2"
 
+[tool.poetry.scripts]
+openhands = "openhands.core.cli:main"
+
 [tool.poetry-dynamic-versioning]
 enable = true
 style = "semver"
 
-[tool.poetry.scripts]
-openhands = "openhands.core.cli:main"
+[tool.autopep8]
+# autopep8 fights with mypy on line length issue
+ignore = [ "E501" ]
+
+[tool.black]
+# prevent black (if installed) from changing single quotes to double quotes
+skip-string-normalization = true
+
+[tool.ruff]
+lint.select = [ "D" ]
+# ignore warnings for missing docstrings
+lint.ignore = [ "D1" ]
+lint.pydocstyle.convention = "google"
+
+[tool.coverage.run]
+concurrency = [ "gevent" ]
