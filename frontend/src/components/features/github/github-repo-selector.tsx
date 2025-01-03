@@ -11,13 +11,9 @@ import { useConfig } from "#/hooks/query/use-config";
 import { searchPublicRepositories } from "#/api/github";
 import { useDebounce } from "#/hooks/use-debounce";
 
-interface GitHubRepositoryWithFlag extends GitHubRepository {
-  fromPublicRepoSearch?: boolean;
-}
-
 interface GitHubRepositorySelectorProps {
   onSelect: () => void;
-  repositories: GitHubRepositoryWithFlag[];
+  repositories: GitHubRepository[];
 }
 
 function sanitizeQuery(query: string) {
@@ -59,7 +55,7 @@ export function GitHubRepositorySelector({
     searchPublicRepo();
   }, [debouncedSearchQuery]);
 
-  const finalRepositories: GitHubRepositoryWithFlag[] = [
+  const allRepositories: GitHubRepositoryWithFlag[] = [
     ...searchedRepos.filter(
       (repo) => !repositories.find((r) => r.id === repo.id),
     ),
@@ -69,7 +65,7 @@ export function GitHubRepositorySelector({
   const dispatch = useDispatch();
 
   const handleRepoSelection = (id: string | null) => {
-    const repo = finalRepositories.find((r) => r.id.toString() === id);
+    const repo = allRepositories.find((r) => r.id.toString() === id);
     if (repo) {
       dispatch(setSelectedRepository(repo.full_name));
       posthog.capture("repository_selected");
