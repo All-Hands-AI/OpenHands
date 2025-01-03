@@ -1,5 +1,6 @@
 import React from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
+import { useDispatch } from "react-redux";
 import FolderIcon from "#/icons/docs.svg?react";
 import { useAuth } from "#/context/auth-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
@@ -11,16 +12,20 @@ import { ExitProjectButton } from "#/components/shared/buttons/exit-project-butt
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { AccountSettingsModal } from "#/components/shared/modals/account-settings/account-settings-modal";
-import { ExitProjectConfirmationModal } from "#/components/shared/modals/exit-project-confirmation-modal";
+
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { useSettingsUpToDate } from "#/context/settings-up-to-date-context";
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { cn } from "#/utils/utils";
 import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
+import { clearSelectedRepository } from "#/state/initial-query-slice";
+import { setUrl, setScreenshotSrc, initialState as browserInitialState } from "#/state/browser-slice";
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const user = useGitHubUser();
   const { data: isAuthed } = useIsAuthed();
   const { logout } = useAuth();
@@ -30,8 +35,7 @@ export function Sidebar() {
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
-  const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
-    React.useState(false);
+
   const [conversationPanelIsOpen, setConversationPanelIsOpen] = React.useState(
     MULTI_CONVO_UI_IS_ENABLED,
   );
@@ -51,9 +55,17 @@ export function Sidebar() {
     setAccountSettingsModalOpen(false);
   };
 
-  const handleClickLogo = () => {
-    if (location.pathname.startsWith("/conversations/"))
-      setStartNewProjectModalIsOpen(true);
+  const handleClickLogo = (e: React.MouseEvent) => {
+    const dispatch = useDispatch();
+    dispatch(clearSelectedRepository());
+    dispatch(setUrl(browserInitialState.url));
+    dispatch(setScreenshotSrc(browserInitialState.screenshotSrc));
+
+    if (e.metaKey || e.ctrlKey) {
+      window.open("/", "_blank");
+    } else {
+      navigate("/");
+    }
   };
 
   const showSettingsModal =
@@ -116,11 +128,7 @@ export function Sidebar() {
             onClose={() => setSettingsModalIsOpen(false)}
           />
         ))}
-      {startNewProjectModalIsOpen && (
-        <ExitProjectConfirmationModal
-          onClose={() => setStartNewProjectModalIsOpen(false)}
-        />
-      )}
+
     </>
   );
 }

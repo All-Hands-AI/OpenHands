@@ -2,7 +2,7 @@ import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { TooltipButton } from "./tooltip-button";
 
 interface AllHandsLogoButtonProps {
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
 }
 
 export function AllHandsLogoButton({ onClick }: AllHandsLogoButtonProps) {
