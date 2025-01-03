@@ -46,11 +46,11 @@ export function RuntimeSizeSelector({
           value={2}
           isDisabled
           classNames={{
-            description: "whitespace-normal break-words",
-            popover: "min-w-[300px]",
+            description:
+              "whitespace-normal break-words min-w-[300px] max-w-[300px]",
+            base: "min-w-[300px] max-w-[300px]",
           }}
           description="Runtime sizes over 1 are disabled by default, please contact contact@all-hands.dev to get access to larger runtimes."
-          wrap="wrap"
         >
           2x (4 core, 16G)
         </SelectItem>

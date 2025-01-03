@@ -60,7 +60,7 @@ describe("RuntimeSizeSelector", () => {
 
     // Click the button to open the dropdown
     const button = screen.getByRole("button", {
-      "aria-label": "SETTINGS_FORM$RUNTIME_SIZE_LABEL",
+      name: "1x (2 core, 8G) SETTINGS_FORM$RUNTIME_SIZE_LABEL",
     });
     button.click();
 
