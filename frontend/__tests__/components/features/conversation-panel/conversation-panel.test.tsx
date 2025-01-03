@@ -175,7 +175,7 @@ describe("ConversationPanel", () => {
 
     // Ensure the conversation is renamed
     expect(updateUserConversationSpy).toHaveBeenCalledWith("3", {
-      name: "Conversation 1 Renamed",
+      title: "Conversation 1 Renamed",
     });
   });
 

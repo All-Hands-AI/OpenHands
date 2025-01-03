@@ -1,39 +1,25 @@
 import ColdIcon from "./state-indicators/cold.svg?react";
-import CoolingIcon from "./state-indicators/cooling.svg?react";
-import FinishedIcon from "./state-indicators/finished.svg?react";
 import RunningIcon from "./state-indicators/running.svg?react";
-import WaitingIcon from "./state-indicators/waiting.svg?react";
-import WarmIcon from "./state-indicators/warm.svg?react";
 
 type SVGIcon = React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
-export type ProjectState =
-  | "cold"
-  | "cooling"
-  | "finished"
-  | "running"
-  | "waiting"
-  | "warm";
+export type ProjectStatus = "RUNNING" | "STOPPED";
 
-const INDICATORS: Record<ProjectState, SVGIcon> = {
-  cold: ColdIcon,
-  cooling: CoolingIcon,
-  finished: FinishedIcon,
-  running: RunningIcon,
-  waiting: WaitingIcon,
-  warm: WarmIcon,
+const INDICATORS: Record<ProjectStatus, SVGIcon> = {
+  STOPPED: ColdIcon,
+  RUNNING: RunningIcon,
 };
 
 interface ConversationStateIndicatorProps {
-  state: ProjectState;
+  status: ProjectStatus;
 }
 
 export function ConversationStateIndicator({
-  state,
+  status,
 }: ConversationStateIndicatorProps) {
-  const StateIcon = INDICATORS[state];
+  const StateIcon = INDICATORS[status];
 
   return (
-    <div data-testid={`${state}-indicator`}>
+    <div data-testid={`${status}-indicator`}>
       <StateIcon />
     </div>
   );

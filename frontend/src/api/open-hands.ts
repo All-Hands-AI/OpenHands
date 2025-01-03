@@ -9,6 +9,7 @@ import {
   GetVSCodeUrlResponse,
   AuthenticateResponse,
   Conversation,
+  ResultSet,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings } from "#/services/settings";
@@ -222,8 +223,10 @@ class OpenHands {
   }
 
   static async getUserConversations(): Promise<Conversation[]> {
-    const { data } = await openHands.get<Conversation[]>("/api/conversations");
-    return data;
+    const { data } = await openHands.get<ResultSet<Conversation>>(
+      "/api/conversations?limit=9",
+    );
+    return data.results;
   }
 
   static async deleteUserConversation(conversationId: string): Promise<void> {
@@ -232,9 +235,9 @@ class OpenHands {
 
   static async updateUserConversation(
     conversationId: string,
-    conversation: Partial<Omit<Conversation, "id">>,
+    conversation: Partial<Omit<Conversation, "conversation_id">>,
   ): Promise<void> {
-    await openHands.put(`/api/conversations/${conversationId}`, conversation);
+    await openHands.patch(`/api/conversations/${conversationId}`, conversation);
   }
 
   static async createConversation(
