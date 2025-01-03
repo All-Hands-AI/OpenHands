@@ -18,6 +18,7 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { cn } from "#/utils/utils";
 import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
+import { FaListUl } from "react-icons/fa";
 
 export function Sidebar() {
   const location = useLocation();
@@ -82,11 +83,12 @@ export function Sidebar() {
               data-testid="toggle-conversation-panel"
               type="button"
               onClick={() => setConversationPanelIsOpen((prev) => !prev)}
-              className={cn(
-                conversationPanelIsOpen ? "border-b-2 border-[#FFE165]" : "",
-              )}
             >
-              <FolderIcon width={28} height={28} />
+              <FaListUl
+                  width={28}
+                  height={28}
+                  fill={conversationPanelIsOpen ? "#FFE165" : "#FFFFFF"}
+              />
             </button>
           )}
           <DocsButton />
