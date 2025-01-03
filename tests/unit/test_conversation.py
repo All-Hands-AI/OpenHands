@@ -29,12 +29,9 @@ def _patch_store():
                 'selected_repository': 'foobar',
                 'conversation_id': 'some_conversation_id',
                 'github_user_id': 'github_user',
+                'last_updated_at': '2025-01-01T00:00:00',
             }
         ),
-    )
-    file_store.write(
-        'sessions/some_conversation_id/events/0.json',
-        json.dumps({'timestamp': '2025-01-01T00:00:00'}),
     )
     with patch(
         'openhands.storage.conversation.file_conversation_store.get_file_store',
@@ -56,7 +53,7 @@ async def test_search_conversations():
         expected = ConversationInfoResultSet(
             results=[
                 ConversationInfo(
-                    id='some_conversation_id',
+                    conversation_id='some_conversation_id',
                     title='Some Conversation',
                     last_updated_at=datetime.fromisoformat('2025-01-01T00:00:00'),
                     status=ConversationStatus.STOPPED,
@@ -74,7 +71,7 @@ async def test_get_conversation():
             'some_conversation_id', MagicMock(state=MagicMock(github_token=''))
         )
         expected = ConversationInfo(
-            id='some_conversation_id',
+            conversation_id='some_conversation_id',
             title='Some Conversation',
             last_updated_at=datetime.fromisoformat('2025-01-01T00:00:00'),
             status=ConversationStatus.STOPPED,
@@ -98,15 +95,15 @@ async def test_get_missing_conversation():
 async def test_update_conversation():
     with _patch_store():
         await update_conversation(
+            MagicMock(state=MagicMock(github_token='')),
             'some_conversation_id',
             'New Title',
-            MagicMock(state=MagicMock(github_token='')),
         )
         conversation = await get_conversation(
             'some_conversation_id', MagicMock(state=MagicMock(github_token=''))
         )
         expected = ConversationInfo(
-            id='some_conversation_id',
+            conversation_id='some_conversation_id',
             title='New Title',
             last_updated_at=datetime.fromisoformat('2025-01-01T00:00:00'),
             status=ConversationStatus.STOPPED,

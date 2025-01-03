@@ -91,11 +91,6 @@ class UserCancelledError(Exception):
         super().__init__(message)
 
 
-class MicroAgentValidationError(Exception):
-    def __init__(self, message='Micro agent validation failed'):
-        super().__init__(message)
-
-
 class OperationCancelled(Exception):
     """Exception raised when an operation is cancelled (e.g. by a keyboard interrupt)."""
 
@@ -203,4 +198,22 @@ class BrowserUnavailableException(Exception):
         self,
         message='Browser environment is not available, please check if has been initialized',
     ):
+        super().__init__(message)
+
+
+# ============================================
+# Microagent Exceptions
+# ============================================
+
+
+class MicroAgentError(Exception):
+    """Base exception for all microagent errors."""
+
+    pass
+
+
+class MicroAgentValidationError(MicroAgentError):
+    """Raised when there's a validation error in microagent metadata."""
+
+    def __init__(self, message='Micro agent validation failed'):
         super().__init__(message)

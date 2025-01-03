@@ -24,7 +24,7 @@ async def get_conversation_info(
         if not title:
             title = f'Conversation {conversation.conversation_id}'
         return ConversationInfo(
-            id=conversation.conversation_id,
+            conversation_id=conversation.conversation_id,
             title=title,
             last_updated_at=datetime.fromisoformat(event.get('timestamp')),
             selected_repository=conversation.selected_repository,

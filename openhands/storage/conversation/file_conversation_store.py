@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
+
+from pydantic import TypeAdapter
 
 from openhands.core.config.app_config import AppConfig
 from openhands.core.logger import openhands_logger as logger
@@ -19,20 +20,23 @@ from openhands.storage.locations import (
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.search_utils import offset_to_page_id, page_id_to_offset
 
+conversation_metadata_type_adapter = TypeAdapter(ConversationMetadata)
+
 
 @dataclass
 class FileConversationStore(ConversationStore):
     file_store: FileStore
 
     async def save_metadata(self, metadata: ConversationMetadata):
-        json_str = json.dumps(metadata.__dict__)
+        json_str = conversation_metadata_type_adapter.dump_json(metadata)
         path = self.get_conversation_metadata_filename(metadata.conversation_id)
         await call_sync_from_async(self.file_store.write, path, json_str)
 
     async def get_metadata(self, conversation_id: str) -> ConversationMetadata:
         path = self.get_conversation_metadata_filename(conversation_id)
         json_str = await call_sync_from_async(self.file_store.read, path)
-        return ConversationMetadata(**json.loads(json_str))
+        result = conversation_metadata_type_adapter.validate_json(json_str)
+        return result
 
     async def delete_metadata(self, conversation_id: str) -> None:
         path = self.get_conversation_metadata_filename(conversation_id)

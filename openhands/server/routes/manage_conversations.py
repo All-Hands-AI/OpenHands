@@ -1,11 +1,14 @@
 import uuid
+from datetime import datetime
+from typing import Callable
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Body, Request
 from fastapi.responses import JSONResponse
 from github import Github
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.stream import EventStreamSubscriber
 from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import config, session_manager
@@ -14,10 +17,16 @@ from openhands.storage.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
-from openhands.utils.async_utils import call_sync_from_async, wait_all
-from openhands.utils.conversation_utils import get_conversation_info
+from openhands.storage.data_models.conversation_status import ConversationStatus
+from openhands.utils.async_utils import (
+    GENERAL_TIMEOUT,
+    call_async_from_sync,
+    call_sync_from_async,
+    wait_all,
+)
 
 app = APIRouter(prefix='/api')
+UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 
 class InitSessionRequest(BaseModel):
@@ -75,11 +84,21 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     )
 
     logger.info(f'Starting agent loop for conversation {conversation_id}')
-    await session_manager.maybe_start_agent_loop(
+    event_stream = await session_manager.maybe_start_agent_loop(
         conversation_id, conversation_init_data
     )
+    try:
+        event_stream.subscribe(
+            EventStreamSubscriber.SERVER,
+            _create_conversation_update_callback(
+                data.github_token or '', conversation_id
+            ),
+            UPDATED_AT_CALLBACK_ID,
+        )
+    except ValueError:
+        pass  # Already subscribed - take no action
     logger.info(f'Finished initializing conversation {conversation_id}')
-    return JSONResponse(content={'status': 'ok', 'id': conversation_id})
+    return JSONResponse(content={'status': 'ok', 'conversation_id': conversation_id})
 
 
 @app.get('/conversations')
@@ -100,7 +119,7 @@ async def search_conversations(
     )
     result = ConversationInfoResultSet(
         results=await wait_all(
-            get_conversation_info(
+            _get_conversation_info(
                 conversation=conversation,
                 is_running=conversation.conversation_id in running_conversations,
             )
@@ -120,15 +139,15 @@ async def get_conversation(
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await session_manager.is_agent_loop_running(conversation_id)
-        conversation_info = await get_conversation_info(metadata, is_running)
+        conversation_info = await _get_conversation_info(metadata, is_running)
         return conversation_info
     except FileNotFoundError:
         return None
 
 
-@app.put('/conversations/{conversation_id}')
+@app.patch('/conversations/{conversation_id}')
 async def update_conversation(
-    conversation_id: str, title: str, request: Request
+    request: Request, conversation_id: str, title: str = Body(embed=True)
 ) -> bool:
     github_token = getattr(request.state, 'github_token', '') or ''
     conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
@@ -156,3 +175,50 @@ async def delete_conversation(
         return False
     await conversation_store.delete_metadata(conversation_id)
     return True
+
+
+async def _get_conversation_info(
+    conversation: ConversationMetadata,
+    is_running: bool,
+) -> ConversationInfo | None:
+    try:
+        title = conversation.title
+        if not title:
+            title = f'Conversation {conversation.conversation_id[:5]}'
+        return ConversationInfo(
+            conversation_id=conversation.conversation_id,
+            title=title,
+            last_updated_at=conversation.last_updated_at,
+            selected_repository=conversation.selected_repository,
+            status=ConversationStatus.RUNNING
+            if is_running
+            else ConversationStatus.STOPPED,
+        )
+    except Exception:  # type: ignore
+        logger.warning(
+            f'Error loading conversation: {conversation.conversation_id[:5]}',
+            exc_info=True,
+            stack_info=True,
+        )
+        return None
+
+
+def _create_conversation_update_callback(
+    github_token: str, conversation_id: str
+) -> Callable:
+    def callback(*args, **kwargs):
+        call_async_from_sync(
+            _update_timestamp_for_conversation,
+            GENERAL_TIMEOUT,
+            github_token,
+            conversation_id,
+        )
+
+    return callback
+
+
+async def _update_timestamp_for_conversation(github_token: str, conversation_id: str):
+    conversation_store = await ConversationStoreImpl.get_instance(config, github_token)
+    conversation = await conversation_store.get_metadata(conversation_id)
+    conversation.last_updated_at = datetime.now()
+    await conversation_store.save_metadata(conversation)
