@@ -28,7 +28,7 @@ uvicorn = "*"
 types-toml = "*"
 numpy = "*"
 json-repair = "*"
-browsergym-core = { git = "https://github.com/ryanhoangt/BrowserGym", subdirectory = "browsergym/core", rev = "add-mouse-position" } # integrate browsergym-core as the browsing interface
+browsergym-core = { git = "https://github.com/ryanhoangt/BrowserGym", subdirectory = "browsergym/core", rev = "add-mouse-position-no-iframe" } # integrate browsergym-core as the browsing interface
 html2text = "*"
 e2b = ">=1.0.5,<1.1.0"
 pexpect = "*"

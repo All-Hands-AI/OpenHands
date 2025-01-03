@@ -36,6 +36,7 @@ async def browse(
         if _action_str == 'gui_use':
             # received action_str defined by Anthropic's Computer Use feature: see https://docs.anthropic.com/en/docs/build-with-claude/computer-use#computer-tool
             extra_args = action.extra_args
+            print(f'✅ extra_args: {extra_args}')
 
             try:
                 validated_args = gui_use.validate_and_transform_args(
@@ -71,11 +72,14 @@ async def browse(
         raise ValueError(f'Invalid action type: {action.action}')
 
     try:
-        # obs provided by BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/env.py#L396
+        # obs provided by BrowserGym: see
+        # https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/env.py#L396
         obs = browser.step(action_str)
         mouse_position = obs.get('mouse_position', [0, 0])
         scaled_mouse_position = gui_use.scale_coordinates(
-            ScalingSource.COMPUTER, int(mouse_position[0]), int(mouse_position[1])
+            ScalingSource.COMPUTER,
+            int(mouse_position[0] or 0),
+            int(mouse_position[1] or 0),
         )
         return BrowserOutputObservation(
             content=obs['text_content'],  # text content of the page

@@ -281,10 +281,10 @@ class AgentController:
                 observation_to_print.content, self.agent.llm.config.max_message_chars
             )
         # Use info level if LOG_ALL_EVENTS is set
-        log_level = 'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'
-        self.log(
-            log_level, str(observation_to_print), extra={'msg_type': 'OBSERVATION'}
-        )
+        # log_level = 'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'
+        # self.log(
+        #     log_level, str(observation_to_print), extra={'msg_type': 'OBSERVATION'}
+        # )
 
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
