@@ -12,53 +12,131 @@ You have two options for customization:
 1. Use an existing image with the required software.
 2. Create your own custom Docker image.
 
-If you choose the first option, you can skip the `Create Your Docker Image` section.
+## Important Requirements
+
+Before proceeding with either option, note these key requirements:
+
+1. The base image must be Debian-based
+2. The user in the container MUST be `root` for proper functionality
+3. Any installed packages should be available system-wide, not just for specific users
 
 ## Create Your Docker Image
 
-To create a custom Docker image, it must be Debian based.
-
-For example, if you want OpenHands to have `ruby` installed, create a `Dockerfile` with the following content:
+Here's a complete example of a custom runtime Dockerfile:
 
 ```dockerfile
 FROM debian:latest
 
 # Install required packages
-RUN apt-get update && apt-get install -y ruby
+RUN apt-get update && apt-get install -y \
+    ruby \
+    python3 \
+    nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Ensure we're running as root
+USER root
 ```
 
-Save this file in a folder. Then, build your Docker image (e.g., named custom-image) by navigating to the folder in
-the terminal and running::
-```bash
-docker build -t custom-image .
-```
+Save this file as `docker/runtime.Dockerfile`. Then, build your Docker image using one of these methods:
 
-This will produce a new image called `custom-image`, which will be available in Docker.
-
-> Note that in the configuration described in this document, OpenHands will run as user "openhands" inside the
-> sandbox and thus all packages installed via the docker file should be available to all users on the system, not just root.
-
-## Using the Development Workflow
-
-### Setup
-
-First, ensure you can run OpenHands by following the instructions in [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
-
-### Specify the Base Sandbox Image
-
-In the `config.toml` file within the OpenHands directory, set the `sandbox_base_container_image` to the image you want to use.
-This can be an image you’ve already pulled or one you’ve built:
+### Method 1: Direct Docker Build
 
 ```bash
-[core]
-...
-sandbox_base_container_image="custom-image"
+docker build -t local/runtime:latest -f docker/runtime.Dockerfile .
 ```
 
-### Run
+### Method 2: Using Docker Compose
 
-Run OpenHands by running ```make run``` in the top level directory.
+Create a `docker-compose.yml` file:
 
-## Technical Explanation
+```yaml
+services:
+  runtime:
+    build:
+      context: .
+      dockerfile: docker/runtime.Dockerfile
+    image: local/runtime:latest
 
-Please refer to [custom docker image section of the runtime documentation](https://docs.all-hands.dev/modules/usage/architecture/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images) for more details.
+  openhands-app:
+    image: docker.all-hands.dev/all-hands-ai/openhands:0.14
+    environment:
+      - SANDBOX_RUNTIME_CONTAINER_IMAGE=local/runtime:latest
+      - LOG_ALL_EVENTS=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .cache:/home/openhands/.cache
+    ports:
+      - '3000:3000'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - runtime
+```
+
+Then run:
+```bash
+docker-compose up -d
+```
+
+## Configuration Options
+
+### Environment Variables
+
+- `SANDBOX_RUNTIME_CONTAINER_IMAGE`: Specifies the custom runtime image (e.g., `local/runtime:latest`)
+- `LOG_ALL_EVENTS`: Enable detailed logging (optional)
+
+### Volume Mounts
+
+The following mounts are important:
+- `/var/run/docker.sock`: Required for container management
+- `.cache:/home/openhands/.cache`: Persistent cache storage
+
+## Common Issues and Troubleshooting
+
+1. **Permission Issues**
+   - Ensure the container runs as `root`
+   - Verify system-wide package installation
+   - Check Docker socket permissions
+
+2. **Image Build Failures**
+   - Confirm Debian-based parent image
+   - Verify package names and versions
+   - Check network connectivity during build
+
+3. **Runtime Errors**
+   - Review container logs: `docker logs <container_id>`
+   - Verify environment variable settings
+   - Check volume mount permissions
+
+## Testing Your Custom Sandbox
+
+1. **Basic Functionality Test**
+```bash
+# Test basic commands
+docker run --rm local/runtime:latest python3 --version
+docker run --rm local/runtime:latest node --version
+```
+
+2. **Integration Test**
+- Start OpenHands with your custom runtime
+- Try basic operations (file creation, command execution)
+- Verify all required tools are accessible
+
+## Security Considerations
+
+1. **Image Security**
+   - Use official base images
+   - Keep packages updated
+   - Remove unnecessary tools
+
+2. **Runtime Security**
+   - Limit exposed ports
+   - Use read-only mounts where possible
+   - Consider implementing additional container security policies
+
+## Advanced Configuration
+
+For more advanced configurations and detailed technical explanations, refer to:
+- [Runtime Documentation](https://docs.all-hands.dev/modules/usage/architecture/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images)
+- [Development Guide](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)
