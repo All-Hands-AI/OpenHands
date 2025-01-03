@@ -1,5 +1,6 @@
 import asyncio
 import time
+from copy import deepcopy
 
 import socketio
 
@@ -8,8 +9,6 @@ from openhands.core.config import AppConfig
 from openhands.core.const.guide_url import TROUBLESHOOTING_URL
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
-from openhands.core.schema.action import ActionType
-from openhands.core.schema.config import ConfigType
 from openhands.events.action import MessageAction, NullAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import (
@@ -22,8 +21,9 @@ from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
+from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import call_coro_in_bg_thread
 
 ROOM_KEY = 'room:{sid}'
 
@@ -36,7 +36,7 @@ class Session:
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
     config: AppConfig
-    settings: dict | None
+    file_store: FileStore
 
     def __init__(
         self,
@@ -48,53 +48,57 @@ class Session:
         self.sid = sid
         self.sio = sio
         self.last_active_ts = int(time.time())
+        self.file_store = file_store
         self.agent_session = AgentSession(
             sid, file_store, status_callback=self.queue_status_message
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
-        self.config = config
+        # Copying this means that when we update variables they are not applied to the shared global configuration!
+        self.config = deepcopy(config)
         self.loop = asyncio.get_event_loop()
-        self.settings = None
 
     def close(self):
         self.is_alive = False
         self.agent_session.close()
 
-    async def initialize_agent(self, data: dict):
-        self.settings = data
+    async def initialize_agent(
+        self,
+        settings: Settings,
+    ):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
         )
-        # Extract the agent-relevant arguments from the request
-        args = {key: value for key, value in data.get('args', {}).items()}
-        agent_cls = args.get(ConfigType.AGENT, self.config.default_agent)
-        self.config.security.confirmation_mode = args.get(
-            ConfigType.CONFIRMATION_MODE, self.config.security.confirmation_mode
+
+        agent_cls = settings.agent or self.config.default_agent
+        self.config.security.confirmation_mode = (
+            self.config.security.confirmation_mode
+            if settings.confirmation_mode is None
+            else settings.confirmation_mode
         )
-        self.config.security.security_analyzer = data.get('args', {}).get(
-            ConfigType.SECURITY_ANALYZER, self.config.security.security_analyzer
+        self.config.security.security_analyzer = (
+            settings.security_analyzer or self.config.security.security_analyzer
         )
-        max_iterations = args.get(ConfigType.MAX_ITERATIONS, self.config.max_iterations)
-        # override default LLM config
+        max_iterations = settings.max_iterations or self.config.max_iterations
+
         default_llm_config = self.config.get_llm_config()
-        default_llm_config.model = args.get(
-            ConfigType.LLM_MODEL, default_llm_config.model
-        )
-        default_llm_config.api_key = args.get(
-            ConfigType.LLM_API_KEY, default_llm_config.api_key
-        )
-        default_llm_config.base_url = args.get(
-            ConfigType.LLM_BASE_URL, default_llm_config.base_url
-        )
+        default_llm_config.model = settings.llm_model or ''
+        default_llm_config.api_key = settings.llm_api_key
+        default_llm_config.base_url = settings.llm_base_url
 
         # TODO: override other LLM config & agent config groups (#2075)
 
         llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
         agent_config = self.config.get_agent_config(agent_cls)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
+
+        github_token = None
+        selected_repository = None
+        if isinstance(settings, ConversationInitData):
+            github_token = settings.github_token
+            selected_repository = settings.selected_repository
 
         try:
             await self.agent_session.start(
@@ -105,6 +109,8 @@ class Session:
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
+                github_token=github_token,
+                selected_repository=selected_repository,
             )
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
@@ -113,7 +119,10 @@ class Session:
             )
             return
 
-    async def on_event(self, event: Event):
+    def on_event(self, event: Event):
+        asyncio.get_event_loop().run_until_complete(self._on_event(event))
+
+    async def _on_event(self, event: Event):
         """Callback function for events that mainly come from the agent.
         Event is the base class for any agent action and observation.
 
@@ -126,9 +135,7 @@ class Session:
             return
         if event.source == EventSource.AGENT:
             await self.send(event_to_dict(event))
-        elif event.source == EventSource.USER and isinstance(
-            event, CmdOutputObservation
-        ):
+        elif event.source == EventSource.USER:
             await self.send(event_to_dict(event))
         # NOTE: ipython observations are not sent here currently
         elif event.source == EventSource.ENVIRONMENT and isinstance(

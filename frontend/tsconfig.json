@@ -5,7 +5,8 @@
     "**/.server/**/*.ts",
     "**/.server/**/*.tsx",
     "**/.client/**/*.ts",
-    "**/.client/**/*.tsx"
+    "**/.client/**/*.tsx",
+    ".react-router/types/**/*",
   ],
   "compilerOptions": {
     "lib": [
@@ -15,8 +16,12 @@
     ],
     "target": "es2022",
     "types": [
-      "@remix-run/node",
+      "@react-router/node",
       "vite/client",
+    ],
+    "rootDirs": [
+      ".",
+      "./.react-router/types"
     ],
     "allowJs": true,
     "skipLibCheck": true,

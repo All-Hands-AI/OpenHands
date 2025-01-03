@@ -5,17 +5,22 @@
  * For more information, see https://remix.run/file-conventions/entry.client
  */
 
-import { RemixBrowser } from "@remix-run/react";
+import { HydratedRouter } from "react-router/dom";
 import React, { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import posthog from "posthog-js";
 import "./i18n";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
-import { UserPrefsProvider } from "./context/user-prefs-context";
+import { SettingsUpToDateProvider } from "./context/settings-up-to-date-context";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -45,7 +50,20 @@ async function prepareApp() {
   }
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      if (!query.queryKey.includes("authenticated")) toast.error(error.message);
+    },
+  }),
+  defaultOptions: {
+    mutations: {
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    },
+  },
+});
 
 prepareApp().then(() =>
   startTransition(() => {
@@ -53,14 +71,14 @@ prepareApp().then(() =>
       document,
       <StrictMode>
         <Provider store={store}>
-          <UserPrefsProvider>
-            <AuthProvider>
+          <AuthProvider>
+            <SettingsUpToDateProvider>
               <QueryClientProvider client={queryClient}>
-                <RemixBrowser />
+                <HydratedRouter />
                 <PosthogInit />
               </QueryClientProvider>
-            </AuthProvider>
-          </UserPrefsProvider>
+            </SettingsUpToDateProvider>
+          </AuthProvider>
         </Provider>
       </StrictMode>,
     );

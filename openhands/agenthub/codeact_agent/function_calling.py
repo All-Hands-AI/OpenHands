@@ -22,9 +22,11 @@ from openhands.events.action import (
     BrowseURLAction,
     CmdRunAction,
     FileEditAction,
+    FileReadAction,
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 
 _BASH_DESCRIPTION = """Execute a bash command in the terminal.
@@ -192,7 +194,7 @@ LLMBasedFileEditTool = ChatCompletionToolParam(
                     'type': 'string',
                     'description': 'The absolute path to the file to be edited.',
                 },
-                'new_content_draft': {
+                'content': {
                     'type': 'string',
                     'description': 'A draft of the new content for the file being edited. Note that the assistant may skip unchanged lines.',
                 },
@@ -268,9 +270,9 @@ StrReplaceEditorTool = ChatCompletionToolParam(
 )
 
 
-_WEB_DESCRIPTION = """Read (convert to markdown) content from a webpage. You should prefer using the `webpage_read` tool over the `browser` tool, but do use the `browser` tool if you need to interact with a webpage (e.g., click a button, fill out a form, etc.).
+_WEB_DESCRIPTION = """Read (convert to markdown) content from a webpage. You should prefer using the `web_read` tool over the `browser` tool, but do use the `browser` tool if you need to interact with a webpage (e.g., click a button, fill out a form, etc.).
 
-You may use the `webpage_read` tool to read content from a webpage, and even search the webpage content using a Google search query (e.g., url=`https://www.google.com/search?q=YOUR_QUERY`).
+You may use the `web_read` tool to read content from a webpage, and even search the webpage content using a Google search query (e.g., url=`https://www.google.com/search?q=YOUR_QUERY`).
 """
 
 WebReadTool = ChatCompletionToolParam(
@@ -569,7 +571,20 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 logger.debug(
                     f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
                 )
-                action = IPythonRunCellAction(code=code, include_extra=False)
+
+                if arguments['command'] == 'view':
+                    action = FileReadAction(
+                        path=arguments['path'],
+                        translated_ipython_code=code,
+                        impl_source=FileReadSource.OH_ACI,
+                    )
+                else:
+                    action = FileEditAction(
+                        path=arguments['path'],
+                        content='',  # dummy value -- we don't need it
+                        translated_ipython_code=code,
+                        impl_source=FileEditSource.OH_ACI,
+                    )
             elif tool_call.function.name == 'browser':
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
             elif tool_call.function.name == 'web_read':

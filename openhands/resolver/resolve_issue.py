@@ -182,7 +182,7 @@ async def process_issue(
 
     config = AppConfig(
         default_agent='CodeActAgent',
-        runtime='eventstream',
+        runtime='docker',
         max_budget_per_task=4,
         max_iterations=max_iterations,
         sandbox=SandboxConfig(
@@ -202,7 +202,7 @@ async def process_issue(
     runtime = create_runtime(config)
     await runtime.connect()
 
-    async def on_event(evt):
+    def on_event(evt):
         logger.info(evt)
 
     runtime.event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
@@ -242,25 +242,25 @@ async def process_issue(
         metrics = None
         success = False
         comment_success = None
-        success_explanation = 'Agent failed to run'
+        result_explanation = 'Agent failed to run'
         last_error = 'Agent failed to run or crashed'
     else:
         histories = [dataclasses.asdict(event) for event in state.history]
         metrics = state.metrics.get() if state.metrics else None
         # determine success based on the history and the issue description
-        success, comment_success, success_explanation = issue_handler.guess_success(
-            issue, state.history, llm_config
+        success, comment_success, result_explanation = issue_handler.guess_success(
+            issue, state.history
         )
 
         if issue_handler.issue_type == 'pr' and comment_success:
             success_log = 'I have updated the PR and resolved some of the issues that were cited in the pull request review. Specifically, I identified the following revision requests, and all the ones that I think I successfully resolved are checked off. All the unchecked ones I was not able to resolve, so manual intervention may be required:\n'
             try:
-                explanations = json.loads(success_explanation)
+                explanations = json.loads(result_explanation)
             except json.JSONDecodeError:
                 logger.error(
-                    f'Failed to parse success_explanation as JSON: {success_explanation}'
+                    f'Failed to parse result_explanation as JSON: {result_explanation}'
                 )
-                explanations = [str(success_explanation)]  # Use raw string as fallback
+                explanations = [str(result_explanation)]  # Use raw string as fallback
 
             for success_indicator, explanation in zip(comment_success, explanations):
                 status = (
@@ -284,19 +284,19 @@ async def process_issue(
         metrics=metrics,
         success=success,
         comment_success=comment_success,
-        success_explanation=success_explanation,
+        result_explanation=result_explanation,
         error=last_error,
     )
     return output
 
 
 def issue_handler_factory(
-    issue_type: str, owner: str, repo: str, token: str
+    issue_type: str, owner: str, repo: str, token: str, llm_config: LLMConfig
 ) -> IssueHandlerInterface:
     if issue_type == 'issue':
-        return IssueHandler(owner, repo, token)
+        return IssueHandler(owner, repo, token, llm_config)
     elif issue_type == 'pr':
-        return PRHandler(owner, repo, token)
+        return PRHandler(owner, repo, token, llm_config)
     else:
         raise ValueError(f'Invalid issue type: {issue_type}')
 
@@ -337,12 +337,20 @@ async def resolve_issue(
         target_branch: Optional target branch to create PR against (for PRs).
         reset_logger: Whether to reset the logger for multiprocessing.
     """
-    issue_handler = issue_handler_factory(issue_type, owner, repo, token)
+    issue_handler = issue_handler_factory(issue_type, owner, repo, token, llm_config)
 
     # Load dataset
     issues: list[GithubIssue] = issue_handler.get_converted_issues(
         issue_numbers=[issue_number], comment_id=comment_id
     )
+
+    if not issues:
+        raise ValueError(
+            f'No issues found for issue number {issue_number}. Please verify that:\n'
+            f'1. The issue/PR #{issue_number} exists in the repository {owner}/{repo}\n'
+            f'2. You have the correct permissions to access it\n'
+            f'3. The repository name is spelled correctly'
+        )
 
     issue = issues[0]
 

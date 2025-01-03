@@ -1,53 +1,21 @@
+import json
 from typing import Any
 
 import requests
-from requests.exceptions import (
-    ChunkedEncodingError,
-    ConnectionError,
-)
-from urllib3.exceptions import IncompleteRead
 
 
-def is_server_error(exception):
-    return (
-        isinstance(exception, requests.HTTPError)
-        and exception.response.status_code >= 500
-    )
+class RequestHTTPError(requests.HTTPError):
+    """Exception raised when an error occurs in a request with details."""
 
+    def __init__(self, *args, detail=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.detail = detail
 
-def is_404_error(exception):
-    return (
-        isinstance(exception, requests.HTTPError)
-        and exception.response.status_code == 404
-    )
-
-
-def is_429_error(exception):
-    return (
-        isinstance(exception, requests.HTTPError)
-        and exception.response.status_code == 429
-    )
-
-
-def is_503_error(exception):
-    return (
-        isinstance(exception, requests.HTTPError)
-        and exception.response.status_code == 503
-    )
-
-
-def is_502_error(exception):
-    return (
-        isinstance(exception, requests.HTTPError)
-        and exception.response.status_code == 502
-    )
-
-
-DEFAULT_RETRY_EXCEPTIONS = [
-    ConnectionError,
-    IncompleteRead,
-    ChunkedEncodingError,
-]
+    def __str__(self) -> str:
+        s = super().__str__()
+        if self.detail is not None:
+            s += f'\nDetails: {self.detail}'
+        return s
 
 
 def send_request(
@@ -57,6 +25,17 @@ def send_request(
     timeout: int = 10,
     **kwargs: Any,
 ) -> requests.Response:
-    response = session.request(method, url, **kwargs)
-    response.raise_for_status()
+    response = session.request(method, url, timeout=timeout, **kwargs)
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as e:
+        try:
+            _json = response.json()
+        except (requests.exceptions.JSONDecodeError, json.decoder.JSONDecodeError):
+            _json = None
+        raise RequestHTTPError(
+            e,
+            response=e.response,
+            detail=_json.get('detail') if _json is not None else None,
+        ) from e
     return response

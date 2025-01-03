@@ -11,6 +11,7 @@ from litellm.exceptions import (
 
 from openhands.core.config import LLMConfig
 from openhands.core.exceptions import OperationCancelled
+from openhands.core.message import Message, TextContent
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
 
@@ -21,6 +22,7 @@ def mock_logger(monkeypatch):
     mock_logger = MagicMock()
     monkeypatch.setattr('openhands.llm.debug_mixin.llm_prompt_logger', mock_logger)
     monkeypatch.setattr('openhands.llm.debug_mixin.llm_response_logger', mock_logger)
+    monkeypatch.setattr('openhands.llm.llm.logger', mock_logger)
     return mock_logger
 
 
@@ -92,13 +94,56 @@ def test_llm_init_with_metrics():
     )  # because we didn't specify model_name in Metrics init
 
 
+@patch('openhands.llm.llm.litellm_completion')
+@patch('time.time')
+def test_response_latency_tracking(mock_time, mock_litellm_completion):
+    # Mock time.time() to return controlled values
+    mock_time.side_effect = [1000.0, 1002.5]  # Start time, end time (2.5s difference)
+
+    # Mock the completion response with a specific ID
+    mock_response = {
+        'id': 'test-response-123',
+        'choices': [{'message': {'content': 'Test response'}}],
+    }
+    mock_litellm_completion.return_value = mock_response
+
+    # Create LLM instance and make a completion call
+    config = LLMConfig(model='gpt-4o', api_key='test_key')
+    llm = LLM(config)
+    response = llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
+
+    # Verify the response latency was tracked correctly
+    assert len(llm.metrics.response_latencies) == 1
+    latency_record = llm.metrics.response_latencies[0]
+    assert latency_record.model == 'gpt-4o'
+    assert (
+        latency_record.latency == 2.5
+    )  # Should be the difference between our mocked times
+    assert latency_record.response_id == 'test-response-123'
+
+    # Verify the completion response was returned correctly
+    assert response['id'] == 'test-response-123'
+    assert response['choices'][0]['message']['content'] == 'Test response'
+
+    # To make sure the metrics fail gracefully, set the start/end time to go backwards.
+    mock_time.side_effect = [1000.0, 999.0]
+    llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
+
+    # There should now be 2 latencies, the last of which has the value clipped to 0
+    assert len(llm.metrics.response_latencies) == 2
+    latency_record = llm.metrics.response_latencies[-1]
+    assert latency_record.latency == 0.0  # Should be lifted to 0 instead of being -1!
+
+
 def test_llm_reset():
     llm = LLM(LLMConfig(model='gpt-4o-mini', api_key='test_key'))
     initial_metrics = copy.deepcopy(llm.metrics)
     initial_metrics.add_cost(1.0)
+    initial_metrics.add_response_latency(0.5, 'test-id')
     llm.reset()
     assert llm.metrics._accumulated_cost != initial_metrics._accumulated_cost
     assert llm.metrics._costs != initial_metrics._costs
+    assert llm.metrics._response_latencies != initial_metrics._response_latencies
     assert isinstance(llm.metrics, Metrics)
 
 
@@ -363,3 +408,79 @@ def test_llm_cloudflare_blockage(mock_litellm_completion, default_config):
 
     # Ensure the completion was called
     mock_litellm_completion.assert_called_once()
+
+
+@patch('openhands.llm.llm.litellm.token_counter')
+def test_get_token_count_with_dict_messages(mock_token_counter, default_config):
+    mock_token_counter.return_value = 42
+    llm = LLM(default_config)
+    messages = [{'role': 'user', 'content': 'Hello!'}]
+
+    token_count = llm.get_token_count(messages)
+
+    assert token_count == 42
+    mock_token_counter.assert_called_once_with(
+        model=default_config.model, messages=messages, custom_tokenizer=None
+    )
+
+
+@patch('openhands.llm.llm.litellm.token_counter')
+def test_get_token_count_with_message_objects(
+    mock_token_counter, default_config, mock_logger
+):
+    llm = LLM(default_config)
+
+    # Create a Message object and its equivalent dict
+    message_obj = Message(role='user', content=[TextContent(text='Hello!')])
+    message_dict = {'role': 'user', 'content': 'Hello!'}
+
+    # Mock token counter to return different values for each call
+    mock_token_counter.side_effect = [42, 42]  # Same value for both cases
+
+    # Get token counts for both formats
+    token_count_obj = llm.get_token_count([message_obj])
+    token_count_dict = llm.get_token_count([message_dict])
+
+    # Verify both formats get the same token count
+    assert token_count_obj == token_count_dict
+    assert mock_token_counter.call_count == 2
+
+
+@patch('openhands.llm.llm.litellm.token_counter')
+@patch('openhands.llm.llm.create_pretrained_tokenizer')
+def test_get_token_count_with_custom_tokenizer(
+    mock_create_tokenizer, mock_token_counter, default_config
+):
+    mock_tokenizer = MagicMock()
+    mock_create_tokenizer.return_value = mock_tokenizer
+    mock_token_counter.return_value = 42
+
+    config = copy.deepcopy(default_config)
+    config.custom_tokenizer = 'custom/tokenizer'
+    llm = LLM(config)
+    messages = [{'role': 'user', 'content': 'Hello!'}]
+
+    token_count = llm.get_token_count(messages)
+
+    assert token_count == 42
+    mock_create_tokenizer.assert_called_once_with('custom/tokenizer')
+    mock_token_counter.assert_called_once_with(
+        model=config.model, messages=messages, custom_tokenizer=mock_tokenizer
+    )
+
+
+@patch('openhands.llm.llm.litellm.token_counter')
+def test_get_token_count_error_handling(
+    mock_token_counter, default_config, mock_logger
+):
+    mock_token_counter.side_effect = Exception('Token counting failed')
+    llm = LLM(default_config)
+    messages = [{'role': 'user', 'content': 'Hello!'}]
+
+    token_count = llm.get_token_count(messages)
+
+    assert token_count == 0
+    mock_token_counter.assert_called_once()
+    mock_logger.error.assert_called_once_with(
+        'Error getting token count for\n model gpt-4o\nToken counting failed'
+    )

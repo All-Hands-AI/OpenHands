@@ -1,5 +1,5 @@
 import React from "react";
-import JupyterEditor from "#/components/jupyter";
+import { JupyterEditor } from "#/components/features/jupyter/jupyter";
 
 function Jupyter() {
   const parentRef = React.useRef<HTMLDivElement>(null);
@@ -14,7 +14,7 @@ function Jupyter() {
   }, []);
 
   return (
-    <div ref={parentRef}>
+    <div ref={parentRef} className="h-full">
       <JupyterEditor maxWidth={parentWidth} />
     </div>
   );

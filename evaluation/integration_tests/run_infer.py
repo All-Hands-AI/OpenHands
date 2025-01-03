@@ -42,7 +42,7 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime=os.environ.get('RUNTIME', 'eventstream'),
+        runtime=os.environ.get('RUNTIME', 'docker'),
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             # use default base_container_image
@@ -218,6 +218,8 @@ if __name__ == '__main__':
     )
 
     df = pd.read_json(output_file, lines=True, orient='records')
+
+    # record success and reason for failure for the final report
     df['success'] = df['test_result'].apply(lambda x: x['success'])
     df['reason'] = df['test_result'].apply(lambda x: x['reason'])
     logger.info('-' * 100)
@@ -231,9 +233,16 @@ if __name__ == '__main__':
     )
     logger.info('-' * 100)
 
+    # record cost for each instance, with 3 decimal places
+    df['cost'] = df['metrics'].apply(lambda x: round(x['accumulated_cost'], 3))
+    logger.info(f'Total cost: USD {df["cost"].sum():.2f}')
+
     report_file = os.path.join(metadata.eval_output_dir, 'report.md')
     with open(report_file, 'w') as f:
         f.write(
             f'Success rate: {df["success"].mean():.2%} ({df["success"].sum()}/{len(df)})\n'
         )
-        f.write(df[['instance_id', 'success', 'reason']].to_markdown(index=False))
+        f.write(f'\nTotal cost: USD {df["cost"].sum():.2f}\n')
+        f.write(
+            df[['instance_id', 'success', 'reason', 'cost']].to_markdown(index=False)
+        )

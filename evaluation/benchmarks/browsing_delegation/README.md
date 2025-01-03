@@ -7,7 +7,7 @@ If so, the browsing performance upper-bound of CodeActAgent will be the performa
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Run Inference
 

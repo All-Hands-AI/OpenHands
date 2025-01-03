@@ -62,6 +62,8 @@ class Message(BaseModel):
     # - tool execution result (to LLM)
     tool_call_id: str | None = None
     name: str | None = None  # name of the tool
+    # force string serializer
+    force_string_serializer: bool = False
 
     @property
     def contains_image(self) -> bool:
@@ -73,7 +75,9 @@ class Message(BaseModel):
         # - into a single string: for providers that don't support list of content items (e.g. no vision, no tool calls)
         # - into a list of content items: the new APIs of providers with vision/prompt caching/tool calls
         # NOTE: remove this when litellm or providers support the new API
-        if self.cache_enabled or self.vision_enabled or self.function_calling_enabled:
+        if not self.force_string_serializer and (
+            self.cache_enabled or self.vision_enabled or self.function_calling_enabled
+        ):
             return self._list_serializer()
         # some providers, like HF and Groq/llama, don't support a list here, but a single string
         return self._string_serializer()
@@ -109,14 +113,6 @@ class Message(BaseModel):
 
         message_dict: dict = {'content': content, 'role': self.role}
 
-        # pop content if it's empty
-        if not content or (
-            len(content) == 1
-            and content[0]['type'] == 'text'
-            and content[0]['text'] == ''
-        ):
-            message_dict.pop('content')
-
         if role_tool_with_prompt_caching:
             message_dict['cache_control'] = {'type': 'ephemeral'}
 
@@ -126,11 +122,21 @@ class Message(BaseModel):
     def _add_tool_call_keys(self, message_dict: dict) -> dict:
         """Add tool call keys if we have a tool call or response.
 
-        NOTE: this is necessary for both native and non-native tool calling"""
+        NOTE: this is necessary for both native and non-native tool calling."""
 
         # an assistant message calling a tool
         if self.tool_calls is not None:
-            message_dict['tool_calls'] = self.tool_calls
+            message_dict['tool_calls'] = [
+                {
+                    'id': tool_call.id,
+                    'type': 'function',
+                    'function': {
+                        'name': tool_call.function.name,
+                        'arguments': tool_call.function.arguments,
+                    },
+                }
+                for tool_call in self.tool_calls
+            ]
 
         # an observation message with tool response
         if self.tool_call_id is not None:

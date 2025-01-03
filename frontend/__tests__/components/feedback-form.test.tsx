@@ -1,8 +1,19 @@
-import { render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as router from "react-router";
+
+// Mock useParams before importing components
+vi.mock("react-router", async () => {
+  const actual = await vi.importActual("react-router");
+  return {
+    ...actual as object,
+    useParams: () => ({ conversationId: "test-conversation-id" }),
+  };
+});
+
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
-import { FeedbackForm } from "#/components/feedback-form";
+import { FeedbackForm } from "#/components/features/feedback/feedback-form";
 
 describe("FeedbackForm", () => {
   const user = userEvent.setup();

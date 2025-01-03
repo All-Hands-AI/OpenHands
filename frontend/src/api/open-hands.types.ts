@@ -1,3 +1,5 @@
+import { ProjectState } from "#/components/features/conversation-panel/conversation-state-indicator";
+
 export interface ErrorResponse {
   error: string;
 }
@@ -43,6 +45,7 @@ export interface Feedback {
 
 export interface GetConfigResponse {
   APP_MODE: "saas" | "oss";
+  APP_SLUG?: string;
   GITHUB_CLIENT_ID: string;
   POSTHOG_CLIENT_KEY: string;
 }
@@ -50,4 +53,17 @@ export interface GetConfigResponse {
 export interface GetVSCodeUrlResponse {
   vscode_url: string | null;
   error?: string;
+}
+
+export interface AuthenticateResponse {
+  message?: string;
+  error?: string;
+}
+
+export interface Conversation {
+  conversation_id: string;
+  name: string;
+  repo: string | null;
+  lastUpdated: string;
+  state: ProjectState;
 }

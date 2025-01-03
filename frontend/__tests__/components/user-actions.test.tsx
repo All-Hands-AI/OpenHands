@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, test, vi, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { UserActions } from "#/components/user-actions";
+import { UserActions } from "#/components/features/sidebar/user-actions";
 
 describe("UserActions", () => {
   const user = userEvent.setup();
@@ -58,7 +58,7 @@ describe("UserActions", () => {
     const userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
 
-    const accountSettingsOption = screen.getByText("Account Settings");
+    const accountSettingsOption = screen.getByText("ACCOUNT_SETTINGS$SETTINGS");
     await user.click(accountSettingsOption);
 
     expect(onClickAccountSettingsMock).toHaveBeenCalledOnce();
@@ -79,7 +79,7 @@ describe("UserActions", () => {
     const userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
 
-    const logoutOption = screen.getByText("Logout");
+    const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
     await user.click(logoutOption);
 
     expect(onLogoutMock).toHaveBeenCalledOnce();
@@ -99,7 +99,7 @@ describe("UserActions", () => {
     const userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
 
-    const logoutOption = screen.getByText("Logout");
+    const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
     await user.click(logoutOption);
 
     expect(onLogoutMock).not.toHaveBeenCalled();

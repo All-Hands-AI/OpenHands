@@ -5,6 +5,7 @@ import platform
 from dataclasses import is_dataclass
 from types import UnionType
 from typing import Any, MutableMapping, get_args, get_origin
+from uuid import uuid4
 
 import toml
 from dotenv import load_dotenv
@@ -18,7 +19,11 @@ from openhands.core.config.config_utils import (
 )
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
+from openhands.core.config.security_config import SecurityConfig
+from openhands.storage import get_file_store
+from openhands.storage.files import FileStore
 
+JWT_SECRET = '.jwt_secret'
 load_dotenv()
 
 
@@ -89,6 +94,10 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     Args:
         cfg: The AppConfig object to update attributes of.
         toml_file: The path to the toml file. Defaults to 'config.toml'.
+
+    See Also:
+    - `config.template.toml` for the full list of config options.
+    - `SandboxConfig` for the sandbox-specific config options.
     """
     # try to read the config.toml file into the config object
     try:
@@ -144,17 +153,23 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             )
                             llm_config = LLMConfig.from_dict(nested_value)
                             cfg.set_llm_config(llm_config, nested_key)
+                elif key is not None and key.lower() == 'security':
+                    logger.openhands_logger.debug(
+                        'Attempt to load security config from config toml'
+                    )
+                    security_config = SecurityConfig.from_dict(value)
+                    cfg.security = security_config
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.openhands_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'
                     )
             except (TypeError, KeyError) as e:
                 logger.openhands_logger.warning(
-                    f'Cannot parse config from toml, toml values have not been applied.\n Error: {e}',
+                    f'Cannot parse [{key}] config from toml, values have not been applied.\nError: {e}',
                     exc_info=False,
                 )
         else:
-            logger.openhands_logger.warning(f'Unknown key in {toml_file}: "{key}')
+            logger.openhands_logger.warning(f'Unknown section [{key}] in {toml_file}')
 
     try:
         # set sandbox config from the toml file
@@ -168,7 +183,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                 # read the key in sandbox and remove it from core
                 setattr(sandbox_config, new_key, core_config.pop(key))
             else:
-                logger.openhands_logger.warning(f'Unknown sandbox config: {key}')
+                logger.openhands_logger.warning(
+                    f'Unknown config key "{key}" in [sandbox] section'
+                )
 
         # the new style values override the old style values
         if 'sandbox' in toml_config:
@@ -180,12 +197,24 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
             if hasattr(cfg, key):
                 setattr(cfg, key, value)
             else:
-                logger.openhands_logger.warning(f'Unknown core config key: {key}')
+                logger.openhands_logger.warning(
+                    f'Unknown config key "{key}" in [core] section'
+                )
     except (TypeError, KeyError) as e:
         logger.openhands_logger.warning(
-            f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
+            f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}',
             exc_info=False,
         )
+
+
+def get_or_create_jwt_secret(file_store: FileStore) -> str:
+    try:
+        jwt_secret = file_store.read(JWT_SECRET)
+        return jwt_secret
+    except FileNotFoundError:
+        new_secret = uuid4().hex
+        file_store.write(JWT_SECRET, new_secret)
+        return new_secret
 
 
 def finalize_config(cfg: AppConfig):
@@ -215,6 +244,11 @@ def finalize_config(cfg: AppConfig):
     # make sure cache dir exists
     if cfg.cache_dir:
         pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
+
+    if not cfg.jwt_secret:
+        cfg.jwt_secret = get_or_create_jwt_secret(
+            get_file_store(cfg.file_store, cfg.file_store_path)
+        )
 
 
 # Utility function for command line --group argument
@@ -359,7 +393,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-n',
         '--name',
-        default='default',
+        default='',
         type=str,
         help='Name for the session',
     )
@@ -368,6 +402,11 @@ def get_parser() -> argparse.ArgumentParser:
         default=None,
         type=str,
         help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
+    )
+    parser.add_argument(
+        '--no-auto-continue',
+        action='store_true',
+        help='Disable automatic "continue" responses. Will read from stdin instead.',
     )
     return parser
 

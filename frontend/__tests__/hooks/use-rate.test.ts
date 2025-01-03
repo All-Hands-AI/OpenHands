@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useRate } from "#/utils/use-rate";
+import { useRate } from "#/hooks/use-rate";
 
 describe("useRate", () => {
   beforeEach(() => {

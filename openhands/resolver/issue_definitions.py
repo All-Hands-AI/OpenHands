@@ -5,17 +5,18 @@ from abc import ABC, abstractmethod
 from typing import Any, ClassVar
 
 import jinja2
-import litellm
 import requests
 
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event
+from openhands.llm.llm import LLM
 from openhands.resolver.github_issue import GithubIssue, ReviewThread
 
 
 class IssueHandlerInterface(ABC):
     issue_type: ClassVar[str]
+    llm: LLM
 
     @abstractmethod
     def get_converted_issues(
@@ -36,7 +37,7 @@ class IssueHandlerInterface(ABC):
 
     @abstractmethod
     def guess_success(
-        self, issue: GithubIssue, history: list[Event], llm_config: LLMConfig
+        self, issue: GithubIssue, history: list[Event]
     ) -> tuple[bool, list[bool] | None, str]:
         """Guess if the issue has been resolved based on the agent's output."""
         pass
@@ -45,11 +46,12 @@ class IssueHandlerInterface(ABC):
 class IssueHandler(IssueHandlerInterface):
     issue_type: ClassVar[str] = 'issue'
 
-    def __init__(self, owner: str, repo: str, token: str):
+    def __init__(self, owner: str, repo: str, token: str, llm_config: LLMConfig):
         self.download_url = 'https://api.github.com/repos/{}/{}/issues'
         self.owner = owner
         self.repo = repo
         self.token = token
+        self.llm = LLM(llm_config)
 
     def _download_issues_from_github(self) -> list[Any]:
         url = self.download_url.format(self.owner, self.repo)
@@ -60,19 +62,23 @@ class IssueHandler(IssueHandlerInterface):
         params: dict[str, int | str] = {'state': 'open', 'per_page': 100, 'page': 1}
         all_issues = []
 
+        # Get issues, page by page
         while True:
             response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()
             issues = response.json()
 
+            # No more issues, break the loop
             if not issues:
                 break
 
+            # Sanity check - the response is a list of dictionaries
             if not isinstance(issues, list) or any(
                 [not isinstance(issue, dict) for issue in issues]
             ):
                 raise ValueError('Expected list of dictionaries from Github API.')
 
+            # Add the issues to the final list
             all_issues.extend(issues)
             assert isinstance(params['page'], int)
             params['page'] += 1
@@ -105,7 +111,12 @@ class IssueHandler(IssueHandlerInterface):
     def _get_issue_comments(
         self, issue_number: int, comment_id: int | None = None
     ) -> list[str] | None:
-        """Download comments for a specific issue from Github."""
+        """Retrieve comments for a specific issue from Github.
+
+        Args:
+            issue_number: The ID of the issue to get comments for
+            comment_id: The ID of a single comment, if provided, otherwise all comments
+        """
         url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}/comments'
         headers = {
             'Authorization': f'token {self.token}',
@@ -114,6 +125,7 @@ class IssueHandler(IssueHandlerInterface):
         params = {'per_page': 100, 'page': 1}
         all_comments = []
 
+        # Get comments, page by page
         while True:
             response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()
@@ -122,6 +134,7 @@ class IssueHandler(IssueHandlerInterface):
             if not comments:
                 break
 
+            # If a single comment ID is provided, return only that comment
             if comment_id:
                 matching_comment = next(
                     (
@@ -134,6 +147,7 @@ class IssueHandler(IssueHandlerInterface):
                 if matching_comment:
                     return [matching_comment]
             else:
+                # Otherwise, return all comments
                 all_comments.extend([comment['body'] for comment in comments])
 
             params['page'] += 1
@@ -144,6 +158,10 @@ class IssueHandler(IssueHandlerInterface):
         self, issue_numbers: list[int] | None = None, comment_id: int | None = None
     ) -> list[GithubIssue]:
         """Download issues from Github.
+
+        Args:
+            issue_numbers: The numbers of the issues to download
+            comment_id: The ID of a single comment, if provided, otherwise all comments
 
         Returns:
             List of Github issues.
@@ -165,11 +183,16 @@ class IssueHandler(IssueHandlerInterface):
 
         converted_issues = []
         for issue in all_issues:
-            if any([issue.get(key) is None for key in ['number', 'title', 'body']]):
+            # Check for required fields (number and title)
+            if any([issue.get(key) is None for key in ['number', 'title']]):
                 logger.warning(
-                    f'Skipping issue {issue} as it is missing number, title, or body.'
+                    f'Skipping issue {issue} as it is missing number or title.'
                 )
                 continue
+
+            # Handle empty body by using empty string
+            if issue.get('body') is None:
+                issue['body'] = ''
 
             # Get issue thread comments
             thread_comments = self._get_issue_comments(
@@ -196,7 +219,14 @@ class IssueHandler(IssueHandlerInterface):
         prompt_template: str,
         repo_instruction: str | None = None,
     ) -> tuple[str, list[str]]:
-        """Generate instruction for the agent."""
+        """Generate instruction for the agent.
+
+        Args:
+            issue: The issue to generate instruction for
+            prompt_template: The prompt template to use
+            repo_instruction: The repository instruction if it exists
+        """
+
         # Format thread comments if they exist
         thread_context = ''
         if issue.thread_comments:
@@ -204,6 +234,7 @@ class IssueHandler(IssueHandlerInterface):
                 issue.thread_comments
             )
 
+        # Extract image URLs from the issue body and thread comments
         images = []
         images.extend(self._extract_image_urls(issue.body))
         images.extend(self._extract_image_urls(thread_context))
@@ -218,10 +249,16 @@ class IssueHandler(IssueHandlerInterface):
         )
 
     def guess_success(
-        self, issue: GithubIssue, history: list[Event], llm_config: LLMConfig
+        self, issue: GithubIssue, history: list[Event]
     ) -> tuple[bool, None | list[bool], str]:
-        """Guess if the issue is fixed based on the history and the issue description."""
+        """Guess if the issue is fixed based on the history and the issue description.
+
+        Args:
+            issue: The issue to check
+            history: The agent's history
+        """
         last_message = history[-1].message
+
         # Include thread comments in the prompt if they exist
         issue_context = issue.body
         if issue.thread_comments:
@@ -229,6 +266,7 @@ class IssueHandler(IssueHandlerInterface):
                 issue.thread_comments
             )
 
+        # Prepare the prompt
         with open(
             os.path.join(
                 os.path.dirname(__file__),
@@ -239,12 +277,8 @@ class IssueHandler(IssueHandlerInterface):
             template = jinja2.Template(f.read())
         prompt = template.render(issue_context=issue_context, last_message=last_message)
 
-        response = litellm.completion(
-            model=llm_config.model,
-            messages=[{'role': 'user', 'content': prompt}],
-            api_key=llm_config.api_key,
-            base_url=llm_config.base_url,
-        )
+        # Get the LLM response and check for 'success' and 'explanation' in the answer
+        response = self.llm.completion(messages=[{'role': 'user', 'content': prompt}])
 
         answer = response.choices[0].message.content.strip()
         pattern = r'--- success\n*(true|false)\n*--- explanation*\n((?:.|\n)*)'
@@ -258,8 +292,8 @@ class IssueHandler(IssueHandlerInterface):
 class PRHandler(IssueHandler):
     issue_type: ClassVar[str] = 'pr'
 
-    def __init__(self, owner: str, repo: str, token: str):
-        super().__init__(owner, repo, token)
+    def __init__(self, owner: str, repo: str, token: str, llm_config: LLMConfig):
+        super().__init__(owner, repo, token, llm_config)
         self.download_url = 'https://api.github.com/repos/{}/{}/pulls'
 
     def __download_pr_metadata(
@@ -326,6 +360,7 @@ class PRHandler(IssueHandler):
 
         variables = {'owner': self.owner, 'repo': self.repo, 'pr': pull_number}
 
+        # Run the query
         url = 'https://api.github.com/graphql'
         headers = {
             'Authorization': f'Bearer {self.token}',
@@ -392,10 +427,12 @@ class PRHandler(IssueHandler):
                             review_thread['body'] + '\n'
                         )  # Add each thread in a new line
 
+                    # Source files on which the comments were made
                     file = review_thread.get('path')
                     if file and file not in files:
                         files.append(file)
 
+                # If the comment ID is not provided or the thread contains the comment ID, add the thread to the list
                 if comment_id is None or thread_contains_comment_id:
                     unresolved_thread = ReviewThread(comment=message, files=files)
                     review_threads.append(unresolved_thread)
@@ -612,16 +649,9 @@ class PRHandler(IssueHandler):
         )
         return instruction, images
 
-    def _check_feedback_with_llm(
-        self, prompt: str, llm_config: LLMConfig
-    ) -> tuple[bool, str]:
+    def _check_feedback_with_llm(self, prompt: str) -> tuple[bool, str]:
         """Helper function to check feedback with LLM and parse response."""
-        response = litellm.completion(
-            model=llm_config.model,
-            messages=[{'role': 'user', 'content': prompt}],
-            api_key=llm_config.api_key,
-            base_url=llm_config.base_url,
-        )
+        response = self.llm.completion(messages=[{'role': 'user', 'content': prompt}])
 
         answer = response.choices[0].message.content.strip()
         pattern = r'--- success\n*(true|false)\n*--- explanation*\n((?:.|\n)*)'
@@ -635,7 +665,6 @@ class PRHandler(IssueHandler):
         review_thread: ReviewThread,
         issues_context: str,
         last_message: str,
-        llm_config: LLMConfig,
     ) -> tuple[bool, str]:
         """Check if a review thread's feedback has been addressed."""
         files_context = json.dumps(review_thread.files, indent=4)
@@ -656,14 +685,13 @@ class PRHandler(IssueHandler):
             last_message=last_message,
         )
 
-        return self._check_feedback_with_llm(prompt, llm_config)
+        return self._check_feedback_with_llm(prompt)
 
     def _check_thread_comments(
         self,
         thread_comments: list[str],
         issues_context: str,
         last_message: str,
-        llm_config: LLMConfig,
     ) -> tuple[bool, str]:
         """Check if thread comments feedback has been addressed."""
         thread_context = '\n---\n'.join(thread_comments)
@@ -682,14 +710,13 @@ class PRHandler(IssueHandler):
             last_message=last_message,
         )
 
-        return self._check_feedback_with_llm(prompt, llm_config)
+        return self._check_feedback_with_llm(prompt)
 
     def _check_review_comments(
         self,
         review_comments: list[str],
         issues_context: str,
         last_message: str,
-        llm_config: LLMConfig,
     ) -> tuple[bool, str]:
         """Check if review comments feedback has been addressed."""
         review_context = '\n---\n'.join(review_comments)
@@ -708,10 +735,10 @@ class PRHandler(IssueHandler):
             last_message=last_message,
         )
 
-        return self._check_feedback_with_llm(prompt, llm_config)
+        return self._check_feedback_with_llm(prompt)
 
     def guess_success(
-        self, issue: GithubIssue, history: list[Event], llm_config: LLMConfig
+        self, issue: GithubIssue, history: list[Event]
     ) -> tuple[bool, None | list[bool], str]:
         """Guess if the issue is fixed based on the history and the issue description."""
         last_message = history[-1].message
@@ -724,7 +751,7 @@ class PRHandler(IssueHandler):
             for review_thread in issue.review_threads:
                 if issues_context and last_message:
                     success, explanation = self._check_review_thread(
-                        review_thread, issues_context, last_message, llm_config
+                        review_thread, issues_context, last_message
                     )
                 else:
                     success, explanation = False, 'Missing context or message'
@@ -734,7 +761,7 @@ class PRHandler(IssueHandler):
         elif issue.thread_comments:
             if issue.thread_comments and issues_context and last_message:
                 success, explanation = self._check_thread_comments(
-                    issue.thread_comments, issues_context, last_message, llm_config
+                    issue.thread_comments, issues_context, last_message
                 )
             else:
                 success, explanation = (
@@ -747,7 +774,7 @@ class PRHandler(IssueHandler):
             # Handle PRs with only review comments (no file-specific review comments or thread comments)
             if issue.review_comments and issues_context and last_message:
                 success, explanation = self._check_review_comments(
-                    issue.review_comments, issues_context, last_message, llm_config
+                    issue.review_comments, issues_context, last_message
                 )
             else:
                 success, explanation = (
@@ -763,4 +790,4 @@ class PRHandler(IssueHandler):
         # Return overall success (all must be true) and explanations
         if not success_list:
             return False, None, 'No feedback was processed'
-        return all(success_list), success_list, '\n'.join(explanation_list)
+        return all(success_list), success_list, json.dumps(explanation_list)

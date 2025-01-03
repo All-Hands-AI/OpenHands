@@ -42,6 +42,9 @@ ENV USE_HOST_NETWORK=false
 ENV WORKSPACE_BASE=/opt/workspace_base
 ENV OPENHANDS_BUILD_VERSION=$OPENHANDS_BUILD_VERSION
 ENV SANDBOX_USER_ID=0
+ENV FILE_STORE=local
+ENV FILE_STORE_PATH=/.openhands-state
+RUN mkdir -p $FILE_STORE_PATH
 RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y \
@@ -68,6 +71,7 @@ ENV VIRTUAL_ENV=/app/.venv \
 COPY --chown=openhands:app --chmod=770 --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 RUN playwright install --with-deps chromium
 
+COPY --chown=openhands:app --chmod=770 ./microagents ./microagents
 COPY --chown=openhands:app --chmod=770 ./openhands ./openhands
 COPY --chown=openhands:app --chmod=777 ./openhands/runtime/plugins ./openhands/runtime/plugins
 COPY --chown=openhands:app --chmod=770 ./openhands/agenthub ./openhands/agenthub
