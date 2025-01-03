@@ -57,7 +57,7 @@ describe("RuntimeSizeSelector", () => {
 
   it("should show the full description text for disabled options", async () => {
     renderRuntimeSizeSelector();
-    
+
     // Click the button to open the dropdown
     const button = screen.getByRole("button", {
       name: /SETTINGS_FORM\$RUNTIME_SIZE_LABEL/,
