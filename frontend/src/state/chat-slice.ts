@@ -93,7 +93,7 @@ export const chatSlice = createSlice({
       const translationID = `ACTION_MESSAGE$${actionID.toUpperCase()}`;
       let text = "";
       if (actionID === "run") {
-        text = `\`${action.payload.args.command}\``;
+        text = `Command:\n\`${action.payload.args.command}\``;
       } else if (actionID === "run_ipython") {
         text = `\`\`\`\n${action.payload.args.code}\n\`\`\``;
       } else if (actionID === "write") {
@@ -158,7 +158,9 @@ export const chatSlice = createSlice({
         if (content.length > MAX_CONTENT_LENGTH) {
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
-        content = `\`\`\`\n${content.trim()}\n\`\`\``;
+        content =
+          causeMessage.content +
+          `\nOutput:\n\`\`\`\n${content.trim() || "Command finished execution with no output"}\n\`\`\``;
         causeMessage.content = content; // Observation content includes the action
       } else if (observationID === "read" || observationID === "edit") {
         const { content } = observation.payload;
