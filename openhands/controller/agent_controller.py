@@ -206,12 +206,13 @@ class AgentController:
             reported = RuntimeError(
                 'There was an unexpected error while running the agent.'
             )
-            if isinstance(e, litellm.AuthenticationError):
+            if isinstance(e, litellm.AuthenticationError) or isinstance(
+                e, litellm.BadRequestError
+            ):
                 reported = e
             await self._react_to_exception(reported)
 
     def should_step(self, event: Event) -> bool:
-        print('should step?', event)
         if isinstance(event, Action):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 return True
