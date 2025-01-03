@@ -2,7 +2,7 @@ import React from "react";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
 import {
-  ProjectState,
+  ProjectStatus,
   ConversationStateIndicator,
 } from "./conversation-state-indicator";
 import { ContextMenu } from "../context-menu/context-menu";
@@ -15,8 +15,8 @@ interface ProjectCardProps {
   onChangeTitle: (title: string) => void;
   name: string;
   repo: string | null;
-  lastUpdated: string; // ISO 8601
-  state?: ProjectState;
+  lastUpdatedAt: string; // ISO 8601
+  status?: ProjectStatus;
 }
 
 export function ConversationCard({
@@ -25,8 +25,8 @@ export function ConversationCard({
   onChangeTitle,
   name,
   repo,
-  lastUpdated,
-  state = "cold",
+  lastUpdatedAt,
+  status = "STOPPED",
 }: ProjectCardProps) {
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -69,7 +69,7 @@ export function ConversationCard({
         />
 
         <div className="flex items-center gap-2 relative">
-          <ConversationStateIndicator state={state} />
+          <ConversationStateIndicator status={status} />
           <EllipsisButton
             onClick={(event) => {
               event.stopPropagation();
@@ -95,7 +95,7 @@ export function ConversationCard({
         />
       )}
       <p className="text-xs text-neutral-400">
-        <time>{formatTimeDelta(new Date(lastUpdated))} ago</time>
+        <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>
       </p>
     </div>
   );

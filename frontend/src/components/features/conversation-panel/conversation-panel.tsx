@@ -102,8 +102,8 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           }
           name={project.title}
           repo={project.repo}
-          lastUpdated={project.last_updated_at}
-          state={project.state}
+          lastUpdatedAt={project.last_updated_at}
+          status={project.status}
         />
       ))}
 

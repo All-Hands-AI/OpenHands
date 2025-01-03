@@ -1,4 +1,4 @@
-import { ProjectState } from "#/components/features/conversation-panel/conversation-state-indicator";
+import { ProjectStatus } from "#/components/features/conversation-panel/conversation-state-indicator";
 
 export interface ErrorResponse {
   error: string;
@@ -65,7 +65,7 @@ export interface Conversation {
   title: string;
   repo: string | null;
   last_updated_at: string;
-  state: ProjectState;
+  status: ProjectStatus;
 }
 
 export interface ResultSet<T> {

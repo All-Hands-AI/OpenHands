@@ -21,7 +21,7 @@ describe("ConversationCard", () => {
         onChangeTitle={onChangeTitle}
         name="Conversation 1"
         repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
     const expectedDate = `${formatTimeDelta(new Date("2021-10-01T12:00:00Z"))} ago`;
@@ -41,7 +41,7 @@ describe("ConversationCard", () => {
         onChangeTitle={onChangeTitle}
         name="Conversation 1"
         repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
@@ -56,7 +56,7 @@ describe("ConversationCard", () => {
         onChangeTitle={onChangeTitle}
         name="Conversation 1"
         repo="org/repo"
-        lastUpdated="2021-10-01T12:00:00Z"
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
@@ -72,7 +72,7 @@ describe("ConversationCard", () => {
         onChangeTitle={onChangeTitle}
         name="Conversation 1"
         repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
@@ -91,7 +91,7 @@ describe("ConversationCard", () => {
         onChangeTitle={onChangeTitle}
         name="Conversation 1"
         repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
@@ -116,7 +116,7 @@ describe("ConversationCard", () => {
         onChangeTitle={onChangeTitle}
         name="Conversation 1"
         repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
@@ -140,7 +140,7 @@ describe("ConversationCard", () => {
         onChangeTitle={onChangeTitle}
         name="Conversation 1"
         repo="org/repo"
-        lastUpdated="2021-10-01T12:00:00Z"
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
@@ -158,7 +158,7 @@ describe("ConversationCard", () => {
         onDelete={onDelete}
         name="Conversation 1"
         repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        lastUpdatedAt="2021-10-01T12:00:00Z"
         onChangeTitle={onChangeTitle}
       />,
     );
@@ -182,7 +182,7 @@ describe("ConversationCard", () => {
         onChangeTitle={onChangeTitle}
         name="Conversation 1"
         repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
@@ -204,7 +204,7 @@ describe("ConversationCard", () => {
         onChangeTitle={onChangeTitle}
         name="Conversation 1"
         repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
@@ -223,7 +223,7 @@ describe("ConversationCard", () => {
         onChangeTitle={onChangeTitle}
         name="Conversation 1"
         repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
@@ -247,7 +247,7 @@ describe("ConversationCard", () => {
           onChangeTitle={onChangeTitle}
           name="Conversation 1"
           repo={null}
-          lastUpdated="2021-10-01T12:00:00Z"
+          lastUpdatedAt="2021-10-01T12:00:00Z"
         />,
       );
 
@@ -262,8 +262,8 @@ describe("ConversationCard", () => {
           onChangeTitle={onChangeTitle}
           name="Conversation 1"
           repo={null}
-          lastUpdated="2021-10-01T12:00:00Z"
-          state="warm"
+          lastUpdatedAt="2021-10-01T12:00:00Z"
+          status="RUNNING"
         />,
       );
 
