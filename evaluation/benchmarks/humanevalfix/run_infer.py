@@ -171,9 +171,7 @@ def complete_runtime(
     num_workers = LANGUAGE_TO_NUM_WORKERS[language]
     python_imports = '\n'.join(IMPORT_HELPER[language])
 
-    action = CmdRunAction(
-        command=f'cat /workspace/{_get_instance_id(instance)}.py', keep_prompt=False
-    )
+    action = CmdRunAction(command=f'cat /workspace/{_get_instance_id(instance)}.py')
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 

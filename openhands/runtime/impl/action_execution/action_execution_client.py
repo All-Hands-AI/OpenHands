@@ -264,7 +264,6 @@ class ActionExecutionClient(Runtime):
                 raise AgentRuntimeTimeoutError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
-
             return obs
 
     def run(self, action: CmdRunAction) -> Observation:
