@@ -47,7 +47,11 @@ def mock_llm() -> LLM:
     """Mocks an LLM object with a utility function for setting and resetting response contents in unit tests."""
     # Create a MagicMock for the LLM object
     mock_llm = MagicMock(
-        spec=LLM, config=MagicMock(spec=LLMConfig, model='gpt-4o', api_key='test_key')
+        spec=LLM,
+        config=MagicMock(
+            spec=LLMConfig, model='gpt-4o', api_key='test_key', custom_llm_provider=None
+        ),
+        metrics=MagicMock(),
     )
     _mock_content = None
 
@@ -383,12 +387,12 @@ def test_llm_attention_condenser_from_config():
 
 
 def test_llm_attention_condenser_invalid_config():
-    """Test that LLMAttentionCondenser raises an error if the configured LLM doesn't support response formats."""
+    """Test that LLMAttentionCondenser raises an error if the configured LLM doesn't support response schema."""
     config = LLMAttentionCondenserConfig(
         max_size=50,
         keep_first=10,
         llm_config=LLMConfig(
-            model='claude-2',  # Older model that doesn't support response formats
+            model='claude-2',  # Older model that doesn't support response schema
             api_key='test_key',
         ),
     )

@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import Any
 
-import litellm
+from litellm import supports_response_schema
 from pydantic import BaseModel
 from typing_extensions import override
 
@@ -336,25 +336,13 @@ class LLMAttentionCondenser(RollingCondenser):
         self.keep_first = keep_first
         self.llm = llm
 
-        # This condenser relies on the `response_format` feature, which is not supported by all LLMs
-        supports_response_format: bool = True
-        try:
-            supported_parameters = litellm.get_supported_openai_params(
-                self.llm.config.model,
-                custom_llm_provider=self.llm.config.custom_llm_provider,
-            )
-            # If the custom provider isn't mapped the `supported_parameters` will be `None`
-            if supported_parameters and 'repsonse_format' in supported_parameters:
-                supports_response_format = True
-
-        except Exception as e:
+        # This condenser relies on the `response_schema` feature, which is not supported by all LLMs
+        if not supports_response_schema(
+            model=self.llm.config.model,
+            custom_llm_provider=self.llm.config.custom_llm_provider,
+        ):
             raise ValueError(
-                "Cannot determine if model supports 'response_format'"
-            ) from e
-
-        if not supports_response_format:
-            raise ValueError(
-                "The LLM model must support the 'response_format' parameter to use the LLMAttentionCondenser."
+                "The LLM model must support the 'response_schema' parameter to use the LLMAttentionCondenser."
             )
 
         super().__init__()
