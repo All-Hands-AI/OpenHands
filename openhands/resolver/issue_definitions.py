@@ -750,25 +750,6 @@ class PRHandler(IssueHandler):
     ) -> tuple[bool, None | list[bool], str]:
         """Guess if the issue is fixed based on the history, issue description and git patch."""
         last_message = history[-1].message
-        # If git_patch is not provided, try to find it in the history
-        if git_patch is None:
-            for event in history:
-                # Check if the event itself is a CmdOutputObservation
-                if (
-                    isinstance(event, CmdOutputObservation)
-                    and event.command == 'git diff --no-color --cached HEAD'
-                ):
-                    git_patch = event.content
-                    break
-                # Check if the event has observations
-                if hasattr(event, '_observations'):
-                    for obs in event._observations:
-                        if (
-                            isinstance(obs, CmdOutputObservation)
-                            and obs.command == 'git diff --no-color --cached HEAD'
-                        ):
-                            git_patch = obs.content
-                            break
 
         issues_context = json.dumps(issue.closing_issues, indent=4)
         success_list = []
