@@ -100,8 +100,8 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           onChangeTitle={(title) =>
             handleChangeTitle(project.conversation_id, project.title, title)
           }
-          name={project.title}
-          repo={project.repo}
+          title={project.title}
+          selectedRepository={project.selected_repository}
           lastUpdatedAt={project.last_updated_at}
           status={project.status}
         />

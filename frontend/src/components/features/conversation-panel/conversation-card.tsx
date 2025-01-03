@@ -13,8 +13,8 @@ interface ProjectCardProps {
   onClick: () => void;
   onDelete: () => void;
   onChangeTitle: (title: string) => void;
-  name: string;
-  repo: string | null;
+  title: string;
+  selectedRepository: string | null;
   lastUpdatedAt: string; // ISO 8601
   status?: ProjectStatus;
 }
@@ -23,13 +23,14 @@ export function ConversationCard({
   onClick,
   onDelete,
   onChangeTitle,
-  name,
-  repo,
+  title,
+  selectedRepository,
   lastUpdatedAt,
   status = "STOPPED",
 }: ProjectCardProps) {
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  console.log("TRACE", selectedRepository)
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
@@ -38,7 +39,7 @@ export function ConversationCard({
       inputRef.current!.value = trimmed;
     } else {
       // reset the value if it's empty
-      inputRef.current!.value = name;
+      inputRef.current!.value = title;
     }
   };
 
@@ -71,7 +72,7 @@ export function ConversationCard({
           onBlur={handleBlur}
           onKeyUp={handleKeyUp}
           type="text"
-          defaultValue={name}
+          defaultValue={title}
           className="text-sm leading-6 font-semibold bg-transparent"
         />
 
@@ -85,9 +86,9 @@ export function ConversationCard({
           />
         </div>
       </div>
-      {repo && (
+      {selectedRepository && (
         <ConversationRepoLink
-          repo={repo}
+          selectedRepository={selectedRepository}
           onClick={(e) => e.stopPropagation()}
         />
       )}

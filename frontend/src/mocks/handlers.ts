@@ -17,26 +17,26 @@ const userPreferences = {
 const conversations: Conversation[] = [
   {
     conversation_id: "1",
-    name: "My New Project",
-    repo: null,
-    lastUpdated: new Date().toISOString(),
-    state: "running",
+    title: "My New Project",
+    selected_repository: null,
+    last_updated_at: new Date().toISOString(),
+    status: "RUNNING",
   },
   {
     conversation_id: "2",
-    name: "Repo Testing",
-    repo: "octocat/hello-world",
+    title: "Repo Testing",
+    selected_repository: "octocat/hello-world",
     // 2 days ago
-    lastUpdated: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    state: "cold",
+    last_updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    status: "STOPPED",
   },
   {
     conversation_id: "3",
-    name: "Another Project",
-    repo: "octocat/earth",
+    title: "Another Project",
+    selected_repository: "octocat/earth",
     // 5 days ago
-    lastUpdated: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    state: "finished",
+    last_updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    status: "STOPPED",
   },
 ];
 
@@ -210,7 +210,7 @@ export const handlers = [
           if (typeof body === "object" && body?.name) {
             CONVERSATIONS.set(conversationId, {
               ...conversation,
-              name: body.name,
+              title: body.name,
             });
             return HttpResponse.json(null, { status: 200 });
           }
@@ -224,10 +224,10 @@ export const handlers = [
   http.post("/api/conversations", () => {
     const conversation: Conversation = {
       conversation_id: (Math.random() * 100).toString(),
-      name: "New Conversation",
-      repo: null,
-      lastUpdated: new Date().toISOString(),
-      state: "warm",
+      title: "New Conversation",
+      selected_repository: null,
+      last_updated_at: new Date().toISOString(),
+      status: "RUNNING",
     };
 
     CONVERSATIONS.set(conversation.conversation_id, conversation);

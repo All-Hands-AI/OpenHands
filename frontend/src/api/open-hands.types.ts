@@ -63,7 +63,7 @@ export interface AuthenticateResponse {
 export interface Conversation {
   conversation_id: string;
   title: string;
-  repo: string | null;
+  selected_repository: string | null;
   last_updated_at: string;
   status: ProjectStatus;
 }
