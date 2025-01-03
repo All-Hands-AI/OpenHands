@@ -1,5 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router";
+import { FaListUl } from "react-icons/fa";
 import { useAuth } from "#/context/auth-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
@@ -16,7 +17,6 @@ import { useSettingsUpToDate } from "#/context/settings-up-to-date-context";
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
-import { FaListUl } from "react-icons/fa";
 
 export function Sidebar() {
   const location = useLocation();
@@ -83,9 +83,9 @@ export function Sidebar() {
               onClick={() => setConversationPanelIsOpen((prev) => !prev)}
             >
               <FaListUl
-                  width={28}
-                  height={28}
-                  fill={conversationPanelIsOpen ? "#FFE165" : "#FFFFFF"}
+                width={28}
+                height={28}
+                fill={conversationPanelIsOpen ? "#FFE165" : "#FFFFFF"}
               />
             </button>
           )}
