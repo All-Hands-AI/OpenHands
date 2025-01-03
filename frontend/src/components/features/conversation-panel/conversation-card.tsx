@@ -42,6 +42,12 @@ export function ConversationCard({
     }
   };
 
+  const handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key == 'Enter') {
+      event.currentTarget.blur();
+    }
+  }
+
   const handleInputClick = (event: React.MouseEvent<HTMLInputElement>) => {
     event.stopPropagation();
   };
@@ -63,6 +69,7 @@ export function ConversationCard({
           data-testid="conversation-card-title"
           onClick={handleInputClick}
           onBlur={handleBlur}
+          onKeyUp={handleKeyUp}
           type="text"
           defaultValue={name}
           className="text-sm leading-6 font-semibold bg-transparent"
