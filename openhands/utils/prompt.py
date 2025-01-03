@@ -103,8 +103,7 @@ class PromptManager:
                 repo_instructions += '\n\n'
             repo_instructions += microagent.content
         return self.system_template.render(
-            runtime_info=self.runtime_info,
-            repo_instructions=repo_instructions
+            runtime_info=self.runtime_info, repo_instructions=repo_instructions
         ).strip()
 
     def get_example_user_message(self) -> str:
