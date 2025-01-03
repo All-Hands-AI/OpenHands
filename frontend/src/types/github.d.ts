@@ -17,7 +17,6 @@ interface GitHubRepository {
   id: number;
   full_name: string;
   stargazers_count?: number;
-  fromPublicRepoSearch?: boolean;
 }
 
 interface GitHubAppRepository {
