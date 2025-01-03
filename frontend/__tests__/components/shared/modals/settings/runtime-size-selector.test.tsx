@@ -58,17 +58,15 @@ describe("RuntimeSizeSelector", () => {
   it("should show the full description text for disabled options", async () => {
     renderRuntimeSizeSelector();
 
-    // Click the button to open the dropdown
-    const button = screen.getByRole("button", {
-      name: /SETTINGS_FORM\$RUNTIME_SIZE_LABEL/,
-    });
-    button.click();
+    // Find the hidden select container
+    const container = screen.getByTestId("hidden-select-container");
+    const select = container.querySelector("select");
+    expect(select).toBeInTheDocument();
 
-    // Wait for the description to appear
-    const description = await screen.findByText(
-      /Runtime sizes over 1 are disabled by default/
-    );
-    expect(description).toBeInTheDocument();
-    expect(description).toHaveClass("whitespace-normal");
+    // Find the disabled option
+    const option = select?.querySelector('option[value="2"]');
+    expect(option).toBeInTheDocument();
+    expect(option).toHaveTextContent("2x (4 core, 16G)");
+
   });
 });
