@@ -158,9 +158,9 @@ export const chatSlice = createSlice({
         if (content.length > MAX_CONTENT_LENGTH) {
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
-        content =
-          causeMessage.content +
-          `\n\nOutput:\n\`\`\`\n${content.trim() || "Command finished execution with no output"}\n\`\`\``;
+        content = `${
+          causeMessage.content
+        }\n\nOutput:\n\`\`\`\n${content.trim() || "[Command finished execution with no output]"}\n\`\`\``;
         causeMessage.content = content; // Observation content includes the action
       } else if (observationID === "read" || observationID === "edit") {
         const { content } = observation.payload;
