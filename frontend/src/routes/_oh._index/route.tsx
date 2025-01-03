@@ -3,9 +3,6 @@ import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setImportedProjectZip } from "#/state/initial-query-slice";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
-import { useUserRepositories } from "#/hooks/query/use-user-repositories";
-import { useAppRepositories } from "#/hooks/query/use-app-repositories";
-
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
@@ -22,8 +19,6 @@ function Home() {
 
   const { data: config } = useConfig();
   const { data: user } = useGitHubUser();
-  const { data: appRepositories } = useAppRepositories();
-  const { data: userRepositories } = useUserRepositories();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     gitHubToken,
@@ -47,11 +42,6 @@ function Home() {
         <div className="flex gap-4 w-full flex-col md:flex-row">
           <GitHubRepositoriesSuggestionBox
             handleSubmit={() => formRef.current?.requestSubmit()}
-            repositories={
-              userRepositories?.pages.flatMap((page) => page.data) ||
-              appRepositories?.pages.flatMap((page) => page.data) ||
-              []
-            }
             gitHubAuthUrl={gitHubAuthUrl}
             user={user || null}
           />
