@@ -25,9 +25,7 @@ export function SettingsUpToDateProvider({
   );
 
   return (
-    <SettingsUpToDateContext.Provider value={value}>
-      {children}
-    </SettingsUpToDateContext.Provider>
+    <SettingsUpToDateContext value={value}>{children}</SettingsUpToDateContext>
   );
 }
 
