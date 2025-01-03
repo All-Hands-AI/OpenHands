@@ -4,69 +4,29 @@ import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
-import { useDebounce } from "#/hooks/use-debounce";
-import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
 
-interface GitHubRepositorySelectorProps {
-  onSelect: () => void;
-  repositories: GitHubRepository[];
+interface GitHubRepositoryWithPublic extends GitHubRepository {
+  is_public?: boolean;
 }
 
-function sanitizeQuery(query: string) {
-  return query
-    .replace(/https?:\/\//, "")
-    .replace(/github.com\//, "")
-    .replace(/\.git$/, "")
-    .toLowerCase();
+interface GitHubRepositorySelectorProps {
+  onInputChange: (value: string) => void;
+  onSelect: () => void;
+  repositories: GitHubRepositoryWithPublic[];
 }
 
 export function GitHubRepositorySelector({
+  onInputChange,
   onSelect,
   repositories,
 }: GitHubRepositorySelectorProps) {
   const { data: config } = useConfig();
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = React.useState<string>("");
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  const { data: searchedRepos } = useSearchRepositories(
-    sanitizeQuery(debouncedSearchQuery),
-  );
-
-  const saasPlaceholderRepository = React.useMemo(() => {
-    if (config?.APP_MODE === "saas" && config?.APP_SLUG) {
-      return [
-        {
-          id: -1000,
-          full_name: "Add more repositories...",
-        },
-      ];
-    }
-
-    return [];
-  }, [config]);
-
-  const filteredSearchedRepos = searchedRepos.filter(
-    (repo) => !repositories.some((r) => r.id === repo.id),
-  );
-
-  const filteredRepositories = repositories.filter(
-    (repo) =>
-      !debouncedSearchQuery ||
-      sanitizeQuery(repo.full_name).includes(
-        sanitizeQuery(debouncedSearchQuery),
-      ),
-  );
-
-  const finalRepositories: GitHubRepository[] = [
-    ...saasPlaceholderRepository,
-    ...filteredSearchedRepos,
-    ...filteredRepositories,
-  ];
 
   const dispatch = useDispatch();
 
   const handleRepoSelection = (id: string | null) => {
-    const repo = finalRepositories.find((r) => r.id.toString() === id);
+    const repo = repositories.find((r) => r.id.toString() === id);
     if (!repo) return;
 
     if (repo.id === -1000) {
@@ -96,7 +56,7 @@ export function GitHubRepositorySelector({
       aria-label="GitHub Repository"
       placeholder="Select a GitHub project"
       selectedKey={selectedKey}
-      items={finalRepositories}
+      items={repositories}
       inputProps={{
         classNames: {
           inputWrapper:
@@ -104,35 +64,29 @@ export function GitHubRepositorySelector({
         },
       }}
       onSelectionChange={(id) => handleRepoSelection(id?.toString() ?? null)}
-      onInputChange={(value) => setSearchQuery(value)}
+      onInputChange={onInputChange}
       clearButtonProps={{ onPress: handleClearSelection }}
       listboxProps={{
         emptyContent,
       }}
-      defaultFilter={(textValue, inputValue) =>
-        !inputValue ||
-        sanitizeQuery(textValue).includes(sanitizeQuery(inputValue))
-      }
     >
-      {(item) => {
-        const isPublicRepo = !repositories.find((r) => r.id === item.id);
-        return (
-          <AutocompleteItem
-            data-testid="github-repo-item"
-            key={item.id}
-            value={item.id}
-            className="data-[selected=true]:bg-default-100"
-            textValue={item.full_name}
-          >
+      {(item) => (
+        <AutocompleteItem
+          data-testid="github-repo-item"
+          key={item.id}
+          value={item.id}
+          textValue={item.full_name}
+        >
+          <div className="flex items-center justify-between">
             {item.full_name}
-            {isPublicRepo && item.stargazers_count !== undefined && (
-              <span className="ml-1 text-gray-400">
+            {item.is_public && !!item.stargazers_count && (
+              <span className="text-xs text-gray-400">
                 ({item.stargazers_count}⭐)
               </span>
             )}
-          </AutocompleteItem>
-        );
-      }}
+          </div>
+        </AutocompleteItem>
+      )}
     </Autocomplete>
   );
 }

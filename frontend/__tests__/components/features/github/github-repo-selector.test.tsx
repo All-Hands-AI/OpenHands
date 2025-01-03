@@ -6,11 +6,16 @@ import OpenHands from "#/api/open-hands";
 import * as GitHubAPI from "#/api/github";
 
 describe("GitHubRepositorySelector", () => {
+  const onInputChangeMock = vi.fn();
   const onSelectMock = vi.fn();
 
   it("should render the search input", () => {
     renderWithProviders(
-      <GitHubRepositorySelector onSelect={onSelectMock} repositories={[]} />,
+      <GitHubRepositorySelector
+        onInputChange={onInputChangeMock}
+        onSelect={onSelectMock}
+        repositories={[]}
+      />,
     );
 
     expect(
@@ -28,7 +33,11 @@ describe("GitHubRepositorySelector", () => {
     });
 
     renderWithProviders(
-      <GitHubRepositorySelector onSelect={onSelectMock} repositories={[]} />,
+      <GitHubRepositorySelector
+        onInputChange={onInputChangeMock}
+        onSelect={onSelectMock}
+        repositories={[]}
+      />,
     );
 
     expect(screen.getByTestId("github-repo-selector")).toBeInTheDocument();
@@ -55,7 +64,11 @@ describe("GitHubRepositorySelector", () => {
     searchPublicRepositoriesSpy.mockResolvedValue(mockSearchedRepos);
 
     renderWithProviders(
-      <GitHubRepositorySelector onSelect={onSelectMock} repositories={[]} />,
+      <GitHubRepositorySelector
+        onInputChange={onInputChangeMock}
+        onSelect={onSelectMock}
+        repositories={[]}
+      />,
     );
 
     expect(screen.getByTestId("github-repo-selector")).toBeInTheDocument();
