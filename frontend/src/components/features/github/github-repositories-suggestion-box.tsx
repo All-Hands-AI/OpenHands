@@ -11,7 +11,6 @@ import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { sanitizeQuery } from "#/utils/sanitize-query";
 import { useDebounce } from "#/hooks/use-debounce";
-import { useConfig } from "#/hooks/query/use-config";
 
 interface GitHubRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;
@@ -29,7 +28,6 @@ export function GitHubRepositoriesSuggestionBox({
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const { data: config } = useConfig();
   // TODO: Use `useQueries` to fetch all repositories in parallel
   const { data: appRepositories } = useAppRepositories();
   const { data: userRepositories } = useUserRepositories();

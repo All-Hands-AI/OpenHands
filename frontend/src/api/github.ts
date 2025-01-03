@@ -11,7 +11,6 @@ function sanitizeQuery(query: string) {
   return sanitizedQuery;
 }
 
-
 /**
  * Given the user, retrieves app installations IDs for OpenHands Github App
  * Uses user access token for Github App
@@ -120,7 +119,7 @@ export const searchPublicRepositories = async (
   sort: "" | "updated" | "stars" | "forks" = "stars",
   order: "desc" | "asc" = "desc",
 ): Promise<GitHubRepository[]> => {
-  const sanitizedQuery = sanitizeQuery(sanitizedQuery);
+  const sanitizedQuery = sanitizeQuery(query);
   if (!sanitizedQuery) {
     return [];
   }

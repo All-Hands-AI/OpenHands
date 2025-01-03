@@ -8,8 +8,6 @@ import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
-import { searchPublicRepositories } from "#/api/github";
-import { useDebounce } from "#/hooks/use-debounce";
 
 interface GitHubRepositorySelectorProps {
   onInputChange: (value: string) => void;
@@ -19,12 +17,13 @@ interface GitHubRepositorySelectorProps {
 }
 
 export function GitHubRepositorySelector({
+  onInputChange,
   onSelect,
-  repositories,
+  userRepositories,
+  publicRepositories,
 }: GitHubRepositorySelectorProps) {
   const { data: config } = useConfig();
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = React.useState<string>("");
 
   const allRepositories: GitHubRepository[] = [
     ...publicRepositories.filter(
