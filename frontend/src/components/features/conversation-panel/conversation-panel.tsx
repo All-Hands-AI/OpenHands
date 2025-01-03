@@ -72,7 +72,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   return (
     <div
       data-testid="conversation-panel"
-      className="w-[350px] h-full border border-neutral-700 bg-neutral-800 rounded-xl"
+      className="w-[350px] h-full border border-neutral-700 bg-neutral-800 rounded-xl overflow-y-auto"
     >
       <div className="pt-4 px-4 flex items-center justify-between">
         {location.pathname.startsWith("/conversation") && (

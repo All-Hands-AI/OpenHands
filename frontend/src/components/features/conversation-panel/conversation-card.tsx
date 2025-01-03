@@ -83,16 +83,6 @@ export function ConversationCard({
               setContextMenuVisible((prev) => !prev);
             }}
           />
-          {contextMenuVisible && (
-            <ContextMenu testId="context-menu" className="absolute left-full">
-              <ContextMenuListItem
-                testId="delete-button"
-                onClick={handleDelete}
-              >
-                Delete
-              </ContextMenuListItem>
-            </ContextMenu>
-          )}
         </div>
       </div>
       {repo && (
@@ -100,6 +90,16 @@ export function ConversationCard({
           repo={repo}
           onClick={(e) => e.stopPropagation()}
         />
+      )}
+      {contextMenuVisible && (
+        <ContextMenu testId="context-menu" className="left-full float-right">
+          <ContextMenuListItem
+            testId="delete-button"
+            onClick={handleDelete}
+          >
+            Delete
+          </ContextMenuListItem>
+        </ContextMenu>
       )}
       <p className="text-xs text-neutral-400">
         <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>
