@@ -12,13 +12,6 @@ from openhands.resolver.github_issue import GithubIssue, ReviewThread
 from openhands.resolver.issue_definitions import PRHandler
 
 
-def mock_llm_response(content):
-    """Helper function to create a mock LLM response."""
-    mock_response = MagicMock()
-    mock_response.choices = [MagicMock(message=MagicMock(content=content))]
-    return mock_response
-
-
 @pytest.fixture
 def pr_handler():
     llm_config = LLMConfig(model='test-model')
@@ -26,7 +19,7 @@ def pr_handler():
 
 
 @pytest.fixture
-def mock_llm_response():
+def mock_llm_success_response():
     return MagicMock(
         choices=[
             MagicMock(
@@ -42,7 +35,7 @@ The changes look good"""
     )
 
 
-def test_guess_success_includes_git_patch(pr_handler, mock_llm_response):
+def test_guess_success_includes_git_patch(pr_handler, mock_llm_success_response):
     # Mock the issue
     issue = GithubIssue(
         owner='test-owner',
@@ -76,7 +69,7 @@ def test_guess_success_includes_git_patch(pr_handler, mock_llm_response):
 
     # Mock the LLM class
     mock_llm = MagicMock()
-    mock_llm.completion.return_value = mock_llm_response
+    mock_llm.completion.return_value = mock_llm_success_response
     pr_handler.llm = mock_llm
     success, success_list, explanation = pr_handler.guess_success(issue, history)
 
@@ -88,7 +81,7 @@ def test_guess_success_includes_git_patch(pr_handler, mock_llm_response):
 
 
 def test_guess_success_includes_git_patch_from_command_output(
-    pr_handler, mock_llm_response
+    pr_handler, mock_llm_success_response
 ):
     # Mock the issue
     issue = GithubIssue(
@@ -123,7 +116,7 @@ def test_guess_success_includes_git_patch_from_command_output(
 
     # Mock the LLM class
     mock_llm = MagicMock()
-    mock_llm.completion.return_value = mock_llm_response
+    mock_llm.completion.return_value = mock_llm_success_response
     pr_handler.llm = mock_llm
     success, success_list, explanation = pr_handler.guess_success(issue, history)
 
@@ -134,7 +127,7 @@ def test_guess_success_includes_git_patch_from_command_output(
     assert '+test line' in prompt
 
 
-def test_guess_success_handles_missing_git_patch(pr_handler, mock_llm_response):
+def test_guess_success_handles_missing_git_patch(pr_handler, mock_llm_success_response):
     # Mock the issue
     issue = GithubIssue(
         owner='test-owner',
@@ -168,7 +161,7 @@ def test_guess_success_handles_missing_git_patch(pr_handler, mock_llm_response):
 
     # Mock the LLM class
     mock_llm = MagicMock()
-    mock_llm.completion.return_value = mock_llm_response
+    mock_llm.completion.return_value = mock_llm_success_response
     pr_handler.llm = mock_llm
     success, success_list, explanation = pr_handler.guess_success(issue, history)
 
