@@ -104,17 +104,55 @@ export const retrieveGitHubUser = async () => {
   return user;
 };
 
-export const retrieveLatestGitHubCommit = async (
-  repository: string,
-): Promise<GitHubCommit> => {
-  const response = await github.get<GitHubCommit[]>(
-    `/repos/${repository}/commits`,
+export const searchPublicRepositories = async (
+  query: string,
+  per_page = 5,
+  sort: "" | "updated" | "stars" | "forks" = "stars",
+  order: "desc" | "asc" = "desc",
+): Promise<GitHubRepository[]> => {
+  const sanitizedQuery = query.trim();
+  if (!sanitizedQuery) {
+    return [];
+  }
+
+  const response = await github.get<{ items: GitHubRepository[] }>(
+    "/search/repositories",
     {
       params: {
-        per_page: 1,
+        q: sanitizedQuery,
+        per_page,
+        sort,
+        order,
       },
     },
   );
+  return response.data.items;
+};
 
-  return response.data[0];
+export const retrieveLatestGitHubCommit = async (
+  repository: string,
+): Promise<GitHubCommit | null> => {
+  try {
+    const response = await github.get<GitHubCommit[]>(
+      `/repos/${repository}/commits`,
+      {
+        params: {
+          per_page: 1,
+        },
+      },
+    );
+    return response.data[0] || null;
+  } catch (error) {
+    if (!error || typeof error !== "object") {
+      throw new Error("Unknown error occurred");
+    }
+    const axiosError = error as { response?: { status: number } };
+    if (axiosError.response?.status === 409) {
+      // Repository is empty, no commits yet
+      return null;
+    }
+    throw new Error(
+      error instanceof Error ? error.message : "Unknown error occurred",
+    );
+  }
 };

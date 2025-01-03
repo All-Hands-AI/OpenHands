@@ -1,3 +1,5 @@
+import { ProjectState } from "#/components/features/conversation-panel/conversation-state-indicator";
+
 export interface ErrorResponse {
   error: string;
 }
@@ -56,4 +58,12 @@ export interface GetVSCodeUrlResponse {
 export interface AuthenticateResponse {
   message?: string;
   error?: string;
+}
+
+export interface Conversation {
+  conversation_id: string;
+  name: string;
+  repo: string | null;
+  lastUpdated: string;
+  state: ProjectState;
 }

@@ -43,7 +43,7 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime=os.environ.get('RUNTIME', 'eventstream'),
+        runtime=os.environ.get('RUNTIME', 'docker'),
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             base_container_image='python:3.12-slim',
@@ -59,6 +59,8 @@ def get_config(
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
+    agent_config = config.get_agent_config(metadata.agent_class)
+    agent_config.use_microagents = False
     return config
 
 

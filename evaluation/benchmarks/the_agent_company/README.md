@@ -5,7 +5,7 @@ This folder contains the evaluation harness that we built on top of the original
 The evaluation consists of three steps:
 
 1. Environment setup: [install python environment](../../README.md#development-environment), [configure LLM config](../../README.md#configure-openhands-and-your-llm), [launch services](https://github.com/TheAgentCompany/TheAgentCompany/blob/main/docs/SETUP.md).
-2. [Run Evaluation](#run-inference-on-the-agent-company-instances): Run all tasks and get the evaluation results.
+2. [Run Evaluation](#run-inference-on-the-agent-company-tasks): Run all tasks and get the evaluation results.
 
 ## Setup Environment and LLM Configuration
 

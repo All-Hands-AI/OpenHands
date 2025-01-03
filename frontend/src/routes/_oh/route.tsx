@@ -4,12 +4,12 @@ import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useAuth } from "#/context/auth-context";
-import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
-import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
+import { useSettings } from "#/hooks/query/use-settings";
+import { useMaybeMigrateSettings } from "#/hooks/use-maybe-migrate-settings";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -44,15 +44,14 @@ export function ErrorBoundary() {
 }
 
 export default function MainApp() {
+  useMaybeMigrateSettings();
+
   const { gitHubToken } = useAuth();
-  const { settings, settingsAreUpToDate } = useUserPrefs();
+  const { data: settings } = useSettings();
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
     !localStorage.getItem("analytics-consent"),
   );
-
-  const [aiConfigModalIsOpen, setAiConfigModalIsOpen] =
-    React.useState(!settingsAreUpToDate);
 
   const config = useConfig();
   const { data: isAuthed, isFetching: isFetchingAuth } = useIsAuthed();
@@ -90,13 +89,6 @@ export default function MainApp() {
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
           onClose={() => setConsentFormIsOpen(false)}
-        />
-      )}
-
-      {aiConfigModalIsOpen && (
-        <SettingsModal
-          onClose={() => setAiConfigModalIsOpen(false)}
-          data-testid="ai-config-modal"
         />
       )}
     </div>

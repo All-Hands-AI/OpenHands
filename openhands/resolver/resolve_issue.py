@@ -182,7 +182,7 @@ async def process_issue(
 
     config = AppConfig(
         default_agent='CodeActAgent',
-        runtime='eventstream',
+        runtime='docker',
         max_budget_per_task=4,
         max_iterations=max_iterations,
         sandbox=SandboxConfig(
@@ -201,7 +201,7 @@ async def process_issue(
 
     runtime = await create_runtime(config)
 
-    async def on_event(evt):
+    def on_event(evt):
         logger.info(evt)
 
     runtime.event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))

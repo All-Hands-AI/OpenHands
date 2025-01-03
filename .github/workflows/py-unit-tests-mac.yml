@@ -91,6 +91,6 @@ jobs:
       - name: Run Tests
         run: poetry run pytest --forked --cov=openhands --cov-report=xml ./tests/unit --ignore=tests/unit/test_memory.py
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

@@ -23,7 +23,7 @@ export function FooterContent({ actions, closeModal }: FooterContentProps) {
             key={label}
             type="button"
             isDisabled={isDisabled}
-            onClick={() => {
+            onPress={() => {
               action();
               if (closeAfterAction) closeModal();
             }}

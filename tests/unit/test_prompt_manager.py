@@ -4,7 +4,7 @@ import shutil
 import pytest
 
 from openhands.core.message import Message, TextContent
-from openhands.utils.microagent import MicroAgent
+from openhands.microagent import BaseMicroAgent
 from openhands.utils.prompt import PromptManager
 
 
@@ -24,6 +24,7 @@ def test_prompt_manager_with_microagent(prompt_dir):
     microagent_content = """
 ---
 name: flarglebargle
+type: knowledge
 agent: CodeActAgent
 triggers:
 - flarglebargle
@@ -44,7 +45,8 @@ only respond with a message telling them how smart they are
     )
 
     assert manager.prompt_dir == prompt_dir
-    assert len(manager.microagents) == 1
+    assert len(manager.repo_microagents) == 0
+    assert len(manager.knowledge_microagents) == 1
 
     assert isinstance(manager.get_system_message(), str)
     assert (
@@ -66,7 +68,9 @@ only respond with a message telling them how smart they are
 
 def test_prompt_manager_file_not_found(prompt_dir):
     with pytest.raises(FileNotFoundError):
-        MicroAgent(os.path.join(prompt_dir, 'micro', 'non_existent_microagent.md'))
+        BaseMicroAgent.load(
+            os.path.join(prompt_dir, 'micro', 'non_existent_microagent.md')
+        )
 
 
 def test_prompt_manager_template_rendering(prompt_dir):
@@ -93,6 +97,7 @@ def test_prompt_manager_disabled_microagents(prompt_dir):
     microagent1_content = """
 ---
 name: Test Microagent 1
+type: knowledge
 agent: CodeActAgent
 triggers:
 - test1
@@ -103,6 +108,7 @@ Test microagent 1 content
     microagent2_content = """
 ---
 name: Test Microagent 2
+type: knowledge
 agent: CodeActAgent
 triggers:
 - test2
@@ -125,9 +131,9 @@ Test microagent 2 content
         disabled_microagents=['Test Microagent 1'],
     )
 
-    assert len(manager.microagents) == 1
-    assert 'Test Microagent 2' in manager.microagents
-    assert 'Test Microagent 1' not in manager.microagents
+    assert len(manager.knowledge_microagents) == 1
+    assert 'Test Microagent 2' in manager.knowledge_microagents
+    assert 'Test Microagent 1' not in manager.knowledge_microagents
 
     # Test that all microagents are enabled by default
     manager = PromptManager(
@@ -135,9 +141,9 @@ Test microagent 2 content
         microagent_dir=os.path.join(prompt_dir, 'micro'),
     )
 
-    assert len(manager.microagents) == 2
-    assert 'Test Microagent 1' in manager.microagents
-    assert 'Test Microagent 2' in manager.microagents
+    assert len(manager.knowledge_microagents) == 2
+    assert 'Test Microagent 1' in manager.knowledge_microagents
+    assert 'Test Microagent 2' in manager.knowledge_microagents
 
     # Clean up temporary files
     os.remove(os.path.join(prompt_dir, 'micro', f'{microagent1_name}.md'))

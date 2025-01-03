@@ -5,60 +5,49 @@ import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
 
+interface GitHubRepositoryWithPublic extends GitHubRepository {
+  is_public?: boolean;
+}
+
 interface GitHubRepositorySelectorProps {
+  onInputChange: (value: string) => void;
   onSelect: () => void;
-  repositories: GitHubRepository[];
+  repositories: GitHubRepositoryWithPublic[];
 }
 
 export function GitHubRepositorySelector({
+  onInputChange,
   onSelect,
   repositories,
 }: GitHubRepositorySelectorProps) {
   const { data: config } = useConfig();
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
 
-  // Add option to install app onto more repos
-  const finalRepositories =
-    config?.APP_MODE === "saas"
-      ? [{ id: -1000, full_name: "Add more repositories..." }, ...repositories]
-      : repositories;
-
   const dispatch = useDispatch();
 
   const handleRepoSelection = (id: string | null) => {
-    const repo = finalRepositories.find((r) => r.id.toString() === id);
-    if (id === "-1000") {
-      if (config?.APP_SLUG)
-        window.open(
-          `https://github.com/apps/${config.APP_SLUG}/installations/new`,
-          "_blank",
-        );
-    } else if (repo) {
-      // set query param
-      dispatch(setSelectedRepository(repo.full_name));
-      posthog.capture("repository_selected");
-      onSelect();
-      setSelectedKey(id);
+    const repo = repositories.find((r) => r.id.toString() === id);
+    if (!repo) return;
+
+    if (repo.id === -1000) {
+      window.open(
+        `https://github.com/apps/${config?.APP_SLUG}/installations/new`,
+        "_blank",
+      );
+      return;
     }
+
+    dispatch(setSelectedRepository(repo.full_name));
+    posthog.capture("repository_selected");
+    onSelect();
+    setSelectedKey(id);
   };
 
   const handleClearSelection = () => {
-    // clear query param
     dispatch(setSelectedRepository(null));
   };
 
-  const emptyContent = config?.APP_SLUG ? (
-    <a
-      href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
-      target="_blank"
-      rel="noreferrer noopener"
-      className="underline"
-    >
-      Add more repositories...
-    </a>
-  ) : (
-    "No results found."
-  );
+  const emptyContent = "No results found.";
 
   return (
     <Autocomplete
@@ -67,6 +56,7 @@ export function GitHubRepositorySelector({
       aria-label="GitHub Repository"
       placeholder="Select a GitHub project"
       selectedKey={selectedKey}
+      items={repositories}
       inputProps={{
         classNames: {
           inputWrapper:
@@ -74,20 +64,29 @@ export function GitHubRepositorySelector({
         },
       }}
       onSelectionChange={(id) => handleRepoSelection(id?.toString() ?? null)}
-      clearButtonProps={{ onClick: handleClearSelection }}
+      onInputChange={onInputChange}
+      clearButtonProps={{ onPress: handleClearSelection }}
       listboxProps={{
         emptyContent,
       }}
     >
-      {finalRepositories.map((repo) => (
+      {(item) => (
         <AutocompleteItem
           data-testid="github-repo-item"
-          key={repo.id}
-          value={repo.id}
+          key={item.id}
+          value={item.id}
+          textValue={item.full_name}
         >
-          {repo.full_name}
+          <div className="flex items-center justify-between">
+            {item.full_name}
+            {item.is_public && !!item.stargazers_count && (
+              <span className="text-xs text-gray-400">
+                ({item.stargazers_count}⭐)
+              </span>
+            )}
+          </div>
         </AutocompleteItem>
-      ))}
+      )}
     </Autocomplete>
   );
 }
