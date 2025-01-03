@@ -68,7 +68,6 @@ class FileConversationStore(ConversationStore):
         num_conversations = len(conversation_ids)
         start = page_id_to_offset(page_id)
         end = min(limit + start, num_conversations)
-        conversation_ids = conversation_ids[start:end]
         conversations = []
         for conversation_id in conversation_ids:
             try:
@@ -79,6 +78,8 @@ class FileConversationStore(ConversationStore):
                     exc_info=True,
                     stack_info=True,
                 )
+        conversations.sort(key=_sort_key, reverse=True)
+        conversations = conversations[start:end]
         next_page_id = offset_to_page_id(end, end < num_conversations)
         return ConversationMetadataResultSet(conversations, next_page_id)
 
@@ -92,3 +93,10 @@ class FileConversationStore(ConversationStore):
     async def get_instance(cls, config: AppConfig, token: str | None):
         file_store = get_file_store(config.file_store, config.file_store_path)
         return FileConversationStore(file_store)
+
+
+def _sort_key(conversation: ConversationMetadata) -> str:
+    last_updated_at = conversation.last_updated_at
+    if last_updated_at:
+        return last_updated_at.isoformat()  # YYYY-MM-DDTHH:MM:SS for sorting
+    return ''
