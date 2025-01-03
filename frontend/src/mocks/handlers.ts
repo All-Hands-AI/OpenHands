@@ -27,7 +27,9 @@ const conversations: Conversation[] = [
     title: "Repo Testing",
     selected_repository: "octocat/hello-world",
     // 2 days ago
-    last_updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    last_updated_at: new Date(
+      Date.now() - 2 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
     status: "STOPPED",
   },
   {
@@ -35,7 +37,9 @@ const conversations: Conversation[] = [
     title: "Another Project",
     selected_repository: "octocat/earth",
     // 5 days ago
-    last_updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    last_updated_at: new Date(
+      Date.now() - 5 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
     status: "STOPPED",
   },
 ];

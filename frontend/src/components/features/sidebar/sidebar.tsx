@@ -31,14 +31,15 @@ export function Sidebar() {
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
-  const [conversationPanelIsOpen, setConversationPanelIsOpen] = React.useState(false);
+  const [conversationPanelIsOpen, setConversationPanelIsOpen] =
+    React.useState(false);
   const conversationPanelRef = React.useRef<HTMLDivElement | null>(null);
 
   const handleClick = (event: MouseEvent) => {
-    const conversationPanel = conversationPanelRef.current
+    const conversationPanel = conversationPanelRef.current;
     if (conversationPanelIsOpen && conversationPanel) {
-      if (!conversationPanel.contains(event.target as any)) {
-        setConversationPanelIsOpen(false)
+      if (!conversationPanel.contains(event.target as Node)) {
+        setConversationPanelIsOpen(false);
       }
     }
   };
@@ -51,10 +52,10 @@ export function Sidebar() {
   }, [user.isError]);
 
   React.useEffect(() => {
-    document.addEventListener("click", handleClick)
+    document.addEventListener("click", handleClick);
     return () => {
-      document.removeEventListener("click", handleClick)
-    }
+      document.removeEventListener("click", handleClick);
+    };
   }, [conversationPanelIsOpen]);
 
   const handleAccountSettingsModalClose = () => {
@@ -111,7 +112,8 @@ export function Sidebar() {
         </nav>
 
         {conversationPanelIsOpen && (
-          <div ref={conversationPanelRef}
+          <div
+            ref={conversationPanelRef}
             className="absolute h-full left-[calc(100%+12px)] top-0 z-20" // 12px padding (sidebar parent)
           >
             <ConversationPanel
