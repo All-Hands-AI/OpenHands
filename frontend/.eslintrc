@@ -73,6 +73,7 @@
             }
           }
         ],
+        "react/prop-types": "off",
         "react/no-array-index-key": "off",
         "react-hooks/exhaustive-deps": "off",
         "import/no-extraneous-dependencies": "off",
