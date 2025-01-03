@@ -1,5 +1,4 @@
 import React from "react";
-import { useLocation } from "react-router";
 import FolderIcon from "#/icons/docs.svg?react";
 import { useAuth } from "#/context/auth-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
@@ -19,7 +18,6 @@ import { cn } from "#/utils/utils";
 import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
 
 export function Sidebar() {
-  const location = useLocation();
   const user = useGitHubUser();
   const { data: isAuthed } = useIsAuthed();
   const { logout } = useAuth();
@@ -48,8 +46,6 @@ export function Sidebar() {
     if (user.isError) logout();
     setAccountSettingsModalOpen(false);
   };
-
-
 
   const showSettingsModal =
     isAuthed && (!settingsAreUpToDate || settingsModalIsOpen);
@@ -85,9 +81,7 @@ export function Sidebar() {
             </button>
           )}
           <DocsButton />
-          <ExitProjectButton
-            onClick={() => setStartNewProjectModalIsOpen(true)}
-          />
+          <ExitProjectButton />
         </nav>
 
         {conversationPanelIsOpen && (
@@ -111,7 +105,6 @@ export function Sidebar() {
             onClose={() => setSettingsModalIsOpen(false)}
           />
         ))}
-
     </>
   );
 }

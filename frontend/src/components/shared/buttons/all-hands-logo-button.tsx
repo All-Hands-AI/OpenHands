@@ -1,5 +1,5 @@
-import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { Tooltip } from "@nextui-org/react";
+import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 
 export function AllHandsLogoButton() {
   return (
