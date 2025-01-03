@@ -395,7 +395,12 @@ def _process_instance_wrapper(
                 + '\n'
             )
             if isinstance(
-                e, (AgentRuntimeDisconnectedError, AgentRuntimeUnavailableError)
+                e,
+                (
+                    AgentRuntimeDisconnectedError,
+                    AgentRuntimeUnavailableError,
+                    AgentRuntimeNotFoundError,
+                ),
             ):
                 runtime_failure_count += 1
                 msg += f'Runtime disconnected error detected for instance {instance.instance_id}, runtime failure count: {runtime_failure_count}'

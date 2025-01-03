@@ -206,7 +206,9 @@ class AgentController:
             reported = RuntimeError(
                 'There was an unexpected error while running the agent.'
             )
-            if isinstance(e, litellm.AuthenticationError):
+            if isinstance(e, litellm.AuthenticationError) or isinstance(
+                e, litellm.BadRequestError
+            ):
                 reported = e
             await self._react_to_exception(reported)
 
@@ -535,9 +537,7 @@ class AgentController:
         self.update_state_before_step()
         action: Action = NullAction()
         try:
-            print('STEP AGENT')
             action = self.agent.step(self.state)
-            print('GOT ACTION', action)
             if action is None:
                 raise LLMNoActionError('No action was returned')
         except (
