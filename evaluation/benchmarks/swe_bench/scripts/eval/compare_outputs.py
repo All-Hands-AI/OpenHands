@@ -104,9 +104,9 @@ for repo, diff in repo_diffs:
     # Determine if this repo has a significant diff
     is_significant = diff >= threshold
     repo_color = 'red' if is_significant else 'yellow'
-    print(colored(f'Difference: {diff} instances!', repo_color, attrs=['bold']))
 
     print(f"\n{colored(repo, repo_color, attrs=['bold'])}:")
+    print(colored(f'Difference: {diff} instances!', repo_color, attrs=['bold']))
     print(colored(f'X resolved but Y failed: ({len(x_instances)} instances)', 'green'))
     if x_instances:
         print('  ' + str(x_instances))
