@@ -1,46 +1,48 @@
 import React from "react";
-import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
+import {
+  Autocomplete,
+  AutocompleteItem,
+  AutocompleteSection,
+} from "@nextui-org/react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
-
-interface GitHubRepositoryWithPublic extends GitHubRepository {
-  is_public?: boolean;
-}
+import { sanitizeQuery } from "#/utils/sanitize-query";
 
 interface GitHubRepositorySelectorProps {
   onInputChange: (value: string) => void;
   onSelect: () => void;
-  repositories: GitHubRepositoryWithPublic[];
+  userRepositories: GitHubRepository[];
+  publicRepositories: GitHubRepository[];
 }
 
 export function GitHubRepositorySelector({
   onInputChange,
   onSelect,
-  repositories,
+  userRepositories,
+  publicRepositories,
 }: GitHubRepositorySelectorProps) {
   const { data: config } = useConfig();
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
 
+  const allRepositories: GitHubRepository[] = [
+    ...publicRepositories.filter(
+      (repo) => !publicRepositories.find((r) => r.id === repo.id),
+    ),
+    ...userRepositories,
+  ];
+
   const dispatch = useDispatch();
 
   const handleRepoSelection = (id: string | null) => {
-    const repo = repositories.find((r) => r.id.toString() === id);
-    if (!repo) return;
-
-    if (repo.id === -1000) {
-      window.open(
-        `https://github.com/apps/${config?.APP_SLUG}/installations/new`,
-        "_blank",
-      );
-      return;
+    const repo = allRepositories.find((r) => r.id.toString() === id);
+    if (repo) {
+      dispatch(setSelectedRepository(repo.full_name));
+      posthog.capture("repository_selected");
+      onSelect();
+      setSelectedKey(id);
     }
-
-    dispatch(setSelectedRepository(repo.full_name));
-    posthog.capture("repository_selected");
-    onSelect();
-    setSelectedKey(id);
   };
 
   const handleClearSelection = () => {
@@ -55,8 +57,8 @@ export function GitHubRepositorySelector({
       name="repo"
       aria-label="GitHub Repository"
       placeholder="Select a GitHub project"
+      isVirtualized={false}
       selectedKey={selectedKey}
-      items={repositories}
       inputProps={{
         classNames: {
           inputWrapper:
@@ -65,27 +67,61 @@ export function GitHubRepositorySelector({
       }}
       onSelectionChange={(id) => handleRepoSelection(id?.toString() ?? null)}
       onInputChange={onInputChange}
-      clearButtonProps={{ onPress: handleClearSelection }}
+      clearButtonProps={{ onClick: handleClearSelection }}
       listboxProps={{
         emptyContent,
       }}
+      defaultFilter={(textValue, inputValue) =>
+        !inputValue ||
+        sanitizeQuery(textValue).includes(sanitizeQuery(inputValue))
+      }
     >
-      {(item) => (
-        <AutocompleteItem
-          data-testid="github-repo-item"
-          key={item.id}
-          value={item.id}
-          textValue={item.full_name}
-        >
-          <div className="flex items-center justify-between">
-            {item.full_name}
-            {item.is_public && !!item.stargazers_count && (
-              <span className="text-xs text-gray-400">
-                ({item.stargazers_count}⭐)
+      {config?.APP_MODE === "saas" &&
+        config?.APP_SLUG &&
+        ((
+          <AutocompleteItem key="install">
+            <a
+              href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
+              target="_blank"
+              rel="noreferrer noopener"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Add more repositories...
+            </a>
+          </AutocompleteItem> // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ) as any)}
+      {userRepositories.length > 0 && (
+        <AutocompleteSection showDivider title="Your Repos">
+          {userRepositories.map((repo) => (
+            <AutocompleteItem
+              data-testid="github-repo-item"
+              key={repo.id}
+              value={repo.id}
+              className="data-[selected=true]:bg-default-100"
+              textValue={repo.full_name}
+            >
+              {repo.full_name}
+            </AutocompleteItem>
+          ))}
+        </AutocompleteSection>
+      )}
+      {publicRepositories.length > 0 && (
+        <AutocompleteSection showDivider title="Public Repos">
+          {publicRepositories.map((repo) => (
+            <AutocompleteItem
+              data-testid="github-repo-item"
+              key={repo.id}
+              value={repo.id}
+              className="data-[selected=true]:bg-default-100"
+              textValue={repo.full_name}
+            >
+              {repo.full_name}
+              <span className="ml-1 text-gray-400">
+                ({repo.stargazers_count || 0}⭐)
               </span>
-            )}
-          </div>
-        </AutocompleteItem>
+            </AutocompleteItem>
+          ))}
+        </AutocompleteSection>
       )}
     </Autocomplete>
   );
