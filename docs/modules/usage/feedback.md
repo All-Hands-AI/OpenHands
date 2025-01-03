@@ -21,7 +21,7 @@ When you submit data, you can submit it either publicly or privately.
 - **Public** data will be distributed under the MIT License, like OpenHands itself, and can be used by the community to
 train and test models. Obviously, feedback that you can make public will be more valuable for the community as a whole,
 so when you are not dealing with sensitive information, we would encourage you to choose this option!
-- **Private** data will only be made available to the OpenHands team for the purpose of improving OpenHands.
+- **Private** data will be made available to the OpenHands team for the purpose of improving OpenHands.
 However, a link with a unique ID will still be created that you can share publicly with others.
 
 ### Who collects and stores the data?
