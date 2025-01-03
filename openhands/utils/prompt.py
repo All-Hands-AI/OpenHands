@@ -88,10 +88,9 @@ class PromptManager:
         ), f'Expecting at most one repo microagent, but found {len(self.repo_microagents)}: {self.repo_microagents.keys()}'
         for microagent in self.repo_microagents.values():
             # We assume these are the repo instructions
-            if len(microagent.triggers) == 0:
-                if repo_instructions:
-                    repo_instructions += '\n\n'
-                repo_instructions += microagent.content
+            if repo_instructions:
+                repo_instructions += '\n\n'
+            repo_instructions += microagent.content
         return self.system_template.render(repo_instructions=repo_instructions).strip()
 
     def get_example_user_message(self) -> str:
