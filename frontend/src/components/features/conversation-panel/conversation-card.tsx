@@ -30,7 +30,6 @@ export function ConversationCard({
 }: ProjectCardProps) {
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
-  console.log("TRACE", selectedRepository)
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
