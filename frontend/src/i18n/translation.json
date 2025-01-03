@@ -1224,6 +1224,20 @@
     "fr": "L'agent s'est arrêté.",
     "tr": "Ajan durdu."
   },
+  "CHAT_INTERFACE$AGENT_DISCONNECTED_MESSAGE": {
+    "en": "Disconnected, trying to reconnect...",
+    "de": "Verbindung getrennt, versuche neu zu verbinden...",
+    "zh-CN": "已断开连接，正在尝试重新连接...",
+    "zh-TW": "已斷開連接，正在嘗試重新連接...",
+    "ko-KR": "연결이 끊어졌습니다. 재연결을 시도하는 중...",
+    "no": "Frakoblet, prøver å koble til på nytt...",
+    "it": "Disconnesso, tentativo di riconnessione in corso...",
+    "pt": "Desconectado, tentando reconectar...",
+    "es": "Desconectado, intentando reconectar...",
+    "ar": "تم قطع الاتصال، جاري محاولة إعادة الاتصال...",
+    "fr": "Déconnecté, tentative de reconnexion...",
+    "tr": "Bağlantı kesildi, yeniden bağlanmaya çalışılıyor..."
+  },
   "CHAT_INTERFACE$AGENT_FINISHED_MESSAGE": {
     "en": "Agent has finished the task.",
     "de": "Agent hat die Aufgabe erledigt.",

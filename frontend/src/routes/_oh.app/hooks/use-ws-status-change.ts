@@ -83,7 +83,7 @@ export const useWSStatusChange = () => {
     }
 
     if (status === WsClientProviderStatus.DISCONNECTED) {
-      dispatch(setCurrentAgentState(AgentState.STOPPED));
+      dispatch(setCurrentAgentState(AgentState.DISCONNECTED));
     }
   }, [status]);
 };

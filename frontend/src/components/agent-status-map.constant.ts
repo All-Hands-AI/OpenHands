@@ -49,6 +49,10 @@ export const AGENT_STATUS_MAP: {
     message: I18nKey.CHAT_INTERFACE$AGENT_ERROR_MESSAGE,
     indicator: IndicatorColor.RED,
   },
+  [AgentState.DISCONNECTED]: {
+    message: I18nKey.CHAT_INTERFACE$AGENT_DISCONNECTED_MESSAGE,
+    indicator: IndicatorColor.ORANGE,
+  },
   [AgentState.AWAITING_USER_CONFIRMATION]: {
     message: I18nKey.CHAT_INTERFACE$AGENT_AWAITING_USER_CONFIRMATION_MESSAGE,
     indicator: IndicatorColor.ORANGE,
