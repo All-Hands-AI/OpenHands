@@ -8,6 +8,7 @@ import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
+import { sanitizeQuery } from "#/api/github";
 
 interface GitHubRepositorySelectorProps {
   onInputChange: (value: string) => void;
@@ -27,7 +28,7 @@ export function GitHubRepositorySelector({
 
   const allRepositories: GitHubRepository[] = [
     ...publicRepositories.filter(
-      (repo) => !repositories.find((r) => r.id === repo.id),
+      (repo) => !publicRepositories.find((r) => r.id === repo.id),
     ),
     ...userRepositories,
   ];
