@@ -186,8 +186,11 @@ export const handlers = [
 
   http.get("/api/options/config", () => HttpResponse.json({ APP_MODE: "oss" })),
 
-  http.get("/api/conversations", async () =>
-    HttpResponse.json(Array.from(CONVERSATIONS.values())),
+  http.get("/api/conversations?limit=9", async () =>
+    HttpResponse.json({
+      results: Array.from(CONVERSATIONS.values()),
+      next_page_id: null,
+    }),
   ),
 
   http.delete("/api/conversations/:conversationId", async ({ params }) => {
@@ -201,7 +204,7 @@ export const handlers = [
     return HttpResponse.json(null, { status: 404 });
   }),
 
-  http.put(
+  http.patch(
     "/api/conversations/:conversationId",
     async ({ params, request }) => {
       const { conversationId } = params;
@@ -211,10 +214,10 @@ export const handlers = [
 
         if (conversation) {
           const body = await request.json();
-          if (typeof body === "object" && body?.name) {
+          if (typeof body === "object" && body?.title) {
             CONVERSATIONS.set(conversationId, {
               ...conversation,
-              title: body.name,
+              title: body.title,
             });
             return HttpResponse.json(null, { status: 200 });
           }

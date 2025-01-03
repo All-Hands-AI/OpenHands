@@ -9,7 +9,7 @@ export function ConversationRepoLink({
 }: ConversationRepoLinkProps) {
   return (
     <a
-      data-testid="conversation-card-repo"
+      data-testid="conversation-card-selected-repository"
       href={`https://github.com/${selectedRepository}`}
       target="_blank noopener noreferrer"
       onClick={onClick}

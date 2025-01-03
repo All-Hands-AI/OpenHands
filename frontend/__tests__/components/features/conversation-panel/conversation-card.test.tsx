@@ -46,7 +46,7 @@ describe("ConversationCard", () => {
     );
 
     expect(
-      screen.queryByTestId("conversation-card-selectedRepository"),
+      screen.queryByTestId("conversation-card-selected-repository"),
     ).not.toBeInTheDocument();
 
     rerender(
@@ -60,7 +60,7 @@ describe("ConversationCard", () => {
       />,
     );
 
-    screen.getByTestId("conversation-card-selectedRepository");
+    screen.getByTestId("conversation-card-selected-repository");
   });
 
   it("should call onClick when the card is clicked", async () => {
@@ -144,7 +144,7 @@ describe("ConversationCard", () => {
       />,
     );
 
-    const selectedRepository = screen.getByTestId("conversation-card-selectedRepository");
+    const selectedRepository = screen.getByTestId("conversation-card-selected-repository");
     await user.click(selectedRepository);
 
     expect(onClick).not.toHaveBeenCalled();
@@ -239,7 +239,7 @@ describe("ConversationCard", () => {
   });
 
   describe("state indicator", () => {
-    it("should render the 'cold' indicator by default", () => {
+    it("should render the 'STOPPED' indicator by default", () => {
       render(
         <ConversationCard
           onClick={onClick}
@@ -251,7 +251,7 @@ describe("ConversationCard", () => {
         />,
       );
 
-      screen.getByTestId("cold-indicator");
+      screen.getByTestId("STOPPED-indicator");
     });
 
     it("should render the other indicators when provided", () => {
@@ -267,8 +267,8 @@ describe("ConversationCard", () => {
         />,
       );
 
-      expect(screen.queryByTestId("cold-indicator")).not.toBeInTheDocument();
-      screen.getByTestId("warm-indicator");
+      expect(screen.queryByTestId("STOPPED-indicator")).not.toBeInTheDocument();
+      screen.getByTestId("RUNNING-indicator");
     });
   });
 });
