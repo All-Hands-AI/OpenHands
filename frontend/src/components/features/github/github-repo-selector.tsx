@@ -28,35 +28,37 @@ export function GitHubRepositorySelector({
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  const { data: searchedRepos = [] } = useSearchRepositories(
+  const { data: searchedRepos } = useSearchRepositories(
     sanitizeQuery(debouncedSearchQuery),
   );
 
-   const getSaaSPlaceholderRepository = (): GitHubRepository[] => {
+  const saasPlaceholderRepository = React.useMemo(() => {
     if (config?.APP_MODE === "saas" && config?.APP_SLUG) {
       return [
         {
           id: -1000,
           full_name: "Add more repositories...",
-        } as GitHubRepository,
+        },
       ];
     }
+
     return [];
-  };
-  
+  }, [config]);
+
   const filteredSearchedRepos = searchedRepos.filter(
-    (repo) => !repositories.some((r) => r.id === repo.id)
+    (repo) => !repositories.some((r) => r.id === repo.id),
   );
-  
-  const filteredRepositories = repositories.filter((repo) => {
-    return (
+
+  const filteredRepositories = repositories.filter(
+    (repo) =>
       !debouncedSearchQuery ||
-      sanitizeQuery(repo.full_name).includes(sanitizeQuery(debouncedSearchQuery))
-    );
-  });
-  
+      sanitizeQuery(repo.full_name).includes(
+        sanitizeQuery(debouncedSearchQuery),
+      ),
+  );
+
   const finalRepositories: GitHubRepository[] = [
-    ...getSaaSPlaceholderRepository(),
+    ...saasPlaceholderRepository,
     ...filteredSearchedRepos,
     ...filteredRepositories,
   ];
