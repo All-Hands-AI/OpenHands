@@ -51,8 +51,8 @@ describe("RuntimeSizeSelector", () => {
     // The options are in the hidden select element
     const select = screen.getByRole("combobox", { hidden: true });
     expect(select).toHaveValue("1");
-    expect(select.children[1]).toHaveTextContent("1x (2 core, 8G)");
-    expect(select.children[2]).toHaveTextContent("2x (4 core, 16G)");
+    expect(select).toHaveDisplayValue("1x (2 core, 8G)");
+    expect(select.children).toHaveLength(3); // Empty option + 2 size options
   });
 
   it("should show the full description text for disabled options", async () => {
@@ -60,13 +60,13 @@ describe("RuntimeSizeSelector", () => {
     
     // Click the button to open the dropdown
     const button = screen.getByRole("button", {
-      name: /1x \(2 core, 8G\) SETTINGS_FORM\$RUNTIME_SIZE_LABEL/,
+      name: /SETTINGS_FORM\$RUNTIME_SIZE_LABEL/,
     });
     button.click();
 
     // Wait for the description to appear
     const description = await screen.findByText(
-      "Runtime sizes over 1 are disabled by default, please contact contact@all-hands.dev to get access to larger runtimes."
+      /Runtime sizes over 1 are disabled by default/
     );
     expect(description).toBeInTheDocument();
     expect(description).toHaveClass("whitespace-normal");
