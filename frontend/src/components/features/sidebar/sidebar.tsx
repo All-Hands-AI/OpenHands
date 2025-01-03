@@ -1,6 +1,5 @@
 import React from "react";
-import { useLocation, useNavigate } from "react-router";
-import { useDispatch } from "react-redux";
+import { useLocation } from "react-router";
 import FolderIcon from "#/icons/docs.svg?react";
 import { useAuth } from "#/context/auth-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
@@ -12,20 +11,15 @@ import { ExitProjectButton } from "#/components/shared/buttons/exit-project-butt
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { AccountSettingsModal } from "#/components/shared/modals/account-settings/account-settings-modal";
-
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { useSettingsUpToDate } from "#/context/settings-up-to-date-context";
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { cn } from "#/utils/utils";
 import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
-import { clearSelectedRepository } from "#/state/initial-query-slice";
-import { setUrl, setScreenshotSrc, initialState as browserInitialState } from "#/state/browser-slice";
 
 export function Sidebar() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
   const user = useGitHubUser();
   const { data: isAuthed } = useIsAuthed();
   const { logout } = useAuth();
@@ -55,18 +49,7 @@ export function Sidebar() {
     setAccountSettingsModalOpen(false);
   };
 
-  const handleClickLogo = (e: React.MouseEvent) => {
-    const dispatch = useDispatch();
-    dispatch(clearSelectedRepository());
-    dispatch(setUrl(browserInitialState.url));
-    dispatch(setScreenshotSrc(browserInitialState.screenshotSrc));
 
-    if (e.metaKey || e.ctrlKey) {
-      window.open("/", "_blank");
-    } else {
-      navigate("/");
-    }
-  };
 
   const showSettingsModal =
     isAuthed && (!settingsAreUpToDate || settingsModalIsOpen);
@@ -76,7 +59,7 @@ export function Sidebar() {
       <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1 relative">
         <nav className="flex flex-row md:flex-col items-center gap-[18px]">
           <div className="w-[34px] h-[34px] flex items-center justify-center">
-            <AllHandsLogoButton onClick={handleClickLogo} />
+            <AllHandsLogoButton />
           </div>
           {user.isLoading && <LoadingSpinner size="small" />}
           {!user.isLoading && (

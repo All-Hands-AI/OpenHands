@@ -1,18 +1,16 @@
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
-import { TooltipButton } from "./tooltip-button";
+import { Tooltip } from "@nextui-org/react";
 
-interface AllHandsLogoButtonProps {
-  onClick: (e: React.MouseEvent) => void;
-}
-
-export function AllHandsLogoButton({ onClick }: AllHandsLogoButtonProps) {
+export function AllHandsLogoButton() {
   return (
-    <TooltipButton
-      tooltip="All Hands AI"
-      ariaLabel="All Hands Logo"
-      onClick={onClick}
-    >
-      <AllHandsLogo width={34} height={23} />
-    </TooltipButton>
+    <Tooltip content="All Hands AI" closeDelay={100}>
+      <a
+        href="/"
+        aria-label="All Hands Logo"
+        className="w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center"
+      >
+        <AllHandsLogo width={34} height={23} />
+      </a>
+    </Tooltip>
   );
 }
