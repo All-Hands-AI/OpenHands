@@ -31,7 +31,7 @@ def get_condensation_metadata(state: State) -> list[dict[str, Any]]:
     """Utility function to retrieve a list of metadata batches from a `State`.
 
     Args:
-        state (State): The state to retrieve metadata from.
+        state: The state to retrieve metadata from.
 
     Returns:
         list[dict[str, Any]]: A list of metadata batches, each representing a condensation.
@@ -63,9 +63,9 @@ class Condenser(ABC):
         Any key/value pairs added to the metadata batch will be recorded in the `State` at the end of the current condensation.
 
         Args:
-            key (str): The key to store the metadata under.
+            key: The key to store the metadata under.
 
-            value (Any): The metadata to store.
+            value: The metadata to store.
         """
         self._metadata_batch[key] = value
 
@@ -97,7 +97,7 @@ class Condenser(ABC):
         New condenser strategies should override this method to implement their own condensation logic. Call `self.add_metadata` in the implementation to record any relevant per-condensation diagnostic information.
 
         Args:
-            events (list[Event]): A list of events representing the entire history of the agent.
+            events: A list of events representing the entire history of the agent.
 
         Returns:
             list[Event]: An event sequence representing a condensed history of the agent.
@@ -113,7 +113,7 @@ class Condenser(ABC):
         """Create a condenser from a configuration object.
 
         Args:
-            config (CondenserConfig): Configuration for the condenser.
+            config: Configuration for the condenser.
 
         Returns:
             Condenser: A condenser instance.
@@ -279,8 +279,8 @@ class AmortizedForgettingCondenser(RollingCondenser):
         """Initialize the condenser.
 
         Args:
-            max_size (int, optional): Maximum size of history before forgetting. Defaults to 100.
-            keep_first (int, optional): Number of initial events to always keep. Defaults to 0.
+            max_size: Maximum size of history before forgetting.
+            keep_first: Number of initial events to always keep.
 
         Raises:
             ValueError: If keep_first is greater than max_size, keep_first is negative, or max_size is non-positive.
@@ -337,7 +337,7 @@ class LLMAttentionCondenser(RollingCondenser):
         self.llm = llm
 
         # This condenser relies on the `response_format` feature, which is not supported by all LLMs
-        supports_response_format: bool = False
+        supports_response_format: bool = True
         try:
             supported_parameters = litellm.get_supported_openai_params(
                 self.llm.config.model,

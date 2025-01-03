@@ -18,6 +18,7 @@ class ObservationMaskingCondenserConfig(BaseModel):
     attention_window: int = Field(
         default=10,
         description='The number of most-recent events where observations will not be masked.',
+        ge=1,
     )
 
 
@@ -28,6 +29,7 @@ class RecentEventsCondenserConfig(BaseModel):
     keep_first: int = Field(
         default=0,
         description='The number of initial events to condense.',
+        ge=0,
     )
     max_events: int = Field(
         default=10, description='Maximum number of events to keep.', ge=1
