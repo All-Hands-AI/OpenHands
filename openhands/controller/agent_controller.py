@@ -211,7 +211,6 @@ class AgentController:
             await self._react_to_exception(reported)
 
     def should_step(self, event: Event) -> bool:
-        print('should step?', event)
         if isinstance(event, Action):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 return True
