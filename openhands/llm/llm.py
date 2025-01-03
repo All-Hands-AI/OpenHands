@@ -13,8 +13,8 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 
+from litellm import ChatCompletionMessageToolCall, ModelInfo, PromptTokensDetails
 from litellm import Message as LiteLLMMessage
-from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
@@ -246,7 +246,9 @@ class LLM(RetryMixin, DebugMixin):
                     resp.choices[0].message = fn_call_response_message
 
                 message_back: str = resp['choices'][0]['message']['content'] or ''
-                tool_calls = resp['choices'][0]['message'].get('tool_calls', [])
+                tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
+                    'message'
+                ].get('tool_calls', [])
                 if tool_calls:
                     for tool_call in tool_calls:
                         fn_name = tool_call.function.name
@@ -359,7 +361,9 @@ class LLM(RetryMixin, DebugMixin):
             # noinspection PyBroadException
             except Exception:
                 pass
-        logger.debug(f'Model info: {self.model_info}')
+        from openhands.core.utils import json
+
+        logger.debug(f'Model info: {json.dumps(self.model_info, indent=2)}')
 
         if self.config.model.startswith('huggingface'):
             # HF doesn't support the OpenAI default value for top_p (1)
@@ -436,13 +440,31 @@ class LLM(RetryMixin, DebugMixin):
         )
 
     def is_function_calling_active(self) -> bool:
-        # Check if model name is in supported list before checking model_info
+        # Check if model name is in our supported list
         model_name_supported = (
             self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
             or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
             or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
         )
-        return model_name_supported
+
+        # Handle native_tool_calling user-defined configuration
+        if self.config.native_tool_calling is None:
+            logger.debug(
+                f'Using default tool calling behavior based on model evaluation: {model_name_supported}'
+            )
+            return model_name_supported
+        elif self.config.native_tool_calling is False:
+            logger.debug('Function calling explicitly disabled via configuration')
+            return False
+        else:
+            # try to enable native tool calling if supported by the model
+            supports_fn_call = litellm.supports_function_calling(
+                model=self.config.model
+            )
+            logger.debug(
+                f'Function calling explicitly enabled, litellm support: {supports_fn_call}'
+            )
+            return supports_fn_call
 
     def _post_completion(self, response: ModelResponse) -> float:
         """Post-process the completion response.

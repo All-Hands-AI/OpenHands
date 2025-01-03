@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-ai"
-version = "0.17.0"
+version = "0.18.0"
 description = "OpenHands: Code Less, Make More"
 authors = ["OpenHands"]
 license = "MIT"
@@ -80,8 +80,8 @@ voyageai = "*"
 llama-index-embeddings-voyageai = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.8.4"
-mypy = "1.14.0"
+ruff = "0.8.5"
+mypy = "1.14.1"
 pre-commit = "4.0.1"
 build = "*"
 

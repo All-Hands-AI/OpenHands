@@ -1,13 +1,18 @@
 import posthog from "posthog-js";
 import React from "react";
 import { io, Socket } from "socket.io-client";
-
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
+import { OpenHandsParsedEvent } from "#/types/core";
 
-const isOpenHandsMessage = (event: Record<string, unknown>) =>
-  event.action === "message";
+const isOpenHandsMessage = (event: unknown): event is OpenHandsParsedEvent =>
+  typeof event === "object" &&
+  event !== null &&
+  "id" in event &&
+  "source" in event &&
+  "message" in event &&
+  "timestamp" in event;
 
 export enum WsClientProviderStatus {
   CONNECTED,

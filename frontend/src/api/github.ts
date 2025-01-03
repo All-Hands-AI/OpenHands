@@ -131,15 +131,28 @@ export const searchPublicRepositories = async (
 
 export const retrieveLatestGitHubCommit = async (
   repository: string,
-): Promise<GitHubCommit> => {
-  const response = await github.get<GitHubCommit[]>(
-    `/repos/${repository}/commits`,
-    {
-      params: {
-        per_page: 1,
+): Promise<GitHubCommit | null> => {
+  try {
+    const response = await github.get<GitHubCommit[]>(
+      `/repos/${repository}/commits`,
+      {
+        params: {
+          per_page: 1,
+        },
       },
-    },
-  );
-
-  return response.data[0];
+    );
+    return response.data[0] || null;
+  } catch (error) {
+    if (!error || typeof error !== "object") {
+      throw new Error("Unknown error occurred");
+    }
+    const axiosError = error as { response?: { status: number } };
+    if (axiosError.response?.status === 409) {
+      // Repository is empty, no commits yet
+      return null;
+    }
+    throw new Error(
+      error instanceof Error ? error.message : "Unknown error occurred",
+    );
+  }
 };

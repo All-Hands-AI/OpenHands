@@ -54,8 +54,8 @@ describe("AccountSettingsContextMenu", () => {
     expect(
       screen.getByTestId("account-settings-context-menu"),
     ).toBeInTheDocument();
-    expect(screen.getByText("Account Settings")).toBeInTheDocument();
-    expect(screen.getByText("Logout")).toBeInTheDocument();
+    expect(screen.getByText("ACCOUNT_SETTINGS$SETTINGS")).toBeInTheDocument();
+    expect(screen.getByText("ACCOUNT_SETTINGS$LOGOUT")).toBeInTheDocument();
   });
 
   it("should call onClickAccountSettings when the account settings option is clicked", async () => {
@@ -68,7 +68,7 @@ describe("AccountSettingsContextMenu", () => {
       />,
     );
 
-    const accountSettingsOption = screen.getByText("Account Settings");
+    const accountSettingsOption = screen.getByText("ACCOUNT_SETTINGS$SETTINGS");
     await user.click(accountSettingsOption);
 
     expect(onClickAccountSettingsMock).toHaveBeenCalledOnce();
@@ -84,7 +84,7 @@ describe("AccountSettingsContextMenu", () => {
       />,
     );
 
-    const logoutOption = screen.getByText("Logout");
+    const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
     await user.click(logoutOption);
 
     expect(onLogoutMock).toHaveBeenCalledOnce();
@@ -100,7 +100,7 @@ describe("AccountSettingsContextMenu", () => {
       />,
     );
 
-    const logoutOption = screen.getByText("Logout");
+    const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
     await user.click(logoutOption);
 
     expect(onLogoutMock).not.toHaveBeenCalled();
@@ -116,8 +116,8 @@ describe("AccountSettingsContextMenu", () => {
       />,
     );
 
-    const element = screen.getByTestId("account-settings-context-menu");
-    mockRef.current = element;
+    const accountSettingsButton = screen.getByText("ACCOUNT_SETTINGS$SETTINGS");
+    await user.click(accountSettingsButton);
     await user.click(document.body);
 
     expect(onCloseMock).toHaveBeenCalledOnce();
