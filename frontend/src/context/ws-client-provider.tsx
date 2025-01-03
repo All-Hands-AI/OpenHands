@@ -1,13 +1,24 @@
 import posthog from "posthog-js";
 import React from "react";
 import { io, Socket } from "socket.io-client";
-
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
+import { OpenHandsParsedEvent } from "#/types/core";
+import { AgentStateChangeObservation } from "#/types/core/observations";
 
-const isOpenHandsMessage = (event: Record<string, unknown>) =>
-  event.action === "message";
+const isOpenHandsMessage = (event: unknown): event is OpenHandsParsedEvent =>
+  typeof event === "object" &&
+  event !== null &&
+  "id" in event &&
+  "source" in event &&
+  "message" in event &&
+  "timestamp" in event;
+
+const isAgentStateChangeObservation = (
+  event: OpenHandsParsedEvent,
+): event is AgentStateChangeObservation =>
+  "observation" in event && event.observation === "agent_state_changed";
 
 export enum WsClientProviderStatus {
   CONNECTED,
@@ -42,9 +53,6 @@ export function WsClientProvider({
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const sioRef = React.useRef<Socket | null>(null);
   const ghTokenRef = React.useRef<string | null>(ghToken);
-  const disconnectRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
   );
@@ -66,7 +74,7 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
-    if (isOpenHandsMessage(event)) {
+    if (isOpenHandsMessage(event) && !isAgentStateChangeObservation(event)) {
       messageRateHandler.record(new Date().getTime());
     }
     setEvents((prevEvents) => [...prevEvents, event]);
@@ -79,6 +87,12 @@ export function WsClientProvider({
 
   function handleDisconnect() {
     setStatus(WsClientProviderStatus.DISCONNECTED);
+    const sio = sioRef.current;
+    if (!sio) {
+      return;
+    }
+    sio.io.opts.query = sio.io.opts.query || {};
+    sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
   }
 
   function handleError() {
@@ -127,24 +141,16 @@ export function WsClientProvider({
     };
   }, [ghToken, conversationId]);
 
-  // Strict mode mounts and unmounts each component twice, so we have to wait in the destructor
-  // before actually disconnecting the socket and cancel the operation if the component gets remounted.
-  React.useEffect(() => {
-    const timeout = disconnectRef.current;
-    if (timeout != null) {
-      clearTimeout(timeout);
-    }
-
-    return () => {
-      disconnectRef.current = setTimeout(() => {
-        const sio = sioRef.current;
-        if (sio) {
-          sio.off("disconnect", handleDisconnect);
-          sio.disconnect();
-        }
-      }, 100);
-    };
-  }, []);
+  React.useEffect(
+    () => () => {
+      const sio = sioRef.current;
+      if (sio) {
+        sio.off("disconnect", handleDisconnect);
+        sio.disconnect();
+      }
+    },
+    [],
+  );
 
   const value = React.useMemo<UseWsClient>(
     () => ({
@@ -156,11 +162,7 @@ export function WsClientProvider({
     [status, messageRateHandler.isUnderThreshold, events],
   );
 
-  return (
-    <WsClientContext.Provider value={value}>
-      {children}
-    </WsClientContext.Provider>
-  );
+  return <WsClientContext value={value}>{children}</WsClientContext>;
 }
 
 export function useWsClient() {

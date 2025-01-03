@@ -4,6 +4,7 @@ from collections import deque
 
 from litellm import ModelResponse
 
+import openhands
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -83,6 +84,7 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm, config)
+        self.pending_actions: deque[Action] = deque()
         self.reset()
 
         self.mock_function_calling = False
@@ -100,17 +102,18 @@ class CodeActAgent(Agent):
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
         )
         logger.debug(
-            f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
+            f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2, ensure_ascii=False).replace("\\n", "\n")}'
         )
         self.prompt_manager = PromptManager(
-            microagent_dir=os.path.join(os.path.dirname(__file__), 'micro')
+            microagent_dir=os.path.join(
+                os.path.dirname(os.path.dirname(openhands.__file__)),
+                'microagents',
+            )
             if self.config.use_microagents
             else None,
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
             disabled_microagents=self.config.disabled_microagents,
         )
-
-        self.pending_actions: deque[Action] = deque()
 
     def get_action_message(
         self,
@@ -340,6 +343,7 @@ class CodeActAgent(Agent):
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
         super().reset()
+        self.pending_actions.clear()
 
     def step(self, state: State) -> Action:
         """Performs one step using the CodeAct Agent.
@@ -482,18 +486,7 @@ class CodeActAgent(Agent):
                 if message:
                     if message.role == 'user':
                         self.prompt_manager.enhance_message(message)
-                    # handle error if the message is the SAME role as the previous message
-                    # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
-                    # there shouldn't be two consecutive messages from the same role
-                    # NOTE: we shouldn't combine tool messages because each of them has a different tool_call_id
-                    if (
-                        messages
-                        and messages[-1].role == message.role
-                        and message.role != 'tool'
-                    ):
-                        messages[-1].content.extend(message.content)
-                    else:
-                        messages.append(message)
+                    messages.append(message)
 
         if self.llm.is_caching_prompt_active():
             # NOTE: this is only needed for anthropic

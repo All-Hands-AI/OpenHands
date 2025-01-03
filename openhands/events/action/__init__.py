@@ -15,7 +15,6 @@ from openhands.events.action.files import (
     FileWriteAction,
 )
 from openhands.events.action.message import MessageAction
-from openhands.events.action.tasks import AddTaskAction, ModifyTaskAction
 
 __all__ = [
     'Action',
@@ -30,8 +29,6 @@ __all__ = [
     'AgentRejectAction',
     'AgentDelegateAction',
     'AgentSummarizeAction',
-    'AddTaskAction',
-    'ModifyTaskAction',
     'ChangeAgentStateAction',
     'IPythonRunCellAction',
     'MessageAction',

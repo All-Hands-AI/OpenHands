@@ -1,115 +1,60 @@
 import { delay, WebSocketHandler, ws } from "msw";
+import { toSocketIo } from "@mswjs/socket.io-binding";
 import { AgentState } from "#/types/agent-state";
+import { InitConfig } from "#/types/core/variances";
+import { SESSION_HISTORY } from "./session-history.mock";
 import {
-  AgentStateChangeObservation,
-  CommandObservation,
-} from "#/types/core/observations";
-import { AssistantMessageAction } from "#/types/core/actions";
-import { TokenConfigSuccess } from "#/types/core/variances";
-import EventLogger from "#/utils/event-logger";
+  generateAgentStateChangeObservation,
+  emitMessages,
+  emitAssistantMessage,
+} from "./mock-ws-helpers";
 
-const generateAgentStateChangeObservation = (
-  state: AgentState,
-): AgentStateChangeObservation => ({
-  id: 1,
-  cause: 0,
-  message: "AGENT_STATE_CHANGE_MESSAGE",
-  source: "agent",
-  timestamp: new Date().toISOString(),
-  observation: "agent_state_changed",
-  content: "AGENT_STATE_CHANGE_MESSAGE",
-  extras: { agent_state: state },
-});
+const isInitConfig = (data: unknown): data is InitConfig =>
+  typeof data === "object" &&
+  data !== null &&
+  "action" in data &&
+  data.action === "initialize";
 
-const generateAgentResponse = (message: string): AssistantMessageAction => ({
-  id: 2,
-  message: "USER_MESSAGE",
-  source: "agent",
-  timestamp: new Date().toISOString(),
-  action: "message",
-  args: {
-    content: message,
-    image_urls: [],
-    wait_for_response: false,
-  },
-});
-
-const generateAgentRunObservation = (): CommandObservation => ({
-  id: 3,
-  cause: 0,
-  message: "COMMAND_OBSERVATION",
-  source: "agent",
-  timestamp: new Date().toISOString(),
-  observation: "run",
-  content: "COMMAND_OBSERVATION",
-  extras: {
-    command: "<input>",
-    command_id: 1,
-    exit_code: 0,
-  },
-});
-
-const api = ws.link("ws://localhost:3000/socket.io/?EIO=4&transport=websocket");
+const chat = ws.link(`ws://${window?.location.host}/socket.io`);
 
 export const handlers: WebSocketHandler[] = [
-  api.addEventListener("connection", ({ client }) => {
-    client.send(
-      JSON.stringify({
-        status: 200,
-        token: Math.random().toString(36).substring(7),
-      } satisfies TokenConfigSuccess),
-    );
+  chat.addEventListener("connection", (connection) => {
+    const io = toSocketIo(connection);
+    // @ts-expect-error - accessing private property for testing purposes
+    const { url }: { url: URL } = io.client.connection;
+    const conversationId = url.searchParams.get("conversation_id");
 
-    // data received from the client
-    client.addEventListener("message", async (event) => {
-      const parsed = JSON.parse(event.data.toString());
-      if ("action" in parsed) {
-        switch (parsed.action) {
-          case "initialize":
-            // agent init
-            client.send(
-              JSON.stringify(
-                generateAgentStateChangeObservation(AgentState.INIT),
-              ),
-            );
-            break;
-          case "message":
-            client.send(
-              JSON.stringify(
-                generateAgentStateChangeObservation(AgentState.RUNNING),
-              ),
-            );
-            await delay(2500);
-            // send message
-            client.send(JSON.stringify(generateAgentResponse("Hello, World!")));
-            client.send(
-              JSON.stringify(
-                generateAgentStateChangeObservation(
-                  AgentState.AWAITING_USER_INPUT,
-                ),
-              ),
-            );
-            break;
-          case "run":
-            await delay(2500);
-            // send command observation
-            client.send(JSON.stringify(generateAgentRunObservation()));
-            break;
-          case "change_agent_state":
-            await delay();
-            // send agent state change observation
-            client.send(
-              JSON.stringify(
-                generateAgentStateChangeObservation(parsed.args.agent_state),
-              ),
-            );
-            break;
-          default:
-            // send error
-            break;
-        }
+    io.client.emit("connect");
+
+    if (conversationId) {
+      emitMessages(io, SESSION_HISTORY["1"]);
+
+      io.client.emit(
+        "oh_event",
+        generateAgentStateChangeObservation(AgentState.AWAITING_USER_INPUT),
+      );
+    }
+
+    io.client.on("oh_action", async (_, data) => {
+      if (isInitConfig(data)) {
+        io.client.emit(
+          "oh_event",
+          generateAgentStateChangeObservation(AgentState.INIT),
+        );
+      } else {
+        io.client.emit(
+          "oh_event",
+          generateAgentStateChangeObservation(AgentState.RUNNING),
+        );
+
+        await delay(2500);
+        emitAssistantMessage(io, "Hello!");
+
+        io.client.emit(
+          "oh_event",
+          generateAgentStateChangeObservation(AgentState.AWAITING_USER_INPUT),
+        );
       }
-      EventLogger.message(event);
     });
   }),
 ];
