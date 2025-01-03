@@ -86,6 +86,7 @@ export function GitHubRepositorySelector({
       name="repo"
       aria-label="GitHub Repository"
       placeholder="Select a GitHub project"
+      isVirtualized={false}
       selectedKey={selectedKey}
       inputProps={{
         classNames: {
