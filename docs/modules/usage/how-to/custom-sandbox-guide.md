@@ -9,8 +9,8 @@ as python and Node.js but may need other software installed by default.
 
 You have two options for customization:
 
-1. Use an existing image with the required software.
-2. Create your own custom Docker image.
+- Use an existing image with the required software.
+- Create your own custom Docker image.
 
 If you choose the first option, you can skip the `Create Your Docker Image` section.
 
@@ -58,7 +58,3 @@ sandbox_base_container_image="custom-image"
 ### Run
 
 Run OpenHands by running ```make run``` in the top level directory.
-
-## Technical Explanation
-
-Please refer to [custom docker image section of the runtime documentation](https://docs.all-hands.dev/modules/usage/architecture/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images) for more details.
