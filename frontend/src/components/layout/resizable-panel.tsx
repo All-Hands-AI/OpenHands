@@ -76,9 +76,9 @@ export function ResizablePanel({
     const handleResize = () => {
       if (orientation === Orientation.HORIZONTAL) {
         const maxWidth = Math.min(
-          window.innerWidth * 0.5,
-          window.innerWidth - 600,
-        ); // 50% or leave 600px for second panel
+          window.innerWidth * 0.5, // Max 50% of window width
+          window.innerWidth - 600, // Leave at least 600px for second panel
+        );
         const minWidth = 350;
         const newSize = Math.min(Math.max(firstSize, minWidth), maxWidth);
         if (newSize !== firstSize) {
@@ -86,13 +86,16 @@ export function ResizablePanel({
         }
       } else {
         const maxHeight = window.innerHeight * 0.7;
-        const minHeight = 250;
+        const minHeight = 300; // Match terminal's minHeight
         const newSize = Math.min(Math.max(firstSize, minHeight), maxHeight);
         if (newSize !== firstSize) {
           setFirstSize(newSize);
         }
       }
     };
+
+    // Initial resize to ensure proper sizing
+    handleResize();
 
     const debouncedResize = debounce(handleResize, 100);
     window.addEventListener("resize", debouncedResize);
@@ -111,12 +114,12 @@ export function ResizablePanel({
       if (isHorizontal) {
         const minWidth = 350; // Min width for chat panel
         const maxWidth = Math.min(
-          window.innerWidth * 0.5,
-          window.innerWidth - 600,
-        ); // 50% or leave 600px for second panel
+          window.innerWidth * 0.5, // Max 50% of window width
+          window.innerWidth - 600, // Leave at least 600px for second panel
+        );
         return Math.min(Math.max(newSize, minWidth), maxWidth);
       }
-      const minHeight = 250; // Min height for workspace panel
+      const minHeight = 300; // Min height for workspace/terminal panel
       const maxHeight = window.innerHeight * 0.7; // 70% of window height
       return Math.min(Math.max(newSize, minHeight), maxHeight);
     };
@@ -186,7 +189,7 @@ export function ResizablePanel({
         const width = Math.min(Math.max(firstSize, minWidth), maxWidth);
         style.width = `${width}px`;
         style.minWidth = `${minWidth}px`;
-        style.maxWidth = "50%";
+        style.maxWidth = "50%"; // Allow chat panel to expand up to 50%
       } else {
         const minHeight = 250;
         const maxHeight = window.innerHeight * 0.7;
@@ -215,22 +218,18 @@ export function ResizablePanel({
         // Calculate remaining width after first panel
         const remainingWidth = window.innerWidth - firstSize;
         const minWidth = 600;
-        const maxWidth = Math.min(
-          window.innerWidth * 0.85,
-          window.innerWidth - 350,
-        ); // 85% or leave 350px for first panel
+        const maxWidth = window.innerWidth - Math.max(firstSize, 350); // Ensure it doesn't exceed window width
 
         // Ensure second panel width respects min/max constraints
         const width = Math.min(Math.max(remainingWidth, minWidth), maxWidth);
         style.width = `${width}px`;
         style.minWidth = `${minWidth}px`;
-        style.maxWidth = "85%";
         style.flexGrow = 1; // Allow second panel to grow and fill remaining space
       } else {
         // Calculate remaining height after first panel
         const remainingHeight = window.innerHeight - firstSize;
         const minHeight = 300;
-        const maxHeight = window.innerHeight * 0.7; // Increased to 70% to match terminal needs
+        const maxHeight = window.innerHeight * 0.7;
 
         // Ensure second panel height respects min/max constraints
         const height = Math.min(
@@ -241,6 +240,8 @@ export function ResizablePanel({
         style.minHeight = `${minHeight}px`;
         style.maxHeight = "70%";
         style.flexGrow = 1; // Allow terminal to grow vertically
+        style.display = "flex"; // Enable flex layout for terminal
+        style.flexDirection = "column"; // Stack terminal content vertically
       }
     } else {
       style.flexGrow = 1;
