@@ -19,8 +19,8 @@ describe("ConversationCard", () => {
         onDelete={onDelete}
         onClick={onClick}
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
+        title="Conversation 1"
+        selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
@@ -33,20 +33,20 @@ describe("ConversationCard", () => {
     within(card).getByText(expectedDate);
   });
 
-  it("should render the repo if available", () => {
+  it("should render the selectedRepository if available", () => {
     const { rerender } = render(
       <ConversationCard
         onDelete={onDelete}
         onClick={onClick}
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
+        title="Conversation 1"
+        selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
     expect(
-      screen.queryByTestId("conversation-card-repo"),
+      screen.queryByTestId("conversation-card-selectedRepository"),
     ).not.toBeInTheDocument();
 
     rerender(
@@ -54,13 +54,13 @@ describe("ConversationCard", () => {
         onDelete={onDelete}
         onClick={onClick}
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo="org/repo"
+        title="Conversation 1"
+        selectedRepository="org/selectedRepository"
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
-    screen.getByTestId("conversation-card-repo");
+    screen.getByTestId("conversation-card-selectedRepository");
   });
 
   it("should call onClick when the card is clicked", async () => {
@@ -70,8 +70,8 @@ describe("ConversationCard", () => {
         onDelete={onDelete}
         onClick={onClick}
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
+        title="Conversation 1"
+        selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
@@ -89,8 +89,8 @@ describe("ConversationCard", () => {
         onDelete={onDelete}
         onClick={onClick}
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
+        title="Conversation 1"
+        selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
@@ -114,8 +114,8 @@ describe("ConversationCard", () => {
         onClick={onClick}
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
+        title="Conversation 1"
+        selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
@@ -131,21 +131,21 @@ describe("ConversationCard", () => {
     expect(onDelete).toHaveBeenCalled();
   });
 
-  test("clicking the repo should not trigger the onClick handler", async () => {
+  test("clicking the selectedRepository should not trigger the onClick handler", async () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
         onClick={onClick}
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo="org/repo"
+        title="Conversation 1"
+        selectedRepository="org/selectedRepository"
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
-    const repo = screen.getByTestId("conversation-card-repo");
-    await user.click(repo);
+    const selectedRepository = screen.getByTestId("conversation-card-selectedRepository");
+    await user.click(selectedRepository);
 
     expect(onClick).not.toHaveBeenCalled();
   });
@@ -156,8 +156,8 @@ describe("ConversationCard", () => {
       <ConversationCard
         onClick={onClick}
         onDelete={onDelete}
-        name="Conversation 1"
-        repo={null}
+        title="Conversation 1"
+        selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
         onChangeTitle={onChangeTitle}
       />,
@@ -180,8 +180,8 @@ describe("ConversationCard", () => {
         onClick={onClick}
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
+        title="Conversation 1"
+        selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
@@ -202,8 +202,8 @@ describe("ConversationCard", () => {
         onClick={onClick}
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
+        title="Conversation 1"
+        selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
@@ -221,8 +221,8 @@ describe("ConversationCard", () => {
         onClick={onClick}
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
+        title="Conversation 1"
+        selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
@@ -245,8 +245,8 @@ describe("ConversationCard", () => {
           onClick={onClick}
           onDelete={onDelete}
           onChangeTitle={onChangeTitle}
-          name="Conversation 1"
-          repo={null}
+          title="Conversation 1"
+          selectedRepository={null}
           lastUpdatedAt="2021-10-01T12:00:00Z"
         />,
       );
@@ -260,8 +260,8 @@ describe("ConversationCard", () => {
           onClick={onClick}
           onDelete={onDelete}
           onChangeTitle={onChangeTitle}
-          name="Conversation 1"
-          repo={null}
+          title="Conversation 1"
+          selectedRepository={null}
           lastUpdatedAt="2021-10-01T12:00:00Z"
           status="RUNNING"
         />,
