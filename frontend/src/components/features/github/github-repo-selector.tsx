@@ -105,7 +105,7 @@ export function GitHubRepositorySelector({
       }}
       onSelectionChange={(id) => handleRepoSelection(id?.toString() ?? null)}
       onInputChange={(value) => setSearchQuery(value)}
-      clearButtonProps={{ onClick: handleClearSelection }}
+      clearButtonProps={{ onPress: handleClearSelection }}
       listboxProps={{
         emptyContent,
       }}
