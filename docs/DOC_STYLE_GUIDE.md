@@ -4,7 +4,7 @@
 
 - **Clarity & Conciseness**: Always prioritize clarity and brevity. Avoid unnecessary jargon or overly complex explanations.
 Keep sentences short and to the point.
-- **Gradual Complexity**: Start the user with the simplest, most basic setup, and then gradually introduce more advanced
+- **Gradual Complexity**: Start with the simplest, most basic setup, and then gradually introduce more advanced
 concepts and configurations.
 
 ## Formatting Guidelines

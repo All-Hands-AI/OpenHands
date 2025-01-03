@@ -5,9 +5,8 @@
 Achieving full replication of production-grade applications with LLMs is a complex endeavor. Our strategy involves:
 
 - **Core Technical Research:** Focusing on foundational research to understand and improve the technical aspects of code generation and handling.
-- **Specialist Abilities:** Enhancing the effectiveness of core components through data curation, training methods, and more.
 - **Task Planning:** Developing capabilities for bug detection, codebase management, and optimization.
-- **Evaluation:** Establishing comprehensive evaluation metrics to better understand and improve our models.
+- **Evaluation:** Establishing comprehensive evaluation metrics to better understand and improve our agents.
 
 ## Default Agent
 
