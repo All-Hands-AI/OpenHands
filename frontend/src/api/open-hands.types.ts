@@ -69,6 +69,6 @@ export interface Conversation {
 }
 
 export interface ResultSet<T> {
-  results: T[]
-  next_page_id: string | null
+  results: T[];
+  next_page_id: string | null;
 }

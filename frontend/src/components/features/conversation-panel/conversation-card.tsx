@@ -43,10 +43,10 @@ export function ConversationCard({
   };
 
   const handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key == 'Enter') {
+    if (event.key === 'Enter') {
       event.currentTarget.blur();
     }
-  }
+  };
 
   const handleInputClick = (event: React.MouseEvent<HTMLInputElement>) => {
     event.stopPropagation();
@@ -93,10 +93,7 @@ export function ConversationCard({
       )}
       {contextMenuVisible && (
         <ContextMenu testId="context-menu" className="left-full float-right">
-          <ContextMenuListItem
-            testId="delete-button"
-            onClick={handleDelete}
-          >
+          <ContextMenuListItem testId="delete-button" onClick={handleDelete}>
             Delete
           </ContextMenuListItem>
         </ContextMenu>

@@ -2,9 +2,7 @@ import ColdIcon from "./state-indicators/cold.svg?react";
 import RunningIcon from "./state-indicators/running.svg?react";
 
 type SVGIcon = React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
-export type ProjectStatus =
-  | "RUNNING"
-  | "STOPPED";
+export type ProjectStatus = "RUNNING" | "STOPPED";
 
 const INDICATORS: Record<ProjectStatus, SVGIcon> = {
   STOPPED: ColdIcon,

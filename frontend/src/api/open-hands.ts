@@ -224,7 +224,7 @@ class OpenHands {
 
   static async getUserConversations(): Promise<Conversation[]> {
     const { data } = await openHands.get<ResultSet<Conversation>>("/api/conversations?limit=9");
-    return data.results
+    return data.results;
   }
 
   static async deleteUserConversation(conversationId: string): Promise<void> {
