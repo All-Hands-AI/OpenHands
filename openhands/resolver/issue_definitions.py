@@ -10,7 +10,6 @@ import requests
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event
-from openhands.events.observation import CmdOutputObservation
 from openhands.llm.llm import LLM
 from openhands.resolver.github_issue import GithubIssue, ReviewThread
 
