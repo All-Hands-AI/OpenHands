@@ -11,6 +11,7 @@ import gymnasium as gym
 import html2text
 import numpy as np
 import tenacity
+from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.utils.obs import flatten_dom_to_str
 from PIL import Image
 
@@ -39,6 +40,8 @@ class BrowserEnv:
 
         self.init_browser()
         atexit.register(self.close)
+
+        self.last_obs = None
 
     def get_html_text_converter(self):
         html_text_converter = html2text.HTML2Text()
@@ -93,6 +96,9 @@ class BrowserEnv:
                 headless=True,
                 disable_env_checker=True,
                 tags_to_mark='all',
+                action_mapping=HighLevelActionSet(
+                    subsets=['chat', 'infeas', 'bid', 'nav', 'tab', 'coord']
+                ).to_python_code,
             )
 
         obs, info = env.reset()
@@ -145,7 +151,9 @@ class BrowserEnv:
                     html_str = flatten_dom_to_str(obs['dom_object'])
                     obs['text_content'] = self.html_text_converter.handle(html_str)
                     # make observation serializable
-                    obs['screenshot'] = self.image_to_png_base64_url(obs['screenshot'])
+                    obs['screenshot'] = self.image_to_png_base64_url(
+                        obs['screenshot'], add_data_prefix=True
+                    )
                     obs['active_page_index'] = obs['active_page_index'].item()
                     obs['elapsed_time'] = obs['elapsed_time'].item()
                     self.browser_side.send((unique_request_id, obs))

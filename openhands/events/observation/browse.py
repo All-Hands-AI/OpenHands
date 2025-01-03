@@ -26,6 +26,7 @@ class BrowserOutputObservation(Observation):
     last_browser_action: str = ''
     last_browser_action_error: str = ''
     focused_element_bid: str = ''
+    mouse_position: list = field(default_factory=list)
 
     @property
     def message(self) -> str:

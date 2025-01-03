@@ -33,6 +33,7 @@ class BrowseInteractiveAction(Action):
     action: str = ActionType.BROWSE_INTERACTIVE
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
+    extra_args: dict | None = None
 
     @property
     def message(self) -> str:

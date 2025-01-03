@@ -446,6 +446,69 @@ BrowserTool = ChatCompletionToolParam(
     ),
 )
 
+_GUI_USE_TOOL_DESCRIPTION = """Use a mouse and keyboard to navigate websites, interact with it, and take screenshots.
+* This is an interface to a web browser GUI environment.
+* Always use `goto` to navigate to a URL before interacting with the page.
+* Some web pages may take time to start or process actions, so you may need to wait and take successive screenshots to see the results of your actions. E.g. if you click on a button and nothing happens, try taking another screenshot.
+* The screen's resolution is 1280x720.
+* Whenever you intend to move the cursor to click on an element like a button or a form field, you should consult a screenshot to determine the coordinates of the element before moving the cursor.
+* If you tried clicking on a button or link but it failed to load, even after waiting, try adjusting your cursor position so that the tip of the cursor visually falls on the element that you want to click.
+* Make sure to click any buttons, links, icons, etc with the cursor tip in the center of the element. Don't click boxes on their edges unless asked.
+"""
+
+GUIUseTool = ChatCompletionToolParam(
+    type='function',
+    function=ChatCompletionToolParamFunctionChunk(
+        name='gui_use',
+        description=_GUI_USE_TOOL_DESCRIPTION,
+        parameters={
+            'type': 'object',
+            'properties': {
+                'action': {
+                    'description': """The action to perform. The available actions are:
+* `goto`: Navigate to a URL.
+* `key`: Press a key or key-combination on the keyboard.
+  - Press a combination of keys. Accepts the logical key names.
+  - Examples: "Backquote", "Minus", "Equal", "Backslash", "Backspace", "Tab", "Delete", "Escape", "ArrowDown", "End", "Enter", "Home", "Insert", "PageDown", "PageUp", "ArrowRight", "ArrowUp", "F1" - F12, "Digit0" - Digit9, "KeyA" - KeyZ, etc.
+  - Can alternatively specify a single character to produce such as "a" or "#". Following modification shortcuts are also supported: "Shift", "Control", "Alt", "Meta", "ShiftLeft", "ControlOrMeta". "ControlOrMeta" resolves to Control on Windows and Linux and to Meta on macOS.
+* `type`: Type a string of text on the keyboard.
+* `cursor_position`: Get the current (x, y) pixel coordinate of the cursor on the screen.
+* `mouse_move`: Move the cursor to a specified (x, y) pixel coordinate on the screen.
+* `left_click`: Click the left mouse button.
+* `left_click_drag`: Click and drag the cursor to a specified (x, y) pixel coordinate on the screen.
+* `right_click`: Click the right mouse button.
+* `middle_click`: Click the middle mouse button.
+* `double_click`: Double-click the left mouse button.
+* `screenshot`: Take a screenshot of the screen.""",
+                    'enum': [
+                        'goto',
+                        'key',
+                        'type',
+                        'mouse_move',
+                        'left_click',
+                        'left_click_drag',
+                        'right_click',
+                        'middle_click',
+                        'double_click',
+                        'screenshot',
+                        'cursor_position',
+                    ],
+                    'type': 'string',
+                },
+                'coordinate': {
+                    'description': '(x, y): The x (pixels from the left edge) and y (pixels from the top edge) coordinates to move the mouse to. Required only by `action=mouse_move` and `action=left_click_drag`.',
+                    'type': 'array',
+                },
+                'text': {
+                    'description': 'Required only by `action=type`, `action=key` and `action=url`.',
+                    'type': 'string',
+                },
+            },
+            'required': ['action'],
+        },
+    ),
+)
+
 _FINISH_DESCRIPTION = """Finish the interaction when the task is complete OR if the assistant cannot proceed further with the task."""
 
 FinishTool = ChatCompletionToolParam(
@@ -526,6 +589,11 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
             elif tool_call.function.name == 'web_read':
                 action = BrowseURLAction(url=arguments['url'])
+            elif tool_call.function.name == 'gui_use':
+                browser_action = 'gui_use'
+                action = BrowseInteractiveAction(
+                    browser_actions=browser_action, extra_args=arguments
+                )
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
@@ -558,8 +626,9 @@ def get_tools(
 ) -> list[ChatCompletionToolParam]:
     tools = [CmdRunTool, FinishTool]
     if codeact_enable_browsing:
-        tools.append(WebReadTool)
-        tools.append(BrowserTool)
+        # tools.append(WebReadTool)
+        # tools.append(BrowserTool)
+        tools.append(GUIUseTool)
     if codeact_enable_jupyter:
         tools.append(IPythonTool)
     if codeact_enable_llm_editor:

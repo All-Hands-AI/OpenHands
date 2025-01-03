@@ -301,10 +301,14 @@ class CodeActAgent(Agent):
                 role='user', content=[TextContent(text=obs.content)]
             )  # Content is already truncated by openhands-aci
         elif isinstance(obs, BrowserOutputObservation):
-            text = obs.get_agent_obs_text()
+            # text = obs.get_agent_obs_text()
             message = Message(
                 role='user',
-                content=[TextContent(text=text)],
+                content=[
+                    TextContent(text=obs.last_browser_action_error)
+                    if obs.error
+                    else ImageContent(image_urls=[obs.screenshot]),
+                ],
             )
         elif isinstance(obs, AgentDelegateObservation):
             text = truncate_content(
