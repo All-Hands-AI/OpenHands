@@ -31,9 +31,7 @@ export function Sidebar() {
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
-  const [conversationPanelIsOpen, setConversationPanelIsOpen] = React.useState(
-    MULTI_CONVO_UI_IS_ENABLED,
-  );
+  const [conversationPanelIsOpen, setConversationPanelIsOpen] = React.useState(false);
   const conversationPanelRef = React.useRef<HTMLDivElement | null>(null);
 
   const handleClick = (event: MouseEvent) => {
