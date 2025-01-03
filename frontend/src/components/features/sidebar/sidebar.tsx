@@ -34,7 +34,7 @@ export function Sidebar() {
   const [conversationPanelIsOpen, setConversationPanelIsOpen] = React.useState(
     MULTI_CONVO_UI_IS_ENABLED,
   );
-  const conversationPanelRef = React.useRef<HTMLElement>(undefined);
+  const conversationPanelRef = React.useRef<HTMLDivElement | null>(null);
 
   const handleClick = (event: MouseEvent) => {
     const conversationPanel = conversationPanelRef.current
