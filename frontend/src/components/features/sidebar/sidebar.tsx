@@ -34,6 +34,16 @@ export function Sidebar() {
   const [conversationPanelIsOpen, setConversationPanelIsOpen] = React.useState(
     MULTI_CONVO_UI_IS_ENABLED,
   );
+  const conversationPanelRef = React.useRef<HTMLElement>(undefined);
+
+  const handleClick = (event: MouseEvent) => {
+    const conversationPanel = conversationPanelRef.current
+    if (conversationPanelIsOpen && conversationPanel) {
+      if (!conversationPanel.contains(event.target as any)) {
+        setConversationPanelIsOpen(false)
+      }
+    }
+  };
 
   React.useEffect(() => {
     // If the github token is invalid, open the account settings modal again
@@ -41,6 +51,13 @@ export function Sidebar() {
       setAccountSettingsModalOpen(true);
     }
   }, [user.isError]);
+
+  React.useEffect(() => {
+    document.addEventListener("click", handleClick)
+    return () => {
+      document.removeEventListener("click", handleClick)
+    }
+  }, [conversationPanelIsOpen]);
 
   const handleAccountSettingsModalClose = () => {
     // If the user closes the modal without connecting to GitHub,
@@ -96,7 +113,7 @@ export function Sidebar() {
         </nav>
 
         {conversationPanelIsOpen && (
-          <div
+          <div ref={conversationPanelRef}
             className="absolute h-full left-[calc(100%+12px)] top-0 z-20" // 12px padding (sidebar parent)
           >
             <ConversationPanel
