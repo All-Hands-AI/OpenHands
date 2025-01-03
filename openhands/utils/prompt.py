@@ -6,8 +6,13 @@ from jinja2 import Template
 
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
+from openhands.microagent import (
+    BaseMicroAgent,
+    KnowledgeMicroAgent,
+    RepoMicroAgent,
+    load_microagents_from_dir,
+)
 from openhands.runtime.base import Runtime
-from openhands.utils.microagent import MicroAgent
 
 
 @dataclass
@@ -35,32 +40,45 @@ class PromptManager:
         microagent_dir: str | None = None,
         disabled_microagents: list[str] | None = None,
     ):
+        self.disabled_microagents: list[str] = disabled_microagents or []
         self.prompt_dir: str = prompt_dir
 
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
-        self.microagents: dict = {}
         self.runtime_info = RuntimeInfo(available_hosts={})
 
-        microagent_files = []
-        if microagent_dir:
-            microagent_files = [
-                os.path.join(microagent_dir, f)
-                for f in os.listdir(microagent_dir)
-                if f.endswith('.md')
-            ]
-        for microagent_file in microagent_files:
-            microagent = MicroAgent(path=microagent_file)
-            if (
-                disabled_microagents is None
-                or microagent.name not in disabled_microagents
-            ):
-                self.microagents[microagent.name] = microagent
+        self.knowledge_microagents: dict[str, KnowledgeMicroAgent] = {}
+        self.repo_microagents: dict[str, RepoMicroAgent] = {}
 
-    def load_microagent_files(self, microagent_files: list[str]):
-        for microagent_file in microagent_files:
-            microagent = MicroAgent(content=microagent_file)
-            self.microagents[microagent.name] = microagent
+        if microagent_dir:
+            # Only load KnowledgeMicroAgents
+            repo_microagents, knowledge_microagents, _ = load_microagents_from_dir(
+                microagent_dir
+            )
+            assert all(
+                isinstance(microagent, KnowledgeMicroAgent)
+                for microagent in knowledge_microagents.values()
+            )
+            for name, microagent in knowledge_microagents.items():
+                if name not in self.disabled_microagents:
+                    self.knowledge_microagents[name] = microagent
+            assert all(
+                isinstance(microagent, RepoMicroAgent)
+                for microagent in repo_microagents.values()
+            )
+            for name, microagent in repo_microagents.items():
+                if name not in self.disabled_microagents:
+                    self.repo_microagents[name] = microagent
+
+    def load_microagents(self, microagents: list[BaseMicroAgent]):
+        # Only keep KnowledgeMicroAgents and RepoMicroAgents
+        for microagent in microagents:
+            if microagent.name in self.disabled_microagents:
+                continue
+            if isinstance(microagent, KnowledgeMicroAgent):
+                self.knowledge_microagents[microagent.name] = microagent
+            elif isinstance(microagent, RepoMicroAgent):
+                self.repo_microagents[microagent.name] = microagent
 
     def set_runtime_info(self, runtime: Runtime):
         self.runtime_info.available_hosts = runtime.web_hosts
@@ -76,16 +94,17 @@ class PromptManager:
 
     def get_system_message(self) -> str:
         repo_instructions = ''
-        for microagent in self.microagents.values():
+        assert (
+            len(self.repo_microagents) <= 1
+        ), f'Expecting at most one repo microagent, but found {len(self.repo_microagents)}: {self.repo_microagents.keys()}'
+        for microagent in self.repo_microagents.values():
             # We assume these are the repo instructions
-            if len(microagent.triggers) == 0:
-                if repo_instructions:
-                    repo_instructions += '\n\n'
-                repo_instructions += microagent.content
-
-        full_instructions = repo_instructions
+            if repo_instructions:
+                repo_instructions += '\n\n'
+            repo_instructions += microagent.content
         return self.system_template.render(
-            runtime_info=self.runtime_info, repo_instructions=full_instructions
+            runtime_info=self.runtime_info,
+            repo_instructions=repo_instructions
         ).strip()
 
     def get_example_user_message(self) -> str:
@@ -111,8 +130,8 @@ class PromptManager:
         if not message.content:
             return
         message_content = message.content[0].text
-        for microagent in self.microagents.values():
-            trigger = microagent.get_trigger(message_content)
+        for microagent in self.knowledge_microagents.values():
+            trigger = microagent.match_trigger(message_content)
             if trigger:
                 micro_text = f'<extra_info>\nThe following information has been included based on a keyword match for "{trigger}". It may or may not be relevant to the user\'s request.'
                 micro_text += '\n\n' + microagent.content

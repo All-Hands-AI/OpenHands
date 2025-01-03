@@ -7,10 +7,9 @@ This is different from [CLI Mode](cli-mode), which is interactive, and better fo
 
 ## With Python
 
-To run OpenHands in headless mode with Python,
-[follow the Development setup instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md),
-and then run:
-
+To run OpenHands in headless mode with Python:
+1. Ensure you have followed the [Development setup instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+2. Run the following command:
 ```bash
 poetry run python -m openhands.core.main -t "write a bash script that prints hi"
 ```
@@ -20,26 +19,15 @@ You'll need to be sure to set your model, API key, and other settings via enviro
 
 ## With Docker
 
-1. Set `WORKSPACE_BASE` to the directory you want OpenHands to edit:
+To run OpenHands in Headless mode with Docker:
 
-```bash
-WORKSPACE_BASE=$(pwd)/workspace
-```
+1. Set the following environmental variables in your terminal:
 
-2. Set `LLM_MODEL` to the model you want to use:
+- `WORKSPACE_BASE` to the directory you want OpenHands to edit (Ex: `export WORKSPACE_BASE=$(pwd)/workspace`).
+- `LLM_MODEL` to the model to use (Ex: `export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"`).
+- `LLM_API_KEY` to the API key (Ex: `export LLM_API_KEY="sk_test_12345"`).
 
-```bash
-LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"
-
-```
-
-3. Set `LLM_API_KEY` to your API key:
-
-```bash
-LLM_API_KEY="sk_test_12345"
-```
-
-4. Run the following Docker command:
+2. Run the following Docker command:
 
 ```bash
 docker run -it \
@@ -58,3 +46,11 @@ docker run -it \
     docker.all-hands.dev/all-hands-ai/openhands:0.18 \
     python -m openhands.core.main -t "write a bash script that prints hi"
 ```
+
+## Advanced Headless Configurations
+
+To view all available configuration options for headless mode, run the Python command with the `--help` flag.
+
+### Additional Logs
+
+For the headless mode to log all the agent actions, in the terminal run: `export LOG_ALL_EVENTS=true`

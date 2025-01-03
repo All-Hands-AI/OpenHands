@@ -11,6 +11,7 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
+from openhands.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
@@ -207,10 +208,10 @@ class AgentSession:
 
         if agent.prompt_manager:
             agent.prompt_manager.set_runtime_info(self.runtime)
-            microagents = await call_sync_from_async(
-                self.runtime.get_custom_microagents, selected_repository
+            microagents: list[BaseMicroAgent] = await call_sync_from_async(
+                self.runtime.get_microagents_from_selected_repo, selected_repository
             )
-            agent.prompt_manager.load_microagent_files(microagents)
+            agent.prompt_manager.load_microagents(microagents)
 
         logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'

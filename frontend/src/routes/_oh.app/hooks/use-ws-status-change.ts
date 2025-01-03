@@ -71,7 +71,7 @@ export const useWSStatusChange = () => {
     }
     statusRef.current = status;
 
-    if (status === WsClientProviderStatus.CONNECTED && initialQuery) {
+    if (status !== WsClientProviderStatus.DISCONNECTED && initialQuery) {
       dispatch(
         addUserMessage({
           content: initialQuery,

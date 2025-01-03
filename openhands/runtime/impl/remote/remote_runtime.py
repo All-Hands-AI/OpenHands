@@ -21,7 +21,6 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
 from openhands.runtime.utils.request import (
-    RequestHTTPError,
     send_request,
 )
 from openhands.runtime.utils.runtime_build import build_runtime_image
@@ -374,10 +373,14 @@ class RemoteRuntime(ActionExecutionClient):
         except requests.Timeout:
             self.log('error', 'No response received within the timeout period.')
             raise
-        except RequestHTTPError as e:
-            if e.response.status_code in (404, 502):
+        except requests.HTTPError as e:
+            if e.response.status_code == 404:
+                raise AgentRuntimeNotFoundError(
+                    'Runtime unavailable: System resources may be exhausted due to running commands. This may be fixed by retrying.'
+                ) from e
+            elif e.response.status_code == 502:
                 raise AgentRuntimeDisconnectedError(
-                    f'{e.response.status_code} error while connecting to {self.runtime_url}'
+                    'Runtime disconnected: System resources may be exhausted due to running commands. This may be fixed by retrying.'
                 ) from e
             elif e.response.status_code == 503:
                 self.log('warning', 'Runtime appears to be paused. Resuming...')
