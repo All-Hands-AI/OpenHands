@@ -12,16 +12,10 @@ import { searchPublicRepositories } from "#/api/github";
 import { useDebounce } from "#/hooks/use-debounce";
 
 interface GitHubRepositorySelectorProps {
+  onInputChange: (value: string) => void;
   onSelect: () => void;
-  repositories: GitHubRepository[];
-}
-
-function sanitizeQuery(query: string) {
-  let sanitizedQuery = query.replace(/https?:\/\//, "");
-  sanitizedQuery = sanitizedQuery.replace(/github.com\//, "");
-  sanitizedQuery = sanitizedQuery.replace(/\.git$/, "");
-  sanitizedQuery = sanitizedQuery.toLowerCase();
-  return sanitizedQuery;
+  userRepositories: GitHubRepository[];
+  publicRepositories: GitHubRepository[];
 }
 
 export function GitHubRepositorySelector({
@@ -31,35 +25,12 @@ export function GitHubRepositorySelector({
   const { data: config } = useConfig();
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
-  const [searchedRepos, setSearchedRepos] = React.useState<
-    GitHubRepositoryWithFlag[]
-  >([]);
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  React.useEffect(() => {
-    const searchPublicRepo = async () => {
-      if (!debouncedSearchQuery) {
-        setSearchedRepos([]);
-        return;
-      }
-      const repos = await searchPublicRepositories(
-        sanitizeQuery(debouncedSearchQuery),
-      );
-      // Sort by stars in descending order
-      const sortedRepos = repos
-        .sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0))
-        .slice(0, 3);
-      setSearchedRepos(sortedRepos);
-    };
-
-    searchPublicRepo();
-  }, [debouncedSearchQuery]);
-
-  const allRepositories: GitHubRepositoryWithFlag[] = [
-    ...searchedRepos.filter(
+  const allRepositories: GitHubRepository[] = [
+    ...publicRepositories.filter(
       (repo) => !repositories.find((r) => r.id === repo.id),
     ),
-    ...repositories,
+    ...userRepositories,
   ];
 
   const dispatch = useDispatch();
@@ -95,7 +66,7 @@ export function GitHubRepositorySelector({
         },
       }}
       onSelectionChange={(id) => handleRepoSelection(id?.toString() ?? null)}
-      onInputChange={(value) => setSearchQuery(value)}
+      onInputChange={onInputChange}
       clearButtonProps={{ onClick: handleClearSelection }}
       listboxProps={{
         emptyContent,
@@ -119,9 +90,9 @@ export function GitHubRepositorySelector({
             </a>
           </AutocompleteItem> // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ) as any)}
-      {repositories.length > 0 && (
+      {userRepositories.length > 0 && (
         <AutocompleteSection showDivider title="Your Repos">
-          {repositories.map((repo) => (
+          {userRepositories.map((repo) => (
             <AutocompleteItem
               data-testid="github-repo-item"
               key={repo.id}
@@ -134,9 +105,9 @@ export function GitHubRepositorySelector({
           ))}
         </AutocompleteSection>
       )}
-      {searchedRepos.length > 0 && (
+      {publicRepositories.length > 0 && (
         <AutocompleteSection showDivider title="Public Repos">
-          {searchedRepos.map((repo) => (
+          {publicRepositories.map((repo) => (
             <AutocompleteItem
               data-testid="github-repo-item"
               key={repo.id}

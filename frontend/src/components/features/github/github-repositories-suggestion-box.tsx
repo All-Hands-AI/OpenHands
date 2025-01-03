@@ -37,19 +37,6 @@ export function GitHubRepositoriesSuggestionBox({
     sanitizeQuery(debouncedSearchQuery),
   );
 
-  const saasPlaceholderRepository = React.useMemo(() => {
-    if (config?.APP_MODE === "saas" && config?.APP_SLUG) {
-      return [
-        {
-          id: -1000,
-          full_name: "Add more repositories...",
-        },
-      ];
-    }
-
-    return [];
-  }, [config]);
-
   const repositories =
     userRepositories?.pages.flatMap((page) => page.data) ||
     appRepositories?.pages.flatMap((page) => page.data) ||
@@ -74,11 +61,8 @@ export function GitHubRepositoriesSuggestionBox({
             <GitHubRepositorySelector
               onInputChange={setSearchQuery}
               onSelect={handleSubmit}
-              repositories={[
-                ...saasPlaceholderRepository,
-                ...searchedRepos,
-                ...repositories,
-              ]}
+              publicReposiotries={searchedRepos}
+              userRepositories={repositories}
             />
           ) : (
             <ModalButton
