@@ -239,7 +239,7 @@ describe("ConversationCard", () => {
   });
 
   describe("state indicator", () => {
-    it("should render the 'cold' indicator by default", () => {
+    it("should render the 'STOPPED' indicator by default", () => {
       render(
         <ConversationCard
           onClick={onClick}
@@ -251,7 +251,7 @@ describe("ConversationCard", () => {
         />,
       );
 
-      screen.getByTestId("cold-indicator");
+      screen.getByTestId("STOPPED-indicator");
     });
 
     it("should render the other indicators when provided", () => {
@@ -263,12 +263,12 @@ describe("ConversationCard", () => {
           name="Conversation 1"
           repo={null}
           lastUpdated="2021-10-01T12:00:00Z"
-          state="warm"
+          state="RUNNING"
         />,
       );
 
-      expect(screen.queryByTestId("cold-indicator")).not.toBeInTheDocument();
-      screen.getByTestId("warm-indicator");
+      expect(screen.queryByTestId("STOPPED-indicator")).not.toBeInTheDocument();
+      screen.getByTestId("RUNNING-indicator");
     });
   });
 });

@@ -26,7 +26,7 @@ export function ConversationCard({
   name,
   repo,
   lastUpdated,
-  state = "cold",
+  state = "STOPPED",
 }: ProjectCardProps) {
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);

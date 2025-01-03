@@ -58,11 +58,11 @@ describe("App", () => {
     const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
 
     getConversationSpy.mockResolvedValue({
-      conversation_id: "9999",
-      lastUpdated: "",
-      name: "",
-      repo: "",
-      state: "cold",
+      id: "9999",
+      last_updated_at: "",
+      title: "",
+      selected_repository: "",
+      status: "STOPPED",
     });
     const { rerender } = renderWithProviders(
       <RouteStub initialEntries={["/conversation/9999"]} />,

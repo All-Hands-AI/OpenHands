@@ -29,7 +29,7 @@ export const useCreateConversation = () => {
         selectedRepository || undefined,
       );
     },
-    onSuccess: async ({ conversation_id: conversationId }, { q }) => {
+    onSuccess: async ({ id: conversationId }, { q }) => {
       posthog.capture("initial_query_submitted", {
         entry_point: "task_form",
         query_character_length: q?.length,

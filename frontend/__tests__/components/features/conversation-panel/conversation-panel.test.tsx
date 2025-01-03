@@ -57,7 +57,10 @@ describe("ConversationPanel", () => {
 
   it("should display an empty state when there are no conversations", async () => {
     const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
-    getUserConversationsSpy.mockResolvedValue([]);
+    getUserConversationsSpy.mockResolvedValue({
+      results: [],
+      next_page_id: null,
+    });
 
     renderConversationPanel();
 
@@ -161,7 +164,7 @@ describe("ConversationPanel", () => {
   it("should rename a conversation", async () => {
     const updateUserConversationSpy = vi.spyOn(
       OpenHands,
-      "updateUserConversation",
+      "updateUserConversationTitle",
     );
 
     const user = userEvent.setup();
@@ -174,15 +177,16 @@ describe("ConversationPanel", () => {
     await user.tab();
 
     // Ensure the conversation is renamed
-    expect(updateUserConversationSpy).toHaveBeenCalledWith("3", {
-      name: "Conversation 1 Renamed",
-    });
+    expect(updateUserConversationSpy).toHaveBeenCalledWith(
+      "3",
+      "Conversation 1 Renamed",
+    );
   });
 
   it("should not rename a conversation when the name is unchanged", async () => {
     const updateUserConversationSpy = vi.spyOn(
       OpenHands,
-      "updateUserConversation",
+      "updateUserConversationTitle",
     );
 
     const user = userEvent.setup();

@@ -6,11 +6,8 @@ export const useUpdateConversation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (variables: {
-      id: string;
-      conversation: Partial<Omit<Conversation, "id">>;
-    }) =>
-      OpenHands.updateUserConversation(variables.id, variables.conversation),
+    mutationFn: (variables: { id: string; title: Conversation["title"] }) =>
+      OpenHands.updateUserConversationTitle(variables.id, variables.title),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user", "conversations"] });
     },
