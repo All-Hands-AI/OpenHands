@@ -614,8 +614,20 @@ class LLM(RetryMixin, DebugMixin):
             # try directly get response_cost from response
             cost = getattr(response, '_hidden_params', {}).get('response_cost', None)
             if cost is None:
+                try:
+                    cost = litellm_completion_cost(
+                        completion_response=response, **extra_kwargs
+                    )
+                except Exception as e:
+                    logger.error(f'Error getting cost from litellm: {e}')
+
+            if cost is None:
+                _model_name = '/'.join(self.config.model.split('/')[1:])
                 cost = litellm_completion_cost(
-                    completion_response=response, **extra_kwargs
+                    completion_response=response, model=_model_name, **extra_kwargs
+                )
+                logger.debug(
+                    f'Using fallback model name {_model_name} to get cost: {cost}'
                 )
             self.metrics.add_cost(cost)
             return cost
