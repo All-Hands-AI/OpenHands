@@ -1196,6 +1196,20 @@
     "fr": "L'agent attend l'entrée de l'utilisateur...",
     "tr": "Ajan kullanıcı girdisini bekliyor..."
   },
+  "CHAT_INTERFACE$AGENT_RATE_LIMITED_MESSAGE": {
+  "en": "Agent is Rate Limited",
+  "zh-CN": "智能体已达到速率限制",
+  "zh-TW": "智能體已達到速率限制",
+  "de": "Agent ist ratenbegrenzt",
+  "ko-KR": "에이전트가 속도 제한되었습니다",
+  "no": "Agenten er hastighetsbegrenset",
+  "it": "L'agente è limitato dalla frequenza",
+  "pt": "O agente está com limite de taxa",
+  "es": "El agente está limitado por tasa",
+  "ar": "الوكيل مقيد بحد السرعة",
+  "fr": "L'agent est limité en fréquence",
+  "tr": "Ajan hız sınırına ulaştı"
+  },
   "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
     "en": "Agent has paused.",
     "de": "Agent pausiert.",
