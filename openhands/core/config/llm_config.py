@@ -138,8 +138,19 @@ class LLMConfig:
         This function is used to create an LLMConfig object from a dictionary,
         with the exception of the 'draft_editor' key, which is a nested LLMConfig object.
         """
-        args = {k: v for k, v in llm_config_dict.items() if not isinstance(v, dict)}
-        if 'draft_editor' in llm_config_dict:
-            draft_editor_config = LLMConfig(**llm_config_dict['draft_editor'])
-            args['draft_editor'] = draft_editor_config
+        # Keep None values to preserve defaults, filter out other dicts
+        args = {
+            k: v
+            for k, v in llm_config_dict.items()
+            if not isinstance(v, dict) or v is None
+        }
+        if (
+            'draft_editor' in llm_config_dict
+            and llm_config_dict['draft_editor'] is not None
+        ):
+            if isinstance(llm_config_dict['draft_editor'], LLMConfig):
+                args['draft_editor'] = llm_config_dict['draft_editor']
+            else:
+                draft_editor_config = LLMConfig(**llm_config_dict['draft_editor'])
+                args['draft_editor'] = draft_editor_config
         return cls(**args)
