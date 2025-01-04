@@ -42,6 +42,9 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
+DEFAULT_RUNTIME_RESOURCE_FACTOR = int(
+    os.environ.get('DEFAULT_RUNTIME_RESOURCE_FACTOR', 1)
+)
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -134,6 +137,7 @@ def get_config(
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             keep_runtime_alive=False,
             remote_runtime_init_timeout=3600,
+            remote_runtime_resource_factor=int(DEFAULT_RUNTIME_RESOURCE_FACTOR),
         ),
         # do not mount workspace
         workspace_base=None,
