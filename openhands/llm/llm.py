@@ -612,10 +612,11 @@ class LLM(RetryMixin, DebugMixin):
 
         try:
             # try directly get response_cost from response
-            cost = getattr(response, '_hidden_params', {}).get('response_cost', None)
+            _hidden_params = getattr(response, '_hidden_params', {})
+            cost = _hidden_params.get('response_cost', None)
             if cost is None:
                 cost = float(
-                    response.get('additional_headers', {}).get(
+                    _hidden_params.get('additional_headers', {}).get(
                         'llm_provider-x-litellm-response-cost', 0.0
                     )
                 )
