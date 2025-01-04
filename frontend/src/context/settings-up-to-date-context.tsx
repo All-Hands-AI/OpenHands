@@ -1,5 +1,18 @@
 import React from "react";
-import { settingsAreUpToDate } from "#/services/settings";
+const LATEST_SETTINGS_VERSION = 5;
+
+export const getCurrentSettingsVersion = () => {
+  const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
+  if (!settingsVersion) return 0;
+  try {
+    return parseInt(settingsVersion, 10);
+  } catch (e) {
+    return 0;
+  }
+};
+
+export const settingsAreUpToDate = () =>
+  getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
 
 interface SettingsUpToDateContextType {
   isUpToDate: boolean;
@@ -25,7 +38,7 @@ export function SettingsUpToDateProvider({
   );
 
   return (
-    <SettingsUpToDateContext value={value}>{children}</SettingsUpToDateContext>
+    <SettingsUpToDateContext.Provider value={value}>{children}</SettingsUpToDateContext.Provider>
   );
 }
 

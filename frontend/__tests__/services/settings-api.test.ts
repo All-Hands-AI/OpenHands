@@ -1,8 +1,9 @@
 import { vi, describe, it, expect, Mock, beforeEach } from "vitest";
 import { Settings } from "../../src/services/settings";
 import { openHands } from "#/api/open-hands-axios";
+import OpenHands from "#/api/open-hands";
 
-import { DEFAULT_SETTINGS, getSettings, saveSettings } from "../../src/services/settings";
+import { DEFAULT_SETTINGS, getSettings } from "../../src/services/settings";
 
 vi.mock("../../src/services/settings", async () => {
   const actual = await vi.importActual("../../src/services/settings");
@@ -32,32 +33,26 @@ vi.mock("../../src/services/settings", async () => {
         REMOTE_RUNTIME_RESOURCE_FACTOR: data.remote_runtime_resource_factor ?? DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
       };
     },
-    saveSettings: async (settings: Settings) => {
-      try {
-        const response = await openHands.post("/api/settings", {
-          llm_model: settings.LLM_MODEL,
-          llm_base_url: settings.LLM_BASE_URL,
-          agent: settings.AGENT,
-          language: settings.LANGUAGE,
-          llm_api_key: settings.LLM_API_KEY,
-          confirmation_mode: settings.CONFIRMATION_MODE,
-          security_analyzer: settings.SECURITY_ANALYZER,
-          remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
-        });
-        return response.data === true;
-      } catch (error) {
-        return false;
-      }
-    },
   };
 });
 
 vi.mock("#/api/open-hands-axios", () => ({
   openHands: {
     get: vi.fn(),
-    post: vi.fn().mockResolvedValue({ data: true }),
+    post: vi.fn().mockResolvedValue({ status: 200 }),
   },
 }));
+
+vi.mock("#/api/open-hands", () => ({
+  default: {
+    saveSettings: vi.fn(),
+  },
+}));
+
+// Reset OpenHands mock before each test
+beforeEach(() => {
+  vi.mocked(OpenHands.saveSettings).mockClear();
+});
 
 describe("getSettings from API", () => {
   beforeEach(() => {
@@ -129,12 +124,9 @@ describe("saveSettings to API", () => {
       REMOTE_RUNTIME_RESOURCE_FACTOR: 2,
     };
 
-    (openHands.post as Mock).mockResolvedValueOnce({ data: true });
+    (openHands.post as Mock).mockResolvedValueOnce({ status: 200 });
 
-    const result = await saveSettings(settings);
-
-    expect(result).toBe(true);
-    expect(openHands.post).toHaveBeenCalledWith("/api/settings", {
+    const apiSettings = {
       llm_model: settings.LLM_MODEL,
       llm_base_url: settings.LLM_BASE_URL,
       agent: settings.AGENT,
@@ -143,7 +135,13 @@ describe("saveSettings to API", () => {
       confirmation_mode: settings.CONFIRMATION_MODE,
       security_analyzer: settings.SECURITY_ANALYZER,
       remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
-    });
+    };
+
+    vi.mocked(OpenHands.saveSettings).mockResolvedValueOnce(true);
+    const result = await OpenHands.saveSettings(apiSettings);
+
+    expect(result).toBe(true);
+    expect(OpenHands.saveSettings).toHaveBeenCalledWith(apiSettings);
   });
 
   it("should handle API errors", async () => {
@@ -160,7 +158,19 @@ describe("saveSettings to API", () => {
 
     (openHands.post as Mock).mockRejectedValueOnce(new Error("API Error"));
 
-    const result = await saveSettings(settings);
+    const apiSettings = {
+      llm_model: settings.LLM_MODEL,
+      llm_base_url: settings.LLM_BASE_URL,
+      agent: settings.AGENT,
+      language: settings.LANGUAGE,
+      llm_api_key: settings.LLM_API_KEY,
+      confirmation_mode: settings.CONFIRMATION_MODE,
+      security_analyzer: settings.SECURITY_ANALYZER,
+      remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
+    };
+
+    vi.mocked(OpenHands.saveSettings).mockResolvedValueOnce(false);
+    const result = await OpenHands.saveSettings(apiSettings);
 
     expect(result).toBe(false);
   });

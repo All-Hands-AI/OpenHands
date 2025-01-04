@@ -4,10 +4,10 @@ import React from "react";
 import { useSettingsUpToDate } from "#/context/settings-up-to-date-context";
 import {
   DEFAULT_SETTINGS,
-  getCurrentSettingsVersion,
   getLocalStorageSettings,
 } from "#/services/settings";
 import { useSaveSettings } from "./mutation/use-save-settings";
+import { getCurrentSettingsVersion } from "#/context/settings-up-to-date-context";
 
 // In this case, we may want to override a previous choice made by the user.
 export const useMaybeMigrateSettings = () => {
