@@ -9,9 +9,8 @@ from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AppConfig,
-    get_llm_config_arg,
-    load_app_config,
     parse_arguments,
+    setup_config_from_args,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
@@ -49,6 +48,21 @@ def read_task_from_file(file_path: str) -> str:
 def read_task_from_stdin() -> str:
     """Read task from stdin."""
     return sys.stdin.read()
+
+
+def read_input(config: AppConfig) -> str:
+    """Read input from user based on config settings."""
+    if config.cli_multiline_input:
+        print('Enter your message (enter "/exit" on a new line to finish):')
+        lines = []
+        while True:
+            line = input('>> ').rstrip()
+            if line == '/exit':  # finish input
+                break
+            lines.append(line)
+        return '\n'.join(lines)
+    else:
+        return input('>> ').rstrip()
 
 
 async def run_controller(
@@ -120,9 +134,7 @@ async def run_controller(
                 if exit_on_message:
                     message = '/exit'
                 elif fake_user_response_fn is None:
-                    # read until EOF (Ctrl+D on Unix, Ctrl+Z on Windows)
-                    print('Request user input (press Ctrl+D/Z when done) >> ')
-                    message = sys.stdin.read().rstrip()
+                    message = read_input(config)
                 else:
                     message = fake_user_response_fn(controller.get_state())
                 action = MessageAction(content=message)
@@ -195,30 +207,12 @@ if __name__ == '__main__':
     else:
         raise ValueError('No task provided. Please specify a task through -t, -f.')
     initial_user_action: MessageAction = MessageAction(content=task_str)
-    # Load the app config
-    # this will load config from config.toml in the current directory
-    # as well as from the environment variables
-    config = load_app_config(config_file=args.config_file)
 
-    # Override default LLM configs ([llm] section in config.toml)
-    if args.llm_config:
-        llm_config = get_llm_config_arg(args.llm_config)
-        if llm_config is None:
-            raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
-        config.set_llm_config(llm_config)
-
-    # Set default agent
-    config.default_agent = args.agent_cls
+    config = setup_config_from_args(args)
 
     # Set session name
     session_name = args.name
     sid = generate_sid(config, session_name)
-
-    # if max budget per task is not sent on the command line, use the config value
-    if args.max_budget_per_task is not None:
-        config.max_budget_per_task = args.max_budget_per_task
-    if args.max_iterations is not None:
-        config.max_iterations = args.max_iterations
 
     asyncio.run(
         run_controller(
