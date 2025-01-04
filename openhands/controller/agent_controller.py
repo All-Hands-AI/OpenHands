@@ -191,6 +191,7 @@ class AgentController:
         self,
         e: Exception,
     ):
+        """React to an exception by setting the agent state to error and updating the metrics."""
         await self.set_agent_state_to(AgentState.ERROR)
         if self.status_callback is not None:
             err_id = ''
@@ -348,7 +349,6 @@ class AgentController:
 
     def _reset(self) -> None:
         """Resets the agent controller"""
-
         # make sure there is an Observation with the tool call metadata to be recognized by the agent
         # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
         if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata'):
@@ -389,6 +389,9 @@ class AgentController:
             return
 
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
+            # sync existing metrics BEFORE resetting the agent
+            self.update_state_after_step()
+            self.state.metrics.merge(self.state.local_metrics)
             self._reset()
         elif (
             new_state == AgentState.RUNNING
