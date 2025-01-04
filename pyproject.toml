@@ -4,6 +4,33 @@ requires = [
   "poetry-core",
 ]
 
+[tool.poetry.group.runtime.dependencies]
+jupyterlab = "*"
+notebook = "*"
+jupyter_kernel_gateway = "*"
+flake8 = "*"
+opencv-python = "*"
+
+
+[tool.poetry.group.evaluation.dependencies]
+streamlit = "*"
+whatthepatch = "*"
+retry = "*"
+evaluate = "*"
+swebench = { git = "https://github.com/All-Hands-AI/SWE-bench.git" }
+commit0 = "*"
+func_timeout = "*"
+sympy = "*"
+gdown = "*"
+matplotlib = "*"
+seaborn = "*"
+tabulate = "*"
+browsergym-webarena = "0.10.2"
+browsergym-miniwob = "0.10.2"
+
+[tool.poetry.scripts]
+openhands = "openhands.core.cli:main"
+
 [tool.poetry]
 name = "openhands-ai"
 version = "0.18.0a0"
@@ -105,35 +132,6 @@ opencv-python = "*"
 pandas = "*"
 reportlab = "*"
 
-[tool.coverage.run]
-concurrency = ["gevent"]
-[tool.poetry.group.runtime.dependencies]
-jupyterlab = "*"
-notebook = "*"
-jupyter_kernel_gateway = "*"
-flake8 = "*"
-opencv-python = "*"
-
-
-[tool.poetry.group.evaluation.dependencies]
-streamlit = "*"
-whatthepatch = "*"
-retry = "*"
-evaluate = "*"
-swebench = { git = "https://github.com/All-Hands-AI/SWE-bench.git" }
-commit0 = "*"
-func_timeout = "*"
-sympy = "*"
-gdown = "*"
-matplotlib = "*"
-seaborn = "*"
-tabulate = "*"
-browsergym-webarena = "0.10.2"
-browsergym-miniwob = "0.10.2"
-
-[tool.poetry.scripts]
-openhands = "openhands.core.cli:main"
-
 [tool.poetry-dynamic-versioning]
 enable = true
 style = "semver"
@@ -153,4 +151,4 @@ lint.ignore = [ "D1" ]
 lint.pydocstyle.convention = "google"
 
 [tool.coverage.run]
-concurrency = [ "gevent" ]
+concurrency = ["gevent"]
