@@ -123,7 +123,6 @@ class openhands.state.State {
   updated_info: List[Tuple[Action, Observation]]
 }
 class openhands.observation.CmdOutputObservation {
-  command_id: int
   command: str
   exit_code: int
   observation: str

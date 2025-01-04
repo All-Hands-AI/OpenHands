@@ -440,13 +440,31 @@ class LLM(RetryMixin, DebugMixin):
         )
 
     def is_function_calling_active(self) -> bool:
-        # Check if model name is in supported list before checking model_info
+        # Check if model name is in our supported list
         model_name_supported = (
             self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
             or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
             or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
         )
-        return model_name_supported
+
+        # Handle native_tool_calling user-defined configuration
+        if self.config.native_tool_calling is None:
+            logger.debug(
+                f'Using default tool calling behavior based on model evaluation: {model_name_supported}'
+            )
+            return model_name_supported
+        elif self.config.native_tool_calling is False:
+            logger.debug('Function calling explicitly disabled via configuration')
+            return False
+        else:
+            # try to enable native tool calling if supported by the model
+            supports_fn_call = litellm.supports_function_calling(
+                model=self.config.model
+            )
+            logger.debug(
+                f'Function calling explicitly enabled, litellm support: {supports_fn_call}'
+            )
+            return supports_fn_call
 
     def _post_completion(self, response: ModelResponse) -> float:
         """Post-process the completion response.
@@ -594,10 +612,30 @@ class LLM(RetryMixin, DebugMixin):
 
         try:
             # try directly get response_cost from response
-            cost = getattr(response, '_hidden_params', {}).get('response_cost', None)
+            _hidden_params = getattr(response, '_hidden_params', {})
+            cost = _hidden_params.get('response_cost', None)
             if cost is None:
+                cost = float(
+                    _hidden_params.get('additional_headers', {}).get(
+                        'llm_provider-x-litellm-response-cost', 0.0
+                    )
+                )
+
+            if cost is None:
+                try:
+                    cost = litellm_completion_cost(
+                        completion_response=response, **extra_kwargs
+                    )
+                except Exception as e:
+                    logger.error(f'Error getting cost from litellm: {e}')
+
+            if cost is None:
+                _model_name = '/'.join(self.config.model.split('/')[1:])
                 cost = litellm_completion_cost(
-                    completion_response=response, **extra_kwargs
+                    completion_response=response, model=_model_name, **extra_kwargs
+                )
+                logger.debug(
+                    f'Using fallback model name {_model_name} to get cost: {cost}'
                 )
             self.metrics.add_cost(cost)
             return cost

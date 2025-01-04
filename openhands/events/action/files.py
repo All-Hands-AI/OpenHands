@@ -48,6 +48,15 @@ class FileWriteAction(Action):
     def message(self) -> str:
         return f'Writing file: {self.path}'
 
+    def __repr__(self) -> str:
+        return (
+            f'**FileWriteAction**\n'
+            f'Path: {self.path}\n'
+            f'Range: [L{self.start}:L{self.end}]\n'
+            f'Thought: {self.thought}\n'
+            f'Content:\n```\n{self.content}\n```\n'
+        )
+
 
 @dataclass
 class FileEditAction(Action):

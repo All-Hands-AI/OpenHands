@@ -17,8 +17,9 @@ Just as for OpenAI Chat completions, we use LiteLLM for OpenAI-compatible endpoi
 
 ## Using an OpenAI Proxy
 
-If you're using an OpenAI proxy, you'll need to set the following in the OpenHands UI through the Settings:
-* Enable `Advanced Options`
-* `Custom Model` to openai/&lt;model-name&gt; (e.g. `openai/gpt-4o` or openai/&lt;proxy-prefix&gt;/&lt;model-name&gt;)
-* `Base URL` to the URL of your OpenAI proxy
-* `API Key` to your OpenAI API key
+If you're using an OpenAI proxy, in the OpenHands UI through the Settings:
+1. Enable `Advanced Options`
+2. Set the following:
+   - `Custom Model` to openai/&lt;model-name&gt; (e.g. `openai/gpt-4o` or openai/&lt;proxy-prefix&gt;/&lt;model-name&gt;)
+   - `Base URL` to the URL of your OpenAI proxy
+   - `API Key` to your OpenAI API key
