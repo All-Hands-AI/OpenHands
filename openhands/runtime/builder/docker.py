@@ -26,6 +26,17 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         self.rolling_logger = RollingLogger(max_lines=10)
 
+    @staticmethod
+    def check_buildx():
+        """Check if Docker Buildx is available"""
+        try:
+            result = subprocess.run(
+                ['docker', 'buildx', 'version'], capture_output=True, text=True
+            )
+            return result.returncode == 0
+        except FileNotFoundError:
+            return False
+
     def build(
         self,
         path: str,
@@ -61,6 +72,34 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             raise AgentRuntimeBuildError(
                 'Docker server version must be >= 18.09 to use BuildKit'
             )
+
+        if not DockerRuntimeBuilder.check_buildx():
+            # when running openhands in a container, there might not be a "docker"
+            # binary available, in which case we need to download docker binary.
+            # since the official openhands app image is built from ubuntu, we use
+            # ubuntu way to install docker binary
+            commands = [
+                'sudo apt-get update',
+                'sudo apt-get install ca-certificates curl',
+                'sudo install -m 0755 -d /etc/apt/keyrings',
+                'sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc',
+                'sudo chmod a+r /etc/apt/keyrings/docker.asc',
+                'echo \
+                  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+                  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+                  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null',
+                'sudo apt-get update',
+                'sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin',
+            ]
+            for cmd in commands:
+                try:
+                    subprocess.run(
+                        cmd, shell=True, check=True, stdout=subprocess.DEVNULL
+                    )
+                except subprocess.CalledProcessError as e:
+                    logger.error(f'Image build failed:\n{e}')
+                    logger.error(f'Command output:\n{e.output}')
+                    raise
 
         target_image_hash_name = tags[0]
         target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
