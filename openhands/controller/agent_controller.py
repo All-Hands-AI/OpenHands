@@ -5,7 +5,11 @@ import traceback
 from typing import Callable, ClassVar, Type
 
 import litellm
-from litellm.exceptions import BadRequestError, ContextWindowExceededError
+from litellm.exceptions import (
+    BadRequestError,
+    ContextWindowExceededError,
+    RateLimitError,
+)
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
@@ -192,6 +196,9 @@ class AgentController:
             err_id = ''
             if isinstance(e, litellm.AuthenticationError):
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
+            elif isinstance(e, RateLimitError):
+                await self.set_agent_state_to(AgentState.RATE_LIMITED)
+                return
             self.status_callback('error', err_id, type(e).__name__ + ': ' + str(e))
 
     def step(self):
@@ -206,12 +213,13 @@ class AgentController:
             reported = RuntimeError(
                 'There was an unexpected error while running the agent.'
             )
-            if isinstance(e, litellm.AuthenticationError):
+            if isinstance(e, litellm.AuthenticationError) or isinstance(
+                e, litellm.BadRequestError
+            ):
                 reported = e
             await self._react_to_exception(reported)
 
     def should_step(self, event: Event) -> bool:
-        print('should step?', event)
         if isinstance(event, Action):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 return True
@@ -536,9 +544,7 @@ class AgentController:
         self.update_state_before_step()
         action: Action = NullAction()
         try:
-            print('STEP AGENT')
             action = self.agent.step(self.state)
-            print('GOT ACTION', action)
             if action is None:
                 raise LLMNoActionError('No action was returned')
         except (

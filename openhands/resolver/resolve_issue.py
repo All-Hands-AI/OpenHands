@@ -122,10 +122,7 @@ async def complete_runtime(
     n_retries = 0
     git_patch = None
     while n_retries < 5:
-        action = CmdRunAction(
-            command=f'git diff --no-color --cached {base_commit}',
-            keep_prompt=False,
-        )
+        action = CmdRunAction(command=f'git diff --no-color --cached {base_commit}')
         action.timeout = 600 + 100 * n_retries
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
@@ -247,9 +244,9 @@ async def process_issue(
     else:
         histories = [dataclasses.asdict(event) for event in state.history]
         metrics = state.metrics.get() if state.metrics else None
-        # determine success based on the history and the issue description
+        # determine success based on the history, issue description and git patch
         success, comment_success, result_explanation = issue_handler.guess_success(
-            issue, state.history
+            issue, state.history, git_patch
         )
 
         if issue_handler.issue_type == 'pr' and comment_success:
