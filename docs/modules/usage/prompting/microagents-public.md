@@ -83,7 +83,7 @@ triggers:
 Instructions and capabilities for the micro-agent...
 ```
 
-## Working With Public Microagents
+## Working With Public Micro-Agents
 
 When working with public micro-agents:
 - **Use Appropriate Triggers**: Ensure your commands include the relevant trigger words to activate the correct micro-agent.
@@ -103,7 +103,7 @@ Best practices for creating public micro-agents:
 
 To contribute a new micro-agent to OpenHands:
 
-### 1. Plan a Public Micro-Agent
+### 1. Plan the Public Micro-Agent
 
 Before creating a public micro-agent, consider:
 - What specific problem or use case will it address?
