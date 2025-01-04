@@ -1,16 +1,15 @@
 import NewProjectIcon from "#/icons/new-project.svg?react";
 import { TooltipButton } from "./tooltip-button";
+import { useEndSession } from "#/hooks/use-end-session";
 
-interface ExitProjectButtonProps {
-  onClick: () => void;
-}
+export function ExitProjectButton() {
+  const endSession = useEndSession();
 
-export function ExitProjectButton({ onClick }: ExitProjectButtonProps) {
   return (
     <TooltipButton
       tooltip="Start new project"
       ariaLabel="Start new project"
-      onClick={onClick}
+      onClick={endSession}
       testId="new-project-button"
     >
       <NewProjectIcon width={28} height={28} />

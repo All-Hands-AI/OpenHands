@@ -1,5 +1,4 @@
 import React from "react";
-import { useLocation } from "react-router";
 import FolderIcon from "#/icons/docs.svg?react";
 import { useAuth } from "#/context/auth-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
@@ -11,7 +10,6 @@ import { ExitProjectButton } from "#/components/shared/buttons/exit-project-butt
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { AccountSettingsModal } from "#/components/shared/modals/account-settings/account-settings-modal";
-import { ExitProjectConfirmationModal } from "#/components/shared/modals/exit-project-confirmation-modal";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { useSettingsUpToDate } from "#/context/settings-up-to-date-context";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -20,7 +18,6 @@ import { cn } from "#/utils/utils";
 import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
 
 export function Sidebar() {
-  const location = useLocation();
   const user = useGitHubUser();
   const { data: isAuthed } = useIsAuthed();
   const { logout } = useAuth();
@@ -30,8 +27,7 @@ export function Sidebar() {
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
-  const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
-    React.useState(false);
+
   const [conversationPanelIsOpen, setConversationPanelIsOpen] = React.useState(
     MULTI_CONVO_UI_IS_ENABLED,
   );
@@ -51,11 +47,6 @@ export function Sidebar() {
     setAccountSettingsModalOpen(false);
   };
 
-  const handleClickLogo = () => {
-    if (location.pathname.startsWith("/conversations/"))
-      setStartNewProjectModalIsOpen(true);
-  };
-
   const showSettingsModal =
     isAuthed && (!settingsAreUpToDate || settingsModalIsOpen);
 
@@ -64,7 +55,7 @@ export function Sidebar() {
       <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1 relative">
         <nav className="flex flex-row md:flex-col items-center gap-[18px]">
           <div className="w-[34px] h-[34px] flex items-center justify-center">
-            <AllHandsLogoButton onClick={handleClickLogo} />
+            <AllHandsLogoButton />
           </div>
           {user.isLoading && <LoadingSpinner size="small" />}
           {!user.isLoading && (
@@ -90,9 +81,7 @@ export function Sidebar() {
             </button>
           )}
           <DocsButton />
-          <ExitProjectButton
-            onClick={() => setStartNewProjectModalIsOpen(true)}
-          />
+          <ExitProjectButton />
         </nav>
 
         {conversationPanelIsOpen && (
@@ -116,11 +105,6 @@ export function Sidebar() {
             onClose={() => setSettingsModalIsOpen(false)}
           />
         ))}
-      {startNewProjectModalIsOpen && (
-        <ExitProjectConfirmationModal
-          onClose={() => setStartNewProjectModalIsOpen(false)}
-        />
-      )}
     </>
   );
 }

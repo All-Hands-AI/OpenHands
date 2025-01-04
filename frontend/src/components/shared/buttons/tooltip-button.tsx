@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 interface TooltipButtonProps {
   children: ReactNode;
   tooltip: string;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
   href?: string;
   ariaLabel: string;
   testId?: string;
