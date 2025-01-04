@@ -5,7 +5,11 @@ import traceback
 from typing import Callable, ClassVar, Type
 
 import litellm
-from litellm.exceptions import BadRequestError, ContextWindowExceededError
+from litellm.exceptions import (
+    BadRequestError,
+    ContextWindowExceededError,
+    RateLimitError,
+)
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
@@ -26,7 +30,6 @@ from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
-    AddTaskAction,
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
@@ -34,7 +37,6 @@ from openhands.events.action import (
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
-    ModifyTaskAction,
     NullAction,
 )
 from openhands.events.event import Event
@@ -194,6 +196,9 @@ class AgentController:
             err_id = ''
             if isinstance(e, litellm.AuthenticationError):
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
+            elif isinstance(e, RateLimitError):
+                await self.set_agent_state_to(AgentState.RATE_LIMITED)
+                return
             self.status_callback('error', err_id, type(e).__name__ + ': ' + str(e))
 
     def step(self):
@@ -208,7 +213,9 @@ class AgentController:
             reported = RuntimeError(
                 'There was an unexpected error while running the agent.'
             )
-            if isinstance(e, litellm.LLMError):
+            if isinstance(e, litellm.AuthenticationError) or isinstance(
+                e, litellm.BadRequestError
+            ):
                 reported = e
             await self._react_to_exception(reported)
 
@@ -261,12 +268,7 @@ class AgentController:
             await self._handle_message_action(action)
         elif isinstance(action, AgentDelegateAction):
             await self.start_delegate(action)
-        elif isinstance(action, AddTaskAction):
-            self.state.root_task.add_subtask(
-                action.parent, action.goal, action.subtasks
-            )
-        elif isinstance(action, ModifyTaskAction):
-            self.state.root_task.set_subtask_state(action.task_id, action.state)
+
         elif isinstance(action, AgentFinishAction):
             self.state.outputs = action.outputs
             self.state.metrics.merge(self.state.local_metrics)

@@ -18,7 +18,6 @@ from openhands.events.action.files import (
     FileWriteAction,
 )
 from openhands.events.action.message import MessageAction
-from openhands.events.action.tasks import AddTaskAction, ModifyTaskAction
 
 actions = (
     NullAction,
@@ -32,8 +31,6 @@ actions = (
     AgentFinishAction,
     AgentRejectAction,
     AgentDelegateAction,
-    AddTaskAction,
-    ModifyTaskAction,
     ChangeAgentStateAction,
     MessageAction,
 )
@@ -69,6 +66,10 @@ def action_from_dict(action: dict) -> Action:
     # images_urls has been renamed to image_urls
     if 'images_urls' in args:
         args['image_urls'] = args.pop('images_urls')
+
+    # keep_prompt has been deprecated in https://github.com/All-Hands-AI/OpenHands/pull/4881
+    if 'keep_prompt' in args:
+        args.pop('keep_prompt')
 
     try:
         decoded_action = action_class(**args)

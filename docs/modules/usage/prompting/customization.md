@@ -9,11 +9,11 @@ You can customize OpenHands' behavior for your repository by creating a `.openha
 be given to the agent every time it works with this repository.
 
 We suggest including the following information:
-1. **Repository Overview**: A brief description of your project's purpose and architecture
-2. **Directory Structure**: Key directories and their purposes
-3. **Development Guidelines**: Project-specific coding standards and practices
-4. **Testing Requirements**: How to run tests and what types of tests are required
-5. **Setup Instructions**: Steps needed to build and run the project
+- **Repository Overview**: A brief description of your project's purpose and architecture.
+- **Directory Structure**: Key directories and their purposes.
+- **Development Guidelines**: Project-specific coding standards and practices.
+- **Testing Requirements**: How to run tests and what types of tests are required.
+- **Setup Instructions**: Steps needed to build and run the project.
 
 ### Example Repository Configuration
 Example `.openhands/microagents/repo.md` file:
@@ -39,11 +39,11 @@ Guidelines:
 
 ### Customizing Prompts
 
-When working with a customized repository:
+When working with a repository:
 
-1. **Reference Project Standards**: Mention specific coding standards or patterns used in your project
-2. **Include Context**: Reference relevant documentation or existing implementations
-3. **Specify Testing Requirements**: Include project-specific testing requirements in your prompts
+- **Reference Project Standards**: Mention specific coding standards or patterns used in your project.
+- **Include Context**: Reference relevant documentation or existing implementations.
+- **Specify Testing Requirements**: Include project-specific testing requirements in your prompts.
 
 Example customized prompt:
 ```
@@ -54,14 +54,14 @@ The component should use our shared styling from src/styles/components.
 
 ### Best Practices for Repository Customization
 
-1. **Keep Instructions Updated**: Regularly update your `.openhands` directory as your project evolves
-2. **Be Specific**: Include specific paths, patterns, and requirements unique to your project
-3. **Document Dependencies**: List all tools and dependencies required for development
-4. **Include Examples**: Provide examples of good code patterns from your project
-5. **Specify Conventions**: Document naming conventions, file organization, and code style preferences
+- **Keep Instructions Updated**: Regularly update your `.openhands` directory as your project evolves.
+- **Be Specific**: Include specific paths, patterns, and requirements unique to your project.
+- **Document Dependencies**: List all tools and dependencies required for development.
+- **Include Examples**: Provide examples of good code patterns from your project.
+- **Specify Conventions**: Document naming conventions, file organization, and code style preferences.
 
 By customizing OpenHands for your repository, you'll get more accurate and consistent results that align with your project's standards and requirements.
 
 ## Other Microagents
 You can create other instructions in the `.openhands/microagents/` directory
-that will be sent to the agent if a particular keyword is found, like `test`, `frontend`, or `migration`. See [Microagents](microagents.md) for more information.
+that will be sent to the agent if a particular keyword is found, like `test`, `frontend`, or `migration`. See [Micro-Agents](microagents.md) for more information.
