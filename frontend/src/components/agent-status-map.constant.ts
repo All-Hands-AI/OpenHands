@@ -61,4 +61,8 @@ export const AGENT_STATUS_MAP: {
     message: I18nKey.CHAT_INTERFACE$AGENT_ACTION_USER_REJECTED_MESSAGE,
     indicator: IndicatorColor.RED,
   },
+  [AgentState.RATE_LIMITED]: {
+    message: I18nKey.CHAT_INTERFACE$AGENT_RATE_LIMITED_MESSAGE,
+    indicator: IndicatorColor.YELLOW,
+  },
 };

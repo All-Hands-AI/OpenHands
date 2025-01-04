@@ -8,6 +8,7 @@ export enum AgentState {
   FINISHED = "finished",
   REJECTED = "rejected",
   ERROR = "error",
+  RATE_LIMITED = "rate_limited",
   AWAITING_USER_CONFIRMATION = "awaiting_user_confirmation",
   USER_CONFIRMED = "user_confirmed",
   USER_REJECTED = "user_rejected",
