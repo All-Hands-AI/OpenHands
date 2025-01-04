@@ -23,15 +23,21 @@ const sidebars: SidebarsConfig = {
           id: 'usage/prompting/prompting-best-practices',
         },
         {
-          type: 'doc',
-          label: 'Customization',
-          id: 'usage/prompting/customization',
-        },
-        {
-          type: 'doc',
-          label: 'Microagents',
-          id: 'usage/prompting/microagents',
-        },
+          type: 'category',
+          label: 'Micro-Agents',
+          items: [
+            {
+              type: 'doc',
+              label: 'Public',
+              id: 'usage/prompting/microagents-public',
+            },
+            {
+              type: 'doc',
+              label: 'Repository',
+              id: 'usage/prompting/microagents-repo',
+            },
+          ],
+        }
       ],
     },
     {

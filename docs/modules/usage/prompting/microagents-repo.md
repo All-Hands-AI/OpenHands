@@ -1,10 +1,12 @@
-# Customizing Agent Behavior
+# Repository Micro-Agents
 
-OpenHands can be customized to work more effectively with specific repositories by providing repository-specific context and guidelines. This section explains how to optimize OpenHands for your project.
+OpenHands can be customized to work more effectively with specific repositories by providing repository-specific context
+and guidelines. This section explains how to optimize OpenHands for your project.
 
 ## Repository Configuration
 
-You can customize OpenHands' behavior for your repository by creating a `.openhands` directory in your repository's root. At minimum, it should contain the file
+You can customize OpenHands' behavior for your repository by creating a `.openhands/microagents/` directory in your repository's root.
+At minimum, it should contain the file
 `.openhands/microagents/repo.md`, which includes instructions that will
 be given to the agent every time it works with this repository.
 
@@ -39,7 +41,8 @@ Guidelines:
 
 ### Customizing Prompts
 
-When working with a repository:
+You may also add customized prompts to the `.openhands/microagents/repo.md` file when working with a repository.
+These could:
 
 - **Reference Project Standards**: Mention specific coding standards or patterns used in your project.
 - **Include Context**: Reference relevant documentation or existing implementations.
@@ -54,14 +57,10 @@ The component should use our shared styling from src/styles/components.
 
 ### Best Practices for Repository Customization
 
-- **Keep Instructions Updated**: Regularly update your `.openhands` directory as your project evolves.
+- **Keep Instructions Updated**: Regularly update your `.openhands/microagents/` directory as your project evolves.
 - **Be Specific**: Include specific paths, patterns, and requirements unique to your project.
 - **Document Dependencies**: List all tools and dependencies required for development.
 - **Include Examples**: Provide examples of good code patterns from your project.
 - **Specify Conventions**: Document naming conventions, file organization, and code style preferences.
 
 By customizing OpenHands for your repository, you'll get more accurate and consistent results that align with your project's standards and requirements.
-
-## Other Microagents
-You can create other instructions in the `.openhands/microagents/` directory
-that will be sent to the agent if a particular keyword is found, like `test`, `frontend`, or `migration`. See [Micro-Agents](microagents.md) for more information.
