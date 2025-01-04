@@ -239,6 +239,7 @@ def test_build_runtime_image_from_scratch():
                 f'{get_runtime_image_repo()}:{OH_VERSION}_mock-versioned-tag',
             ],
             platform=None,
+            extra_build_args=None,
         )
         assert (
             image_name
@@ -333,6 +334,7 @@ def test_build_runtime_image_exact_hash_not_exist_and_lock_exist():
                 # VERSION tag will NOT be included except from scratch
             ],
             platform=None,
+            extra_build_args=None,
         )
         mock_prep_build_folder.assert_called_once_with(
             ANY,
@@ -391,6 +393,7 @@ def test_build_runtime_image_exact_hash_not_exist_and_lock_not_exist_and_version
                 # VERSION tag will NOT be included except from scratch
             ],
             platform=None,
+            extra_build_args=None,
         )
         mock_prep_build_folder.assert_called_once_with(
             ANY,

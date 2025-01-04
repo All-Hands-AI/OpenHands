@@ -13,6 +13,7 @@ import requests
 import tenacity
 
 from openhands.core.config import AppConfig
+from openhands.core.exceptions import AgentRuntimeDisconnectedError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
@@ -29,7 +30,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
-from openhands.runtime.base import Runtime, RuntimeDisconnectedError
+from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.utils.async_utils import call_sync_from_async
@@ -211,7 +212,7 @@ class LocalRuntime(Runtime):
                 )
                 return observation_from_dict(response.json())
             except requests.exceptions.ConnectionError:
-                raise RuntimeDisconnectedError('Server connection lost')
+                raise AgentRuntimeDisconnectedError('Server connection lost')
             except requests.exceptions.RequestException as e:
                 return ErrorObservation(f'Failed to execute action: {e}')
 
@@ -239,7 +240,7 @@ class LocalRuntime(Runtime):
             )
             return observation_from_dict(response.json())
         except requests.exceptions.ConnectionError:
-            raise RuntimeDisconnectedError('Server connection lost')
+            raise AgentRuntimeDisconnectedError('Server connection lost')
         except requests.exceptions.RequestException as e:
             return ErrorObservation(f'Failed to execute command: {e}')
 
@@ -252,7 +253,7 @@ class LocalRuntime(Runtime):
             )
             return observation_from_dict(response.json())
         except requests.exceptions.ConnectionError:
-            raise RuntimeDisconnectedError('Server connection lost')
+            raise AgentRuntimeDisconnectedError('Server connection lost')
         except requests.exceptions.RequestException as e:
             return ErrorObservation(f'Failed to execute IPython cell: {e}')
 
@@ -265,7 +266,7 @@ class LocalRuntime(Runtime):
             )
             return observation_from_dict(response.json())
         except requests.exceptions.ConnectionError:
-            raise RuntimeDisconnectedError('Server connection lost')
+            raise AgentRuntimeDisconnectedError('Server connection lost')
         except requests.exceptions.RequestException as e:
             return ErrorObservation(f'Failed to read file: {e}')
 
@@ -278,7 +279,7 @@ class LocalRuntime(Runtime):
             )
             return observation_from_dict(response.json())
         except requests.exceptions.ConnectionError:
-            raise RuntimeDisconnectedError('Server connection lost')
+            raise AgentRuntimeDisconnectedError('Server connection lost')
         except requests.exceptions.RequestException as e:
             return ErrorObservation(f'Failed to write file: {e}')
 
@@ -291,7 +292,7 @@ class LocalRuntime(Runtime):
             )
             return observation_from_dict(response.json())
         except requests.exceptions.ConnectionError:
-            raise RuntimeDisconnectedError('Server connection lost')
+            raise AgentRuntimeDisconnectedError('Server connection lost')
         except requests.exceptions.RequestException as e:
             return ErrorObservation(f'Failed to browse URL: {e}')
 
@@ -304,7 +305,7 @@ class LocalRuntime(Runtime):
             )
             return observation_from_dict(response.json())
         except requests.exceptions.ConnectionError:
-            raise RuntimeDisconnectedError('Server connection lost')
+            raise AgentRuntimeDisconnectedError('Server connection lost')
         except requests.exceptions.RequestException as e:
             return ErrorObservation(f'Failed to execute browser action: {e}')
 
@@ -321,7 +322,7 @@ class LocalRuntime(Runtime):
             )
             response.raise_for_status()
         except requests.exceptions.ConnectionError:
-            raise RuntimeDisconnectedError('Server connection lost')
+            raise AgentRuntimeDisconnectedError('Server connection lost')
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f'Failed to copy file: {e}')
 
@@ -335,7 +336,7 @@ class LocalRuntime(Runtime):
             response.raise_for_status()
             return response.json()
         except requests.exceptions.ConnectionError:
-            raise RuntimeDisconnectedError('Server connection lost')
+            raise AgentRuntimeDisconnectedError('Server connection lost')
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f'Failed to list files: {e}')
 
@@ -349,7 +350,7 @@ class LocalRuntime(Runtime):
             response.raise_for_status()
             return Path(response.json()['path'])
         except requests.exceptions.ConnectionError:
-            raise RuntimeDisconnectedError('Server connection lost')
+            raise AgentRuntimeDisconnectedError('Server connection lost')
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f'Failed to copy file: {e}')
 
@@ -363,6 +364,6 @@ class LocalRuntime(Runtime):
             response.raise_for_status()
             return response.json()['url']
         except requests.exceptions.ConnectionError:
-            raise RuntimeDisconnectedError('Server connection lost')
+            raise AgentRuntimeDisconnectedError('Server connection lost')
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f'Failed to get VSCode URL: {e}')

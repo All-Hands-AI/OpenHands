@@ -1,24 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  useWsClient,
-  WsClientProviderStatus,
-} from "#/context/ws-client-provider";
+import { useSelector } from "react-redux";
 import OpenHands from "#/api/open-hands";
-import { useAuth } from "#/context/auth-context";
+import { useConversation } from "#/context/conversation-context";
+import { RootState } from "#/store";
+import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 
 interface UseListFilesConfig {
   path?: string;
   enabled?: boolean;
 }
 
-export const useListFiles = (config?: UseListFilesConfig) => {
-  const { token } = useAuth();
-  const { status } = useWsClient();
-  const isActive = status === WsClientProviderStatus.ACTIVE;
+const DEFAULT_CONFIG: UseListFilesConfig = {
+  enabled: true,
+};
+
+export const useListFiles = (config: UseListFilesConfig = DEFAULT_CONFIG) => {
+  const { conversationId } = useConversation();
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const isActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
   return useQuery({
-    queryKey: ["files", token, config?.path],
-    queryFn: () => OpenHands.getFiles(config?.path),
-    enabled: isActive && config?.enabled && !!token,
+    queryKey: ["files", conversationId, config?.path],
+    queryFn: () => OpenHands.getFiles(conversationId, config?.path),
+    enabled: !!(isActive && config?.enabled),
   });
 };

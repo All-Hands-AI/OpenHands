@@ -930,7 +930,7 @@
     "pt": "Configurações de compartilhamento",
     "tr": "Paylaşım ayarları"
   },
-  "SECURITY$UNKNOWN_ANALYZER_LABEL":{
+  "SECURITY$UNKNOWN_ANALYZER_LABEL": {
     "en": "Unknown security analyzer chosen",
     "es": "Analizador de seguridad desconocido",
     "zh-CN": "选择了未知的安全分析器",
@@ -1195,6 +1195,20 @@
     "ar": "الوكيل في انتظار إدخال المستخدم...",
     "fr": "L'agent attend l'entrée de l'utilisateur...",
     "tr": "Ajan kullanıcı girdisini bekliyor..."
+  },
+  "CHAT_INTERFACE$AGENT_RATE_LIMITED_MESSAGE": {
+  "en": "Agent is Rate Limited",
+  "zh-CN": "智能体已达到速率限制",
+  "zh-TW": "智能體已達到速率限制",
+  "de": "Agent ist ratenbegrenzt",
+  "ko-KR": "에이전트가 속도 제한되었습니다",
+  "no": "Agenten er hastighetsbegrenset",
+  "it": "L'agente è limitato dalla frequenza",
+  "pt": "O agente está com limite de taxa",
+  "es": "El agente está limitado por tasa",
+  "ar": "الوكيل مقيد بحد السرعة",
+  "fr": "L'agent est limité en fréquence",
+  "tr": "Ajan hız sınırına ulaştı"
   },
   "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
     "en": "Agent has paused.",
@@ -1782,14 +1796,6 @@
     "fr": "Privé",
     "tr": "Özel"
   },
-  "ERROR_MESSAGE$SHOW_DETAILS": {
-    "en": "Show details",
-    "es": "Mostrar detalles"
-  },
-  "ERROR_MESSAGE$HIDE_DETAILS": {
-    "en": "Hide details",
-    "es": "Ocultar detalles"
-  },
   "STATUS$STARTING_RUNTIME": {
     "en": "Starting Runtime...",
     "zh-CN": "启动运行时...",
@@ -1860,19 +1866,19 @@
     "fr": "En attente que le client soit prêt...",
     "tr": "İstemcinin hazır olması bekleniyor..."
   },
-  "ACCOUNT_SETTINGS_MODAL$DISCONNECT":{
+  "ACCOUNT_SETTINGS_MODAL$DISCONNECT": {
     "en": "Disconnect",
     "es": "Desconectar"
   },
-  "ACCOUNT_SETTINGS_MODAL$SAVE":{
+  "ACCOUNT_SETTINGS_MODAL$SAVE": {
     "en": "Save",
     "es": "Guardar"
   },
-  "ACCOUNT_SETTINGS_MODAL$CLOSE":{
+  "ACCOUNT_SETTINGS_MODAL$CLOSE": {
     "en": "Close",
     "es": "Cerrar"
   },
-  "ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID":{
+  "ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID": {
     "en": "GitHub token is invalid. Please try again.",
     "es": ""
   },
@@ -1981,12 +1987,18 @@
     "es": "Toda la información guardada en tu configuración de IA será eliminada, incluyendo tus API Keys"
   },
   "PROJECT_MENU_DETAILS_PLACEHOLDER$NEW_PROJECT_LABEL": {
-    "en":"New Project",
-    "es":"Nuevo proyecto"
+    "en": "New Project",
+    "es": "Nuevo proyecto"
+  },
+  "PROJECT_MENU_DETAILS_PLACEHOLDER$CONNECT_TO_GITHUB": {
+    "en": "Connect to GitHub"
+  },
+  "PROJECT_MENU_DETAILS_PLACEHOLDER$CONNECTED": {
+    "en": "Connected"
   },
   "PROJECT_MENU_DETAILS$AGO_LABEL": {
-    "en":"ago",
-    "es":"atrás"
+    "en": "ago",
+    "es": "atrás"
   },
   "STATUS$ERROR_LLM_AUTHENTICATION": {
     "en": "Error authenticating with the LLM provider. Please check your API key",
@@ -2009,8 +2021,83 @@
     "en": "Push to GitHub",
     "es": "Subir a GitHub"
   },
-  "PROJECT_MENU_CARD_CONTEXT_MENU$DOWNLOAD_AS_ZIP_LABEL": {
-    "en": "Download as .zip",
-    "es": "Descargar como .zip"
+  "PROJECT_MENU_CARD_CONTEXT_MENU$DOWNLOAD_FILES_LABEL": {
+    "en": "Download files",
+    "es": "Descargar archivos"
+  },
+  "PROJECT_MENU_CARD$OPEN": {
+    "en": "Open project menu"
+  },
+  "ACTION_BUTTON$RESUME": {
+    "en": "Resume the agent task"
+  },
+  "ACTION_BUTTON$PAUSE": {
+    "en": "Pause the current task"
+  },
+  "BROWSER$SCREENSHOT_ALT": {
+    "en": "Browser Screenshot"
+  },
+  "ACCOUNT_SETTINGS$SETTINGS": {
+    "en": "Account Settings"
+  },
+  "ACCOUNT_SETTINGS$LOGOUT": {
+    "en": "Logout"
+  },
+  "ERROR_TOAST$CLOSE_BUTTON_LABEL": {
+    "en": "Close"
+  },
+  "FILE_EXPLORER$UPLOAD": {
+    "en": "Upload File"
+  },
+  "FILE_EXPLORER$REFRESH_WORKSPACE": {
+    "en": "Refresh workspace"
+  },
+  "FILE_EXPLORER$OPEN_WORKSPACE": {
+    "en": "Open workspace"
+  },
+  "FILE_EXPLORER$CLOSE_WORKSPACE": {
+    "en": "Close workspace"
+  },
+  "ACTION_MESSAGE$RUN": {
+    "en": "Running a bash command"
+  },
+  "ACTION_MESSAGE$RUN_IPYTHON": {
+    "en": "Running a Python command"
+  },
+  "ACTION_MESSAGE$READ": {
+    "en": "Reading the contents of a file"
+  },
+  "ACTION_MESSAGE$EDIT": {
+    "en": "Editing the contents of a file"
+  },
+  "ACTION_MESSAGE$WRITE": {
+    "en": "Writing to a file"
+  },
+  "ACTION_MESSAGE$BROWSE": {
+    "en": "Browsing the web"
+  },
+  "OBSERVATION_MESSAGE$RUN": {
+    "en": "Ran a bash command"
+  },
+  "OBSERVATION_MESSAGE$RUN_IPYTHON": {
+    "en": "Ran a Python command"
+  },
+  "OBSERVATION_MESSAGE$READ": {
+    "en": "Read the contents of a file"
+  },
+  "OBSERVATION_MESSAGE$EDIT": {
+    "en": "Edited the contents of a file"
+  },
+  "OBSERVATION_MESSAGE$WRITE": {
+    "en": "Wrote to a file"
+  },
+  "OBSERVATION_MESSAGE$BROWSE": {
+    "en": "Browsing completed"
+  },
+  "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
+    "en": "Show details"
+  },
+  "EXPANDABLE_MESSAGE$HIDE_DETAILS": {
+    "en": "Hide details"
   }
 }

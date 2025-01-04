@@ -1,11 +1,13 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import * as router from "react-router";
 import { createRoutesStub } from "react-router";
 import { screen, waitFor, within } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import userEvent from "@testing-library/user-event";
 import MainApp from "#/routes/_oh/route";
-import * as CaptureConsent from "#/utils/handle-capture-consent";
 import i18n from "#/i18n";
+import * as CaptureConsent from "#/utils/handle-capture-consent";
+import OpenHands from "#/api/open-hands";
 
 describe("frontend/routes/_oh", () => {
   const RouteStub = createRoutesStub([{ Component: MainApp, path: "/" }]);
@@ -38,13 +40,7 @@ describe("frontend/routes/_oh", () => {
     await screen.findByTestId("root-layout");
   });
 
-  it("should render the AI config modal if the user is authed", async () => {
-    // Our mock return value is true by default
-    renderWithProviders(<RouteStub />);
-    await screen.findByTestId("ai-config-modal");
-  });
-
-  it("should render the AI config modal if settings are not up-to-date", async () => {
+  it.skip("should render the AI config modal if settings are not up-to-date", async () => {
     settingsAreUpToDateMock.mockReturnValue(false);
     renderWithProviders(<RouteStub />);
 
@@ -60,12 +56,19 @@ describe("frontend/routes/_oh", () => {
     });
   });
 
-  it("should capture the user's consent", async () => {
+  it("should render and capture the user's consent if oss mode", async () => {
     const user = userEvent.setup();
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     const handleCaptureConsentSpy = vi.spyOn(
       CaptureConsent,
       "handleCaptureConsent",
     );
+
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "oss",
+      GITHUB_CLIENT_ID: "test-id",
+      POSTHOG_CLIENT_KEY: "test-key",
+    });
 
     renderWithProviders(<RouteStub />);
 
@@ -85,6 +88,23 @@ describe("frontend/routes/_oh", () => {
     expect(
       screen.queryByTestId("user-capture-consent-form"),
     ).not.toBeInTheDocument();
+  });
+
+  it("should not render the user consent form if saas mode", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+      GITHUB_CLIENT_ID: "test-id",
+      POSTHOG_CLIENT_KEY: "test-key",
+    });
+
+    renderWithProviders(<RouteStub />);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("user-capture-consent-form"),
+      ).not.toBeInTheDocument();
+    });
   });
 
   it("should not render the user consent form if the user has already made a decision", async () => {

@@ -83,14 +83,23 @@ export function ChatInput({
   };
 
   const handleSubmitMessage = () => {
-    if (textareaRef.current?.value) {
-      onSubmit(textareaRef.current.value);
-      textareaRef.current.value = "";
+    const message = value || textareaRef.current?.value || "";
+    if (message.trim()) {
+      onSubmit(message);
+      onChange?.("");
+      if (textareaRef.current) {
+        textareaRef.current.value = "";
+      }
     }
   };
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey && !disabled) {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      !disabled &&
+      !event.nativeEvent.isComposing
+    ) {
       event.preventDefault();
       handleSubmitMessage();
     }

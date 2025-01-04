@@ -6,40 +6,31 @@ import {
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
 import { createChatMessage } from "#/services/chat-service";
-import { getCloneRepoCommand } from "#/services/terminal-service";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { addUserMessage } from "#/state/chat-slice";
-import {
-  clearSelectedRepository,
-  clearFiles,
-  clearInitialQuery,
-} from "#/state/initial-query-slice";
+import { clearFiles, clearInitialQuery } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
-import AgentState from "#/types/agent-state";
+import { AgentState } from "#/types/agent-state";
 
 export const useWSStatusChange = () => {
   const { send, status } = useWsClient();
   const { gitHubToken } = useAuth();
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
 
   const statusRef = React.useRef<WsClientProviderStatus | null>(null);
 
   const { selectedRepository } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const { files, importedProjectZip, initialQuery } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const sendInitialQuery = (query: string, base64Files: string[]) => {
     const timestamp = new Date().toISOString();
     send(createChatMessage(query, base64Files, timestamp));
-  };
-
-  const dispatchCloneRepoCommand = (ghToken: string, repository: string) => {
-    send(getCloneRepoCommand(ghToken, repository));
-    dispatch(clearSelectedRepository());
   };
 
   const dispatchInitialQuery = (query: string, additionalInfo: string) => {
@@ -53,11 +44,10 @@ export const useWSStatusChange = () => {
     dispatch(clearInitialQuery()); // reset initial query
   };
 
-  const handleOnWSActive = () => {
+  const handleAgentInit = () => {
     let additionalInfo = "";
 
     if (gitHubToken && selectedRepository) {
-      dispatchCloneRepoCommand(gitHubToken, selectedRepository);
       additionalInfo = `Repository ${selectedRepository} has been cloned to /workspace. Please check the /workspace for files.`;
     } else if (importedProjectZip) {
       // if there's an uploaded project zip, add it to the chat
@@ -69,6 +59,11 @@ export const useWSStatusChange = () => {
       dispatchInitialQuery(initialQuery, additionalInfo);
     }
   };
+  React.useEffect(() => {
+    if (curAgentState === AgentState.INIT) {
+      handleAgentInit();
+    }
+  }, [curAgentState]);
 
   React.useEffect(() => {
     if (statusRef.current === status) {
@@ -76,21 +71,18 @@ export const useWSStatusChange = () => {
     }
     statusRef.current = status;
 
-    if (status === WsClientProviderStatus.ACTIVE) {
-      handleOnWSActive();
-    }
-
-    if (status === WsClientProviderStatus.OPENING && initialQuery) {
+    if (status !== WsClientProviderStatus.DISCONNECTED && initialQuery) {
       dispatch(
         addUserMessage({
           content: initialQuery,
           imageUrls: files,
           timestamp: new Date().toISOString(),
+          pending: true,
         }),
       );
     }
 
-    if (status === WsClientProviderStatus.STOPPED) {
+    if (status === WsClientProviderStatus.DISCONNECTED) {
       dispatch(setCurrentAgentState(AgentState.STOPPED));
     }
   }, [status]);

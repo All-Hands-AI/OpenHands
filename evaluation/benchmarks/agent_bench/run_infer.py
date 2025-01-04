@@ -43,7 +43,7 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime=os.environ.get('RUNTIME', 'eventstream'),
+        runtime=os.environ.get('RUNTIME', 'docker'),
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             base_container_image='python:3.12-slim',
@@ -59,6 +59,8 @@ def get_config(
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
+    agent_config = config.get_agent_config(metadata.agent_class)
+    agent_config.use_microagents = False
     return config
 
 
@@ -135,7 +137,6 @@ def complete_runtime(
 
         action = CmdRunAction(
             command=f'chmod +x ./{script_name} && ./{script_name}',
-            keep_prompt=False,
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
@@ -162,8 +163,7 @@ def complete_runtime(
             logger.info(f'Running get ground truth cmd: {script_name}')
 
             action = CmdRunAction(
-                command=f'chmod +x ./{script_name} && ./{script_name}',
-                keep_prompt=False,
+                command=f'chmod +x ./{script_name} && ./{script_name}'
             )
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
@@ -307,6 +307,8 @@ if __name__ == '__main__':
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
+        # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
+        llm_config.modify_params = False
 
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')

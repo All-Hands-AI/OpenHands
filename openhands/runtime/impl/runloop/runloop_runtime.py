@@ -1,9 +1,6 @@
 import logging
-import threading
-import time
 from typing import Callable
 
-import requests
 import tenacity
 from runloop_api_client import Runloop
 from runloop_api_client.types import DevboxView
@@ -12,89 +9,18 @@ from runloop_api_client.types.shared_params import LaunchParameters
 from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
-from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
-from openhands.runtime.utils.log_buffer import LogBuffer
-from openhands.runtime.utils.request import send_request
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
 
 
-class RunloopLogBuffer(LogBuffer):
-    """Synchronous buffer for Runloop devbox logs.
-
-    This class provides a thread-safe way to collect, store, and retrieve logs
-    from a Docker container. It uses a list to store log lines and provides methods
-    for appending, retrieving, and clearing logs.
-    """
-
-    def __init__(self, runloop_api_client: Runloop, devbox_id: str):
-        self.client_ready = False
-        self.init_msg = 'Runtime client initialized.'
-
-        self.buffer: list[str] = []
-        self.lock = threading.Lock()
-        self._stop_event = threading.Event()
-        self.runloop_api_client = runloop_api_client
-        self.devbox_id = devbox_id
-        self.log_index = 0
-        self.log_stream_thread = threading.Thread(target=self.stream_logs)
-        self.log_stream_thread.daemon = True
-        self.log_stream_thread.start()
-
-    def stream_logs(self):
-        """Stream logs from the Docker container in a separate thread.
-
-        This method runs in its own thread to handle the blocking
-        operation of reading log lines from the Docker SDK's synchronous generator.
-        """
-
-        try:
-            # TODO(Runloop) Replace with stream
-            while True:
-                raw_logs = self.runloop_api_client.devboxes.logs.list(
-                    self.devbox_id
-                ).logs[self.log_index :]
-                logs = [
-                    log.message
-                    for log in raw_logs
-                    if log.message and log.cmd_id is None
-                ]
-
-                self.log_index += len(raw_logs)
-                if self._stop_event.is_set():
-                    break
-                if logs:
-                    for log_line in logs:
-                        self.append(log_line)
-                        if self.init_msg in log_line:
-                            self.client_ready = True
-
-                time.sleep(1)
-        except Exception as e:
-            logger.error(f'Error streaming runloop logs: {e}')
-
-    # NB: Match LogBuffer behavior on below methods
-
-    def get_and_clear(self) -> list[str]:
-        with self.lock:
-            logs = list(self.buffer)
-            self.buffer.clear()
-            return logs
-
-    def append(self, log_line: str):
-        with self.lock:
-            self.buffer.append(log_line)
-
-    def close(self, timeout: float = 5.0):
-        self._stop_event.set()
-        self.log_stream_thread.join(timeout)
-
-
-class RunloopRuntime(DockerRuntime):
-    """The RunloopRuntime class is a DockerRuntime that utilizes Runloop Devbox as a runtime environment."""
+class RunloopRuntime(ActionExecutionClient):
+    """The RunloopRuntime class is an DockerRuntime that utilizes Runloop Devbox as a runtime environment."""
 
     _sandbox_port: int = 4444
     _vscode_port: int = 4445
@@ -116,10 +42,8 @@ class RunloopRuntime(DockerRuntime):
         self.runloop_api_client = Runloop(
             bearer_token=config.runloop_api_key,
         )
-        self.session = requests.Session()
         self.container_name = CONTAINER_NAME_PREFIX + sid
-        self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
-        self.init_base_runtime(
+        super().__init__(
             config,
             event_stream,
             sid,
@@ -130,8 +54,10 @@ class RunloopRuntime(DockerRuntime):
             headless_mode,
         )
         # Buffer for container logs
-        self.log_buffer: LogBuffer | None = None
         self._vscode_url: str | None = None
+
+    def _get_action_execution_server_host(self):
+        return self.api_url
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(120),
@@ -221,8 +147,6 @@ class RunloopRuntime(DockerRuntime):
             port=self._sandbox_port,
         )
 
-        # Hook up logs
-        self.log_buffer = RunloopLogBuffer(self.runloop_api_client, self.devbox.id)
         self.api_url = tunnel.url
         logger.info(f'Container started. Server url: {self.api_url}')
 
@@ -246,29 +170,10 @@ class RunloopRuntime(DockerRuntime):
         reraise=(ConnectionRefusedError,),
     )
     def _wait_until_alive(self):
-        # NB(Runloop): Remote logs are not guaranteed realtime, removing client_ready check from logs
-        self._refresh_logs()
-        if not self.log_buffer:
-            raise RuntimeError('Runtime client is not ready.')
-        response = send_request(
-            self.session,
-            'GET',
-            f'{self.api_url}/alive',
-            timeout=5,
-        )
-        if response.status_code == 200:
-            return
-        else:
-            msg = f'Action execution API is not alive. Response: {response}'
-            logger.error(msg)
-            raise RuntimeError(msg)
+        super().check_if_alive()
 
     def close(self, rm_all_containers: bool | None = True):
-        if self.log_buffer:
-            self.log_buffer.close()
-
-        if self.session:
-            self.session.close()
+        super().close()
 
         if self.attach_to_existing:
             return
@@ -278,42 +183,24 @@ class RunloopRuntime(DockerRuntime):
 
     @property
     def vscode_url(self) -> str | None:
-        if self.vscode_enabled and self.devbox and self.devbox.status == 'running':
-            if self._vscode_url is not None:
-                return self._vscode_url
-
-            try:
-                with send_request(
-                    self.session,
-                    'GET',
-                    f'{self.api_url}/vscode/connection_token',
-                    timeout=10,
-                ) as response:
-                    response_json = response.json()
-                    assert isinstance(response_json, dict)
-                    if response_json['token'] is None:
-                        return None
-                    token = response_json['token']
-
-                self._vscode_url = (
-                    self.runloop_api_client.devboxes.create_tunnel(
-                        id=self.devbox.id,
-                        port=self._vscode_port,
-                    ).url
-                    + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
-                )
-
-                self.log(
-                    'debug',
-                    f'VSCode URL: {self._vscode_url}',
-                )
-
-                return self._vscode_url
-            except Exception as e:
-                self.log(
-                    'error',
-                    f'Failed to create vscode tunnel {e}',
-                )
-                return None
-        else:
+        if self._vscode_url is not None:  # cached value
+            return self._vscode_url
+        token = super().get_vscode_token()
+        if not token:
             return None
+        if not self.devbox:
+            return None
+        self._vscode_url = (
+            self.runloop_api_client.devboxes.create_tunnel(
+                id=self.devbox.id,
+                port=self._vscode_port,
+            ).url
+            + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        )
+
+        self.log(
+            'debug',
+            f'VSCode URL: {self._vscode_url}',
+        )
+
+        return self._vscode_url

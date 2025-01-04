@@ -9,7 +9,7 @@ import { WsClientProviderStatus } from "#/context/ws-client-provider";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const renderChatInterface = (messages: (Message | ErrorMessage)[]) =>
+const renderChatInterface = (messages: Message[]) =>
   renderWithProviders(<ChatInterface />);
 
 describe("Empty state", () => {
@@ -20,7 +20,7 @@ describe("Empty state", () => {
   const { useWsClient: useWsClientMock } = vi.hoisted(() => ({
     useWsClient: vi.fn(() => ({
       send: sendMock,
-      status: WsClientProviderStatus.ACTIVE,
+      status: WsClientProviderStatus.CONNECTED,
       isLoadingMessages: false,
     })),
   }));
@@ -56,6 +56,7 @@ describe("Empty state", () => {
           content: "Hello",
           imageUrls: [],
           timestamp: new Date().toISOString(),
+          pending: true,
         }),
       );
     });
@@ -89,7 +90,7 @@ describe("Empty state", () => {
       // this is to test that the message is in the UI before the socket is called
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        status: WsClientProviderStatus.ACTIVE,
+        status: WsClientProviderStatus.CONNECTED,
         isLoadingMessages: false,
       }));
       const addUserMessageSpy = vi.spyOn(ChatSlice, "addUserMessage");
@@ -119,7 +120,7 @@ describe("Empty state", () => {
     async () => {
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        status: WsClientProviderStatus.ACTIVE,
+        status: WsClientProviderStatus.CONNECTED,
         isLoadingMessages: false,
       }));
       const user = userEvent.setup();
@@ -137,7 +138,7 @@ describe("Empty state", () => {
 
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        status: WsClientProviderStatus.ACTIVE,
+        status: WsClientProviderStatus.CONNECTED,
         isLoadingMessages: false,
       }));
       rerender(<ChatInterface />);
@@ -172,12 +173,14 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
       {
         sender: "assistant",
         content: "Hi",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
     ];
     renderChatInterface(messages);
@@ -192,7 +195,7 @@ describe.skip("ChatInterface", () => {
     expect(screen.getByTestId("chat-input")).toBeInTheDocument();
   });
 
-  it.todo("should call socket send when submitting a message", async () => {
+  it("should call socket send when submitting a message", async () => {
     const user = userEvent.setup();
     const messages: Message[] = [];
     renderChatInterface(messages);
@@ -211,6 +214,7 @@ describe.skip("ChatInterface", () => {
         content: "Here are some images",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
     ];
     const { rerender } = renderChatInterface(messages);
@@ -223,6 +227,7 @@ describe.skip("ChatInterface", () => {
         content: "Here are some images",
         imageUrls: ["image1", "image2"],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
     ];
 
@@ -235,8 +240,6 @@ describe.skip("ChatInterface", () => {
     );
   });
 
-  it.todo("should render confirmation buttons");
-
   it("should render a 'continue' action when there are more than 2 messages and awaiting user input", () => {
     const messages: Message[] = [
       {
@@ -244,12 +247,14 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
       {
         sender: "user",
         content: "Hi",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
     ];
     const { rerender } = renderChatInterface(messages);
@@ -262,6 +267,7 @@ describe.skip("ChatInterface", () => {
       content: "How can I help you?",
       imageUrls: [],
       timestamp: new Date().toISOString(),
+      pending: true,
     });
 
     rerender(<ChatInterface />);
@@ -270,17 +276,19 @@ describe.skip("ChatInterface", () => {
   });
 
   it("should render inline errors", () => {
-    const messages: (Message | ErrorMessage)[] = [
+    const messages: Message[] = [
       {
         sender: "assistant",
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
       {
-        error: true,
-        id: "",
-        message: "Something went wrong",
+        type: "error",
+        content: "Something went wrong",
+        sender: "assistant",
+        timestamp: new Date().toISOString(),
       },
     ];
     renderChatInterface(messages);
@@ -301,6 +309,7 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
     ];
     renderChatInterface(messages);
@@ -326,6 +335,7 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
     ];
     const { rerender } = renderChatInterface(messages);
@@ -358,18 +368,21 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
       {
         sender: "user",
         content: "Hi",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
       {
         sender: "assistant",
         content: "How can I help you?",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
     ];
     const { rerender } = renderChatInterface(messages);
@@ -380,18 +393,11 @@ describe.skip("ChatInterface", () => {
       content: "I need help",
       imageUrls: [],
       timestamp: new Date().toISOString(),
+      pending: true,
     });
 
     rerender(<ChatInterface />);
 
     expect(screen.getByTestId("feedback-actions")).toBeInTheDocument();
-  });
-
-  describe("feedback", () => {
-    it.todo("should open the feedback modal when a feedback action is clicked");
-    it.todo(
-      "should submit feedback and hide the actions when feedback is shared",
-    );
-    it.todo("should render the actions once more after new messages are added");
   });
 });

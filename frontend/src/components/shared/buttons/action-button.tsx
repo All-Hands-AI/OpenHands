@@ -1,5 +1,5 @@
 import { Tooltip } from "@nextui-org/react";
-import AgentState from "#/types/agent-state";
+import { AgentState } from "#/types/agent-state";
 
 interface ActionButtonProps {
   isDisabled?: boolean;

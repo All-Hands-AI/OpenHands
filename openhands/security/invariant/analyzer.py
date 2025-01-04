@@ -300,7 +300,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         )
         # we should confirm only on agent actions
         event_source = event.source if event.source else EventSource.AGENT
-        await call_sync_from_async(self.event_stream.add_event, new_event, event_source)
+        self.event_stream.add_event(new_event, event_source)
 
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         logger.debug('Calling security_risk on InvariantAnalyzer')

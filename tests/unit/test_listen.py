@@ -16,8 +16,9 @@ class MockStaticFiles:
 
 
 # Patch necessary components before importing from listen
-with patch('openhands.server.session.SessionManager', MockSessionManager), patch(
-    'fastapi.staticfiles.StaticFiles', MockStaticFiles
+with (
+    patch('openhands.server.session.SessionManager', MockSessionManager),
+    patch('fastapi.staticfiles.StaticFiles', MockStaticFiles),
 ):
     from openhands.server.file_config import (
         is_extension_allowed,
@@ -53,8 +54,9 @@ def test_load_file_upload_config_invalid_max_size():
 
 
 def test_is_extension_allowed():
-    with patch('openhands.server.file_config.RESTRICT_FILE_TYPES', True), patch(
-        'openhands.server.file_config.ALLOWED_EXTENSIONS', ['.txt', '.pdf']
+    with (
+        patch('openhands.server.file_config.RESTRICT_FILE_TYPES', True),
+        patch('openhands.server.file_config.ALLOWED_EXTENSIONS', ['.txt', '.pdf']),
     ):
         assert is_extension_allowed('file.txt')
         assert is_extension_allowed('file.pdf')
@@ -71,8 +73,9 @@ def test_is_extension_allowed_no_restrictions():
 
 
 def test_is_extension_allowed_wildcard():
-    with patch('openhands.server.file_config.RESTRICT_FILE_TYPES', True), patch(
-        'openhands.server.file_config.ALLOWED_EXTENSIONS', ['.*']
+    with (
+        patch('openhands.server.file_config.RESTRICT_FILE_TYPES', True),
+        patch('openhands.server.file_config.ALLOWED_EXTENSIONS', ['.*']),
     ):
         assert is_extension_allowed('file.txt')
         assert is_extension_allowed('file.pdf')

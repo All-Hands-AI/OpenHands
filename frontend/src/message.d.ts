@@ -1,12 +1,11 @@
 type Message = {
   sender: "user" | "assistant";
   content: string;
-  imageUrls: string[];
   timestamp: string;
-};
-
-type ErrorMessage = {
-  error: boolean;
-  id?: string;
-  message: string;
+  imageUrls?: string[];
+  type?: "thought" | "error" | "action";
+  success?: boolean;
+  pending?: boolean;
+  translationID?: string;
+  eventID?: number;
 };

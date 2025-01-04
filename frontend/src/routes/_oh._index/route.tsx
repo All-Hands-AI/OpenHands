@@ -1,9 +1,8 @@
-import { useLocation, useNavigate } from "react-router";
 import React from "react";
 import { useDispatch } from "react-redux";
+import posthog from "posthog-js";
 import { setImportedProjectZip } from "#/state/initial-query-slice";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
-import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
@@ -14,17 +13,12 @@ import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
 
 function Home() {
-  const { token, gitHubToken } = useAuth();
-
+  const { gitHubToken } = useAuth();
   const dispatch = useDispatch();
-  const location = useLocation();
-  const navigate = useNavigate();
-
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const { data: config } = useConfig();
   const { data: user } = useGitHubUser();
-  const { data: repositories } = useUserRepositories();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     gitHubToken,
@@ -32,27 +26,22 @@ function Home() {
     gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   });
 
-  React.useEffect(() => {
-    if (token) navigate("/app");
-  }, [location.pathname]);
+  const latestConversation = localStorage.getItem("latest_conversation_id");
 
   return (
     <div
       data-testid="root-index"
-      className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto"
+      className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto px-2"
     >
       <HeroHeading />
-      <div className="flex flex-col gap-16 w-[600px] items-center">
+      <div className="flex flex-col gap-8 w-full md:w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
           <TaskForm ref={formRef} />
         </div>
 
-        <div className="flex gap-4 w-full">
+        <div className="flex gap-4 w-full flex-col md:flex-row">
           <GitHubRepositoriesSuggestionBox
             handleSubmit={() => formRef.current?.requestSubmit()}
-            repositories={
-              repositories?.pages.flatMap((page) => page.data) || []
-            }
             gitHubAuthUrl={gitHubAuthUrl}
             user={user || null}
           />
@@ -61,6 +50,7 @@ function Home() {
               if (event.target.files) {
                 const zip = event.target.files[0];
                 dispatch(setImportedProjectZip(await convertZipToBase64(zip)));
+                posthog.capture("zip_file_uploaded");
                 formRef.current?.requestSubmit();
               } else {
                 // TODO: handle error
@@ -69,6 +59,19 @@ function Home() {
           />
         </div>
       </div>
+      {latestConversation && (
+        <div className="flex gap-4 w-full text-center mt-8">
+          <p className="text-center w-full">
+            Or&nbsp;
+            <a
+              className="underline"
+              href={`/conversations/${latestConversation}`}
+            >
+              jump back to your most recent conversation
+            </a>
+          </p>
+        </div>
+      )}
     </div>
   );
 }

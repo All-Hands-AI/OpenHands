@@ -12,7 +12,7 @@ from openhands.core.config import load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
-from openhands.runtime.impl.docker import DockerRuntime
+from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.runtime.impl.local import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
@@ -21,7 +21,7 @@ from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_async_from_sync
 
 TEST_IN_CI = os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes']
-TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream').lower()
+TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'docker').lower()
 RUN_AS_OPENHANDS = os.getenv('RUN_AS_OPENHANDS', 'True').lower() in ['true', '1', 'yes']
 test_mount_path = ''
 project_dir = os.path.dirname(
@@ -70,7 +70,7 @@ def _close_test_runtime(runtime: Runtime) -> None:
     time.sleep(1)
 
 
-def _reset_pwd() -> None:
+def _reset_cwd() -> None:
     global project_dir
     # Try to change back to project directory
     try:
@@ -130,7 +130,7 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
 # Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
 def get_runtime_classes() -> list[type[Runtime]]:
     runtime = TEST_RUNTIME
-    if runtime.lower() == 'eventstream':
+    if runtime.lower() == 'docker' or runtime.lower() == 'eventstream':
         return [DockerRuntime]
     elif runtime.lower() == 'local':
         return [LocalRuntime]
@@ -155,16 +155,16 @@ def get_run_as_openhands() -> list[bool]:
 
 @pytest.fixture(scope='module')  # for xdist
 def runtime_setup_module():
-    _reset_pwd()
+    _reset_cwd()
     yield
-    _reset_pwd()
+    _reset_cwd()
 
 
 @pytest.fixture(scope='session')  # not for xdist
 def runtime_setup_session():
-    _reset_pwd()
+    _reset_cwd()
     yield
-    _reset_pwd()
+    _reset_cwd()
 
 
 # This assures that all tests run together per runtime, not alternating between them,
@@ -233,14 +233,14 @@ def _load_runtime(
     global test_mount_path
     if use_workspace:
         test_mount_path = os.path.join(config.workspace_base, 'rt')
+    elif temp_dir is not None:
+        test_mount_path = os.path.join(temp_dir, sid)
     else:
-        test_mount_path = os.path.join(
-            temp_dir, sid
-        )  # need a subfolder to avoid conflicts
+        test_mount_path = None
     config.workspace_mount_path = test_mount_path
 
     # Mounting folder specific for this test inside the sandbox
-    config.workspace_mount_path_in_sandbox = f'{sandbox_test_folder}/{sid}'
+    config.workspace_mount_path_in_sandbox = f'{sandbox_test_folder}'
     print('\nPaths used:')
     print(f'use_host_network: {config.sandbox.use_host_network}')
     print(f'workspace_base: {config.workspace_base}')

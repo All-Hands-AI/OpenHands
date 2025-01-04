@@ -4,9 +4,10 @@ This folder contains evaluation harness for evaluating agents on the [GAIA bench
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Run the evaluation
+
 We are using the GAIA dataset hosted on [Hugging Face](https://huggingface.co/datasets/gaia-benchmark/GAIA).
 Please accept the terms and make sure to have logged in on your computer by `huggingface-cli login` before running the evaluation.
 
@@ -41,6 +42,7 @@ For example,
 ## Get score
 
 Then you can get stats by running the following command:
+
 ```bash
 python ./evaluation/benchmarks/gaia/get_score.py \
 --file <path_to/output.json>

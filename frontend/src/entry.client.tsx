@@ -20,7 +20,7 @@ import toast from "react-hot-toast";
 import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
-import { UserPrefsProvider } from "./context/user-prefs-context";
+import { SettingsUpToDateProvider } from "./context/settings-up-to-date-context";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -52,8 +52,8 @@ async function prepareApp() {
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
-    onError: (error) => {
-      toast.error(error.message);
+    onError: (error, query) => {
+      if (!query.queryKey.includes("authenticated")) toast.error(error.message);
     },
   }),
   defaultOptions: {
@@ -71,14 +71,14 @@ prepareApp().then(() =>
       document,
       <StrictMode>
         <Provider store={store}>
-          <UserPrefsProvider>
-            <AuthProvider>
+          <AuthProvider>
+            <SettingsUpToDateProvider>
               <QueryClientProvider client={queryClient}>
                 <HydratedRouter />
                 <PosthogInit />
               </QueryClientProvider>
-            </AuthProvider>
-          </UserPrefsProvider>
+            </SettingsUpToDateProvider>
+          </AuthProvider>
         </Provider>
       </StrictMode>,
     );
