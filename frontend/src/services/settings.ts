@@ -1,5 +1,7 @@
 import OpenHands from "#/api/open-hands";
 
+export const LATEST_SETTINGS_VERSION = 5;
+
 export type Settings = {
   LLM_MODEL: string;
   LLM_BASE_URL: string;
@@ -66,30 +68,12 @@ export const getLocalStorageSettings = (): Settings => {
  */
 export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
 
-/**
- * Get the settings from the server or use the default settings if not found
- */
-export const getSettings = async (): Promise<Settings> => {
+export const getCurrentSettingsVersion = () => {
+  const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
+  if (!settingsVersion) return 0;
   try {
-    const apiSettings = await OpenHands.getSettings();
-    if (apiSettings != null) {
-      return {
-        LLM_MODEL: apiSettings.llm_model || DEFAULT_SETTINGS.LLM_MODEL,
-        LLM_BASE_URL: apiSettings.llm_base_url || DEFAULT_SETTINGS.LLM_BASE_URL,
-        AGENT: apiSettings.agent || DEFAULT_SETTINGS.AGENT,
-        LANGUAGE: apiSettings.language || DEFAULT_SETTINGS.LANGUAGE,
-        CONFIRMATION_MODE:
-          apiSettings.confirmation_mode ?? DEFAULT_SETTINGS.CONFIRMATION_MODE,
-        SECURITY_ANALYZER:
-          apiSettings.security_analyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
-        LLM_API_KEY: apiSettings.llm_api_key ?? DEFAULT_SETTINGS.LLM_API_KEY,
-        REMOTE_RUNTIME_RESOURCE_FACTOR:
-          apiSettings.remote_runtime_resource_factor ??
-          DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-      };
-    }
-  } catch (error) {
-    // If API fails, fallback to localStorage
+    return parseInt(settingsVersion, 10);
+  } catch (e) {
+    return 0;
   }
-  return getLocalStorageSettings();
 };

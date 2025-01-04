@@ -1,15 +1,5 @@
 import React from "react";
-const LATEST_SETTINGS_VERSION = 5;
-
-export const getCurrentSettingsVersion = () => {
-  const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
-  if (!settingsVersion) return 0;
-  try {
-    return parseInt(settingsVersion, 10);
-  } catch (e) {
-    return 0;
-  }
-};
+import { LATEST_SETTINGS_VERSION, getCurrentSettingsVersion } from "#/services/settings";
 
 export const settingsAreUpToDate = () =>
   getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
