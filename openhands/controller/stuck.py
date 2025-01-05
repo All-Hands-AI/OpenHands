@@ -127,22 +127,22 @@ class StuckDetector:
 
     def _is_stuck_repeating_action_error(self, last_actions, last_observations):
         # scenario 2: same action, errors
-        # it takes 4 actions and 4 observations to detect a loop
-        # check if the last four actions are the same and result in errors
+        # it takes 3 actions and 3 observations to detect a loop
+        # check if the last three actions are the same and result in errors
 
         if len(last_actions) < 4 or len(last_observations) < 4:
             return False
 
-        # are the last four actions the "same"?
-        if all(self._eq_no_pid(last_actions[0], action) for action in last_actions[:4]):
-            # and the last four observations are all errors?
-            if all(isinstance(obs, ErrorObservation) for obs in last_observations[:4]):
+        # are the last three actions the "same"?
+        if all(self._eq_no_pid(last_actions[0], action) for action in last_actions[:3]):
+            # and the last three observations are all errors?
+            if all(isinstance(obs, ErrorObservation) for obs in last_observations[:3]):
                 logger.warning('Action, ErrorObservation loop detected')
                 return True
-            # or, are the last four observations all IPythonRunCellObservation with SyntaxError?
+            # or, are the last three observations all IPythonRunCellObservation with SyntaxError?
             elif all(
                 isinstance(obs, IPythonRunCellObservation)
-                for obs in last_observations[:4]
+                for obs in last_observations[:3]
             ):
                 warning = 'Action, IPythonRunCellObservation loop detected'
                 for error_message in self.SYNTAX_ERROR_MESSAGES:
@@ -150,7 +150,7 @@ class StuckDetector:
                         'SyntaxError: unterminated string literal (detected at line'
                     ):
                         if self._check_for_consistent_line_error(
-                            last_observations[:4], error_message
+                            last_observations[:3], error_message
                         ):
                             logger.warning(warning)
                             return True
@@ -158,7 +158,7 @@ class StuckDetector:
                         'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
                         'SyntaxError: incomplete input',
                     ) and self._check_for_consistent_invalid_syntax(
-                        last_observations[:4], error_message
+                        last_observations[:3], error_message
                     ):
                         logger.warning(warning)
                         return True
@@ -191,11 +191,11 @@ class StuckDetector:
 
         # Check if:
         # 1. All first lines are identical
-        # 2. We have exactly 4 valid observations
+        # 2. We have exactly 3 valid observations
         # 3. The error message line is identical in all valid observations
         return (
             len(set(first_lines)) == 1
-            and len(valid_observations) == 4
+            and len(valid_observations) == 3
             and len(
                 set(
                     obs.content.strip().split('\n')[:-2][-1]
@@ -228,9 +228,9 @@ class StuckDetector:
             if error_message in last_lines[-3]:
                 error_lines.append(last_lines[-3])
 
-        # Check if we found the error message in all 4 observations
+        # Check if we found the error message in all 3 observations
         # and the 3rd-to-last line is identical across all occurrences
-        return len(error_lines) == 4 and len(set(error_lines)) == 1
+        return len(error_lines) == 3 and len(set(error_lines)) == 1
 
     def _is_stuck_monologue(self, filtered_history):
         # scenario 3: monologue
