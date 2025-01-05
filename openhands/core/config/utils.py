@@ -2,6 +2,7 @@ import argparse
 import os
 import pathlib
 import platform
+import sys
 from dataclasses import is_dataclass
 from types import UnionType
 from typing import Any, MutableMapping, get_args, get_origin
@@ -311,8 +312,14 @@ def get_llm_config_arg(
 
 # Command line arguments
 def get_parser() -> argparse.ArgumentParser:
-    """Get the parser for the command line arguments."""
-    parser = argparse.ArgumentParser(description='Run an agent with a specific task')
+    """Get the argument parser."""
+    parser = argparse.ArgumentParser(description='Run the agent via CLI')
+
+    # Add version argument
+    parser.add_argument(
+        '-v', '--version', action='store_true', help='Show version information'
+    )
+
     parser.add_argument(
         '--config-file',
         type=str,
@@ -412,10 +419,17 @@ def get_parser() -> argparse.ArgumentParser:
 
 
 def parse_arguments() -> argparse.Namespace:
-    """Parse the command line arguments."""
+    """Parse command line arguments."""
     parser = get_parser()
-    parsed_args, _ = parser.parse_known_args()
-    return parsed_args
+    args = parser.parse_args()
+
+    if args.version:
+        from openhands import __version__
+
+        print(f'OpenHands version: {__version__}')
+        sys.exit(0)
+
+    return args
 
 
 def load_app_config(

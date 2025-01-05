@@ -6,7 +6,6 @@ from uuid import uuid4
 from termcolor import colored
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
-from openhands import __version__
 from openhands.core.config import (
     AppConfig,
     parse_arguments,
@@ -103,10 +102,6 @@ async def main(loop: asyncio.AbstractEventLoop):
     """Runs the agent in CLI mode"""
 
     args = parse_arguments()
-
-    if args.version:
-        print(f'OpenHands version: {__version__}')
-        return
 
     logger.setLevel(logging.WARNING)
 
