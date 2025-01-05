@@ -54,20 +54,29 @@ done
 OUTPUT_FILE=$(echo "$INFER_OUTPUT" | grep -o '### OUTPUT FILE:.* ###' | sed 's/### OUTPUT FILE: \(.*\) ###/\1/')
 echo "Got OUTPUT_FILE: $OUTPUT_FILE"
 
-echo "### Evaluating on $OUTPUT_FILE ... ###"
-COMMAND="poetry run python evaluation/benchmarks/swe_bench/eval_infer.py \
-  --eval-num-workers $((N_WORKERS * 2)) \
-  --input-file $OUTPUT_FILE \
-  --dataset $DATASET \
-  --split $SPLIT"
+while true; do
+    echo "### Evaluating on $OUTPUT_FILE ... ###"
+    COMMAND="poetry run python evaluation/benchmarks/swe_bench/eval_infer.py \
+    --eval-num-workers $((N_WORKERS * 2)) \
+    --input-file $OUTPUT_FILE \
+    --dataset $DATASET \
+    --split $SPLIT"
 
-if [ -n "$EVAL_LIMIT" ]; then
-  echo "EVAL_LIMIT: $EVAL_LIMIT"
-  COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
-fi
-echo "Running command: $COMMAND"
-# Run the command
-eval $COMMAND
+    if [ -n "$EVAL_LIMIT" ]; then
+    echo "EVAL_LIMIT: $EVAL_LIMIT"
+    COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
+    fi
+    echo "Running command: $COMMAND"
+    # Run the command
+    eval $COMMAND
+    EVAL_STATUS=$?
+    if [ $EVAL_STATUS -eq 0 ]; then
+        echo "### Evaluation completed successfully. ###"
+        break
+    else
+        echo "### Evaluation failed with exit code $EVAL_STATUS. Retrying... ###"
+    fi
+done
 
 # update the output with evaluation results
 echo "### Updating the output with evaluation results... ###"
