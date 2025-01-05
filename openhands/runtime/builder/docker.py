@@ -78,6 +78,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             # binary available, in which case we need to download docker binary.
             # since the official openhands app image is built from debian, we use
             # debian way to install docker binary
+            logger.info(
+                'No docker binary available inside openhands-app container, trying to download online...'
+            )
             commands = [
                 'apt-get update',
                 'apt-get install -y ca-certificates curl gnupg',
@@ -100,6 +103,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                     logger.error(f'Image build failed:\n{e}')
                     logger.error(f'Command output:\n{e.output}')
                     raise
+            logger.info('Downloaded and installed docker binary')
 
         target_image_hash_name = tags[0]
         target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
