@@ -17,6 +17,7 @@ from openhands.microagent import (
 @dataclass
 class RepositoryInfo:
     """Information about a GitHub repository that has been cloned."""
+
     repo_name: str | None = None
     repo_directory: str | None = None
 
@@ -111,7 +112,9 @@ class PromptManager:
             repo_directory=self.repository_info.repo_directory,
         ).strip()
 
-    def set_repository_info(self, repo_name: str | None, repo_directory: str | None = None) -> None:
+    def set_repository_info(
+        self, repo_name: str | None, repo_directory: str | None = None
+    ) -> None:
         """Sets information about the GitHub repository that has been cloned.
 
         Args:
