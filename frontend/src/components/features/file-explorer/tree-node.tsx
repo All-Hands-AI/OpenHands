@@ -1,10 +1,12 @@
 import React from "react";
+import { useSelector } from "react-redux";
 
 import { useFiles } from "#/context/files";
 import { cn } from "#/utils/utils";
 import { useListFiles } from "#/hooks/query/use-list-files";
 import { useListFile } from "#/hooks/query/use-list-file";
 import { Filename } from "./filename";
+import { RootState } from "#/store";
 
 interface TreeNodeProps {
   path: string;
@@ -12,14 +14,9 @@ interface TreeNodeProps {
 }
 
 function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
-  const {
-    setFileContent,
-    modifiedFiles,
-    setSelectedPath,
-    files,
-    selectedPath,
-  } = useFiles();
+  const { setFileContent, setSelectedPath, files, selectedPath } = useFiles();
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const isDirectory = path.endsWith("/");
 
@@ -32,12 +29,17 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
 
   React.useEffect(() => {
     if (fileContent) {
-      const code = modifiedFiles[path] || files[path];
-      if (!code || fileContent !== files[path]) {
+      if (fileContent !== files[path]) {
         setFileContent(path, fileContent);
       }
     }
   }, [fileContent, path]);
+
+  React.useEffect(() => {
+    if (selectedPath === path && !isDirectory) {
+      refetch();
+    }
+  }, [curAgentState, selectedPath, path, isDirectory]);
 
   const fileParts = path.split("/");
   const filename =
@@ -70,10 +72,6 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
           type={isDirectory ? "folder" : "file"}
           isOpen={isOpen}
         />
-
-        {modifiedFiles[path] && (
-          <div className="w-2 h-2 rounded-full bg-neutral-500" />
-        )}
       </button>
 
       {isOpen && paths && (
