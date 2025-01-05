@@ -76,20 +76,20 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         if not DockerRuntimeBuilder.check_buildx():
             # when running openhands in a container, there might not be a "docker"
             # binary available, in which case we need to download docker binary.
-            # since the official openhands app image is built from ubuntu, we use
-            # ubuntu way to install docker binary
+            # since the official openhands app image is built from debian, we use
+            # debian way to install docker binary
             commands = [
                 'apt-get update',
-                'apt-get install ca-certificates curl',
+                'apt-get install -y ca-certificates curl gnupg',
                 'install -m 0755 -d /etc/apt/keyrings',
-                'curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc',
+                'curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc',
                 'chmod a+r /etc/apt/keyrings/docker.asc',
                 'echo \
-                  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+                  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
                   $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
                   tee /etc/apt/sources.list.d/docker.list > /dev/null',
                 'apt-get update',
-                'apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin',
+                'apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin',
             ]
             for cmd in commands:
                 try:
