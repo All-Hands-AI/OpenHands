@@ -413,7 +413,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '--no-auto-continue',
         action='store_true',
-        help='Disable automatic "continue" responses. Will read from stdin instead.',
+        help='Disable automatic "continue" responses in headless mode. Will read from stdin instead.',
     )
     return parser
 
