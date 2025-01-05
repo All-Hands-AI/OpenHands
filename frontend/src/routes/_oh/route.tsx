@@ -4,11 +4,12 @@ import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useAuth } from "#/context/auth-context";
-import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
+import { useSettings } from "#/hooks/query/use-settings";
+import { useMaybeMigrateSettings } from "#/hooks/use-maybe-migrate-settings";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -43,29 +44,23 @@ export function ErrorBoundary() {
 }
 
 export default function MainApp() {
-  const { gitHubToken, clearToken } = useAuth();
-  const { settings } = useUserPrefs();
+  useMaybeMigrateSettings();
+
+  const { gitHubToken } = useAuth();
+  const { data: settings } = useSettings();
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
     !localStorage.getItem("analytics-consent"),
   );
 
   const config = useConfig();
-  const {
-    data: isAuthed,
-    isFetched,
-    isFetching: isFetchingAuth,
-  } = useIsAuthed();
+  const { data: isAuthed, isFetching: isFetchingAuth } = useIsAuthed();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     gitHubToken,
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
-
-  React.useEffect(() => {
-    if (isFetched && !isAuthed) clearToken();
-  }, [isFetched, isAuthed]);
 
   React.useEffect(() => {
     if (settings.LANGUAGE) {
