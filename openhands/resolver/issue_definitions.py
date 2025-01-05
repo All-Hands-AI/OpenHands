@@ -37,9 +37,9 @@ class IssueHandlerInterface(ABC):
 
     @abstractmethod
     def guess_success(
-        self, issue: GithubIssue, history: list[Event]
+        self, issue: GithubIssue, history: list[Event], git_patch: str | None = None
     ) -> tuple[bool, list[bool] | None, str]:
-        """Guess if the issue has been resolved based on the agent's output."""
+        """Guess if the issue has been resolved based on the agent's output and git patch."""
         pass
 
 
@@ -249,13 +249,14 @@ class IssueHandler(IssueHandlerInterface):
         )
 
     def guess_success(
-        self, issue: GithubIssue, history: list[Event]
+        self, issue: GithubIssue, history: list[Event], git_patch: str | None = None
     ) -> tuple[bool, None | list[bool], str]:
         """Guess if the issue is fixed based on the history and the issue description.
 
         Args:
             issue: The issue to check
             history: The agent's history
+            git_patch: Optional git patch showing the changes made
         """
         last_message = history[-1].message
 
@@ -665,6 +666,7 @@ class PRHandler(IssueHandler):
         review_thread: ReviewThread,
         issues_context: str,
         last_message: str,
+        git_patch: str | None = None,
     ) -> tuple[bool, str]:
         """Check if a review thread's feedback has been addressed."""
         files_context = json.dumps(review_thread.files, indent=4)
@@ -683,6 +685,7 @@ class PRHandler(IssueHandler):
             feedback=review_thread.comment,
             files_context=files_context,
             last_message=last_message,
+            git_patch=git_patch or 'No changes made yet',
         )
 
         return self._check_feedback_with_llm(prompt)
@@ -692,6 +695,7 @@ class PRHandler(IssueHandler):
         thread_comments: list[str],
         issues_context: str,
         last_message: str,
+        git_patch: str | None = None,
     ) -> tuple[bool, str]:
         """Check if thread comments feedback has been addressed."""
         thread_context = '\n---\n'.join(thread_comments)
@@ -708,6 +712,7 @@ class PRHandler(IssueHandler):
             issue_context=issues_context,
             thread_context=thread_context,
             last_message=last_message,
+            git_patch=git_patch or 'No changes made yet',
         )
 
         return self._check_feedback_with_llm(prompt)
@@ -717,6 +722,7 @@ class PRHandler(IssueHandler):
         review_comments: list[str],
         issues_context: str,
         last_message: str,
+        git_patch: str | None = None,
     ) -> tuple[bool, str]:
         """Check if review comments feedback has been addressed."""
         review_context = '\n---\n'.join(review_comments)
@@ -733,15 +739,17 @@ class PRHandler(IssueHandler):
             issue_context=issues_context,
             review_context=review_context,
             last_message=last_message,
+            git_patch=git_patch or 'No changes made yet',
         )
 
         return self._check_feedback_with_llm(prompt)
 
     def guess_success(
-        self, issue: GithubIssue, history: list[Event]
+        self, issue: GithubIssue, history: list[Event], git_patch: str | None = None
     ) -> tuple[bool, None | list[bool], str]:
-        """Guess if the issue is fixed based on the history and the issue description."""
+        """Guess if the issue is fixed based on the history, issue description and git patch."""
         last_message = history[-1].message
+
         issues_context = json.dumps(issue.closing_issues, indent=4)
         success_list = []
         explanation_list = []
@@ -751,7 +759,7 @@ class PRHandler(IssueHandler):
             for review_thread in issue.review_threads:
                 if issues_context and last_message:
                     success, explanation = self._check_review_thread(
-                        review_thread, issues_context, last_message
+                        review_thread, issues_context, last_message, git_patch
                     )
                 else:
                     success, explanation = False, 'Missing context or message'
@@ -761,7 +769,7 @@ class PRHandler(IssueHandler):
         elif issue.thread_comments:
             if issue.thread_comments and issues_context and last_message:
                 success, explanation = self._check_thread_comments(
-                    issue.thread_comments, issues_context, last_message
+                    issue.thread_comments, issues_context, last_message, git_patch
                 )
             else:
                 success, explanation = (
@@ -774,7 +782,7 @@ class PRHandler(IssueHandler):
             # Handle PRs with only review comments (no file-specific review comments or thread comments)
             if issue.review_comments and issues_context and last_message:
                 success, explanation = self._check_review_comments(
-                    issue.review_comments, issues_context, last_message
+                    issue.review_comments, issues_context, last_message, git_patch
                 )
             else:
                 success, explanation = (

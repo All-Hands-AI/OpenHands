@@ -1,13 +1,24 @@
 import posthog from "posthog-js";
 import React from "react";
 import { io, Socket } from "socket.io-client";
-
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
+import { OpenHandsParsedEvent } from "#/types/core";
+import { AgentStateChangeObservation } from "#/types/core/observations";
 
-const isOpenHandsMessage = (event: Record<string, unknown>) =>
-  event.action === "message";
+const isOpenHandsMessage = (event: unknown): event is OpenHandsParsedEvent =>
+  typeof event === "object" &&
+  event !== null &&
+  "id" in event &&
+  "source" in event &&
+  "message" in event &&
+  "timestamp" in event;
+
+const isAgentStateChangeObservation = (
+  event: OpenHandsParsedEvent,
+): event is AgentStateChangeObservation =>
+  "observation" in event && event.observation === "agent_state_changed";
 
 export enum WsClientProviderStatus {
   CONNECTED,
@@ -63,7 +74,7 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
-    if (isOpenHandsMessage(event)) {
+    if (isOpenHandsMessage(event) && !isAgentStateChangeObservation(event)) {
       messageRateHandler.record(new Date().getTime());
     }
     setEvents((prevEvents) => [...prevEvents, event]);

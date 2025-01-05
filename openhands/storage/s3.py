@@ -15,8 +15,8 @@ class S3FileStore(FileStore):
         self.bucket = os.getenv('AWS_S3_BUCKET')
         self.client = Minio(endpoint, access_key, secret_key, secure=secure)
 
-    def write(self, path: str, contents: str) -> None:
-        as_bytes = contents.encode('utf-8')
+    def write(self, path: str, contents: str | bytes) -> None:
+        as_bytes = contents.encode('utf-8') if isinstance(contents, str) else contents
         stream = io.BytesIO(as_bytes)
         try:
             self.client.put_object(self.bucket, path, stream, len(as_bytes))

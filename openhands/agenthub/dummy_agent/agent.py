@@ -1,4 +1,4 @@
-from typing import TypedDict, Union
+from typing import TypedDict
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -6,7 +6,6 @@ from openhands.core.config import AgentConfig
 from openhands.core.schema import AgentState
 from openhands.events.action import (
     Action,
-    AddTaskAction,
     AgentFinishAction,
     AgentRejectAction,
     BrowseInteractiveAction,
@@ -15,10 +14,11 @@ from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
     MessageAction,
-    ModifyTaskAction,
 )
 from openhands.events.observation import (
     AgentStateChangedObservation,
+    BrowserOutputObservation,
+    CmdOutputMetadata,
     CmdOutputObservation,
     FileReadObservation,
     FileWriteObservation,
@@ -50,30 +50,12 @@ class DummyAgent(Agent):
         super().__init__(llm, config)
         self.steps: list[ActionObs] = [
             {
-                'action': AddTaskAction(
-                    parent='None', goal='check the current directory'
-                ),
-                'observations': [],
-            },
-            {
-                'action': AddTaskAction(parent='0', goal='run ls'),
-                'observations': [],
-            },
-            {
-                'action': ModifyTaskAction(task_id='0', state='in_progress'),
-                'observations': [],
-            },
-            {
                 'action': MessageAction('Time to get started!'),
                 'observations': [],
             },
             {
                 'action': CmdRunAction(command='echo "foo"'),
-                'observations': [
-                    CmdOutputObservation(
-                        'foo', command_id=-1, command='echo "foo"', exit_code=0
-                    )
-                ],
+                'observations': [CmdOutputObservation('foo', command='echo "foo"')],
             },
             {
                 'action': FileWriteAction(
@@ -96,16 +78,20 @@ class DummyAgent(Agent):
                 'observations': [
                     CmdOutputObservation(
                         'bash: hello.sh: No such file or directory',
-                        command_id=-1,
                         command='bash workspace/hello.sh',
-                        exit_code=127,
+                        metadata=CmdOutputMetadata(exit_code=127),
                     )
                 ],
             },
             {
                 'action': BrowseURLAction(url='https://google.com'),
                 'observations': [
-                    # BrowserOutputObservation('<html><body>Simulated Google page</body></html>',url='https://google.com',screenshot=''),
+                    BrowserOutputObservation(
+                        '<html><body>Simulated Google page</body></html>',
+                        url='https://google.com',
+                        screenshot='',
+                        trigger_by_action='',
+                    ),
                 ],
             },
             {
@@ -113,7 +99,12 @@ class DummyAgent(Agent):
                     browser_actions='goto("https://google.com")'
                 ),
                 'observations': [
-                    # BrowserOutputObservation('<html><body>Simulated Google page after interaction</body></html>',url='https://google.com',screenshot=''),
+                    BrowserOutputObservation(
+                        '<html><body>Simulated Google page after interaction</body></html>',
+                        url='https://google.com',
+                        screenshot='',
+                        trigger_by_action='',
+                    ),
                 ],
             },
             {
@@ -134,30 +125,6 @@ class DummyAgent(Agent):
 
         current_step = self.steps[state.iteration]
         action = current_step['action']
-
-        # If the action is AddTaskAction or ModifyTaskAction, update the parent ID or task_id
-        if isinstance(action, AddTaskAction):
-            if action.parent == 'None':
-                action.parent = ''  # Root task has no parent
-            elif action.parent == '0':
-                action.parent = state.root_task.id
-            elif action.parent.startswith('0.'):
-                action.parent = f'{state.root_task.id}{action.parent[1:]}'
-        elif isinstance(action, ModifyTaskAction):
-            if action.task_id == '0':
-                action.task_id = state.root_task.id
-            elif action.task_id.startswith('0.'):
-                action.task_id = f'{state.root_task.id}{action.task_id[1:]}'
-            # Ensure the task_id doesn't start with a dot
-            if action.task_id.startswith('.'):
-                action.task_id = action.task_id[1:]
-        elif isinstance(action, (BrowseURLAction, BrowseInteractiveAction)):
-            try:
-                return self.simulate_browser_action(action)
-            except (
-                Exception
-            ):  # This could be a specific exception for browser unavailability
-                return self.handle_browser_unavailable(action)
 
         if state.iteration > 0:
             prev_step = self.steps[state.iteration - 1]
@@ -181,8 +148,6 @@ class DummyAgent(Agent):
                         obs.pop('timestamp', None)
                         obs.pop('cause', None)
                         obs.pop('source', None)
-                        if 'extras' in obs:
-                            obs['extras'].pop('command_id', None)
 
                     if hist_obs != expected_obs:
                         print(
@@ -190,22 +155,3 @@ class DummyAgent(Agent):
                         )
 
         return action
-
-    def simulate_browser_action(
-        self, action: Union[BrowseURLAction, BrowseInteractiveAction]
-    ) -> Action:
-        # Instead of simulating, we'll reject the browser action
-        return self.handle_browser_unavailable(action)
-
-    def handle_browser_unavailable(
-        self, action: Union[BrowseURLAction, BrowseInteractiveAction]
-    ) -> Action:
-        # Create a message action to inform that browsing is not available
-        message = 'Browser actions are not available in the DummyAgent environment.'
-        if isinstance(action, BrowseURLAction):
-            message += f' Unable to browse URL: {action.url}'
-        elif isinstance(action, BrowseInteractiveAction):
-            message += (
-                f' Unable to perform interactive browsing: {action.browser_actions}'
-            )
-        return MessageAction(content=message)

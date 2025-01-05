@@ -351,12 +351,13 @@ class SessionManager:
                 sid=sid, file_store=self.file_store, config=self.config, sio=self.sio
             )
             self._local_agent_loops_by_sid[sid] = session
-            await session.initialize_agent(settings)
+            asyncio.create_task(session.initialize_agent(settings))
 
         event_stream = await self._get_event_stream(sid)
         if not event_stream:
             logger.error(f'No event stream after starting agent loop: {sid}')
             raise RuntimeError(f'no_event_stream:{sid}')
+        asyncio.create_task(self._cleanup_session_later(sid))
         return event_stream
 
     async def _get_event_stream(self, sid: str) -> EventStream | None:

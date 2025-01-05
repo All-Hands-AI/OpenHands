@@ -10,8 +10,8 @@ import i18n from "i18next";
 import { vi } from "vitest";
 import { AppStore, RootState, rootReducer } from "./src/store";
 import { AuthProvider } from "#/context/auth-context";
-import { SettingsProvider } from "#/context/settings-context";
 import { ConversationProvider } from "#/context/conversation-context";
+import { SettingsUpToDateProvider } from "#/context/settings-up-to-date-context";
 
 // Mock useParams before importing components
 vi.mock("react-router", async () => {
@@ -66,15 +66,21 @@ export function renderWithProviders(
   function Wrapper({ children }: PropsWithChildren) {
     return (
       <Provider store={store}>
-        <QueryClientProvider client={new QueryClient()}>
-          <SettingsProvider>
-            <AuthProvider>
+        <AuthProvider>
+          <SettingsUpToDateProvider>
+            <QueryClientProvider
+              client={
+                new QueryClient({
+                  defaultOptions: { queries: { retry: false } },
+                })
+              }
+            >
               <ConversationProvider>
                 <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
               </ConversationProvider>
-            </AuthProvider>
-          </SettingsProvider>
-        </QueryClientProvider>
+            </QueryClientProvider>
+          </SettingsUpToDateProvider>
+        </AuthProvider>
       </Provider>
     );
   }

@@ -111,6 +111,11 @@ elif os.path.exists(openhands_remote_report_jsonl):
         instance_id_to_status[row['instance_id']] = row['test_result']['report']
     df['report'] = df.apply(apply_report, axis=1)
 
+    report_is_dict = df['report'].apply(lambda x: isinstance(x, dict))
+    if not report_is_dict.all():
+        print(df[~report_is_dict])
+        raise ValueError(f'Report is not a dict, but a {type(row["report"])}')
+
     _n_instances = len(df)
     _n_resolved = len(df[df['report'].apply(lambda x: x.get('resolved', False))])
     _n_unresolved = _n_instances - _n_resolved
