@@ -68,3 +68,15 @@ export const getLocalStorageSettings = (): Settings => {
     LLM_BASE_URL: baseUrl || DEFAULT_SETTINGS.LLM_BASE_URL,
     AGENT: agent || DEFAULT_SETTINGS.AGENT,
     LANGUAGE: language || DEFAULT_SETTINGS.LANGUAGE,
+    LLM_API_KEY: llmApiKey || DEFAULT_SETTINGS.LLM_API_KEY,
+    CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
+    SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
+    REMOTE_RUNTIME_RESOURCE_FACTOR:
+      DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+  };
+};
+
+/**
+ * Get the default settings
+ */
+export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
