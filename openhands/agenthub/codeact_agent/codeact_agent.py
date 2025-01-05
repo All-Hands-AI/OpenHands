@@ -194,8 +194,20 @@ class CodeActAgent(Agent):
                 else:
                     action.thought = content
 
-                # remove the tool call metadata
+                # Store the tool response properly
+                if action.source == 'agent':
+                    llm_response: ModelResponse = tool_metadata.model_response
+                    pending_tool_call_action_messages[llm_response.id] = Message(
+                        role=assistant_msg.role,
+                        content=[TextContent(text=assistant_msg.content or '')],
+                        tool_calls=assistant_msg.tool_calls,
+                        function_calling_enabled=self.llm.is_function_calling_active(),
+                    )
+                    return []
+
+                # remove the tool call metadata for user-sourced finish
                 action.tool_call_metadata = None
+
             return [
                 Message(
                     role=role,
