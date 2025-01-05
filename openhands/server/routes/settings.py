@@ -56,6 +56,13 @@ async def store_settings(
             # LLM key isn't on the frontend, so we need to keep it if unset
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
+
+        # Update sandbox config with new settings
+        if settings.remote_runtime_resource_factor is not None:
+            config.sandbox.remote_runtime_resource_factor = (
+                settings.remote_runtime_resource_factor
+            )
+
         await settings_store.store(settings)
 
         return JSONResponse(
