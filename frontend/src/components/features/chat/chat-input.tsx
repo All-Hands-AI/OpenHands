@@ -84,7 +84,7 @@ export function ChatInput({
 
   const handleSubmitMessage = () => {
     const message = value || textareaRef.current?.value || "";
-    if (message) {
+    if (message.trim()) {
       onSubmit(message);
       onChange?.("");
       if (textareaRef.current) {
@@ -94,7 +94,12 @@ export function ChatInput({
   };
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey && !disabled) {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      !disabled &&
+      !event.nativeEvent.isComposing
+    ) {
       event.preventDefault();
       handleSubmitMessage();
     }

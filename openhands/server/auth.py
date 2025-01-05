@@ -30,10 +30,10 @@ def get_sid_from_token(token: str, jwt_secret: str) -> str:
     return ''
 
 
-def sign_token(payload: dict[str, object], jwt_secret: str) -> str:
+def sign_token(payload: dict[str, object], jwt_secret: str, algorithm='HS256') -> str:
     """Signs a JWT token."""
     # payload = {
     #     "sid": sid,
     #     # "exp": datetime.now(timezone.utc) + timedelta(minutes=15),
     # }
-    return jwt.encode(payload, jwt_secret, algorithm='HS256')
+    return jwt.encode(payload, jwt_secret, algorithm=algorithm)

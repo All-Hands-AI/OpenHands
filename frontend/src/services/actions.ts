@@ -16,6 +16,7 @@ import {
   StatusMessage,
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
+import { appendInput } from "#/state/command-slice";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -38,7 +39,10 @@ const messageActions = {
       store.dispatch(
         addUserMessage({
           content: message.args.content,
-          imageUrls: [],
+          imageUrls:
+            typeof message.args.image_urls === "string"
+              ? [message.args.image_urls]
+              : message.args.image_urls,
           timestamp: message.timestamp,
           pending: false,
         }),
@@ -57,6 +61,10 @@ const messageActions = {
 export function handleActionMessage(message: ActionMessage) {
   if (message.args?.hidden) {
     return;
+  }
+
+  if (message.action === ActionType.RUN) {
+    store.dispatch(appendInput(message.args.command));
   }
 
   if ("args" in message && "security_risk" in message.args) {

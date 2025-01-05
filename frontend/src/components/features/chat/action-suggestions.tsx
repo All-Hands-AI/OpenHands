@@ -1,8 +1,10 @@
 import posthog from "posthog-js";
 import React from "react";
+import { useSelector } from "react-redux";
 import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
 import { useAuth } from "#/context/auth-context";
-import { downloadWorkspace } from "#/utils/download-workspace";
+import { DownloadModal } from "#/components/shared/download-modal";
+import type { RootState } from "#/store";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -12,24 +14,25 @@ export function ActionSuggestions({
   onSuggestionsClick,
 }: ActionSuggestionsProps) {
   const { gitHubToken } = useAuth();
+  const { selectedRepository } = useSelector(
+    (state: RootState) => state.initialQuery,
+  );
 
   const [isDownloading, setIsDownloading] = React.useState(false);
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 
-  const handleDownloadWorkspace = async () => {
-    setIsDownloading(true);
-    try {
-      await downloadWorkspace();
-    } catch (error) {
-      // TODO: Handle error
-    } finally {
-      setIsDownloading(false);
-    }
+  const handleDownloadClose = () => {
+    setIsDownloading(false);
   };
 
   return (
     <div className="flex flex-col gap-2 mb-2">
-      {gitHubToken ? (
+      <DownloadModal
+        initialPath=""
+        onClose={handleDownloadClose}
+        isOpen={isDownloading}
+      />
+      {gitHubToken && selectedRepository ? (
         <div className="flex flex-row gap-2 justify-center w-full">
           {!hasPullRequest ? (
             <>
@@ -75,13 +78,15 @@ export function ActionSuggestions({
         <SuggestionItem
           suggestion={{
             label: !isDownloading
-              ? "Download .zip"
+              ? "Download files"
               : "Downloading, please wait...",
-            value: "Download .zip",
+            value: "Download files",
           }}
           onClick={() => {
             posthog.capture("download_workspace_button_clicked");
-            handleDownloadWorkspace();
+            if (!isDownloading) {
+              setIsDownloading(true);
+            }
           }}
         />
       )}
