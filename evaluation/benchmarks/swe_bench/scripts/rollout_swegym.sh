@@ -29,7 +29,22 @@ export EVAL_DOCKER_IMAGE_PREFIX="us-central1-docker.pkg.dev/evaluation-092424/sw
 EVAL_LIMIT=500
 MAX_ITER=100
 
-./evaluation/benchmarks/swe_bench/scripts/run_infer.sh \
-    $MODEL HEAD CodeActAgent \
-    $EVAL_LIMIT $MAX_ITER $N_WORKERS \
-    $DATASET $SPLIT $N_RUNS
+while true; do
+    echo "Running inference..."
+    ./evaluation/benchmarks/swe_bench/scripts/run_infer.sh \
+        $MODEL HEAD CodeActAgent \
+        $EVAL_LIMIT $MAX_ITER $N_WORKERS \
+        $DATASET $SPLIT $N_RUNS
+
+    INFER_STATUS=$?  # Capture the exit status of run_infer.sh
+
+    echo "Cleaning up remote runtime..."
+    ./evaluation/utils/scripts/cleanup_remote_runtime.sh
+
+    if [ $INFER_STATUS -eq 0 ]; then
+        echo "Inference completed successfully. Exiting..."
+        break
+    else
+        echo "Inference failed with exit code $INFER_STATUS. Retrying..."
+    fi
+done
