@@ -1,13 +1,12 @@
-
-
 from dataclasses import dataclass
 
 
 @dataclass
-class SessionInitData:
+class Settings:
     """
-    Session initialization data for the web environment - a deep copy of the global config is made and then overridden with this data.
+    Persisted settings for OpenHands sessions
     """
+
     language: str | None = None
     agent: str | None = None
     max_iterations: int | None = None
@@ -16,5 +15,3 @@ class SessionInitData:
     llm_model: str | None = None
     llm_api_key: str | None = None
     llm_base_url: str | None = None
-    github_token: str | None = None
-    selected_repository: str | None = None
