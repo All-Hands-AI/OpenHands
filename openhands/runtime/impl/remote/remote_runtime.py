@@ -20,9 +20,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 )
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
-from openhands.runtime.utils.request import (
-    send_request,
-)
+from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
@@ -329,9 +327,14 @@ class RemoteRuntime(ActionExecutionClient):
         elif pod_status in ('failed', 'unknown', 'crashloopbackoff'):
             # clean up the runtime
             self.close()
-            raise AgentRuntimeUnavailableError(
-                f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}. Pod Logs:\n{runtime_data.get("pod_logs", "N/A")}'
-            )
+            if pod_status == 'crashloopbackoff':
+                raise AgentRuntimeUnavailableError(
+                    'Runtime crashed and is being restarted, potentially due to memory usage. Please try again.'
+                )
+            else:
+                raise AgentRuntimeUnavailableError(
+                    f'Runtime is unavailable (status: {pod_status}). Please try again.'
+                )
         else:
             # Maybe this should be a hard failure, but passing through in case the API changes
             self.log('warning', f'Unknown pod status: {pod_status}')
@@ -371,15 +374,17 @@ class RemoteRuntime(ActionExecutionClient):
                 f'No response received within the timeout period for url: {url}',
             )
             raise
+
         except requests.HTTPError as e:
-            if e.response.status_code == 404:
-                raise AgentRuntimeNotFoundError(
-                    'Runtime unavailable: System resources may be exhausted due to running commands. This may be fixed by retrying.'
-                ) from e
-            elif e.response.status_code == 502:
-                raise AgentRuntimeDisconnectedError(
-                    'Runtime disconnected: System resources may be exhausted due to running commands. This may be fixed by retrying.'
-                ) from e
+            if e.response.status_code in (404, 502):
+                if e.response.status_code == 404:
+                    raise AgentRuntimeDisconnectedError(
+                        'Runtime is not responding. This may be temporary, please try again.'
+                    ) from e
+                else:  # 502
+                    raise AgentRuntimeDisconnectedError(
+                        'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again.'
+                    ) from e
             elif e.response.status_code == 503:
                 self.log('warning', 'Runtime appears to be paused. Resuming...')
                 self._resume_runtime()
