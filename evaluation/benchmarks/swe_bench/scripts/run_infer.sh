@@ -100,6 +100,10 @@ function run_eval() {
 
   # Run the command
   eval $COMMAND
+  # if exit code is not 0, exit the script
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
 }
 
 unset SANDBOX_ENV_GITHUB_TOKEN # prevent the agent from using the github token to push

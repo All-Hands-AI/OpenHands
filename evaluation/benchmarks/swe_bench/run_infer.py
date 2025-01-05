@@ -533,6 +533,7 @@ if __name__ == '__main__':
     )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
+    print(f'### OUTPUT FILE: {output_file} ###')
     instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
 
     if len(instances) > 0 and not isinstance(

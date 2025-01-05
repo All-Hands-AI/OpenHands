@@ -138,7 +138,7 @@ streamlit = "*"
 whatthepatch = "*"
 retry = "*"
 evaluate = "*"
-swebench = { git = "https://github.com/All-Hands-AI/SWE-bench.git" }
+swebench = { git = "https://github.com/SWE-Gym/SWE-Bench-Fork.git" }
 commit0 = "*"
 func_timeout = "*"
 sympy = "*"

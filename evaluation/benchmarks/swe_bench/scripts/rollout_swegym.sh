@@ -30,21 +30,51 @@ EVAL_LIMIT=500
 MAX_ITER=100
 
 while true; do
-    echo "Running inference..."
-    ./evaluation/benchmarks/swe_bench/scripts/run_infer.sh \
+    echo "### Running inference... ###"
+    # Capture the output in a variable while also printing to stdout
+    INFER_OUTPUT=$(./evaluation/benchmarks/swe_bench/scripts/run_infer.sh \
         $MODEL HEAD CodeActAgent \
         $EVAL_LIMIT $MAX_ITER $N_WORKERS \
-        $DATASET $SPLIT $N_RUNS
+        $DATASET $SPLIT $N_RUNS | tee >(cat 1>&2))
 
     INFER_STATUS=$?  # Capture the exit status of run_infer.sh
 
-    echo "Cleaning up remote runtime..."
+    echo "### Cleaning up remote runtime... ###"
     ./evaluation/utils/scripts/cleanup_remote_runtime.sh
 
     if [ $INFER_STATUS -eq 0 ]; then
-        echo "Inference completed successfully. Exiting..."
+        echo "### Inference completed successfully. ###"
         break
     else
-        echo "Inference failed with exit code $INFER_STATUS. Retrying..."
+        echo "### Inference failed with exit code $INFER_STATUS. Retrying... ###"
     fi
 done
+
+# Extract the output directory using the special delimiters
+OUTPUT_FILE=$(echo "$INFER_OUTPUT" | grep -o '### OUTPUT FILE:.* ###' | sed 's/### OUTPUT FILE: \(.*\) ###/\1/')
+echo "Got OUTPUT_FILE: $OUTPUT_FILE"
+
+echo "### Evaluating on $OUTPUT_FILE ... ###"
+COMMAND="poetry run python evaluation/benchmarks/swe_bench/eval_infer.py \
+  --eval-num-workers $((N_WORKERS * 2)) \
+  --input-file $OUTPUT_FILE \
+  --dataset $DATASET \
+  --split $SPLIT"
+
+if [ -n "$EVAL_LIMIT" ]; then
+  echo "EVAL_LIMIT: $EVAL_LIMIT"
+  COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
+fi
+echo "Running command: $COMMAND"
+# Run the command
+eval $COMMAND
+
+# update the output with evaluation results
+echo "### Updating the output with evaluation results... ###"
+poetry run python evaluation/benchmarks/swe_bench/scripts/eval/update_output_with_eval.py $OUTPUT_FILE
+
+echo "### Combining the final completions... ###"
+poetry run python evaluation/benchmarks/swe_bench/scripts/eval/combine_final_completions.py $OUTPUT_FILE
+
+echo "### DONE! ###"
+echo "You can find the final output at $(dirname $OUTPUT_FILE)/$FINAL_OUTPUT_FILE"
