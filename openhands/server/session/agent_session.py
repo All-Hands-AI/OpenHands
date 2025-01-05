@@ -202,7 +202,7 @@ class AgentSession:
                 )
             return
 
-        self.runtime.clone_repo(github_token, selected_repository)
+        repo_directory = self.runtime.clone_repo(github_token, selected_repository)
         if agent.prompt_manager:
             microagents: list[BaseMicroAgent] = await call_sync_from_async(
                 self.runtime.get_microagents_from_selected_repo, selected_repository
@@ -210,6 +210,7 @@ class AgentSession:
             agent.prompt_manager.load_microagents(microagents)
             # Pass GitHub repository information to the prompt manager
             agent.prompt_manager.github_repo = selected_repository
+            agent.prompt_manager.repo_directory = repo_directory
 
         logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'

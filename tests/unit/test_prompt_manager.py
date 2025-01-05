@@ -87,7 +87,7 @@ def test_prompt_manager_template_rendering(prompt_dir):
         f.write('''System prompt: bar
 {% if github_repo %}
 <REPOSITORY_INFO>
-This code is from the GitHub repository: {{ github_repo }}
+At the user's request, repository {{ github_repo }} has been cloned to directory {{ repo_directory }}.
 </REPOSITORY_INFO>
 {% endif %}
 {{ repo_instructions }}''')
@@ -100,11 +100,16 @@ This code is from the GitHub repository: {{ github_repo }}
     assert manager.get_example_user_message() == 'User prompt: foo'
 
     # Test with GitHub repo
-    manager = PromptManager(prompt_dir, microagent_dir='', github_repo='owner/repo')
+    manager = PromptManager(
+        prompt_dir=prompt_dir,
+        microagent_dir='',
+        github_repo='owner/repo',
+        repo_directory='/workspace/repo'
+    )
     system_msg = manager.get_system_message()
     assert 'System prompt: bar' in system_msg
     assert '<REPOSITORY_INFO>' in system_msg
-    assert 'This code is from the GitHub repository: owner/repo' in system_msg
+    assert 'At the user\'s request, repository owner/repo has been cloned to directory /workspace/repo.' in system_msg
     assert '</REPOSITORY_INFO>' in system_msg
     assert manager.get_example_user_message() == 'User prompt: foo'
 

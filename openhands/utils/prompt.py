@@ -33,10 +33,12 @@ class PromptManager:
         microagent_dir: str | None = None,
         disabled_microagents: list[str] | None = None,
         github_repo: str | None = None,
+        repo_directory: str | None = None,
     ):
         self.disabled_microagents: list[str] = disabled_microagents or []
         self.prompt_dir: str = prompt_dir
         self.github_repo: str | None = github_repo
+        self.repo_directory: str | None = repo_directory
 
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
@@ -97,6 +99,7 @@ class PromptManager:
         return self.system_template.render(
             repo_instructions=repo_instructions,
             github_repo=self.github_repo,
+            repo_directory=self.repo_directory,
         ).strip()
 
     def get_example_user_message(self) -> str:
