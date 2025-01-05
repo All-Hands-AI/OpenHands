@@ -2,6 +2,9 @@ import json
 from typing import Any
 
 import requests
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
+
+from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 class RequestHTTPError(requests.HTTPError):
@@ -18,6 +21,18 @@ class RequestHTTPError(requests.HTTPError):
         return s
 
 
+def is_rate_limit_error(exception):
+    return (
+        isinstance(exception, requests.HTTPError)
+        and exception.response.status_code == 429
+    )
+
+
+@retry(
+    retry=retry_if_exception(is_rate_limit_error),
+    stop=stop_after_attempt(3) | stop_if_should_exit(),
+    wait=wait_exponential(multiplier=1, min=4, max=60),
+)
 def send_request(
     session: requests.Session,
     method: str,

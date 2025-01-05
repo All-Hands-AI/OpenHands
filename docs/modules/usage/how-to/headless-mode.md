@@ -23,9 +23,9 @@ To run OpenHands in Headless mode with Docker:
 
 1. Set the following environmental variables in your terminal:
 
-* `WORKSPACE_BASE` to the directory you want OpenHands to edit (Ex: `export WORKSPACE_BASE=$(pwd)/workspace`).
-* `LLM_MODEL` to the model to use (Ex: `export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"`).
-* `LLM_API_KEY` to the API key (Ex: `export LLM_API_KEY="sk_test_12345"`).
+- `WORKSPACE_BASE` to the directory you want OpenHands to edit (Ex: `export WORKSPACE_BASE=$(pwd)/workspace`).
+- `LLM_MODEL` to the model to use (Ex: `export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"`).
+- `LLM_API_KEY` to the API key (Ex: `export LLM_API_KEY="sk_test_12345"`).
 
 2. Run the following Docker command:
 
@@ -53,4 +53,4 @@ To view all available configuration options for headless mode, run the Python co
 
 ### Additional Logs
 
-For the headless mode to log all the agent actions, in your terminal run: `export LOG_ALL_EVENTS=true`
+For the headless mode to log all the agent actions, in the terminal run: `export LOG_ALL_EVENTS=true`
