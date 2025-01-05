@@ -194,13 +194,22 @@ class CodeActAgent(Agent):
                 else:
                     action.thought = content
 
-                # Store the tool response properly
+                # Store both the tool call and its response properly
                 if action.source == 'agent':
                     llm_response: ModelResponse = tool_metadata.model_response
+                    # Store the tool call message
                     pending_tool_call_action_messages[llm_response.id] = Message(
                         role=assistant_msg.role,
                         content=[TextContent(text=assistant_msg.content or '')],
                         tool_calls=assistant_msg.tool_calls,
+                        function_calling_enabled=self.llm.is_function_calling_active(),
+                    )
+                    # Store the tool response message
+                    tool_call_id_to_message[tool_metadata.tool_call_id] = Message(
+                        role='tool',
+                        content=[TextContent(text=action.thought or '')],
+                        tool_call_id=tool_metadata.tool_call_id,
+                        name=tool_metadata.function_name,
                         function_calling_enabled=self.llm.is_function_calling_active(),
                     )
                     return []
