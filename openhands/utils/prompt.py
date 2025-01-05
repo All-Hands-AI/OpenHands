@@ -94,13 +94,10 @@ class PromptManager:
                 repo_instructions += '\n\n'
             repo_instructions += microagent.content
 
-        # Add GitHub repository information if available
-        if self.github_repo:
-            if repo_instructions:
-                repo_instructions += '\n\n'
-            repo_instructions += f'<REPOSITORY_INFO>\nThis code is from the GitHub repository: {self.github_repo}\n</REPOSITORY_INFO>'
-
-        return self.system_template.render(repo_instructions=repo_instructions).strip()
+        return self.system_template.render(
+            repo_instructions=repo_instructions,
+            github_repo=self.github_repo,
+        ).strip()
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent
