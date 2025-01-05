@@ -127,7 +127,6 @@ For each problem, OpenHands is given a set number of iterations to fix the faili
         "observation": "run",
         "content": "california_schools/california_schools.sqlite\r\n[(1.0,)]",
         "extras": {
-          "command_id": -1,
           "command": "python3 0.py",
           "exit_code": 0
         }

@@ -9,7 +9,7 @@ import { WsClientProviderStatus } from "#/context/ws-client-provider";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const renderChatInterface = (messages: (Message)[]) =>
+const renderChatInterface = (messages: Message[]) =>
   renderWithProviders(<ChatInterface />);
 
 describe("Empty state", () => {
@@ -20,7 +20,7 @@ describe("Empty state", () => {
   const { useWsClient: useWsClientMock } = vi.hoisted(() => ({
     useWsClient: vi.fn(() => ({
       send: sendMock,
-      status: WsClientProviderStatus.ACTIVE,
+      status: WsClientProviderStatus.CONNECTED,
       isLoadingMessages: false,
     })),
   }));
@@ -90,7 +90,7 @@ describe("Empty state", () => {
       // this is to test that the message is in the UI before the socket is called
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        status: WsClientProviderStatus.ACTIVE,
+        status: WsClientProviderStatus.CONNECTED,
         isLoadingMessages: false,
       }));
       const addUserMessageSpy = vi.spyOn(ChatSlice, "addUserMessage");
@@ -120,7 +120,7 @@ describe("Empty state", () => {
     async () => {
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        status: WsClientProviderStatus.ACTIVE,
+        status: WsClientProviderStatus.CONNECTED,
         isLoadingMessages: false,
       }));
       const user = userEvent.setup();
@@ -138,7 +138,7 @@ describe("Empty state", () => {
 
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        status: WsClientProviderStatus.ACTIVE,
+        status: WsClientProviderStatus.CONNECTED,
         isLoadingMessages: false,
       }));
       rerender(<ChatInterface />);
@@ -195,7 +195,7 @@ describe.skip("ChatInterface", () => {
     expect(screen.getByTestId("chat-input")).toBeInTheDocument();
   });
 
-  it.todo("should call socket send when submitting a message", async () => {
+  it("should call socket send when submitting a message", async () => {
     const user = userEvent.setup();
     const messages: Message[] = [];
     renderChatInterface(messages);
@@ -240,8 +240,6 @@ describe.skip("ChatInterface", () => {
     );
   });
 
-  it.todo("should render confirmation buttons");
-
   it("should render a 'continue' action when there are more than 2 messages and awaiting user input", () => {
     const messages: Message[] = [
       {
@@ -278,7 +276,7 @@ describe.skip("ChatInterface", () => {
   });
 
   it("should render inline errors", () => {
-    const messages: (Message)[] = [
+    const messages: Message[] = [
       {
         sender: "assistant",
         content: "Hello",
@@ -401,13 +399,5 @@ describe.skip("ChatInterface", () => {
     rerender(<ChatInterface />);
 
     expect(screen.getByTestId("feedback-actions")).toBeInTheDocument();
-  });
-
-  describe("feedback", () => {
-    it.todo("should open the feedback modal when a feedback action is clicked");
-    it.todo(
-      "should submit feedback and hide the actions when feedback is shared",
-    );
-    it.todo("should render the actions once more after new messages are added");
   });
 });

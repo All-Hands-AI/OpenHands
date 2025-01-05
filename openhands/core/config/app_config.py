@@ -42,6 +42,8 @@ class AppConfig:
         file_uploads_max_file_size_mb: Maximum file upload size in MB. `0` means unlimited.
         file_uploads_restrict_file_types: Whether to restrict upload file types.
         file_uploads_allowed_extensions: Allowed file extensions. `['.*']` allows all.
+        cli_multiline_input: Whether to enable multiline input in CLI. When disabled,
+            input is read line by line. When enabled, input continues until /exit command.
     """
 
     llms: dict[str, LLMConfig] = field(default_factory=dict)
@@ -49,9 +51,9 @@ class AppConfig:
     default_agent: str = OH_DEFAULT_AGENT
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
-    runtime: str = 'eventstream'
-    file_store: str = 'memory'
-    file_store_path: str = '/tmp/file_store'
+    runtime: str = 'docker'
+    file_store: str = 'local'
+    file_store_path: str = '/tmp/openhands_file_store'
     trajectories_path: str | None = None
     workspace_base: str | None = None
     workspace_mount_path: str | None = None
@@ -66,14 +68,12 @@ class AppConfig:
     modal_api_token_secret: str = ''
     disable_color: bool = False
     jwt_secret: str = ''
-    attach_session_middleware_class: str = (
-        'openhands.server.middleware.AttachSessionMiddleware'
-    )
     debug: bool = False
     file_uploads_max_file_size_mb: int = 0
     file_uploads_restrict_file_types: bool = False
     file_uploads_allowed_extensions: list[str] = field(default_factory=lambda: ['.*'])
     runloop_api_key: str | None = None
+    cli_multiline_input: bool = False
 
     defaults_dict: ClassVar[dict] = {}
 

@@ -5,16 +5,22 @@ from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, AppConfig, LLMConfig
+from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
+from openhands.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
-from openhands.runtime.base import Runtime, RuntimeUnavailableError
+from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import call_async_from_sync
+from openhands.utils.async_utils import call_async_from_sync, call_sync_from_async
+from openhands.utils.shutdown_listener import should_continue
+
+WAIT_TIME_BEFORE_CLOSE = 300
+WAIT_TIME_BEFORE_CLOSE_INTERVAL = 5
 
 
 class AgentSession:
@@ -30,6 +36,7 @@ class AgentSession:
     controller: AgentController | None = None
     runtime: Runtime | None = None
     security_analyzer: SecurityAnalyzer | None = None
+    _initializing: bool = False
     _closed: bool = False
     loop: asyncio.AbstractEventLoop | None = None
 
@@ -78,39 +85,10 @@ class AgentSession:
                 'Session already started. You need to close this session and start a new one.'
             )
 
-        asyncio.get_event_loop().run_in_executor(
-            None,
-            self._start_thread,
-            runtime_name,
-            config,
-            agent,
-            max_iterations,
-            max_budget_per_task,
-            agent_to_llm_config,
-            agent_configs,
-            github_token,
-            selected_repository,
-        )
-
-    def _start_thread(self, *args):
-        try:
-            asyncio.run(self._start(*args), debug=True)
-        except RuntimeError:
-            logger.error(f'Error starting session: {RuntimeError}', exc_info=True)
-            logger.debug('Session Finished')
-
-    async def _start(
-        self,
-        runtime_name: str,
-        config: AppConfig,
-        agent: Agent,
-        max_iterations: int,
-        max_budget_per_task: float | None = None,
-        agent_to_llm_config: dict[str, LLMConfig] | None = None,
-        agent_configs: dict[str, AgentConfig] | None = None,
-        github_token: str | None = None,
-        selected_repository: str | None = None,
-    ):
+        if self._closed:
+            logger.warning('Session closed before starting')
+            return
+        self._initializing = True
         self._create_security_analyzer(config.security.security_analyzer)
         await self._create_runtime(
             runtime_name=runtime_name,
@@ -120,7 +98,7 @@ class AgentSession:
             selected_repository=selected_repository,
         )
 
-        self._create_controller(
+        self.controller = self._create_controller(
             agent,
             config.security.confirmation_mode,
             max_iterations,
@@ -131,9 +109,7 @@ class AgentSession:
         self.event_stream.add_event(
             ChangeAgentStateAction(AgentState.INIT), EventSource.ENVIRONMENT
         )
-        if self.controller:
-            self.controller.agent_task = self.controller.start_step_loop()
-            await self.controller.agent_task  # type: ignore
+        self._initializing = False
 
     def close(self):
         """Closes the Agent session"""
@@ -143,6 +119,18 @@ class AgentSession:
         call_async_from_sync(self._close)
 
     async def _close(self):
+        seconds_waited = 0
+        while self._initializing and should_continue():
+            logger.debug(
+                f'Waiting for initialization to finish before closing session {self.sid}'
+            )
+            await asyncio.sleep(WAIT_TIME_BEFORE_CLOSE_INTERVAL)
+            seconds_waited += WAIT_TIME_BEFORE_CLOSE_INTERVAL
+            if seconds_waited > WAIT_TIME_BEFORE_CLOSE:
+                logger.error(
+                    f'Waited too long for initialization to finish before closing session {self.sid}'
+                )
+                break
         if self.controller is not None:
             end_state = self.controller.get_state()
             end_state.save_to_session(self.sid, self.file_store)
@@ -199,9 +187,14 @@ class AgentSession:
             headless_mode=False,
         )
 
+        # FIXME: this sleep is a terrible hack.
+        # This is to give the websocket a second to connect, so that
+        # the status messages make it through to the frontend.
+        # We should find a better way to plumb status messages through.
+        await asyncio.sleep(1)
         try:
             await self.runtime.connect()
-        except RuntimeUnavailableError as e:
+        except AgentRuntimeUnavailableError as e:
             logger.error(f'Runtime initialization failed: {e}', exc_info=True)
             if self._status_callback:
                 self._status_callback(
@@ -209,18 +202,16 @@ class AgentSession:
                 )
             return
 
-        if self.runtime is not None:
-            self.runtime.clone_repo(github_token, selected_repository)
-            if agent.prompt_manager:
-                agent.prompt_manager.load_microagent_files(
-                    self.runtime.get_custom_microagents(selected_repository)
-                )
-
-            logger.debug(
-                f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
+        self.runtime.clone_repo(github_token, selected_repository)
+        if agent.prompt_manager:
+            microagents: list[BaseMicroAgent] = await call_sync_from_async(
+                self.runtime.get_microagents_from_selected_repo, selected_repository
             )
-        else:
-            logger.warning('Runtime initialization failed')
+            agent.prompt_manager.load_microagents(microagents)
+
+        logger.debug(
+            f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
+        )
 
     def _create_controller(
         self,
@@ -230,7 +221,7 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-    ):
+    ) -> AgentController:
         """Creates an AgentController instance
 
         Parameters:
@@ -267,7 +258,7 @@ class AgentSession:
         )
         logger.debug(msg)
 
-        self.controller = AgentController(
+        controller = AgentController(
             sid=self.sid,
             event_stream=self.event_stream,
             agent=agent,
@@ -279,12 +270,26 @@ class AgentSession:
             headless_mode=False,
             status_callback=self._status_callback,
         )
+
+        # Note: We now attempt to restore the state from session here,
+        # but if it fails, we fall back to None and still initialize the controller
+        # with a fresh state. That way, the controller will always load events from the event stream
+        # even if the state file was corrupt.
+
+        restored_state = None
         try:
-            agent_state = State.restore_from_session(self.sid, self.file_store)
-            self.controller.set_initial_state(
-                agent_state, max_iterations, confirmation_mode
-            )
-            logger.debug(f'Restored agent state from session, sid: {self.sid}')
+            restored_state = State.restore_from_session(self.sid, self.file_store)
         except Exception as e:
-            logger.debug(f'State could not be restored: {e}')
+            if self.event_stream.get_latest_event_id() > 0:
+                # if we have events, we should have a state
+                logger.warning(f'State could not be restored: {e}')
+
+        # Set the initial state through the controller.
+        controller.set_initial_state(restored_state, max_iterations, confirmation_mode)
+        if restored_state:
+            logger.debug(f'Restored agent state from session, sid: {self.sid}')
+        else:
+            logger.debug('New session state created.')
+
         logger.debug('Agent controller initialized.')
+        return controller

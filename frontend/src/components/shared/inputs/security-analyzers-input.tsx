@@ -25,7 +25,6 @@ export function SecurityAnalyzerInput({
       </label>
       <Autocomplete
         isDisabled={isDisabled}
-        isRequired
         id="security-analyzer"
         name="security-analyzer"
         aria-label="Security Analyzer"

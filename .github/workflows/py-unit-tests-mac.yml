@@ -31,6 +31,8 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
+      - name: Install tmux
+        run: brew install tmux
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
@@ -91,6 +93,6 @@ jobs:
       - name: Run Tests
         run: poetry run pytest --forked --cov=openhands --cov-report=xml ./tests/unit --ignore=tests/unit/test_memory.py
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
