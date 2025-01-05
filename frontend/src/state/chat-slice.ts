@@ -93,7 +93,7 @@ export const chatSlice = createSlice({
       const translationID = `ACTION_MESSAGE$${actionID.toUpperCase()}`;
       let text = "";
       if (actionID === "run") {
-        text = `\`${action.payload.args.command}\``;
+        text = `Command:\n\`${action.payload.args.command}\``;
       } else if (actionID === "run_ipython") {
         text = `\`\`\`\n${action.payload.args.code}\n\`\`\``;
       } else if (actionID === "write") {
@@ -144,7 +144,7 @@ export const chatSlice = createSlice({
       // Set success property based on observation type
       if (observationID === "run") {
         const commandObs = observation.payload as CommandObservation;
-        causeMessage.success = commandObs.extras.exit_code === 0;
+        causeMessage.success = commandObs.extras.metadata.exit_code === 0;
       } else if (observationID === "run_ipython") {
         // For IPython, we consider it successful if there's no error message
         const ipythonObs = observation.payload as IPythonObservation;
@@ -158,7 +158,9 @@ export const chatSlice = createSlice({
         if (content.length > MAX_CONTENT_LENGTH) {
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
-        content = `\`\`\`\n${content}\n\`\`\``;
+        content = `${
+          causeMessage.content
+        }\n\nOutput:\n\`\`\`\n${content.trim() || "[Command finished execution with no output]"}\n\`\`\``;
         causeMessage.content = content; // Observation content includes the action
       } else if (observationID === "read" || observationID === "edit") {
         const { content } = observation.payload;

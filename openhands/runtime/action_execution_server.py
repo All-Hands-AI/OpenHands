@@ -95,31 +95,34 @@ class ActionExecutor:
         browsergym_eval_env: str | None,
     ) -> None:
         self.plugins_to_load = plugins_to_load
-        self._initial_pwd = work_dir
+        self._initial_cwd = work_dir
         self.username = username
         self.user_id = user_id
         _updated_user_id = init_user_and_working_directory(
-            username=username, user_id=self.user_id, initial_pwd=work_dir
+            username=username, user_id=self.user_id, initial_cwd=work_dir
         )
         if _updated_user_id is not None:
             self.user_id = _updated_user_id
 
-        self.bash_session = BashSession(
-            work_dir=work_dir,
-            username=username,
-        )
-
+        self.bash_session: BashSession | None = None
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv(browsergym_eval_env)
         self.start_time = time.time()
         self.last_execution_time = self.start_time
+        self._initialized = False
 
     @property
-    def initial_pwd(self):
-        return self._initial_pwd
+    def initial_cwd(self):
+        return self._initial_cwd
 
     async def ainit(self):
+        # bash needs to be initialized first
+        self.bash_session = BashSession(
+            work_dir=self._initial_cwd,
+            username=self.username,
+        )
+        self.bash_session.initialize()
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
             timeout=30,
@@ -138,8 +141,14 @@ class ActionExecutor:
 
         await self._init_bash_commands()
         logger.debug('Runtime client initialized.')
+        self._initialized = True
+
+    @property
+    def initialized(self) -> bool:
+        return self._initialized
 
     async def _init_plugin(self, plugin: Plugin):
+        assert self.bash_session is not None
         await plugin.initialize(self.username)
         self.plugins[plugin.name] = plugin
         logger.debug(f'Initializing plugin: {plugin.name}')
@@ -147,7 +156,7 @@ class ActionExecutor:
         if isinstance(plugin, JupyterPlugin):
             await self.run_ipython(
                 IPythonRunCellAction(
-                    code=f'import os; os.chdir("{self.bash_session.pwd}")'
+                    code=f'import os; os.chdir("{self.bash_session.cwd}")'
                 )
             )
 
@@ -177,30 +186,32 @@ class ActionExecutor:
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
-        obs = await call_sync_from_async(self.bash_session.run, action)
+        assert self.bash_session is not None
+        obs = await call_sync_from_async(self.bash_session.execute, action)
         return obs
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
+        assert self.bash_session is not None
         if 'jupyter' in self.plugins:
             _jupyter_plugin: JupyterPlugin = self.plugins['jupyter']  # type: ignore
             # This is used to make AgentSkills in Jupyter aware of the
             # current working directory in Bash
-            jupyter_pwd = getattr(self, '_jupyter_pwd', None)
-            if self.bash_session.pwd != jupyter_pwd:
+            jupyter_cwd = getattr(self, '_jupyter_cwd', None)
+            if self.bash_session.cwd != jupyter_cwd:
                 logger.debug(
-                    f'{self.bash_session.pwd} != {jupyter_pwd} -> reset Jupyter PWD'
+                    f'{self.bash_session.cwd} != {jupyter_cwd} -> reset Jupyter PWD'
                 )
-                reset_jupyter_pwd_code = (
-                    f'import os; os.chdir("{self.bash_session.pwd}")'
+                reset_jupyter_cwd_code = (
+                    f'import os; os.chdir("{self.bash_session.cwd}")'
                 )
-                _aux_action = IPythonRunCellAction(code=reset_jupyter_pwd_code)
+                _aux_action = IPythonRunCellAction(code=reset_jupyter_cwd_code)
                 _reset_obs: IPythonRunCellObservation = await _jupyter_plugin.run(
                     _aux_action
                 )
                 logger.debug(
-                    f'Changed working directory in IPython to: {self.bash_session.pwd}. Output: {_reset_obs}'
+                    f'Changed working directory in IPython to: {self.bash_session.cwd}. Output: {_reset_obs}'
                 )
-                self._jupyter_pwd = self.bash_session.pwd
+                self._jupyter_cwd = self.bash_session.cwd
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             obs.content = obs.content.rstrip()
@@ -266,7 +277,7 @@ class ActionExecutor:
 
             if action.include_extra:
                 obs.content += (
-                    f'\n[Jupyter current working directory: {self.bash_session.pwd}]'
+                    f'\n[Jupyter current working directory: {self.bash_session.cwd}]'
                 )
                 obs.content += f'\n[Jupyter Python interpreter: {_jupyter_plugin.python_interpreter_path}]'
             return obs
@@ -282,6 +293,7 @@ class ActionExecutor:
         return str(filepath)
 
     async def read(self, action: FileReadAction) -> Observation:
+        assert self.bash_session is not None
         if action.impl_source == FileReadSource.OH_ACI:
             return await self.run_ipython(
                 IPythonRunCellAction(
@@ -292,7 +304,7 @@ class ActionExecutor:
 
         # NOTE: the client code is running inside the sandbox,
         # so there's no need to check permission
-        working_dir = self.bash_session.workdir
+        working_dir = self.bash_session.cwd
         filepath = self._resolve_path(action.path, working_dir)
         try:
             if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
@@ -339,7 +351,8 @@ class ActionExecutor:
         return FileReadObservation(path=filepath, content=code_view)
 
     async def write(self, action: FileWriteAction) -> Observation:
-        working_dir = self.bash_session.workdir
+        assert self.bash_session is not None
+        working_dir = self.bash_session.cwd
         filepath = self._resolve_path(action.path, working_dir)
 
         insert = action.content.split('\n')
@@ -400,7 +413,8 @@ class ActionExecutor:
         return await browse(action, self.browser)
 
     def close(self):
-        self.bash_session.close()
+        if self.bash_session is not None:
+            self.bash_session.close()
         self.browser.close()
 
 
@@ -609,6 +623,8 @@ if __name__ == '__main__':
 
     @app.get('/alive')
     async def alive():
+        if client is None or not client.initialized:
+            return {'status': 'not initialized'}
         return {'status': 'ok'}
 
     # ================================
@@ -658,11 +674,11 @@ if __name__ == '__main__':
 
         # Get the full path of the requested directory
         if path is None:
-            full_path = client.initial_pwd
+            full_path = client.initial_cwd
         elif os.path.isabs(path):
             full_path = path
         else:
-            full_path = os.path.join(client.initial_pwd, path)
+            full_path = os.path.join(client.initial_cwd, path)
 
         if not os.path.exists(full_path):
             # if user just removed a folder, prevent server error 500 in UI
