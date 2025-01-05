@@ -39,7 +39,11 @@ def event_loop():
 def mock_agent():
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
-    agent.llm.metrics = MagicMock(spec=Metrics)
+    metrics = MagicMock(spec=Metrics)
+    metrics.costs = []
+    metrics.accumulated_cost = 0.0
+    metrics.response_latencies = []
+    agent.llm.metrics = metrics
     return agent
 
 
