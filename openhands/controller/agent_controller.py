@@ -5,7 +5,11 @@ import traceback
 from typing import Callable, ClassVar, Type
 
 import litellm
-from litellm.exceptions import BadRequestError, ContextWindowExceededError
+from litellm.exceptions import (
+    BadRequestError,
+    ContextWindowExceededError,
+    RateLimitError,
+)
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
@@ -187,11 +191,15 @@ class AgentController:
         self,
         e: Exception,
     ):
+        """React to an exception by setting the agent state to error and sending a status message."""
         await self.set_agent_state_to(AgentState.ERROR)
         if self.status_callback is not None:
             err_id = ''
             if isinstance(e, litellm.AuthenticationError):
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
+            elif isinstance(e, RateLimitError):
+                await self.set_agent_state_to(AgentState.RATE_LIMITED)
+                return
             self.status_callback('error', err_id, type(e).__name__ + ': ' + str(e))
 
     def step(self):
@@ -206,7 +214,9 @@ class AgentController:
             reported = RuntimeError(
                 'There was an unexpected error while running the agent.'
             )
-            if isinstance(e, litellm.AuthenticationError):
+            if isinstance(e, litellm.AuthenticationError) or isinstance(
+                e, litellm.BadRequestError
+            ):
                 reported = e
             await self._react_to_exception(reported)
 
@@ -339,7 +349,6 @@ class AgentController:
 
     def _reset(self) -> None:
         """Resets the agent controller"""
-
         # make sure there is an Observation with the tool call metadata to be recognized by the agent
         # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
         if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata'):
@@ -380,6 +389,9 @@ class AgentController:
             return
 
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
+            # sync existing metrics BEFORE resetting the agent
+            self.update_state_after_step()
+            self.state.metrics.merge(self.state.local_metrics)
             self._reset()
         elif (
             new_state == AgentState.RUNNING

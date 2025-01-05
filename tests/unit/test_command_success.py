@@ -1,4 +1,5 @@
 from openhands.events.observation.commands import (
+    CmdOutputMetadata,
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
@@ -7,14 +8,18 @@ from openhands.events.observation.commands import (
 def test_cmd_output_success():
     # Test successful command
     obs = CmdOutputObservation(
-        command_id=1, command='ls', content='file1.txt\nfile2.txt', exit_code=0
+        command='ls',
+        content='file1.txt\nfile2.txt',
+        metadata=CmdOutputMetadata(exit_code=0),
     )
     assert obs.success is True
     assert obs.error is False
 
     # Test failed command
     obs = CmdOutputObservation(
-        command_id=2, command='ls', content='No such file or directory', exit_code=1
+        command='ls',
+        content='No such file or directory',
+        metadata=CmdOutputMetadata(exit_code=1),
     )
     assert obs.success is False
     assert obs.error is True

@@ -68,7 +68,13 @@ export function renderWithProviders(
       <Provider store={store}>
         <AuthProvider>
           <SettingsUpToDateProvider>
-            <QueryClientProvider client={new QueryClient()}>
+            <QueryClientProvider
+              client={
+                new QueryClient({
+                  defaultOptions: { queries: { retry: false } },
+                })
+              }
+            >
               <ConversationProvider>
                 <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
               </ConversationProvider>

@@ -145,10 +145,7 @@ def complete_runtime(
         )
         logger.info(f'Running test file: {script_name}')
 
-    action = CmdRunAction(
-        command=f'python3 -m unittest {script_name}',
-        keep_prompt=False,
-    )
+    action = CmdRunAction(command=f'python3 -m unittest {script_name}')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})

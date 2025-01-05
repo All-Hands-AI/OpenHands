@@ -52,8 +52,8 @@ class AppConfig:
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
     runtime: str = 'docker'
-    file_store: str = 'memory'
-    file_store_path: str = '/tmp/file_store'
+    file_store: str = 'local'
+    file_store_path: str = '/tmp/openhands_file_store'
     trajectories_path: str | None = None
     workspace_base: str | None = None
     workspace_mount_path: str | None = None

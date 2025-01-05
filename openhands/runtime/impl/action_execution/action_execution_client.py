@@ -114,8 +114,7 @@ class ActionExecutionClient(Runtime):
             if path is not None:
                 data['path'] = path
 
-            with send_request(
-                self.session,
+            with self._send_action_server_request(
                 'POST',
                 f'{self._get_action_execution_server_host()}/list_files',
                 json=data,
@@ -132,8 +131,7 @@ class ActionExecutionClient(Runtime):
 
         try:
             params = {'path': path}
-            with send_request(
-                self.session,
+            with self._send_action_server_request(
                 'GET',
                 f'{self._get_action_execution_server_host()}/download_files',
                 params=params,
@@ -198,8 +196,7 @@ class ActionExecutionClient(Runtime):
         if self.vscode_enabled and self._runtime_initialized:
             if self._vscode_token is not None:  # cached value
                 return self._vscode_token
-            with send_request(
-                self.session,
+            with self._send_action_server_request(
                 'GET',
                 f'{self._get_action_execution_server_host()}/vscode/connection_token',
                 timeout=10,
@@ -249,8 +246,7 @@ class ActionExecutionClient(Runtime):
             assert action.timeout is not None
 
             try:
-                with send_request(
-                    self.session,
+                with self._send_action_server_request(
                     'POST',
                     f'{self._get_action_execution_server_host()}/execute_action',
                     json={'action': event_to_dict(action)},
@@ -264,7 +260,6 @@ class ActionExecutionClient(Runtime):
                 raise AgentRuntimeTimeoutError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
-
             return obs
 
     def run(self, action: CmdRunAction) -> Observation:

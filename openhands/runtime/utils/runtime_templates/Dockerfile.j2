@@ -15,7 +15,7 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
 # Install base system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        wget curl sudo apt-utils git jq \
+        wget curl sudo apt-utils git jq tmux \
         {% if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) %}
         libgl1 \
         {% else %}
