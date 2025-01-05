@@ -1,5 +1,3 @@
-import OpenHands from "#/api/open-hands";
-
 export const LATEST_SETTINGS_VERSION = 5;
 
 export const getCurrentSettingsVersion = () => {

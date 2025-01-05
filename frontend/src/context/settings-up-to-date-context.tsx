@@ -1,5 +1,8 @@
 import React from "react";
-import { LATEST_SETTINGS_VERSION, getCurrentSettingsVersion } from "#/services/settings";
+import {
+  LATEST_SETTINGS_VERSION,
+  getCurrentSettingsVersion,
+} from "#/services/settings";
 
 export const settingsAreUpToDate = () =>
   getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
@@ -28,7 +31,9 @@ export function SettingsUpToDateProvider({
   );
 
   return (
-    <SettingsUpToDateContext.Provider value={value}>{children}</SettingsUpToDateContext.Provider>
+    <SettingsUpToDateContext.Provider value={value}>
+      {children}
+    </SettingsUpToDateContext.Provider>
   );
 }
 
