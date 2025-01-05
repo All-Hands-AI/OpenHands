@@ -1,4 +1,5 @@
 import os
+from dataclasses import dataclass
 from itertools import islice
 
 from jinja2 import Template
@@ -11,6 +12,13 @@ from openhands.microagent import (
     RepoMicroAgent,
     load_microagents_from_dir,
 )
+
+
+@dataclass
+class RepositoryInfo:
+    """Information about a GitHub repository that has been cloned."""
+    repo_name: str | None = None
+    repo_directory: str | None = None
 
 
 class PromptManager:
@@ -37,8 +45,9 @@ class PromptManager:
     ):
         self.disabled_microagents: list[str] = disabled_microagents or []
         self.prompt_dir: str = prompt_dir
-        self.github_repo: str | None = github_repo
-        self.repo_directory: str | None = repo_directory
+        self.repository_info = RepositoryInfo()
+        if github_repo:
+            self.set_repository_info(github_repo, repo_directory)
 
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
@@ -98,9 +107,19 @@ class PromptManager:
 
         return self.system_template.render(
             repo_instructions=repo_instructions,
-            github_repo=self.github_repo,
-            repo_directory=self.repo_directory,
+            github_repo=self.repository_info.repo_name,
+            repo_directory=self.repository_info.repo_directory,
         ).strip()
+
+    def set_repository_info(self, repo_name: str | None, repo_directory: str | None = None) -> None:
+        """Sets information about the GitHub repository that has been cloned.
+
+        Args:
+            repo_name: The name of the GitHub repository (e.g. 'owner/repo')
+            repo_directory: The directory where the repository has been cloned
+        """
+        self.repository_info.repo_name = repo_name
+        self.repository_info.repo_directory = repo_directory
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent

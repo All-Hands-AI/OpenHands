@@ -5,7 +5,7 @@ import pytest
 
 from openhands.core.message import Message, TextContent
 from openhands.microagent import BaseMicroAgent
-from openhands.utils.prompt import PromptManager
+from openhands.utils.prompt import PromptManager, RepositoryInfo
 
 
 @pytest.fixture
@@ -57,10 +57,11 @@ only respond with a message telling them how smart they are
     assert '<REPOSITORY_INFO>' not in manager.get_system_message()
 
     # Test with GitHub repo
-    manager.github_repo = 'owner/repo'
+    manager.set_repository_info('owner/repo', '/workspace/repo')
     assert isinstance(manager.get_system_message(), str)
     assert '<REPOSITORY_INFO>' in manager.get_system_message()
     assert 'owner/repo' in manager.get_system_message()
+    assert '/workspace/repo' in manager.get_system_message()
 
     assert isinstance(manager.get_example_user_message(), str)
 
@@ -100,12 +101,8 @@ At the user's request, repository {{ github_repo }} has been cloned to directory
     assert manager.get_example_user_message() == 'User prompt: foo'
 
     # Test with GitHub repo
-    manager = PromptManager(
-        prompt_dir=prompt_dir,
-        microagent_dir='',
-        github_repo='owner/repo',
-        repo_directory='/workspace/repo'
-    )
+    manager = PromptManager(prompt_dir=prompt_dir, microagent_dir='')
+    manager.set_repository_info('owner/repo', '/workspace/repo')
     system_msg = manager.get_system_message()
     assert 'System prompt: bar' in system_msg
     assert '<REPOSITORY_INFO>' in system_msg
@@ -116,6 +113,33 @@ At the user's request, repository {{ github_repo }} has been cloned to directory
     # Clean up temporary files
     os.remove(os.path.join(prompt_dir, 'system_prompt.j2'))
     os.remove(os.path.join(prompt_dir, 'user_prompt.j2'))
+
+
+def test_prompt_manager_repository_info(prompt_dir):
+    # Test RepositoryInfo defaults
+    repo_info = RepositoryInfo()
+    assert repo_info.repo_name is None
+    assert repo_info.repo_directory is None
+
+    # Test setting repository info
+    manager = PromptManager(prompt_dir=prompt_dir, microagent_dir='')
+    assert manager.repository_info.repo_name is None
+    assert manager.repository_info.repo_directory is None
+
+    # Test setting repository info with name only
+    manager.set_repository_info('owner/repo')
+    assert manager.repository_info.repo_name == 'owner/repo'
+    assert manager.repository_info.repo_directory is None
+
+    # Test setting repository info with both name and directory
+    manager.set_repository_info('owner/repo2', '/workspace/repo2')
+    assert manager.repository_info.repo_name == 'owner/repo2'
+    assert manager.repository_info.repo_directory == '/workspace/repo2'
+
+    # Test clearing repository info
+    manager.set_repository_info(None)
+    assert manager.repository_info.repo_name is None
+    assert manager.repository_info.repo_directory is None
 
 
 def test_prompt_manager_disabled_microagents(prompt_dir):

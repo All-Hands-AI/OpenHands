@@ -209,8 +209,7 @@ class AgentSession:
             )
             agent.prompt_manager.load_microagents(microagents)
             # Pass GitHub repository information to the prompt manager
-            agent.prompt_manager.github_repo = selected_repository
-            agent.prompt_manager.repo_directory = repo_directory
+            agent.prompt_manager.set_repository_info(selected_repository, repo_directory)
 
         logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
