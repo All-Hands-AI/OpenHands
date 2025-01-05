@@ -401,7 +401,7 @@ def process_instance(
             8,
         )
         logger.warning(
-            f'This is the second attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
+            f'This is the {runtime_failure_count + 1}th attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
         )
     runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
