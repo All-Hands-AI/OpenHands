@@ -407,6 +407,11 @@ To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-
   - Default: `"nikolaik/python-nodejs:python3.12-nodejs22"`
   - Description: Container image to use for the sandbox
 
+- `enable_gpu`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Enable GPU support in the sandbox container. When enabled, all available GPUs will be accessible to the container.
+
 **Networking**
 - `use_host_network`
   - Type: `bool`
