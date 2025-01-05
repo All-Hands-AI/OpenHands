@@ -51,6 +51,22 @@ describe("ChatInput", () => {
     expect(onSubmitMock).not.toHaveBeenCalled();
   });
 
+  it("should not call onSubmit when the message is only whitespace", async () => {
+    const user = userEvent.setup();
+    render(<ChatInput onSubmit={onSubmitMock} />);
+    const textarea = screen.getByRole("textbox");
+
+    await user.type(textarea, "   ");
+    await user.keyboard("{Enter}");
+
+    expect(onSubmitMock).not.toHaveBeenCalled();
+
+    await user.type(textarea, " \t\n");
+    await user.keyboard("{Enter}");
+
+    expect(onSubmitMock).not.toHaveBeenCalled();
+  });
+
   it("should disable submit", async () => {
     const user = userEvent.setup();
     render(<ChatInput disabled onSubmit={onSubmitMock} />);
@@ -201,5 +217,31 @@ describe("ChatInput", () => {
 
     // Verify image paste was handled
     expect(onImagePaste).toHaveBeenCalledWith([file]);
+  });
+
+  it("should not submit when Enter is pressed during IME composition", async () => {
+    const user = userEvent.setup();
+    render(<ChatInput onSubmit={onSubmitMock} />);
+    const textarea = screen.getByRole("textbox");
+
+    await user.type(textarea, "こんにちは");
+
+    // Simulate Enter during IME composition
+    fireEvent.keyDown(textarea, {
+      key: "Enter",
+      isComposing: true,
+      nativeEvent: { isComposing: true },
+    });
+
+    expect(onSubmitMock).not.toHaveBeenCalled();
+
+    // Simulate normal Enter after composition is done
+    fireEvent.keyDown(textarea, {
+      key: "Enter",
+      isComposing: false,
+      nativeEvent: { isComposing: false },
+    });
+
+    expect(onSubmitMock).toHaveBeenCalledWith("こんにちは");
   });
 });

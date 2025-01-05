@@ -24,7 +24,7 @@ export interface AssistantMessageAction
   extends OpenHandsActionEvent<"message"> {
   source: "agent";
   args: {
-    content: string;
+    thought: string;
     image_urls: string[] | null;
     wait_for_response: boolean;
   };
@@ -78,32 +78,12 @@ export interface BrowseInteractiveAction
   };
 }
 
-export interface AddTaskAction extends OpenHandsActionEvent<"add_task"> {
-  source: "agent";
-  timeout: number;
-  args: {
-    parent: string;
-    goal: string;
-    subtasks: unknown[];
-    thought: string;
-  };
-}
-
-export interface ModifyTaskAction extends OpenHandsActionEvent<"modify_task"> {
-  source: "agent";
-  timeout: number;
-  args: {
-    task_id: string;
-    state: string;
-    thought: string;
-  };
-}
-
 export interface FileReadAction extends OpenHandsActionEvent<"read"> {
   source: "agent";
   args: {
     path: string;
     thought: string;
+    translated_ipython_code: string | null;
   };
 }
 
@@ -113,6 +93,14 @@ export interface FileWriteAction extends OpenHandsActionEvent<"write"> {
     path: string;
     content: string;
     thought: string;
+  };
+}
+
+export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
+  source: "agent";
+  args: {
+    path: string;
+    translated_ipython_code: string;
   };
 }
 
@@ -133,7 +121,6 @@ export type OpenHandsAction =
   | BrowseAction
   | BrowseInteractiveAction
   | FileReadAction
+  | FileEditAction
   | FileWriteAction
-  | AddTaskAction
-  | ModifyTaskAction
   | RejectAction;

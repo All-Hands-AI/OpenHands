@@ -16,7 +16,7 @@ from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm import bedrock
-from openhands.server.shared import config
+from openhands.server.shared import config, openhands_config
 
 app = APIRouter(prefix='/api/options')
 
@@ -104,3 +104,12 @@ async def get_security_analyzers():
         list: A sorted list of security analyzer names.
     """
     return sorted(SecurityAnalyzers.keys())
+
+
+@app.get('/config')
+async def get_config():
+    """
+    Get current config
+    """
+
+    return openhands_config.get_config()

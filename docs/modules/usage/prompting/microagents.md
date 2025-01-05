@@ -6,22 +6,22 @@ OpenHands uses specialized micro-agents to handle specific tasks and contexts ef
 
 Micro-agents are defined in markdown files under the `openhands/agenthub/codeact_agent/micro/` directory. Each micro-agent is configured with:
 
-- A unique name
-- The agent type (typically CodeActAgent)
-- Trigger keywords that activate the agent
-- Specific instructions and capabilities
+- A unique name.
+- The agent type (typically CodeActAgent).
+- Trigger keywords that activate the agent.
+- Specific instructions and capabilities.
 
 ## Available Micro-Agents
 
 ### GitHub Agent
-**File**: `github.md`  
+**File**: `github.md`
 **Triggers**: `github`, `git`
 
 The GitHub agent specializes in GitHub API interactions and repository management. It:
-- Has access to a `GITHUB_TOKEN` for API authentication
-- Follows strict guidelines for repository interactions
-- Handles branch management and pull requests
-- Uses the GitHub API instead of web browser interactions
+- Has access to a `GITHUB_TOKEN` for API authentication.
+- Follows strict guidelines for repository interactions.
+- Handles branch management and pull requests.
+- Uses the GitHub API instead of web browser interactions.
 
 Key features:
 - Branch protection (prevents direct pushes to main/master)
@@ -30,17 +30,18 @@ Key features:
 - API-first approach for GitHub operations
 
 ### NPM Agent
-**File**: `npm.md`  
+**File**: `npm.md`
 **Triggers**: `npm`
 
 Specializes in handling npm package management with specific focus on:
-- Non-interactive shell operations
-- Automated confirmation handling using Unix 'yes' command
-- Package installation automation
+- Non-interactive shell operations.
+- Automated confirmation handling using Unix 'yes' command.
+- Package installation automation.
 
 ### Custom Micro-Agents
 
-You can create your own micro-agents by adding new markdown files to the micro-agents directory. Each file should follow this structure:
+You can create your own micro-agents by adding new markdown files to the micro-agents directory.
+Each file should follow this structure:
 
 ```markdown
 ---
@@ -57,19 +58,18 @@ Instructions and capabilities for the micro-agent...
 ## Best Practices
 
 When working with micro-agents:
-
-1. **Use Appropriate Triggers**: Ensure your commands include the relevant trigger words to activate the correct micro-agent
-2. **Follow Agent Guidelines**: Each agent has specific instructions and limitations - respect these for optimal results
-3. **API-First Approach**: When available, use API endpoints rather than web interfaces
-4. **Automation Friendly**: Design commands that work well in non-interactive environments
+- **Use Appropriate Triggers**: Ensure your commands include the relevant trigger words to activate the correct micro-agent.
+- **Follow Agent Guidelines**: Each agent has specific instructions and limitations. Respect these for optimal results.
+- **API-First Approach**: When available, use API endpoints rather than web interfaces.
+- **Automation Friendly**: Design commands that work well in non-interactive environments.
 
 ## Integration
 
 Micro-agents are automatically integrated into OpenHands' workflow. They:
-- Monitor incoming commands for their trigger words
-- Activate when relevant triggers are detected
-- Apply their specialized knowledge and capabilities
-- Follow their specific guidelines and restrictions
+- Monitor incoming commands for their trigger words.
+- Activate when relevant triggers are detected.
+- Apply their specialized knowledge and capabilities.
+- Follow their specific guidelines and restrictions.
 
 ## Example Usage
 
@@ -105,7 +105,7 @@ Create a new markdown file in `openhands/agenthub/codeact_agent/micro/` with a d
 
 Your micro-agent file must include:
 
-1. **Front Matter**: YAML metadata at the start of the file:
+- **Front Matter**: YAML metadata at the start of the file:
 ```markdown
 ---
 name: your_agent_name
@@ -116,7 +116,7 @@ triggers:
 ---
 ```
 
-2. **Instructions**: Clear, specific guidelines for the agent's behavior:
+- **Instructions**: Clear, specific guidelines for the agent's behavior:
 ```markdown
 You are responsible for [specific task/domain].
 
@@ -135,19 +135,19 @@ Examples of usage:
 
 ### 4. Best Practices for Micro-Agent Development
 
-1. **Clear Scope**: Keep the agent focused on a specific domain or task
-2. **Explicit Instructions**: Provide clear, unambiguous guidelines
-3. **Useful Examples**: Include practical examples of common use cases
-4. **Safety First**: Include necessary warnings and constraints
-5. **Integration Awareness**: Consider how the agent interacts with other components
+- **Clear Scope**: Keep the agent focused on a specific domain or task.
+- **Explicit Instructions**: Provide clear, unambiguous guidelines.
+- **Useful Examples**: Include practical examples of common use cases.
+- **Safety First**: Include necessary warnings and constraints.
+- **Integration Awareness**: Consider how the agent interacts with other components.
 
 ### 5. Testing Your Micro-Agent
 
 Before submitting:
-1. Test the agent with various prompts
-2. Verify trigger words activate the agent correctly
-3. Ensure instructions are clear and comprehensive
-4. Check for potential conflicts with existing agents
+- Test the agent with various prompts.
+- Verify trigger words activate the agent correctly.
+- Ensure instructions are clear and comprehensive.
+- Check for potential conflicts with existing agents.
 
 ### 6. Example Implementation
 
@@ -176,24 +176,20 @@ Guidelines:
 
 Examples:
 1. Creating a Dockerfile:
-   ```dockerfile
    FROM node:18-alpine
    WORKDIR /app
    COPY package*.json ./
    RUN npm install
    COPY . .
    CMD ["npm", "start"]
-   ```
 
 2. Docker Compose usage:
-   ```yaml
    version: '3'
    services:
      web:
        build: .
        ports:
          - "3000:3000"
-   ```
 
 Remember to:
 - Validate Dockerfile syntax
@@ -203,11 +199,12 @@ Remember to:
 
 ### 7. Submission Process
 
-1. Create your micro-agent file in the correct directory
-2. Test thoroughly
+1. Create your micro-agent file in the correct directory.
+2. Test thoroughly.
 3. Submit a pull request with:
-   - The new micro-agent file
-   - Updated documentation if needed
-   - Description of the agent's purpose and capabilities
+   - The new micro-agent file.
+   - Updated documentation if needed.
+   - Description of the agent's purpose and capabilities.
 
-Remember that micro-agents are a powerful way to extend OpenHands' capabilities in specific domains. Well-designed agents can significantly improve the system's ability to handle specialized tasks.
+Remember that micro-agents are a powerful way to extend OpenHands' capabilities in specific domains. Well-designed
+agents can significantly improve the system's ability to handle specialized tasks.

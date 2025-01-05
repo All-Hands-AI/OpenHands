@@ -3,13 +3,13 @@
 ## Introduction
 
 The OpenHands Runtime folder contains the core components responsible for executing actions and managing the runtime environment for the OpenHands project. This README provides an overview of the main components and their interactions.
-You can learn more about how the runtime works in the [EventStream Runtime](https://docs.all-hands.dev/modules/usage/architecture/runtime) documentation.
+You can learn more about how the runtime works in the [Docker Runtime](https://docs.all-hands.dev/modules/usage/architecture/runtime) documentation.
 
 ## Main Components
 
-### 1. impl/*runtime.py
+### 1. base.py
 
-The `impl/*runtime.py` file defines the `Runtime` class, which serves as the primary [interface](./base.py) for agent interactions with the external environment. It handles various operations including:
+The `base.py` file defines the `Runtime` class, which serves as the primary [interface](./base.py) for agent interactions with the external environment. It handles various operations including:
 
 - Bash sandbox execution
 - Browser interactions
@@ -23,15 +23,35 @@ Key features of the `Runtime` class:
 - Action execution methods for different types of actions (run, read, write, browse, etc.)
 - Abstract methods for file operations (to be implemented by subclasses)
 
-### 2. action_execution_server.py
+### 2. impl/action_execution/action_execution_client.py
+The `action_execution_client.py` file contains the `ActionExecutionClient` class, which implements the Runtime interface. It is an abstract implementation, meaning
+it still needs to be extended by a concrete implementation to be used.
 
-The `action_executor_server.py` file contains the `ActionExecutor` class, which is responsible for executing actions received from the OpenHands backend and producing observations. This client runs inside a Docker sandbox.
+This client interacts with an action_execution_server (defined below) via HTTP
+calls to actually perform runtime actions.
+
+### 3. action_execution_server.py
+
+The `action_executor_server.py` file contains the `ActionExecutor` class, which is responsible for executing actions received via the `/execute_action` HTTP endpoint. It returns observations in the HTTP response.
 
 Key features of the `ActionExecutor` class:
 - Initialization of user environment and bash shell
 - Plugin management and initialization
 - Execution of various action types (bash commands, IPython cells, file operations, browsing)
 - Integration with BrowserEnv for web interactions
+
+### 4. Other Implementations
+The `./impl/` directory contains a few different Runtime implementations, all of
+which extend the `ActionExecutionClient` class. These implementations
+handle the lifecycle of a Docker container or other environment running the
+ActionExecutor server.
+
+There are currently four implementations:
+* Docker (runs locally in a Docker container)
+* Remote (runs via a custom HTTP API for creating, pausing, resuming, and stopping runtimes in a remote environment)
+* Modal (uses the Modal API)
+* Runloop (uses the Runloop API)
+
 
 ## Workflow Description
 
@@ -76,9 +96,9 @@ Key features of the `ActionExecutor` class:
 
 ## Runtime Types
 
-### EventStream Runtime
+### Docker Runtime
 
-The EventStream Runtime is designed for local execution using Docker containers:
+The Docker Runtime is designed for local execution using Docker containers:
 
 - Creates and manages a Docker container for each session
 - Executes actions within the container
