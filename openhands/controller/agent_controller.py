@@ -390,7 +390,7 @@ class AgentController:
 
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
             # sync existing metrics BEFORE resetting the agent
-            self.update_state_after_step()
+            await self.update_state_after_step()
             self.state.metrics.merge(self.state.local_metrics)
             self._reset()
         elif (
