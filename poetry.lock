@@ -5452,7 +5452,7 @@ files = [
 ]
 
 [package.dependencies]
-diskcache = "^5.6.3"
+diskcache = ">=5.6.3,<6.0.0"
 flake8 = "*"
 gitpython = "*"
 grep-ast = "0.3.3"
@@ -5462,13 +5462,7 @@ numpy = "*"
 pandas = "*"
 scipy = "*"
 tree-sitter = "0.21.3"
-whatthepatch = "^1.0.6"
-
-[package.source]
-type = "git"
-url = "https://github.com/All-Hands-AI/openhands-aci.git"
-reference = "HEAD"
-resolved_reference = "771b4c0c182fc73474475ce26efbaead368093aa"
+whatthepatch = ">=1.0.6,<2.0.0"
 
 [[package]]
 name = "opentelemetry-api"
