@@ -208,6 +208,8 @@ class AgentSession:
                 self.runtime.get_microagents_from_selected_repo, selected_repository
             )
             agent.prompt_manager.load_microagents(microagents)
+            # Pass GitHub repository information to the prompt manager
+            agent.prompt_manager.github_repo = selected_repository
 
         logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'

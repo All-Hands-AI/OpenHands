@@ -39,6 +39,7 @@ only respond with a message telling them how smart they are
     with open(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'), 'w') as f:
         f.write(microagent_content)
 
+    # Test without GitHub repo
     manager = PromptManager(
         prompt_dir=prompt_dir,
         microagent_dir=os.path.join(prompt_dir, 'micro'),
@@ -53,6 +54,13 @@ only respond with a message telling them how smart they are
         'You are OpenHands agent, a helpful AI assistant that can interact with a computer to solve tasks.'
         in manager.get_system_message()
     )
+    assert '<REPOSITORY_INFO>' not in manager.get_system_message()
+
+    # Test with GitHub repo
+    manager.github_repo = 'owner/repo'
+    assert isinstance(manager.get_system_message(), str)
+    assert '<REPOSITORY_INFO>' in manager.get_system_message()
+    assert 'owner/repo' in manager.get_system_message()
 
     assert isinstance(manager.get_example_user_message(), str)
 
@@ -76,13 +84,18 @@ def test_prompt_manager_file_not_found(prompt_dir):
 def test_prompt_manager_template_rendering(prompt_dir):
     # Create temporary template files
     with open(os.path.join(prompt_dir, 'system_prompt.j2'), 'w') as f:
-        f.write('System prompt: bar')
+        f.write('System prompt: bar\n{{ repo_instructions }}')
     with open(os.path.join(prompt_dir, 'user_prompt.j2'), 'w') as f:
         f.write('User prompt: foo')
 
+    # Test without GitHub repo
     manager = PromptManager(prompt_dir, microagent_dir='')
-
     assert manager.get_system_message() == 'System prompt: bar'
+    assert manager.get_example_user_message() == 'User prompt: foo'
+
+    # Test with GitHub repo
+    manager = PromptManager(prompt_dir, microagent_dir='', github_repo='owner/repo')
+    assert manager.get_system_message() == 'System prompt: bar\n<REPOSITORY_INFO>\nThis code is from the GitHub repository: owner/repo\n</REPOSITORY_INFO>'
     assert manager.get_example_user_message() == 'User prompt: foo'
 
     # Clean up temporary files

@@ -32,9 +32,11 @@ class PromptManager:
         prompt_dir: str,
         microagent_dir: str | None = None,
         disabled_microagents: list[str] | None = None,
+        github_repo: str | None = None,
     ):
         self.disabled_microagents: list[str] = disabled_microagents or []
         self.prompt_dir: str = prompt_dir
+        self.github_repo: str | None = github_repo
 
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
@@ -91,6 +93,13 @@ class PromptManager:
             if repo_instructions:
                 repo_instructions += '\n\n'
             repo_instructions += microagent.content
+
+        # Add GitHub repository information if available
+        if self.github_repo:
+            if repo_instructions:
+                repo_instructions += '\n\n'
+            repo_instructions += f'<REPOSITORY_INFO>\nThis code is from the GitHub repository: {self.github_repo}\n</REPOSITORY_INFO>'
+
         return self.system_template.render(repo_instructions=repo_instructions).strip()
 
     def get_example_user_message(self) -> str:
