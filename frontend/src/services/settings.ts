@@ -1,5 +1,35 @@
 export const LATEST_SETTINGS_VERSION = 5;
 
+export type Settings = {
+  LLM_MODEL: string;
+  LLM_BASE_URL: string;
+  AGENT: string;
+  LANGUAGE: string;
+  LLM_API_KEY: string | null;
+  CONFIRMATION_MODE: boolean;
+  SECURITY_ANALYZER: string;
+};
+
+export type ApiSettings = {
+  llm_model: string;
+  llm_base_url: string;
+  agent: string;
+  language: string;
+  llm_api_key: string | null;
+  confirmation_mode: boolean;
+  security_analyzer: string;
+};
+
+export const DEFAULT_SETTINGS: Settings = {
+  LLM_MODEL: "anthropic/claude-3-5-sonnet-20241022",
+  LLM_BASE_URL: "",
+  AGENT: "CodeActAgent",
+  LANGUAGE: "en",
+  LLM_API_KEY: null,
+  CONFIRMATION_MODE: false,
+  SECURITY_ANALYZER: "",
+};
+
 export const getCurrentSettingsVersion = () => {
   const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
   if (!settingsVersion) return 0;
@@ -12,39 +42,6 @@ export const getCurrentSettingsVersion = () => {
 
 export const settingsAreUpToDate = () =>
   getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
-
-export type Settings = {
-  LLM_MODEL: string;
-  LLM_BASE_URL: string;
-  AGENT: string;
-  LANGUAGE: string;
-  LLM_API_KEY: string | null;
-  CONFIRMATION_MODE: boolean;
-  SECURITY_ANALYZER: string;
-  REMOTE_RUNTIME_RESOURCE_FACTOR: number;
-};
-
-export type ApiSettings = {
-  llm_model: string;
-  llm_base_url: string;
-  agent: string;
-  language: string;
-  llm_api_key: string | null;
-  confirmation_mode: boolean;
-  security_analyzer: string;
-  remote_runtime_resource_factor: number;
-};
-
-export const DEFAULT_SETTINGS: Settings = {
-  LLM_MODEL: "anthropic/claude-3-5-sonnet-20241022",
-  LLM_BASE_URL: "",
-  AGENT: "CodeActAgent",
-  LANGUAGE: "en",
-  LLM_API_KEY: null,
-  CONFIRMATION_MODE: false,
-  SECURITY_ANALYZER: "",
-  REMOTE_RUNTIME_RESOURCE_FACTOR: 1,
-};
 
 // TODO: localStorage settings are deprecated. Remove this after 1/31/2025
 /**
@@ -69,8 +66,6 @@ export const getLocalStorageSettings = (): Settings => {
     LLM_API_KEY: llmApiKey || DEFAULT_SETTINGS.LLM_API_KEY,
     CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
     SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
-    REMOTE_RUNTIME_RESOURCE_FACTOR:
-      DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
   };
 };
 
