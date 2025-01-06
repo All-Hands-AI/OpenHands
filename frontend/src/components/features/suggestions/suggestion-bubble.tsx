@@ -28,7 +28,7 @@ export function SuggestionBubble({
       <div className="flex items-center gap-2">
         <Lightbulb width={18} height={18} />
         <span className="text-sm">
-          {t(`SUGGESTIONS$${suggestion}` as I18nKey)}
+          {suggestion}
         </span>
       </div>
       <RefreshButton onClick={handleRefresh} />
