@@ -96,7 +96,7 @@ class FileConversationStore(ConversationStore):
 
 
 def _sort_key(conversation: ConversationMetadata) -> str:
-    last_updated_at = conversation.last_updated_at
-    if last_updated_at:
-        return last_updated_at.isoformat()  # YYYY-MM-DDTHH:MM:SS for sorting
+    created_at = conversation.created_at
+    if created_at:
+        return created_at.isoformat()  # YYYY-MM-DDTHH:MM:SS for sorting
     return ''
