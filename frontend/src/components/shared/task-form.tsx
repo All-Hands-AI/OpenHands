@@ -31,9 +31,10 @@ export function TaskForm({ ref }: TaskFormProps) {
   );
 
   const [text, setText] = React.useState("");
-  const [suggestion, setSuggestion] = React.useState(
-    getRandomKey(SUGGESTIONS["non-repo"]),
-  );
+  const [suggestion, setSuggestion] = React.useState(() => {
+    const key = getRandomKey(SUGGESTIONS["non-repo"]);
+    return { key, value: SUGGESTIONS["non-repo"][key] };
+  });
   const [inputIsFocused, setInputIsFocused] = React.useState(false);
   const { mutate: createConversation, isPending } = useCreateConversation();
 
@@ -41,16 +42,14 @@ export function TaskForm({ ref }: TaskFormProps) {
     const suggestions = SUGGESTIONS["non-repo"];
     // remove current suggestion to avoid refreshing to the same suggestion
     const suggestionCopy = { ...suggestions };
-    delete suggestionCopy[suggestion];
+    delete suggestionCopy[suggestion.key];
 
     const key = getRandomKey(suggestionCopy);
-    setSuggestion(key);
+    setSuggestion({ key, value: suggestions[key] });
   };
 
   const onClickSuggestion = () => {
-    const suggestions = SUGGESTIONS["non-repo"];
-    const value = suggestions[suggestion];
-    setText(value);
+    setText(suggestion.value);
   };
 
   const placeholder = React.useMemo(() => {
