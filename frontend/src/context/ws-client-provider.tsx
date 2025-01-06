@@ -101,12 +101,10 @@ export function WsClientProvider({
   }
 
   React.useEffect(() => {
-    console.log("TRACE:conversationUpdate")
     lastEventRef.current = null;
   }, [conversationId]);
 
   React.useEffect(() => {
-    console.log("TRACE:convo_gh")
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }
