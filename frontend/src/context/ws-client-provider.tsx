@@ -5,9 +5,12 @@ import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
 import { OpenHandsParsedEvent } from "#/types/core";
-import { AgentStateChangeObservation } from "#/types/core/observations";
+import {
+  AssistantMessageAction,
+  UserMessageAction,
+} from "#/types/core/actions";
 
-const isOpenHandsMessage = (event: unknown): event is OpenHandsParsedEvent =>
+const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
   event !== null &&
   "id" in event &&
@@ -15,10 +18,26 @@ const isOpenHandsMessage = (event: unknown): event is OpenHandsParsedEvent =>
   "message" in event &&
   "timestamp" in event;
 
-const isAgentStateChangeObservation = (
+const isUserMessage = (
   event: OpenHandsParsedEvent,
-): event is AgentStateChangeObservation =>
-  "observation" in event && event.observation === "agent_state_changed";
+): event is UserMessageAction =>
+  "source" in event &&
+  "type" in event &&
+  event.source === "user" &&
+  event.type === "message";
+
+const isAssistantMessage = (
+  event: OpenHandsParsedEvent,
+): event is AssistantMessageAction =>
+  "source" in event &&
+  "type" in event &&
+  event.source === "agent" &&
+  event.type === "message";
+
+const isMessageAction = (
+  event: OpenHandsParsedEvent,
+): event is UserMessageAction | AssistantMessageAction =>
+  isUserMessage(event) || isAssistantMessage(event);
 
 export enum WsClientProviderStatus {
   CONNECTED,
@@ -74,7 +93,7 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
-    if (isOpenHandsMessage(event) && !isAgentStateChangeObservation(event)) {
+    if (isOpenHandsEvent(event) && isMessageAction(event)) {
       messageRateHandler.record(new Date().getTime());
     }
     setEvents((prevEvents) => [...prevEvents, event]);
