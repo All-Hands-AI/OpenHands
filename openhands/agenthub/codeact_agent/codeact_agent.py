@@ -436,7 +436,6 @@ class CodeActAgent(Agent):
                 Message(
                     role='user',
                     content=[TextContent(text=example_message)],
-                    cache_prompt=self.llm.is_caching_prompt_active(),
                 )
             )
 
