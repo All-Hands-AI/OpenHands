@@ -15,7 +15,6 @@ export const useUserRepositories = () => {
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled: !!gitHubToken && config?.APP_MODE === "oss",
-    retry: false,
   });
 
   // TODO: Once we create our custom dropdown component, we should fetch data onEndReached
