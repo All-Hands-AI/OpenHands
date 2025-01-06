@@ -1,6 +1,6 @@
 from urllib.parse import parse_qs
 
-from github import Github
+from github import Github, GithubException
 from socketio.exceptions import ConnectionRefusedError
 
 from openhands.core.logger import openhands_logger as logger
@@ -37,9 +37,16 @@ async def connect(connection_id: str, environ, auth):
         user_id = -1
         if auth and 'github_token' in auth:
             github_token = auth['github_token']
-            with Github(github_token) as g:
-                gh_user = await call_sync_from_async(g.get_user)
-                user_id = gh_user.id
+            try:
+                with Github(github_token) as g:
+                    gh_user = await call_sync_from_async(g.get_user)
+                    user_id = gh_user.id
+            except GithubException as e:
+                logger.error(f'Error connecting to github: {e}')
+                raise ConnectionRefusedError(f'Error connecting to github: {e}')
+        else:
+            logger.error('No github_token in auth')
+            raise ConnectionRefusedError('No github_token sent')
 
         logger.info(f'User {user_id} is connecting to conversation {conversation_id}')
 
