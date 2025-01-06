@@ -1,0 +1,14 @@
+{
+  "title": {
+    "message": "ブログ",
+    "description": "The title for the blog used in SEO"
+  },
+  "description": {
+    "message": "ブログ",
+    "description": "The description for the blog used in SEO"
+  },
+  "sidebar.title": {
+    "message": "最近の投稿",
+    "description": "The label for the left sidebar"
+  }
+}

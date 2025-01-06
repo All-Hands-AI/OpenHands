@@ -1,0 +1,26 @@
+{
+  "title": {
+    "message": "OpenHands",
+    "description": "The title in the navbar"
+  },
+  "logo.alt": {
+    "message": "OpenHands",
+    "description": "The alt text of navbar logo"
+  },
+  "item.label.User Guides": {
+    "message": "ユーザーガイド",
+    "description": "Navbar item with label User Guides"
+  },
+  "item.label.Python API": {
+    "message": "Python API",
+    "description": "Navbar item with label Python API"
+  },
+  "item.label.Company": {
+    "message": "会社",
+    "description": "Navbar item with label Company"
+  },
+  "item.label.GitHub": {
+    "message": "GitHub",
+    "description": "Navbar item with label GitHub"
+  }
+}
