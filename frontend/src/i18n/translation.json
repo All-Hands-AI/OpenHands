@@ -10,7 +10,8 @@
     "fr": "OpenHands Espace de travail",
     "it": "Area di lavoro OpenHands",
     "pt": "Espaço de trabalho OpenHands",
-    "es": "Espacio de trabajo de OpenHands"
+    "es": "Espacio de trabajo de OpenHands",
+    "ja": "OpenHands ワークスペース"
   },
   "WORKSPACE$TERMINAL_TAB_LABEL": {
     "en": "Terminal",
@@ -24,7 +25,8 @@
     "es": "Terminal",
     "ar": "الطرفية",
     "fr": "Terminal",
-    "tr": "Terminal"
+    "tr": "Terminal",
+    "ja": "ターミナル"
   },
   "CODE_EDITOR$FILE_SAVED_SUCCESSFULLY": {
     "en": "File saved successfully",
@@ -38,7 +40,8 @@
     "es": "Archivo guardado exitosamente",
     "ar": "تم حفظ الملف بنجاح",
     "fr": "Fichier enregistré avec succès",
-    "tr": "Dosya başarıyla kaydedildi"
+    "tr": "Dosya başarıyla kaydedildi",
+    "ja": "ファイルが正常に保存されました"
   },
   "CODE_EDITOR$SAVING_LABEL": {
     "en": "Saving...",
@@ -52,7 +55,8 @@
     "es": "Guardando...",
     "ar": "حفظ مؤقت",
     "fr": "Enregistrement en cours...",
-    "tr": "Kayıt yapılıyor..."
+    "tr": "Kayıt yapılıyor...",
+    "ja": "保存中..."
   },
   "CODE_EDITOR$SAVE_LABEL": {
     "en": "Save",
@@ -66,7 +70,8 @@
     "es": "Guardar",
     "ar": "حفظ",
     "fr": "Enregistrer",
-    "tr": "Kayıt"
+    "tr": "Kayıt",
+    "ja": "保存"
   },
   "CODE_EDITOR$OPTIONS": {
     "en": "Options",
@@ -80,7 +85,8 @@
     "es": "Opciones",
     "ar": "خيارات",
     "fr": "Options",
-    "tr": "Seçenekler"
+    "tr": "Seçenekler",
+    "ja": "オプション"
   },
   "CODE_EDITOR$FILE_SAVE_ERROR": {
     "en": "An unknown error occurred while saving the file",
@@ -94,7 +100,8 @@
     "es": "Ocurrió un error desconocido al guardar el archivo",
     "ar": "حدث خطأ غير معروف أثناء حفظ الملف",
     "fr": "Une erreur inconnue s'est produite lors de l'enregistrement du fichier",
-    "tr": "Dosya kaydedilirken bilinmeyen bir hata oluştu"
+    "tr": "Dosya kaydedilirken bilinmeyen bir hata oluştu",
+    "ja": "ファイルの保存中に不明なエラーが発生しました"
   },
   "CODE_EDITOR$EMPTY_MESSAGE": {
     "en": "No file selected.",
@@ -108,7 +115,8 @@
     "es": "Ningún archivo seleccionado.",
     "ar": "لم يتم اختيار أي ملف.",
     "fr": "Aucun fichier sélectionné.",
-    "tr": "Hiçbir dosya seçilmedi."
+    "tr": "Hiçbir dosya seçilmedi.",
+    "ja": "ファイルが選択されていません。"
   },
   "FILE_SERVICE$SELECT_FILE_ERROR": {
     "en": "Error selecting file. Please try again.",
@@ -122,7 +130,8 @@
     "es": "Error al seleccionar el archivo. Por favor, inténtelo de nuevo.",
     "ar": "خطأ في اختيار الملف. يرجى المحاولة مرة أخرى.",
     "fr": "Erreur lors de la sélection du fichier. Veuillez réessayer.",
-    "tr": "Dosya seçiminde hata oluştu. Lütfen tekrar deneyin."
+    "tr": "Dosya seçiminde hata oluştu. Lütfen tekrar deneyin.",
+    "ja": "ファイルの選択中にエラーが発生しました。もう一度お試しください。"
   },
   "FILE_SERVICE$UPLOAD_FILES_ERROR": {
     "en": "Error uploading files. Please try again.",
@@ -136,7 +145,8 @@
     "es": "Error al subir los archivos. Por favor, inténtelo de nuevo.",
     "ar": "خطأ في تحميل الملفات. يرجى المحاولة مرة أخرى.",
     "fr": "Erreur lors du téléchargement des fichiers. Veuillez réessayer.",
-    "tr": "Dosyalar yüklenirken hata oluştu. Lütfen tekrar deneyin."
+    "tr": "Dosyalar yüklenirken hata oluştu. Lütfen tekrar deneyin.",
+    "ja": "ファイルのアップロード中にエラーが発生しました。もう一度お試しください。"
   },
   "FILE_SERVICE$LIST_FILES_ERROR": {
     "en": "Error listing files. Please try again.",
@@ -150,7 +160,8 @@
     "es": "Error al listar los archivos. Por favor, inténtelo de nuevo.",
     "ar": "خطأ في سرد الملفات. يرجى المحاولة مرة أخرى.",
     "fr": "Erreur lors de la liste des fichiers. Veuillez réessayer.",
-    "tr": "Dosyalar listelenirken hata oluştu. Lütfen tekrar deneyin."
+    "tr": "Dosyalar listelenirken hata oluştu. Lütfen tekrar deneyin.",
+    "ja": "ファイル一覧の取得中にエラーが発生しました。もう一度お試しください。"
   },
   "FILE_SERVICE$SAVE_FILE_ERROR": {
     "en": "Error saving file. Please try again.",
@@ -164,7 +175,8 @@
     "es": "Error al guardar el archivo. Por favor, inténtelo de nuevo.",
     "ar": "خطأ في حفظ الملف. يرجى المحاولة مرة أخرى.",
     "fr": "Erreur lors de l'enregistrement du fichier. Veuillez réessayer.",
-    "tr": "Dosya kaydedilirken hata oluştu. Lütfen tekrar deneyin."
+    "tr": "Dosya kaydedilirken hata oluştu. Lütfen tekrar deneyin.",
+    "ja": "ファイルの保存中にエラーが発生しました。もう一度お試しください。"
   },
   "FILE_SERVICE$INVALID_FILE_PATH": {
     "en": "Invalid file path. Please check the file name and try again.",
@@ -178,7 +190,8 @@
     "es": "Ruta de archivo inválida. Por favor, verifique el nombre del archivo e inténtelo de nuevo.",
     "ar": "مسار الملف غير صالح. يرجى التحقق من اسم الملف والمحاولة مرة أخرى.",
     "fr": "Chemin de fichier invalide. Veuillez vérifier le nom du fichier et réessayer.",
-    "tr": "Geçersiz dosya yolu. Lütfen dosya adını kontrol edin ve tekrar deneyin."
+    "tr": "Geçersiz dosya yolu. Lütfen dosya adını kontrol edin ve tekrar deneyin.",
+    "ja": "ファイルパスが無効です。ファイル名を確認して、もう一度お試しください。"
   },
   "WORKSPACE$PLANNER_TAB_LABEL": {
     "en": "Planner",
@@ -191,7 +204,8 @@
     "fr": "Planificateur",
     "it": "Pianificatore",
     "pt": "Planejador",
-    "es": "Planificador"
+    "es": "Planificador",
+    "ja": "プランナー"
   },
   "WORKSPACE$JUPYTER_TAB_LABEL": {
     "en": "Jupyter IPython",
@@ -204,7 +218,8 @@
     "fr": "Jupyter IPython",
     "it": "Jupyter IPython",
     "pt": "Jupyter IPython",
-    "es": "Jupyter IPython"
+    "es": "Jupyter IPython",
+    "ja": "Jupyter IPython"
   },
   "WORKSPACE$CODE_EDITOR_TAB_LABEL": {
     "en": "Code Editor",
@@ -217,7 +232,8 @@
     "fr": "Éditeur de code",
     "it": "Editor di codice",
     "pt": "Editor de código",
-    "es": "Editor de código"
+    "es": "Editor de código",
+    "ja": "コードエディタ"
   },
   "WORKSPACE$BROWSER_TAB_LABEL": {
     "en": "Browser (Experimental)",
@@ -231,7 +247,8 @@
     "es": "Navegador (Experimental)",
     "ar": "المتصفح (تجريبي)",
     "fr": "Navigateur (Expérimental)",
-    "tr": "Tarayıcı (Deneysel)"
+    "tr": "Tarayıcı (Deneysel)",
+    "ja": "ブラウザ（実験的）"
   },
   "CONFIGURATION$OPENHANDS_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenHands Workspace directory",
@@ -245,7 +262,8 @@
     "es": "Directorio del espacio de trabajo de OpenHands",
     "ar": "مجلد مساحة عمل أوبنديفين",
     "fr": "Répertoire de l'espace de travail OpenHands",
-    "tr": "OpenHands çalışma alanı dizini"
+    "tr": "OpenHands çalışma alanı dizini",
+    "ja": "OpenHands ワークスペースディレクトリ"
   },
   "CONFIGURATION$OPENHANDS_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
     "en": "Default: ./workspace",
@@ -258,7 +276,8 @@
     "fr": "Par défaut: ./workspace",
     "it": "Predefinito: ./workspace",
     "pt": "Padrão: ./workspace",
-    "es": "Predeterminado: ./workspace"
+    "es": "Predeterminado: ./workspace",
+    "ja": "デフォルト: ./workspace"
   },
   "CONFIGURATION$MODAL_TITLE": {
     "en": "Configuration",
@@ -272,7 +291,8 @@
     "es": "Configuración",
     "ar": "التكوين",
     "fr": "Configuration",
-    "tr": "Konfigürasyon"
+    "tr": "Konfigürasyon",
+    "ja": "設定"
   },
   "CONFIGURATION$MODEL_SELECT_LABEL": {
     "en": "Model",
@@ -286,7 +306,8 @@
     "es": "Modelo",
     "ar": "النموذج",
     "fr": "Modèle",
-    "tr": "Model"
+    "tr": "Model",
+    "ja": "モデル"
   },
   "CONFIGURATION$MODEL_SELECT_PLACEHOLDER": {
     "en": "Select a model",
@@ -300,7 +321,8 @@
     "es": "Seleccionar un modelo",
     "ar": "حدد نموذج",
     "fr": "Sélectionner un modèle",
-    "tr": "Model Seç"
+    "tr": "Model Seç",
+    "ja": "モデルを選択"
   },
   "CONFIGURATION$AGENT_SELECT_LABEL": {
     "en": "Agent",
@@ -314,7 +336,8 @@
     "es": "Agente",
     "ar": "الوكيل",
     "fr": "Agent",
-    "tr": "Ajan"
+    "tr": "Ajan",
+    "ja": "エージェント"
   },
   "CONFIGURATION$AGENT_SELECT_PLACEHOLDER": {
     "en": "Select an agent",
@@ -328,7 +351,8 @@
     "es": "Seleccionar un agente",
     "ar": "حدد وكيلا",
     "fr": "Sélectionner un agent",
-    "tr": "Ajan Seç"
+    "tr": "Ajan Seç",
+    "ja": "エージェントを選択"
   },
   "CONFIGURATION$LANGUAGE_SELECT_LABEL": {
     "en": "Language",
@@ -341,7 +365,8 @@
     "fr": "Langue",
     "it": "Lingua",
     "pt": "Idioma",
-    "es": "Idioma"
+    "es": "Idioma",
+    "ja": "言語"
   },
   "CONFIGURATION$LANGUAGE_SELECT_PLACEHOLDER": {
     "en": "Select a language",
@@ -355,7 +380,8 @@
     "es": "Seleccionar un idioma",
     "ar": "حدد لغة",
     "fr": "Sélectionner une langue",
-    "tr": "Dil Seç"
+    "tr": "Dil Seç",
+    "ja": "言語を選択"
   },
   "CONFIGURATION$SECURITY_SELECT_LABEL": {
     "en": "Security analyzer",
@@ -369,7 +395,8 @@
     "es": "Analizador de seguridad",
     "ar": "محلل الأمان",
     "fr": "Analyseur de sécurité",
-    "tr": "Güvenlik analizörü"
+    "tr": "Güvenlik analizörü",
+    "ja": "セキュリティアナライザー"
   },
   "CONFIGURATION$SECURITY_SELECT_PLACEHOLDER": {
     "en": "Select a security analyzer (optional)",
@@ -383,7 +410,8 @@
     "es": "Seleccione un analizador de seguridad (opcional)",
     "ar": "اختر محلل أمان (اختياري)",
     "fr": "Sélectionnez un analyseur de sécurité (facultatif)",
-    "tr": "Bir güvenlik analizörü seçin (isteğe bağlı)"
+    "tr": "Bir güvenlik analizörü seçin (isteğe bağlı)",
+    "ja": "セキュリティアナライザーを選択（オプション）"
   },
   "CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL": {
     "en": "Close",
@@ -397,7 +425,8 @@
     "es": "Cerrar",
     "ar": "إغلاق",
     "fr": "Fermer",
-    "tr": "Kapat"
+    "tr": "Kapat",
+    "ja": "閉じる"
   },
   "CONFIGURATION$MODAL_SAVE_BUTTON_LABEL": {
     "en": "Save",
@@ -410,7 +439,8 @@
     "fr": "Enregistrer",
     "it": "Salva",
     "pt": "Salvar",
-    "es": "Guardar"
+    "es": "Guardar",
+    "ja": "保存"
   },
   "CONFIGURATION$MODAL_RESET_BUTTON_LABEL": {
     "en": "Reset to defaults",
@@ -424,7 +454,8 @@
     "es": "Restablecer valores predeterminados",
     "ar": "إعادة التعيين إلى الإعدادات الافتراضية",
     "fr": "Réinitialiser aux valeurs par défaut",
-    "tr": "Varsayılanlara Sıfırla"
+    "tr": "Varsayılanlara Sıfırla",
+    "ja": "デフォルトにリセット"
   },
   "CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE": {
     "en": "We've changed some settings in the latest update. Take a minute to review.",
@@ -438,7 +469,8 @@
     "es": "Hemos cambiado algunas configuraciones en la última actualización. Tómate un momento para revisarlas.",
     "ar": "لقد قمنا بتغيير بعض الإعدادات في التحديث الأخير. خذ دقيقة لمراجعتها.",
     "fr": "Nous avons modifié certains paramètres dans la dernière mise à jour. Prenez un moment pour les examiner.",
-    "tr": "Son güncellemede bazı ayarları değiştirdik. Gözden geçirmek için bir dakikanızı ayırın."
+    "tr": "Son güncellemede bazı ayarları değiştirdik. Gözden geçirmek için bir dakikanızı ayırın.",
+    "ja": "最新のアップデートで一部の設定を変更しました。確認のためにお時間をお取りください。"
   },
   "CONFIGURATION$AGENT_LOADING": {
     "en": "Please wait while the agent loads. This may take a few minutes...",
@@ -452,1652 +484,49 @@
     "es": "Por favor, espere mientras el agente se carga. Esto puede tardar unos minutos...",
     "ar": "يرجى الانتظار أثناء تحميل الوكيل. قد يستغرق هذا بضع دقائق...",
     "fr": "Veuillez patienter pendant le chargement de l'agent. Cela peut prendre quelques minutes...",
-    "tr": "Lütfen ajan yüklenirken bekleyin. Bu birkaç dakika sürebilir..."
+    "tr": "Lütfen ajan yüklenirken bekleyin. Bu birkaç dakika sürebilir...",
+    "ja": "エージェントの読み込み中です。数分かかる場合があります..."
   },
-  "CONFIGURATION$AGENT_RUNNING": {
-    "en": "Please stop the agent before editing these settings.",
-    "de": "Bitte beenden Sie den Agenten vor der Bearbeitung der Einstellungen.",
-    "zh-CN": "请在编辑这些设置之前停止代理。",
-    "ko-KR": "이 설정을 편집하기 전에 에이전트를 중지해 주세요.",
-    "no": "Vennligst stopp agenten før du redigerer disse innstillingene.",
-    "zh-TW": "請在編輯這些設定之前停止代理。",
-    "it": "Si prega di fermare l'agente prima di modificare queste impostazioni.",
-    "pt": "Por favor, pare o agente antes de editar estas configurações.",
-    "es": "Por favor, detenga el agente antes de editar estas configuraciones.",
-    "ar": "يرجى إيقاف الوكيل قبل تعديل هذه الإعدادات.",
-    "fr": "Veuillez arrêter l'agent avant de modifier ces paramètres.",
-    "tr": "Bu ayarları düzenlemeden önce lütfen ajanı durdurun."
-  },
-  "CONFIGURATION$ERROR_FETCH_MODELS": {
-    "en": "Failed to fetch models and agents",
-    "zh-CN": "获取模型和智能体失败",
-    "de": "Fehler beim Abrufen der Modelle und Agenten",
-    "zh-TW": "獲取模型和智能體失敗",
-    "es": "Error al obtener modelos y agentes",
-    "fr": "Échec de la récupération des modèles et des agents",
-    "it": "Impossibile recuperare modelli e agenti",
-    "pt": "Falha ao buscar modelos e agentes",
-    "ko-KR": "모델 및 에이전트 가져오기 실패",
-    "ar": "فشل في جلب النماذج والوكلاء",
-    "tr": "Modeller ve ajanlar getirilemedi",
-    "no": "Kunne ikke hente modeller og agenter"
-  },
-  "SESSION$SERVER_CONNECTED_MESSAGE": {
-    "en": "Connected to server",
-    "zh-CN": "已连接到服务器",
-    "de": "Verbindung zum Server hergestellt",
-    "zh-TW": "已連接到伺服器",
-    "es": "Conectado al servidor",
-    "fr": "Connecté au serveur",
-    "it": "Connesso al server",
-    "pt": "Conectado ao servidor",
-    "ko-KR": "서버에 연결됨",
-    "ar": "تم الاتصال بالخادم",
-    "tr": "Sunucuya bağlandı",
-    "no": "Koblet til server"
-  },
-  "SESSION$SESSION_HANDLING_ERROR_MESSAGE": {
-    "en": "Error handling message",
-    "zh-CN": "处理消息时发生错误",
-    "de": "Fehler beim Verarbeiten der Nachricht",
-    "zh-TW": "處理訊息時發生錯誤",
-    "es": "Error al procesar el mensaje",
-    "fr": "Erreur lors du traitement du message",
-    "it": "Errore durante l'elaborazione del messaggio",
-    "pt": "Erro ao processar a mensagem",
-    "ko-KR": "메시지 처리 중 오류 발생",
-    "ar": "خطأ في معالجة الرسالة",
-    "tr": "Mesaj işlenirken hata oluştu",
-    "no": "Feil ved behandling av melding"
-  },
-  "SESSION$SESSION_CONNECTION_ERROR_MESSAGE": {
-    "en": "Error connecting to session",
-    "zh-CN": "连接到会话时发生错误",
-    "de": "Verbindung zur Sitzung fehlgeschlagen",
-    "zh-TW": "連接到會話時發生錯誤",
-    "es": "Error al conectar con la sesión",
-    "fr": "Erreur de connexion à la session",
-    "it": "Errore durante la connessione alla sessione",
-    "pt": "Erro ao conectar à sessão",
-    "ko-KR": "세션 연결 오류",
-    "ar": "خطأ في الاتصال بالجلسة",
-    "tr": "Oturuma bağlanırken hata oluştu",
-    "no": "Feil ved tilkobling til økt"
-  },
-  "SESSION$SOCKET_NOT_INITIALIZED_ERROR_MESSAGE": {
-    "en": "Socket not initialized",
-    "zh-CN": "Socket 未初始化",
-    "de": "Socket nicht initialisiert",
-    "zh-TW": "Socket 未初始化",
-    "es": "Socket no inicializado",
-    "fr": "Socket non initialisé",
-    "it": "Socket non inizializzato",
-    "pt": "Socket não inicializado",
-    "ko-KR": "소켓이 초기화되지 않았습니다",
-    "ar": "لم يتم تهيئة Socket",
-    "tr": "Soket başlatılmadı",
-    "no": "Socket ikke initialisert"
-  },
-  "EXPLORER$UPLOAD_ERROR_MESSAGE": {
-    "en": "Error uploading file",
-    "zh-CN": "上传文件时发生错误",
-    "de": "Fehler beim Hochladen der Datei",
-    "zh-TW": "上傳檔案時發生錯誤",
-    "es": "Error al subir el archivo",
-    "fr": "Erreur lors du téléchargement du fichier",
-    "it": "Errore durante il caricamento del file",
-    "pt": "Erro ao fazer upload do arquivo",
-    "ko-KR": "파일 업로드 중 오류 발생",
-    "ar": "خطأ في تحميل الملف",
-    "tr": "Dosya yüklenirken hata oluştu",
-    "no": "Feil ved opplasting av fil"
-  },
-  "EXPLORER$LABEL_DROP_FILES": {
-    "en": "Drop files here",
-    "zh-CN": "将文件拖到这里",
-    "de": "Dateien hier ablegen",
-    "zh-TW": "將檔案拖曳至此",
-    "es": "Suelta los archivos aquí",
-    "fr": "Déposez les fichiers ici",
-    "no": "Slipp filer her",
-    "it": "Trascina i file qui",
-    "pt": "Solte os arquivos aqui",
-    "ko-KR": "파일을 여기에 놓으세요",
-    "ar": "أسقط الملفات هنا",
-    "tr": "Dosyaları buraya bırakın"
-  },
-  "EXPLORER$LABEL_WORKSPACE": {
-    "en": "Workspace",
-    "zh-CN": "工作区",
-    "de": "Arbeitsbereich",
-    "zh-TW": "工作區",
-    "es": "Espacio de trabajo",
-    "fr": "Espace de travail",
-    "it": "Area di lavoro",
-    "pt": "Espaço de trabalho",
-    "ko-KR": "작업 공간",
-    "ar": "مساحة العمل",
-    "tr": "Çalışma alanı",
-    "no": "Arbeidsområde"
-  },
-  "EXPLORER$EMPTY_WORKSPACE_MESSAGE": {
-    "en": "No files in workspace",
-    "zh-CN": "工作区没有文件",
-    "de": "Keine Dateien im Arbeitsbereich",
-    "zh-TW": "工作區沒有檔案",
-    "es": "No hay archivos en el espacio de trabajo",
-    "fr": "Aucun fichier dans l'espace de travail",
-    "it": "Nessun file nell'area di lavoro",
-    "pt": "Nenhum arquivo no espaço de trabalho",
-    "ko-KR": "작업 공간에 파일이 없습니다",
-    "ar": "لا توجد ملفات في مساحة العمل",
-    "tr": "Çalışma alanında dosya yok",
-    "no": "Ingen filer i arbeidsområdet"
-  },
-  "EXPLORER$LOADING_WORKSPACE_MESSAGE": {
-    "en": "Loading workspace...",
-    "zh-CN": "正在加载工作区...",
-    "de": "Arbeitsbereich wird geladen...",
-    "zh-TW": "正在載入工作區...",
-    "es": "Cargando espacio de trabajo...",
-    "fr": "Chargement de l'espace de travail...",
-    "it": "Caricamento dell'area di lavoro...",
-    "pt": "Carregando espaço de trabalho...",
-    "ko-KR": "작업 공간 로딩 중...",
-    "ar": "جارٍ تحميل مساحة العمل...",
-    "tr": "Çalışma alanı yükleniyor...",
-    "no": "Laster arbeidsområde..."
-  },
-  "EXPLORER$REFRESH_ERROR_MESSAGE": {
-    "en": "Error refreshing workspace",
-    "zh-CN": "工作区刷新错误",
-    "de": "Fehler beim Aktualisieren des Arbeitsbereichs",
-    "zh-TW": "工作區重新整理錯誤",
-    "es": "Error al actualizar el espacio de trabajo",
-    "fr": "Erreur lors de l'actualisation de l'espace de travail",
-    "it": "Errore durante l'aggiornamento dell'area di lavoro",
-    "pt": "Erro ao atualizar o espaço de trabalho",
-    "ko-KR": "작업 공간 새로 고침 오류",
-    "ar": "خطأ في تحديث مساحة العمل",
-    "tr": "Çalışma alanı yenilenirken hata oluştu",
-    "no": "Feil ved oppdatering av arbeidsområde"
-  },
-  "EXPLORER$UPLOAD_SUCCESS_MESSAGE": {
-    "en": "Successfully uploaded {{count}} file(s)",
-    "zh-CN": "成功上传 {{count}} 个文件",
-    "de": "Erfolgreich {{count}} Datei(en) hochgeladen",
-    "zh-TW": "成功上傳 {{count}} 個檔案",
-    "es": "Se subieron {{count}} archivo(s) con éxito",
-    "fr": "{{count}} fichier(s) téléchargé(s) avec succès",
-    "it": "Caricato con successo {{count}} file",
-    "pt": "{{count}} arquivo(s) carregado(s) com sucesso",
-    "ko-KR": "{{count}}개의 파일을 성공적으로 업로드했습니다",
-    "ar": "تم تحميل {{count}} ملف (ملفات) بنجاح",
-    "tr": "{{count}} dosya başarıyla yüklendi",
-    "no": "Lastet opp {{count}} fil(er) vellykket"
-  },
-  "EXPLORER$NO_FILES_UPLOADED_MESSAGE": {
-    "en": "No files were uploaded",
-    "zh-CN": "没有文件上传",
-    "de": "Keine Dateien wurden hochgeladen",
-    "zh-TW": "沒有檔案被上傳",
-    "es": "No se subieron archivos",
-    "fr": "Aucun fichier n'a été téléchargé",
-    "it": "Nessun file è stato caricato",
-    "pt": "Nenhum arquivo foi carregado",
-    "ko-KR": "업로드된 파일이 없습니다",
-    "ar": "لم يتم تحميل أي ملفات",
-    "tr": "Hiçbir dosya yüklenmedi",
-    "no": "Ingen filer ble lastet opp"
-  },
-  "EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE": {
-    "en": "{{count}} file(s) were skipped during upload",
-    "de": "{{count}} Datei(en) wurden während des Hochladens übersprungen",
-    "zh-CN": "{{count}} 个文件在上传过程中被跳过",
-    "zh-TW": "{{count}} 個檔案在上傳過程中被跳過",
-    "es": "Se omitieron {{count}} archivo(s) durante la carga",
-    "fr": "{{count}} fichier(s) ont été ignorés pendant le téléchargement",
-    "it": "{{count}} file sono stati saltati durante il caricamento",
-    "pt": "{{count}} arquivo(s) foram ignorados durante o upload",
-    "ko-KR": "업로드 중 {{count}}개의 파일이 건너뛰어졌습니다",
-    "ar": "تم تخطي {{count}} ملف (ملفات) أثناء التحميل",
-    "tr": "Yükleme sırasında {{count}} dosya atlandı",
-    "no": "{{count}} fil(er) ble hoppet over under opplasting"
-  },
-  "EXPLORER$UPLOAD_UNEXPECTED_RESPONSE_MESSAGE": {
-    "en": "Unexpected response structure from server",
-    "zh-CN": "服务器响应结构不符合预期",
-    "de": "Unerwartetes Antwortformat vom Server",
-    "zh-TW": "伺服器回應結構不符合預期",
-    "es": "Estructura de respuesta inesperada del servidor",
-    "fr": "Structure de réponse inattendue du serveur",
-    "it": "Struttura di risposta inaspettata dal server",
-    "pt": "Estrutura de resposta inesperada do servidor",
-    "ko-KR": "서버로부터 예상치 못한 응답 구조",
-    "ar": "بنية استجابة غير متوقعة من الخادم",
-    "tr": "Sunucudan beklenmeyen yanıt yapısı",
-    "no": "Uventet responsstruktur fra serveren"
-  },
-  "EXPLORER$VSCODE_SWITCHING_MESSAGE": {
-    "en": "Switching to VS Code in 3 seconds...\nImportant: Please inform the agent of any changes you make in VS Code. To avoid conflicts, wait for the assistant to complete its work before making your own changes.",
-    "zh-CN": "3 秒后切换到 VS Code\n重要提示：请告知 OpenHands 您在 VS Code 中进行的任何更改。为了避免冲突，请在 OpenHands 完成工作后再进行自己的更改。",
-    "zh-TW": "3 秒後切換到 VS Code\n重要提示：請告知 OpenHands 您在 VS Code 中進行的任何更改。為避免衝突，請在 OpenHands 完成工作後再進行自己的更改。"
-  },
-  "EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE": {
-    "en": "Error switching to VS Code: {{error}}",
-    "zh-CN": "切换到 VS Code 时发生错误: {{error}}",
-    "zh-TW": "切換到 VS Code 時發生錯誤: {{error}}"
-  },
-  "LOAD_SESSION$MODAL_TITLE": {
-    "en": "Return to existing session?",
-    "de": "Zurück zu vorhandener Sitzung?",
-    "zh-CN": "是否继续未完成的会话?",
-    "zh-TW": "是否繼續未完成的會話?",
-    "es": "¿Volver a la sesión existente?",
-    "fr": "Revenir à la session existante ?",
-    "it": "Tornare alla sessione esistente?",
-    "pt": "Retornar à sessão existente?",
-    "ko-KR": "기존 세션으로 돌아가시겠습니까?",
-    "ar": "العودة إلى الجلسة الحالية؟",
-    "tr": "Mevcut oturuma dönmek ister misiniz?"
-  },
-  "LOAD_SESSION$MODAL_CONTENT": {
-    "en": "You seem to have an ongoing session. Would you like to pick up where you left off, or start fresh?",
-    "de": "Sie haben eine aktive Sitzung. Möchten Sie die Arbeit an der vorherigen Stelle fortsetzen oder von vorne anfangen?",
-    "es": "Parece que tienes una sesión en curso. ¿Te gustaría continuar donde lo dejaste o empezar de nuevo?",
-    "fr": "Il semble que vous ayez une session en cours. Souhaitez-vous reprendre là où vous vous êtes arrêté ou recommencer à zéro ?",
-    "it": "Sembra che tu abbia una sessione in corso. Vorresti riprendere da dove hai lasciato o ricominciare da capo?",
-    "pt": "Parece que você tem uma sessão em andamento. Gostaria de continuar de onde parou ou começar do zero?",
-    "ko-KR": "진행 중인 세션이 있는 것 같습니다. 중단한 곳에서 계속하시겠습니까, 아니면 새로 시작하시겠습니까?",
-    "ar": "يبدو أن لديك جلسة جارية. هل ترغب في استكمال ما توقفت عنده أم البدء من جديد؟",
-    "tr": "Devam eden bir oturumunuz var gibi görünüyor. Kaldığınız yerden devam etmek mi yoksa yeniden başlamak mı istersiniz?",
-    "zh-CN": "您似乎有一个未完成的任务。您想继续之前的工作还是重新开始？",
-    "zh-TW": "您似乎有一個未完成的任務。您想從上次離開的地方繼續還是重新開始？"
-  },
-  "LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL": {
-    "en": "Resume Session",
-    "de": "Sitzung fortsetzen",
-    "zh-CN": "恢复会话",
-    "zh-TW": "恢復會話",
-    "es": "Reanudar sesión",
-    "fr": "Reprendre la session",
-    "it": "Riprendi sessione",
-    "pt": "Retomar sessão",
-    "ko-KR": "세션 재개",
-    "ar": "استئناف الجلسة",
-    "tr": "Oturumu Devam Ettir"
-  },
-  "LOAD_SESSION$START_NEW_SESSION_MODAL_ACTION_LABEL": {
-    "en": "Start New Session",
-    "de": "Neue Sitzung starten",
-    "zh-CN": "开始新会话",
-    "zh-TW": "開始新會話",
-    "es": "Iniciar nueva sesión",
-    "fr": "Démarrer une nouvelle session",
-    "it": "Avvia nuova sessione",
-    "pt": "Iniciar nova sessão",
-    "ko-KR": "새 세션 시작",
-    "ar": "بدء جلسة جديدة",
-    "tr": "Yeni Oturum Başlat"
-  },
-  "FEEDBACK$MODAL_TITLE": {
-    "en": "Share feedback",
-    "de": "Feedback teilen",
-    "zh-CN": "分享反馈",
-    "zh-TW": "分享反饋",
-    "es": "Compartir comentarios",
-    "fr": "Partager des commentaires",
-    "it": "Condividi feedback",
-    "pt": "Compartilhar feedback",
-    "ko-KR": "피드백 공유",
-    "ar": "مشاركة التعليقات",
-    "tr": "Geri bildirim paylaş"
-  },
-  "FEEDBACK$MODAL_CONTENT": {
-    "en": "To help us improve, we collect feedback from your interactions to improve our prompts. By submitting this form, you consent to us collecting this data.",
-    "de": "Um uns zu verbessern, sammeln wir Feedback aus Ihren Interaktionen, um unsere Prompts zu verbessern. Durch das Absenden dieses Formulars stimmen Sie der Erfassung dieser Daten zu.",
-    "zh-CN": "为了帮助我们改进，我们会收集您的互动反馈以改进我们的提示。提交此表单即表示您同意我们收集这些数据。",
-    "zh-TW": "為了幫助我們改進，我們會收集您的互動反饋以改進我們的提示。提交此表單即表示您同意我們收集這些數據。",
-    "es": "Para ayudarnos a mejorar, recopilamos comentarios de sus interacciones para mejorar nuestras indicaciones. Al enviar este formulario, usted consiente que recopilemos estos datos.",
-    "fr": "Pour nous aider à nous améliorer, nous recueillons des commentaires de vos interactions pour améliorer nos invites. En soumettant ce formulaire, vous consentez à ce que nous collections ces données.",
-    "it": "Per aiutarci a migliorare, raccogliamo feedback dalle tue interazioni per migliorare i nostri prompt. Inviando questo modulo, acconsenti alla raccolta di questi dati.",
-    "pt": "Para nos ajudar a melhorar, coletamos feedback de suas interações para aprimorar nossas sugestões. Ao enviar este formulário, você consente que coletemos esses dados.",
-    "ko-KR": "개선을 위해 귀하의 상호 작용에서 피드백을 수집하여 프롬프트를 개선합니다. 이 양식을 제출함으로써 귀하는 이 데이터 수집에 동의하게 됩니다.",
-    "ar": "لمساعدتنا على التحسين، نقوم بجمع التعليقات من تفاعلاتك لتحسين مطالباتنا. من خلال إرسال هذا النموذج، فإنك توافق على جمعنا لهذه البيانات.",
-    "tr": "Kendimizi geliştirmemize yardımcı olmak için, etkileşimlerinizden geri bildirim toplayarak ipuçlarımızı iyileştiriyoruz. Bu formu göndererek, bu verileri toplamamıza izin vermiş olursunuz."
-  },
-  "FEEDBACK$EMAIL_LABEL": {
-    "en": "Your email",
-    "de": "Ihre E-Mail-Adresse",
-    "zh-CN": "您的电子邮箱",
-    "zh-TW": "您的電子郵箱",
-    "es": "Su correo electrónico",
-    "fr": "Votre e-mail",
-    "it": "La tua email",
-    "pt": "Seu e-mail",
-    "ko-KR": "귀하의 이메일",
-    "ar": "بريدك الإلكتروني",
-    "tr": "E-posta adresiniz"
-  },
-  "FEEDBACK$CONTRIBUTE_LABEL": {
-    "en": "Contribute to public dataset",
-    "de": "Zum öffentlichen Datensatz beitragen",
-    "zh-CN": "贡献到公共数据集",
-    "zh-TW": "貢獻到公共數據集",
-    "es": "Contribuir al conjunto de datos público",
-    "fr": "Contribuer à l'ensemble de données public",
-    "it": "Contribuisci al dataset pubblico",
-    "pt": "Contribuir para o conjunto de dados público",
-    "ko-KR": "공개 데이터셋에 기여",
-    "ar": "المساهمة في مجموعة البيانات العامة",
-    "tr": "Genel veri setine katkıda bulun"
-  },
-  "FEEDBACK$SHARE_LABEL": {
-    "en": "Share",
-    "de": "Teilen",
-    "zh-CN": "分享",
-    "zh-TW": "分享",
-    "es": "Compartir",
-    "fr": "Partager",
-    "it": "Condividi",
-    "pt": "Compartilhar",
-    "ko-KR": "공유",
-    "ar": "مشاركة",
-    "tr": "Paylaş"
-  },
-  "FEEDBACK$CANCEL_LABEL": {
-    "en": "Cancel",
-    "de": "Abbruch",
-    "zh-CN": "取消",
-    "zh-TW": "取消",
-    "es": "Cancelar",
-    "fr": "Annuler",
-    "it": "Annulla",
-    "pt": "Cancelar",
-    "ko-KR": "취소",
-    "ar": "إلغاء",
-    "tr": "İptal"
-  },
-  "FEEDBACK$EMAIL_PLACEHOLDER": {
-    "en": "Enter your email address",
-    "es": "Ingresa tu correo electrónico",
-    "zh-CN": "输入您的电子邮件地址",
-    "zh-TW": "輸入您的電子郵件地址",
-    "ko-KR": "이메일 주소를 입력하세요",
-    "no": "Skriv inn din e-postadresse",
-    "ar": "أدخل عنوان بريدك الإلكتروني",
-    "de": "Geben Sie Ihre E-Mail-Adresse ein",
-    "fr": "Entrez votre adresse e-mail",
-    "it": "Inserisci il tuo indirizzo email",
-    "pt": "Digite seu endereço de e-mail",
-    "tr": "E-posta adresinizi girin"
-  },
-  "FEEDBACK$PASSWORD_COPIED_MESSAGE": {
-    "en": "Password copied to clipboard.",
-    "es": "Contraseña copiada al portapapeles.",
-    "zh-CN": "密码已复制到剪贴板。",
-    "zh-TW": "密碼已複製到剪貼板。",
-    "ko-KR": "비밀번호가 클립보드에 복사되었습니다.",
-    "no": "Passord kopiert til utklippstavlen.",
-    "ar": "تم نسخ كلمة المرور إلى الحافظة.",
-    "de": "Passwort in die Zwischenablage kopiert.",
-    "fr": "Mot de passe copié dans le presse-papiers.",
-    "it": "Password copiata negli appunti.",
-    "pt": "Senha copiada para a área de transferência.",
-    "tr": "Parola panoya kopyalandı."
-  },
-  "FEEDBACK$GO_TO_FEEDBACK": {
-    "en": "Go to shared feedback",
-    "es": "Ir a feedback compartido",
-    "zh-CN": "转到共享反馈",
-    "zh-TW": "前往共享反饋",
-    "ko-KR": "공유된 피드백으로 이동",
-    "no": "Gå til delt tilbakemelding",
-    "ar": "الذهاب إلى التعليقات المشتركة",
-    "de": "Zum geteilten Feedback gehen",
-    "fr": "Aller aux commentaires partagés",
-    "it": "Vai al feedback condiviso",
-    "pt": "Ir para feedback compartilhado",
-    "tr": "Paylaşılan geri bildirimlere git"
-  },
-  "FEEDBACK$PASSWORD": {
-    "en": "Password:",
-    "es": "Contraseña:",
-    "zh-CN": "密码：",
-    "zh-TW": "密碼：",
-    "ko-KR": "비밀번호:",
-    "no": "Passord:",
-    "ar": "كلمة المرور:",
-    "de": "Passwort:",
-    "fr": "Mot de passe :",
-    "it": "Password:",
-    "pt": "Senha:",
-    "tr": "Parola:"
-  },
-  "FEEDBACK$INVALID_EMAIL_FORMAT": {
-    "en": "Invalid email format",
-    "es": "Formato de correo inválido",
-    "zh-CN": "无效的电子邮件格式",
-    "zh-TW": "無效的電子郵件格式",
-    "ko-KR": "잘못된 이메일 형식",
-    "no": "Ugyldig e-postformat",
-    "ar": "تنسيق البريد الإلكتروني غير صالح",
-    "de": "Ungültiges E-Mail-Format",
-    "fr": "Format d'e-mail invalide",
-    "it": "Formato email non valido",
-    "pt": "Formato de e-mail inválido",
-    "tr": "Geçersiz e-posta biçimi"
-  },
-  "FEEDBACK$FAILED_TO_SHARE": {
-    "en": "Failed to share, please contact the developers:",
-    "es": "Error al compartir, por favor contacta con los desarrolladores:",
-    "zh-CN": "分享失败，请联系开发人员：",
-    "zh-TW": "分享失敗，請聯繫開發人員：",
-    "ko-KR": "공유 실패, 개발자에게 문의하세요:",
-    "no": "Deling mislyktes, vennligst kontakt utviklerne:",
-    "ar": "فشل المشاركة، يرجى الاتصال بالمطورين:",
-    "de": "Teilen fehlgeschlagen, bitte kontaktieren Sie die Entwickler:",
-    "fr": "Échec du partage, veuillez contacter les développeurs :",
-    "it": "Condivisione fallita, contattare gli sviluppatori:",
-    "pt": "Falha ao compartilhar, entre em contato com os desenvolvedores:",
-    "tr": "Paylaşım başarısız, lütfen geliştiricilerle iletişime geçin:"
-  },
-  "FEEDBACK$COPY_LABEL": {
-    "en": "Copy",
-    "es": "Copiar",
-    "zh-CN": "复制",
-    "zh-TW": "複製",
-    "ko-KR": "복사",
-    "no": "Kopier",
-    "ar": "نسخ",
-    "de": "Kopieren",
-    "fr": "Copier",
-    "it": "Copia",
-    "pt": "Copiar",
-    "tr": "Kopyala"
-  },
-  "FEEDBACK$SHARING_SETTINGS_LABEL": {
-    "en": "Sharing settings",
-    "es": "Configuración de compartir",
-    "zh-CN": "共享设置",
-    "zh-TW": "共享設定",
-    "ko-KR": "공유 설정",
-    "no": "Delingsinnstillinger",
-    "ar": "إعدادات المشاركة",
-    "de": "Freigabeeinstellungen",
-    "fr": "Paramètres de partage",
-    "it": "Impostazioni di condivisione",
-    "pt": "Configurações de compartilhamento",
-    "tr": "Paylaşım ayarları"
-  },
-  "SECURITY$UNKNOWN_ANALYZER_LABEL": {
-    "en": "Unknown security analyzer chosen",
-    "es": "Analizador de seguridad desconocido",
-    "zh-CN": "选择了未知的安全分析器",
-    "zh-TW": "選擇了未知的安全分析器",
-    "ko-KR": "알 수 없는 보안 분석기가 선택되었습니다",
-    "no": "Ukjent sikkerhetsanalysator valgt",
-    "ar": "تم اختيار محلل أمان غير معروف",
-    "de": "Unbekannter Sicherheitsanalysator ausgewählt",
-    "fr": "Analyseur de sécurité inconnu choisi",
-    "it": "Analizzatore di sicurezza sconosciuto selezionato",
-    "pt": "Analisador de segurança desconhecido escolhido",
-    "tr": "Bilinmeyen güvenlik analizörü seçildi"
-  },
-  "INVARIANT$UPDATE_POLICY_LABEL": {
-    "en": "Update Policy",
-    "es": "Actualizar política",
-    "zh-CN": "更新策略",
-    "zh-TW": "更新策略",
-    "ko-KR": "정책 업데이트",
-    "no": "Oppdater policy",
-    "ar": "تحديث السياسة",
-    "de": "Richtlinie aktualisieren",
-    "fr": "Mettre à jour la politique",
-    "it": "Aggiorna policy",
-    "pt": "Atualizar política",
-    "tr": "İlkeyi güncelle"
-  },
-  "INVARIANT$UPDATE_SETTINGS_LABEL": {
-    "en": "Update Settings",
-    "es": "Actualizar configuración",
-    "zh-CN": "更新设置",
-    "zh-TW": "更新設定",
-    "ko-KR": "설정 업데이트",
-    "no": "Oppdater innstillinger",
-    "ar": "تحديث الإعدادات",
-    "de": "Einstellungen aktualisieren",
-    "fr": "Mettre à jour les paramètres",
-    "it": "Aggiorna impostazioni",
-    "pt": "Atualizar configurações",
-    "tr": "Ayarları güncelle"
-  },
-  "INVARIANT$SETTINGS_LABEL": {
+  "ACCOUNT_SETTINGS$SETTINGS": {
     "en": "Settings",
-    "es": "Configuración",
     "zh-CN": "设置",
-    "zh-TW": "設定",
+    "de": "Einstellungen",
     "ko-KR": "설정",
     "no": "Innstillinger",
+    "zh-TW": "設定",
     "ar": "الإعدادات",
-    "de": "Einstellungen",
     "fr": "Paramètres",
     "it": "Impostazioni",
     "pt": "Configurações",
-    "tr": "Ayarlar"
-  },
-  "INVARIANT$ASK_CONFIRMATION_RISK_SEVERITY_LABEL": {
-    "en": "Ask for user confirmation on risk severity:",
-    "es": "Preguntar por confirmación del usuario sobre severidad del riesgo:",
-    "zh-CN": "询问用户确认风险等级：",
-    "zh-TW": "詢問用戶確認風險等級：",
-    "ko-KR": "위험 심각도에 대한 사용자 확인 요청:",
-    "no": "Be om brukerbekreftelse på risikoalvorlighet:",
-    "ar": "اطلب تأكيد المستخدم على مستوى الخطورة:",
-    "de": "Nach Benutzerbestätigung für Risikoschweregrad fragen:",
-    "fr": "Demander la confirmation de l'utilisateur sur la gravité du risque :",
-    "it": "Chiedi conferma all'utente sulla gravità del rischio:",
-    "pt": "Solicitar confirmação do usuário sobre a gravidade do risco:",
-    "tr": "Risk şiddeti için kullanıcı onayı iste:"
-  },
-  "INVARIANT$DONT_ASK_FOR_CONFIRMATION_LABEL": {
-    "en": "Don't ask for confirmation",
-    "es": "No solicitar confirmación",
-    "zh-CN": "不要请求确认",
-    "zh-TW": "不要請求確認",
-    "ko-KR": "확인 요청하지 않음",
-    "no": "Ikke spør om bekreftelse",
-    "ar": "لا تطلب التأكيد",
-    "de": "Nicht nach Bestätigung fragen",
-    "fr": "Ne pas demander de confirmation",
-    "it": "Non chiedere conferma",
-    "pt": "Não solicitar confirmação",
-    "tr": "Onay isteme"
-  },
-  "INVARIANT$INVARIANT_ANALYZER_LABEL": {
-    "en": "Invariant Analyzer",
-    "es": "Analizador de invariantes",
-    "zh-CN": "不变量分析器",
-    "zh-TW": "不變量分析器",
-    "ko-KR": "불변성 분석기",
-    "no": "Invariant-analysator",
-    "ar": "محلل الثوابت",
-    "de": "Invarianten-Analysator",
-    "fr": "Analyseur d'invariants",
-    "it": "Analizzatore di invarianti",
-    "pt": "Analisador de invariantes",
-    "tr": "Değişmez Analizörü"
-  },
-  "INVARIANT$INVARIANT_ANALYZER_MESSAGE": {
-    "en": "Invariant Analyzer continuously monitors your OpenHands agent for security issues.",
-    "es": "Analizador de invariantes continuamente monitorea tu agente de OpenHands por problemas de seguridad.",
-    "zh-CN": "不变量分析器持续监控您的 OpenHands 代理的安全问题。",
-    "zh-TW": "不變量分析器持續監控您的 OpenHands 代理的安全問題。",
-    "ko-KR": "불변성 분석기는 OpenHands 에이전트의 보안 문제를 지속적으로 모니터링합니다.",
-    "no": "Invariant-analysatoren overvåker kontinuerlig OpenHands-agenten din for sikkerhetsproblemer.",
-    "ar": "يراقب محلل الثوابت وكيل OpenHands الخاص بك باستمرار للتحقق من المشاكل الأمنية.",
-    "de": "Der Invarianten-Analysator überwacht kontinuierlich Ihren OpenHands-Agenten auf Sicherheitsprobleme.",
-    "fr": "L'analyseur d'invariants surveille en permanence votre agent OpenHands pour détecter les problèmes de sécurité.",
-    "it": "L'analizzatore di invarianti monitora continuamente il tuo agente OpenHands per problemi di sicurezza.",
-    "pt": "O analisador de invariantes monitora continuamente seu agente OpenHands em busca de problemas de segurança.",
-    "tr": "Değişmez Analizörü, OpenHands ajanınızı güvenlik sorunları için sürekli olarak izler."
-  },
-  "INVARIANT$CLICK_TO_LEARN_MORE_LABEL": {
-    "en": "Click to learn more",
-    "es": "Clic para aprender más",
-    "zh-CN": "点击了解更多",
-    "zh-TW": "點擊了解更多",
-    "ko-KR": "자세히 알아보기",
-    "no": "Klikk for å lære mer",
-    "ar": "انقر لمعرفة المزيد",
-    "de": "Klicken Sie, um mehr zu erfahren",
-    "fr": "Cliquez pour en savoir plus",
-    "it": "Clicca per saperne di più",
-    "pt": "Clique para saber mais",
-    "tr": "Daha fazla bilgi için tıklayın"
-  },
-  "INVARIANT$POLICY_LABEL": {
-    "en": "Policy",
-    "es": "Política",
-    "zh-CN": "策略",
-    "zh-TW": "策略",
-    "ko-KR": "정책",
-    "no": "Policy",
-    "ar": "السياسة",
-    "de": "Richtlinie",
-    "fr": "Politique",
-    "it": "Policy",
-    "pt": "Política",
-    "tr": "İlke"
-  },
-  "INVARIANT$LOG_LABEL": {
-    "en": "Logs",
-    "es": "Logs",
-    "zh-CN": "日志",
-    "zh-TW": "日誌",
-    "ko-KR": "로그",
-    "no": "Logger",
-    "ar": "السجلات",
-    "de": "Protokolle",
-    "fr": "Journaux",
-    "it": "Log",
-    "pt": "Logs",
-    "tr": "Günlükler"
-  },
-  "INVARIANT$EXPORT_TRACE_LABEL": {
-    "en": "Export Trace",
-    "es": "Exportar traza",
-    "zh-CN": "导出跟踪",
-    "zh-TW": "匯出追蹤",
-    "ko-KR": "추적 내보내기",
-    "no": "Eksporter sporing",
-    "ar": "تصدير التتبع",
-    "de": "Ablaufverfolgung exportieren",
-    "fr": "Exporter la trace",
-    "it": "Esporta traccia",
-    "pt": "Exportar rastreamento",
-    "tr": "İzlemeyi dışa aktar"
-  },
-  "INVARIANT$TRACE_EXPORTED_MESSAGE": {
-    "en": "Trace exported",
-    "es": "Traza exportada",
-    "zh-CN": "跟踪已导出",
-    "zh-TW": "追蹤已匯出",
-    "ko-KR": "추적 내보내기 완료",
-    "no": "Sporing eksportert",
-    "ar": "تم تصدير التتبع",
-    "de": "Ablaufverfolgung exportiert",
-    "fr": "Trace exportée",
-    "it": "Traccia esportata",
-    "pt": "Rastreamento exportado",
-    "tr": "İzleme dışa aktarıldı"
-  },
-  "INVARIANT$POLICY_UPDATED_MESSAGE": {
-    "en": "Policy updated",
-    "es": "Política actualizada",
-    "zh-CN": "策略已更新",
-    "zh-TW": "策略已更新",
-    "ko-KR": "정책이 업데이트되었습니다",
-    "no": "Policy oppdatert",
-    "ar": "تم تحديث السياسة",
-    "de": "Richtlinie aktualisiert",
-    "fr": "Politique mise à jour",
-    "it": "Policy aggiornata",
-    "pt": "Política atualizada",
-    "tr": "İlke güncellendi"
-  },
-  "INVARIANT$SETTINGS_UPDATED_MESSAGE": {
-    "en": "Settings updated",
-    "es": "Configuración actualizada",
-    "zh-CN": "设置已更新",
-    "zh-TW": "設定已更新",
-    "ko-KR": "설정이 업데이트되었습니다",
-    "no": "Innstillinger oppdatert",
-    "ar": "تم تحديث الإعدادات",
-    "de": "Einstellungen aktualisiert",
-    "fr": "Paramètres mis à jour",
-    "it": "Impostazioni aggiornate",
-    "pt": "Configurações atualizadas",
-    "tr": "Ayarlar güncellendi"
-  },
-  "CHAT_INTERFACE$INITIALIZING_AGENT_LOADING_MESSAGE": {
-    "en": "Starting up!",
-    "de": "Wird gestartet!",
-    "zh-CN": "正在启动！",
-    "zh-TW": "正在啟動！",
-    "ko-KR": "시작 중입니다!",
-    "no": "Starter opp!",
-    "it": "Avvio in corso!",
-    "pt": "Iniciando!",
-    "es": "¡Iniciando!",
-    "ar": "جارٍ البدء!",
-    "fr": "Démarrage en cours !",
-    "tr": "Başlatılıyor!"
-  },
-  "CHAT_INTERFACE$AGENT_INIT_MESSAGE": {
-    "en": "Agent is initialized, waiting for task...",
-    "de": "Agent ist initialisiert und wartet auf Aufgabe...",
-    "zh-CN": "智能体已初始化，等待任务中...",
-    "zh-TW": "智能體已初始化，等待任務中...",
-    "ko-KR": "에이전트가 초기화되었습니다. 작업을 기다리는 중...",
-    "no": "Agenten er initialisert, venter på oppgave...",
-    "it": "L'agente è inizializzato, in attesa di compiti...",
-    "pt": "Agente inicializado, aguardando tarefa...",
-    "es": "El agente está inicializado, esperando tarea...",
-    "ar": "تم تهيئة الوكيل، في انتظار المهمة...",
-    "fr": "L'agent est initialisé, en attente de tâche...",
-    "tr": "Ajan başlatıldı, görev bekleniyor..."
-  },
-  "CHAT_INTERFACE$AGENT_RUNNING_MESSAGE": {
-    "en": "Agent is running task",
-    "de": "Agent führt Aufgabe aus",
-    "zh-CN": "智能体正在执行任务...",
-    "zh-TW": "智能體正在執行任務...",
-    "ko-KR": "에이전트가 작업을 실행 중입니다",
-    "no": "Agenten utfører oppgave",
-    "it": "L'agente sta eseguendo il compito",
-    "pt": "O agente está executando a tarefa",
-    "es": "El agente está ejecutando la tarea",
-    "ar": "الوكيل يقوم بتنفيذ المهمة",
-    "fr": "L'agent exécute la tâche",
-    "tr": "Ajan görevi yürütüyor"
-  },
-  "CHAT_INTERFACE$AGENT_AWAITING_USER_INPUT_MESSAGE": {
-    "en": "Agent is awaiting user input...",
-    "de": "Agent wartet auf Benutzereingabe...",
-    "zh-CN": "智能体正在等待用户输入...",
-    "zh-TW": "智能體正在等待用戶輸入...",
-    "ko-KR": "에이전트가 사용자 입력을 기다리고 있습니다...",
-    "no": "Agenten venter på brukerinndata...",
-    "it": "L'agente è in attesa dell'input dell'utente...",
-    "pt": "O agente está aguardando a entrada do usuário...",
-    "es": "El agente está esperando la entrada del usuario...",
-    "ar": "الوكيل في انتظار إدخال المستخدم...",
-    "fr": "L'agent attend l'entrée de l'utilisateur...",
-    "tr": "Ajan kullanıcı girdisini bekliyor..."
-  },
-  "CHAT_INTERFACE$AGENT_RATE_LIMITED_MESSAGE": {
-  "en": "Agent is Rate Limited",
-  "zh-CN": "智能体已达到速率限制",
-  "zh-TW": "智能體已達到速率限制",
-  "de": "Agent ist ratenbegrenzt",
-  "ko-KR": "에이전트가 속도 제한되었습니다",
-  "no": "Agenten er hastighetsbegrenset",
-  "it": "L'agente è limitato dalla frequenza",
-  "pt": "O agente está com limite de taxa",
-  "es": "El agente está limitado por tasa",
-  "ar": "الوكيل مقيد بحد السرعة",
-  "fr": "L'agent est limité en fréquence",
-  "tr": "Ajan hız sınırına ulaştı"
-  },
-  "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
-    "en": "Agent has paused.",
-    "de": "Agent pausiert.",
-    "zh-CN": "智能体已暂停",
-    "zh-TW": "智能體已暫停",
-    "ko-KR": "에이전트가 일시 중지되었습니다.",
-    "no": "Agenten har pauset.",
-    "it": "L'agente ha messo in pausa.",
-    "pt": "O agente foi pausado.",
-    "es": "El agente ha pausado.",
-    "ar": "توقف الوكيل مؤقتًا.",
-    "fr": "L'agent a mis en pause.",
-    "tr": "Ajan duraklatıldı."
-  },
-  "CHAT_INTERFACE$AGENT_STOPPED_MESSAGE": {
-    "en": "Agent has stopped.",
-    "de": "Agent hat angehalten.",
-    "zh-CN": "智能体已停止",
-    "zh-TW": "智能體已停止",
-    "ko-KR": "에이전트가 중지되었습니다.",
-    "no": "Agenten har stoppet.",
-    "it": "L'agente si è fermato.",
-    "pt": "O agente parou.",
-    "es": "El agente se ha detenido.",
-    "ar": "توقف الوكيل.",
-    "fr": "L'agent s'est arrêté.",
-    "tr": "Ajan durdu."
-  },
-  "CHAT_INTERFACE$AGENT_FINISHED_MESSAGE": {
-    "en": "Agent has finished the task.",
-    "de": "Agent hat die Aufgabe erledigt.",
-    "zh-CN": "智能体已完成任务",
-    "zh-TW": "智能體已完成任務",
-    "ko-KR": "에이전트가 작업을 완료했습니다.",
-    "no": "Agenten har fullført oppgaven.",
-    "it": "L'agente ha completato il compito.",
-    "pt": "O agente concluiu a tarefa.",
-    "es": "El agente ha terminado la tarea.",
-    "ar": "أنهى الوكيل المهمة.",
-    "fr": "L'agent a terminé la tâche.",
-    "tr": "Ajan görevi tamamladı."
-  },
-  "CHAT_INTERFACE$AGENT_REJECTED_MESSAGE": {
-    "en": "Agent has rejected the task.",
-    "de": "Agent hat die Aufgabe abgelehnt.",
-    "zh-CN": "智能体拒绝任务",
-    "zh-TW": "智能體拒絕任務",
-    "ko-KR": "에이전트가 작업을 거부했습니다.",
-    "no": "Agenten har avvist oppgaven.",
-    "it": "L'agente ha rifiutato il compito.",
-    "pt": "O agente rejeitou a tarefa.",
-    "es": "El agente ha rechazado la tarea.",
-    "ar": "رفض الوكيل المهمة.",
-    "fr": "L'agent a rejeté la tâche.",
-    "tr": "Ajan görevi reddetti."
-  },
-  "CHAT_INTERFACE$AGENT_ERROR_MESSAGE": {
-    "en": "Agent encountered an error.",
-    "de": "Agent ist auf einen Fehler gelaufen.",
-    "zh-CN": "智能体遇到错误",
-    "zh-TW": "智能體遇到錯誤",
-    "ko-KR": "에이전트에 오류가 발생했습니다.",
-    "no": "Agenten støtte på en feil.",
-    "it": "L'agente ha riscontrato un errore.",
-    "pt": "O agente encontrou um erro.",
-    "es": "El agente encontró un error.",
-    "ar": "واجه الوكيل خطأ.",
-    "fr": "L'agent a rencontré une erreur.",
-    "tr": "Ajan bir hatayla karşılaştı."
-  },
-  "CHAT_INTERFACE$AGENT_AWAITING_USER_CONFIRMATION_MESSAGE": {
-    "en": "Agent is awaiting user confirmation for the pending action.",
-    "de": "Agent wartet auf die Bestätigung des Benutzers für die ausstehende Aktion.",
-    "zh-CN": "代理正在等待用户确认待处理的操作。",
-    "zh-TW": "代理正在等待用戶確認待處理的操作。",
-    "ko-KR": "에이전트가 대기 중인 작업에 대한 사용자 확인을 기다리고 있습니다.",
-    "no": "Agenten venter på brukerbekreftelse for den ventende handlingen.",
-    "it": "L'agente è in attesa della conferma dell'utente per l'azione in sospeso.",
-    "pt": "O agente está aguardando a confirmação do usuário para a ação pendente.",
-    "es": "El agente está esperando la confirmación del usuario para la acción pendiente.",
-    "ar": "الوكيل ينتظر تأكيد المستخدم للإجراء المعلق.",
-    "fr": "L'agent attend la confirmation de l'utilisateur pour l'action en attente.",
-    "tr": "Ajan, bekleyen işlem için kullanıcı onayını bekliyor."
-  },
-  "CHAT_INTERFACE$AGENT_ACTION_USER_CONFIRMED_MESSAGE": {
-    "en": "Agent action has been confirmed!",
-    "de": "Die Aktion des Agenten wurde bestätigt!",
-    "zh-CN": "代理操作已确认！",
-    "zh-TW": "代理操作已確認！",
-    "ko-KR": "에이전트 작업이 확인되었습니다!",
-    "no": "Agenthandlingen har blitt bekreftet!",
-    "it": "L'azione dell'agente è stata confermata!",
-    "pt": "A ação do agente foi confirmada!",
-    "es": "¡La acción del agente ha sido confirmada!",
-    "ar": "تم تأكيد إجراء الوكيل!",
-    "fr": "L'action de l'agent a été confirmée !",
-    "tr": "Ajan eylemi onaylandı!"
-  },
-  "CHAT_INTERFACE$AGENT_ACTION_USER_REJECTED_MESSAGE": {
-    "en": "Agent action has been rejected!",
-    "de": "Die Aktion des Agenten wurde abgelehnt!",
-    "zh-CN": "代理操作已被拒绝！",
-    "zh-TW": "代理操作已被拒絕！",
-    "ko-KR": "에이전트 작업이 거부되었습니다!",
-    "no": "Agenthandlingen har blitt avvist!",
-    "it": "L'azione dell'agente è stata rifiutata!",
-    "pt": "A ação do agente foi rejeitada!",
-    "es": "¡La acción del agente ha sido rechazada!",
-    "ar": "تم رفض إجراء الوكيل!",
-    "fr": "L'action de l'agent a été rejetée !",
-    "tr": "Ajan eylemi reddedildi!"
-  },
-  "CHAT_INTERFACE$INPUT_PLACEHOLDER": {
-    "en": "Message assistant...",
-    "zh-CN": "给助理发消息",
-    "de": "Sende eine Nachricht an den Assistenten...",
-    "ko-KR": "어시스턴트에게 메시지 보내기",
-    "no": "Send melding til assistenten...",
-    "zh-TW": "给助理留言",
-    "it": "Invia un messaggio all'assistente...",
-    "pt": "Envie uma mensagem para o assistente...",
-    "es": "Mensaje al asistente...",
-    "ar": "مراسلة المساعد",
-    "fr": "Envoyez un message à l'assistant...",
-    "tr": "Asistana mesaj gönder..."
-  },
-  "CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE": {
-    "en": "Continue",
-    "zh-CN": "继续",
-    "de": "Fortfahren",
-    "zh-TW": "繼續",
-    "ko-KR": "계속",
-    "no": "Fortsett",
-    "it": "Continua",
-    "pt": "Continuar",
-    "es": "Continuar",
-    "ar": "استمرار",
-    "fr": "Continuer",
-    "tr": "Devam et"
-  },
-  "CHAT_INTERFACE$USER_ASK_CONFIRMATION": {
-    "en": "Do you want to continue with this action?",
-    "de": "Möchten Sie mit dieser Aktion fortfahren?",
-    "zh-CN": "您要继续此操作吗？",
-    "zh-TW": "您要繼續此操作嗎？",
-    "ko-KR": "이 작업을 계속하시겠습니까?",
-    "no": "Vil du fortsette med denne handlingen?",
-    "it": "Vuoi continuare con questa azione?",
-    "pt": "Deseja continuar com esta ação?",
-    "es": "¿Desea continuar con esta acción?",
-    "ar": "هل تريد الاستمرار في هذا الإجراء؟",
-    "fr": "Voulez-vous continuer avec cette action ?",
-    "tr": "Bu işleme devam etmek istiyor musunuz?"
-  },
-  "CHAT_INTERFACE$USER_CONFIRMED": {
-    "en": "Confirm the requested action",
-    "de": "Bestätigen Sie die angeforderte Aktion",
-    "zh-CN": "确认请求的操作",
-    "zh-TW": "確認請求的操作",
-    "ko-KR": "요청된 작업 확인",
-    "no": "Bekreft den forespurte handlingen",
-    "it": "Conferma l'azione richiesta",
-    "pt": "Confirmar a ação solicitada",
-    "es": "Confirmar la acción solicitada",
-    "ar": "تأكيد الإجراء المطلوب",
-    "fr": "Confirmer l'action demandée",
-    "tr": "İstenen eylemi onayla"
-  },
-  "CHAT_INTERFACE$USER_REJECTED": {
-    "en": "Reject the requested action",
-    "de": "Lehnen Sie die angeforderte Aktion ab",
-    "zh-CN": "拒绝请求的操作",
-    "zh-TW": "拒絕請求的操作",
-    "ko-KR": "요청된 작업 거부",
-    "no": "Avvis den forespurte handlingen",
-    "it": "Rifiuta l'azione richiesta",
-    "pt": "Rejeitar a ação solicitada",
-    "es": "Rechazar la acción solicitada",
-    "ar": "رفض الإجراء المطلوب",
-    "fr": "Rejeter l'action demandée",
-    "tr": "İstenen eylemi reddet"
-  },
-  "CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT": {
-    "en": "Send",
-    "zh-CN": "发送",
-    "de": "Senden",
-    "ko-KR": "전송",
-    "no": "Send",
-    "zh-TW": "發送",
-    "it": "Invia",
-    "pt": "Enviar",
-    "es": "Enviar",
-    "ar": "إرسال",
-    "fr": "Envoyer"
-  },
-  "CHAT_INTERFACE$CHAT_MESSAGE_COPIED": {
-    "en": "Message copied to clipboard",
-    "zh-CN": "消息已复制到剪贴板",
-    "de": "Nachricht in die Zwischenablage kopiert",
-    "ko-KR": "메시지가 클립보드에 복사되었습니다",
-    "no": "Melding kopiert til utklippstavlen",
-    "zh-TW": "訊息已複製到剪貼簿",
-    "it": "Messaggio copiato negli appunti",
-    "pt": "Mensagem copiada para a área de transferência",
-    "es": "Mensaje copiado al portapapeles",
-    "ar": "تم نسخ الرسالة إلى الحافظة",
-    "fr": "Message copié dans le presse-papiers",
-    "tr": "Mesaj panoya kopyalandı"
-  },
-  "CHAT_INTERFACE$CHAT_MESSAGE_COPY_FAILED": {
-    "en": "Failed to copy message to clipboard",
-    "zh-CN": "复制消息到剪贴板失败",
-    "de": "Nachricht konnte nicht in die Zwischenablage kopiert werden",
-    "ko-KR": "메시지를 클립보드에 복사하지 못했습니다",
-    "no": "Kunne ikke kopiere meldingen til utklippstavlen",
-    "zh-TW": "無法將訊息複製到剪貼簿",
-    "it": "Impossibile copiare il messaggio negli appunti",
-    "pt": "Falha ao copiar mensagem para a área de transferência",
-    "es": "No se pudo copiar el mensaje al portapapeles",
-    "ar": "فشل نسخ الرسالة إلى الحافظة",
-    "fr": "Échec de la copie du message dans le presse-papiers",
-    "tr": "Mesaj panoya kopyalanamadı"
-  },
-  "CHAT_INTERFACE$TOOLTIP_COPY_MESSAGE": {
-    "en": "Copy message",
-    "zh-CN": "复制消息",
-    "de": "Nachricht kopieren",
-    "ko-KR": "메시지 복사",
-    "no": "Kopier melding",
-    "zh-TW": "複製訊息",
-    "it": "Copia messaggio",
-    "pt": "Copiar mensagem",
-    "es": "Copiar mensaje",
-    "ar": "نسخ الرسالة",
-    "fr": "Copier le message",
-    "tr": "Mesajı kopyala"
-  },
-  "CHAT_INTERFACE$TOOLTIP_SEND_MESSAGE": {
-    "en": "Send message",
-    "zh-CN": "发送消息",
-    "de": "Nachricht senden",
-    "ko-KR": "메시지 보내기",
-    "no": "Send melding",
-    "zh-TW": "發送訊息",
-    "it": "Invia messaggio",
-    "pt": "Enviar mensagem",
-    "es": "Enviar mensaje",
-    "ar": "إرسال الرسالة",
-    "fr": "Envoyer le message",
-    "tr": "Mesaj gönder"
-  },
-  "CHAT_INTERFACE$TOOLTIP_UPLOAD_IMAGE": {
-    "en": "Upload image",
-    "zh-CN": "上传图片",
-    "de": "Bild hochladen",
-    "ko-KR": "이미지 업로드",
-    "no": "Last opp bilde",
-    "zh-TW": "上傳圖片",
-    "it": "Carica immagine",
-    "pt": "Carregar imagem",
-    "es": "Subir imagen",
-    "ar": "تحميل الصورة",
-    "fr": "Télécharger une image",
-    "tr": "Resim yükle"
-  },
-  "CHAT_INTERFACE$INITIAL_MESSAGE": {
-    "en": "Hi! I'm OpenHands, an AI Software Engineer. What would you like to build with me today?",
-    "zh-CN": "你好！我是 OpenHands，一名 AI 软件工程师。今天想和我一起编写什么程序呢?",
-    "de": "Hi! Ich bin OpenHands, ein KI-Softwareingenieur. Was möchten Sie heute mit mir erstellen?",
-    "ko-KR": "안녕하세요! 저는 오픈데빈(OpenHands), AI 소프트웨어 엔지니어입니다. 오늘은 저와 함께 무엇을 만들어 볼까요?",
-    "no": "Hi! I'm OpenHands, an AI Software Engineer. What would you like to build with me today?",
-    "zh-TW": "嗨！我是 OpenHands，一位人工智慧軟體工程師。你今天想和我一起建造什麼？",
-    "it": "Hi! I'm OpenHands, an AI Software Engineer. What would you like to build with me today?",
-    "pt": "Hi! I'm OpenHands, an AI Software Engineer. What would you like to build with me today?",
-    "es": "Hi! I'm OpenHands, an AI Software Engineer. What would you like to build with me today?",
-    "ar": "مرحبا! أنا OpenHands، مهندس برمجيات AI. ماذا تود أن تبني معي اليوم؟",
-    "fr": "Salut! Je suis OpenHands, un ingénieur logiciel en IA. Que voudriez-vous construire avec moi aujourd'hui?"
-  },
-  "CHAT_INTERFACE$ASSISTANT": {
-    "en": "Assistant",
-    "zh-CN": "助理",
-    "ko-KR": "어시스턴트",
-    "de": "Assistent",
-    "no": "Assistant",
-    "zh-TW": "助理",
-    "it": "Assistant",
-    "pt": "Assistant",
-    "es": "Assistant",
-    "ar": "مساعد",
-    "fr": "Assistant",
-    "tr": "Gönder"
-  },
-  "CHAT_INTERFACE$TO_BOTTOM": {
-    "en": "To Bottom",
-    "de": "Nach unten",
-    "zh-CN": "回到底部",
-    "ko-KR": "맨 아래로",
-    "no": "Til bunnen",
-    "zh-TW": "回到底部",
-    "it": "In fondo",
-    "pt": "Para o fundo",
-    "es": "Ir al final",
-    "ar": "إلى الأسفل",
-    "fr": "Vers le bas",
-    "tr": "En alta"
-  },
-  "CHAT_INTERFACE$MESSAGE_ARIA_LABEL": {
-    "en": "Message from {{sender}}",
-    "zh-CN": "来自 {{sender}} 的消息",
-    "de": "Nachricht von {{sender}}",
-    "ko-KR": "{{sender}}의 메시지",
-    "no": "Melding fra {{sender}}",
-    "zh-TW": "來自 {{sender}} 的訊息",
-    "it": "Messaggio da {{sender}}",
-    "pt": "Mensagem de {{sender}}",
-    "es": "Mensaje de {{sender}}",
-    "ar": "رسالة من {{sender}}",
-    "fr": "Message de {{sender}}",
-    "tr": "{{sender}} tarafından gönderilen mesaj"
-  },
-  "CHAT_INTERFACE$CHAT_CONVERSATION": {
-    "en": "Chat Conversation",
-    "zh-CN": "聊天对话",
-    "de": "Chat-Konversation",
-    "ko-KR": "채팅 대화",
-    "no": "Chat-samtale",
-    "zh-TW": "聊天對話",
-    "it": "Conversazione di chat",
-    "pt": "Conversa de chat",
-    "es": "Conversación de chat",
-    "ar": "محادثة تلقيم",
-    "fr": "Conversation de chat",
-    "tr": "Sohbet Konuşması"
-  },
-  "CHAT_INTERFACE$UNKNOWN_SENDER": {
-    "en": "Unknown",
-    "zh-CN": "未知",
-    "de": "Unbekannt",
-    "ko-KR": "알 수 없음",
-    "no": "Ukjent",
-    "zh-TW": "未知",
-    "it": "Sconosciuto",
-    "pt": "Desconhecido",
-    "es": "Desconocido",
-    "ar": "مجهول",
-    "fr": "Inconnu",
-    "tr": "Bilinmeyen"
-  },
-  "SECURITY_ANALYZER$UNKNOWN_RISK": {
-    "en": "Unknown Risk",
-    "de": "Unbekanntes Risiko",
-    "zh-CN": "未知风险",
-    "ko-KR": "알 수 없는 위험",
-    "no": "Ukjent risiko",
-    "zh-TW": "未知風險",
-    "it": "Rischio sconosciuto",
-    "pt": "Risco desconhecido",
-    "es": "Riesgo desconocido",
-    "ar": "مخاطر غير معروفة",
-    "fr": "Risque inconnu",
-    "tr": "Bilinmeyen risk"
-  },
-  "SECURITY_ANALYZER$LOW_RISK": {
-    "en": "Low Risk",
-    "de": "Niedriges Risiko",
-    "zh-CN": "低风险",
-    "ko-KR": "낮은 위험",
-    "no": "Lav risiko",
-    "zh-TW": "低風險",
-    "it": "Rischio basso",
-    "pt": "Baixo risco",
-    "es": "Riesgo bajo",
-    "ar": "مخاطر منخفضة",
-    "fr": "Risque faible",
-    "tr": "Düşük risk"
-  },
-  "SECURITY_ANALYZER$MEDIUM_RISK": {
-    "en": "Medium Risk",
-    "de": "Mittleres Risiko",
-    "zh-CN": "中等风险",
-    "ko-KR": "중간 위험",
-    "no": "Middels risiko",
-    "zh-TW": "中等風險",
-    "it": "Rischio medio",
-    "pt": "Risco médio",
-    "es": "Riesgo medio",
-    "ar": "مخاطر متوسطة",
-    "fr": "Risque moyen",
-    "tr": "Orta risk"
-  },
-  "SECURITY_ANALYZER$HIGH_RISK": {
-    "en": "High Risk",
-    "de": "Hohes Risiko",
-    "zh-CN": "高风险",
-    "ko-KR": "높은 위험",
-    "no": "Høy risiko",
-    "zh-TW": "高風險",
-    "it": "Rischio elevato",
-    "pt": "Alto risco",
-    "es": "Riesgo alto",
-    "ar": "مخاطر عالية",
-    "fr": "Risque élevé",
-    "tr": "Yüksek risk"
-  },
-  "SETTINGS$MODEL_TOOLTIP": {
-    "en": "Select the language model to use.",
-    "zh-CN": "选择要使用的语言模型",
-    "zh-TW": "選擇要使用的語言模型。",
-    "de": "Wähle das zu verwendende Modell.",
-    "ko-KR": "사용할 언어 모델을 선택하세요.",
-    "no": "Velg språkmodellen som skal brukes.",
-    "it": "Seleziona il modello linguistico da utilizzare.",
-    "pt": "Selecione o modelo de linguagem a ser usado.",
-    "es": "Seleccione el modelo de lenguaje a utilizar.",
-    "ar": "اختر نموذج اللغة المراد استخدامه.",
-    "fr": "Sélectionnez le modèle de langage à utiliser.",
-    "tr": "Kullanılacak dil modelini seçin."
-  },
-  "SETTINGS$AGENT_TOOLTIP": {
-    "en": "Select the agent to use.",
-    "zh-CN": "选择要使用的智能体",
-    "zh-TW": "選擇要使用的智能體。",
-    "de": "Wähle den zu verwendenden Agenten.",
-    "ko-KR": "사용할 에이전트를 선택하세요.",
-    "no": "Velg agenten som skal brukes.",
-    "it": "Seleziona l'agente da utilizzare.",
-    "pt": "Selecione o agente a ser usado.",
-    "es": "Seleccione el agente a utilizar.",
-    "ar": "اختر الوكيل المراد استخدامه.",
-    "fr": "Sélectionnez l'agent à utiliser.",
-    "tr": "Kullanılacak ajanı seçin."
-  },
-  "SETTINGS$LANGUAGE_TOOLTIP": {
-    "en": "Select the language for the UI.",
-    "zh-CN": "选择界面语言",
-    "zh-TW": "選擇 UI 的語言。",
-    "de": "Wähle die Sprache für die Oberfläche.",
-    "ko-KR": "UI 언어를 선택하세요.",
-    "no": "Velg språk for brukergrensesnittet.",
-    "it": "Seleziona la lingua per l'interfaccia utente.",
-    "pt": "Selecione o idioma para a interface do usuário.",
-    "es": "Seleccione el idioma para la interfaz de usuario.",
-    "ar": "اختر لغة واجهة المستخدم.",
-    "fr": "Sélectionnez la langue de l'interface utilisateur.",
-    "tr": "Kullanıcı arayüzü için dil seçin."
-  },
-  "SETTINGS$DISABLED_RUNNING": {
-    "en": "Cannot be changed while the agent is running.",
-    "zh-CN": "在智能体运行时无法更改",
-    "zh-TW": "智能體正在執行時無法更改。",
-    "de": "Kann bei laufender Aufgabe nicht geändert werden.",
-    "ko-KR": "에이전트가 실행 중일 때는 변경할 수 없습니다.",
-    "no": "Kan ikke endres mens agenten kjører.",
-    "it": "Non può essere modificato mentre l'agente è in esecuzione.",
-    "pt": "Não pode ser alterado enquanto o agente está em execução.",
-    "es": "No se puede cambiar mientras el agente está en ejecución.",
-    "ar": "لا يمكن تغييره أثناء تشغيل الوكيل.",
-    "fr": "Ne peut pas être modifié pendant que l'agent est en cours d'exécution.",
-    "tr": "Ajan çalışırken değiştirilemez."
-  },
-  "SETTINGS$API_KEY_PLACEHOLDER": {
-    "en": "Enter your API key.",
-    "zh-CN": "输入您的 API key",
-    "zh-TW": "輸入您的 API 金鑰。",
-    "de": "Modell API Schlüssel.",
-    "ko-KR": "API 키를 입력하세요.",
-    "no": "Skriv inn din API-nøkkel.",
-    "it": "Inserisci la tua chiave API.",
-    "pt": "Digite sua chave de API.",
-    "es": "Ingrese su clave de API.",
-    "ar": "أدخل مفتاح API الخاص بك.",
-    "fr": "Entrez votre clé API.",
-    "tr": "API anahtarınızı girin."
-  },
-  "SETTINGS$CONFIRMATION_MODE": {
-    "en": "Enable Confirmation Mode",
-    "de": "Bestätigungsmodus aktivieren",
-    "zh-CN": "启用确认模式",
-    "zh-TW": "啟用確認模式",
-    "ko-KR": "확인 모드 활성화",
-    "no": "Aktiver bekreftelsesmodus",
-    "it": "Abilita modalità di conferma",
-    "pt": "Ativar modo de confirmação",
-    "es": "Habilitar modo de confirmación",
-    "ar": "تفعيل وضع التأكيد",
-    "fr": "Activer le mode de confirmation",
-    "tr": "Onay Modunu Etkinleştir"
-  },
-  "SETTINGS$CONFIRMATION_MODE_TOOLTIP": {
-    "en": "Awaits for user confirmation before executing code.",
-    "de": "Wartet auf die Bestätigung des Benutzers, bevor der Code ausgeführt wird.",
-    "zh-CN": "在执行代码之前等待用户确认。",
-    "zh-TW": "在執行程式碼之前等待使用者確認。",
-    "ko-KR": "코드 실행 전 사용자 확인을 기다립니다.",
-    "no": "Venter på brukerbekreftelse før koden utføres.",
-    "it": "Attende la conferma dell'utente prima di eseguire il codice.",
-    "pt": "Aguarda a confirmação do usuário antes de executar o código.",
-    "es": "Espera la confirmación del usuario antes de ejecutar el código.",
-    "ar": "ينتظر تأكيد المستخدم قبل تنفيذ الكود.",
-    "fr": "Attend la confirmation de l'utilisateur avant d'exécuter le code.",
-    "tr": "Kodu çalıştırmadan önce kullanıcı onayını bekler."
-  },
-  "SETTINGS$AGENT_SELECT_ENABLED": {
-    "en": "Enable Agent Selection - Advanced Users",
-    "zh-CN": "启用智能体选择 - 高级用户",
-    "zh-TW": "啟用智能體選擇 - 進階使用者",
-    "de": "Agentenauswahl aktivieren - Fortgeschrittene Benutzer",
-    "ko-KR": "에이전트 선택 활성화 - 고급 사용자",
-    "no": "Aktiver agentvalg - Avanserte brukere",
-    "it": "Abilita selezione agente - Utenti avanzati",
-    "pt": "Ativar seleção de agente - Usuários avançados",
-    "es": "Habilitar selección de agente - Usuarios avanzados",
-    "ar": "تمكين اختيار الوكيل - المستخدمين المتقدمين",
-    "fr": "Activer la sélection d'agent - Utilisateurs avancés",
-    "tr": "Ajan Seçimini Etkinleştir - İleri Düzey Kullanıcılar"
-  },
-  "SETTINGS$SECURITY_ANALYZER": {
-    "en": "Enable Security Analyzer",
-    "de": "Sicherheitsanalysator aktivieren",
-    "zh-CN": "启用安全分析器",
-    "zh-TW": "啟用安全分析器",
-    "ko-KR": "보안 분석기 활성화",
-    "no": "Aktiver sikkerhetsanalysator",
-    "it": "Abilita analizzatore di sicurezza",
-    "pt": "Ativar analisador de segurança",
-    "es": "Habilitar analizador de seguridad",
-    "ar": "تمكين محلل الأمان",
-    "fr": "Activer l'analyseur de sécurité",
-    "tr": "Güvenlik Analizörünü Etkinleştir"
-  },
-  "BROWSER$EMPTY_MESSAGE": {
-    "en": "No page loaded.",
-    "zh-CN": "页面未加载",
-    "zh-TW": "未加載任何頁面。",
-    "de": "Keine Seite geladen.",
-    "ko-KR": "페이지가 로드되지 않았습니다.",
-    "no": "Ingen side lastet.",
-    "it": "Nessuna pagina caricata.",
-    "pt": "Nenhuma página carregada.",
-    "es": "Ninguna página cargada.",
-    "ar": "لم يتم تحميل أي صفحة.",
-    "fr": "Aucune page chargée.",
-    "tr": "Sayfa yüklenmedi."
-  },
-  "PLANNER$EMPTY_MESSAGE": {
-    "en": "No plan created.",
-    "zh-CN": "计划未创建",
-    "zh-TW": "未創建任何計劃。",
-    "de": "Kein Plan erstellt.",
-    "ko-KR": "생성된 계획이 없습니다.",
-    "no": "Ingen plan opprettet.",
-    "it": "Nessun piano creato.",
-    "pt": "Nenhum plano criado.",
-    "es": "Ningún plan creado.",
-    "ar": "لم يتم إنشاء أي خطة.",
-    "fr": "Aucun plan créé.",
-    "tr": "Plan oluşturulmadı."
-  },
-  "FEEDBACK$PUBLIC_LABEL": {
-    "en": "Public",
-    "zh-CN": "公开",
-    "zh-TW": "公開",
-    "de": "Öffentlich",
-    "ko-KR": "공개",
-    "no": "Offentlig",
-    "it": "Pubblico",
-    "pt": "Público",
-    "es": "Público",
-    "ar": "عام",
-    "fr": "Public",
-    "tr": "Herkese Açık"
-  },
-  "FEEDBACK$PRIVATE_LABEL": {
-    "en": "Private",
-    "zh-CN": "私有",
-    "zh-TW": "私有",
-    "de": "Privat",
-    "ko-KR": "비공개",
-    "no": "Privat",
-    "it": "Privato",
-    "pt": "Privado",
-    "es": "Privado",
-    "ar": "خاص",
-    "fr": "Privé",
-    "tr": "Özel"
-  },
-  "STATUS$STARTING_RUNTIME": {
-    "en": "Starting Runtime...",
-    "zh-CN": "启动运行时...",
-    "zh-TW": "啟動運行時...",
-    "de": "Laufzeitumgebung wird gestartet...",
-    "ko-KR": "런타임 시작 중...",
-    "no": "Starter kjøretidsmiljø...",
-    "it": "Avvio dell'ambiente di esecuzione...",
-    "pt": "Iniciando o ambiente de execução...",
-    "es": "Iniciando el entorno de ejecución...",
-    "ar": "جارٍ بدء بيئة التشغيل...",
-    "fr": "Démarrage de l'environnement d'exécution...",
-    "tr": "Çalışma zamanı başlatılıyor..."
-  },
-  "STATUS$STARTING_CONTAINER": {
-    "en": "Preparing container, this might take a few minutes...",
-    "zh-CN": "正在准备容器，这可能需要几分钟...",
-    "zh-TW": "正在準備容器，這可能需要幾分鐘...",
-    "de": "Container wird vorbereitet, dies kann einige Minuten dauern...",
-    "ko-KR": "컨테이너를 준비 중입니다. 몇 분 정도 걸릴 수 있습니다...",
-    "no": "Forbereder container, dette kan ta noen minutter...",
-    "it": "Preparazione del container in corso, potrebbe richiedere alcuni minuti...",
-    "pt": "Preparando o container, isso pode levar alguns minutos...",
-    "es": "Preparando el contenedor, esto puede tardar unos minutos...",
-    "ar": "جارٍ إعداد الحاوية، قد يستغرق هذا بضع دقائق...",
-    "fr": "Préparation du conteneur, cela peut prendre quelques minutes...",
-    "tr": "Konteyner hazırlanıyor, bu işlem birkaç dakika sürebilir..."
-  },
-  "STATUS$PREPARING_CONTAINER": {
-    "en": "Preparing to start container...",
-    "zh-CN": "正在准备启动容器...",
-    "zh-TW": "正在準備啟動容器...",
-    "de": "Vorbereitung zum Starten des Containers...",
-    "ko-KR": "컨테이너 시작 준비 중...",
-    "no": "Forbereder å starte container...",
-    "it": "Preparazione all'avvio del container...",
-    "pt": "Preparando para iniciar o container...",
-    "es": "Preparando para iniciar el contenedor...",
-    "ar": "جارٍ التحضير لبدء الحاوية...",
-    "fr": "Préparation du démarrage du conteneur...",
-    "tr": "Konteyner başlatılmaya hazırlanıyor..."
-  },
-  "STATUS$CONTAINER_STARTED": {
-    "en": "Container started.",
-    "zh-CN": "容器已启动。",
-    "zh-TW": "容器已啟動。",
-    "de": "Container gestartet.",
-    "ko-KR": "컨테이너가 시작되었습니다.",
-    "no": "Container startet.",
-    "it": "Container avviato.",
-    "pt": "Container iniciado.",
-    "es": "Contenedor iniciado.",
-    "ar": "تم بدء الحاوية.",
-    "fr": "Conteneur démarré.",
-    "tr": "Konteyner başlatıldı."
-  },
-  "STATUS$WAITING_FOR_CLIENT": {
-    "en": "Waiting for client to become ready...",
-    "zh-CN": "等待客户端准备就绪...",
-    "zh-TW": "等待客戶端準備就緒...",
-    "de": "Warten auf Bereitschaft des Clients...",
-    "ko-KR": "클라이언트가 준비될 때까지 기다리는 중...",
-    "no": "Venter på at klienten skal bli klar...",
-    "it": "In attesa che il client sia pronto...",
-    "pt": "Aguardando o cliente ficar pronto...",
-    "es": "Esperando a que el cliente esté listo...",
-    "ar": "في انتظار جاهزية العميل...",
-    "fr": "En attente que le client soit prêt...",
-    "tr": "İstemcinin hazır olması bekleniyor..."
-  },
-  "ACCOUNT_SETTINGS_MODAL$DISCONNECT": {
-    "en": "Disconnect",
-    "es": "Desconectar"
-  },
-  "ACCOUNT_SETTINGS_MODAL$SAVE": {
-    "en": "Save",
-    "es": "Guardar"
-  },
-  "ACCOUNT_SETTINGS_MODAL$CLOSE": {
-    "en": "Close",
-    "es": "Cerrar"
-  },
-  "ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID": {
-    "en": "GitHub token is invalid. Please try again.",
-    "es": ""
-  },
-  "CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN": {
-    "en": "Get your token",
-    "es": "Obten tu token"
-  },
-  "CONNECT_TO_GITHUB_MODAL$HERE": {
-    "en": "here",
-    "es": "aquí"
-  },
-  "CONNECT_TO_GITHUB_MODAL$CONNECT": {
-    "en": "Connect",
-    "es": "Conectar"
-  },
-  "CONNECT_TO_GITHUB_MODAL$CLOSE": {
-    "en": "Close",
-    "es": "Cerrar"
-  },
-  "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$BY_CONNECTING_YOU_AGREE": {
-    "en": "By connecting you agree to our",
-    "es": "Al conectarte tu aceptas nuestros"
-  },
-  "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$TERMS_OF_SERVICE": {
-    "en": "terms of service",
-    "es": "términos de servicio"
-  },
-  "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$CONTINUE": {
-    "en": "Continue",
-    "es": "Continuar"
-  },
-  "LOADING_PROJECT$LOADING": {
-    "en": "Loading...",
-    "es": "Cargando..."
-  },
-  "CUSTOM_INPUT$OPTIONAL_LABEL": {
-    "en": "(Optional)",
-    "es": "(Opcional)"
-  },
-  "SETTINGS_FORM$ADVANCED_OPTIONS_LABEL": {
-    "en": "Advanced Options",
-    "es": "Opciones avanzadas"
-  },
-  "SETTINGS_FORM$CUSTOM_MODEL_LABEL": {
-    "en": "Custom Model",
-    "es": "Modelo personalizado"
-  },
-  "SETTINGS_FORM$BASE_URL_LABEL": {
-    "en": "Base URL",
-    "es": "URL base"
-  },
-  "SETTINGS_FORM$API_KEY_LABEL": {
-    "en": "API Key",
-    "es": "API Key"
-  },
-  "SETTINGS_FORM$DONT_KNOW_API_KEY_LABEL": {
-    "en": "Don't know your API key?",
-    "es": "¿No sabes tu API key?"
-  },
-  "SETTINGS_FORM$CLICK_HERE_FOR_INSTRUCTIONS_LABEL": {
-    "en": "Click here for instructions",
-    "es": "Clic aquí para instrucciones"
-  },
-  "SETTINGS_FORM$AGENT_LABEL": {
-    "en": "Agent",
-    "es": "Agente"
-  },
-  "SETTINGS_FORM$SECURITY_ANALYZER_LABEL": {
-    "en": "Security Analyzer (Optional)",
-    "es": "Analizador de seguridad (opcional)"
-  },
-  "SETTINGS_FORM$ENABLE_CONFIRMATION_MODE_LABEL": {
-    "en": "Enable Confirmation Mode",
-    "es": "Habilitar modo de confirmación"
-  },
-  "SETTINGS_FORM$SAVE_LABEL": {
-    "en": "Save",
-    "es": "Guardar"
-  },
-  "SETTINGS_FORM$CLOSE_LABEL": {
-    "en": "Close",
-    "es": "Cerrar"
-  },
-  "SETTINGS_FORM$RESET_TO_DEFAULTS_LABEL": {
-    "en": "Reset to defaults",
-    "es": "Reiniciar valores por defect"
-  },
-  "SETTINGS_FORM$CANCEL_LABEL": {
-    "en": "Cancel",
-    "es": "Cancelar"
-  },
-  "SETTINGS_FORM$END_SESSION_LABEL": {
-    "en": "End Session",
-    "es": "Terminar sesión"
-  },
-  "SETTINGS_FORM$CHANGING_WORKSPACE_WARNING_MESSAGE": {
-    "en": "Changing your settings will clear your workspace and start a new session. Are you sure you want to continue?",
-    "es": "Cambiar tu configuración limpiará tu espacio de trabajo e iniciará una nueva sesión. ¿Estás seguro de continuar?"
-  },
-  "SETTINGS_FORM$ARE_YOU_SURE_LABEL": {
-    "en": "Are you sure?",
-    "es": "¿Estás seguro?"
-  },
-  "SETTINGS_FORM$ALL_INFORMATION_WILL_BE_DELETED_MESSAGE": {
-    "en": "All saved information in your AI settings will be deleted, including any API keys.",
-    "es": "Toda la información guardada en tu configuración de IA será eliminada, incluyendo tus API Keys"
-  },
-  "PROJECT_MENU_DETAILS_PLACEHOLDER$NEW_PROJECT_LABEL": {
-    "en": "New Project",
-    "es": "Nuevo proyecto"
-  },
-  "PROJECT_MENU_DETAILS_PLACEHOLDER$CONNECT_TO_GITHUB": {
-    "en": "Connect to GitHub"
-  },
-  "PROJECT_MENU_DETAILS_PLACEHOLDER$CONNECTED": {
-    "en": "Connected"
-  },
-  "PROJECT_MENU_DETAILS$AGO_LABEL": {
-    "en": "ago",
-    "es": "atrás"
-  },
-  "STATUS$ERROR_LLM_AUTHENTICATION": {
-    "en": "Error authenticating with the LLM provider. Please check your API key",
-    "es": "Error autenticando con el proveedor de LLM. Por favor revisa tu API key"
-  },
-  "STATUS$ERROR_RUNTIME_DISCONNECTED": {
-    "en": "There was an error while connecting to the runtime. Please refresh the page."
-  },
-  "AGENT_ERROR$BAD_ACTION": {
-    "en": "Agent tried to execute a malformed action."
-  },
-  "AGENT_ERROR$ACTION_TIMEOUT": {
-    "en": "Action timed out."
-  },
-  "PROJECT_MENU_CARD_CONTEXT_MENU$CONNECT_TO_GITHUB_LABEL": {
-    "en": "Connect to GitHub",
-    "es": "Conectar a GitHub"
-  },
-  "PROJECT_MENU_CARD_CONTEXT_MENU$PUSH_TO_GITHUB_LABEL": {
-    "en": "Push to GitHub",
-    "es": "Subir a GitHub"
-  },
-  "PROJECT_MENU_CARD_CONTEXT_MENU$DOWNLOAD_FILES_LABEL": {
-    "en": "Download files",
-    "es": "Descargar archivos"
-  },
-  "PROJECT_MENU_CARD$OPEN": {
-    "en": "Open project menu"
-  },
-  "ACTION_BUTTON$RESUME": {
-    "en": "Resume the agent task"
-  },
-  "ACTION_BUTTON$PAUSE": {
-    "en": "Pause the current task"
-  },
-  "BROWSER$SCREENSHOT_ALT": {
-    "en": "Browser Screenshot"
-  },
-  "ACCOUNT_SETTINGS$SETTINGS": {
-    "en": "Account Settings"
+    "es": "Configuración",
+    "ja": "設定"
   },
   "ACCOUNT_SETTINGS$LOGOUT": {
-    "en": "Logout"
+    "en": "Logout",
+    "zh-CN": "退出登录",
+    "de": "Abmelden",
+    "ko-KR": "로그아웃",
+    "no": "Logg ut",
+    "zh-TW": "登出",
+    "ar": "تسجيل الخروج",
+    "fr": "Déconnexion",
+    "it": "Esci",
+    "pt": "Sair",
+    "es": "Cerrar sesión",
+    "ja": "ログアウト"
   },
-  "ERROR_TOAST$CLOSE_BUTTON_LABEL": {
-    "en": "Close"
-  },
-  "FILE_EXPLORER$UPLOAD": {
-    "en": "Upload File"
-  },
-  "FILE_EXPLORER$REFRESH_WORKSPACE": {
-    "en": "Refresh workspace"
-  },
-  "FILE_EXPLORER$OPEN_WORKSPACE": {
-    "en": "Open workspace"
-  },
-  "FILE_EXPLORER$CLOSE_WORKSPACE": {
-    "en": "Close workspace"
-  },
-  "ACTION_MESSAGE$RUN": {
-    "en": "Running a bash command"
-  },
-  "ACTION_MESSAGE$RUN_IPYTHON": {
-    "en": "Running a Python command"
-  },
-  "ACTION_MESSAGE$READ": {
-    "en": "Reading the contents of a file"
-  },
-  "ACTION_MESSAGE$EDIT": {
-    "en": "Editing the contents of a file"
-  },
-  "ACTION_MESSAGE$WRITE": {
-    "en": "Writing to a file"
-  },
-  "ACTION_MESSAGE$BROWSE": {
-    "en": "Browsing the web"
-  },
-  "OBSERVATION_MESSAGE$RUN": {
-    "en": "Ran a bash command"
-  },
-  "OBSERVATION_MESSAGE$RUN_IPYTHON": {
-    "en": "Ran a Python command"
-  },
-  "OBSERVATION_MESSAGE$READ": {
-    "en": "Read the contents of a file"
-  },
-  "OBSERVATION_MESSAGE$EDIT": {
-    "en": "Edited the contents of a file"
-  },
-  "OBSERVATION_MESSAGE$WRITE": {
-    "en": "Wrote to a file"
-  },
-  "OBSERVATION_MESSAGE$BROWSE": {
-    "en": "Browsing completed"
-  },
-  "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
-    "en": "Show details"
-  },
-  "EXPANDABLE_MESSAGE$HIDE_DETAILS": {
-    "en": "Hide details"
+  "BROWSER$EMPTY_MESSAGE": {
+    "en": "No screenshot available",
+    "zh-CN": "没有可用的截图",
+    "de": "Kein Screenshot verfügbar",
+    "ko-KR": "스크린샷이 없습니다",
+    "no": "Ingen skjermbilde tilgjengelig",
+    "zh-TW": "沒有可用的截圖",
+    "ar": "لا توجد لقطة شاشة متاحة",
+    "fr": "Aucune capture d'écran disponible",
+    "it": "Nessuno screenshot disponibile",
+    "pt": "Nenhuma captura de tela disponível",
+    "es": "No hay captura de pantalla disponible",
+    "ja": "スクリーンショットがありません"
   }
 }
