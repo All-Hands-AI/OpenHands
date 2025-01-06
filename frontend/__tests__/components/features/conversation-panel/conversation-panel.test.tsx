@@ -53,6 +53,8 @@ describe("ConversationPanel", () => {
     renderConversationPanel();
     const cards = await screen.findAllByTestId("conversation-card");
 
+    // NOTE that we filter out conversations that don't have a created_at property
+    // (mock data has 4 conversations, but only 3 have a created_at property)
     expect(cards).toHaveLength(3);
   });
 

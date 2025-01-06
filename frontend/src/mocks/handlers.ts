@@ -24,6 +24,7 @@ const conversations: Conversation[] = [
     title: "My New Project",
     selected_repository: null,
     last_updated_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
     status: "RUNNING",
   },
   {
@@ -34,10 +35,22 @@ const conversations: Conversation[] = [
     last_updated_at: new Date(
       Date.now() - 2 * 24 * 60 * 60 * 1000,
     ).toISOString(),
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     status: "STOPPED",
   },
   {
     conversation_id: "3",
+    title: "Another Project",
+    selected_repository: "octocat/earth",
+    // 5 days ago
+    last_updated_at: new Date(
+      Date.now() - 5 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    status: "STOPPED",
+  },
+  {
+    conversation_id: "4",
     title: "Another Project",
     selected_repository: "octocat/earth",
     // 5 days ago
