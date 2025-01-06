@@ -64,6 +64,7 @@ class EventStream:
     _queue: queue.Queue[Event]
     _queue_thread: threading.Thread
     _queue_loop: asyncio.AbstractEventLoop | None
+    _thread_loops: dict[str, dict[str, asyncio.AbstractEventLoop]]
 
     def __init__(self, sid: str, file_store: FileStore):
         self.sid = sid
@@ -71,6 +72,7 @@ class EventStream:
         self._stop_flag = threading.Event()
         self._queue: queue.Queue[Event] = queue.Queue()
         self._thread_pools: dict[str, dict[str, ThreadPoolExecutor]] = {}
+        self._thread_loops: dict[str, dict[str, asyncio.AbstractEventLoop]] = {}
         self._queue_loop = None
         self._queue_thread = threading.Thread(target=self._run_queue_loop)
         self._queue_thread.daemon = True
@@ -97,13 +99,40 @@ class EventStream:
                 self._cur_id = id + 1
 
     def _init_thread_loop(self):
+        # Get the current thread ident to use as a key
+        thread_id = threading.current_thread().ident
+        if thread_id is None:
+            raise RuntimeError("Thread ID should not be None")
+        
+        # Create and store the loop
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        
+        # Find which subscriber/callback this thread belongs to
+        for subscriber_id, callbacks in self._thread_pools.items():
+            for callback_id, pool in callbacks.items():
+                for thread in pool._threads:
+                    if thread.ident == thread_id:
+                        if subscriber_id not in self._thread_loops:
+                            self._thread_loops[subscriber_id] = {}
+                        self._thread_loops[subscriber_id][callback_id] = loop
+                        return
 
     def close(self):
         self._stop_flag.set()
         if self._queue_thread.is_alive():
             self._queue_thread.join()
+        
+        # Close all thread pool loops first
+        for subscriber_id, callbacks in self._thread_loops.items():
+            for callback_id, loop in callbacks.items():
+                try:
+                    loop.stop()
+                    loop.close()
+                except Exception as e:
+                    logger.warning(f"Error closing loop for {subscriber_id}/{callback_id}: {e}")
+        
+        # Then shutdown the thread pools
         for pool in self._thread_pools.values():
             for p in pool.values():
                 p.shutdown()
@@ -210,6 +239,21 @@ class EventStream:
         if callback_id not in self._subscribers[subscriber_id]:
             logger.warning(f'Callback not found during unsubscribe: {callback_id}')
             return
+
+        # Clean up the event loop if it exists
+        if subscriber_id in self._thread_loops and callback_id in self._thread_loops[subscriber_id]:
+            try:
+                loop = self._thread_loops[subscriber_id][callback_id]
+                loop.stop()
+                loop.close()
+                del self._thread_loops[subscriber_id][callback_id]
+            except Exception as e:
+                logger.warning(f"Error closing loop for {subscriber_id}/{callback_id}: {e}")
+
+        # Clean up the thread pool
+        if subscriber_id in self._thread_pools and callback_id in self._thread_pools[subscriber_id]:
+            self._thread_pools[subscriber_id][callback_id].shutdown()
+            del self._thread_pools[subscriber_id][callback_id]
 
         del self._subscribers[subscriber_id][callback_id]
 
