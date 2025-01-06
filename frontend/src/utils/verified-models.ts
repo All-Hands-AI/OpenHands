@@ -3,7 +3,6 @@ export const VERIFIED_PROVIDERS = ["openai", "azure", "anthropic", "deepseek"];
 export const VERIFIED_MODELS = [
   "gpt-4o",
   "claude-3-5-sonnet-20241022",
-  "claude-3-5-haiku-20241022",
   "deepseek-chat",
 ];
 
