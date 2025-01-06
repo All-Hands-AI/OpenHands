@@ -11,7 +11,6 @@ import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { sanitizeQuery } from "#/utils/sanitize-query";
 import { useDebounce } from "#/hooks/use-debounce";
-import { useConfig } from "#/hooks/query/use-config";
 
 interface GitHubRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;
@@ -29,26 +28,12 @@ export function GitHubRepositoriesSuggestionBox({
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const { data: config } = useConfig();
   // TODO: Use `useQueries` to fetch all repositories in parallel
   const { data: appRepositories } = useAppRepositories();
   const { data: userRepositories } = useUserRepositories();
   const { data: searchedRepos } = useSearchRepositories(
     sanitizeQuery(debouncedSearchQuery),
   );
-
-  const saasPlaceholderRepository = React.useMemo(() => {
-    if (config?.APP_MODE === "saas" && config?.APP_SLUG) {
-      return [
-        {
-          id: -1000,
-          full_name: "Add more repositories...",
-        },
-      ];
-    }
-
-    return [];
-  }, [config]);
 
   const repositories =
     userRepositories?.pages.flatMap((page) => page.data) ||
@@ -74,11 +59,8 @@ export function GitHubRepositoriesSuggestionBox({
             <GitHubRepositorySelector
               onInputChange={setSearchQuery}
               onSelect={handleSubmit}
-              repositories={[
-                ...saasPlaceholderRepository,
-                ...searchedRepos,
-                ...repositories,
-              ]}
+              publicRepositories={searchedRepos}
+              userRepositories={repositories}
             />
           ) : (
             <ModalButton

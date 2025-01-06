@@ -14,7 +14,8 @@ describe("GitHubRepositorySelector", () => {
       <GitHubRepositorySelector
         onInputChange={onInputChangeMock}
         onSelect={onSelectMock}
-        repositories={[]}
+        publicRepositories={[]}
+        userRepositories={[]}
       />,
     );
 
@@ -36,7 +37,8 @@ describe("GitHubRepositorySelector", () => {
       <GitHubRepositorySelector
         onInputChange={onInputChangeMock}
         onSelect={onSelectMock}
-        repositories={[]}
+        publicRepositories={[]}
+        userRepositories={[]}
       />,
     );
 
@@ -67,7 +69,8 @@ describe("GitHubRepositorySelector", () => {
       <GitHubRepositorySelector
         onInputChange={onInputChangeMock}
         onSelect={onSelectMock}
-        repositories={[]}
+        publicRepositories={[]}
+        userRepositories={[]}
       />,
     );
 

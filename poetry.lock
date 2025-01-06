@@ -3712,6 +3712,17 @@ websocket-client = ">=0.32.0,<0.40.0 || >0.40.0,<0.41.dev0 || >=0.43.dev0"
 adal = ["adal (>=1.0.2)"]
 
 [[package]]
+name = "libtmux"
+version = "0.37.0"
+description = "Typed library that provides an ORM wrapper for tmux, a terminal multiplexer."
+optional = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "libtmux-0.37.0-py3-none-any.whl", hash = "sha256:7e8cbab30b033d132b6fca5dddb575bb7f6a1fd802328e7174f9b49023556376"},
+    {file = "libtmux-0.37.0.tar.gz", hash = "sha256:21955c5dce6332db41abad5e26ae8c4062ef2b9a89099bd57a36f52be1d5270f"},
+]
+
+[[package]]
 name = "libwebarena"
 version = "0.0.3"
 description = "This is an unofficial, use-at-your-own risks port of the webarena benchmark, for use as a standalone library package."
@@ -5419,7 +5430,6 @@ optional = false
 python-versions = ">=3.6"
 files = [
     {file = "opencv-python-4.10.0.84.tar.gz", hash = "sha256:72d234e4582e9658ffea8e9cae5b63d488ad06994ef12d81dc303b17472f3526"},
-    {file = "opencv_python-4.10.0.84-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:fc182f8f4cda51b45f01c64e4cbedfc2f00aff799debebc305d8d0210c43f251"},
     {file = "opencv_python-4.10.0.84-cp37-abi3-macosx_12_0_x86_64.whl", hash = "sha256:71e575744f1d23f79741450254660442785f45a0797212852ee5199ef12eed98"},
     {file = "opencv_python-4.10.0.84-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:09a332b50488e2dda866a6c5573ee192fe3583239fb26ff2f7f9ceb0bc119ea6"},
     {file = "opencv_python-4.10.0.84-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9ace140fc6d647fbe1c692bcb2abce768973491222c067c131d80957c595b71f"},
@@ -5432,13 +5442,13 @@ numpy = {version = ">=1.26.0", markers = "python_version >= \"3.12\""}
 
 [[package]]
 name = "openhands-aci"
-version = "0.1.5"
+version = "0.1.6"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
 python-versions = "<4.0,>=3.12"
 files = [
-    {file = "openhands_aci-0.1.5-py3-none-any.whl", hash = "sha256:7b4238161ede81ba870efd5f30af654d432d03a74632746ba19147761ed21533"},
-    {file = "openhands_aci-0.1.5.tar.gz", hash = "sha256:3ed6d051c4944ba4dee1febcf2b41c3d95da1706102f53f61809a3aca0821afe"},
+    {file = "openhands_aci-0.1.6-py3-none-any.whl", hash = "sha256:e9589d959a146fad3e6935be1f80b7a4368dd7aa2ba38ad267862c4f8a246e72"},
+    {file = "openhands_aci-0.1.6.tar.gz", hash = "sha256:6edf4d6478a349140a324c4a0c4be6d1e9a7acce1739a37d02eecbb9006a2ce7"},
 ]
 
 [package.dependencies]
@@ -8299,6 +8309,25 @@ pymysql = ["pymysql"]
 sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
+name = "sse-starlette"
+version = "2.1.3"
+description = "SSE plugin for Starlette"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "sse_starlette-2.1.3-py3-none-any.whl", hash = "sha256:8ec846438b4665b9e8c560fcdea6bc8081a3abf7942faa95e5a744999d219772"},
+    {file = "sse_starlette-2.1.3.tar.gz", hash = "sha256:9cd27eb35319e1414e3d2558ee7414487f9529ce3b3cf9b21434fd110e017169"},
+]
+
+[package.dependencies]
+anyio = "*"
+starlette = "*"
+uvicorn = "*"
+
+[package.extras]
+examples = ["fastapi"]
+
+[[package]]
 name = "stack-data"
 version = "0.6.3"
 description = "Extract data from python stack frames and tracebacks for informative displays"
@@ -10054,4 +10083,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "691bdd0f64e3476858eb34ce6ed6d0b0e7d97458cfd69fd366cd9c1c4f4ec897"
+content-hash = "6f8fd9ffcc411aed1c8f50aff98e36bf06932c27b82485e4f9fd05bbe7b195c4"

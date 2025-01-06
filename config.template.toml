@@ -198,6 +198,16 @@ model = "gpt-4o"
 # agent.CodeActAgent
 ##############################################################################
 [agent]
+
+# whether the browsing tool is enabled
+codeact_enable_browsing = true
+
+# whether the LLM draft editor is enabled
+codeact_enable_llm_editor = false
+
+# whether the IPython tool is enabled
+codeact_enable_jupyter = true
+
 # Name of the micro agent to use for this agent
 #micro_agent_name = ""
 
@@ -209,6 +219,12 @@ model = "gpt-4o"
 
 # LLM config group to use
 #llm_config = 'your-llm-config-group'
+
+# Whether to use microagents at all
+#use_microagents = true
+
+# List of microagents to disable
+#disabled_microagents = []
 
 [agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially

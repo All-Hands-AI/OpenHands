@@ -278,6 +278,14 @@ class DockerRuntime(ActionExecutionClient):
                 detach=True,
                 environment=environment,
                 volumes=volumes,
+                device_requests=(
+                    [docker.types.DeviceRequest(
+                        capabilities=[['gpu']],
+                        count=-1
+                    )]
+                    if self.config.sandbox.enable_gpu
+                    else None
+                ),
             )
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')

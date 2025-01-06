@@ -16,7 +16,7 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
     <ModalBackdrop onClose={onClose}>
       <div
         data-testid="ai-config-modal"
-        className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2"
+        className="bg-root-primary min-w-[384px] max-w-[700px] p-6 rounded-xl flex flex-col gap-2"
       >
         {aiConfigOptions.error && (
           <p className="text-danger text-xs">{aiConfigOptions.error.message}</p>
