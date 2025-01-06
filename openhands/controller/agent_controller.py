@@ -5,7 +5,11 @@ import traceback
 from typing import Callable, ClassVar, Type
 
 import litellm
-from litellm.exceptions import BadRequestError, ContextWindowExceededError
+from litellm.exceptions import (
+    BadRequestError,
+    ContextWindowExceededError,
+    RateLimitError,
+)
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
@@ -26,7 +30,6 @@ from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
-    AddTaskAction,
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
@@ -34,7 +37,6 @@ from openhands.events.action import (
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
-    ModifyTaskAction,
     NullAction,
 )
 from openhands.events.event import Event
@@ -189,11 +191,15 @@ class AgentController:
         self,
         e: Exception,
     ):
+        """React to an exception by setting the agent state to error and sending a status message."""
         await self.set_agent_state_to(AgentState.ERROR)
         if self.status_callback is not None:
             err_id = ''
             if isinstance(e, litellm.AuthenticationError):
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
+            elif isinstance(e, RateLimitError):
+                await self.set_agent_state_to(AgentState.RATE_LIMITED)
+                return
             self.status_callback('error', err_id, type(e).__name__ + ': ' + str(e))
 
     def step(self):
@@ -203,12 +209,19 @@ class AgentController:
         try:
             await self._step()
         except Exception as e:
-            traceback.print_exc()
-            self.log('error', f'Error while running the agent: {e}')
-            reported = RuntimeError(
-                'There was an unexpected error while running the agent.'
+            self.log(
+                'error',
+                f'Error while running the agent (session ID: {self.id}): {e}. '
+                f'Traceback: {traceback.format_exc()}',
             )
-            if isinstance(e, litellm.AuthenticationError):
+            reported = RuntimeError(
+                'There was an unexpected error while running the agent. Please '
+                f'report this error to the developers. Your session ID is {self.id}. '
+                f'Exception: {e}.'
+            )
+            if isinstance(e, litellm.AuthenticationError) or isinstance(
+                e, litellm.BadRequestError
+            ):
                 reported = e
             await self._react_to_exception(reported)
 
@@ -261,12 +274,7 @@ class AgentController:
             await self._handle_message_action(action)
         elif isinstance(action, AgentDelegateAction):
             await self.start_delegate(action)
-        elif isinstance(action, AddTaskAction):
-            self.state.root_task.add_subtask(
-                action.parent, action.goal, action.subtasks
-            )
-        elif isinstance(action, ModifyTaskAction):
-            self.state.root_task.set_subtask_state(action.task_id, action.state)
+
         elif isinstance(action, AgentFinishAction):
             self.state.outputs = action.outputs
             self.state.metrics.merge(self.state.local_metrics)
@@ -346,7 +354,6 @@ class AgentController:
 
     def _reset(self) -> None:
         """Resets the agent controller"""
-
         # make sure there is an Observation with the tool call metadata to be recognized by the agent
         # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
         if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata'):
@@ -387,6 +394,9 @@ class AgentController:
             return
 
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
+            # sync existing metrics BEFORE resetting the agent
+            await self.update_state_after_step()
+            self.state.metrics.merge(self.state.local_metrics)
             self._reset()
         elif (
             new_state == AgentState.RUNNING

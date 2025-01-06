@@ -180,6 +180,12 @@ model = "gpt-4o"
 # https://docs.litellm.ai/docs/completion/token_usage
 #custom_tokenizer = ""
 
+# Whether to use native tool calling if supported by the model. Can be true, false, or None by default, which chooses the model's default behavior based on the evaluation.
+# ATTENTION: Based on evaluation, enabling native function calling may lead to worse results
+# in some scenarios. Use with caution and consider testing with your specific use case.
+# https://github.com/All-Hands-AI/OpenHands/pull/4711
+#native_tool_calling = None
+
 [llm.gpt4o-mini]
 api_key = "your-api-key"
 model = "gpt-4o"
@@ -192,6 +198,16 @@ model = "gpt-4o"
 # agent.CodeActAgent
 ##############################################################################
 [agent]
+
+# whether the browsing tool is enabled
+codeact_enable_browsing = true
+
+# whether the LLM draft editor is enabled
+codeact_enable_llm_editor = false
+
+# whether the IPython tool is enabled
+codeact_enable_jupyter = true
+
 # Name of the micro agent to use for this agent
 #micro_agent_name = ""
 
@@ -203,6 +219,12 @@ model = "gpt-4o"
 
 # LLM config group to use
 #llm_config = 'your-llm-config-group'
+
+# Whether to use microagents at all
+#use_microagents = true
+
+# List of microagents to disable
+#disabled_microagents = []
 
 [agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially

@@ -4,7 +4,9 @@ OpenHands can connect to any LLM supported by LiteLLM. However, it requires a po
 
 ## Model Recommendations
 
-Based on our evaluations of language models for coding tasks (using the SWE-bench dataset), we can provide some recommendations for model selection. Some analyses can be found in [this blog article comparing LLMs](https://www.all-hands.dev/blog/evaluation-of-llms-as-coding-agents-on-swe-bench-at-30x-speed) and [this blog article with some more recent results](https://www.all-hands.dev/blog/openhands-codeact-21-an-open-state-of-the-art-software-development-agent).
+Based on our evaluations of language models for coding tasks (using the SWE-bench dataset), we can provide some
+recommendations for model selection. Some analyses can be found in [this blog article comparing LLMs](https://www.all-hands.dev/blog/evaluation-of-llms-as-coding-agents-on-swe-bench-at-30x-speed) and
+[this blog article with some more recent results](https://www.all-hands.dev/blog/openhands-codeact-21-an-open-state-of-the-art-software-development-agent).
 
 When choosing a model, consider both the quality of outputs and the associated costs. Here's a summary of the findings:
 
@@ -69,9 +71,11 @@ We have a few guides for running OpenHands with specific model providers:
 
 ### API retries and rate limits
 
-LLM providers typically have rate limits, sometimes very low, and may require retries. OpenHands will automatically retry requests if it receives a Rate Limit Error (429 error code), API connection error, or other transient errors.
+LLM providers typically have rate limits, sometimes very low, and may require retries. OpenHands will automatically
+retry requests if it receives a Rate Limit Error (429 error code), API connection error, or other transient errors.
 
-You can customize these options as you need for the provider you're using. Check their documentation, and set the following environment variables to control the number of retries and the time between retries:
+You can customize these options as you need for the provider you're using. Check their documentation, and set the
+following environment variables to control the number of retries and the time between retries:
 
 - `LLM_NUM_RETRIES` (Default of 8)
 - `LLM_RETRY_MIN_WAIT` (Default of 15 seconds)

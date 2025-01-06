@@ -44,7 +44,7 @@ For example, we might build a TODO app:
 
 We can keep iterating on the app once the skeleton is there:
 
-> Please allow adding an optional due date to every task
+> Please allow adding an optional due date to every task.
 
 Just like with normal development, it's good to commit and push your code frequently.
 This way you can always revert back to an old state if the agent goes off track.
@@ -59,15 +59,15 @@ OpenHands can also do a great job adding new code to an existing code base.
 
 For example, you can ask OpenHands to add a new GitHub action to your project
 which lints your code. OpenHands may take a peek at your codebase to see what language
-it should use, but then it can just drop a new file into `./github/workflows/lint.yml`
+it should use and then drop a new file into `./github/workflows/lint.yml`.
 
-> Please add a GitHub action that lints the code in this repository
+> Please add a GitHub action that lints the code in this repository.
 
 Some tasks might require a bit more context. While OpenHands can use `ls` and `grep`
 to search through your codebase, providing context up front allows it to move faster,
 and more accurately. And it'll cost you fewer tokens!
 
-> Please modify ./backend/api/routes.js to add a new route that returns a list of all tasks
+> Please modify ./backend/api/routes.js to add a new route that returns a list of all tasks.
 
 > Please add a new React component that displays a list of Widgets to the ./frontend/components
 > directory. It should use the existing Widget component.
@@ -78,15 +78,15 @@ OpenHands does great at refactoring existing code, especially in small chunks.
 You probably don't want to try rearchitecting your whole codebase, but breaking up
 long files and functions, renaming variables, etc. tend to work very well.
 
-> Please rename all the single-letter variables in ./app.go
+> Please rename all the single-letter variables in ./app.go.
 
-> Please break the function `build_and_deploy_widgets` into two functions, `build_widgets` and `deploy_widgets` in widget.php
+> Please break the function `build_and_deploy_widgets` into two functions, `build_widgets` and `deploy_widgets` in widget.php.
 
-> Please break ./api/routes.js into separate files for each route
+> Please break ./api/routes.js into separate files for each route.
 
 ## Bug Fixes
 
-OpenHands can also help you track down and fix bugs in your code. But, as any
+OpenHands can also help you track down and fix bugs in your code. But as any
 developer knows, bug fixing can be extremely tricky, and often OpenHands will need more context.
 It helps if you've diagnosed the bug, but want OpenHands to figure out the logic.
 
@@ -94,18 +94,18 @@ It helps if you've diagnosed the bug, but want OpenHands to figure out the logic
 
 > The `search_widgets` function in ./app.py is doing a case-sensitive search. Please make it case-insensitive.
 
-It often helps to do test-driven development when bugfixing with an agent.
+It often helps to do test-driven development when bug fixing with an agent.
 You can ask the agent to write a new test, and then iterate until it fixes the bug:
 
 > The `hello` function crashes on the empty string. Please write a test that reproduces this bug, then fix the code so it passes.
 
 ## More
 
-OpenHands is capable of helping out on just about any coding task. But it takes some practice
+OpenHands is capable of helping out on just about any coding task but it takes some practice
 to get the most out of it. Remember to:
-* Keep your tasks small
-* Be as specific as possible
-* Provide as much context as possible
-* Commit and push frequently
+* Keep your tasks small.
+* Be as specific as possible.
+* Provide as much context as possible.
+* Commit and push frequently.
 
 See [Prompting Best Practices](./prompting/prompting-best-practices) for more tips on how to get the most out of OpenHands.

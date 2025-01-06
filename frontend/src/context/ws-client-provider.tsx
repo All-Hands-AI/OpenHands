@@ -1,13 +1,43 @@
 import posthog from "posthog-js";
 import React from "react";
 import { io, Socket } from "socket.io-client";
-
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
+import { OpenHandsParsedEvent } from "#/types/core";
+import {
+  AssistantMessageAction,
+  UserMessageAction,
+} from "#/types/core/actions";
 
-const isOpenHandsMessage = (event: Record<string, unknown>) =>
-  event.action === "message";
+const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
+  typeof event === "object" &&
+  event !== null &&
+  "id" in event &&
+  "source" in event &&
+  "message" in event &&
+  "timestamp" in event;
+
+const isUserMessage = (
+  event: OpenHandsParsedEvent,
+): event is UserMessageAction =>
+  "source" in event &&
+  "type" in event &&
+  event.source === "user" &&
+  event.type === "message";
+
+const isAssistantMessage = (
+  event: OpenHandsParsedEvent,
+): event is AssistantMessageAction =>
+  "source" in event &&
+  "type" in event &&
+  event.source === "agent" &&
+  event.type === "message";
+
+const isMessageAction = (
+  event: OpenHandsParsedEvent,
+): event is UserMessageAction | AssistantMessageAction =>
+  isUserMessage(event) || isAssistantMessage(event);
 
 export enum WsClientProviderStatus {
   CONNECTED,
@@ -32,16 +62,13 @@ const WsClientContext = React.createContext<UseWsClient>({
 
 interface WsClientProviderProps {
   conversationId: string;
-  ghToken: string | null;
 }
 
 export function WsClientProvider({
-  ghToken,
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const sioRef = React.useRef<Socket | null>(null);
-  const ghTokenRef = React.useRef<string | null>(ghToken);
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
   );
@@ -63,7 +90,7 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
-    if (isOpenHandsMessage(event)) {
+    if (isOpenHandsEvent(event) && isMessageAction(event)) {
       messageRateHandler.record(new Date().getTime());
     }
     setEvents((prevEvents) => [...prevEvents, event]);
@@ -90,6 +117,10 @@ export function WsClientProvider({
   }
 
   React.useEffect(() => {
+    lastEventRef.current = null;
+  }, [conversationId]);
+
+  React.useEffect(() => {
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }
@@ -107,9 +138,6 @@ export function WsClientProvider({
 
     sio = io(baseUrl, {
       transports: ["websocket"],
-      auth: {
-        github_token: ghToken || undefined,
-      },
       query,
     });
     sio.on("connect", handleConnect);
@@ -119,7 +147,6 @@ export function WsClientProvider({
     sio.on("disconnect", handleDisconnect);
 
     sioRef.current = sio;
-    ghTokenRef.current = ghToken;
 
     return () => {
       sio.off("connect", handleConnect);
@@ -128,7 +155,7 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [ghToken, conversationId]);
+  }, [conversationId]);
 
   React.useEffect(
     () => () => {

@@ -34,6 +34,7 @@ class SandboxConfig:
         platform: The platform on which the image should be built. Default is None.
         remote_runtime_resource_factor: Factor to scale the resource allocation for remote runtime.
             Must be one of [1, 2, 4, 8]. Will only be used if the runtime is remote.
+        enable_gpu: Whether to enable GPU.
     """
 
     remote_runtime_api_url: str = 'http://localhost:8000'
@@ -57,8 +58,9 @@ class SandboxConfig:
     runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
     browsergym_eval_env: str | None = None
     platform: str | None = None
-    close_delay: int = 15
+    close_delay: int = 900
     remote_runtime_resource_factor: int = 1
+    enable_gpu: bool = False
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
