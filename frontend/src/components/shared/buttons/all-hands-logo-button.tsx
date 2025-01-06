@@ -12,7 +12,7 @@ export function AllHandsLogoButton({ onClick }: AllHandsLogoButtonProps) {
       ariaLabel="All Hands Logo"
       onClick={onClick}
     >
-      <AllHandsLogo width={51} height={35} />
+      <AllHandsLogo width={44} height={30} />
     </TooltipButton>
   );
 }
