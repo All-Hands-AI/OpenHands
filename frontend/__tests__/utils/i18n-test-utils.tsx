@@ -8,7 +8,7 @@ const mockI18n = {
       "SUGGESTIONS$TODO_APP": "ToDoリストアプリを開発する",
       "LANDING$BUILD_APP_BUTTON": "プルリクエストを表示するアプリを開発する",
       "SUGGESTIONS$HACKER_NEWS": "Hacker Newsのトップ記事を表示するbashスクリプトを作成する",
-      "LETS_START_BUILDING": "開発を始めましょう！",
+      "LANDING$TITLE": "一緒に開発を始めましょう！",
       "OPEN_IN_VSCODE": "VS Codeで開く",
       "INCREASE_TEST_COVERAGE": "テストカバレッジを向上",
       "AUTO_MERGE_PRS": "PRを自動マージ",

@@ -1,19 +1,5 @@
 {
-  "LETS_START_BUILDING": {
-    "en": "Let's start building!",
-    "ja": "開発を始めましょう！",
-    "zh-CN": "让我们开始构建！",
-    "zh-TW": "讓我們開始構建！",
-    "ko-KR": "구축을 시작해봅시다!",
-    "de": "Lass uns anfangen zu bauen!",
-    "no": "La oss begynne å bygge!",
-    "it": "Iniziamo a costruire!",
-    "pt": "Vamos começar a construir!",
-    "es": "¡Empecemos a construir!",
-    "ar": "دعنا نبدأ البناء!",
-    "fr": "Commençons à construire !",
-    "tr": "Hadi inşa etmeye başlayalım!"
-  },
+
   "WORKSPACE$TITLE": {
     "en": "OpenHands Workspace",
     "zh-CN": "OpenHands 工作区",
@@ -1652,7 +1638,8 @@
     "it": "Iniziamo a costruire!",
     "pt": "Vamos começar a construir!",
     "ar": "هيا نبدأ البناء!",
-    "no": "La oss begynne å bygge!"
+    "no": "La oss begynne å bygge!",
+    "tr": "Hadi inşa etmeye başlayalım!"
   },
   "LANDING$SUBTITLE": {
     "en": "OpenHands makes it easy to build and maintain software using a simple prompt.",

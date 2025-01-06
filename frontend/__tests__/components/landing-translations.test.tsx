@@ -57,7 +57,7 @@ describe("Landing page translations", () => {
       return (
         <div>
           <div data-testid="main-content">
-            <h1>{t("LETS_START_BUILDING")}</h1>
+            <h1>{t("LANDING$TITLE")}</h1>
             <button>{t("OPEN_IN_VSCODE")}</button>
             <button>{t("INCREASE_TEST_COVERAGE")}</button>
             <button>{t("AUTO_MERGE_PRS")}</button>
@@ -89,7 +89,7 @@ describe("Landing page translations", () => {
     render(<TestComponent />);
 
     // Check main content translations
-    expect(screen.getByText("開発を始めましょう！")).toBeInTheDocument();
+    expect(screen.getByText("一緒に開発を始めましょう！")).toBeInTheDocument();
     expect(screen.getByText("VS Codeで開く")).toBeInTheDocument();
     expect(screen.getByText("テストカバレッジを向上")).toBeInTheDocument();
     expect(screen.getByText("PRを自動マージ")).toBeInTheDocument();
@@ -123,7 +123,7 @@ describe("Landing page translations", () => {
   test("all translation keys should have translations for all supported languages", () => {
     // Test all translation keys used in the component
     const translationKeys = [
-      "LETS_START_BUILDING",
+      "LANDING$TITLE",
       "OPEN_IN_VSCODE",
       "INCREASE_TEST_COVERAGE",
       "AUTO_MERGE_PRS",
