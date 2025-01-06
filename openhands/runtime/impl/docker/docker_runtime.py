@@ -306,6 +306,9 @@ class DockerRuntime(ActionExecutionClient):
         for port in self.container.attrs['NetworkSettings']['Ports']:  # type: ignore
             self._container_port = int(port.split('/')[0])
             break
+        else:
+            # fallback if host network is used
+            self._container_port = int(self.container.attrs['Args'][9])  # type: ignore
         self._host_port = self._container_port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(
