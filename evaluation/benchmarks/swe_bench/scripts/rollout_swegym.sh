@@ -65,10 +65,6 @@ function run_eval() {
 
   # Run the command
   eval $COMMAND
-  # if exit code is not 0, exit the script
-  if [ $? -ne 0 ]; then
-    exit 1
-  fi
 }
 
 while true; do
@@ -80,10 +76,9 @@ while true; do
         current_eval_note="$EVAL_NOTE-run_$i"
         echo "EVAL_NOTE: $current_eval_note"
         run_eval $current_eval_note
+        INFER_STATUS=$?  # Capture the exit status of run_infer.sh
+        echo "INFER_STATUS: $INFER_STATUS"
     done
-
-    INFER_STATUS=$?  # Capture the exit status of run_infer.sh
-    echo "INFER_STATUS: $INFER_STATUS"
 
     echo "### Cleaning up remote runtime... ###"
     ./evaluation/utils/scripts/cleanup_remote_runtime.sh
