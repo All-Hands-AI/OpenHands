@@ -27,7 +27,7 @@ export const useAppRepositories = () => {
         installationIndex || 0,
         installations,
         repoPage || 1,
-        30,
+        1000,
       );
     },
     initialPageParam: { installationIndex: 0, repoPage: 1 },
