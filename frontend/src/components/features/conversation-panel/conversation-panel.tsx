@@ -63,7 +63,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     if (oldTitle !== newTitle)
       updateConversation({
         id: conversationId,
-        conversation: { name: newTitle },
+        conversation: { title: newTitle },
       });
   };
 
@@ -75,7 +75,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   return (
     <div
       data-testid="conversation-panel"
-      className="w-[350px] h-full border border-neutral-700 bg-neutral-800 rounded-xl"
+      className="w-[350px] h-full border border-neutral-700 bg-neutral-800 rounded-xl overflow-y-auto"
     >
       <div className="pt-4 px-4 flex items-center justify-between">
         {location.pathname.startsWith("/conversation") && (
@@ -103,12 +103,12 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           onClick={() => handleClickCard(project.conversation_id)}
           onDelete={() => handleDeleteProject(project.conversation_id)}
           onChangeTitle={(title) =>
-            handleChangeTitle(project.conversation_id, project.name, title)
+            handleChangeTitle(project.conversation_id, project.title, title)
           }
-          name={project.name}
-          repo={project.repo}
-          lastUpdated={project.lastUpdated}
-          state={project.state}
+          title={project.title}
+          selectedRepository={project.selected_repository}
+          lastUpdatedAt={project.last_updated_at}
+          status={project.status}
         />
       ))}
 
