@@ -111,19 +111,24 @@ class EventStream:
         if self._queue_thread.is_alive():
             self._queue_thread.join()
 
-        for subscriber_id, callbacks in self._thread_loops.items():
-            for callback_id, loop in callbacks.items():
-                try:
-                    loop.stop()
-                    loop.close()
-                except Exception as e:
-                    logger.warning(
-                        f'Error closing loop for {subscriber_id}/{callback_id}: {e}'
-                    )
+        for subscriber_id in self._subscribers:
+            for callback_id in self._subscribers[subscriber_id]:
+                self._clean_up_subscriber(subscriber_id, callback_id)
 
-        for pool in self._thread_pools.values():
-            for p in pool.values():
-                p.shutdown()
+    def _clean_up_subscriber(self, subscriber_id: str, callback_id: str):
+        loop = self._thread_loops[subscriber_id][callback_id]
+        try:
+            loop.stop()
+            loop.close()
+        except Exception as e:
+            logger.warning(f'Error closing loop for {subscriber_id}/{callback_id}: {e}')
+
+        del self._thread_loops[subscriber_id][callback_id]
+        pool = self._thread_pools[subscriber_id][callback_id]
+        pool.shutdown()
+        del self._thread_pools[subscriber_id][callback_id]
+
+        del self._subscribers[subscriber_id][callback_id]
 
     def _get_filename_for_id(self, id: int) -> str:
         return get_conversation_event_filename(self.sid, id)
@@ -229,30 +234,7 @@ class EventStream:
             logger.warning(f'Callback not found during unsubscribe: {callback_id}')
             return
 
-        # Clean up the event loop if it exists
-        if (
-            subscriber_id in self._thread_loops
-            and callback_id in self._thread_loops[subscriber_id]
-        ):
-            try:
-                loop = self._thread_loops[subscriber_id][callback_id]
-                loop.stop()
-                loop.close()
-                del self._thread_loops[subscriber_id][callback_id]
-            except Exception as e:
-                logger.warning(
-                    f'Error closing loop for {subscriber_id}/{callback_id}: {e}'
-                )
-
-        # Clean up the thread pool
-        if (
-            subscriber_id in self._thread_pools
-            and callback_id in self._thread_pools[subscriber_id]
-        ):
-            self._thread_pools[subscriber_id][callback_id].shutdown()
-            del self._thread_pools[subscriber_id][callback_id]
-
-        del self._subscribers[subscriber_id][callback_id]
+        self._clean_up_subscriber(subscriber_id, callback_id)
 
     def add_event(self, event: Event, source: EventSource):
         if hasattr(event, '_id') and event.id is not None:
