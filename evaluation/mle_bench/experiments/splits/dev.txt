@@ -1,0 +1,7 @@
+invasive-species-monitoring
+ml2021spring-hw2
+movie-review-sentiment-analysis-kernels-only
+paddy-disease-classification
+plant-seedlings-classification
+playground-series-s3e18
+spaceship-titanic
