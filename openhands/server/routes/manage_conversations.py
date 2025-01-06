@@ -52,9 +52,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     if settings:
         session_init_args = {**settings.__dict__, **session_init_args}
 
-    github_token = (
-        request.state.github_token if hasattr(request.state, 'github_token') else ''
-    )
+    github_token = getattr(request.state, 'github_token', '')
     session_init_args['github_token'] = github_token
     session_init_args['selected_repository'] = data.selected_repository
     conversation_init_data = ConversationInitData(**session_init_args)
