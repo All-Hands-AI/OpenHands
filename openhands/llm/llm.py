@@ -27,7 +27,6 @@ from litellm.exceptions import (
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
 
-from openhands.core.exceptions import CloudFlareBlockageError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.llm.debug_mixin import DebugMixin
@@ -203,88 +202,81 @@ class LLM(RetryMixin, DebugMixin):
             # NOTE: this setting is global; unlike drop_params, it cannot be overridden in the litellm completion partial
             litellm.modify_params = self.config.modify_params
 
-            try:
-                # Record start time for latency measurement
-                start_time = time.time()
+            # Record start time for latency measurement
+            start_time = time.time()
 
-                # we don't support streaming here, thus we get a ModelResponse
-                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+            # we don't support streaming here, thus we get a ModelResponse
+            resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
-                # Calculate and record latency
-                latency = time.time() - start_time
-                response_id = resp.get('id', 'unknown')
-                self.metrics.add_response_latency(latency, response_id)
+            # Calculate and record latency
+            latency = time.time() - start_time
+            response_id = resp.get('id', 'unknown')
+            self.metrics.add_response_latency(latency, response_id)
 
-                non_fncall_response = copy.deepcopy(resp)
+            non_fncall_response = copy.deepcopy(resp)
+            if mock_function_calling:
+                assert len(resp.choices) == 1
+                assert mock_fncall_tools is not None
+                non_fncall_response_message = resp.choices[0].message
+                fn_call_messages_with_response = (
+                    convert_non_fncall_messages_to_fncall_messages(
+                        messages + [non_fncall_response_message], mock_fncall_tools
+                    )
+                )
+                fn_call_response_message = fn_call_messages_with_response[-1]
+                if not isinstance(fn_call_response_message, LiteLLMMessage):
+                    fn_call_response_message = LiteLLMMessage(
+                        **fn_call_response_message
+                    )
+                resp.choices[0].message = fn_call_response_message
+
+            message_back: str = resp['choices'][0]['message']['content'] or ''
+            tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
+                'message'
+            ].get('tool_calls', [])
+            if tool_calls:
+                for tool_call in tool_calls:
+                    fn_name = tool_call.function.name
+                    fn_args = tool_call.function.arguments
+                    message_back += f'\nFunction call: {fn_name}({fn_args})'
+
+            # log the LLM response
+            self.log_response(message_back)
+
+            # post-process the response first to calculate cost
+            cost = self._post_completion(resp)
+
+            # log for evals or other scripts that need the raw completion
+            if self.config.log_completions:
+                assert self.config.log_completions_folder is not None
+                log_file = os.path.join(
+                    self.config.log_completions_folder,
+                    # use the metric model name (for draft editor)
+                    f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
+                )
+
+                # set up the dict to be logged
+                _d = {
+                    'messages': messages,
+                    'response': resp,
+                    'args': args,
+                    'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
+                    'timestamp': time.time(),
+                    'cost': cost,
+                }
+
+                # if non-native function calling, save messages/response separately
                 if mock_function_calling:
-                    assert len(resp.choices) == 1
-                    assert mock_fncall_tools is not None
-                    non_fncall_response_message = resp.choices[0].message
-                    fn_call_messages_with_response = (
-                        convert_non_fncall_messages_to_fncall_messages(
-                            messages + [non_fncall_response_message], mock_fncall_tools
-                        )
-                    )
-                    fn_call_response_message = fn_call_messages_with_response[-1]
-                    if not isinstance(fn_call_response_message, LiteLLMMessage):
-                        fn_call_response_message = LiteLLMMessage(
-                            **fn_call_response_message
-                        )
-                    resp.choices[0].message = fn_call_response_message
+                    # Overwrite response as non-fncall to be consistent with messages
+                    _d['response'] = non_fncall_response
 
-                message_back: str = resp['choices'][0]['message']['content'] or ''
-                tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
-                    'message'
-                ].get('tool_calls', [])
-                if tool_calls:
-                    for tool_call in tool_calls:
-                        fn_name = tool_call.function.name
-                        fn_args = tool_call.function.arguments
-                        message_back += f'\nFunction call: {fn_name}({fn_args})'
+                    # Save fncall_messages/response separately
+                    _d['fncall_messages'] = original_fncall_messages
+                    _d['fncall_response'] = resp
+                with open(log_file, 'w') as f:
+                    f.write(json.dumps(_d))
 
-                # log the LLM response
-                self.log_response(message_back)
-
-                # post-process the response first to calculate cost
-                cost = self._post_completion(resp)
-
-                # log for evals or other scripts that need the raw completion
-                if self.config.log_completions:
-                    assert self.config.log_completions_folder is not None
-                    log_file = os.path.join(
-                        self.config.log_completions_folder,
-                        # use the metric model name (for draft editor)
-                        f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
-                    )
-
-                    # set up the dict to be logged
-                    _d = {
-                        'messages': messages,
-                        'response': resp,
-                        'args': args,
-                        'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
-                        'timestamp': time.time(),
-                        'cost': cost,
-                    }
-
-                    # if non-native function calling, save messages/response separately
-                    if mock_function_calling:
-                        # Overwrite response as non-fncall to be consistent with messages
-                        _d['response'] = non_fncall_response
-
-                        # Save fncall_messages/response separately
-                        _d['fncall_messages'] = original_fncall_messages
-                        _d['fncall_response'] = resp
-                    with open(log_file, 'w') as f:
-                        f.write(json.dumps(_d))
-
-                return resp
-            except APIError as e:
-                if 'Attention Required! | Cloudflare' in str(e):
-                    raise CloudFlareBlockageError(
-                        'Request blocked by CloudFlare'
-                    ) from e
-                raise
+            return resp
 
         self._completion = wrapper
 
