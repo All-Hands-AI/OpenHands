@@ -1,5 +1,9 @@
 import { delay, http, HttpResponse } from "msw";
-import { GetConfigResponse, Conversation } from "#/api/open-hands.types";
+import {
+  GetConfigResponse,
+  Conversation,
+  ResultSet,
+} from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 
 const userPreferences = {
@@ -186,12 +190,15 @@ export const handlers = [
 
   http.get("/api/options/config", () => HttpResponse.json({ APP_MODE: "oss" })),
 
-  http.get("/api/conversations?limit=9", async () =>
-    HttpResponse.json({
-      results: Array.from(CONVERSATIONS.values()),
+  http.get("/api/conversations", async () => {
+    const values = Array.from(CONVERSATIONS.values());
+    const results: ResultSet<Conversation> = {
+      results: values,
       next_page_id: null,
-    }),
-  ),
+    };
+
+    return HttpResponse.json(results, { status: 200 });
+  }),
 
   http.delete("/api/conversations/:conversationId", async ({ params }) => {
     const { conversationId } = params;

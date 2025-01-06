@@ -35,28 +35,12 @@ export function Sidebar() {
     React.useState(false);
   const conversationPanelRef = React.useRef<HTMLDivElement | null>(null);
 
-  const handleClick = (event: MouseEvent) => {
-    const conversationPanel = conversationPanelRef.current;
-    if (conversationPanelIsOpen && conversationPanel) {
-      if (!conversationPanel.contains(event.target as Node)) {
-        setConversationPanelIsOpen(false);
-      }
-    }
-  };
-
   React.useEffect(() => {
     // If the github token is invalid, open the account settings modal again
     if (user.isError) {
       setAccountSettingsModalOpen(true);
     }
   }, [user.isError]);
-
-  React.useEffect(() => {
-    document.addEventListener("click", handleClick);
-    return () => {
-      document.removeEventListener("click", handleClick);
-    };
-  }, [conversationPanelIsOpen]);
 
   const handleAccountSettingsModalClose = () => {
     // If the user closes the modal without connecting to GitHub,

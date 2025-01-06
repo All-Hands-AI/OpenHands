@@ -9,7 +9,7 @@ import { ContextMenu } from "../context-menu/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 import { EllipsisButton } from "./ellipsis-button";
 
-interface ProjectCardProps {
+interface ConversationCardProps {
   onClick: () => void;
   onDelete: () => void;
   onChangeTitle: (title: string) => void;
@@ -27,8 +27,9 @@ export function ConversationCard({
   selectedRepository,
   lastUpdatedAt,
   status = "STOPPED",
-}: ProjectCardProps) {
+}: ConversationCardProps) {
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
+  const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const handleBlur = () => {
@@ -40,6 +41,8 @@ export function ConversationCard({
       // reset the value if it's empty
       inputRef.current!.value = title;
     }
+
+    setTitleMode("view");
   };
 
   const handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -57,6 +60,18 @@ export function ConversationCard({
     onDelete();
   };
 
+  const handleEdit = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setTitleMode("edit");
+    setContextMenuVisible(false);
+  };
+
+  React.useEffect(() => {
+    if (titleMode === "edit") {
+      inputRef.current?.focus();
+    }
+  }, [titleMode]);
+
   return (
     <div
       data-testid="conversation-card"
@@ -65,8 +80,9 @@ export function ConversationCard({
     >
       <div className="flex items-center justify-between space-x-1">
         <input
-          ref={inputRef}
           data-testid="conversation-card-title"
+          ref={inputRef}
+          disabled={titleMode === "view"}
           onClick={handleInputClick}
           onBlur={handleBlur}
           onKeyUp={handleKeyUp}
@@ -89,6 +105,9 @@ export function ConversationCard({
         <ContextMenu testId="context-menu" className="left-full float-right">
           <ContextMenuListItem testId="delete-button" onClick={handleDelete}>
             Delete
+          </ContextMenuListItem>
+          <ContextMenuListItem testId="edit-button" onClick={handleEdit}>
+            Edit Title
           </ContextMenuListItem>
         </ContextMenu>
       )}

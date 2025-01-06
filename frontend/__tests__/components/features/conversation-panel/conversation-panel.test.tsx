@@ -9,6 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
+import { clickOnEditButton } from "./utils";
 
 describe("ConversationPanel", () => {
   const onCloseMock = vi.fn();
@@ -169,6 +170,8 @@ describe("ConversationPanel", () => {
     const cards = await screen.findAllByTestId("conversation-card");
     const title = within(cards[0]).getByTestId("conversation-card-title");
 
+    await clickOnEditButton(user);
+
     await user.clear(title);
     await user.type(title, "Conversation 1 Renamed");
     await user.tab();
@@ -195,6 +198,8 @@ describe("ConversationPanel", () => {
 
     // Ensure the conversation is not renamed
     expect(updateUserConversationSpy).not.toHaveBeenCalled();
+
+    await clickOnEditButton(user);
 
     await user.type(title, "Conversation 1");
     await user.click(title);
