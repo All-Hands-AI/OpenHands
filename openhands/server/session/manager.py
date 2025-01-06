@@ -197,6 +197,7 @@ class SessionManager:
                 await c.connect()
             except AgentRuntimeUnavailableError as e:
                 logger.error(f'Error connecting to conversation {c.sid}: {e}')
+                await c.disconnect()
                 return None
             end_time = time.time()
             logger.info(
