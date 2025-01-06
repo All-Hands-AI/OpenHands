@@ -164,7 +164,8 @@ export function ResizablePanel({
         flexShrink: 1,
         ...(isHorizontal
           ? {
-              minWidth: "600px",
+              minWidth: "30%",
+              maxWidth: "70%",
             }
           : {
               minHeight: "300px",
