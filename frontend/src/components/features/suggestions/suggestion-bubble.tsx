@@ -1,6 +1,6 @@
+import { useTranslation } from "react-i18next";
 import { RefreshButton } from "#/components/shared/buttons/refresh-button";
 import Lightbulb from "#/icons/lightbulb.svg?react";
-import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 
 interface SuggestionBubbleProps {
@@ -27,7 +27,9 @@ export function SuggestionBubble({
     >
       <div className="flex items-center gap-2">
         <Lightbulb width={18} height={18} />
-        <span className="text-sm">{t(`SUGGESTIONS$${suggestion}` as I18nKey)}</span>
+        <span className="text-sm">
+          {t(`SUGGESTIONS$${suggestion}` as I18nKey)}
+        </span>
       </div>
       <RefreshButton onClick={handleRefresh} />
     </div>

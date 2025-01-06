@@ -1,5 +1,5 @@
-import DocsIcon from "#/icons/docs.svg?react";
 import { useTranslation } from "react-i18next";
+import DocsIcon from "#/icons/docs.svg?react";
 import { I18nKey } from "#/i18n/declaration";
 import { TooltipButton } from "./tooltip-button";
 

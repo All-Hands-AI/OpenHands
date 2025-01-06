@@ -1,6 +1,6 @@
+import { useTranslation } from "react-i18next";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { Settings } from "#/services/settings";
-import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { LoadingSpinner } from "../../loading-spinner";
 import { ModalBackdrop } from "../modal-backdrop";
@@ -30,9 +30,7 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
         <p className="text-xs text-[#A3A3A3]">
           {t(I18nKey.SETTINGS$DESCRIPTION)}
         </p>
-        <p className="text-xs text-danger">
-          {t(I18nKey.SETTINGS$WARNING)}
-        </p>
+        <p className="text-xs text-danger">{t(I18nKey.SETTINGS$WARNING)}</p>
         {aiConfigOptions.isLoading && (
           <div className="flex justify-center">
             <LoadingSpinner size="small" />

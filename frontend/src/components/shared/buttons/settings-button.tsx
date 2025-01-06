@@ -1,5 +1,5 @@
-import CogTooth from "#/assets/cog-tooth";
 import { useTranslation } from "react-i18next";
+import CogTooth from "#/assets/cog-tooth";
 import { I18nKey } from "#/i18n/declaration";
 import { TooltipButton } from "./tooltip-button";
 
