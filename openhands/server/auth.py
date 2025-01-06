@@ -6,9 +6,9 @@ from openhands.core.logger import openhands_logger as logger
 
 
 def get_user_id(request: Request) -> int:
-    if not hasattr(request.state, 'github_user'):
+    if not hasattr(request.state, 'github_user_id'):
         return -1
-    return request.state.github_user.id
+    return request.state.github_user_id
 
 
 def get_sid_from_token(token: str, jwt_secret: str) -> str:
