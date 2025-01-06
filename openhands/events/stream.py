@@ -61,6 +61,9 @@ class EventStream:
     _subscribers: dict[str, dict[str, Callable]]
     _cur_id: int = 0
     _lock: threading.Lock
+    _queue: queue.Queue[Event]
+    _queue_thread: threading.Thread
+    _queue_loop: asyncio.AbstractEventLoop | None
 
     def __init__(self, sid: str, file_store: FileStore):
         self.sid = sid
@@ -69,9 +72,10 @@ class EventStream:
         self._stop_flag = threading.Event()
         self._queue: queue.Queue[Event] = queue.Queue()
         self._thread_pools: dict[str, dict[str, ThreadPoolExecutor]] = {}
+        self._queue_loop = None
         self._queue_thread = threading.Thread(target=self._run_queue_loop)
         self._queue_thread.daemon = True
-        self._queue_thread.start()
+        # self._queue_thread.start()
         self._subscribers = {}
         self._lock = threading.Lock()
         self._cur_id = 0
@@ -100,7 +104,8 @@ class EventStream:
     def close(self):
         print('CLOSE ES', self.sid)
         self._stop_flag.set()
-        self._queue_thread.join()
+        if self._queue_thread.is_alive():
+            self._queue_thread.join()
         print('JOINED')
         for pool in self._thread_pools.values():
             for p in pool.values():
@@ -229,9 +234,12 @@ class EventStream:
         self._queue.put(event)
 
     def _run_queue_loop(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(self._process_queue())
+        self._queue_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self._queue_loop)
+        try:
+            self._queue_loop.run_until_complete(self._process_queue())
+        finally:
+            self._queue_loop.close()
 
     async def _process_queue(self):
         while should_continue() and not self._stop_flag.is_set():
