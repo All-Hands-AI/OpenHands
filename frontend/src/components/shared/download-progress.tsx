@@ -69,7 +69,10 @@ export function DownloadProgress({
           <span>
             {progress.isDiscoveringFiles
               ? t(I18nKey.DOWNLOAD$SCANNING)
-              : t(I18nKey.DOWNLOAD$FILES_PROGRESS, { downloaded: progress.filesDownloaded, total: progress.filesTotal })}
+              : t(I18nKey.DOWNLOAD$FILES_PROGRESS, {
+                  downloaded: progress.filesDownloaded,
+                  total: progress.filesTotal,
+                })}
           </span>
           {!progress.isDiscoveringFiles && (
             <span>{formatBytes(progress.bytesDownloadedPerSecond)}/s</span>

@@ -1,8 +1,8 @@
 import React from "react";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
 import posthog from "posthog-js";
+import { I18nKey } from "#/i18n/declaration";
 import { setImportedProjectZip } from "#/state/initial-query-slice";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useGitHubUser } from "#/hooks/query/use-github-user";

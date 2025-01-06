@@ -1,5 +1,5 @@
-import ArrowSendIcon from "#/icons/arrow-send.svg?react";
 import { useTranslation } from "react-i18next";
+import ArrowSendIcon from "#/icons/arrow-send.svg?react";
 import { I18nKey } from "#/i18n/declaration";
 
 interface SubmitButtonProps {

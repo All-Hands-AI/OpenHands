@@ -1313,15 +1313,7 @@
     "fr": "L'agent a mis en pause.",
     "tr": "Ajan duraklatıldı."
   },
-  "CHAT_INTERFACE$AGENT_STOPPED_MESSAGE": {
-    "en": "Agent has stopped.",
-    "de": "Agent hat angehalten.",
-    "zh-CN": "智能体已停止",
-    "zh-TW": "智能體已停止",
-    "ko-KR": "에이전트가 중지되었습니다.",
-    "no": "Agenten har stoppet.",
-    "ja": "エージェントが停止しました"
-  },
+
   "LANDING$TITLE": {
     "en": "Let's start building!",
     "ja": "さあ、始めましょう！",
@@ -1910,12 +1902,20 @@
     "ar": "تنظيف التبعيات",
     "no": "Rydd opp i avhengighetene mine"
   },
+  "CHAT_INTERFACE$AGENT_STOPPED_MESSAGE": {
+    "en": "Agent has stopped.",
+    "de": "Agent hat angehalten.",
+    "zh-CN": "智能体已停止",
+    "zh-TW": "智能體已停止",
+    "ko-KR": "에이전트가 중지되었습니다.",
+    "no": "Agenten har stoppet.",
     "it": "L'agente si è fermato.",
     "pt": "O agente parou.",
     "es": "El agente se ha detenido.",
     "ar": "توقف الوكيل.",
     "fr": "L'agent s'est arrêté.",
-    "tr": "Ajan durdu."
+    "tr": "Ajan durdu.",
+    "ja": "エージェントが停止しました"
   },
   "CHAT_INTERFACE$AGENT_FINISHED_MESSAGE": {
     "en": "Agent has finished the task.",

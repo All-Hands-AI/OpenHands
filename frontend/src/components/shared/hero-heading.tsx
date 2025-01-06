@@ -1,10 +1,9 @@
-import BuildIt from "#/icons/build-it.svg?react";
 import { useTranslation } from "react-i18next";
+import BuildIt from "#/icons/build-it.svg?react";
 import { I18nKey } from "#/i18n/declaration";
 
 export function HeroHeading() {
   const { t } = useTranslation();
-  
   return (
     <div className="w-[304px] text-center flex flex-col gap-4 items-center py-4">
       <BuildIt width={88} height={104} />
