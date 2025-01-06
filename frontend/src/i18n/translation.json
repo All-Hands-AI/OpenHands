@@ -1,7 +1,18 @@
 {
   "LETS_START_BUILDING": {
     "en": "Let's start building!",
-    "ja": "開発を始めましょう！"
+    "ja": "開発を始めましょう！",
+    "zh-CN": "让我们开始构建！",
+    "zh-TW": "讓我們開始構建！",
+    "ko-KR": "구축을 시작해봅시다!",
+    "de": "Lass uns anfangen zu bauen!",
+    "no": "La oss begynne å bygge!",
+    "it": "Iniziamo a costruire!",
+    "pt": "Vamos começar a construir!",
+    "es": "¡Empecemos a construir!",
+    "ar": "دعنا نبدأ البناء!",
+    "fr": "Commençons à construire !",
+    "tr": "Hadi inşa etmeye başlayalım!"
   },
   "WORKSPACE$TITLE": {
     "en": "OpenHands Workspace",
@@ -15,7 +26,8 @@
     "it": "Area di lavoro OpenHands",
     "pt": "Espaço de trabalho OpenHands",
     "es": "Espacio de trabajo de OpenHands",
-    "ja": "OpenHands ワークスペース"
+    "ja": "OpenHands ワークスペース",
+    "tr": "OpenHands Çalışma Alanı"
   },
   "WORKSPACE$TERMINAL_TAB_LABEL": {
     "en": "Terminal",
@@ -34,7 +46,18 @@
   },
   "TERMINAL$WAITING_FOR_CLIENT": {
     "en": "Waiting for client to become ready...",
-    "ja": "クライアントの準備を待機中..."
+    "ja": "クライアントの準備を待機中...",
+    "zh-CN": "等待客户端准备就绪...",
+    "zh-TW": "等待客戶端準備就緒...",
+    "ko-KR": "클라이언트 준비를 기다리는 중...",
+    "de": "Warte auf Bereitschaft des Clients...",
+    "no": "Venter på at klienten skal bli klar...",
+    "it": "In attesa che il client sia pronto...",
+    "pt": "Aguardando o cliente ficar pronto...",
+    "es": "Esperando a que el cliente esté listo...",
+    "ar": "في انتظار جاهزية العميل...",
+    "fr": "En attente de la disponibilité du client...",
+    "tr": "İstemcinin hazır olması bekleniyor..."
   },
   "CODE_EDITOR$FILE_SAVED_SUCCESSFULLY": {
     "en": "File saved successfully",
@@ -227,7 +250,8 @@
     "it": "Jupyter IPython",
     "pt": "Jupyter IPython",
     "es": "Jupyter IPython",
-    "ja": "Jupyter IPython"
+    "ja": "Jupyter IPython",
+    "tr": "Jupyter IPython"
   },
   "WORKSPACE$CODE_EDITOR_TAB_LABEL": {
     "en": "Code Editor",
@@ -241,7 +265,8 @@
     "it": "Editor di codice",
     "pt": "Editor de código",
     "es": "Editor de código",
-    "ja": "コードエディタ"
+    "ja": "コードエディタ",
+    "tr": "Kod Editörü"
   },
   "WORKSPACE$BROWSER_TAB_LABEL": {
     "en": "Browser (Experimental)",
@@ -260,23 +285,78 @@
   },
   "OPEN_IN_VSCODE": {
     "en": "Open in VS Code",
-    "ja": "VS Codeで開く"
+    "ja": "VS Codeで開く",
+    "zh-CN": "在 VS Code 中打开",
+    "zh-TW": "在 VS Code 中開啟",
+    "ko-KR": "VS Code에서 열기",
+    "de": "In VS Code öffnen",
+    "no": "Åpne i VS Code",
+    "it": "Apri in VS Code",
+    "pt": "Abrir no VS Code",
+    "es": "Abrir en VS Code",
+    "ar": "فتح في VS Code",
+    "fr": "Ouvrir dans VS Code",
+    "tr": "VS Code'da aç"
   },
   "INCREASE_TEST_COVERAGE": {
-    "en": "INCREASE_TEST_COVERAGE",
-    "ja": "テストカバレッジを向上"
+    "en": "Increase test coverage",
+    "ja": "テストカバレッジを向上",
+    "zh-CN": "提高测试覆盖率",
+    "zh-TW": "提高測試覆蓋率",
+    "ko-KR": "테스트 커버리지 향상",
+    "de": "Testabdeckung erhöhen",
+    "no": "Øk testdekning",
+    "it": "Aumenta la copertura dei test",
+    "pt": "Aumentar cobertura de testes",
+    "es": "Aumentar cobertura de pruebas",
+    "ar": "زيادة تغطية الاختبارات",
+    "fr": "Augmenter la couverture des tests",
+    "tr": "Test kapsamını artır"
   },
   "AUTO_MERGE_PRS": {
-    "en": "AUTO_MERGE_PRS",
-    "ja": "PRを自動マージ"
+    "en": "Auto-merge PRs",
+    "ja": "PRを自動マージ",
+    "zh-CN": "自动合并PR",
+    "zh-TW": "自動合併PR",
+    "ko-KR": "PR 자동 병합",
+    "de": "PRs automatisch zusammenführen",
+    "no": "Auto-flett PRer",
+    "it": "Unisci automaticamente le PR",
+    "pt": "Mesclar PRs automaticamente",
+    "es": "Fusionar PRs automáticamente",
+    "ar": "دمج طلبات السحب تلقائياً",
+    "fr": "Fusionner automatiquement les PR",
+    "tr": "PR'ları otomatik birleştir"
   },
   "FIX_README": {
-    "en": "FIX_README",
-    "ja": "READMEを修正"
+    "en": "Fix README",
+    "ja": "READMEを修正",
+    "zh-CN": "修复 README",
+    "zh-TW": "修復 README",
+    "ko-KR": "README 수정",
+    "de": "README korrigieren",
+    "no": "Fiks README",
+    "it": "Correggi README",
+    "pt": "Corrigir README",
+    "es": "Arreglar README",
+    "ar": "إصلاح README",
+    "fr": "Corriger le README",
+    "tr": "README'yi düzelt"
   },
   "CLEAN_DEPENDENCIES": {
-    "en": "CLEAN_DEPENDENCIES",
-    "ja": "依存関係を整理"
+    "en": "Clean dependencies",
+    "ja": "依存関係を整理",
+    "zh-CN": "清理依赖项",
+    "zh-TW": "清理相依性",
+    "ko-KR": "의존성 정리",
+    "de": "Abhängigkeiten bereinigen",
+    "no": "Rydd avhengigheter",
+    "it": "Pulisci dipendenze",
+    "pt": "Limpar dependências",
+    "es": "Limpiar dependencias",
+    "ar": "تنظيف التبعيات",
+    "fr": "Nettoyer les dépendances",
+    "tr": "Bağımlılıkları temizle"
   },
   "CONFIGURATION$OPENHANDS_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenHands Workspace directory",
@@ -491,15 +571,48 @@
   },
   "STATUS$CONNECTED": {
     "en": "Connected",
-    "ja": "接続済み"
+    "ja": "接続済み",
+    "zh-CN": "已连接",
+    "zh-TW": "已連接",
+    "ko-KR": "연결됨",
+    "de": "Verbunden",
+    "no": "Tilkoblet",
+    "it": "Connesso",
+    "pt": "Conectado",
+    "es": "Conectado",
+    "ar": "متصل",
+    "fr": "Connecté",
+    "tr": "Bağlandı"
   },
   "STATUS$CONNECTED_TO_SERVER": {
     "en": "Connected to server",
-    "ja": "サーバーに接続済み"
+    "ja": "サーバーに接続済み",
+    "zh-CN": "已连接到服务器",
+    "zh-TW": "已連接到伺服器",
+    "ko-KR": "서버에 연결됨",
+    "de": "Mit Server verbunden",
+    "no": "Tilkoblet server",
+    "it": "Connesso al server",
+    "pt": "Conectado ao servidor",
+    "es": "Conectado al servidor",
+    "ar": "متصل بالخادم",
+    "fr": "Connecté au serveur",
+    "tr": "Sunucuya bağlandı"
   },
   "PROJECT$NEW_PROJECT": {
     "en": "New Project",
-    "ja": "新規プロジェクト"
+    "ja": "新規プロジェクト",
+    "zh-CN": "新项目",
+    "zh-TW": "新專案",
+    "ko-KR": "새 프로젝트",
+    "de": "Neues Projekt",
+    "no": "Nytt prosjekt",
+    "it": "Nuovo progetto",
+    "pt": "Novo projeto",
+    "es": "Nuevo proyecto",
+    "ar": "مشروع جديد",
+    "fr": "Nouveau projet",
+    "tr": "Yeni Proje"
   },
   "WORKSPACE$LABEL": {
     "en": "Workspace",
@@ -515,15 +628,48 @@
   },
   "TIME$MINUTES_AGO": {
     "en": "minutes ago",
-    "ja": "分前"
+    "ja": "分前",
+    "zh-CN": "分钟前",
+    "zh-TW": "分鐘前",
+    "ko-KR": "분 전",
+    "de": "Minuten her",
+    "no": "minutter siden",
+    "it": "minuti fa",
+    "pt": "minutos atrás",
+    "es": "minutos atrás",
+    "ar": "دقائق مضت",
+    "fr": "minutes",
+    "tr": "dakika önce"
   },
   "TIME$HOURS_AGO": {
     "en": "hours ago",
-    "ja": "時間前"
+    "ja": "時間前",
+    "zh-CN": "小时前",
+    "zh-TW": "小時前",
+    "ko-KR": "시간 전",
+    "de": "Stunden her",
+    "no": "timer siden",
+    "it": "ore fa",
+    "pt": "horas atrás",
+    "es": "horas atrás",
+    "ar": "ساعات مضت",
+    "fr": "heures",
+    "tr": "saat önce"
   },
   "TIME$DAYS_AGO": {
     "en": "days ago",
-    "ja": "日前"
+    "ja": "日前",
+    "zh-CN": "天前",
+    "zh-TW": "天前",
+    "ko-KR": "일 전",
+    "de": "Tage her",
+    "no": "dager siden",
+    "it": "giorni fa",
+    "pt": "dias atrás",
+    "es": "días atrás",
+    "ar": "أيام مضت",
+    "fr": "jours",
+    "tr": "gün önce"
   },
   "CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE": {
     "en": "We've changed some settings in the latest update. Take a minute to review.",
