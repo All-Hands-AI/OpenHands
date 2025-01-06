@@ -286,7 +286,7 @@ async def test_cleanup_session_connections():
                 }
             )
 
-            await session_manager._close_session('session1')
+            await session_manager._on_close_session('session1')
 
             remaining_connections = session_manager.local_connection_id_to_session_id
             assert 'conn1' not in remaining_connections
