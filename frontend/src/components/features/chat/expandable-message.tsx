@@ -30,11 +30,24 @@ export function ExpandableMessage({
 
   useEffect(() => {
     if (id && i18n.exists(id)) {
-      setHeadline(t(id));
+      // Only show the headline if the action hasn't been executed yet (success is undefined)
+      if (success === undefined) {
+        setHeadline(t(id));
+        setDetails("");
+        setShowDetails(false);
+      } else {
+        // Only show the details if the action has been executed
+        setHeadline("");
+        setDetails(message);
+        setShowDetails(true);
+      }
+    } else {
+      // If no translation ID is provided, just show the message
+      setHeadline("");
       setDetails(message);
-      setShowDetails(false);
+      setShowDetails(true);
     }
-  }, [id, message, i18n.language]);
+  }, [id, message, success, i18n.language, t]);
 
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 
@@ -46,7 +59,8 @@ export function ExpandableMessage({
       )}
     >
       <div className="text-sm w-full">
-        {headline && (
+        {headline ? (
+          // Show headline for unexecuted actions
           <div className="flex flex-row justify-between items-center w-full">
             <span
               className={cn(
@@ -55,30 +69,26 @@ export function ExpandableMessage({
               )}
             >
               {headline}
-              <button
-                type="button"
-                onClick={() => setShowDetails(!showDetails)}
-                className="cursor-pointer text-left"
-              >
-                {showDetails ? (
-                  <ArrowUp
-                    className={cn(
-                      "h-4 w-4 ml-2 inline",
-                      type === "error" ? "fill-danger" : "fill-neutral-300",
-                    )}
-                  />
-                ) : (
-                  <ArrowDown
-                    className={cn(
-                      "h-4 w-4 ml-2 inline",
-                      type === "error" ? "fill-danger" : "fill-neutral-300",
-                    )}
-                  />
-                )}
-              </button>
             </span>
+          </div>
+        ) : (
+          // Show details for executed actions
+          <div className="flex flex-row justify-between items-center w-full">
+            <div className="flex-grow">
+              <Markdown
+                className="text-sm overflow-auto"
+                components={{
+                  code,
+                  ul,
+                  ol,
+                }}
+                remarkPlugins={[remarkGfm]}
+              >
+                {details}
+              </Markdown>
+            </div>
             {type === "action" && success !== undefined && (
-              <span className="flex-shrink-0">
+              <span className="flex-shrink-0 ml-2">
                 {success ? (
                   <CheckCircle
                     data-testid="status-icon"
@@ -93,19 +103,6 @@ export function ExpandableMessage({
               </span>
             )}
           </div>
-        )}
-        {showDetails && (
-          <Markdown
-            className="text-sm overflow-auto"
-            components={{
-              code,
-              ul,
-              ol,
-            }}
-            remarkPlugins={[remarkGfm]}
-          >
-            {details}
-          </Markdown>
         )}
       </div>
     </div>
