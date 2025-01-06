@@ -1,6 +1,6 @@
 from urllib.parse import parse_qs
 
-from github import Github, GithubException
+import jwt
 from socketio.exceptions import ConnectionRefusedError
 
 from openhands.core.logger import openhands_logger as logger
@@ -18,7 +18,6 @@ from openhands.server.routes.settings import ConversationStoreImpl, SettingsStor
 from openhands.server.session.manager import ConversationDoesNotExistError
 from openhands.server.shared import config, openhands_config, session_manager, sio
 from openhands.server.types import AppMode
-from openhands.utils.async_utils import call_sync_from_async
 
 
 @sio.event
@@ -31,22 +30,20 @@ async def connect(connection_id: str, environ, auth):
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
 
-    github_token = ''
     user_id = -1
     if openhands_config.app_mode != AppMode.OSS:
-        user_id = -1
-        if auth and 'github_token' in auth:
-            github_token = auth['github_token']
-            try:
-                with Github(github_token) as g:
-                    gh_user = await call_sync_from_async(g.get_user)
-                    user_id = gh_user.id
-            except GithubException as e:
-                logger.error(f'Error connecting to github: {e}')
-                raise ConnectionRefusedError(f'Error connecting to github: {e}')
-        else:
-            logger.error('No github_token in auth')
-            raise ConnectionRefusedError('No github_token sent')
+        if 'cookie' not in auth:
+            logger.error('No cookie in auth')
+            raise ConnectionRefusedError('No cookie in auth')
+        cookies = dict(
+            cookie.split('=', 1) for cookie in auth.get('cookie', '').split('; ')
+        )
+        signed_token = cookies.get('github_auth', '')
+        if not signed_token:
+            logger.error('No github_auth cookie')
+            raise ConnectionRefusedError('No github_auth cookie')
+        decoded = jwt.decode(signed_token, config.jwt_secret, algorithms=['HS256'])
+        user_id = decoded['github_user_id']
 
         logger.info(f'User {user_id} is connecting to conversation {conversation_id}')
 

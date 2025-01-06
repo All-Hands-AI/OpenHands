@@ -43,16 +43,13 @@ const WsClientContext = React.createContext<UseWsClient>({
 
 interface WsClientProviderProps {
   conversationId: string;
-  ghToken: string | null;
 }
 
 export function WsClientProvider({
-  ghToken,
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const sioRef = React.useRef<Socket | null>(null);
-  const ghTokenRef = React.useRef<string | null>(ghToken);
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
   );
@@ -119,7 +116,7 @@ export function WsClientProvider({
     sio = io(baseUrl, {
       transports: ["websocket"],
       auth: {
-        github_token: ghToken || undefined,
+        cookie: document.cookie,
       },
       query,
     });
@@ -130,7 +127,6 @@ export function WsClientProvider({
     sio.on("disconnect", handleDisconnect);
 
     sioRef.current = sio;
-    ghTokenRef.current = ghToken;
 
     return () => {
       sio.off("connect", handleConnect);
@@ -139,7 +135,7 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [ghToken, conversationId]);
+  }, [conversationId]);
 
   React.useEffect(
     () => () => {

@@ -175,7 +175,7 @@ function AppContent() {
   }
 
   return (
-    <WsClientProvider ghToken={gitHubToken} conversationId={conversationId}>
+    <WsClientProvider conversationId={conversationId}>
       <EventHandler>
         <div data-testid="app-route" className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto">{renderMain()}</div>
