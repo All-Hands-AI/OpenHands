@@ -57,7 +57,7 @@ export function TaskForm({ ref }: TaskFormProps) {
       return t(I18nKey.LANDING$CHANGE_PROMPT, { repo: selectedRepository });
     }
 
-    return t(I18nKey.LANDING$BUILD_PROMPT);
+    return t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD);
   }, [selectedRepository]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {

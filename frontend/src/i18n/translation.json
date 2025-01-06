@@ -663,10 +663,7 @@
     "tr": "Varsayılanlara Sıfırla",
     "ja": "デフォルトにリセット"
   },
-  "CHAT$WHAT_DO_YOU_WANT_TO_BUILD": {
-    "en": "What do you want to build?",
-    "ja": "何を開発したいですか？"
-  },
+
   "STATUS$CONNECTED": {
     "en": "Connected",
     "ja": "接続済み",
@@ -829,21 +826,7 @@
     "no": "Kunne ikke hente modeller og agenter",
     "ja": "モデルとエージェントの取得に失敗しました"
   },
-  "SESSION$SERVER_CONNECTED_MESSAGE": {
-    "en": "Connected to server",
-    "zh-CN": "已连接到服务器",
-    "de": "Verbindung zum Server hergestellt",
-    "zh-TW": "已連接到伺服器",
-    "es": "Conectado al servidor",
-    "fr": "Connecté au serveur",
-    "it": "Connesso al server",
-    "pt": "Conectado ao servidor",
-    "ko-KR": "서버에 연결됨",
-    "ar": "تم الاتصال بالخادم",
-    "tr": "Sunucuya bağlandı",
-    "no": "Koblet til server",
-    "ja": "サーバーに接続しました"
-  },
+
   "SESSION$SESSION_HANDLING_ERROR_MESSAGE": {
     "en": "Error handling message",
     "zh-CN": "处理消息时发生错误",
@@ -1740,20 +1723,7 @@
     "ar": "كتابة سكربت باش يعرض أهم خبر على هاكر نيوز",
     "no": "Skriv et bash-script som viser topphistorien på Hacker News"
   },
-  "LANDING$BUILD_PROMPT": {
-    "en": "What do you want to build?",
-    "ja": "何を開発したいですか？",
-    "zh-CN": "你想构建什么？",
-    "zh-TW": "你想構建什麼？",
-    "ko-KR": "무엇을 만들고 싶으신가요?",
-    "fr": "Que voulez-vous construire ?",
-    "es": "¿Qué quieres construir?",
-    "de": "Was möchtest du bauen?",
-    "it": "Cosa vuoi costruire?",
-    "pt": "O que você quer construir?",
-    "ar": "ماذا تريد أن تبني؟",
-    "no": "Hva vil du bygge?"
-  },
+
   "LANDING$CHANGE_PROMPT": {
     "en": "What would you like to change in {{repo}}?",
     "ja": "{{repo}}で何を変更したいですか？",
