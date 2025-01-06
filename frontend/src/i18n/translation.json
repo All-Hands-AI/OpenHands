@@ -32,6 +32,10 @@
     "tr": "Terminal",
     "ja": "ターミナル"
   },
+  "TERMINAL$WAITING_FOR_CLIENT": {
+    "en": "Waiting for client to become ready...",
+    "ja": "クライアントの準備を待機中..."
+  },
   "CODE_EDITOR$FILE_SAVED_SUCCESSFULLY": {
     "en": "File saved successfully",
     "zh-CN": "文件保存成功",
@@ -504,6 +508,22 @@
   "BROWSER$SCREENSHOT": {
     "en": "Browser Screenshot",
     "ja": "ブラウザのスクリーンショット"
+  },
+  "STATUS$WAITING_FOR_CLIENT": {
+    "en": "Waiting for client to become ready",
+    "ja": "クライアントの準備を待機中"
+  },
+  "TIME$MINUTES_AGO": {
+    "en": "minutes ago",
+    "ja": "分前"
+  },
+  "TIME$HOURS_AGO": {
+    "en": "hours ago",
+    "ja": "時間前"
+  },
+  "TIME$DAYS_AGO": {
+    "en": "days ago",
+    "ja": "日前"
   },
   "CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE": {
     "en": "We've changed some settings in the latest update. Take a minute to review.",
