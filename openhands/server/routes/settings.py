@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.auth import get_user_id
 from openhands.server.settings import Settings
 from openhands.server.shared import config, openhands_config
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -19,9 +20,10 @@ ConversationStoreImpl = get_impl(
 
 @app.get('/settings')
 async def load_settings(request: Request) -> Settings | None:
-    github_token = getattr(request.state, 'github_token', '') or ''
     try:
-        settings_store = await SettingsStoreImpl.get_instance(config, github_token)
+        settings_store = await SettingsStoreImpl.get_instance(
+            config, get_user_id(request)
+        )
         settings = await settings_store.load()
         if not settings:
             return JSONResponse(
@@ -45,11 +47,10 @@ async def store_settings(
     request: Request,
     settings: Settings,
 ) -> JSONResponse:
-    github_token = ''
-    if hasattr(request.state, 'github_token'):
-        github_token = request.state.github_token
     try:
-        settings_store = await SettingsStoreImpl.get_instance(config, github_token)
+        settings_store = await SettingsStoreImpl.get_instance(
+            config, get_user_id(request)
+        )
         existing_settings = await settings_store.load()
 
         if existing_settings:
