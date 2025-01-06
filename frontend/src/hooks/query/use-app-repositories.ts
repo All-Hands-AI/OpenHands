@@ -50,6 +50,7 @@ export const useAppRepositories = () => {
       Array.isArray(installations) &&
       installations.length > 0 &&
       config?.APP_MODE === "saas",
+    retry: false,
   });
 
   // TODO: Once we create our custom dropdown component, we should fetch data onEndReached

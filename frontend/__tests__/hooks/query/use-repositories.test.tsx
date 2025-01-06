@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("#/api/github", () => ({
   retrieveGitHubUserRepositories: vi.fn(),
@@ -23,7 +23,15 @@ import { useConfig } from "#/hooks/query/use-config";
 import { useAppInstallations } from "#/hooks/query/use-app-installations";
 
 describe("Repository Loading Hooks", () => {
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        cacheTime: 0,
+        staleTime: 0,
+      },
+    },
+  });
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
       <AuthProvider initialToken="test-token">{children}</AuthProvider>
@@ -32,8 +40,22 @@ describe("Repository Loading Hooks", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    queryClient.clear();
     vi.mocked(useConfig).mockReturnValue({ data: { APP_MODE: "oss" } });
     vi.mocked(useAppInstallations).mockReturnValue({ data: [1, 2] });
+    vi.mocked(retrieveGitHubUserRepositories).mockResolvedValue({
+      data: [],
+      nextPage: null,
+    });
+    vi.mocked(retrieveGitHubAppRepositories).mockResolvedValue({
+      data: { repositories: [] },
+      nextPage: null,
+      installationIndex: null,
+    });
+  });
+
+  afterEach(() => {
+    queryClient.clear();
   });
 
   describe("useUserRepositories", () => {
@@ -43,11 +65,16 @@ describe("Repository Loading Hooks", () => {
         nextPage: null,
       });
 
-      renderHook(() => useUserRepositories(), { wrapper });
+      const { result } = renderHook(() => useUserRepositories(), { wrapper });
+
+      // Wait for the query to be enabled and executed
+      await waitFor(() => {
+        expect(result.current.isEnabled).toBe(true);
+      }, { timeout: 3000 });
 
       await waitFor(() => {
         expect(retrieveGitHubUserRepositories).toHaveBeenCalledWith(1, 1000);
-      });
+      }, { timeout: 3000 });
     });
   });
 
@@ -63,11 +90,16 @@ describe("Repository Loading Hooks", () => {
         installationIndex: null,
       });
 
-      renderHook(() => useAppRepositories(), { wrapper });
+      const { result } = renderHook(() => useAppRepositories(), { wrapper });
+
+      // Wait for the query to be enabled and executed
+      await waitFor(() => {
+        expect(result.current.isEnabled).toBe(true);
+      }, { timeout: 3000 });
 
       await waitFor(() => {
-        expect(mockRetrieveGitHubAppRepositories).toHaveBeenCalledWith(0, [1, 2], 1, 1000);
-      });
+        expect(retrieveGitHubAppRepositories).toHaveBeenCalledWith(0, [1, 2], 1, 1000);
+      }, { timeout: 3000 });
     });
   });
 });
