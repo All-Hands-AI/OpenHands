@@ -74,7 +74,7 @@ class EventStream:
         self._queue_loop = None
         self._queue_thread = threading.Thread(target=self._run_queue_loop)
         self._queue_thread.daemon = True
-        # self._queue_thread.start()
+        self._queue_thread.start()
         self._subscribers = {}
         self._lock = threading.Lock()
         self._cur_id = 0
