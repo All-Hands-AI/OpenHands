@@ -111,8 +111,10 @@ class EventStream:
         if self._queue_thread.is_alive():
             self._queue_thread.join()
 
-        for subscriber_id in self._subscribers:
-            for callback_id in self._subscribers[subscriber_id]:
+        subscriber_ids = list(self._subscribers.keys())
+        for subscriber_id in subscriber_ids:
+            callback_ids = list(self._subscribers[subscriber_id].keys())
+            for callback_id in callback_ids:
                 self._clean_up_subscriber(subscriber_id, callback_id)
 
     def _clean_up_subscriber(self, subscriber_id: str, callback_id: str):
