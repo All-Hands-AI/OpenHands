@@ -115,9 +115,6 @@ export function WsClientProvider({
 
     sio = io(baseUrl, {
       transports: ["websocket"],
-      auth: {
-        cookie: document.cookie,
-      },
       query,
     });
     sio.on("connect", handleConnect);

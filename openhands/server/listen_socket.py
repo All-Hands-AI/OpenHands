@@ -32,12 +32,8 @@ async def connect(connection_id: str, environ, auth):
 
     user_id = -1
     if openhands_config.app_mode != AppMode.OSS:
-        if 'cookie' not in auth:
-            logger.error('No cookie in auth')
-            raise ConnectionRefusedError('No cookie in auth')
-        cookies = dict(
-            cookie.split('=', 1) for cookie in auth.get('cookie', '').split('; ')
-        )
+        cookies_str = environ.get('HTTP_COOKIE', '')
+        cookies = dict(cookie.split('=', 1) for cookie in cookies_str.split('; '))
         signed_token = cookies.get('github_auth', '')
         if not signed_token:
             logger.error('No github_auth cookie')
