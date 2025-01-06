@@ -22,7 +22,6 @@ _CHECK_ALIVE_INTERVAL = 15
 
 _CLEANUP_INTERVAL = 15
 _CLEANUP_EXCEPTION_WAIT_TIME = 15
-_MAX_RUNNING_LOOPS = 16
 
 
 class ConversationDoesNotExistError(Exception):
@@ -232,10 +231,7 @@ class SessionManager:
                 running_loops.sort(key=lambda item: item[1].last_active_ts)
                 sid_to_close: list[str] = []
                 for sid, session in running_loops:
-                    if (
-                        session.last_active_ts < close_threshold
-                        or len(running_loops) - len(sid_to_close) > _MAX_RUNNING_LOOPS
-                    ):
+                    if session.last_active_ts < close_threshold:
                         sid_to_close.append(sid)
 
                 await wait_all(self._cleanup_session(sid) for sid in sid_to_close)
