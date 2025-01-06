@@ -481,6 +481,30 @@
     "tr": "Varsayılanlara Sıfırla",
     "ja": "デフォルトにリセット"
   },
+  "CHAT$WHAT_DO_YOU_WANT_TO_BUILD": {
+    "en": "What do you want to build?",
+    "ja": "何を開発したいですか？"
+  },
+  "STATUS$CONNECTED": {
+    "en": "Connected",
+    "ja": "接続済み"
+  },
+  "STATUS$CONNECTED_TO_SERVER": {
+    "en": "Connected to server",
+    "ja": "サーバーに接続済み"
+  },
+  "PROJECT$NEW_PROJECT": {
+    "en": "New Project",
+    "ja": "新規プロジェクト"
+  },
+  "WORKSPACE$LABEL": {
+    "en": "Workspace",
+    "ja": "ワークスペース"
+  },
+  "BROWSER$SCREENSHOT": {
+    "en": "Browser Screenshot",
+    "ja": "ブラウザのスクリーンショット"
+  },
   "CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE": {
     "en": "We've changed some settings in the latest update. Take a minute to review.",
     "de": "Mit dem letzten Update haben wir ein paar Einstellungen geändert. Bitte kontrollieren Ihre Einstellungen.",
