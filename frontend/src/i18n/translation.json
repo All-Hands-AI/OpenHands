@@ -1384,6 +1384,34 @@
     "ar": "بناء تطبيق لعرض طلبات السحب",
     "no": "Bygg en app for å se pull requests"
   },
+  "SUGGESTIONS$TODO_APP": {
+    "en": "Build a todo list application",
+    "ja": "ToDoリストアプリを開発する",
+    "zh-CN": "构建一个待办事项列表应用",
+    "zh-TW": "構建一個待辦事項列表應用",
+    "ko-KR": "할 일 목록 앱 만들기",
+    "fr": "Construire une application de liste de tâches",
+    "es": "Construir una aplicación de lista de tareas",
+    "de": "Eine To-Do-Listen-App erstellen",
+    "it": "Costruisci un'applicazione per la lista delle cose da fare",
+    "pt": "Construir um aplicativo de lista de tarefas",
+    "ar": "بناء تطبيق قائمة المهام",
+    "no": "Bygg en gjøremålsliste-app"
+  },
+  "SUGGESTIONS$HACKER_NEWS": {
+    "en": "Write a bash script that shows the top story on Hacker News",
+    "ja": "Hacker Newsのトップ記事を表示するbashスクリプトを作成する",
+    "zh-CN": "编写一个显示Hacker News头条新闻的bash脚本",
+    "zh-TW": "編寫一個顯示Hacker News頭條新聞的bash腳本",
+    "ko-KR": "Hacker News의 상위 기사를 보여주는 bash 스크립트 작성하기",
+    "fr": "Écrire un script bash qui affiche l'article principal de Hacker News",
+    "es": "Escribir un script bash que muestre la noticia principal de Hacker News",
+    "de": "Ein Bash-Skript schreiben, das die Top-Story von Hacker News anzeigt",
+    "it": "Scrivi uno script bash che mostra la notizia principale su Hacker News",
+    "pt": "Escrever um script bash que mostra a principal notícia do Hacker News",
+    "ar": "كتابة سكربت باش يعرض أهم خبر على هاكر نيوز",
+    "no": "Skriv et bash-script som viser topphistorien på Hacker News"
+  },
   "LANDING$BUILD_PROMPT": {
     "en": "What do you want to build?",
     "ja": "何を開発したいですか？",
