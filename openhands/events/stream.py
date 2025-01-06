@@ -67,7 +67,6 @@ class EventStream:
 
     def __init__(self, sid: str, file_store: FileStore):
         self.sid = sid
-        print('INIT ES', sid)
         self.file_store = file_store
         self._stop_flag = threading.Event()
         self._queue: queue.Queue[Event] = queue.Queue()
@@ -102,15 +101,12 @@ class EventStream:
         asyncio.set_event_loop(loop)
 
     def close(self):
-        print('CLOSE ES', self.sid)
         self._stop_flag.set()
         if self._queue_thread.is_alive():
             self._queue_thread.join()
-        print('JOINED')
         for pool in self._thread_pools.values():
             for p in pool.values():
                 p.shutdown()
-        print('DONE CLOSING ES', self.sid)
 
     def _get_filename_for_id(self, id: int) -> str:
         return get_conversation_event_filename(self.sid, id)
