@@ -209,10 +209,15 @@ class AgentController:
         try:
             await self._step()
         except Exception as e:
-            traceback.print_exc()
-            self.log('error', f'Error while running the agent: {e}')
+            self.log(
+                'error',
+                f'Error while running the agent (session ID: {self.id}): {e}. '
+                f'Traceback: {traceback.format_exc()}',
+            )
             reported = RuntimeError(
-                'There was an unexpected error while running the agent.'
+                'There was an unexpected error while running the agent. Please '
+                f'report this error to the developers. Your session ID is {self.id}. '
+                f'Exception: {e}.'
             )
             if isinstance(e, litellm.AuthenticationError) or isinstance(
                 e, litellm.BadRequestError
