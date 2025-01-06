@@ -32,8 +32,9 @@ async def connect(connection_id: str, environ, auth):
         raise ConnectionRefusedError('No conversation_id in query params')
 
     github_token = ''
+    user_id = -1
     if openhands_config.app_mode != AppMode.OSS:
-        user_id = ''
+        user_id = -1
         if auth and 'github_token' in auth:
             github_token = auth['github_token']
             with Github(github_token) as g:
@@ -42,9 +43,7 @@ async def connect(connection_id: str, environ, auth):
 
         logger.info(f'User {user_id} is connecting to conversation {conversation_id}')
 
-        conversation_store = await ConversationStoreImpl.get_instance(
-            config, github_token
-        )
+        conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
         metadata = await conversation_store.get_metadata(conversation_id)
         if metadata.github_user_id != user_id:
             logger.error(
@@ -54,7 +53,7 @@ async def connect(connection_id: str, environ, auth):
                 f'User {user_id} is not allowed to join conversation {conversation_id}'
             )
 
-    settings_store = await SettingsStoreImpl.get_instance(config, github_token)
+    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
 
     if not settings:
