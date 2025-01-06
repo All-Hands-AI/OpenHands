@@ -128,16 +128,7 @@ class ActionExecutor:
             timeout=30,
         )
 
-        # This is a temporary workaround
-        # TODO: refactor AgentSkills to be part of JupyterPlugin
-        # AFTER ServerRuntime is deprecated
-        if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
-            obs = await self.run_ipython(
-                IPythonRunCellAction(
-                    code='from openhands.runtime.plugins.agent_skills.agentskills import *\n'
-                )
-            )
-            logger.debug(f'AgentSkills initialized: {obs}')
+
 
         await self._init_bash_commands()
         logger.debug('Runtime client initialized.')

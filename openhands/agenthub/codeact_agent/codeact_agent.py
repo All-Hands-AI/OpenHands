@@ -37,7 +37,6 @@ from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.runtime.plugins import (
-    AgentSkillsRequirement,
     JupyterRequirement,
     PluginRequirement,
 )
@@ -66,10 +65,6 @@ class CodeActAgent(Agent):
     """
 
     sandbox_plugins: list[PluginRequirement] = [
-        # NOTE: AgentSkillsRequirement need to go before JupyterRequirement, since
-        # AgentSkillsRequirement provides a lot of Python functions,
-        # and it needs to be initialized before Jupyter for Jupyter to use those functions.
-        AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
 

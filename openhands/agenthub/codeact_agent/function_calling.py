@@ -501,7 +501,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             elif tool_call.function.name == 'edit_file':
                 action = FileEditAction(**arguments)
             elif tool_call.function.name == 'str_replace_editor':
-                # We implement this in agent_skills, which can be used via Jupyter
+                # This is now implemented via function calling
                 # convert tool_call.function.arguments to kwargs that can be passed to file_editor
                 code = f'print(file_editor(**{arguments}))'
                 logger.debug(
