@@ -19,6 +19,7 @@ import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 import { useEndSession } from "#/hooks/use-end-session";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
+import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 
 export function Sidebar() {
   const dispatch = useDispatch();
@@ -79,13 +80,14 @@ export function Sidebar() {
           )}
           <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
           {MULTI_CONVERSATION_UI && (
-            <button
+            <TooltipButton
               data-testid="toggle-conversation-panel"
-              type="button"
+              tooltip="Conversations"
+              ariaLabel="Conversations"
               onClick={() => setConversationPanelIsOpen((prev) => !prev)}
             >
               <FaListUl width={28} height={28} />
-            </button>
+            </TooltipButton>
           )}
           <DocsButton />
           <ExitProjectButton onClick={handleEndSession} />
