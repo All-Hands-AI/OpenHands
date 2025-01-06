@@ -1,4 +1,8 @@
 {
+  "LETS_START_BUILDING": {
+    "en": "Let's start building!",
+    "ja": "開発を始めましょう！"
+  },
   "WORKSPACE$TITLE": {
     "en": "OpenHands Workspace",
     "zh-CN": "OpenHands 工作区",
@@ -249,6 +253,26 @@
     "fr": "Navigateur (Expérimental)",
     "tr": "Tarayıcı (Deneysel)",
     "ja": "ブラウザ（実験的）"
+  },
+  "OPEN_IN_VSCODE": {
+    "en": "Open in VS Code",
+    "ja": "VS Codeで開く"
+  },
+  "INCREASE_TEST_COVERAGE": {
+    "en": "INCREASE_TEST_COVERAGE",
+    "ja": "テストカバレッジを向上"
+  },
+  "AUTO_MERGE_PRS": {
+    "en": "AUTO_MERGE_PRS",
+    "ja": "PRを自動マージ"
+  },
+  "FIX_README": {
+    "en": "FIX_README",
+    "ja": "READMEを修正"
+  },
+  "CLEAN_DEPENDENCIES": {
+    "en": "CLEAN_DEPENDENCIES",
+    "ja": "依存関係を整理"
   },
   "CONFIGURATION$OPENHANDS_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenHands Workspace directory",
