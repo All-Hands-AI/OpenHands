@@ -1,22 +1,22 @@
-import { useSettings } from "#/context/settings-context";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
+import { Settings } from "#/services/settings";
 import { LoadingSpinner } from "../../loading-spinner";
 import { ModalBackdrop } from "../modal-backdrop";
 import { SettingsForm } from "./settings-form";
 
 interface SettingsModalProps {
+  settings: Settings;
   onClose: () => void;
 }
 
-export function SettingsModal({ onClose }: SettingsModalProps) {
-  const { settings } = useSettings();
+export function SettingsModal({ onClose, settings }: SettingsModalProps) {
   const aiConfigOptions = useAIConfigOptions();
 
   return (
     <ModalBackdrop onClose={onClose}>
       <div
         data-testid="ai-config-modal"
-        className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2"
+        className="bg-root-primary min-w-[384px] max-w-[700px] p-6 rounded-xl flex flex-col gap-2"
       >
         {aiConfigOptions.error && (
           <p className="text-danger text-xs">{aiConfigOptions.error.message}</p>

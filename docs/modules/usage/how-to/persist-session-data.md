@@ -1,6 +1,6 @@
 # Persisting Session Data
 
-Using the standard installation, the session data is stored in memory. Currently, if OpenHands' service is restarted,
+Using the standard Development Workflow, the session data is stored in memory. Currently, if OpenHands' service is restarted,
 previous sessions become invalid (a new secret is generated) and thus not recoverable.
 
 ## How to Persist Session Data

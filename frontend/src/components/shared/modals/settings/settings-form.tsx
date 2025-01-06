@@ -9,7 +9,6 @@ import { DangerModal } from "../confirmation-modals/danger-modal";
 import { I18nKey } from "#/i18n/declaration";
 import { extractSettings, saveSettingsView } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
-import { useSettings } from "#/context/settings-context";
 import { ModalButton } from "../../buttons/modal-button";
 import { AdvancedOptionSwitch } from "../../inputs/advanced-option-switch";
 import { AgentInput } from "../../inputs/agent-input";
@@ -20,6 +19,10 @@ import { CustomModelInput } from "../../inputs/custom-model-input";
 import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
+import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+
+import { RuntimeSizeSelector } from "./runtime-size-selector";
+import { useConfig } from "#/hooks/query/use-config";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -38,8 +41,9 @@ export function SettingsForm({
   securityAnalyzers,
   onClose,
 }: SettingsFormProps) {
-  const { saveSettings } = useSettings();
+  const { mutateAsync: saveSettings } = useSaveSettings();
   const endSession = useEndSession();
+  const { data: config } = useConfig();
 
   const location = useLocation();
   const { t } = useTranslation();
@@ -82,7 +86,6 @@ export function SettingsForm({
   const resetOngoingSession = () => {
     if (location.pathname.startsWith("/conversations/")) {
       endSession();
-      onClose();
     }
   };
 
@@ -92,21 +95,21 @@ export function SettingsForm({
     const newSettings = extractSettings(formData);
 
     saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
-    await saveSettings(newSettings);
+    await saveSettings(newSettings, { onSuccess: onClose });
     resetOngoingSession();
 
     posthog.capture("settings_saved", {
       LLM_MODEL: newSettings.LLM_MODEL,
       LLM_API_KEY: newSettings.LLM_API_KEY ? "SET" : "UNSET",
+      REMOTE_RUNTIME_RESOURCE_FACTOR:
+        newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     });
   };
 
   const handleConfirmResetSettings = async () => {
-    await saveSettings(getDefaultSettings());
+    await saveSettings(getDefaultSettings(), { onSuccess: onClose });
     resetOngoingSession();
     posthog.capture("settings_reset");
-
-    onClose();
   };
 
   const handleConfirmEndSession = () => {
@@ -122,9 +125,10 @@ export function SettingsForm({
       setConfirmEndSessionModalOpen(true);
     } else {
       handleFormSubmission(formData);
-      onClose();
     }
   };
+
+  const isSaasMode = config?.APP_MODE === "saas";
 
   return (
     <div>
@@ -165,19 +169,24 @@ export function SettingsForm({
 
           <APIKeyInput
             isDisabled={!!disabled}
-            defaultValue={settings.LLM_API_KEY || ""}
+            isSet={settings.LLM_API_KEY === "SET"}
           />
 
           {showAdvancedOptions && (
-            <AgentInput
-              isDisabled={!!disabled}
-              defaultValue={settings.AGENT}
-              agents={agents}
-            />
-          )}
-
-          {showAdvancedOptions && (
             <>
+              <AgentInput
+                isDisabled={!!disabled}
+                defaultValue={settings.AGENT}
+                agents={agents}
+              />
+
+              {isSaasMode && (
+                <RuntimeSizeSelector
+                  isDisabled={!!disabled}
+                  defaultValue={settings.REMOTE_RUNTIME_RESOURCE_FACTOR}
+                />
+              )}
+
               <SecurityAnalyzerInput
                 isDisabled={!!disabled}
                 defaultValue={settings.SECURITY_ANALYZER}
@@ -221,6 +230,7 @@ export function SettingsForm({
       {confirmResetDefaultsModalOpen && (
         <ModalBackdrop>
           <DangerModal
+            testId="reset-defaults-modal"
             title={t(I18nKey.SETTINGS_FORM$ARE_YOU_SURE_LABEL)}
             description={t(
               I18nKey.SETTINGS_FORM$ALL_INFORMATION_WILL_BE_DELETED_MESSAGE,

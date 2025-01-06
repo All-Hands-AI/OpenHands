@@ -4,6 +4,7 @@ from collections import deque
 
 from litellm import ModelResponse
 
+import openhands
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -101,10 +102,13 @@ class CodeActAgent(Agent):
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
         )
         logger.debug(
-            f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
+            f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2, ensure_ascii=False).replace("\\n", "\n")}'
         )
         self.prompt_manager = PromptManager(
-            microagent_dir=os.path.join(os.path.dirname(__file__), 'micro')
+            microagent_dir=os.path.join(
+                os.path.dirname(os.path.dirname(openhands.__file__)),
+                'microagents',
+            )
             if self.config.use_microagents
             else None,
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
@@ -273,7 +277,9 @@ class CodeActAgent(Agent):
                 )
             else:
                 text = truncate_content(
-                    obs.content + obs.interpreter_details, max_message_chars
+                    obs.content
+                    + f'\n[Python Interpreter: {obs.metadata.py_interpreter_path}]',
+                    max_message_chars,
                 )
             text += f'\n[Command finished with exit code {obs.exit_code}]'
             message = Message(role='user', content=[TextContent(text=text)])
@@ -482,18 +488,7 @@ class CodeActAgent(Agent):
                 if message:
                     if message.role == 'user':
                         self.prompt_manager.enhance_message(message)
-                    # handle error if the message is the SAME role as the previous message
-                    # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
-                    # there shouldn't be two consecutive messages from the same role
-                    # NOTE: we shouldn't combine tool messages because each of them has a different tool_call_id
-                    if (
-                        messages
-                        and messages[-1].role == message.role
-                        and message.role != 'tool'
-                    ):
-                        messages[-1].content.extend(message.content)
-                    else:
-                        messages.append(message)
+                    messages.append(message)
 
         if self.llm.is_caching_prompt_active():
             # NOTE: this is only needed for anthropic

@@ -121,7 +121,7 @@ def get_config(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
-        runtime=os.environ.get('RUNTIME', 'eventstream'),
+        runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox=SandboxConfig(
             base_container_image=base_container_image,
             enable_auto_lint=True,
@@ -282,6 +282,16 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to remove git remotes: {str(obs)}')
 
+    action = CmdRunAction(command='which python')
+    action.timeout = 600
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        obs.exit_code == 0 and 'testbed' in obs.content,
+        f'Expected to find python interpreter from testbed, but got: {str(obs)}',
+    )
+
     logger.info('-' * 30)
     logger.info('END Runtime Initialization Fn')
     logger.info('-' * 30)
@@ -337,8 +347,7 @@ def complete_runtime(
     git_patch = None
     while n_retries < 5:
         action = CmdRunAction(
-            command=f'git diff --no-color --cached {instance["base_commit"]}',
-            keep_prompt=False,
+            command=f'git diff --no-color --cached {instance["base_commit"]}'
         )
         action.timeout = 600 + 100 * n_retries
         logger.info(action, extra={'msg_type': 'ACTION'})
@@ -385,7 +394,7 @@ def process_instance(
     if runtime_failure_count > 0:
         config.sandbox.remote_runtime_resource_factor = min(
             config.sandbox.remote_runtime_resource_factor * (2**runtime_failure_count),
-            2,  # hardcode maximum resource factor to 2
+            8,
         )
         logger.warning(
             f'This is the second attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
@@ -535,4 +544,5 @@ if __name__ == '__main__':
         args.eval_num_workers,
         process_instance,
         timeout_seconds=120 * 60,  # 2 hour PER instance should be more than enough
+        max_retries=5,
     )
