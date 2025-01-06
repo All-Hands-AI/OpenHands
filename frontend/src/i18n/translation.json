@@ -1330,7 +1330,7 @@
   },
   "LANDING$SUBTITLE": {
     "en": "OpenHands makes it easy to build and maintain software using a simple prompt.",
-    "ja": "OpenHandsは、シンプルなプロンプトを使用してソフトウェアの構築と保守を簡単にします。",
+    "ja": "OpenHandsは、シンプルなプロンプトを使用してソフトウェアの開発と保守を簡単にします。",
     "zh-CN": "OpenHands 使用简单的提示来轻松构建和维护软件。",
     "zh-TW": "OpenHands 使用簡單的提示來輕鬆構建和維護軟件。",
     "ko-KR": "OpenHands는 간단한 프롬프트를 사용하여 소프트웨어를 쉽게 구축하고 유지관리할 수 있게 해줍니다.",
@@ -1372,7 +1372,7 @@
   },
   "LANDING$BUILD_APP_BUTTON": {
     "en": "Build an app to view pull requests",
-    "ja": "プルリクエストを表示するアプリを構築する",
+    "ja": "プルリクエストを表示するアプリを開発する",
     "zh-CN": "构建一个查看拉取请求的应用",
     "zh-TW": "構建一個查看拉取請求的應用",
     "ko-KR": "풀 리퀘스트를 보기 위한 앱 만들기",
@@ -1386,7 +1386,7 @@
   },
   "LANDING$BUILD_PROMPT": {
     "en": "What do you want to build?",
-    "ja": "何を構築したいですか？",
+    "ja": "何を開発したいですか？",
     "zh-CN": "你想构建什么？",
     "zh-TW": "你想構建什麼？",
     "ko-KR": "무엇을 만들고 싶으신가요?",
@@ -1819,18 +1819,18 @@
     "no": "Last opp en .zip"
   },
   "LANDING$RECENT_CONVERSATION": {
-    "en": "Or jump back to your most recent conversation",
-    "ja": "または最近の会話に戻る",
-    "zh-CN": "或返回到最近的对话",
-    "zh-TW": "或返回到最近的對話",
-    "ko-KR": "또는 가장 최근 대화로 돌아가기",
-    "fr": "Ou revenez à votre conversation la plus récente",
-    "es": "O vuelve a tu conversación más reciente",
-    "de": "Oder kehre zu deiner letzten Konversation zurück",
-    "it": "O torna alla tua conversazione più recente",
-    "pt": "Ou volte para sua conversa mais recente",
+    "en": "jump back to your most recent conversation",
+    "ja": "最新の会話に戻る",
+    "zh-CN": "返回到最近的对话",
+    "zh-TW": "返回到最近的對話",
+    "ko-KR": "가장 최근 대화로 돌아가기",
+    "fr": "revenez à votre conversation la plus récente",
+    "es": "vuelve a tu conversación más reciente",
+    "de": "kehre zu deiner letzten Konversation zurück",
+    "it": "torna alla tua conversazione più recente",
+    "pt": "volte para sua conversa mais recente",
     "ar": "أو العودة إلى آخر محادثة",
-    "no": "Eller gå tilbake til din siste samtale"
+    "no": "gå tilbake til din siste samtale"
   },
   "LANDING$OR": {
     "en": "Or",
