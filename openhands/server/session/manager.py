@@ -153,6 +153,10 @@ class SessionManager:
             flag = self._has_remote_connections_flags.get(sid)
             if flag:
                 flag.set()
+        elif message_type == 'close_session':
+            sid = data['sid']
+            if sid in self._local_agent_loops_by_sid:
+                await self._on_close_session(sid)
         elif message_type == 'session_closing':
             # Session closing event - We only get this in the event of graceful shutdown,
             # which can't be guaranteed - nodes can simply vanish unexpectedly!
@@ -187,6 +191,7 @@ class SessionManager:
                 await c.connect()
             except AgentRuntimeUnavailableError as e:
                 logger.error(f'Error connecting to conversation {c.sid}: {e}')
+                await c.disconnect()
                 return None
             end_time = time.time()
             logger.info(
@@ -238,7 +243,8 @@ class SessionManager:
                 await asyncio.sleep(_CLEANUP_INTERVAL)
             except asyncio.CancelledError:
                 await wait_all(
-                    self._close_session(sid) for sid in self._local_agent_loops_by_sid
+                    self._on_close_session(sid)
+                    for sid in self._local_agent_loops_by_sid
                 )
                 return
             except Exception:
@@ -427,10 +433,22 @@ class SessionManager:
                 json.dumps({'sid': sid, 'message_type': 'session_closing'}),
             )
 
-        await self._close_session(sid)
+        await self._on_close_session(sid)
         return True
 
-    async def _close_session(self, sid: str):
+    async def close_session(self, sid: str):
+        session = self._local_agent_loops_by_sid.get(sid)
+        if session:
+            await self._on_close_session(sid)
+
+        redis_client = self._get_redis_client()
+        if redis_client:
+            await redis_client.publish(
+                'oh_event',
+                json.dumps({'sid': sid, 'message_type': 'close_session'}),
+            )
+
+    async def _on_close_session(self, sid: str):
         logger.info(f'_close_session:{sid}')
 
         # Clear up local variables
