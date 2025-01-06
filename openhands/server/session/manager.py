@@ -14,7 +14,7 @@ from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.async_utils import call_sync_from_async, wait_all
 from openhands.utils.shutdown_listener import should_continue
 
 _REDIS_POLL_TIMEOUT = 1.5
@@ -22,6 +22,7 @@ _CHECK_ALIVE_INTERVAL = 15
 
 _CLEANUP_INTERVAL = 15
 _CLEANUP_EXCEPTION_WAIT_TIME = 15
+_MAX_RUNNING_LOOPS = 3
 
 
 class ConversationDoesNotExistError(Exception):
@@ -51,9 +52,6 @@ class SessionManager:
     _active_conversations: dict[str, tuple[Conversation, int]] = field(
         default_factory=dict
     )
-    _detached_conversations: dict[str, tuple[Conversation, float]] = field(
-        default_factory=dict
-    )
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
     _has_remote_connections_flags: dict[str, asyncio.Event] = field(
@@ -64,7 +62,7 @@ class SessionManager:
         redis_client = self._get_redis_client()
         if redis_client:
             self._redis_listen_task = asyncio.create_task(self._redis_subscribe())
-        self._cleanup_task = asyncio.create_task(self._cleanup_detached_conversations())
+        self._cleanup_task = asyncio.create_task(self._cleanup_stale())
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
@@ -184,13 +182,6 @@ class SessionManager:
                 logger.info(f'Reusing active conversation {sid}')
                 return conversation
 
-            # Check if we have a detached conversation we can reuse
-            if sid in self._detached_conversations:
-                conversation, _ = self._detached_conversations.pop(sid)
-                self._active_conversations[sid] = (conversation, 1)
-                logger.info(f'Reusing detached conversation {sid}')
-                return conversation
-
             # Create new conversation if none exists
             c = Conversation(sid, file_store=self.file_store, config=self.config)
             try:
@@ -224,18 +215,11 @@ class SessionManager:
                     return
                 else:
                     self._active_conversations.pop(sid)
-                    self._detached_conversations[sid] = (conversation, time.time())
 
-    async def _cleanup_detached_conversations(self):
+    async def _cleanup_stale(self):
         while should_continue():
             if self._get_redis_client():
                 # Debug info for HA envs
-                logger.info(
-                    f'Attached conversations: {len(self._active_conversations)}'
-                )
-                logger.info(
-                    f'Detached conversations: {len(self._detached_conversations)}'
-                )
                 logger.info(
                     f'Running agent loops: {len(self._local_agent_loops_by_sid)}'
                 )
@@ -243,22 +227,26 @@ class SessionManager:
                     f'Local connections: {len(self.local_connection_id_to_session_id)}'
                 )
             try:
-                async with self._conversations_lock:
-                    # Create a list of items to process to avoid modifying dict during iteration
-                    items = list(self._detached_conversations.items())
-                    for sid, (conversation, detach_time) in items:
-                        await conversation.disconnect()
-                        self._detached_conversations.pop(sid, None)
+                close_threshold = time.time() - self.config.sandbox.close_delay
+                running_loops = list(self._local_agent_loops_by_sid.items())
+                running_loops.sort(key=lambda item: item[1].last_active_ts)
+                sid_to_close: list[str] = []
+                for sid, session in running_loops:
+                    if (
+                        session.last_active_ts < close_threshold
+                        or len(running_loops) - len(sid_to_close) > _MAX_RUNNING_LOOPS
+                    ):
+                        sid_to_close.append(sid)
 
+                await wait_all(self._cleanup_session(sid) for sid in sid_to_close)
                 await asyncio.sleep(_CLEANUP_INTERVAL)
             except asyncio.CancelledError:
-                async with self._conversations_lock:
-                    for conversation, _ in self._detached_conversations.values():
-                        await conversation.disconnect()
-                    self._detached_conversations.clear()
+                await wait_all(
+                    self._close_session(sid) for sid in self._local_agent_loops_by_sid
+                )
                 return
             except Exception:
-                logger.warning('error_cleaning_detached_conversations', exc_info=True)
+                logger.warning('error_cleaning_stale', exc_info=True)
                 await asyncio.sleep(_CLEANUP_EXCEPTION_WAIT_TIME)
 
     async def get_agent_loop_running(self, sids: set[str]) -> set[str]:
@@ -357,7 +345,6 @@ class SessionManager:
         if not event_stream:
             logger.error(f'No event stream after starting agent loop: {sid}')
             raise RuntimeError(f'no_event_stream:{sid}')
-        asyncio.create_task(self._cleanup_session_later(sid))
         return event_stream
 
     async def _get_event_stream(self, sid: str) -> EventStream | None:
@@ -415,19 +402,6 @@ class SessionManager:
             # This can occur if the init action was never run.
             logger.warning(f'disconnect_from_uninitialized_session:{connection_id}')
             return
-
-        if should_continue():
-            asyncio.create_task(self._cleanup_session_later(sid))
-        else:
-            await self._close_session(sid)
-
-    async def _cleanup_session_later(self, sid: str):
-        # Once there have been no connections to a session for a reasonable period, we close it
-        try:
-            await asyncio.sleep(self.config.sandbox.close_delay)
-        finally:
-            # If the sleep was cancelled, we still want to close these
-            await self._cleanup_session(sid)
 
     async def _cleanup_session(self, sid: str) -> bool:
         # Get local connections
