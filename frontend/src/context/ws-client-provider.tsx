@@ -98,6 +98,10 @@ export function WsClientProvider({
   }
 
   React.useEffect(() => {
+    lastEventRef.current = null;
+  }, [conversationId]);
+
+  React.useEffect(() => {
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }

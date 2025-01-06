@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router";
-import FolderIcon from "#/icons/docs.svg?react";
+import { FaListUl } from "react-icons/fa";
 import { useAuth } from "#/context/auth-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
@@ -16,8 +16,7 @@ import { SettingsModal } from "#/components/shared/modals/settings/settings-moda
 import { useSettingsUpToDate } from "#/context/settings-up-to-date-context";
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
-import { cn } from "#/utils/utils";
-import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
+import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 
 export function Sidebar() {
   const location = useLocation();
@@ -32,9 +31,18 @@ export function Sidebar() {
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
-  const [conversationPanelIsOpen, setConversationPanelIsOpen] = React.useState(
-    MULTI_CONVO_UI_IS_ENABLED,
-  );
+  const [conversationPanelIsOpen, setConversationPanelIsOpen] =
+    React.useState(false);
+  const conversationPanelRef = React.useRef<HTMLDivElement | null>(null);
+
+  const handleClick = (event: MouseEvent) => {
+    const conversationPanel = conversationPanelRef.current;
+    if (conversationPanelIsOpen && conversationPanel) {
+      if (!conversationPanel.contains(event.target as Node)) {
+        setConversationPanelIsOpen(false);
+      }
+    }
+  };
 
   React.useEffect(() => {
     // If the github token is invalid, open the account settings modal again
@@ -42,6 +50,13 @@ export function Sidebar() {
       setAccountSettingsModalOpen(true);
     }
   }, [user.isError]);
+
+  React.useEffect(() => {
+    document.addEventListener("click", handleClick);
+    return () => {
+      document.removeEventListener("click", handleClick);
+    };
+  }, [conversationPanelIsOpen]);
 
   const handleAccountSettingsModalClose = () => {
     // If the user closes the modal without connecting to GitHub,
@@ -77,16 +92,17 @@ export function Sidebar() {
             />
           )}
           <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
-          {MULTI_CONVO_UI_IS_ENABLED && (
+          {MULTI_CONVERSATION_UI && (
             <button
               data-testid="toggle-conversation-panel"
               type="button"
               onClick={() => setConversationPanelIsOpen((prev) => !prev)}
-              className={cn(
-                conversationPanelIsOpen ? "border-b-2 border-[#FFE165]" : "",
-              )}
             >
-              <FolderIcon width={28} height={28} />
+              <FaListUl
+                width={28}
+                height={28}
+                fill={conversationPanelIsOpen ? "#FFE165" : "#FFFFFF"}
+              />
             </button>
           )}
           <DocsButton />
@@ -97,6 +113,7 @@ export function Sidebar() {
 
         {conversationPanelIsOpen && (
           <div
+            ref={conversationPanelRef}
             className="absolute h-full left-[calc(100%+12px)] top-0 z-20" // 12px padding (sidebar parent)
           >
             <ConversationPanel

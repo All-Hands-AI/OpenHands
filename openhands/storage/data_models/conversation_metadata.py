@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 
@@ -9,3 +9,4 @@ class ConversationMetadata:
     selected_repository: str | None
     title: str | None = None
     last_updated_at: datetime | None = None
+    created_at: datetime = field(default_factory=datetime.now)
