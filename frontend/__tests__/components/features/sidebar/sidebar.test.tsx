@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { createRoutesStub } from "react-router";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
-import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
+import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 
 const renderSidebar = () => {
   const RouterStub = createRoutesStub([
@@ -18,7 +18,7 @@ const renderSidebar = () => {
 };
 
 describe("Sidebar", () => {
-  it.skipIf(!MULTI_CONVO_UI_IS_ENABLED)(
+  it.skipIf(!MULTI_CONVERSATION_UI)(
     "should have the conversation panel open by default",
     () => {
       renderSidebar();
@@ -26,7 +26,7 @@ describe("Sidebar", () => {
     },
   );
 
-  it.skipIf(!MULTI_CONVO_UI_IS_ENABLED)(
+  it.skipIf(!MULTI_CONVERSATION_UI)(
     "should toggle the conversation panel",
     async () => {
       const user = userEvent.setup();
