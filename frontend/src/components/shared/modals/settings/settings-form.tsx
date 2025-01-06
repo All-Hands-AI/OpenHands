@@ -22,6 +22,7 @@ import { ModelSelector } from "./model-selector";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
 import { RuntimeSizeSelector } from "./runtime-size-selector";
+import { useConfig } from "#/hooks/query/use-config";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -42,6 +43,7 @@ export function SettingsForm({
 }: SettingsFormProps) {
   const { mutateAsync: saveSettings } = useSaveSettings();
   const endSession = useEndSession();
+  const { data: config } = useConfig();
 
   const location = useLocation();
   const { t } = useTranslation();
@@ -126,6 +128,8 @@ export function SettingsForm({
     }
   };
 
+  const isSaasMode = config?.APP_MODE === "saas";
+
   return (
     <div>
       <form
@@ -176,10 +180,12 @@ export function SettingsForm({
                 agents={agents}
               />
 
-              <RuntimeSizeSelector
-                isDisabled={!!disabled}
-                defaultValue={settings.REMOTE_RUNTIME_RESOURCE_FACTOR}
-              />
+              {isSaasMode && (
+                <RuntimeSizeSelector
+                  isDisabled={!!disabled}
+                  defaultValue={settings.REMOTE_RUNTIME_RESOURCE_FACTOR}
+                />
+              )}
 
               <SecurityAnalyzerInput
                 isDisabled={!!disabled}

@@ -1,7 +1,5 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { Select, SelectItem } from "@nextui-org/react";
-import { useConfig } from "#/hooks/query/use-config";
 
 interface RuntimeSizeSelectorProps {
   isDisabled: boolean;
@@ -13,12 +11,6 @@ export function RuntimeSizeSelector({
   defaultValue,
 }: RuntimeSizeSelectorProps) {
   const { t } = useTranslation();
-  const { data: config } = useConfig();
-  const isSaasMode = config?.APP_MODE === "saas";
-
-  if (!isSaasMode) {
-    return null;
-  }
 
   return (
     <fieldset className="flex flex-col gap-2">
