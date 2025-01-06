@@ -5,7 +5,7 @@ import { screen, waitFor } from "@testing-library/react";
 import toast from "react-hot-toast";
 import App from "#/routes/_oh.app/route";
 import OpenHands from "#/api/open-hands";
-import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
+import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 
 describe("App", () => {
   const RouteStub = createRoutesStub([
@@ -35,7 +35,7 @@ describe("App", () => {
     await screen.findByTestId("app-route");
   });
 
-  it.skipIf(!MULTI_CONVO_UI_IS_ENABLED)(
+  it.skipIf(!MULTI_CONVERSATION_UI)(
     "should call endSession if the user does not have permission to view conversation",
     async () => {
       const errorToastSpy = vi.spyOn(toast, "error");

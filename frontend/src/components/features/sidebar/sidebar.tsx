@@ -16,7 +16,7 @@ import { SettingsModal } from "#/components/shared/modals/settings/settings-moda
 import { useSettingsUpToDate } from "#/context/settings-up-to-date-context";
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
-import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
+import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 
 export function Sidebar() {
   const location = useLocation();
@@ -92,7 +92,7 @@ export function Sidebar() {
             />
           )}
           <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
-          {MULTI_CONVO_UI_IS_ENABLED && (
+          {MULTI_CONVERSATION_UI && (
             <button
               data-testid="toggle-conversation-panel"
               type="button"
