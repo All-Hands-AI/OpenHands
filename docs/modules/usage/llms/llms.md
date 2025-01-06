@@ -9,7 +9,7 @@ recommendations for model selection. Our latest benchmarking results can be foun
 
 Based on these findings and community feedback, the following models have been verified to work reasonably well with OpenHands:
 
-- anthropic/claude-3-5-sonnet-20241022 (most recommended)
+- anthropic/claude-3-5-sonnet-20241022 (recommended)
 - anthropic/claude-3-5-haiku-20241022
 - deepseek/deepseek-chat
 - gpt-4o
