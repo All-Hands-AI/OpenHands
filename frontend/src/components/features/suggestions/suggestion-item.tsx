@@ -18,7 +18,9 @@ export function SuggestionItem({ suggestion, onClick }: SuggestionItemProps) {
         onClick={() => onClick(suggestion.value)}
         className="text-[16px] leading-6 -tracking-[0.01em] text-center w-full p-3 font-semibold"
       >
-        {typeof suggestion.label === 'string' ? suggestion.label : t(suggestion.label)}
+        {typeof suggestion.label === "string"
+          ? suggestion.label
+          : t(suggestion.label)}
       </button>
     </li>
   );
