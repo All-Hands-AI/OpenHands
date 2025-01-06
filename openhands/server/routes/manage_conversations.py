@@ -61,6 +61,18 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     logger.info('Conversation store loaded')
 
+    conversation_result_set = await conversation_store.search(limit=100)
+    conversation_ids = {
+        conversation.conversation_id for conversation in conversation_result_set.results
+    }
+    running_conversations = await session_manager.get_agent_loop_running(
+        set(conversation_ids)
+    )
+    if running_conversations:
+        return JSONResponse(
+            {'status': 'error', 'message': 'Too many running conversations'}, 400
+        )
+
     conversation_id = uuid.uuid4().hex
     while await conversation_store.exists(conversation_id):
         logger.warning(f'Collision on conversation ID: {conversation_id}. Retrying...')
