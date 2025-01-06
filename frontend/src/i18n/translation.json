@@ -2778,5 +2778,75 @@
   },
   "EXPANDABLE_MESSAGE$HIDE_DETAILS": {
     "en": "Hide details"
+  },
+  "SETTINGS$TITLE": {
+    "en": "AI Provider Configuration",
+    "ja": "AI プロバイダー設定",
+    "zh-CN": "AI 提供商配置",
+    "zh-TW": "AI 提供商配置",
+    "ko-KR": "AI 제공자 설정",
+    "no": "AI-leverandørkonfigurasjon",
+    "it": "Configurazione del provider AI",
+    "pt": "Configuração do provedor de IA",
+    "es": "Configuración del proveedor de IA",
+    "ar": "إعدادات مزود الذكاء الاصطناعي",
+    "fr": "Configuration du fournisseur d'IA",
+    "tr": "AI Sağlayıcı Yapılandırması"
+  },
+  "SETTINGS$DESCRIPTION": {
+    "en": "To continue, connect an OpenAI, Anthropic, or other LLM account",
+    "ja": "続行するには、OpenAI、Anthropic、または他のLLMアカウントを接続してください",
+    "zh-CN": "要继续，请连接 OpenAI、Anthropic 或其他 LLM 账户",
+    "zh-TW": "要繼續，請連接 OpenAI、Anthropic 或其他 LLM 帳戶",
+    "ko-KR": "계속하려면 OpenAI, Anthropic 또는 다른 LLM 계정을 연결하세요",
+    "no": "For å fortsette, koble til en OpenAI, Anthropic eller annen LLM-konto",
+    "it": "Per continuare, connetti un account OpenAI, Anthropic o altro LLM",
+    "pt": "Para continuar, conecte uma conta OpenAI, Anthropic ou outra LLM",
+    "es": "Para continuar, conecte una cuenta de OpenAI, Anthropic u otro LLM",
+    "ar": "للمتابعة، قم بتوصيل حساب OpenAI أو Anthropic أو حساب LLM آخر",
+    "fr": "Pour continuer, connectez un compte OpenAI, Anthropic ou autre LLM",
+    "tr": "Devam etmek için bir OpenAI, Anthropic veya başka bir LLM hesabı bağlayın"
+  },
+  "SETTINGS$WARNING": {
+    "en": "Changing settings during an active session will end the session",
+    "ja": "アクティブなセッション中に設定を変更すると、セッションが終了します",
+    "zh-CN": "在活动会话期间更改设置将结束会话",
+    "zh-TW": "在活動會話期間更改設定將結束會話",
+    "ko-KR": "활성 세션 중 설정을 변경하면 세션이 종료됩니다",
+    "no": "Endring av innstillinger under en aktiv økt vil avslutte økten",
+    "it": "La modifica delle impostazioni durante una sessione attiva terminerà la sessione",
+    "pt": "Alterar as configurações durante uma sessão ativa encerrará a sessão",
+    "es": "Cambiar la configuración durante una sesión activa finalizará la sesión",
+    "ar": "سيؤدي تغيير الإعدادات أثناء جلسة نشطة إلى إنهاء الجلسة",
+    "fr": "La modification des paramètres pendant une session active mettra fin à la session",
+    "tr": "Aktif bir oturum sırasında ayarları değiştirmek oturumu sonlandıracaktır"
+  },
+  "SIDEBAR$SETTINGS": {
+    "en": "Settings",
+    "ja": "設定",
+    "zh-CN": "设置",
+    "zh-TW": "設定",
+    "ko-KR": "설정",
+    "no": "Innstillinger",
+    "it": "Impostazioni",
+    "pt": "Configurações",
+    "es": "Configuración",
+    "ar": "الإعدادات",
+    "fr": "Paramètres",
+    "tr": "Ayarlar"
+  },
+  "SIDEBAR$DOCS": {
+    "en": "Documentation",
+    "ja": "ドキュメント",
+    "zh-CN": "文档",
+    "zh-TW": "文件",
+    "ko-KR": "문서",
+    "no": "Dokumentasjon",
+    "it": "Documentazione",
+    "pt": "Documentação",
+    "es": "Documentación",
+    "ar": "التوثيق",
+    "fr": "Documentation",
+    "tr": "Belgeler"
   }
 }
