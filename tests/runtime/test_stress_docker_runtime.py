@@ -1,4 +1,4 @@
-"""Stress tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
+"""Stress tests for the DockerRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import pytest
 from conftest import TEST_IN_CI, _close_test_runtime, _load_runtime
@@ -11,7 +11,7 @@ from openhands.events.action import CmdRunAction
     TEST_IN_CI,
     reason='This test should only be run locally, not in CI.',
 )
-def test_stress_eventstream_runtime(temp_dir, runtime_cls, repeat=1):
+def test_stress_docker_runtime(temp_dir, runtime_cls, repeat=1):
     runtime = _load_runtime(temp_dir, runtime_cls)
 
     action = CmdRunAction(
