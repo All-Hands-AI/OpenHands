@@ -198,13 +198,6 @@ class LLM(RetryMixin, DebugMixin):
             # log the entire LLM prompt
             self.log_prompt(messages)
 
-            if self.is_caching_prompt_active():
-                # Anthropic-specific prompt caching
-                if 'claude-3' in self.config.model:
-                    kwargs['extra_headers'] = {
-                        'anthropic-beta': 'prompt-caching-2024-07-31',
-                    }
-
             # set litellm modify_params to the configured value
             # True by default to allow litellm to do transformations like adding a default message, when a message is empty
             # NOTE: this setting is global; unlike drop_params, it cannot be overridden in the litellm completion partial
