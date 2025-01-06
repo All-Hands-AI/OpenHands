@@ -7,21 +7,11 @@ OpenHands can connect to any LLM supported by LiteLLM. However, it requires a po
 Based on our evaluations of language models for coding tasks (using the SWE-bench dataset), we can provide some
 recommendations for model selection. Our latest benchmarking results can be found in [this spreadsheet](https://docs.google.com/spreadsheets/d/1wOUdFCMyY6Nt0AIqF705KN4JKOWgeI4wUGUP60krXXs/edit?gid=0).
 
-When choosing a model, consider both the quality of outputs and the associated costs. Here's a summary of the findings:
-
-Most recommended model:
-- anthropic/claude-3-5-sonnet-20241022 (41.67% success rate)
-
-Models with acceptable performance:
-- anthropic/claude-3-5-haiku-20241022 (28.67%)
-- deepseek/deepseek-chat (23.00%)
-- gpt-4o (18.67%)
-
 Based on these findings and community feedback, the following models have been verified to work reasonably well with OpenHands:
 
-- claude-3-5-sonnet-20241022 (recommended)
-- claude-3-5-haiku-20241022
-- deepseek-chat
+- anthropic/claude-3-5-sonnet-20241022 (most recommended)
+- anthropic/claude-3-5-haiku-20241022
+- deepseek/deepseek-chat
 - gpt-4o
 
 :::warning
