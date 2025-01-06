@@ -4,6 +4,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from enum import Enum
+from functools import partial
 from typing import Callable, Iterable
 
 from openhands.core.logger import openhands_logger as logger
@@ -98,41 +99,28 @@ class EventStream:
             if id >= self._cur_id:
                 self._cur_id = id + 1
 
-    def _init_thread_loop(self):
-        # Get the current thread ident to use as a key
-        thread_id = threading.current_thread().ident
-        if thread_id is None:
-            raise RuntimeError("Thread ID should not be None")
-        
-        # Create and store the loop
+    def _init_thread_loop(self, subscriber_id: str, callback_id: str):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        
-        # Find which subscriber/callback this thread belongs to
-        for subscriber_id, callbacks in self._thread_pools.items():
-            for callback_id, pool in callbacks.items():
-                for thread in pool._threads:
-                    if thread.ident == thread_id:
-                        if subscriber_id not in self._thread_loops:
-                            self._thread_loops[subscriber_id] = {}
-                        self._thread_loops[subscriber_id][callback_id] = loop
-                        return
+        if subscriber_id not in self._thread_loops:
+            self._thread_loops[subscriber_id] = {}
+        self._thread_loops[subscriber_id][callback_id] = loop
 
     def close(self):
         self._stop_flag.set()
         if self._queue_thread.is_alive():
             self._queue_thread.join()
-        
-        # Close all thread pool loops first
+
         for subscriber_id, callbacks in self._thread_loops.items():
             for callback_id, loop in callbacks.items():
                 try:
                     loop.stop()
                     loop.close()
                 except Exception as e:
-                    logger.warning(f"Error closing loop for {subscriber_id}/{callback_id}: {e}")
-        
-        # Then shutdown the thread pools
+                    logger.warning(
+                        f'Error closing loop for {subscriber_id}/{callback_id}: {e}'
+                    )
+
         for pool in self._thread_pools.values():
             for p in pool.values():
                 p.shutdown()
@@ -218,7 +206,8 @@ class EventStream:
     def subscribe(
         self, subscriber_id: EventStreamSubscriber, callback: Callable, callback_id: str
     ):
-        pool = ThreadPoolExecutor(max_workers=1, initializer=self._init_thread_loop)
+        initializer = partial(self._init_thread_loop, subscriber_id, callback_id)
+        pool = ThreadPoolExecutor(max_workers=1, initializer=initializer)
         if subscriber_id not in self._subscribers:
             self._subscribers[subscriber_id] = {}
             self._thread_pools[subscriber_id] = {}
@@ -241,17 +230,25 @@ class EventStream:
             return
 
         # Clean up the event loop if it exists
-        if subscriber_id in self._thread_loops and callback_id in self._thread_loops[subscriber_id]:
+        if (
+            subscriber_id in self._thread_loops
+            and callback_id in self._thread_loops[subscriber_id]
+        ):
             try:
                 loop = self._thread_loops[subscriber_id][callback_id]
                 loop.stop()
                 loop.close()
                 del self._thread_loops[subscriber_id][callback_id]
             except Exception as e:
-                logger.warning(f"Error closing loop for {subscriber_id}/{callback_id}: {e}")
+                logger.warning(
+                    f'Error closing loop for {subscriber_id}/{callback_id}: {e}'
+                )
 
         # Clean up the thread pool
-        if subscriber_id in self._thread_pools and callback_id in self._thread_pools[subscriber_id]:
+        if (
+            subscriber_id in self._thread_pools
+            and callback_id in self._thread_pools[subscriber_id]
+        ):
             self._thread_pools[subscriber_id][callback_id].shutdown()
             del self._thread_pools[subscriber_id][callback_id]
 
