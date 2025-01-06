@@ -1,4 +1,6 @@
 import { Tooltip } from "@nextui-org/react";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import DefaultUserAvatar from "#/icons/default-user.svg?react";
 import { cn } from "#/utils/utils";
@@ -11,6 +13,7 @@ interface UserAvatarProps {
 }
 
 export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
+  const { t } = useTranslation();
   const buttonContent = (
     <button
       data-testid="user-avatar"
@@ -24,7 +27,7 @@ export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
       {!isLoading && avatarUrl && <Avatar src={avatarUrl} />}
       {!isLoading && !avatarUrl && (
         <DefaultUserAvatar
-          aria-label="user avatar placeholder"
+          aria-label={t(I18nKey.USER$AVATAR_PLACEHOLDER)}
           width={20}
           height={20}
         />
@@ -34,7 +37,7 @@ export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
   );
 
   return (
-    <Tooltip content="Account settings" closeDelay={100}>
+    <Tooltip content={t(I18nKey.USER$ACCOUNT_SETTINGS)} closeDelay={100}>
       {buttonContent}
     </Tooltip>
   );

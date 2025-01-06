@@ -1,6 +1,8 @@
 import React from "react";
 import { useNavigation } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import { addFile, removeFile } from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/features/suggestions/suggestion-bubble";
@@ -20,6 +22,7 @@ interface TaskFormProps {
 }
 
 export function TaskForm({ ref }: TaskFormProps) {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
@@ -52,10 +55,10 @@ export function TaskForm({ ref }: TaskFormProps) {
 
   const placeholder = React.useMemo(() => {
     if (selectedRepository) {
-      return `What would you like to change in ${selectedRepository}?`;
+      return t(I18nKey.LANDING$CHANGE_PROMPT, { repo: selectedRepository });
     }
 
-    return "What do you want to build?";
+    return t(I18nKey.LANDING$BUILD_PROMPT);
   }, [selectedRepository]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {

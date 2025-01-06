@@ -1,4 +1,6 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { SuggestionBox } from "#/components/features/suggestions/suggestion-box";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import { GitHubRepositorySelector } from "./github-repo-selector";
@@ -23,6 +25,7 @@ export function GitHubRepositoriesSuggestionBox({
   gitHubAuthUrl,
   user,
 }: GitHubRepositoriesSuggestionBoxProps) {
+  const { t } = useTranslation();
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
@@ -53,7 +56,7 @@ export function GitHubRepositoriesSuggestionBox({
   return (
     <>
       <SuggestionBox
-        title="Open a Repo"
+        title={t(I18nKey.LANDING$OPEN_REPO)}
         content={
           isLoggedIn ? (
             <GitHubRepositorySelector
@@ -64,7 +67,7 @@ export function GitHubRepositoriesSuggestionBox({
             />
           ) : (
             <ModalButton
-              text="Connect to GitHub"
+              text={t(I18nKey.GITHUB$CONNECT)}
               icon={<GitHubLogo width={20} height={20} />}
               className="bg-[#791B80] w-full"
               onClick={handleConnectToGitHub}
