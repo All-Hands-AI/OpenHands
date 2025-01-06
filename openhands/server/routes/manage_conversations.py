@@ -189,6 +189,7 @@ async def _get_conversation_info(
             conversation_id=conversation.conversation_id,
             title=title,
             last_updated_at=conversation.last_updated_at,
+            created_at=conversation.created_at,
             selected_repository=conversation.selected_repository,
             status=ConversationStatus.RUNNING
             if is_running
