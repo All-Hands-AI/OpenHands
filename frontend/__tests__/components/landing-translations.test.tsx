@@ -163,7 +163,7 @@ describe("Landing page translations", () => {
 
   test("translation file should not have duplicate keys", () => {
     const duplicates = findDuplicateKeys(translations);
-    
+
     if (duplicates.length > 0) {
       throw new Error(`Found duplicate translation keys: ${duplicates.join(', ')}`);
     }

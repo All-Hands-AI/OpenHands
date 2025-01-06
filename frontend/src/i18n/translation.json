@@ -491,6 +491,118 @@
     "tr": "Dil Seç",
     "ja": "言語を選択"
   },
+
+  "ACCOUNT_SETTINGS$SETTINGS": {
+    "en": "Settings",
+    "zh-CN": "设置",
+    "de": "Einstellungen",
+    "ko-KR": "설정",
+    "no": "Innstillinger",
+    "zh-TW": "設定",
+    "it": "Impostazioni",
+    "pt": "Configurações",
+    "es": "Configuración",
+    "ar": "الإعدادات",
+    "fr": "Paramètres",
+    "tr": "Ayarlar",
+    "ja": "設定"
+  },
+
+  "ACCOUNT_SETTINGS$LOGOUT": {
+    "en": "Logout",
+    "zh-CN": "退出登录",
+    "de": "Abmelden",
+    "ko-KR": "로그아웃",
+    "no": "Logg ut",
+    "zh-TW": "登出",
+    "it": "Esci",
+    "pt": "Sair",
+    "es": "Cerrar sesión",
+    "ar": "تسجيل الخروج",
+    "fr": "Déconnexion",
+    "tr": "Çıkış yap",
+    "ja": "ログアウト"
+  },
+
+  "CONVERSATION$NO_CONVERSATIONS": {
+    "en": "No conversations yet",
+    "zh-CN": "暂无对话",
+    "de": "Noch keine Gespräche",
+    "ko-KR": "아직 대화가 없습니다",
+    "no": "Ingen samtaler ennå",
+    "zh-TW": "尚無對話",
+    "it": "Nessuna conversazione",
+    "pt": "Nenhuma conversa ainda",
+    "es": "Aún no hay conversaciones",
+    "ar": "لا توجد محادثات بعد",
+    "fr": "Pas encore de conversations",
+    "tr": "Henüz konuşma yok",
+    "ja": "まだ会話がありません"
+  },
+
+  "LANDING$SELECT_REPO": {
+    "en": "Select a repository",
+    "zh-CN": "选择仓库",
+    "de": "Repository auswählen",
+    "ko-KR": "저장소 선택",
+    "no": "Velg et repository",
+    "zh-TW": "選擇儲存庫",
+    "it": "Seleziona un repository",
+    "pt": "Selecione um repositório",
+    "es": "Seleccionar un repositorio",
+    "ar": "اختر مستودعاً",
+    "fr": "Sélectionner un dépôt",
+    "tr": "Bir depo seçin",
+    "ja": "リポジトリを選択"
+  },
+
+  "BUTTON$SEND": {
+    "en": "Send",
+    "zh-CN": "发送",
+    "de": "Senden",
+    "ko-KR": "보내기",
+    "no": "Send",
+    "zh-TW": "發送",
+    "it": "Invia",
+    "pt": "Enviar",
+    "es": "Enviar",
+    "ar": "إرسال",
+    "fr": "Envoyer",
+    "tr": "Gönder",
+    "ja": "送信"
+  },
+
+  "BROWSER$EMPTY_MESSAGE": {
+    "en": "No page loaded",
+    "zh-CN": "未加载页面",
+    "de": "Keine Seite geladen",
+    "ko-KR": "페이지가 로드되지 않음",
+    "no": "Ingen side lastet",
+    "zh-TW": "未載入頁面",
+    "it": "Nessuna pagina caricata",
+    "pt": "Nenhuma página carregada",
+    "es": "Ninguna página cargada",
+    "ar": "لم يتم تحميل أي صفحة",
+    "fr": "Aucune page chargée",
+    "tr": "Sayfa yüklenmedi",
+    "ja": "ページが読み込まれていません"
+  },
+
+  "USER$AVATAR_PLACEHOLDER": {
+    "en": "User avatar placeholder",
+    "zh-CN": "用户头像占位符",
+    "de": "Benutzer-Avatar Platzhalter",
+    "ko-KR": "사용자 아바타 플레이스홀더",
+    "no": "Bruker avatar plassholder",
+    "zh-TW": "使用者頭像佔位符",
+    "it": "Segnaposto avatar utente",
+    "pt": "Espaço reservado para avatar do usuário",
+    "es": "Marcador de posición del avatar del usuario",
+    "ar": "عنصر نائب لصورة المستخدم",
+    "fr": "Espace réservé pour l'avatar utilisateur",
+    "tr": "Kullanıcı avatar yer tutucusu",
+    "ja": "ユーザーアバターのプレースホルダー"
+  },
   "CONFIGURATION$SECURITY_SELECT_LABEL": {
     "en": "Security analyzer",
     "de": "Sicherheitsanalysator",
@@ -1597,6 +1709,21 @@
     "pt": "Construir um aplicativo para visualizar pull requests",
     "ar": "بناء تطبيق لعرض طلبات السحب",
     "no": "Bygg en app for å se pull requests"
+  },
+  "SUGGESTIONS$WHAT_TO_BUILD": {
+    "en": "What do you want to build?",
+    "ja": "何を開発しますか？",
+    "zh-CN": "你想要构建什么？",
+    "zh-TW": "你想要建立什麼？",
+    "ko-KR": "무엇을 만들고 싶으신가요?",
+    "de": "Was möchten Sie entwickeln?",
+    "no": "Hva vil du bygge?",
+    "it": "Cosa vuoi costruire?",
+    "pt": "O que você quer construir?",
+    "es": "¿Qué quieres construir?",
+    "ar": "ماذا تريد أن تبني؟",
+    "fr": "Que voulez-vous construire ?",
+    "tr": "Ne inşa etmek istiyorsun?"
   },
   "SUGGESTIONS$TODO_APP": {
     "en": "Build a todo list application",
