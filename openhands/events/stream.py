@@ -1,9 +1,9 @@
 import asyncio
+import queue
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from enum import Enum
-from queue import Queue
 from typing import Callable, Iterable
 
 from openhands.core.logger import openhands_logger as logger
@@ -62,10 +62,12 @@ class EventStream:
     _cur_id: int = 0
     _lock: threading.Lock
 
-    def __init__(self, sid: str, file_store: FileStore, num_workers: int = 1):
+    def __init__(self, sid: str, file_store: FileStore):
         self.sid = sid
+        print('INIT ES', sid)
         self.file_store = file_store
-        self._queue: Queue[Event] = Queue()
+        self._stop_flag = threading.Event()
+        self._queue: queue.Queue[Event] = queue.Queue()
         self._thread_pools: dict[str, dict[str, ThreadPoolExecutor]] = {}
         self._queue_thread = threading.Thread(target=self._run_queue_loop)
         self._queue_thread.daemon = True
@@ -94,6 +96,16 @@ class EventStream:
     def _init_thread_loop(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+
+    def close(self):
+        print('CLOSE ES', self.sid)
+        self._stop_flag.set()
+        self._queue_thread.join()
+        print('JOINED')
+        for pool in self._thread_pools.values():
+            for p in pool.values():
+                p.shutdown()
+        print('DONE CLOSING ES', self.sid)
 
     def _get_filename_for_id(self, id: int) -> str:
         return get_conversation_event_filename(self.sid, id)
@@ -222,8 +234,12 @@ class EventStream:
         loop.run_until_complete(self._process_queue())
 
     async def _process_queue(self):
-        while should_continue():
-            event = self._queue.get()
+        while should_continue() and not self._stop_flag.is_set():
+            event = None
+            try:
+                event = self._queue.get(timeout=0.1)
+            except queue.Empty:
+                continue
             for key in sorted(self._subscribers.keys()):
                 callbacks = self._subscribers[key]
                 for callback_id in callbacks:
