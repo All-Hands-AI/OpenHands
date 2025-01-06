@@ -43,4 +43,6 @@ class Conversation:
         await self.runtime.connect()
 
     async def disconnect(self):
+        if self.event_stream:
+            self.event_stream.close()
         asyncio.create_task(call_sync_from_async(self.runtime.close))
