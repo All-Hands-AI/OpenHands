@@ -10,7 +10,8 @@
     "fr": "OpenHands Espace de travail",
     "it": "Area di lavoro OpenHands",
     "pt": "Espaço de trabalho OpenHands",
-    "es": "Espacio de trabajo de OpenHands"
+    "es": "Espacio de trabajo de OpenHands",
+    "ja": "OpenHands ワークスペース"
   },
   "WORKSPACE$TERMINAL_TAB_LABEL": {
     "en": "Terminal",
@@ -24,7 +25,8 @@
     "es": "Terminal",
     "ar": "الطرفية",
     "fr": "Terminal",
-    "tr": "Terminal"
+    "tr": "Terminal",
+    "ja": "ターミナル"
   },
   "CODE_EDITOR$FILE_SAVED_SUCCESSFULLY": {
     "en": "File saved successfully",
@@ -38,7 +40,8 @@
     "es": "Archivo guardado exitosamente",
     "ar": "تم حفظ الملف بنجاح",
     "fr": "Fichier enregistré avec succès",
-    "tr": "Dosya başarıyla kaydedildi"
+    "tr": "Dosya başarıyla kaydedildi",
+    "ja": "ファイルが正常に保存されました"
   },
   "CODE_EDITOR$SAVING_LABEL": {
     "en": "Saving...",
@@ -52,7 +55,8 @@
     "es": "Guardando...",
     "ar": "حفظ مؤقت",
     "fr": "Enregistrement en cours...",
-    "tr": "Kayıt yapılıyor..."
+    "tr": "Kayıt yapılıyor...",
+    "ja": "保存中..."
   },
   "CODE_EDITOR$SAVE_LABEL": {
     "en": "Save",
@@ -66,7 +70,8 @@
     "es": "Guardar",
     "ar": "حفظ",
     "fr": "Enregistrer",
-    "tr": "Kayıt"
+    "tr": "Kayıt",
+    "ja": "保存"
   },
   "CODE_EDITOR$OPTIONS": {
     "en": "Options",
@@ -80,7 +85,8 @@
     "es": "Opciones",
     "ar": "خيارات",
     "fr": "Options",
-    "tr": "Seçenekler"
+    "tr": "Seçenekler",
+    "ja": "オプション"
   },
   "CODE_EDITOR$FILE_SAVE_ERROR": {
     "en": "An unknown error occurred while saving the file",
@@ -94,7 +100,8 @@
     "es": "Ocurrió un error desconocido al guardar el archivo",
     "ar": "حدث خطأ غير معروف أثناء حفظ الملف",
     "fr": "Une erreur inconnue s'est produite lors de l'enregistrement du fichier",
-    "tr": "Dosya kaydedilirken bilinmeyen bir hata oluştu"
+    "tr": "Dosya kaydedilirken bilinmeyen bir hata oluştu",
+    "ja": "ファイルの保存中に不明なエラーが発生しました"
   },
   "CODE_EDITOR$EMPTY_MESSAGE": {
     "en": "No file selected.",
@@ -108,7 +115,8 @@
     "es": "Ningún archivo seleccionado.",
     "ar": "لم يتم اختيار أي ملف.",
     "fr": "Aucun fichier sélectionné.",
-    "tr": "Hiçbir dosya seçilmedi."
+    "tr": "Hiçbir dosya seçilmedi.",
+    "ja": "ファイルが選択されていません。"
   },
   "FILE_SERVICE$SELECT_FILE_ERROR": {
     "en": "Error selecting file. Please try again.",
@@ -122,7 +130,8 @@
     "es": "Error al seleccionar el archivo. Por favor, inténtelo de nuevo.",
     "ar": "خطأ في اختيار الملف. يرجى المحاولة مرة أخرى.",
     "fr": "Erreur lors de la sélection du fichier. Veuillez réessayer.",
-    "tr": "Dosya seçiminde hata oluştu. Lütfen tekrar deneyin."
+    "tr": "Dosya seçiminde hata oluştu. Lütfen tekrar deneyin.",
+    "ja": "ファイルの選択中にエラーが発生しました。もう一度お試しください。"
   },
   "FILE_SERVICE$UPLOAD_FILES_ERROR": {
     "en": "Error uploading files. Please try again.",
@@ -136,7 +145,8 @@
     "es": "Error al subir los archivos. Por favor, inténtelo de nuevo.",
     "ar": "خطأ في تحميل الملفات. يرجى المحاولة مرة أخرى.",
     "fr": "Erreur lors du téléchargement des fichiers. Veuillez réessayer.",
-    "tr": "Dosyalar yüklenirken hata oluştu. Lütfen tekrar deneyin."
+    "tr": "Dosyalar yüklenirken hata oluştu. Lütfen tekrar deneyin.",
+    "ja": "ファイルのアップロード中にエラーが発生しました。もう一度お試しください。"
   },
   "FILE_SERVICE$LIST_FILES_ERROR": {
     "en": "Error listing files. Please try again.",
@@ -150,7 +160,8 @@
     "es": "Error al listar los archivos. Por favor, inténtelo de nuevo.",
     "ar": "خطأ في سرد الملفات. يرجى المحاولة مرة أخرى.",
     "fr": "Erreur lors de la liste des fichiers. Veuillez réessayer.",
-    "tr": "Dosyalar listelenirken hata oluştu. Lütfen tekrar deneyin."
+    "tr": "Dosyalar listelenirken hata oluştu. Lütfen tekrar deneyin.",
+    "ja": "ファイル一覧の取得中にエラーが発生しました。もう一度お試しください。"
   },
   "FILE_SERVICE$SAVE_FILE_ERROR": {
     "en": "Error saving file. Please try again.",
@@ -164,7 +175,8 @@
     "es": "Error al guardar el archivo. Por favor, inténtelo de nuevo.",
     "ar": "خطأ في حفظ الملف. يرجى المحاولة مرة أخرى.",
     "fr": "Erreur lors de l'enregistrement du fichier. Veuillez réessayer.",
-    "tr": "Dosya kaydedilirken hata oluştu. Lütfen tekrar deneyin."
+    "tr": "Dosya kaydedilirken hata oluştu. Lütfen tekrar deneyin.",
+    "ja": "ファイルの保存中にエラーが発生しました。もう一度お試しください。"
   },
   "FILE_SERVICE$INVALID_FILE_PATH": {
     "en": "Invalid file path. Please check the file name and try again.",
@@ -178,7 +190,8 @@
     "es": "Ruta de archivo inválida. Por favor, verifique el nombre del archivo e inténtelo de nuevo.",
     "ar": "مسار الملف غير صالح. يرجى التحقق من اسم الملف والمحاولة مرة أخرى.",
     "fr": "Chemin de fichier invalide. Veuillez vérifier le nom du fichier et réessayer.",
-    "tr": "Geçersiz dosya yolu. Lütfen dosya adını kontrol edin ve tekrar deneyin."
+    "tr": "Geçersiz dosya yolu. Lütfen dosya adını kontrol edin ve tekrar deneyin.",
+    "ja": "ファイルパスが無効です。ファイル名を確認して、もう一度お試しください。"
   },
   "WORKSPACE$PLANNER_TAB_LABEL": {
     "en": "Planner",
@@ -191,7 +204,8 @@
     "fr": "Planificateur",
     "it": "Pianificatore",
     "pt": "Planejador",
-    "es": "Planificador"
+    "es": "Planificador",
+    "ja": "プランナー"
   },
   "WORKSPACE$JUPYTER_TAB_LABEL": {
     "en": "Jupyter IPython",
@@ -204,7 +218,8 @@
     "fr": "Jupyter IPython",
     "it": "Jupyter IPython",
     "pt": "Jupyter IPython",
-    "es": "Jupyter IPython"
+    "es": "Jupyter IPython",
+    "ja": "Jupyter IPython"
   },
   "WORKSPACE$CODE_EDITOR_TAB_LABEL": {
     "en": "Code Editor",
@@ -217,7 +232,8 @@
     "fr": "Éditeur de code",
     "it": "Editor di codice",
     "pt": "Editor de código",
-    "es": "Editor de código"
+    "es": "Editor de código",
+    "ja": "コードエディタ"
   },
   "WORKSPACE$BROWSER_TAB_LABEL": {
     "en": "Browser (Experimental)",
@@ -231,7 +247,8 @@
     "es": "Navegador (Experimental)",
     "ar": "المتصفح (تجريبي)",
     "fr": "Navigateur (Expérimental)",
-    "tr": "Tarayıcı (Deneysel)"
+    "tr": "Tarayıcı (Deneysel)",
+    "ja": "ブラウザ（実験的）"
   },
   "CONFIGURATION$OPENHANDS_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenHands Workspace directory",
@@ -245,7 +262,8 @@
     "es": "Directorio del espacio de trabajo de OpenHands",
     "ar": "مجلد مساحة عمل أوبنديفين",
     "fr": "Répertoire de l'espace de travail OpenHands",
-    "tr": "OpenHands çalışma alanı dizini"
+    "tr": "OpenHands çalışma alanı dizini",
+    "ja": "OpenHands ワークスペースディレクトリ"
   },
   "CONFIGURATION$OPENHANDS_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
     "en": "Default: ./workspace",
@@ -258,7 +276,8 @@
     "fr": "Par défaut: ./workspace",
     "it": "Predefinito: ./workspace",
     "pt": "Padrão: ./workspace",
-    "es": "Predeterminado: ./workspace"
+    "es": "Predeterminado: ./workspace",
+    "ja": "デフォルト: ./workspace"
   },
   "CONFIGURATION$MODAL_TITLE": {
     "en": "Configuration",
@@ -272,7 +291,8 @@
     "es": "Configuración",
     "ar": "التكوين",
     "fr": "Configuration",
-    "tr": "Konfigürasyon"
+    "tr": "Konfigürasyon",
+    "ja": "設定"
   },
   "CONFIGURATION$MODEL_SELECT_LABEL": {
     "en": "Model",
@@ -286,7 +306,8 @@
     "es": "Modelo",
     "ar": "النموذج",
     "fr": "Modèle",
-    "tr": "Model"
+    "tr": "Model",
+    "ja": "モデル"
   },
   "CONFIGURATION$MODEL_SELECT_PLACEHOLDER": {
     "en": "Select a model",
@@ -300,7 +321,8 @@
     "es": "Seleccionar un modelo",
     "ar": "حدد نموذج",
     "fr": "Sélectionner un modèle",
-    "tr": "Model Seç"
+    "tr": "Model Seç",
+    "ja": "モデルを選択"
   },
   "CONFIGURATION$AGENT_SELECT_LABEL": {
     "en": "Agent",
@@ -314,7 +336,8 @@
     "es": "Agente",
     "ar": "الوكيل",
     "fr": "Agent",
-    "tr": "Ajan"
+    "tr": "Ajan",
+    "ja": "エージェント"
   },
   "CONFIGURATION$AGENT_SELECT_PLACEHOLDER": {
     "en": "Select an agent",
@@ -328,7 +351,8 @@
     "es": "Seleccionar un agente",
     "ar": "حدد وكيلا",
     "fr": "Sélectionner un agent",
-    "tr": "Ajan Seç"
+    "tr": "Ajan Seç",
+    "ja": "エージェントを選択"
   },
   "CONFIGURATION$LANGUAGE_SELECT_LABEL": {
     "en": "Language",
@@ -341,7 +365,8 @@
     "fr": "Langue",
     "it": "Lingua",
     "pt": "Idioma",
-    "es": "Idioma"
+    "es": "Idioma",
+    "ja": "言語"
   },
   "CONFIGURATION$LANGUAGE_SELECT_PLACEHOLDER": {
     "en": "Select a language",
@@ -355,7 +380,8 @@
     "es": "Seleccionar un idioma",
     "ar": "حدد لغة",
     "fr": "Sélectionner une langue",
-    "tr": "Dil Seç"
+    "tr": "Dil Seç",
+    "ja": "言語を選択"
   },
   "CONFIGURATION$SECURITY_SELECT_LABEL": {
     "en": "Security analyzer",
@@ -369,7 +395,8 @@
     "es": "Analizador de seguridad",
     "ar": "محلل الأمان",
     "fr": "Analyseur de sécurité",
-    "tr": "Güvenlik analizörü"
+    "tr": "Güvenlik analizörü",
+    "ja": "セキュリティアナライザー"
   },
   "CONFIGURATION$SECURITY_SELECT_PLACEHOLDER": {
     "en": "Select a security analyzer (optional)",
@@ -383,7 +410,8 @@
     "es": "Seleccione un analizador de seguridad (opcional)",
     "ar": "اختر محلل أمان (اختياري)",
     "fr": "Sélectionnez un analyseur de sécurité (facultatif)",
-    "tr": "Bir güvenlik analizörü seçin (isteğe bağlı)"
+    "tr": "Bir güvenlik analizörü seçin (isteğe bağlı)",
+    "ja": "セキュリティアナライザーを選択（オプション）"
   },
   "CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL": {
     "en": "Close",
@@ -397,7 +425,8 @@
     "es": "Cerrar",
     "ar": "إغلاق",
     "fr": "Fermer",
-    "tr": "Kapat"
+    "tr": "Kapat",
+    "ja": "閉じる"
   },
   "CONFIGURATION$MODAL_SAVE_BUTTON_LABEL": {
     "en": "Save",
@@ -410,7 +439,8 @@
     "fr": "Enregistrer",
     "it": "Salva",
     "pt": "Salvar",
-    "es": "Guardar"
+    "es": "Guardar",
+    "ja": "保存"
   },
   "CONFIGURATION$MODAL_RESET_BUTTON_LABEL": {
     "en": "Reset to defaults",
@@ -424,7 +454,8 @@
     "es": "Restablecer valores predeterminados",
     "ar": "إعادة التعيين إلى الإعدادات الافتراضية",
     "fr": "Réinitialiser aux valeurs par défaut",
-    "tr": "Varsayılanlara Sıfırla"
+    "tr": "Varsayılanlara Sıfırla",
+    "ja": "デフォルトにリセット"
   },
   "CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE": {
     "en": "We've changed some settings in the latest update. Take a minute to review.",
@@ -438,7 +469,8 @@
     "es": "Hemos cambiado algunas configuraciones en la última actualización. Tómate un momento para revisarlas.",
     "ar": "لقد قمنا بتغيير بعض الإعدادات في التحديث الأخير. خذ دقيقة لمراجعتها.",
     "fr": "Nous avons modifié certains paramètres dans la dernière mise à jour. Prenez un moment pour les examiner.",
-    "tr": "Son güncellemede bazı ayarları değiştirdik. Gözden geçirmek için bir dakikanızı ayırın."
+    "tr": "Son güncellemede bazı ayarları değiştirdik. Gözden geçirmek için bir dakikanızı ayırın.",
+    "ja": "最新のアップデートで一部の設定を変更しました。確認のためにお時間をいただけますか。"
   },
   "CONFIGURATION$AGENT_LOADING": {
     "en": "Please wait while the agent loads. This may take a few minutes...",
@@ -452,7 +484,8 @@
     "es": "Por favor, espere mientras el agente se carga. Esto puede tardar unos minutos...",
     "ar": "يرجى الانتظار أثناء تحميل الوكيل. قد يستغرق هذا بضع دقائق...",
     "fr": "Veuillez patienter pendant le chargement de l'agent. Cela peut prendre quelques minutes...",
-    "tr": "Lütfen ajan yüklenirken bekleyin. Bu birkaç dakika sürebilir..."
+    "tr": "Lütfen ajan yüklenirken bekleyin. Bu birkaç dakika sürebilir...",
+    "ja": "エージェントの読み込み中です。数分かかる場合があります..."
   },
   "CONFIGURATION$AGENT_RUNNING": {
     "en": "Please stop the agent before editing these settings.",
@@ -466,7 +499,8 @@
     "es": "Por favor, detenga el agente antes de editar estas configuraciones.",
     "ar": "يرجى إيقاف الوكيل قبل تعديل هذه الإعدادات.",
     "fr": "Veuillez arrêter l'agent avant de modifier ces paramètres.",
-    "tr": "Bu ayarları düzenlemeden önce lütfen ajanı durdurun."
+    "tr": "Bu ayarları düzenlemeden önce lütfen ajanı durdurun.",
+    "ja": "これらの設定を編集する前にエージェントを停止してください。"
   },
   "CONFIGURATION$ERROR_FETCH_MODELS": {
     "en": "Failed to fetch models and agents",
@@ -480,7 +514,8 @@
     "ko-KR": "모델 및 에이전트 가져오기 실패",
     "ar": "فشل في جلب النماذج والوكلاء",
     "tr": "Modeller ve ajanlar getirilemedi",
-    "no": "Kunne ikke hente modeller og agenter"
+    "no": "Kunne ikke hente modeller og agenter",
+    "ja": "モデルとエージェントの取得に失敗しました"
   },
   "SESSION$SERVER_CONNECTED_MESSAGE": {
     "en": "Connected to server",
@@ -494,7 +529,8 @@
     "ko-KR": "서버에 연결됨",
     "ar": "تم الاتصال بالخادم",
     "tr": "Sunucuya bağlandı",
-    "no": "Koblet til server"
+    "no": "Koblet til server",
+    "ja": "サーバーに接続しました"
   },
   "SESSION$SESSION_HANDLING_ERROR_MESSAGE": {
     "en": "Error handling message",
@@ -508,7 +544,8 @@
     "ko-KR": "메시지 처리 중 오류 발생",
     "ar": "خطأ في معالجة الرسالة",
     "tr": "Mesaj işlenirken hata oluştu",
-    "no": "Feil ved behandling av melding"
+    "no": "Feil ved behandling av melding",
+    "ja": "メッセージの処理中にエラーが発生しました"
   },
   "SESSION$SESSION_CONNECTION_ERROR_MESSAGE": {
     "en": "Error connecting to session",
@@ -522,7 +559,8 @@
     "ko-KR": "세션 연결 오류",
     "ar": "خطأ في الاتصال بالجلسة",
     "tr": "Oturuma bağlanırken hata oluştu",
-    "no": "Feil ved tilkobling til økt"
+    "no": "Feil ved tilkobling til økt",
+    "ja": "セッションへの接続中にエラーが発生しました"
   },
   "SESSION$SOCKET_NOT_INITIALIZED_ERROR_MESSAGE": {
     "en": "Socket not initialized",
@@ -536,7 +574,8 @@
     "ko-KR": "소켓이 초기화되지 않았습니다",
     "ar": "لم يتم تهيئة Socket",
     "tr": "Soket başlatılmadı",
-    "no": "Socket ikke initialisert"
+    "no": "Socket ikke initialisert",
+    "ja": "ソケットが初期化されていません"
   },
   "EXPLORER$UPLOAD_ERROR_MESSAGE": {
     "en": "Error uploading file",
@@ -550,7 +589,8 @@
     "ko-KR": "파일 업로드 중 오류 발생",
     "ar": "خطأ في تحميل الملف",
     "tr": "Dosya yüklenirken hata oluştu",
-    "no": "Feil ved opplasting av fil"
+    "no": "Feil ved opplasting av fil",
+    "ja": "ファイルのアップロード中にエラーが発生しました"
   },
   "EXPLORER$LABEL_DROP_FILES": {
     "en": "Drop files here",
@@ -564,7 +604,8 @@
     "pt": "Solte os arquivos aqui",
     "ko-KR": "파일을 여기에 놓으세요",
     "ar": "أسقط الملفات هنا",
-    "tr": "Dosyaları buraya bırakın"
+    "tr": "Dosyaları buraya bırakın",
+    "ja": "ここにファイルをドロップ"
   },
   "EXPLORER$LABEL_WORKSPACE": {
     "en": "Workspace",
@@ -578,7 +619,8 @@
     "ko-KR": "작업 공간",
     "ar": "مساحة العمل",
     "tr": "Çalışma alanı",
-    "no": "Arbeidsområde"
+    "no": "Arbeidsområde",
+    "ja": "ワークスペース"
   },
   "EXPLORER$EMPTY_WORKSPACE_MESSAGE": {
     "en": "No files in workspace",
@@ -592,7 +634,8 @@
     "ko-KR": "작업 공간에 파일이 없습니다",
     "ar": "لا توجد ملفات في مساحة العمل",
     "tr": "Çalışma alanında dosya yok",
-    "no": "Ingen filer i arbeidsområdet"
+    "no": "Ingen filer i arbeidsområdet",
+    "ja": "ワークスペースにファイルがありません"
   },
   "EXPLORER$LOADING_WORKSPACE_MESSAGE": {
     "en": "Loading workspace...",
@@ -606,7 +649,8 @@
     "ko-KR": "작업 공간 로딩 중...",
     "ar": "جارٍ تحميل مساحة العمل...",
     "tr": "Çalışma alanı yükleniyor...",
-    "no": "Laster arbeidsområde..."
+    "no": "Laster arbeidsområde...",
+    "ja": "ワークスペースを読み込み中..."
   },
   "EXPLORER$REFRESH_ERROR_MESSAGE": {
     "en": "Error refreshing workspace",
@@ -620,7 +664,8 @@
     "ko-KR": "작업 공간 새로 고침 오류",
     "ar": "خطأ في تحديث مساحة العمل",
     "tr": "Çalışma alanı yenilenirken hata oluştu",
-    "no": "Feil ved oppdatering av arbeidsområde"
+    "no": "Feil ved oppdatering av arbeidsområde",
+    "ja": "ワークスペースの更新中にエラーが発生しました"
   },
   "EXPLORER$UPLOAD_SUCCESS_MESSAGE": {
     "en": "Successfully uploaded {{count}} file(s)",
@@ -634,7 +679,8 @@
     "ko-KR": "{{count}}개의 파일을 성공적으로 업로드했습니다",
     "ar": "تم تحميل {{count}} ملف (ملفات) بنجاح",
     "tr": "{{count}} dosya başarıyla yüklendi",
-    "no": "Lastet opp {{count}} fil(er) vellykket"
+    "no": "Lastet opp {{count}} fil(er) vellykket",
+    "ja": "{{count}}個のファイルが正常にアップロードされました"
   },
   "EXPLORER$NO_FILES_UPLOADED_MESSAGE": {
     "en": "No files were uploaded",
@@ -648,7 +694,8 @@
     "ko-KR": "업로드된 파일이 없습니다",
     "ar": "لم يتم تحميل أي ملفات",
     "tr": "Hiçbir dosya yüklenmedi",
-    "no": "Ingen filer ble lastet opp"
+    "no": "Ingen filer ble lastet opp",
+    "ja": "アップロードされたファイルはありません"
   },
   "EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE": {
     "en": "{{count}} file(s) were skipped during upload",
@@ -662,7 +709,8 @@
     "ko-KR": "업로드 중 {{count}}개의 파일이 건너뛰어졌습니다",
     "ar": "تم تخطي {{count}} ملف (ملفات) أثناء التحميل",
     "tr": "Yükleme sırasında {{count}} dosya atlandı",
-    "no": "{{count}} fil(er) ble hoppet over under opplasting"
+    "no": "{{count}} fil(er) ble hoppet over under opplasting",
+    "ja": "アップロード中に{{count}}個のファイルがスキップされました"
   },
   "EXPLORER$UPLOAD_UNEXPECTED_RESPONSE_MESSAGE": {
     "en": "Unexpected response structure from server",
@@ -676,17 +724,20 @@
     "ko-KR": "서버로부터 예상치 못한 응답 구조",
     "ar": "بنية استجابة غير متوقعة من الخادم",
     "tr": "Sunucudan beklenmeyen yanıt yapısı",
-    "no": "Uventet responsstruktur fra serveren"
+    "no": "Uventet responsstruktur fra serveren",
+    "ja": "サーバーから予期しない応答構造が返されました"
   },
   "EXPLORER$VSCODE_SWITCHING_MESSAGE": {
     "en": "Switching to VS Code in 3 seconds...\nImportant: Please inform the agent of any changes you make in VS Code. To avoid conflicts, wait for the assistant to complete its work before making your own changes.",
     "zh-CN": "3 秒后切换到 VS Code\n重要提示：请告知 OpenHands 您在 VS Code 中进行的任何更改。为了避免冲突，请在 OpenHands 完成工作后再进行自己的更改。",
-    "zh-TW": "3 秒後切換到 VS Code\n重要提示：請告知 OpenHands 您在 VS Code 中進行的任何更改。為避免衝突，請在 OpenHands 完成工作後再進行自己的更改。"
+    "zh-TW": "3 秒後切換到 VS Code\n重要提示：請告知 OpenHands 您在 VS Code 中進行的任何更改。為避免衝突，請在 OpenHands 完成工作後再進行自己的更改。",
+    "ja": "3秒後にVS Codeに切り替わります...\n重要：VS Codeで行った変更はエージェントに通知してください。競合を避けるため、アシスタントの作業が完了するまで自身の変更を待ってください。"
   },
   "EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE": {
     "en": "Error switching to VS Code: {{error}}",
     "zh-CN": "切换到 VS Code 时发生错误: {{error}}",
-    "zh-TW": "切換到 VS Code 時發生錯誤: {{error}}"
+    "zh-TW": "切換到 VS Code 時發生錯誤: {{error}}",
+    "ja": "VS Codeへの切り替え中にエラーが発生しました: {{error}}"
   },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Return to existing session?",
@@ -699,7 +750,8 @@
     "pt": "Retornar à sessão existente?",
     "ko-KR": "기존 세션으로 돌아가시겠습니까?",
     "ar": "العودة إلى الجلسة الحالية؟",
-    "tr": "Mevcut oturuma dönmek ister misiniz?"
+    "tr": "Mevcut oturuma dönmek ister misiniz?",
+    "ja": "既存のセッションに戻りますか？"
   },
   "LOAD_SESSION$MODAL_CONTENT": {
     "en": "You seem to have an ongoing session. Would you like to pick up where you left off, or start fresh?",
@@ -712,7 +764,8 @@
     "ar": "يبدو أن لديك جلسة جارية. هل ترغب في استكمال ما توقفت عنده أم البدء من جديد؟",
     "tr": "Devam eden bir oturumunuz var gibi görünüyor. Kaldığınız yerden devam etmek mi yoksa yeniden başlamak mı istersiniz?",
     "zh-CN": "您似乎有一个未完成的任务。您想继续之前的工作还是重新开始？",
-    "zh-TW": "您似乎有一個未完成的任務。您想從上次離開的地方繼續還是重新開始？"
+    "zh-TW": "您似乎有一個未完成的任務。您想從上次離開的地方繼續還是重新開始？",
+    "ja": "進行中のセッションがあるようです。中断した箇所から再開しますか、それとも新しく始めますか？"
   },
   "LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL": {
     "en": "Resume Session",
@@ -725,7 +778,8 @@
     "pt": "Retomar sessão",
     "ko-KR": "세션 재개",
     "ar": "استئناف الجلسة",
-    "tr": "Oturumu Devam Ettir"
+    "tr": "Oturumu Devam Ettir",
+    "ja": "セッションを再開"
   },
   "LOAD_SESSION$START_NEW_SESSION_MODAL_ACTION_LABEL": {
     "en": "Start New Session",
@@ -738,7 +792,8 @@
     "pt": "Iniciar nova sessão",
     "ko-KR": "새 세션 시작",
     "ar": "بدء جلسة جديدة",
-    "tr": "Yeni Oturum Başlat"
+    "tr": "Yeni Oturum Başlat",
+    "ja": "新しいセッションを開始"
   },
   "FEEDBACK$MODAL_TITLE": {
     "en": "Share feedback",
@@ -751,7 +806,8 @@
     "pt": "Compartilhar feedback",
     "ko-KR": "피드백 공유",
     "ar": "مشاركة التعليقات",
-    "tr": "Geri bildirim paylaş"
+    "tr": "Geri bildirim paylaş",
+    "ja": "フィードバックを共有"
   },
   "FEEDBACK$MODAL_CONTENT": {
     "en": "To help us improve, we collect feedback from your interactions to improve our prompts. By submitting this form, you consent to us collecting this data.",
@@ -764,7 +820,8 @@
     "pt": "Para nos ajudar a melhorar, coletamos feedback de suas interações para aprimorar nossas sugestões. Ao enviar este formulário, você consente que coletemos esses dados.",
     "ko-KR": "개선을 위해 귀하의 상호 작용에서 피드백을 수집하여 프롬프트를 개선합니다. 이 양식을 제출함으로써 귀하는 이 데이터 수집에 동의하게 됩니다.",
     "ar": "لمساعدتنا على التحسين، نقوم بجمع التعليقات من تفاعلاتك لتحسين مطالباتنا. من خلال إرسال هذا النموذج، فإنك توافق على جمعنا لهذه البيانات.",
-    "tr": "Kendimizi geliştirmemize yardımcı olmak için, etkileşimlerinizden geri bildirim toplayarak ipuçlarımızı iyileştiriyoruz. Bu formu göndererek, bu verileri toplamamıza izin vermiş olursunuz."
+    "tr": "Kendimizi geliştirmemize yardımcı olmak için, etkileşimlerinizden geri bildirim toplayarak ipuçlarımızı iyileştiriyoruz. Bu formu göndererek, bu verileri toplamamıza izin vermiş olursunuz.",
+    "ja": "サービス改善のため、プロンプトの改善に向けてユーザーの操作からフィードバックを収集しています。このフォームを送信することで、データ収集に同意したことになります。"
   },
   "FEEDBACK$EMAIL_LABEL": {
     "en": "Your email",
@@ -777,7 +834,8 @@
     "pt": "Seu e-mail",
     "ko-KR": "귀하의 이메일",
     "ar": "بريدك الإلكتروني",
-    "tr": "E-posta adresiniz"
+    "tr": "E-posta adresiniz",
+    "ja": "メールアドレス"
   },
   "FEEDBACK$CONTRIBUTE_LABEL": {
     "en": "Contribute to public dataset",
@@ -790,7 +848,8 @@
     "pt": "Contribuir para o conjunto de dados público",
     "ko-KR": "공개 데이터셋에 기여",
     "ar": "المساهمة في مجموعة البيانات العامة",
-    "tr": "Genel veri setine katkıda bulun"
+    "tr": "Genel veri setine katkıda bulun",
+    "ja": "公開データセットに貢献"
   },
   "FEEDBACK$SHARE_LABEL": {
     "en": "Share",
@@ -803,7 +862,8 @@
     "pt": "Compartilhar",
     "ko-KR": "공유",
     "ar": "مشاركة",
-    "tr": "Paylaş"
+    "tr": "Paylaş",
+    "ja": "共有"
   },
   "FEEDBACK$CANCEL_LABEL": {
     "en": "Cancel",
@@ -816,7 +876,8 @@
     "pt": "Cancelar",
     "ko-KR": "취소",
     "ar": "إلغاء",
-    "tr": "İptal"
+    "tr": "İptal",
+    "ja": "キャンセル"
   },
   "FEEDBACK$EMAIL_PLACEHOLDER": {
     "en": "Enter your email address",
@@ -830,7 +891,8 @@
     "fr": "Entrez votre adresse e-mail",
     "it": "Inserisci il tuo indirizzo email",
     "pt": "Digite seu endereço de e-mail",
-    "tr": "E-posta adresinizi girin"
+    "tr": "E-posta adresinizi girin",
+    "ja": "メールアドレスを入力してください"
   },
   "FEEDBACK$PASSWORD_COPIED_MESSAGE": {
     "en": "Password copied to clipboard.",
@@ -844,7 +906,8 @@
     "fr": "Mot de passe copié dans le presse-papiers.",
     "it": "Password copiata negli appunti.",
     "pt": "Senha copiada para a área de transferência.",
-    "tr": "Parola panoya kopyalandı."
+    "tr": "Parola panoya kopyalandı.",
+    "ja": "パスワードがクリップボードにコピーされました。"
   },
   "FEEDBACK$GO_TO_FEEDBACK": {
     "en": "Go to shared feedback",
@@ -858,7 +921,8 @@
     "fr": "Aller aux commentaires partagés",
     "it": "Vai al feedback condiviso",
     "pt": "Ir para feedback compartilhado",
-    "tr": "Paylaşılan geri bildirimlere git"
+    "tr": "Paylaşılan geri bildirimlere git",
+    "ja": "共有されたフィードバックへ移動"
   },
   "FEEDBACK$PASSWORD": {
     "en": "Password:",
@@ -872,7 +936,8 @@
     "fr": "Mot de passe :",
     "it": "Password:",
     "pt": "Senha:",
-    "tr": "Parola:"
+    "tr": "Parola:",
+    "ja": "パスワード："
   },
   "FEEDBACK$INVALID_EMAIL_FORMAT": {
     "en": "Invalid email format",
@@ -886,7 +951,8 @@
     "fr": "Format d'e-mail invalide",
     "it": "Formato email non valido",
     "pt": "Formato de e-mail inválido",
-    "tr": "Geçersiz e-posta biçimi"
+    "tr": "Geçersiz e-posta biçimi",
+    "ja": "無効なメールアドレス形式"
   },
   "FEEDBACK$FAILED_TO_SHARE": {
     "en": "Failed to share, please contact the developers:",
@@ -900,7 +966,8 @@
     "fr": "Échec du partage, veuillez contacter les développeurs :",
     "it": "Condivisione fallita, contattare gli sviluppatori:",
     "pt": "Falha ao compartilhar, entre em contato com os desenvolvedores:",
-    "tr": "Paylaşım başarısız, lütfen geliştiricilerle iletişime geçin:"
+    "tr": "Paylaşım başarısız, lütfen geliştiricilerle iletişime geçin:",
+    "ja": "共有に失敗しました。開発者に連絡してください："
   },
   "FEEDBACK$COPY_LABEL": {
     "en": "Copy",
@@ -914,7 +981,8 @@
     "fr": "Copier",
     "it": "Copia",
     "pt": "Copiar",
-    "tr": "Kopyala"
+    "tr": "Kopyala",
+    "ja": "コピー"
   },
   "FEEDBACK$SHARING_SETTINGS_LABEL": {
     "en": "Sharing settings",
@@ -928,7 +996,8 @@
     "fr": "Paramètres de partage",
     "it": "Impostazioni di condivisione",
     "pt": "Configurações de compartilhamento",
-    "tr": "Paylaşım ayarları"
+    "tr": "Paylaşım ayarları",
+    "ja": "共有設定"
   },
   "SECURITY$UNKNOWN_ANALYZER_LABEL": {
     "en": "Unknown security analyzer chosen",
@@ -942,7 +1011,8 @@
     "fr": "Analyseur de sécurité inconnu choisi",
     "it": "Analizzatore di sicurezza sconosciuto selezionato",
     "pt": "Analisador de segurança desconhecido escolhido",
-    "tr": "Bilinmeyen güvenlik analizörü seçildi"
+    "tr": "Bilinmeyen güvenlik analizörü seçildi",
+    "ja": "不明なセキュリティアナライザーが選択されました"
   },
   "INVARIANT$UPDATE_POLICY_LABEL": {
     "en": "Update Policy",
@@ -956,7 +1026,8 @@
     "fr": "Mettre à jour la politique",
     "it": "Aggiorna policy",
     "pt": "Atualizar política",
-    "tr": "İlkeyi güncelle"
+    "tr": "İlkeyi güncelle",
+    "ja": "ポリシーを更新"
   },
   "INVARIANT$UPDATE_SETTINGS_LABEL": {
     "en": "Update Settings",
@@ -970,7 +1041,8 @@
     "fr": "Mettre à jour les paramètres",
     "it": "Aggiorna impostazioni",
     "pt": "Atualizar configurações",
-    "tr": "Ayarları güncelle"
+    "tr": "Ayarları güncelle",
+    "ja": "設定を更新"
   },
   "INVARIANT$SETTINGS_LABEL": {
     "en": "Settings",
@@ -984,7 +1056,8 @@
     "fr": "Paramètres",
     "it": "Impostazioni",
     "pt": "Configurações",
-    "tr": "Ayarlar"
+    "tr": "Ayarlar",
+    "ja": "設定"
   },
   "INVARIANT$ASK_CONFIRMATION_RISK_SEVERITY_LABEL": {
     "en": "Ask for user confirmation on risk severity:",
@@ -998,7 +1071,8 @@
     "fr": "Demander la confirmation de l'utilisateur sur la gravité du risque :",
     "it": "Chiedi conferma all'utente sulla gravità del rischio:",
     "pt": "Solicitar confirmação do usuário sobre a gravidade do risco:",
-    "tr": "Risk şiddeti için kullanıcı onayı iste:"
+    "tr": "Risk şiddeti için kullanıcı onayı iste:",
+    "ja": "リスクの重大度についてユーザーの確認を求める："
   },
   "INVARIANT$DONT_ASK_FOR_CONFIRMATION_LABEL": {
     "en": "Don't ask for confirmation",
@@ -1012,7 +1086,8 @@
     "fr": "Ne pas demander de confirmation",
     "it": "Non chiedere conferma",
     "pt": "Não solicitar confirmação",
-    "tr": "Onay isteme"
+    "tr": "Onay isteme",
+    "ja": "確認を求めない"
   },
   "INVARIANT$INVARIANT_ANALYZER_LABEL": {
     "en": "Invariant Analyzer",
@@ -1026,7 +1101,8 @@
     "fr": "Analyseur d'invariants",
     "it": "Analizzatore di invarianti",
     "pt": "Analisador de invariantes",
-    "tr": "Değişmez Analizörü"
+    "tr": "Değişmez Analizörü",
+    "ja": "不変条件アナライザー"
   },
   "INVARIANT$INVARIANT_ANALYZER_MESSAGE": {
     "en": "Invariant Analyzer continuously monitors your OpenHands agent for security issues.",
@@ -1040,7 +1116,8 @@
     "fr": "L'analyseur d'invariants surveille en permanence votre agent OpenHands pour détecter les problèmes de sécurité.",
     "it": "L'analizzatore di invarianti monitora continuamente il tuo agente OpenHands per problemi di sicurezza.",
     "pt": "O analisador de invariantes monitora continuamente seu agente OpenHands em busca de problemas de segurança.",
-    "tr": "Değişmez Analizörü, OpenHands ajanınızı güvenlik sorunları için sürekli olarak izler."
+    "tr": "Değişmez Analizörü, OpenHands ajanınızı güvenlik sorunları için sürekli olarak izler.",
+    "ja": "不変条件アナライザーは、OpenHandsエージェントのセキュリティ問題を継続的に監視します。"
   },
   "INVARIANT$CLICK_TO_LEARN_MORE_LABEL": {
     "en": "Click to learn more",
@@ -1054,7 +1131,8 @@
     "fr": "Cliquez pour en savoir plus",
     "it": "Clicca per saperne di più",
     "pt": "Clique para saber mais",
-    "tr": "Daha fazla bilgi için tıklayın"
+    "tr": "Daha fazla bilgi için tıklayın",
+    "ja": "詳細はこちらをクリック"
   },
   "INVARIANT$POLICY_LABEL": {
     "en": "Policy",
@@ -1068,7 +1146,8 @@
     "fr": "Politique",
     "it": "Policy",
     "pt": "Política",
-    "tr": "İlke"
+    "tr": "İlke",
+    "ja": "ポリシー"
   },
   "INVARIANT$LOG_LABEL": {
     "en": "Logs",
@@ -1082,7 +1161,8 @@
     "fr": "Journaux",
     "it": "Log",
     "pt": "Logs",
-    "tr": "Günlükler"
+    "tr": "Günlükler",
+    "ja": "ログ"
   },
   "INVARIANT$EXPORT_TRACE_LABEL": {
     "en": "Export Trace",
@@ -1096,7 +1176,8 @@
     "fr": "Exporter la trace",
     "it": "Esporta traccia",
     "pt": "Exportar rastreamento",
-    "tr": "İzlemeyi dışa aktar"
+    "tr": "İzlemeyi dışa aktar",
+    "ja": "トレースをエクスポート"
   },
   "INVARIANT$TRACE_EXPORTED_MESSAGE": {
     "en": "Trace exported",
@@ -1110,7 +1191,8 @@
     "fr": "Trace exportée",
     "it": "Traccia esportata",
     "pt": "Rastreamento exportado",
-    "tr": "İzleme dışa aktarıldı"
+    "tr": "İzleme dışa aktarıldı",
+    "ja": "トレースをエクスポートしました"
   },
   "INVARIANT$POLICY_UPDATED_MESSAGE": {
     "en": "Policy updated",
@@ -1124,7 +1206,8 @@
     "fr": "Politique mise à jour",
     "it": "Policy aggiornata",
     "pt": "Política atualizada",
-    "tr": "İlke güncellendi"
+    "tr": "İlke güncellendi",
+    "ja": "ポリシーを更新しました"
   },
   "INVARIANT$SETTINGS_UPDATED_MESSAGE": {
     "en": "Settings updated",
@@ -1138,7 +1221,8 @@
     "fr": "Paramètres mis à jour",
     "it": "Impostazioni aggiornate",
     "pt": "Configurações atualizadas",
-    "tr": "Ayarlar güncellendi"
+    "tr": "Ayarlar güncellendi",
+    "ja": "設定を更新しました"
   },
   "CHAT_INTERFACE$INITIALIZING_AGENT_LOADING_MESSAGE": {
     "en": "Starting up!",
@@ -1152,7 +1236,8 @@
     "es": "¡Iniciando!",
     "ar": "جارٍ البدء!",
     "fr": "Démarrage en cours !",
-    "tr": "Başlatılıyor!"
+    "tr": "Başlatılıyor!",
+    "ja": "起動中！"
   },
   "CHAT_INTERFACE$AGENT_INIT_MESSAGE": {
     "en": "Agent is initialized, waiting for task...",
@@ -1166,7 +1251,8 @@
     "es": "El agente está inicializado, esperando tarea...",
     "ar": "تم تهيئة الوكيل، في انتظار المهمة...",
     "fr": "L'agent est initialisé, en attente de tâche...",
-    "tr": "Ajan başlatıldı, görev bekleniyor..."
+    "tr": "Ajan başlatıldı, görev bekleniyor...",
+    "ja": "エージェントの初期化が完了しました。タスクを待機中..."
   },
   "CHAT_INTERFACE$AGENT_RUNNING_MESSAGE": {
     "en": "Agent is running task",
@@ -1180,7 +1266,8 @@
     "es": "El agente está ejecutando la tarea",
     "ar": "الوكيل يقوم بتنفيذ المهمة",
     "fr": "L'agent exécute la tâche",
-    "tr": "Ajan görevi yürütüyor"
+    "tr": "Ajan görevi yürütüyor",
+    "ja": "エージェントがタスクを実行中"
   },
   "CHAT_INTERFACE$AGENT_AWAITING_USER_INPUT_MESSAGE": {
     "en": "Agent is awaiting user input...",
@@ -1194,7 +1281,8 @@
     "es": "El agente está esperando la entrada del usuario...",
     "ar": "الوكيل في انتظار إدخال المستخدم...",
     "fr": "L'agent attend l'entrée de l'utilisateur...",
-    "tr": "Ajan kullanıcı girdisini bekliyor..."
+    "tr": "Ajan kullanıcı girdisini bekliyor...",
+    "ja": "エージェントがユーザー入力を待機中..."
   },
   "CHAT_INTERFACE$AGENT_RATE_LIMITED_MESSAGE": {
   "en": "Agent is Rate Limited",
@@ -1208,7 +1296,8 @@
   "es": "El agente está limitado por tasa",
   "ar": "الوكيل مقيد بحد السرعة",
   "fr": "L'agent est limité en fréquence",
-  "tr": "Ajan hız sınırına ulaştı"
+  "tr": "Ajan hız sınırına ulaştı",
+  "ja": "エージェントがレート制限中"
   },
   "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
     "en": "Agent has paused.",
