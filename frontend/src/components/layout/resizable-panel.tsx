@@ -45,204 +45,152 @@ export function ResizablePanel({
   orientation,
   initialSize,
 }: ResizablePanelProps): JSX.Element {
-  const [firstSize, setFirstSize] = useState<number>(() => {
-    // Enforce initial size constraints
-    if (orientation === Orientation.HORIZONTAL) {
-      const minWidth = 350;
-      const maxWidth = window.innerWidth * 0.5; // Allow up to 50% of window width
-      return Math.min(Math.max(initialSize, minWidth), maxWidth);
-    }
-    const minHeight = 300; // Match terminal's minHeight
-    const maxHeight = window.innerHeight * 0.7;
-    return Math.min(Math.max(initialSize, minHeight), maxHeight);
-  });
+  const isHorizontal = orientation === Orientation.HORIZONTAL;
+  const getConstraints = useCallback(
+    () => ({
+      min: isHorizontal ? 350 : 300,
+      max: isHorizontal ? window.innerWidth * 0.5 : window.innerHeight * 0.7,
+    }),
+    [isHorizontal],
+  );
+
+  const constrainSize = useCallback(
+    (size: number) => {
+      const { min, max } = getConstraints();
+      return Math.min(Math.max(size, min), max);
+    },
+    [getConstraints],
+  );
+
+  const [firstSize, setFirstSize] = useState(() => constrainSize(initialSize));
   const [dividerPosition, setDividerPosition] = useState<number | null>(null);
+  const [collapse, setCollapse] = useState(Collapse.SPLIT);
   const firstRef = useRef<HTMLDivElement>(null);
   const secondRef = useRef<HTMLDivElement>(null);
-  const [collapse, setCollapse] = useState<Collapse>(Collapse.SPLIT);
-  const isHorizontal = orientation === Orientation.HORIZONTAL;
 
-  // Debounce function to limit resize handler calls
-  const debounce = useCallback((fn: () => void, delay: number) => {
-    let timeoutId: NodeJS.Timeout;
+  useEffect(() => {
+    const handleResize = () => setFirstSize(constrainSize(firstSize));
+    const timeoutId = setTimeout(handleResize, 100);
+    window.addEventListener("resize", handleResize);
     return () => {
       clearTimeout(timeoutId);
-      timeoutId = setTimeout(fn, delay);
+      window.removeEventListener("resize", handleResize);
     };
-  }, []);
-
-  // Handle window resize to maintain constraints
-  useEffect(() => {
-    const handleResize = () => {
-      if (orientation === Orientation.HORIZONTAL) {
-        const maxWidth = window.innerWidth * 0.5; // Max 50% of window width
-        const minWidth = 350;
-        const newSize = Math.min(Math.max(firstSize, minWidth), maxWidth);
-        if (newSize !== firstSize) {
-          setFirstSize(newSize);
-        }
-      } else {
-        const maxHeight = window.innerHeight * 0.7;
-        const minHeight = 300; // Match terminal's minHeight
-        const newSize = Math.min(Math.max(firstSize, minHeight), maxHeight);
-        if (newSize !== firstSize) {
-          setFirstSize(newSize);
-        }
-      }
-    };
-
-    // Initial resize to ensure proper sizing
-    handleResize();
-
-    const debouncedResize = debounce(handleResize, 100);
-    window.addEventListener("resize", debouncedResize);
-    return () => window.removeEventListener("resize", debouncedResize);
-  }, [orientation, firstSize, debounce]);
+  }, [firstSize, constrainSize]);
 
   useEffect(() => {
-    if (dividerPosition == null || !firstRef.current) {
-      return undefined;
-    }
-    const getFirstSizeFromEvent = (e: MouseEvent) => {
-      const position = isHorizontal ? e.clientX : e.clientY;
-      const newSize = firstSize + position - dividerPosition;
+    if (!dividerPosition) return undefined;
 
-      // Enforce min/max constraints
-      if (isHorizontal) {
-        const minWidth = 350; // Min width for chat panel
-        const maxWidth = window.innerWidth * 0.5; // Max 50% of window width
-        return Math.min(Math.max(newSize, minWidth), maxWidth);
-      }
-      const minHeight = 300; // Min height for workspace/terminal panel
-      const maxHeight = window.innerHeight * 0.7; // 70% of window height
-      return Math.min(Math.max(newSize, minHeight), maxHeight);
-    };
     const onMouseMove = (e: MouseEvent) => {
       e.preventDefault();
-      setFirstSize(getFirstSizeFromEvent(e));
+      const delta = (isHorizontal ? e.clientX : e.clientY) - dividerPosition;
+      setFirstSize(constrainSize(firstSize + delta));
+      setDividerPosition(isHorizontal ? e.clientX : e.clientY);
     };
+
     const onMouseUp = (e: MouseEvent) => {
       e.preventDefault();
-      if (firstRef.current) {
-        firstRef.current.style.transition = "";
-      }
-      if (secondRef.current) {
-        secondRef.current.style.transition = "";
-      }
-      setFirstSize(getFirstSizeFromEvent(e));
+      if (firstRef.current) firstRef.current.style.transition = "";
+      if (secondRef.current) secondRef.current.style.transition = "";
+      setFirstSize(
+        constrainSize(
+          firstSize +
+            ((isHorizontal ? e.clientX : e.clientY) - dividerPosition),
+        ),
+      );
       setDividerPosition(null);
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
     };
+
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
     return () => {
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
     };
-  }, [dividerPosition, firstSize, isHorizontal]);
+  }, [dividerPosition, firstSize, isHorizontal, constrainSize]);
 
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (firstRef.current) {
-      firstRef.current.style.transition = "none";
-    }
-    if (secondRef.current) {
-      secondRef.current.style.transition = "none";
-    }
-    const position = isHorizontal ? e.clientX : e.clientY;
-    setDividerPosition(position);
+    if (firstRef.current) firstRef.current.style.transition = "none";
+    if (secondRef.current) secondRef.current.style.transition = "none";
+    setDividerPosition(isHorizontal ? e.clientX : e.clientY);
   };
 
-  const getStyleForFirst = useCallback(() => {
-    const style: CSSProperties = { overflow: "hidden" };
-    if (collapse === Collapse.COLLAPSED) {
-      style.opacity = 0;
-      style.width = 0;
-      style.minWidth = 0;
-      style.height = 0;
-      style.minHeight = 0;
-    } else if (collapse === Collapse.SPLIT) {
-      if (isHorizontal) {
-        const minWidth = 350;
-        const maxWidth = window.innerWidth * 0.5; // Allow up to 50% of window width
-        // Ensure first panel width respects min/max constraints
-        const width = Math.min(Math.max(firstSize, minWidth), maxWidth);
-        style.width = `${width}px`;
-        style.minWidth = `${minWidth}px`;
-        style.maxWidth = "50%";
-        style.flexShrink = 0; // Prevent shrinking below set width
-      } else {
-        const minHeight = 250;
-        const maxHeight = window.innerHeight * 0.7;
-        // Ensure first panel height respects min/max constraints
-        const height = Math.min(Math.max(firstSize, minHeight), maxHeight);
-        style.height = `${height}px`;
-        style.minHeight = `${minHeight}px`;
-        style.maxHeight = "70%";
-        style.flexShrink = 0; // Prevent shrinking below set height
+  const getPanelStyle = useCallback(
+    (isFirst: boolean): CSSProperties => {
+      const style: CSSProperties = { overflow: "hidden" };
+      const { min } = getConstraints();
+      const isHidden =
+        (isFirst && collapse === Collapse.COLLAPSED) ||
+        (!isFirst && collapse === Collapse.FILLED);
+
+      const hiddenStyle: CSSProperties = {
+        ...style,
+        opacity: 0,
+        width: 0,
+        minWidth: 0,
+        height: 0,
+        minHeight: 0,
+      };
+
+      const expandedStyle: CSSProperties = { ...style, flexGrow: 1 };
+
+      if (isHidden) {
+        return hiddenStyle;
       }
-    } else {
-      style.flexGrow = 1;
-    }
-    return style;
-  }, [collapse, firstSize, isHorizontal]);
 
-  const getStyleForSecond = useCallback(() => {
-    const style: CSSProperties = { overflow: "hidden" };
-    if (collapse === Collapse.FILLED) {
-      style.opacity = 0;
-      style.width = 0;
-      style.minWidth = 0;
-      style.height = 0;
-      style.minHeight = 0;
-    } else if (collapse === Collapse.SPLIT) {
-      if (isHorizontal) {
-        // Ensure second panel stays within window bounds
-        const minWidth = 600;
-        const maxWidth = window.innerWidth - Math.max(firstSize, 350);
-        style.minWidth = `${minWidth}px`;
-        style.maxWidth = `${maxWidth}px`;
-        style.width = "auto";
-        style.flexGrow = 1;
-        style.flexShrink = 1;
-      } else {
-        const minHeight = 300;
-        style.minHeight = `${minHeight}px`;
-        style.height = "auto";
-        style.flexGrow = 1;
-        style.flexShrink = 1;
-        style.display = "flex";
-        style.flexDirection = "column";
+      if (collapse !== Collapse.SPLIT) {
+        return expandedStyle;
       }
-    } else {
-      style.flexGrow = 1;
-    }
-    return style;
-  }, [collapse, firstSize, isHorizontal]);
 
-  const onCollapse = () => {
-    if (collapse === Collapse.SPLIT) {
-      setCollapse(Collapse.COLLAPSED);
-    } else {
-      setCollapse(Collapse.SPLIT);
-    }
-  };
+      if (isFirst) {
+        const dimension = isHorizontal ? "width" : "height";
+        const minDimension = isHorizontal ? "minWidth" : "minHeight";
+        const maxDimension = isHorizontal ? "maxWidth" : "maxHeight";
 
-  const onExpand = () => {
-    if (collapse === Collapse.SPLIT) {
-      setCollapse(Collapse.FILLED);
-    } else {
-      setCollapse(Collapse.SPLIT);
-    }
-  };
+        const firstPanelStyle: CSSProperties = {
+          ...style,
+          [dimension]: `${firstSize}px`,
+          [minDimension]: `${min}px`,
+          [maxDimension]: isHorizontal ? "50%" : "70%",
+          flexShrink: 0,
+        };
+        return firstPanelStyle;
+      }
+
+      const secondPanelStyle: CSSProperties = {
+        ...style,
+        flexGrow: 1,
+        flexShrink: 1,
+        ...(isHorizontal
+          ? {
+              minWidth: "600px",
+            }
+          : {
+              minHeight: "300px",
+              display: "flex",
+              flexDirection: "column",
+            }),
+      };
+      return secondPanelStyle;
+    },
+    [collapse, firstSize, isHorizontal, getConstraints],
+  );
+
+  const toggleCollapse = () =>
+    setCollapse(
+      collapse === Collapse.SPLIT ? Collapse.COLLAPSED : Collapse.SPLIT,
+    );
+
+  const toggleExpand = () =>
+    setCollapse(collapse === Collapse.SPLIT ? Collapse.FILLED : Collapse.SPLIT);
 
   return (
     <div className={twMerge("flex", !isHorizontal && "flex-col", className)}>
       <div
         ref={firstRef}
         className={twMerge(firstClassName, "transition-all ease-soft-spring")}
-        style={getStyleForFirst()}
+        style={getPanelStyle(true)}
       >
         {firstChild}
       </div>
@@ -253,18 +201,18 @@ export function ResizablePanel({
         <IconButton
           icon={isHorizontal ? <VscChevronLeft /> : <VscChevronUp />}
           ariaLabel="Collapse"
-          onClick={onCollapse}
+          onClick={toggleCollapse}
         />
         <IconButton
           icon={isHorizontal ? <VscChevronRight /> : <VscChevronDown />}
           ariaLabel="Expand"
-          onClick={onExpand}
+          onClick={toggleExpand}
         />
       </div>
       <div
         ref={secondRef}
         className={twMerge(secondClassName, "transition-all ease-soft-spring")}
-        style={getStyleForSecond()}
+        style={getPanelStyle(false)}
       >
         {secondChild}
       </div>
