@@ -386,6 +386,25 @@ class LLM(RetryMixin, DebugMixin):
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
+        # Initialize function calling capability
+        # Check if model name is in our supported list
+        model_name_supported = (
+            self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
+            or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
+            or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
+        )
+
+        # Handle native_tool_calling user-defined configuration
+        if self.config.native_tool_calling is None:
+            self._function_calling_active = model_name_supported
+        elif self.config.native_tool_calling is False:
+            self._function_calling_active = False
+        else:
+            # try to enable native tool calling if supported by the model
+            self._function_calling_active = litellm.supports_function_calling(
+                model=self.config.model
+            )
+
     def vision_is_active(self) -> bool:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
@@ -427,24 +446,11 @@ class LLM(RetryMixin, DebugMixin):
         )
 
     def is_function_calling_active(self) -> bool:
-        # Check if model name is in our supported list
-        model_name_supported = (
-            self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
-            or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
-        )
+        """Returns whether function calling is supported and enabled for this LLM instance.
 
-        # Handle native_tool_calling user-defined configuration
-        if self.config.native_tool_calling is None:
-            return model_name_supported
-        elif self.config.native_tool_calling is False:
-            return False
-        else:
-            # try to enable native tool calling if supported by the model
-            supports_fn_call = litellm.supports_function_calling(
-                model=self.config.model
-            )
-            return supports_fn_call
+        The result is cached during initialization for performance.
+        """
+        return self._function_calling_active
 
     def _post_completion(self, response: ModelResponse) -> float:
         """Post-process the completion response.
