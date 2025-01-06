@@ -1,7 +1,7 @@
 from litellm.exceptions import APIError
 from tenacity import (
     retry,
-    retry_if_exception_type,
+    retry_if_exception,
     stop_after_attempt,
     wait_exponential,
 )
@@ -42,8 +42,8 @@ class RetryMixin:
             before_sleep=self.log_retry_attempt,
             stop=stop_after_attempt(num_retries) | stop_if_should_exit(),
             reraise=True,
-            # Provide the above filter function to decide whether to retry or not.
-            retry=retry_if_exception_type(_filter_exceptions),
+            # Use the above filter function to decide whether to retry or not.
+            retry=retry_if_exception(_filter_exceptions),
             wait=wait_exponential(
                 multiplier=retry_multiplier,
                 min=retry_min_wait,
