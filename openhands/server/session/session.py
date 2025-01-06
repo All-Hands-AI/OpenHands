@@ -37,6 +37,7 @@ class Session:
     loop: asyncio.AbstractEventLoop
     config: AppConfig
     file_store: FileStore
+    user_id: int
 
     def __init__(
         self,
@@ -44,6 +45,7 @@ class Session:
         config: AppConfig,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
+        user_id: int = 0,
     ):
         self.sid = sid
         self.sio = sio
@@ -58,6 +60,7 @@ class Session:
         # Copying this means that when we update variables they are not applied to the shared global configuration!
         self.config = deepcopy(config)
         self.loop = asyncio.get_event_loop()
+        self.user_id = user_id
 
     def close(self):
         self.is_alive = False

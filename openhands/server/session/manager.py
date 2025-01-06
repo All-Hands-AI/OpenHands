@@ -22,7 +22,7 @@ _CHECK_ALIVE_INTERVAL = 15
 
 _CLEANUP_INTERVAL = 15
 _CLEANUP_EXCEPTION_WAIT_TIME = 15
-_MAX_RUNNING_LOOPS = 3
+_MAX_RUNNING_LOOPS = 16
 
 
 class ConversationDoesNotExistError(Exception):
@@ -330,13 +330,19 @@ class SessionManager:
         finally:
             self._has_remote_connections_flags.pop(sid, None)
 
-    async def maybe_start_agent_loop(self, sid: str, settings: Settings) -> EventStream:
+    async def maybe_start_agent_loop(
+        self, sid: str, settings: Settings, user_id: int = 0
+    ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}')
         session: Session | None = None
         if not await self.is_agent_loop_running(sid):
             logger.info(f'start_agent_loop:{sid}')
             session = Session(
-                sid=sid, file_store=self.file_store, config=self.config, sio=self.sio
+                sid=sid,
+                file_store=self.file_store,
+                config=self.config,
+                sio=self.sio,
+                user_id=user_id,
             )
             self._local_agent_loops_by_sid[sid] = session
             asyncio.create_task(session.initialize_agent(settings))
