@@ -131,6 +131,8 @@ class AgentSession:
                     f'Waited too long for initialization to finish before closing session {self.sid}'
                 )
                 break
+        if self.event_stream is not None:
+            self.event_stream.close()
         if self.controller is not None:
             end_state = self.controller.get_state()
             end_state.save_to_session(self.sid, self.file_store)
