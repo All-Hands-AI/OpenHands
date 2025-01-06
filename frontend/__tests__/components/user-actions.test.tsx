@@ -58,7 +58,7 @@ describe("UserActions", () => {
     const userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
 
-    const accountSettingsOption = screen.getByText("ACCOUNT_SETTINGS$SETTINGS");
+    const accountSettingsOption = screen.getByText("Account Settings");
     await user.click(accountSettingsOption);
 
     expect(onClickAccountSettingsMock).toHaveBeenCalledOnce();
@@ -79,7 +79,7 @@ describe("UserActions", () => {
     const userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
 
-    const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
+    const logoutOption = screen.getByText("Logout");
     await user.click(logoutOption);
 
     expect(onLogoutMock).toHaveBeenCalledOnce();
@@ -99,7 +99,7 @@ describe("UserActions", () => {
     const userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
 
-    const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
+    const logoutOption = screen.getByText("Logout");
     await user.click(logoutOption);
 
     expect(onLogoutMock).not.toHaveBeenCalled();

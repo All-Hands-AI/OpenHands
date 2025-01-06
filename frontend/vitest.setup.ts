@@ -10,16 +10,29 @@ HTMLCanvasElement.prototype.getContext = vi.fn();
 HTMLElement.prototype.scrollTo = vi.fn();
 
 // Mock the i18n provider
-vi.mock("react-i18next", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("react-i18next")>()),
-  useTranslation: () => ({
-    t: (key: string) => key,
-    i18n: {
-      language: "en",
-      exists: () => false,
-    },
-  }),
-}));
+vi.mock("react-i18next", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-i18next")>();
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (key: string) => {
+        // Load the actual translations
+        const translations = require("./src/i18n/translation.json");
+        if (!translations[key] || !translations[key]["en"]) {
+          throw new Error(`Missing translation for key: ${key}`);
+        }
+        return translations[key]["en"];
+      },
+      i18n: {
+        language: "en",
+        exists: (key: string) => {
+          const translations = require("./src/i18n/translation.json");
+          return !!translations[key];
+        },
+      },
+    }),
+  };
+});
 
 // Mock requests during tests
 beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));

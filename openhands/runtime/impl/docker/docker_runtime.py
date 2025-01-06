@@ -267,10 +267,7 @@ class DockerRuntime(ActionExecutionClient):
                 environment=environment,
                 volumes=volumes,
                 device_requests=(
-                    [docker.types.DeviceRequest(
-                        capabilities=[['gpu']],
-                        count=-1
-                    )]
+                    [docker.types.DeviceRequest(capabilities=[['gpu']], count=-1)]
                     if self.config.sandbox.enable_gpu
                     else None
                 ),
