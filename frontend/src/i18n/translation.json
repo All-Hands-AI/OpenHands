@@ -709,10 +709,7 @@
     "fr": "Nouveau projet",
     "tr": "Yeni Proje"
   },
-  "WORKSPACE$LABEL": {
-    "en": "Workspace",
-    "ja": "ワークスペース"
-  },
+
   "BROWSER$SCREENSHOT": {
     "en": "Browser Screenshot",
     "ja": "ブラウザのスクリーンショット"
@@ -2907,10 +2904,7 @@
     "en": "By connecting you agree to our",
     "es": "Al conectarte tu aceptas nuestros"
   },
-  "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$TERMS_OF_SERVICE": {
-    "en": "terms of service",
-    "es": "términos de servicio"
-  },
+
   "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$CONTINUE": {
     "en": "Continue",
     "es": "Continuar"
