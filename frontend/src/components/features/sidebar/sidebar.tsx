@@ -84,11 +84,7 @@ export function Sidebar() {
               type="button"
               onClick={() => setConversationPanelIsOpen((prev) => !prev)}
             >
-              <FaListUl
-                width={28}
-                height={28}
-                fill={conversationPanelIsOpen ? "#FFE165" : "#FFFFFF"}
-              />
+              <FaListUl width={28} height={28} />
             </button>
           )}
           <DocsButton />
