@@ -162,7 +162,7 @@
 
 - `runtime`
   - 类型: `str`
-  - 默认值: `"eventstream"`
+  - 默认值: `"docker"`
   - 描述: 运行时环境
 
 - `default_agent`
