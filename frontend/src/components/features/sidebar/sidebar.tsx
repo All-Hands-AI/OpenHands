@@ -65,10 +65,23 @@ export function Sidebar() {
     <>
       <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1 relative">
         <nav className="flex flex-row md:flex-col items-center gap-[18px]">
-          <div className="w-[34px] h-[34px] flex items-center justify-center">
+          <div className="w-[34px] h-[34px] flex items-center justify-center mb-7">
             <AllHandsLogoButton onClick={handleEndSession} />
           </div>
           {user.isLoading && <LoadingSpinner size="small" />}
+          <ExitProjectButton onClick={handleEndSession} />
+          {MULTI_CONVERSATION_UI && (
+            <TooltipButton
+              data-testid="toggle-conversation-panel"
+              tooltip="Conversations"
+              ariaLabel="Conversations"
+              onClick={() => setConversationPanelIsOpen((prev) => !prev)}
+            >
+              <FaListUl size={22} />
+            </TooltipButton>
+          )}
+          <DocsButton />
+          <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
           {!user.isLoading && (
             <UserActions
               user={
@@ -78,19 +91,6 @@ export function Sidebar() {
               onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
             />
           )}
-          <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
-          {MULTI_CONVERSATION_UI && (
-            <TooltipButton
-              data-testid="toggle-conversation-panel"
-              tooltip="Conversations"
-              ariaLabel="Conversations"
-              onClick={() => setConversationPanelIsOpen((prev) => !prev)}
-            >
-              <FaListUl width={28} height={28} />
-            </TooltipButton>
-          )}
-          <DocsButton />
-          <ExitProjectButton onClick={handleEndSession} />
         </nav>
 
         {conversationPanelIsOpen && (

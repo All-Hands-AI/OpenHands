@@ -27,10 +27,7 @@ export function TooltipButton({
       aria-label={ariaLabel}
       data-testid={testId}
       onClick={onClick}
-      className={cn(
-        "w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center",
-        className,
-      )}
+      className={cn("hover:opacity-80", className)}
     >
       {children}
     </button>
@@ -41,10 +38,7 @@ export function TooltipButton({
       href={href}
       target="_blank"
       rel="noreferrer noopener"
-      className={cn(
-        "w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center",
-        className,
-      )}
+      className={cn("hover:opacity-80", className)}
       aria-label={ariaLabel}
     >
       {children}
