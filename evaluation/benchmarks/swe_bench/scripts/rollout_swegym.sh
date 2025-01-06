@@ -26,18 +26,64 @@ export RUNTIME=remote
 export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev"
 export EVAL_DOCKER_IMAGE_PREFIX="us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images"
 
-EVAL_LIMIT=500
+EVAL_LIMIT=1000
 MAX_ITER=100
+
+
+# ===== Run inference =====
+source "evaluation/utils/version_control.sh"
+get_openhands_version
+
+echo "AGENT: $AGENT"
+echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
+echo "MODEL_CONFIG: $MODEL_CONFIG"
+echo "DATASET: $DATASET"
+echo "SPLIT: $SPLIT"
+
+# Default to NOT use Hint
+export USE_INSTANCE_IMAGE=true
+export USE_HINT_TEXT=false
+export RUN_WITH_BROWSING=false
+echo "USE_HINT_TEXT: $USE_HINT_TEXT"
+EVAL_NOTE="$OPENHANDS_VERSION-no-hint-$EXP_NAME"
+
+function run_eval() {
+  local eval_note=$1
+  COMMAND="poetry run python evaluation/benchmarks/swe_bench/run_infer.py \
+    --agent-cls CodeActAgent \
+    --llm-config $MODEL \
+    --max-iterations $MAX_ITER \
+    --eval-num-workers $N_WORKERS \
+    --eval-note $eval_note \
+    --dataset $DATASET \
+    --split $SPLIT"
+
+  if [ -n "$EVAL_LIMIT" ]; then
+    echo "EVAL_LIMIT: $EVAL_LIMIT"
+    COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
+  fi
+
+  # Run the command
+  eval $COMMAND
+  # if exit code is not 0, exit the script
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
+}
 
 while true; do
     echo "### Running inference... ###"
-    # Capture the output in a variable while also printing to stdout
-    INFER_OUTPUT=$(./evaluation/benchmarks/swe_bench/scripts/run_infer.sh \
-        $MODEL HEAD CodeActAgent \
-        $EVAL_LIMIT $MAX_ITER $N_WORKERS \
-        $DATASET $SPLIT $N_RUNS | tee >(cat 1>&2))
+
+    unset SANDBOX_ENV_GITHUB_TOKEN # prevent the agent from using the github token to push
+
+    for i in $(seq 1 $N_RUNS); do
+        current_eval_note="$EVAL_NOTE-run_$i"
+        echo "EVAL_NOTE: $current_eval_note"
+        run_eval $current_eval_note
+    done
 
     INFER_STATUS=$?  # Capture the exit status of run_infer.sh
+    echo "INFER_STATUS: $INFER_STATUS"
 
     echo "### Cleaning up remote runtime... ###"
     ./evaluation/utils/scripts/cleanup_remote_runtime.sh
