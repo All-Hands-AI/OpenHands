@@ -25,6 +25,8 @@ export function RuntimeSizeSelector({
         name="runtime-size"
         defaultSelectedKeys={[String(defaultValue || 1)]}
         isDisabled={isDisabled}
+        selectionMode="single"
+        isRequired
         aria-label={t("SETTINGS_FORM$RUNTIME_SIZE_LABEL")}
         classNames={{
           trigger: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
