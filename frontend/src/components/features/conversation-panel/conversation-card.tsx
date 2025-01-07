@@ -5,11 +5,10 @@ import {
   ProjectStatus,
   ConversationStateIndicator,
 } from "./conversation-state-indicator";
-import { ContextMenu } from "../context-menu/context-menu";
-import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 import { EllipsisButton } from "./ellipsis-button";
+import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 
-interface ProjectCardProps {
+interface ConversationCardProps {
   onClick: () => void;
   onDelete: () => void;
   onChangeTitle: (title: string) => void;
@@ -27,7 +26,7 @@ export function ConversationCard({
   selectedRepository,
   lastUpdatedAt,
   status = "STOPPED",
-}: ProjectCardProps) {
+}: ConversationCardProps) {
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -86,11 +85,10 @@ export function ConversationCard({
         </div>
       </div>
       {contextMenuVisible && (
-        <ContextMenu testId="context-menu" className="left-full float-right">
-          <ContextMenuListItem testId="delete-button" onClick={handleDelete}>
-            Delete
-          </ContextMenuListItem>
-        </ContextMenu>
+        <ConversationCardContextMenu
+          onClose={() => setContextMenuVisible(false)}
+          onDelete={handleDelete}
+        />
       )}
       {selectedRepository && (
         <ConversationRepoLink
