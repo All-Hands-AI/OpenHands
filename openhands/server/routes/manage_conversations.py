@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Callable
 
 from fastapi import APIRouter, Body, Request
@@ -220,5 +220,5 @@ def _create_conversation_update_callback(
 async def _update_timestamp_for_conversation(user_id: int, conversation_id: str):
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     conversation = await conversation_store.get_metadata(conversation_id)
-    conversation.last_updated_at = datetime.now()
+    conversation.last_updated_at = datetime.now(timezone.utc)
     await conversation_store.save_metadata(conversation)
