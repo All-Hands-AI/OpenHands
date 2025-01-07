@@ -1,6 +1,7 @@
 import { Input, Tooltip } from "@nextui-org/react";
 import { useTranslation } from "react-i18next";
 import { FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
+import { I18nKey } from "#/i18n/declaration";
 
 interface APIKeyInputProps {
   isDisabled: boolean;
@@ -21,14 +22,14 @@ export function APIKeyInput({ isDisabled, isSet }: APIKeyInputProps) {
           {!isSet && (
             <FaExclamationCircle className="text-[#FF3860] inline-block" />
           )}
-          {t("API_KEY")}
+          {t(I18nKey.API_KEY)}
         </label>
       </Tooltip>
       <Input
         isDisabled={isDisabled}
         id="api-key"
         name="api-key"
-        aria-label={t("API_KEY")}
+        aria-label={t(I18nKey.API_KEY)}
         type="password"
         defaultValue=""
         classNames={{
@@ -36,14 +37,14 @@ export function APIKeyInput({ isDisabled, isSet }: APIKeyInputProps) {
         }}
       />
       <p className="text-sm text-[#A3A3A3]">
-        {t("DONT_KNOW_API_KEY")}{" "}
+        {t(I18nKey.DONT_KNOW_API_KEY)}{" "}
         <a
           href="https://docs.all-hands.dev/modules/usage/llms"
           rel="noreferrer noopener"
           target="_blank"
           className="underline underline-offset-2"
         >
-          {t("CLICK_FOR_INSTRUCTIONS")}
+          {t(I18nKey.CLICK_FOR_INSTRUCTIONS)}
         </a>
       </p>
     </fieldset>

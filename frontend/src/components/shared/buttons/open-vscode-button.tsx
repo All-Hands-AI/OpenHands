@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import VSCodeIcon from "#/assets/vscode-alt.svg?react";
 
@@ -12,7 +13,7 @@ export function OpenVSCodeButton({
   onClick,
 }: OpenVSCodeButtonProps) {
   const { t } = useTranslation();
-  const buttonText = t("OPEN_IN_VSCODE");
+  const buttonText = t(I18nKey.OPEN_IN_VSCODE);
 
   return (
     <button

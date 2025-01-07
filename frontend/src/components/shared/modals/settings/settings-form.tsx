@@ -2,6 +2,7 @@ import { useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import React from "react";
 import posthog from "posthog-js";
+import { I18nKey } from "#/i18n/declaration";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { getDefaultSettings, Settings } from "#/services/settings";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
@@ -205,18 +206,18 @@ export function SettingsForm({
             <ModalButton
               disabled={disabled}
               type="submit"
-              text={t("SAVE_BUTTON")}
+              text={t(I18nKey.SAVE_BUTTON)}
               className="bg-[#4465DB] w-full"
             />
             <ModalButton
-              text={t("CLOSE_BUTTON")}
+              text={t(I18nKey.CLOSE_BUTTON)}
               className="bg-[#737373] w-full"
               onClick={onClose}
             />
           </div>
           <ModalButton
             disabled={disabled}
-            text={t("RESET_TO_DEFAULTS")}
+            text={t(I18nKey.RESET_TO_DEFAULTS)}
             variant="text-like"
             className="text-danger self-start"
             onClick={() => {
@@ -230,15 +231,15 @@ export function SettingsForm({
         <ModalBackdrop>
           <DangerModal
             testId="reset-defaults-modal"
-            title={t("CONFIRM_RESET_TITLE")}
-            description={t("CONFIRM_RESET_MESSAGE")}
+            title={t(I18nKey.CONFIRM_RESET_TITLE)}
+            description={t(I18nKey.CONFIRM_RESET_MESSAGE)}
             buttons={{
               danger: {
-                text: t("RESET_TO_DEFAULTS"),
+                text: t(I18nKey.RESET_TO_DEFAULTS),
                 onClick: handleConfirmResetSettings,
               },
               cancel: {
-                text: t("CANCEL_BUTTON"),
+                text: t(I18nKey.CANCEL_BUTTON),
                 onClick: () => setConfirmResetDefaultsModalOpen(false),
               },
             }}
@@ -248,15 +249,15 @@ export function SettingsForm({
       {confirmEndSessionModalOpen && (
         <ModalBackdrop>
           <DangerModal
-            title={t("END_SESSION_TITLE")}
-            description={t("END_SESSION_MESSAGE")}
+            title={t(I18nKey.END_SESSION_TITLE)}
+            description={t(I18nKey.END_SESSION_MESSAGE)}
             buttons={{
               danger: {
-                text: t("END_SESSION_BUTTON"),
+                text: t(I18nKey.END_SESSION_BUTTON),
                 onClick: handleConfirmEndSession,
               },
               cancel: {
-                text: t("CANCEL_BUTTON"),
+                text: t(I18nKey.CANCEL_BUTTON),
                 onClick: () => setConfirmEndSessionModalOpen(false),
               },
             }}
