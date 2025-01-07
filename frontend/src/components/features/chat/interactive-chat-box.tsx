@@ -71,7 +71,7 @@ export function InteractiveChatBox({
         <ChatInput
           disabled={isDisabled}
           button={mode}
-          placeholder={t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD)}
+
           onChange={onChange}
           onSubmit={handleSubmit}
           onStop={onStop}
