@@ -1,7 +1,7 @@
+import { useTranslation } from "react-i18next";
 import { Suggestions } from "#/components/features/suggestions/suggestions";
 import { I18nKey } from "#/i18n/declaration";
 import BuildIt from "#/icons/build-it.svg?react";
-import { useTranslation } from "react-i18next";
 import { SUGGESTIONS } from "#/utils/suggestions";
 
 interface ChatSuggestionsProps {
