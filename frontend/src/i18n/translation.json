@@ -1,4 +1,46 @@
 {
+  "PROJECT$START_NEW": {
+    "en": "Start new project",
+    "ja": "新規プロジェクトを開始",
+    "zh-CN": "开始新项目",
+    "zh-TW": "開始新專案",
+    "ko-KR": "새 프로젝트 시작",
+    "no": "Start nytt prosjekt",
+    "it": "Avvia nuovo progetto",
+    "pt": "Iniciar novo projeto",
+    "es": "Iniciar nuevo proyecto",
+    "ar": "بدء مشروع جديد",
+    "fr": "Démarrer un nouveau projet",
+    "tr": "Yeni proje başlat"
+  },
+  "PROJECT$NEW": {
+    "en": "New Project",
+    "ja": "新規プロジェクト",
+    "zh-CN": "新项目",
+    "zh-TW": "新專案",
+    "ko-KR": "새 프로젝트",
+    "no": "Nytt prosjekt",
+    "it": "Nuovo progetto",
+    "pt": "Novo projeto",
+    "es": "Nuevo proyecto",
+    "ar": "مشروع جديد",
+    "fr": "Nouveau projet",
+    "tr": "Yeni proje"
+  },
+  "STATUS$CONNECTED": {
+    "en": "Connected",
+    "ja": "接続済み",
+    "zh-CN": "已连接",
+    "zh-TW": "已連接",
+    "ko-KR": "연결됨",
+    "no": "Tilkoblet",
+    "it": "Connesso",
+    "pt": "Conectado",
+    "es": "Conectado",
+    "ar": "متصل",
+    "fr": "Connecté",
+    "tr": "Bağlı"
+  },
   "BROWSER$EMPTY_MESSAGE": {
     "en": "No browser content to display",
     "ja": "表示するブラウザコンテンツがありません",
