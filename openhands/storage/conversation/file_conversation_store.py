@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from pydantic import TypeAdapter
 
@@ -39,7 +40,9 @@ class FileConversationStore(ConversationStore):
         return result
 
     async def delete_metadata(self, conversation_id: str) -> None:
-        path = self.get_conversation_metadata_filename(conversation_id)
+        path = str(
+            Path(self.get_conversation_metadata_filename(conversation_id)).parent
+        )
         await call_sync_from_async(self.file_store.delete, path)
 
     async def exists(self, conversation_id: str) -> bool:
@@ -90,7 +93,9 @@ class FileConversationStore(ConversationStore):
         return get_conversation_metadata_filename(conversation_id)
 
     @classmethod
-    async def get_instance(cls, config: AppConfig, token: str | None):
+    async def get_instance(
+        cls, config: AppConfig, user_id: int
+    ) -> FileConversationStore:
         file_store = get_file_store(config.file_store, config.file_store_path)
         return FileConversationStore(file_store)
 

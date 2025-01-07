@@ -20,7 +20,7 @@ export function AdvancedOptionSwitch({
     <Switch
       isDisabled={isDisabled}
       name="use-advanced-options"
-      isSelected={showAdvancedOptions}
+      defaultSelected={showAdvancedOptions}
       onValueChange={setShowAdvancedOptions}
       classNames={{
         thumb: cn(
