@@ -68,6 +68,21 @@ interface WsClientProviderProps {
   ghToken: string | null;
 }
 
+export function updateStatusWhenErrorMessagePresent(data: unknown) {
+  if (
+    data &&
+    typeof data === "object" &&
+    "message" in data &&
+    typeof data.message === "string"
+  ) {
+    handleStatusMessage({
+      type: "error",
+      message: data.message as string,
+      status_update: true,
+    });
+  }
+}
+
 export function WsClientProvider({
   ghToken,
   conversationId,
@@ -105,21 +120,6 @@ export function WsClientProvider({
     }
 
     handleAssistantMessage(event);
-  }
-
-  function updateStatusWhenErrorMessagePresent(data: unknown) {
-    if (
-      data &&
-      typeof data === "object" &&
-      "message" in data &&
-      typeof data.message === "string"
-    ) {
-      handleStatusMessage({
-        type: "error",
-        message: data.message as string,
-        status_update: true,
-      });
-    }
   }
 
   function handleDisconnect(data: unknown) {
