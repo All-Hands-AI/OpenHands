@@ -15,7 +15,7 @@ from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import call_sync_from_async, wait_all
+from openhands.utils.async_utils import wait_all
 from openhands.utils.shutdown_listener import should_continue
 
 _REDIS_POLL_TIMEOUT = 1.5
@@ -23,7 +23,7 @@ _CHECK_ALIVE_INTERVAL = 15
 
 _CLEANUP_INTERVAL = 15
 _CLEANUP_EXCEPTION_WAIT_TIME = 15
-MAX_RUNNING_CONVERSATIONS = 1
+MAX_RUNNING_CONVERSATIONS = 3
 
 
 class ConversationDoesNotExistError(Exception):
@@ -496,5 +496,5 @@ class SessionManager:
                 json.dumps({'sid': session.sid, 'message_type': 'session_closing'}),
             )
 
-        await call_sync_from_async(session.close)
+        await session.close()
         logger.info(f'closed_session:{session.sid}')
