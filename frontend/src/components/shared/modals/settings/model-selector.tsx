@@ -4,10 +4,10 @@ import {
   AutocompleteSection,
 } from "@nextui-org/react";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { mapProvider } from "#/utils/map-provider";
 import { VERIFIED_MODELS, VERIFIED_PROVIDERS } from "#/utils/verified-models";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
-import { useTranslation } from "react-i18next";
 
 interface ModelSelectorProps {
   isDisabled?: boolean;

@@ -21,11 +21,11 @@ index 3045244d..741c1f9e 100644
 @@ -57,7 +57,7 @@ export function TaskForm({ ref }: TaskFormProps) {
        return t(I18nKey.LANDING$CHANGE_PROMPT, { repo: selectedRepository });
      }
- 
+
 -    return t(I18nKey.LANDING$BUILD_PROMPT);
 +    return t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD);
    }, [selectedRepository]);
- 
+
    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
 diff --git a/frontend/src/i18n/translation.json b/frontend/src/i18n/translation.json
 index 1254db07..db1f6bd3 100644
@@ -88,6 +88,5 @@ index 1254db07..db1f6bd3 100644
    "LANDING$CHANGE_PROMPT": {
      "en": "What would you like to change in {{repo}}?",
      "ja": "{{repo}}で何を変更したいですか？",
--- 
+--
 2.39.5
-

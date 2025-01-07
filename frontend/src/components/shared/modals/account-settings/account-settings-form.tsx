@@ -109,9 +109,7 @@ export function AccountSettingsForm({
             </>
           )}
           {gitHubError && (
-            <p className="text-danger text-xs">
-              {t("GITHUB_TOKEN_INVALID")}
-            </p>
+            <p className="text-danger text-xs">{t("GITHUB_TOKEN_INVALID")}</p>
           )}
           {gitHubToken && !gitHubError && (
             <ModalButton
