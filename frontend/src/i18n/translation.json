@@ -148,7 +148,7 @@
   },
   "CODE_EDITOR$FILE_SAVE_ERROR": {
     "en": "An unknown error occurred while saving the file",
-    "zh-CN": "文件保存时发生未知错误",
+    "zh-CN": "保存文件时发生未知错误",
     "zh-TW": "文件保存時發生未知錯誤",
     "de": "Beim Speichern der Datei ist ein unbekannter Fehler aufgetreten",
     "ko-KR": "파일 저장 중 알 수 없는 오류가 발생했습니다",
@@ -163,7 +163,7 @@
   },
   "CODE_EDITOR$EMPTY_MESSAGE": {
     "en": "No file selected.",
-    "zh-CN": "文件未选中",
+    "zh-CN": "未选择文件",
     "zh-TW": "未選取任何文件。",
     "de": "Keine Datei ausgewählt.",
     "ko-KR": "선택된 파일이 없습니다.",
@@ -313,7 +313,7 @@
   "OPEN_IN_VSCODE": {
     "en": "Open in VS Code",
     "ja": "VS Codeで開く",
-    "zh-CN": "在 VS Code 中打开",
+    "zh-CN": "在VS Code中打开",
     "zh-TW": "在 VS Code 中開啟",
     "ko-KR": "VS Code에서 열기",
     "de": "In VS Code öffnen",
@@ -358,7 +358,7 @@
   "FIX_README": {
     "en": "Fix README",
     "ja": "READMEを修正",
-    "zh-CN": "修复 README",
+    "zh-CN": "修复README",
     "zh-TW": "修復 README",
     "ko-KR": "README 수정",
     "de": "README korrigieren",
@@ -387,7 +387,7 @@
   },
   "CONFIGURATION$OPENHANDS_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenHands Workspace directory",
-    "zh-CN": "OpenHands 工作区目录",
+    "zh-CN": "OpenHands工作区目录",
     "de": "OpenHands Arbeitsverzeichnis",
     "ko-KR": "OpenHands 워크스페이스 폴더",
     "no": "OpenHands arbeidsmappe",
@@ -515,7 +515,7 @@
   "CONFIRM_RESET_MESSAGE": {
     "en": "All information will be deleted",
     "ja": "すべての情報が削除されます",
-    "zh-CN": "所有信息将被删除",
+    "zh-CN": "确定要重置所有设置吗？",
     "zh-TW": "所有資訊將被刪除",
     "ko-KR": "모든 정보가 삭제됩니다",
     "no": "All informasjon vil bli slettet",
@@ -543,7 +543,7 @@
   "END_SESSION_MESSAGE": {
     "en": "Changing workspace settings will end the current session",
     "ja": "ワークスペース設定を変更すると、現在のセッションが終了します",
-    "zh-CN": "更改工作区设置将结束当前会话",
+    "zh-CN": "确定要结束当前会话吗？",
     "zh-TW": "更改工作區設定將結束當前會話",
     "ko-KR": "작업 공간 설정을 변경하면 현재 세션이 종료됩니다",
     "no": "Endring av arbeidsområdeinnstillinger vil avslutte gjeldende økt",
@@ -613,7 +613,7 @@
   "GITHUB_TOKEN_OPTIONAL": {
     "en": "GitHub Token (Optional)",
     "ja": "GitHubトークン（任意）",
-    "zh-CN": "GitHub令牌（可选）",
+    "zh-CN": "（可选）",
     "zh-TW": "GitHub權杖（選填）",
     "ko-KR": "GitHub 토큰 (선택사항)",
     "no": "GitHub-token (valgfritt)",
@@ -627,7 +627,7 @@
   "GET_YOUR_TOKEN": {
     "en": "Get your token",
     "ja": "トークンを取得",
-    "zh-CN": "获取令牌",
+    "zh-CN": "获取您的令牌",
     "zh-TW": "取得權杖",
     "ko-KR": "토큰 받기",
     "no": "Få din token",
@@ -711,7 +711,7 @@
   "CLICK_FOR_INSTRUCTIONS": {
     "en": "Click here for instructions",
     "ja": "手順はこちらをクリック",
-    "zh-CN": "点击此处获取说明",
+    "zh-CN": "点击查看说明",
     "zh-TW": "點擊此處獲取說明",
     "ko-KR": "안내를 보려면 여기를 클릭하세요",
     "no": "Klikk her for instruksjoner",
@@ -752,7 +752,7 @@
   },
   "CONFIGURATION$OPENHANDS_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
     "en": "Default: ./workspace",
-    "zh-CN": "默认：./workspace",
+    "zh-CN": "输入工作区目录路径",
     "de": "Standard: ./workspace",
     "ko-KR": "기본: ./workspace",
     "no": "Standard: ./workspace",
@@ -796,7 +796,7 @@
   },
   "CONFIGURATION$MODEL_SELECT_PLACEHOLDER": {
     "en": "Select a model",
-    "zh-CN": "选择一个模型",
+    "zh-CN": "选择模型",
     "de": "Wähle ein Modell",
     "ko-KR": "모델 선택",
     "no": "Velg en modell",
@@ -811,7 +811,7 @@
   },
   "CONFIGURATION$AGENT_SELECT_LABEL": {
     "en": "Agent",
-    "zh-CN": "智能体",
+    "zh-CN": "代理",
     "de": "Agent",
     "ko-KR": "에이전트",
     "no": "Agent",
@@ -826,7 +826,7 @@
   },
   "CONFIGURATION$AGENT_SELECT_PLACEHOLDER": {
     "en": "Select an agent",
-    "zh-CN": "选择一个智能体",
+    "zh-CN": "选择代理",
     "de": "Wähle einen Agenten",
     "ko-KR": "에이전트 선택",
     "no": "Velg en agent",
@@ -855,7 +855,7 @@
   },
   "CONFIGURATION$LANGUAGE_SELECT_PLACEHOLDER": {
     "en": "Select a language",
-    "zh-CN": "选择一种语言",
+    "zh-CN": "选择语言",
     "de": "Wähle eine Sprache",
     "ko-KR": "언어 선택",
     "no": "Velg et språk",
@@ -871,7 +871,7 @@
   "CONFIGURATION$SECURITY_SELECT_LABEL": {
     "en": "Security analyzer",
     "de": "Sicherheitsanalysator",
-    "zh-CN": "安全分析器",
+    "zh-CN": "安全性",
     "ko-KR": "보안 분석기",
     "no": "Sikkerhetsanalysator",
     "zh-TW": "安全分析器",
@@ -886,7 +886,7 @@
   "CONFIGURATION$SECURITY_SELECT_PLACEHOLDER": {
     "en": "Select a security analyzer (optional)",
     "de": "Wählen Sie einen Sicherheitsanalysator (optional)",
-    "zh-CN": "选择一个安全分析器（可选）",
+    "zh-CN": "选择安全级别",
     "ko-KR": "보안 분석기 선택 (선택사항)",
     "no": "Velg en sikkerhetsanalysator (valgfritt)",
     "zh-TW": "選擇安全分析器（可選）",
@@ -929,7 +929,7 @@
   },
   "CONFIGURATION$MODAL_RESET_BUTTON_LABEL": {
     "en": "Reset to defaults",
-    "zh-CN": "重置为默认值",
+    "zh-CN": "重置",
     "de": "Auf Standardwerte zurücksetzen",
     "ko-KR": "기본값으로 재설정",
     "no": "Tilbakestill til standardverdier",
@@ -974,12 +974,13 @@
   },
   "BROWSER$SCREENSHOT": {
     "en": "Browser Screenshot",
-    "ja": "ブラウザのスクリーンショット"
+    "ja": "ブラウザのスクリーンショット",
+    "zh-CN": "截图"
   },
   "TIME$MINUTES_AGO": {
     "en": "minutes ago",
     "ja": "分前",
-    "zh-CN": "分钟前",
+    "zh-CN": "{minutes}分钟前",
     "zh-TW": "分鐘前",
     "ko-KR": "분 전",
     "de": "Minuten her",
@@ -994,7 +995,7 @@
   "TIME$HOURS_AGO": {
     "en": "hours ago",
     "ja": "時間前",
-    "zh-CN": "小时前",
+    "zh-CN": "{hours}小时前",
     "zh-TW": "小時前",
     "ko-KR": "시간 전",
     "de": "Stunden her",
@@ -1009,7 +1010,7 @@
   "TIME$DAYS_AGO": {
     "en": "days ago",
     "ja": "日前",
-    "zh-CN": "天前",
+    "zh-CN": "{days}天前",
     "zh-TW": "天前",
     "ko-KR": "일 전",
     "de": "Tage her",
@@ -1023,7 +1024,7 @@
   },
   "SETTINGS_FORM$RUNTIME_SIZE_LABEL": {
     "en": "Runtime Settings",
-    "zh-CN": "运行时设置",
+    "zh-CN": "运行时大小",
     "de": "Laufzeiteinstellungen",
     "ko-KR": "런타임 설정",
     "no": "Kjøretidsinnstillinger",
@@ -1039,7 +1040,7 @@
   "CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE": {
     "en": "We've changed some settings in the latest update. Take a minute to review.",
     "de": "Mit dem letzten Update haben wir ein paar Einstellungen geändert. Bitte kontrollieren Ihre Einstellungen.",
-    "zh-CN": "我们在最新更新中更改了一些设置。请花点时间检查一下。",
+    "zh-CN": "设置需要更新",
     "ko-KR": "최신 업데이트에서 일부 설정을 변경했습니다. 잠시 시간을 내어 검토해 주세요.",
     "no": "Vi har endret noen innstillinger i den siste oppdateringen. Ta deg tid til å se gjennom dem.",
     "zh-TW": "我們在最新更新中更改了一些設定。請花點時間檢查一下。",
@@ -1054,7 +1055,7 @@
   "CONFIGURATION$AGENT_LOADING": {
     "en": "Please wait while the agent loads. This may take a few minutes...",
     "de": "Bitte warten Sie, während der Agent lädt. Das kann ein paar Minuten dauern...",
-    "zh-CN": "请稍候，代理正在加载中。这可能需要几分钟...",
+    "zh-CN": "代理加载中",
     "ko-KR": "에이전트가 로드되는 동안 기다려 주세요. 몇 분 정도 걸릴 수 있습니다...",
     "no": "Vennligst vent mens agenten laster. Dette kan ta noen minutter...",
     "zh-TW": "請稍候，代理正在載入中。這可能需要幾分鐘...",
@@ -1069,7 +1070,7 @@
   "CONFIGURATION$AGENT_RUNNING": {
     "en": "Please stop the agent before editing these settings.",
     "de": "Bitte beenden Sie den Agenten vor der Bearbeitung der Einstellungen.",
-    "zh-CN": "请在编辑这些设置之前停止代理。",
+    "zh-CN": "代理运行中",
     "ko-KR": "이 설정을 편집하기 전에 에이전트를 중지해 주세요.",
     "no": "Vennligst stopp agenten før du redigerer disse innstillingene.",
     "zh-TW": "請在編輯這些設定之前停止代理。",
@@ -1083,7 +1084,7 @@
   },
   "CONFIGURATION$ERROR_FETCH_MODELS": {
     "en": "Failed to fetch models and agents",
-    "zh-CN": "获取模型和智能体失败",
+    "zh-CN": "获取模型时出错",
     "de": "Fehler beim Abrufen der Modelle und Agenten",
     "zh-TW": "獲取模型和智能體失敗",
     "es": "Error al obtener modelos y agentes",
@@ -1098,7 +1099,7 @@
   },
   "SESSION$SESSION_HANDLING_ERROR_MESSAGE": {
     "en": "Error handling message",
-    "zh-CN": "处理消息时发生错误",
+    "zh-CN": "处理会话时出错",
     "de": "Fehler beim Verarbeiten der Nachricht",
     "zh-TW": "處理訊息時發生錯誤",
     "es": "Error al procesar el mensaje",
@@ -1113,7 +1114,7 @@
   },
   "SESSION$SESSION_CONNECTION_ERROR_MESSAGE": {
     "en": "Error connecting to session",
-    "zh-CN": "连接到会话时发生错误",
+    "zh-CN": "连接会话时出错",
     "de": "Verbindung zur Sitzung fehlgeschlagen",
     "zh-TW": "連接到會話時發生錯誤",
     "es": "Error al conectar con la sesión",
@@ -1128,7 +1129,7 @@
   },
   "SESSION$SOCKET_NOT_INITIALIZED_ERROR_MESSAGE": {
     "en": "Socket not initialized",
-    "zh-CN": "Socket 未初始化",
+    "zh-CN": "套接字未初始化",
     "de": "Socket nicht initialisiert",
     "zh-TW": "Socket 未初始化",
     "es": "Socket no inicializado",
@@ -1143,7 +1144,7 @@
   },
   "EXPLORER$UPLOAD_ERROR_MESSAGE": {
     "en": "Error uploading file",
-    "zh-CN": "上传文件时发生错误",
+    "zh-CN": "上传时出错",
     "de": "Fehler beim Hochladen der Datei",
     "zh-TW": "上傳檔案時發生錯誤",
     "es": "Error al subir el archivo",
@@ -1158,7 +1159,7 @@
   },
   "EXPLORER$LABEL_DROP_FILES": {
     "en": "Drop files here",
-    "zh-CN": "将文件拖到这里",
+    "zh-CN": "拖放文件到此处",
     "de": "Dateien hier ablegen",
     "zh-TW": "將檔案拖曳至此",
     "es": "Suelta los archivos aquí",
@@ -1188,7 +1189,7 @@
   },
   "EXPLORER$EMPTY_WORKSPACE_MESSAGE": {
     "en": "No files in workspace",
-    "zh-CN": "工作区没有文件",
+    "zh-CN": "工作区为空",
     "de": "Keine Dateien im Arbeitsbereich",
     "zh-TW": "工作區沒有檔案",
     "es": "No hay archivos en el espacio de trabajo",
@@ -1203,7 +1204,7 @@
   },
   "EXPLORER$LOADING_WORKSPACE_MESSAGE": {
     "en": "Loading workspace...",
-    "zh-CN": "正在加载工作区...",
+    "zh-CN": "加载工作区中...",
     "de": "Arbeitsbereich wird geladen...",
     "zh-TW": "正在載入工作區...",
     "es": "Cargando espacio de trabajo...",
@@ -1218,7 +1219,7 @@
   },
   "EXPLORER$REFRESH_ERROR_MESSAGE": {
     "en": "Error refreshing workspace",
-    "zh-CN": "工作区刷新错误",
+    "zh-CN": "刷新时出错",
     "de": "Fehler beim Aktualisieren des Arbeitsbereichs",
     "zh-TW": "工作區重新整理錯誤",
     "es": "Error al actualizar el espacio de trabajo",
@@ -1233,7 +1234,7 @@
   },
   "EXPLORER$UPLOAD_SUCCESS_MESSAGE": {
     "en": "Successfully uploaded {{count}} file(s)",
-    "zh-CN": "成功上传 {{count}} 个文件",
+    "zh-CN": "上传成功",
     "de": "Erfolgreich {{count}} Datei(en) hochgeladen",
     "zh-TW": "成功上傳 {{count}} 個檔案",
     "es": "Se subieron {{count}} archivo(s) con éxito",
@@ -1248,7 +1249,7 @@
   },
   "EXPLORER$NO_FILES_UPLOADED_MESSAGE": {
     "en": "No files were uploaded",
-    "zh-CN": "没有文件上传",
+    "zh-CN": "未上传任何文件",
     "de": "Keine Dateien wurden hochgeladen",
     "zh-TW": "沒有檔案被上傳",
     "es": "No se subieron archivos",
@@ -1264,7 +1265,7 @@
   "EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE": {
     "en": "{{count}} file(s) were skipped during upload",
     "de": "{{count}} Datei(en) wurden während des Hochladens übersprungen",
-    "zh-CN": "{{count}} 个文件在上传过程中被跳过",
+    "zh-CN": "部分文件上传成功",
     "zh-TW": "{{count}} 個檔案在上傳過程中被跳過",
     "es": "Se omitieron {{count}} archivo(s) durante la carga",
     "fr": "{{count}} fichier(s) ont été ignorés pendant le téléchargement",
@@ -1278,7 +1279,7 @@
   },
   "EXPLORER$UPLOAD_UNEXPECTED_RESPONSE_MESSAGE": {
     "en": "Unexpected response structure from server",
-    "zh-CN": "服务器响应结构不符合预期",
+    "zh-CN": "上传时收到意外响应",
     "de": "Unerwartetes Antwortformat vom Server",
     "zh-TW": "伺服器回應結構不符合預期",
     "es": "Estructura de respuesta inesperada del servidor",
@@ -1293,13 +1294,13 @@
   },
   "EXPLORER$VSCODE_SWITCHING_MESSAGE": {
     "en": "Switching to VS Code in 3 seconds...\nImportant: Please inform the agent of any changes you make in VS Code. To avoid conflicts, wait for the assistant to complete its work before making your own changes.",
-    "zh-CN": "3 秒后切换到 VS Code\n重要提示：请告知 OpenHands 您在 VS Code 中进行的任何更改。为了避免冲突，请在 OpenHands 完成工作后再进行自己的更改。",
+    "zh-CN": "切换到VS Code中...",
     "zh-TW": "3 秒後切換到 VS Code\n重要提示：請告知 OpenHands 您在 VS Code 中進行的任何更改。為避免衝突，請在 OpenHands 完成工作後再進行自己的更改。",
     "ja": "3秒後にVS Codeに切り替わります...\n重要：VS Codeで行った変更はエージェントに通知してください。競合を避けるため、アシスタントの作業が完了するまで自身の変更を待ってください。"
   },
   "EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE": {
     "en": "Error switching to VS Code: {{error}}",
-    "zh-CN": "切换到 VS Code 时发生错误: {{error}}",
+    "zh-CN": "切换到VS Code时出错",
     "zh-TW": "切換到 VS Code 時發生錯誤: {{error}}",
     "ja": "VS Codeへの切り替え中にエラーが発生しました: {{error}}"
   },
@@ -3056,223 +3057,285 @@
   },
   "ACCOUNT_SETTINGS_MODAL$DISCONNECT": {
     "en": "Disconnect",
-    "es": "Desconectar"
+    "es": "Desconectar",
+    "zh-CN": "断开连接"
   },
   "ACCOUNT_SETTINGS_MODAL$SAVE": {
     "en": "Save",
-    "es": "Guardar"
+    "es": "Guardar",
+    "zh-CN": "保存"
   },
   "ACCOUNT_SETTINGS_MODAL$CLOSE": {
     "en": "Close",
-    "es": "Cerrar"
+    "es": "Cerrar",
+    "zh-CN": "关闭"
   },
   "ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID": {
     "en": "GitHub token is invalid. Please try again.",
-    "es": ""
+    "es": "",
+    "zh-CN": "GitHub令牌无效"
   },
   "CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN": {
     "en": "Get your token",
-    "es": "Obten tu token"
+    "es": "Obten tu token",
+    "zh-CN": "获取您的令牌"
   },
   "CONNECT_TO_GITHUB_MODAL$HERE": {
     "en": "here",
-    "es": "aquí"
+    "es": "aquí",
+    "zh-CN": "这里"
   },
   "CONNECT_TO_GITHUB_MODAL$CONNECT": {
     "en": "Connect",
-    "es": "Conectar"
+    "es": "Conectar",
+    "zh-CN": "连接"
   },
   "CONNECT_TO_GITHUB_MODAL$CLOSE": {
     "en": "Close",
-    "es": "Cerrar"
+    "es": "Cerrar",
+    "zh-CN": "关闭"
   },
   "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$BY_CONNECTING_YOU_AGREE": {
     "en": "By connecting you agree to our",
-    "es": "Al conectarte tu aceptas nuestros"
+    "es": "Al conectarte tu aceptas nuestros",
+    "zh-CN": "连接即表示您同意"
   },
   "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$CONTINUE": {
     "en": "Continue",
-    "es": "Continuar"
+    "es": "Continuar",
+    "zh-CN": "继续"
   },
   "LOADING_PROJECT$LOADING": {
     "en": "Loading...",
-    "es": "Cargando..."
+    "es": "Cargando...",
+    "zh-CN": "加载中..."
   },
   "CUSTOM_INPUT$OPTIONAL_LABEL": {
     "en": "(Optional)",
-    "es": "(Opcional)"
+    "es": "(Opcional)",
+    "zh-CN": "可选"
   },
   "SETTINGS_FORM$CUSTOM_MODEL_LABEL": {
     "en": "Custom Model",
-    "es": "Modelo personalizado"
+    "es": "Modelo personalizado",
+    "zh-CN": "自定义模型"
   },
   "SETTINGS_FORM$BASE_URL_LABEL": {
     "en": "Base URL",
-    "es": "URL base"
+    "es": "URL base",
+    "zh-CN": "基础URL"
   },
   "SETTINGS_FORM$API_KEY_LABEL": {
     "en": "API Key",
-    "es": "API Key"
+    "es": "API Key",
+    "zh-CN": "API密钥"
   },
   "SETTINGS_FORM$DONT_KNOW_API_KEY_LABEL": {
     "en": "Don't know your API key?",
-    "es": "¿No sabes tu API key?"
+    "es": "¿No sabes tu API key?",
+    "zh-CN": "不知道您的API密钥？"
   },
   "SETTINGS_FORM$CLICK_HERE_FOR_INSTRUCTIONS_LABEL": {
     "en": "Click here for instructions",
-    "es": "Clic aquí para instrucciones"
+    "es": "Clic aquí para instrucciones",
+    "zh-CN": "点击这里查看说明"
   },
   "SETTINGS_FORM$AGENT_LABEL": {
     "en": "Agent",
-    "es": "Agente"
+    "es": "Agente",
+    "zh-CN": "代理"
   },
   "SETTINGS_FORM$SECURITY_ANALYZER_LABEL": {
     "en": "Security Analyzer (Optional)",
-    "es": "Analizador de seguridad (opcional)"
+    "es": "Analizador de seguridad (opcional)",
+    "zh-CN": "安全分析器"
   },
   "SETTINGS_FORM$ENABLE_CONFIRMATION_MODE_LABEL": {
     "en": "Enable Confirmation Mode",
-    "es": "Habilitar modo de confirmación"
+    "es": "Habilitar modo de confirmación",
+    "zh-CN": "启用确认模式"
   },
   "SETTINGS_FORM$SAVE_LABEL": {
     "en": "Save",
-    "es": "Guardar"
+    "es": "Guardar",
+    "zh-CN": "保存"
   },
   "SETTINGS_FORM$CLOSE_LABEL": {
     "en": "Close",
-    "es": "Cerrar"
+    "es": "Cerrar",
+    "zh-CN": "关闭"
   },
   "SETTINGS_FORM$RESET_TO_DEFAULTS_LABEL": {
     "en": "Reset to defaults",
-    "es": "Reiniciar valores por defect"
+    "es": "Reiniciar valores por defect",
+    "zh-CN": "重置为默认值"
   },
   "SETTINGS_FORM$CANCEL_LABEL": {
     "en": "Cancel",
-    "es": "Cancelar"
+    "es": "Cancelar",
+    "zh-CN": "取消"
   },
   "SETTINGS_FORM$END_SESSION_LABEL": {
     "en": "End Session",
-    "es": "Terminar sesión"
+    "es": "Terminar sesión",
+    "zh-CN": "结束会话"
   },
   "SETTINGS_FORM$CHANGING_WORKSPACE_WARNING_MESSAGE": {
     "en": "Changing your settings will clear your workspace and start a new session. Are you sure you want to continue?",
-    "es": "Cambiar tu configuración limpiará tu espacio de trabajo e iniciará una nueva sesión. ¿Estás seguro de continuar?"
+    "es": "Cambiar tu configuración limpiará tu espacio de trabajo e iniciará una nueva sesión. ¿Estás seguro de continuar?",
+    "zh-CN": "更改工作区将删除所有信息"
   },
   "SETTINGS_FORM$ARE_YOU_SURE_LABEL": {
     "en": "Are you sure?",
-    "es": "¿Estás seguro?"
+    "es": "¿Estás seguro?",
+    "zh-CN": "确定吗？"
   },
   "SETTINGS_FORM$ALL_INFORMATION_WILL_BE_DELETED_MESSAGE": {
     "en": "All saved information in your AI settings will be deleted, including any API keys.",
-    "es": "Toda la información guardada en tu configuración de IA será eliminada, incluyendo tus API Keys"
+    "es": "Toda la información guardada en tu configuración de IA será eliminada, incluyendo tus API Keys",
+    "zh-CN": "所有信息将被删除"
   },
   "PROJECT_MENU_DETAILS_PLACEHOLDER$NEW_PROJECT_LABEL": {
     "en": "New Project",
-    "es": "Nuevo proyecto"
+    "es": "Nuevo proyecto",
+    "zh-CN": "新项目"
   },
   "PROJECT_MENU_DETAILS_PLACEHOLDER$CONNECT_TO_GITHUB": {
-    "en": "Connect to GitHub"
+    "en": "Connect to GitHub",
+    "zh-CN": "连接到GitHub"
   },
   "PROJECT_MENU_DETAILS_PLACEHOLDER$CONNECTED": {
-    "en": "Connected"
+    "en": "Connected",
+    "zh-CN": "已连接"
   },
   "PROJECT_MENU_DETAILS$AGO_LABEL": {
     "en": "ago",
-    "es": "atrás"
+    "es": "atrás",
+    "zh-CN": "前"
   },
   "STATUS$ERROR_LLM_AUTHENTICATION": {
     "en": "Error authenticating with the LLM provider. Please check your API key",
-    "es": "Error autenticando con el proveedor de LLM. Por favor revisa tu API key"
+    "es": "Error autenticando con el proveedor de LLM. Por favor revisa tu API key",
+    "zh-CN": "LLM认证错误"
   },
   "STATUS$ERROR_RUNTIME_DISCONNECTED": {
-    "en": "There was an error while connecting to the runtime. Please refresh the page."
+    "en": "There was an error while connecting to the runtime. Please refresh the page.",
+    "zh-CN": "运行时已断开连接"
   },
   "AGENT_ERROR$BAD_ACTION": {
-    "en": "Agent tried to execute a malformed action."
+    "en": "Agent tried to execute a malformed action.",
+    "zh-CN": "错误的操作"
   },
   "AGENT_ERROR$ACTION_TIMEOUT": {
-    "en": "Action timed out."
+    "en": "Action timed out.",
+    "zh-CN": "操作超时"
   },
   "PROJECT_MENU_CARD_CONTEXT_MENU$CONNECT_TO_GITHUB_LABEL": {
     "en": "Connect to GitHub",
-    "es": "Conectar a GitHub"
+    "es": "Conectar a GitHub",
+    "zh-CN": "连接到GitHub"
   },
   "PROJECT_MENU_CARD_CONTEXT_MENU$PUSH_TO_GITHUB_LABEL": {
     "en": "Push to GitHub",
-    "es": "Subir a GitHub"
+    "es": "Subir a GitHub",
+    "zh-CN": "推送到GitHub"
   },
   "PROJECT_MENU_CARD_CONTEXT_MENU$DOWNLOAD_FILES_LABEL": {
     "en": "Download files",
-    "es": "Descargar archivos"
+    "es": "Descargar archivos",
+    "zh-CN": "下载文件"
   },
   "PROJECT_MENU_CARD$OPEN": {
-    "en": "Open project menu"
+    "en": "Open project menu",
+    "zh-CN": "打开"
   },
   "ACTION_BUTTON$RESUME": {
-    "en": "Resume the agent task"
+    "en": "Resume the agent task",
+    "zh-CN": "继续"
   },
   "ACTION_BUTTON$PAUSE": {
-    "en": "Pause the current task"
+    "en": "Pause the current task",
+    "zh-CN": "暂停"
   },
   "BROWSER$SCREENSHOT_ALT": {
-    "en": "Browser Screenshot"
+    "en": "Browser Screenshot",
+    "zh-CN": "截图"
   },
   "ERROR_TOAST$CLOSE_BUTTON_LABEL": {
-    "en": "Close"
+    "en": "Close",
+    "zh-CN": "关闭"
   },
   "FILE_EXPLORER$UPLOAD": {
-    "en": "Upload File"
+    "en": "Upload File",
+    "zh-CN": "上传"
   },
   "FILE_EXPLORER$REFRESH_WORKSPACE": {
-    "en": "Refresh workspace"
+    "en": "Refresh workspace",
+    "zh-CN": "刷新工作区"
   },
   "FILE_EXPLORER$OPEN_WORKSPACE": {
-    "en": "Open workspace"
+    "en": "Open workspace",
+    "zh-CN": "打开工作区"
   },
   "FILE_EXPLORER$CLOSE_WORKSPACE": {
-    "en": "Close workspace"
+    "en": "Close workspace",
+    "zh-CN": "关闭工作区"
   },
   "ACTION_MESSAGE$RUN": {
-    "en": "Running a bash command"
+    "en": "Running a bash command",
+    "zh-CN": "运行"
   },
   "ACTION_MESSAGE$RUN_IPYTHON": {
-    "en": "Running a Python command"
+    "en": "Running a Python command",
+    "zh-CN": "运行IPython"
   },
   "ACTION_MESSAGE$READ": {
-    "en": "Reading the contents of a file"
+    "en": "Reading the contents of a file",
+    "zh-CN": "读取"
   },
   "ACTION_MESSAGE$EDIT": {
-    "en": "Editing the contents of a file"
+    "en": "Editing the contents of a file",
+    "zh-CN": "编辑"
   },
   "ACTION_MESSAGE$WRITE": {
-    "en": "Writing to a file"
+    "en": "Writing to a file",
+    "zh-CN": "写入"
   },
   "ACTION_MESSAGE$BROWSE": {
-    "en": "Browsing the web"
+    "en": "Browsing the web",
+    "zh-CN": "浏览"
   },
   "OBSERVATION_MESSAGE$RUN": {
-    "en": "Ran a bash command"
+    "en": "Ran a bash command",
+    "zh-CN": "运行"
   },
   "OBSERVATION_MESSAGE$RUN_IPYTHON": {
-    "en": "Ran a Python command"
+    "en": "Ran a Python command",
+    "zh-CN": "运行IPython"
   },
   "OBSERVATION_MESSAGE$READ": {
-    "en": "Read the contents of a file"
+    "en": "Read the contents of a file",
+    "zh-CN": "读取"
   },
   "OBSERVATION_MESSAGE$EDIT": {
-    "en": "Edited the contents of a file"
+    "en": "Edited the contents of a file",
+    "zh-CN": "编辑"
   },
   "OBSERVATION_MESSAGE$WRITE": {
-    "en": "Wrote to a file"
+    "en": "Wrote to a file",
+    "zh-CN": "写入"
   },
   "OBSERVATION_MESSAGE$BROWSE": {
-    "en": "Browsing completed"
+    "en": "Browsing completed",
+    "zh-CN": "浏览"
   },
   "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
-    "en": "Show details"
+    "en": "Show details",
+    "zh-CN": "显示详情"
   },
   "EXPANDABLE_MESSAGE$HIDE_DETAILS": {
-    "en": "Hide details"
+    "en": "Hide details",
+    "zh-CN": "隐藏详情"
   },
   "SETTINGS$TITLE": {
     "en": "AI Provider Configuration",
@@ -3475,7 +3538,8 @@
   "SETTINGS_FORM$ADVANCED_OPTIONS_LABEL": {
     "en": "Advanced Options",
     "es": "Opciones avanzadas",
-    "ja": "詳細オプション"
+    "ja": "詳細オプション",
+    "zh-CN": "高级选项"
   },
   "CONVERSATION$NO_CONVERSATIONS": {
     "en": "No conversations found",
