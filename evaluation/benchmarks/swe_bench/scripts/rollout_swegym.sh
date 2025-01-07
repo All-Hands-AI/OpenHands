@@ -26,7 +26,7 @@ export RUNTIME=remote
 export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev"
 export EVAL_DOCKER_IMAGE_PREFIX="us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images"
 
-EVAL_LIMIT=1000
+EVAL_LIMIT=3000
 MAX_ITER=100
 
 
