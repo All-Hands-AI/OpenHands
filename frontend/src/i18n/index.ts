@@ -2,6 +2,7 @@ import i18n from "i18next";
 import Backend from "i18next-http-backend";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
+import translations from "./translation.json";
 
 export const AvailableLanguages = [
   { label: "English", value: "en" },
@@ -26,7 +27,25 @@ i18n
   .init({
     fallbackLng: "en",
     debug: import.meta.env.NODE_ENV === "development",
-    lng: typeof window !== "undefined" ? localStorage.getItem("LANGUAGE") || "en" : "en",
+    lng:
+      typeof window !== "undefined"
+        ? localStorage.getItem("LANGUAGE") || "en"
+        : "en",
+    resources: {
+      en: { translation: translations },
+      ja: { translation: translations },
+      "zh-CN": { translation: translations },
+      "zh-TW": { translation: translations },
+      "ko-KR": { translation: translations },
+      no: { translation: translations },
+      ar: { translation: translations },
+      de: { translation: translations },
+      fr: { translation: translations },
+      it: { translation: translations },
+      pt: { translation: translations },
+      es: { translation: translations },
+      tr: { translation: translations },
+    },
   });
 
 export default i18n;
