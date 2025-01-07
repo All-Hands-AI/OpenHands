@@ -13,7 +13,7 @@ export const base64ToBlob = (base64: string) => {
     const chunk = bytes.slice(i, i + chunkSize);
     const array = new Uint8Array(chunk.length);
 
-    for (let j = 0; j < chunk.length; j++) {
+    for (let j = 0; j < chunk.length; j += 1) {
       array[j] = chunk.charCodeAt(j);
     }
 
