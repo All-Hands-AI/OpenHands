@@ -1010,7 +1010,14 @@
     "zh-CN": "截图",
     "zh-TW": "截圖",
     "ko-KR": "스크린샷",
-    "tr": "Ekran görüntüsü"
+    "tr": "Ekran görüntüsü",
+    "no": "Nettleser skjermbilde",
+    "ar": "لقطة شاشة المتصفح",
+    "de": "Browser-Screenshot",
+    "fr": "Capture d'écran du navigateur",
+    "it": "Screenshot del browser",
+    "pt": "Captura de tela do navegador",
+    "es": "Captura de pantalla del navegador"
   },
   "TIME$MINUTES_AGO": {
     "en": "minutes ago",
@@ -1332,14 +1339,30 @@
     "zh-CN": "切换到VS Code中...",
     "zh-TW": "切換到VS Code中...",
     "ja": "3秒後にVS Codeに切り替わります...\n重要：VS Codeで行った変更はエージェントに通知してください。競合を避けるため、アシスタントの作業が完了するまで自身の変更を待ってください。",
-    "ko-KR": "VS Code로 전환 중..."
+    "ko-KR": "VS Code로 전환 중...",
+    "no": "Bytter til VS Code om 3 sekunder...\nViktig: Vennligst informer agenten om eventuelle endringer du gjør i VS Code. For å unngå konflikter, vent til assistenten er ferdig med sitt arbeid før du gjør dine egne endringer.",
+    "ar": "جارٍ التبديل إلى VS Code في غضون 3 ثوانٍ...\nمهم: يرجى إبلاغ الوكيل بأي تغييرات تقوم بها في VS Code. لتجنب التعارضات، انتظر حتى يكمل المساعد عمله قبل إجراء تغييراتك.",
+    "de": "Wechsel zu VS Code in 3 Sekunden...\nWichtig: Bitte informieren Sie den Agenten über alle Änderungen, die Sie in VS Code vornehmen. Um Konflikte zu vermeiden, warten Sie, bis der Assistent seine Arbeit abgeschlossen hat, bevor Sie eigene Änderungen vornehmen.",
+    "fr": "Passage à VS Code dans 3 secondes...\nImportant : Veuillez informer l'agent de toute modification que vous apportez dans VS Code. Pour éviter les conflits, attendez que l'assistant ait terminé son travail avant d'apporter vos propres modifications.",
+    "it": "Passaggio a VS Code tra 3 secondi...\nImportante: Si prega di informare l'agente di eventuali modifiche apportate in VS Code. Per evitare conflitti, attendere che l'assistente completi il suo lavoro prima di apportare le proprie modifiche.",
+    "pt": "Mudando para o VS Code em 3 segundos...\nImportante: Por favor, informe o agente sobre quaisquer alterações que você fizer no VS Code. Para evitar conflitos, aguarde até que o assistente conclua seu trabalho antes de fazer suas próprias alterações.",
+    "es": "Cambiando a VS Code en 3 segundos...\nImportante: Por favor, informe al agente de cualquier cambio que realice en VS Code. Para evitar conflictos, espere a que el asistente complete su trabajo antes de realizar sus propios cambios.",
+    "tr": "3 saniye içinde VS Code'a geçiliyor...\nÖnemli: Lütfen VS Code'da yaptığınız değişiklikleri aracıya bildirin. Çakışmaları önlemek için, kendi değişikliklerinizi yapmadan önce asistanın işini tamamlamasını bekleyin."
   },
   "EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE": {
     "en": "Error switching to VS Code: {{error}}",
     "zh-CN": "切换到VS Code时出错",
     "zh-TW": "切換到VS Code時出錯",
     "ja": "VS Codeへの切り替え中にエラーが発生しました: {{error}}",
-    "ko-KR": "VS Code로 전환 중 오류 발생"
+    "ko-KR": "VS Code로 전환 중 오류 발생",
+    "no": "Feil ved bytte til VS Code: {{error}}",
+    "ar": "خطأ في التبديل إلى VS Code: {{error}}",
+    "de": "Fehler beim Wechsel zu VS Code: {{error}}",
+    "fr": "Erreur lors du passage à VS Code : {{error}}",
+    "it": "Errore durante il passaggio a VS Code: {{error}}",
+    "pt": "Erro ao mudar para o VS Code: {{error}}",
+    "es": "Error al cambiar a VS Code: {{error}}",
+    "tr": "VS Code'a geçişte hata: {{error}}"
   },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Return to existing session?",
@@ -1353,7 +1376,8 @@
     "ko-KR": "기존 세션으로 돌아가시겠습니까?",
     "ar": "العودة إلى الجلسة الحالية؟",
     "tr": "Mevcut oturuma dönmek ister misiniz?",
-    "ja": "既存のセッションに戻りますか？"
+    "ja": "既存のセッションに戻りますか？",
+    "no": "Gå tilbake til eksisterende økt?"
   },
   "LOAD_SESSION$MODAL_CONTENT": {
     "en": "You seem to have an ongoing session. Would you like to pick up where you left off, or start fresh?",
@@ -1367,7 +1391,8 @@
     "tr": "Devam eden bir oturumunuz var gibi görünüyor. Kaldığınız yerden devam etmek mi yoksa yeniden başlamak mı istersiniz?",
     "zh-CN": "您似乎有一个未完成的任务。您想继续之前的工作还是重新开始？",
     "zh-TW": "您似乎有一個未完成的任務。您想從上次離開的地方繼續還是重新開始？",
-    "ja": "進行中のセッションがあるようです。中断した箇所から再開しますか、それとも新しく始めますか？"
+    "ja": "進行中のセッションがあるようです。中断した箇所から再開しますか、それとも新しく始めますか？",
+    "no": "Det ser ut som du har en pågående økt. Vil du fortsette der du slapp, eller starte på nytt?"
   },
   "LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL": {
     "en": "Resume Session",
@@ -1375,6 +1400,7 @@
     "zh-CN": "恢复会话",
     "zh-TW": "恢復會話",
     "es": "Reanudar sesión",
+    "no": "Fortsett økt",
     "fr": "Reprendre la session",
     "it": "Riprendi sessione",
     "pt": "Retomar sessão",
@@ -1395,7 +1421,8 @@
     "ko-KR": "새 세션 시작",
     "ar": "بدء جلسة جديدة",
     "tr": "Yeni Oturum Başlat",
-    "ja": "新しいセッションを開始"
+    "ja": "新しいセッションを開始",
+    "no": "Start ny økt"
   },
   "FEEDBACK$MODAL_TITLE": {
     "en": "Share feedback",
@@ -1409,7 +1436,8 @@
     "ko-KR": "피드백 공유",
     "ar": "مشاركة التعليقات",
     "tr": "Geri bildirim paylaş",
-    "ja": "フィードバックを共有"
+    "ja": "フィードバックを共有",
+    "no": "Del tilbakemelding"
   },
   "FEEDBACK$MODAL_CONTENT": {
     "en": "To help us improve, we collect feedback from your interactions to improve our prompts. By submitting this form, you consent to us collecting this data.",
@@ -1421,6 +1449,7 @@
     "it": "Per aiutarci a migliorare, raccogliamo feedback dalle tue interazioni per migliorare i nostri prompt. Inviando questo modulo, acconsenti alla raccolta di questi dati.",
     "pt": "Para nos ajudar a melhorar, coletamos feedback de suas interações para aprimorar nossas sugestões. Ao enviar este formulário, você consente que coletemos esses dados.",
     "ko-KR": "개선을 위해 귀하의 상호 작용에서 피드백을 수집하여 프롬프트를 개선합니다. 이 양식을 제출함으로써 귀하는 이 데이터 수집에 동의하게 됩니다.",
+    "no": "For å hjelpe oss med å forbedre oss, samler vi tilbakemeldinger fra dine interaksjoner for å forbedre våre instruksjoner. Ved å sende inn dette skjemaet, samtykker du til at vi samler inn disse dataene.",
     "ar": "لمساعدتنا على التحسين، نقوم بجمع التعليقات من تفاعلاتك لتحسين مطالباتنا. من خلال إرسال هذا النموذج، فإنك توافق على جمعنا لهذه البيانات.",
     "tr": "Kendimizi geliştirmemize yardımcı olmak için, etkileşimlerinizden geri bildirim toplayarak ipuçlarımızı iyileştiriyoruz. Bu formu göndererek, bu verileri toplamamıza izin vermiş olursunuz.",
     "ja": "サービス改善のため、プロンプトの改善に向けてユーザーの操作からフィードバックを収集しています。このフォームを送信することで、データ収集に同意したことになります。"
@@ -1437,7 +1466,8 @@
     "ko-KR": "귀하의 이메일",
     "ar": "بريدك الإلكتروني",
     "tr": "E-posta adresiniz",
-    "ja": "メールアドレス"
+    "ja": "メールアドレス",
+    "no": "Din e-post"
   },
   "FEEDBACK$CONTRIBUTE_LABEL": {
     "en": "Contribute to public dataset",
@@ -1449,6 +1479,7 @@
     "it": "Contribuisci al dataset pubblico",
     "pt": "Contribuir para o conjunto de dados público",
     "ko-KR": "공개 데이터셋에 기여",
+    "no": "Bidra til offentlig datasett",
     "ar": "المساهمة في مجموعة البيانات العامة",
     "tr": "Genel veri setine katkıda bulun",
     "ja": "公開データセットに貢献"
@@ -1465,7 +1496,8 @@
     "ko-KR": "공유",
     "ar": "مشاركة",
     "tr": "Paylaş",
-    "ja": "共有"
+    "ja": "共有",
+    "no": "Del"
   },
   "FEEDBACK$CANCEL_LABEL": {
     "en": "Cancel",
@@ -1477,6 +1509,7 @@
     "it": "Annulla",
     "pt": "Cancelar",
     "ko-KR": "취소",
+    "no": "Avbryt",
     "ar": "إلغاء",
     "tr": "İptal",
     "ja": "キャンセル"
@@ -3137,7 +3170,14 @@
     "zh-CN": "断开连接",
     "zh-TW": "中斷連線",
     "ko-KR": "연결 해제",
-    "ja": "切断"
+    "ja": "切断",
+    "no": "Koble fra",
+    "ar": "قطع الاتصال",
+    "de": "Trennen",
+    "fr": "Déconnecter",
+    "it": "Disconnetti",
+    "pt": "Desconectar",
+    "tr": "Bağlantıyı kes"
   },
   "ACCOUNT_SETTINGS_MODAL$SAVE": {
     "en": "Save",
@@ -3145,7 +3185,14 @@
     "zh-CN": "保存",
     "zh-TW": "儲存",
     "ko-KR": "저장",
-    "ja": "保存"
+    "ja": "保存",
+    "no": "Lagre",
+    "ar": "حفظ",
+    "de": "Speichern",
+    "fr": "Enregistrer",
+    "it": "Salva",
+    "pt": "Salvar",
+    "tr": "Kaydet"
   },
   "ACCOUNT_SETTINGS_MODAL$CLOSE": {
     "en": "Close",
@@ -3153,12 +3200,29 @@
     "zh-CN": "关闭",
     "zh-TW": "關閉",
     "ko-KR": "닫기",
-    "ja": "閉じる"
+    "ja": "閉じる",
+    "no": "Lukk",
+    "ar": "إغلاق",
+    "de": "Schließen",
+    "fr": "Fermer",
+    "it": "Chiudi",
+    "pt": "Fechar",
+    "tr": "Kapat"
   },
   "ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID": {
     "en": "GitHub token is invalid. Please try again.",
-    "es": "",
-    "zh-CN": "GitHub令牌无效",
+    "es": "El token de GitHub no es válido. Por favor, inténtelo de nuevo.",
+    "zh-CN": "GitHub令牌无效。请重试。",
+    "zh-TW": "GitHub權杖無效。請重試。",
+    "ko-KR": "GitHub 토큰이 유효하지 않습니다. 다시 시도해 주세요.",
+    "ja": "GitHubトークンが無効です。もう一度お試しください。",
+    "no": "GitHub-token er ugyldig. Vennligst prøv igjen.",
+    "ar": "رمز GitHub غير صالح. يرجى المحاولة مرة أخرى.",
+    "de": "GitHub-Token ist ungültig. Bitte versuchen Sie es erneut.",
+    "fr": "Le jeton GitHub n'est pas valide. Veuillez réessayer.",
+    "it": "Il token GitHub non è valido. Per favore riprova.",
+    "pt": "O token do GitHub é inválido. Por favor, tente novamente.",
+    "tr": "GitHub token'ı geçersiz. Lütfen tekrar deneyin.",
     "zh-TW": "GitHub權杖無效",
     "ko-KR": "GitHub 토큰이 유효하지 않습니다",
     "ja": "GitHubトークンが無効です"
@@ -3169,7 +3233,14 @@
     "zh-CN": "获取您的令牌",
     "zh-TW": "取得您的權杖",
     "ko-KR": "토큰 받기",
-    "ja": "トークンを取得"
+    "ja": "トークンを取得",
+    "no": "Få din token",
+    "ar": "احصل على الرمز الخاص بك",
+    "de": "Holen Sie sich Ihren Token",
+    "fr": "Obtenez votre jeton",
+    "it": "Ottieni il tuo token",
+    "pt": "Obtenha seu token",
+    "tr": "Token'ınızı alın"
   },
   "CONNECT_TO_GITHUB_MODAL$HERE": {
     "en": "here",
@@ -3177,13 +3248,27 @@
     "zh-CN": "这里",
     "zh-TW": "這裡",
     "ko-KR": "여기",
-    "ja": "こちら"
+    "ja": "こちら",
+    "no": "her",
+    "ar": "هنا",
+    "de": "hier",
+    "fr": "ici",
+    "it": "qui",
+    "pt": "aqui",
+    "tr": "burada"
   },
   "CONNECT_TO_GITHUB_MODAL$CONNECT": {
     "en": "Connect",
     "es": "Conectar",
     "zh-CN": "连接",
     "zh-TW": "連線",
+    "no": "Koble til",
+    "ar": "اتصال",
+    "de": "Verbinden",
+    "fr": "Connecter",
+    "it": "Connetti",
+    "pt": "Conectar",
+    "tr": "Bağlan",
     "ko-KR": "연결",
     "ja": "接続"
   },
@@ -3193,15 +3278,29 @@
     "zh-CN": "关闭",
     "zh-TW": "關閉",
     "ko-KR": "닫기",
-    "ja": "閉じる"
+    "ja": "閉じる",
+    "no": "Lukk",
+    "ar": "إغلاق",
+    "de": "Schließen",
+    "fr": "Fermer",
+    "it": "Chiudi",
+    "pt": "Fechar",
+    "tr": "Kapat"
   },
   "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$BY_CONNECTING_YOU_AGREE": {
     "en": "By connecting you agree to our",
     "es": "Al conectarte tu aceptas nuestros",
     "zh-CN": "连接即表示您同意",
     "zh-TW": "連線即表示您同意",
-    "ko-KR": "연결함으로써 동의합니다",
-    "ja": "接続することで同意します"
+    "ko-KR": "연결함으로써 귀하는 우리의",
+    "ja": "接続することで、あなたは当社の",
+    "no": "Ved å koble til godtar du våre",
+    "ar": "بالاتصال فإنك توافق على",
+    "de": "Durch die Verbindung stimmen Sie unseren",
+    "fr": "En vous connectant, vous acceptez nos",
+    "it": "Connettendoti accetti i nostri",
+    "pt": "Ao conectar você concorda com nossos",
+    "tr": "Bağlanarak kabul etmiş olursunuz"
   },
   "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$CONTINUE": {
     "en": "Continue",
@@ -3209,7 +3308,14 @@
     "zh-CN": "继续",
     "zh-TW": "繼續",
     "ko-KR": "계속",
-    "ja": "続行"
+    "ja": "続行",
+    "no": "Fortsett",
+    "ar": "متابعة",
+    "de": "Fortfahren",
+    "fr": "Continuer",
+    "it": "Continua",
+    "pt": "Continuar",
+    "tr": "Devam et"
   },
   "LOADING_PROJECT$LOADING": {
     "en": "Loading...",
@@ -3217,7 +3323,14 @@
     "zh-CN": "加载中...",
     "zh-TW": "載入中...",
     "ko-KR": "로딩 중...",
-    "ja": "読み込み中..."
+    "ja": "読み込み中...",
+    "no": "Laster...",
+    "ar": "جارٍ التحميل...",
+    "de": "Wird geladen...",
+    "fr": "Chargement...",
+    "it": "Caricamento...",
+    "pt": "Carregando...",
+    "tr": "Yükleniyor..."
   },
   "CUSTOM_INPUT$OPTIONAL_LABEL": {
     "en": "(Optional)",
@@ -3225,7 +3338,14 @@
     "zh-CN": "可选",
     "zh-TW": "選填",
     "ko-KR": "선택사항",
-    "ja": "任意"
+    "ja": "任意",
+    "no": "(Valgfritt)",
+    "ar": "(اختياري)",
+    "de": "(Optional)",
+    "fr": "(Facultatif)",
+    "it": "(Opzionale)",
+    "pt": "(Opcional)",
+    "tr": "(İsteğe bağlı)"
   },
   "SETTINGS_FORM$CUSTOM_MODEL_LABEL": {
     "en": "Custom Model",
@@ -3233,7 +3353,14 @@
     "zh-CN": "自定义模型",
     "zh-TW": "自訂模型",
     "ko-KR": "사용자 정의 모델",
-    "ja": "カスタムモデル"
+    "ja": "カスタムモデル",
+    "no": "Tilpasset modell",
+    "ar": "نموذج مخصص",
+    "de": "Benutzerdefiniertes Modell",
+    "fr": "Modèle personnalisé",
+    "it": "Modello personalizzato",
+    "pt": "Modelo personalizado",
+    "tr": "Özel model"
   },
   "SETTINGS_FORM$BASE_URL_LABEL": {
     "en": "Base URL",
@@ -3241,12 +3368,29 @@
     "zh-CN": "基础URL",
     "zh-TW": "基礎URL",
     "ko-KR": "기본 URL",
-    "ja": "ベースURL"
+    "ja": "ベースURL",
+    "no": "Base URL",
+    "ar": "عنوان URL الأساسي",
+    "de": "Basis-URL",
+    "fr": "URL de base",
+    "it": "URL di base",
+    "pt": "URL base",
+    "tr": "Temel URL"
   },
   "SETTINGS_FORM$API_KEY_LABEL": {
     "en": "API Key",
     "es": "API Key",
     "zh-CN": "API密钥",
+    "zh-TW": "API金鑰",
+    "ko-KR": "API 키",
+    "ja": "APIキー",
+    "no": "API-nøkkel",
+    "ar": "مفتاح API",
+    "de": "API-Schlüssel",
+    "fr": "Clé API",
+    "it": "Chiave API",
+    "pt": "Chave API",
+    "tr": "API Anahtarı",
     "zh-TW": "API金鑰",
     "ko-KR": "API 키",
     "ja": "APIキー"
@@ -3257,7 +3401,14 @@
     "zh-CN": "不知道您的API密钥？",
     "zh-TW": "不知道您的API金鑰？",
     "ko-KR": "API 키를 모르시나요?",
-    "ja": "APIキーがわかりませんか？"
+    "ja": "APIキーがわかりませんか？",
+    "no": "Kjenner du ikke API-nøkkelen din?",
+    "ar": "لا تعرف مفتاح API الخاص بك؟",
+    "de": "Kennen Sie Ihren API-Schlüssel nicht?",
+    "fr": "Vous ne connaissez pas votre clé API ?",
+    "it": "Non conosci la tua chiave API?",
+    "pt": "Não sabe sua chave API?",
+    "tr": "API anahtarınızı bilmiyor musunuz?"
   },
   "SETTINGS_FORM$CLICK_HERE_FOR_INSTRUCTIONS_LABEL": {
     "en": "Click here for instructions",
@@ -3265,7 +3416,14 @@
     "zh-CN": "点击这里查看说明",
     "zh-TW": "點擊這裡查看說明",
     "ko-KR": "설명을 보려면 여기를 클릭하세요",
-    "ja": "説明を見るにはここをクリック"
+    "ja": "説明を見るにはここをクリック",
+    "no": "Klikk her for instruksjoner",
+    "ar": "انقر هنا للتعليمات",
+    "de": "Klicken Sie hier für Anweisungen",
+    "fr": "Cliquez ici pour les instructions",
+    "it": "Clicca qui per le istruzioni",
+    "pt": "Clique aqui para instruções",
+    "tr": "Talimatlar için buraya tıklayın"
   },
   "SETTINGS_FORM$AGENT_LABEL": {
     "en": "Agent",
@@ -3273,12 +3431,29 @@
     "zh-CN": "代理",
     "zh-TW": "代理",
     "ko-KR": "에이전트",
-    "ja": "エージェント"
+    "ja": "エージェント",
+    "no": "Agent",
+    "ar": "الوكيل",
+    "de": "Agent",
+    "fr": "Agent",
+    "it": "Agente",
+    "pt": "Agente",
+    "tr": "Ajan"
   },
   "SETTINGS_FORM$SECURITY_ANALYZER_LABEL": {
     "en": "Security Analyzer (Optional)",
     "es": "Analizador de seguridad (opcional)",
     "zh-CN": "安全分析器",
+    "zh-TW": "安全分析器",
+    "ko-KR": "보안 분석기 (선택사항)",
+    "ja": "セキュリティアナライザー (任意)",
+    "no": "Sikkerhetsanalysator (valgfritt)",
+    "ar": "محلل الأمان (اختياري)",
+    "de": "Sicherheitsanalyse (Optional)",
+    "fr": "Analyseur de sécurité (Facultatif)",
+    "it": "Analizzatore di sicurezza (Opzionale)",
+    "pt": "Analisador de segurança (Opcional)",
+    "tr": "Güvenlik Analizörü (İsteğe bağlı)",
     "zh-TW": "安全分析器",
     "ko-KR": "보안 분석기",
     "ja": "セキュリティアナライザー"
@@ -3289,7 +3464,14 @@
     "zh-CN": "启用确认模式",
     "zh-TW": "啟用確認模式",
     "ko-KR": "확인 모드 활성화",
-    "ja": "確認モードを有効化"
+    "ja": "確認モードを有効化",
+    "no": "Aktiver bekreftelsesmodus",
+    "ar": "تمكين وضع التأكيد",
+    "de": "Bestätigungsmodus aktivieren",
+    "fr": "Activer le mode de confirmation",
+    "it": "Abilita modalità di conferma",
+    "pt": "Ativar modo de confirmação",
+    "tr": "Onay modunu etkinleştir"
   },
   "SETTINGS_FORM$SAVE_LABEL": {
     "en": "Save",
@@ -3297,12 +3479,29 @@
     "zh-CN": "保存",
     "zh-TW": "儲存",
     "ko-KR": "저장",
-    "ja": "保存"
+    "ja": "保存",
+    "no": "Lagre",
+    "ar": "حفظ",
+    "de": "Speichern",
+    "fr": "Enregistrer",
+    "it": "Salva",
+    "pt": "Salvar",
+    "tr": "Kaydet"
   },
   "SETTINGS_FORM$CLOSE_LABEL": {
     "en": "Close",
     "es": "Cerrar",
     "zh-CN": "关闭",
+    "zh-TW": "關閉",
+    "ko-KR": "닫기",
+    "ja": "閉じる",
+    "no": "Lukk",
+    "ar": "إغلاق",
+    "de": "Schließen",
+    "fr": "Fermer",
+    "it": "Chiudi",
+    "pt": "Fechar",
+    "tr": "Kapat",
     "zh-TW": "關閉",
     "ko-KR": "닫기",
     "ja": "閉じる"
@@ -3313,7 +3512,14 @@
     "zh-CN": "重置为默认值",
     "zh-TW": "重置為預設值",
     "ko-KR": "기본값으로 재설정",
-    "ja": "デフォルトに戻す"
+    "ja": "デフォルトに戻す",
+    "no": "Tilbakestill til standardverdier",
+    "ar": "إعادة التعيين إلى الإعدادات الافتراضية",
+    "de": "Auf Standardwerte zurücksetzen",
+    "fr": "Réinitialiser aux valeurs par défaut",
+    "it": "Ripristina valori predefiniti",
+    "pt": "Restaurar padrões",
+    "tr": "Varsayılanlara sıfırla"
   },
   "SETTINGS_FORM$CANCEL_LABEL": {
     "en": "Cancel",
@@ -3321,7 +3527,14 @@
     "zh-CN": "取消",
     "zh-TW": "取消",
     "ko-KR": "취소",
-    "ja": "キャンセル"
+    "ja": "キャンセル",
+    "no": "Avbryt",
+    "ar": "إلغاء",
+    "de": "Abbrechen",
+    "fr": "Annuler",
+    "it": "Annulla",
+    "pt": "Cancelar",
+    "tr": "İptal"
   },
   "SETTINGS_FORM$END_SESSION_LABEL": {
     "en": "End Session",
@@ -3329,10 +3542,30 @@
     "zh-CN": "结束会话",
     "zh-TW": "結束工作階段",
     "ko-KR": "세션 종료",
+    "ja": "セッションを終了",
+    "no": "Avslutt økt",
+    "ar": "إنهاء الجلسة",
+    "de": "Sitzung beenden",
+    "fr": "Terminer la session",
+    "it": "Termina sessione",
+    "pt": "Encerrar sessão",
+    "tr": "Oturumu sonlandır",
     "ja": "セッションを終了"
   },
   "SETTINGS_FORM$CHANGING_WORKSPACE_WARNING_MESSAGE": {
     "en": "Changing your settings will clear your workspace and start a new session. Are you sure you want to continue?",
+    "es": "Cambiar la configuración borrará su espacio de trabajo e iniciará una nueva sesión. ¿Está seguro de que desea continuar?",
+    "zh-CN": "更改设置将清除您的工作区并开始新会话。您确定要继续吗？",
+    "zh-TW": "更改設定將清除您的工作區並開始新工作階段。您確定要繼續嗎？",
+    "ko-KR": "설정을 변경하면 작업 공간이 지워지고 새 세션이 시작됩니다. 계속하시겠습니까?",
+    "ja": "設定を変更すると、ワークスペースがクリアされ、新しいセッションが開始されます。続行しますか？",
+    "no": "Å endre innstillingene vil tømme arbeidsområdet ditt og starte en ny økt. Er du sikker på at du vil fortsette?",
+    "ar": "سيؤدي تغيير الإعدادات إلى مسح مساحة العمل وبدء جلسة جديدة. هل أنت متأكد من أنك تريد المتابعة؟",
+    "de": "Wenn Sie Ihre Einstellungen ändern, wird Ihr Arbeitsbereich gelöscht und eine neue Sitzung gestartet. Möchten Sie wirklich fortfahren?",
+    "fr": "La modification de vos paramètres effacera votre espace de travail et démarrera une nouvelle session. Êtes-vous sûr de vouloir continuer ?",
+    "it": "La modifica delle impostazioni cancellerà il tuo spazio di lavoro e avvierà una nuova sessione. Sei sicuro di voler continuare?",
+    "pt": "Alterar suas configurações limpará seu espaço de trabalho e iniciará uma nova sessão. Tem certeza de que deseja continuar?",
+    "tr": "Ayarlarınızı değiştirmek çalışma alanınızı temizleyecek ve yeni bir oturum başlatacak. Devam etmek istediğinizden emin misiniz?",
     "es": "Cambiar tu configuración limpiará tu espacio de trabajo e iniciará una nueva sesión. ¿Estás seguro de continuar?",
     "zh-CN": "更改工作区将删除所有信息",
     "zh-TW": "更改工作區將刪除所有資訊",
@@ -3345,7 +3578,14 @@
     "zh-CN": "确定吗？",
     "zh-TW": "確定嗎？",
     "ko-KR": "확실합니까?",
-    "ja": "よろしいですか？"
+    "ja": "よろしいですか？",
+    "no": "Er du sikker?",
+    "ar": "هل أنت متأكد؟",
+    "de": "Sind Sie sicher?",
+    "fr": "Êtes-vous sûr ?",
+    "it": "Sei sicuro?",
+    "pt": "Tem certeza?",
+    "tr": "Emin misiniz?"
   },
   "SETTINGS_FORM$ALL_INFORMATION_WILL_BE_DELETED_MESSAGE": {
     "en": "All saved information in your AI settings will be deleted, including any API keys.",
@@ -3353,7 +3593,14 @@
     "zh-CN": "所有信息将被删除",
     "zh-TW": "所有資訊將被刪除",
     "ko-KR": "모든 정보가 삭제됩니다",
-    "ja": "全ての情報が削除されます"
+    "ja": "全ての情報が削除されます",
+    "no": "All lagret informasjon i AI-innstillingene dine vil bli slettet, inkludert API-nøkler.",
+    "ar": "سيتم حذف جميع المعلومات المحفوظة في إعدادات الذكاء الاصطناعي الخاصة بك، بما في ذلك أي مفاتيح API.",
+    "de": "Alle gespeicherten Informationen in Ihren KI-Einstellungen werden gelöscht, einschließlich aller API-Schlüssel.",
+    "fr": "Toutes les informations enregistrées dans vos paramètres d'IA seront supprimées, y compris les clés API.",
+    "it": "Tutte le informazioni salvate nelle tue impostazioni AI saranno eliminate, incluse le chiavi API.",
+    "pt": "Todas as informações salvas nas suas configurações de IA serão excluídas, incluindo quaisquer chaves API.",
+    "tr": "API anahtarları dahil olmak üzere AI ayarlarınızdaki tüm kayıtlı bilgiler silinecektir."
   },
   "PROJECT_MENU_DETAILS_PLACEHOLDER$NEW_PROJECT_LABEL": {
     "en": "New Project",
@@ -3361,12 +3608,29 @@
     "zh-CN": "新项目",
     "zh-TW": "新專案",
     "ko-KR": "새 프로젝트",
-    "ja": "新規プロジェクト"
+    "ja": "新規プロジェクト",
+    "no": "Nytt prosjekt",
+    "ar": "مشروع جديد",
+    "de": "Neues Projekt",
+    "fr": "Nouveau projet",
+    "it": "Nuovo progetto",
+    "pt": "Novo projeto",
+    "tr": "Yeni proje"
   },
   "PROJECT_MENU_DETAILS_PLACEHOLDER$CONNECT_TO_GITHUB": {
     "en": "Connect to GitHub",
     "zh-CN": "连接到GitHub",
     "zh-TW": "連線到GitHub",
+    "ko-KR": "GitHub에 연결",
+    "ja": "GitHubに接続",
+    "no": "Koble til GitHub",
+    "ar": "الاتصال بـ GitHub",
+    "de": "Mit GitHub verbinden",
+    "fr": "Se connecter à GitHub",
+    "it": "Connetti a GitHub",
+    "pt": "Conectar ao GitHub",
+    "es": "Conectar a GitHub",
+    "tr": "GitHub'a bağlan",
     "ko-KR": "GitHub에 연결",
     "ja": "GitHubに接続"
   },
@@ -3374,6 +3638,16 @@
     "en": "Connected",
     "zh-CN": "已连接",
     "zh-TW": "已連線",
+    "ko-KR": "연결됨",
+    "ja": "接続済み",
+    "no": "Tilkoblet",
+    "ar": "متصل",
+    "de": "Verbunden",
+    "fr": "Connecté",
+    "it": "Connesso",
+    "pt": "Conectado",
+    "es": "Conectado",
+    "tr": "Bağlandı",
     "ko-KR": "연결됨",
     "ja": "接続済み"
   },
