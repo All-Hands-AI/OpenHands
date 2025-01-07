@@ -1,10 +1,8 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
 import { ChatInput } from "./chat-input";
 import { cn } from "#/utils/utils";
 import { ImageCarousel } from "../images/image-carousel";
 import { UploadImageInput } from "../images/upload-image-input";
-import { I18nKey } from "#/i18n/declaration";
 
 interface InteractiveChatBoxProps {
   isDisabled?: boolean;
@@ -23,7 +21,6 @@ export function InteractiveChatBox({
   value,
   onChange,
 }: InteractiveChatBoxProps) {
-  const { t } = useTranslation();
   const [images, setImages] = React.useState<File[]>([]);
 
   const handleUpload = (files: File[]) => {
@@ -71,7 +68,6 @@ export function InteractiveChatBox({
         <ChatInput
           disabled={isDisabled}
           button={mode}
-
           onChange={onChange}
           onSubmit={handleSubmit}
           onStop={onStop}
