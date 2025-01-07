@@ -62,7 +62,7 @@ class SandboxConfig:
     runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
     browsergym_eval_env: str | None = None
     platform: str | None = None
-    close_delay: int = 5
+    close_delay: int = 900
     remote_runtime_resource_factor: int = 1
     enable_gpu: bool = False
     docker_runtime_kwargs: str | None = None
