@@ -3745,7 +3745,7 @@
   },
   "SUGGESTIONS$WHAT_TO_BUILD": {
     "en": "What do you want to build?",
-    "ja": "何を作りたいですか？",
+    "ja": "何を開発しますか？",
     "zh-CN": "你想要构建什么？",
     "zh-TW": "你想要建構什麼？",
     "ko-KR": "무엇을 만들고 싶으신가요?",
