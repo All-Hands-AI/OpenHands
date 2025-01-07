@@ -3403,7 +3403,18 @@
     "en": "Account Settings"
   },
   "ACCOUNT_SETTINGS$LOGOUT": {
-    "en": "Logout"
+    "en": "Logout",
+    "ja": "ログアウト",
+    "zh-CN": "退出登录",
+    "zh-TW": "登出",
+    "ko-KR": "로그아웃",
+    "no": "Logg ut",
+    "it": "Esci",
+    "pt": "Sair",
+    "es": "Cerrar sesión",
+    "ar": "تسجيل الخروج",
+    "fr": "Déconnexion",
+    "tr": "Çıkış yap"
   },
   "SETTINGS_FORM$ADVANCED_OPTIONS_LABEL": {
     "en": "Advanced Options",
