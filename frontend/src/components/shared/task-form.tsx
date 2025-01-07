@@ -107,7 +107,7 @@ export function TaskForm({ ref }: TaskFormProps) {
                   dispatch(addFile(base64));
                 });
               }}
-              placeholder={placeholder}
+              placeholder={t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD)}
               value={text}
               maxRows={15}
               showButton={!!text}
