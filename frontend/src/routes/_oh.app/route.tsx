@@ -3,6 +3,8 @@ import React from "react";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import {
   ConversationProvider,
   useConversation,
@@ -37,6 +39,7 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 
 function AppContent() {
+  const { t } = useTranslation();
   const { gitHubToken } = useAuth();
   const { data: settings } = useSettings();
 
@@ -137,12 +140,20 @@ function AppContent() {
               <Container
                 className="h-full"
                 labels={[
-                  { label: "Workspace", to: "", icon: <CodeIcon /> },
-                  { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
+                  {
+                    label: t(I18nKey.WORKSPACE$TITLE),
+                    to: "",
+                    icon: <CodeIcon />,
+                  },
+                  {
+                    label: t(I18nKey.WORKSPACE$JUPYTER_TAB_LABEL),
+                    to: "jupyter",
+                    icon: <ListIcon />,
+                  },
                   {
                     label: (
                       <div className="flex items-center gap-1">
-                        Browser
+                        {t(I18nKey.WORKSPACE$BROWSER_TAB_LABEL)}
                         {updateCount > 0 && <CountBadge count={updateCount} />}
                       </div>
                     ),
