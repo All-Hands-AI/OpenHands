@@ -7,6 +7,7 @@ import React from "react";
 import { mapProvider } from "#/utils/map-provider";
 import { VERIFIED_MODELS, VERIFIED_PROVIDERS } from "#/utils/verified-models";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
+import { useTranslation } from "react-i18next";
 
 interface ModelSelectorProps {
   isDisabled?: boolean;
@@ -60,12 +61,14 @@ export function ModelSelector({
     setLitellmId(null);
   };
 
+  const { t } = useTranslation();
+
   return (
     <div data-testid="model-selector" className="flex flex-col gap-2">
       <div className="flex flex-row gap-3">
         <fieldset className="flex flex-col gap-2">
           <label htmlFor="agent" className="font-[500] text-[#A3A3A3] text-xs">
-            LLM Provider
+            {t("LLM_PROVIDER")}
           </label>
           <Autocomplete
             data-testid="llm-provider"
@@ -73,8 +76,8 @@ export function ModelSelector({
             isVirtualized={false}
             name="llm-provider"
             isDisabled={isDisabled}
-            aria-label="LLM Provider"
-            placeholder="Select a provider"
+            aria-label={t("LLM_PROVIDER")}
+            placeholder={t("SELECT_PROVIDER_PLACEHOLDER")}
             isClearable={false}
             onSelectionChange={(e) => {
               if (e?.toString()) handleChangeProvider(e.toString());
@@ -115,15 +118,15 @@ export function ModelSelector({
 
         <fieldset className="flex flex-col gap-2">
           <label htmlFor="agent" className="font-[500] text-[#A3A3A3] text-xs">
-            LLM Model
+            {t("LLM_MODEL")}
           </label>
           <Autocomplete
             data-testid="llm-model"
             isRequired
             isVirtualized={false}
             name="llm-model"
-            aria-label="LLM Model"
-            placeholder="Select a model"
+            aria-label={t("LLM_MODEL")}
+            placeholder={t("SELECT_MODEL_PLACEHOLDER")}
             isClearable={false}
             onSelectionChange={(e) => {
               if (e?.toString()) handleChangeModel(e.toString());
