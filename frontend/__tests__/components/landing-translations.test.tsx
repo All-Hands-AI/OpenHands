@@ -89,7 +89,7 @@ describe("Landing page translations", () => {
     render(<TestComponent />);
 
     // Check main content translations
-    expect(screen.getByText("一緒に開発を始めましょう！")).toBeInTheDocument();
+    expect(screen.getByText("開発を始めましょう！")).toBeInTheDocument();
     expect(screen.getByText("VS Codeで開く")).toBeInTheDocument();
     expect(screen.getByText("テストカバレッジを向上")).toBeInTheDocument();
     expect(screen.getByText("PRを自動マージ")).toBeInTheDocument();
@@ -99,12 +99,12 @@ describe("Landing page translations", () => {
     // Check tab labels
     const tabs = screen.getByTestId("tabs");
     expect(tabs).toHaveTextContent("ターミナル");
-    expect(tabs).toHaveTextContent("ブラウザ（実験的）");
-    expect(tabs).toHaveTextContent("Jupyter IPython");
+    expect(tabs).toHaveTextContent("ブラウザ");
+    expect(tabs).toHaveTextContent("Jupyter");
     expect(tabs).toHaveTextContent("コードエディタ");
 
     // Check workspace label and new project button
-    expect(screen.getByTestId("workspace-label")).toHaveTextContent("OpenHands ワークスペース");
+    expect(screen.getByTestId("workspace-label")).toHaveTextContent("ワークスペース");
     expect(screen.getByTestId("new-project")).toHaveTextContent("新規プロジェクト");
 
     // Check status messages
