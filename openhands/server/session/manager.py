@@ -258,7 +258,7 @@ class SessionManager:
                 await asyncio.sleep(_CLEANUP_EXCEPTION_WAIT_TIME)
 
     async def is_agent_loop_running(self, sid: str) -> bool:
-        running_sids = self.get_running_agent_loops(filter_to_sids={sid})
+        running_sids = await self.get_running_agent_loops(filter_to_sids={sid})
         return bool(running_sids)
 
     async def get_running_agent_loops(
