@@ -26,6 +26,7 @@ i18n
   .init({
     fallbackLng: "en",
     debug: import.meta.env.NODE_ENV === "development",
+    lng: localStorage.getItem("LANGUAGE") || "en",
   });
 
 export default i18n;
