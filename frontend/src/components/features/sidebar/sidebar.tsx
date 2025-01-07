@@ -20,6 +20,7 @@ import { useEndSession } from "#/hooks/use-end-session";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
 import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
+import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
 
 export function Sidebar() {
   const dispatch = useDispatch();
@@ -36,7 +37,6 @@ export function Sidebar() {
 
   const [conversationPanelIsOpen, setConversationPanelIsOpen] =
     React.useState(false);
-  const conversationPanelRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     // If the github token is invalid, open the account settings modal again
@@ -63,7 +63,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1 relative">
+      <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
         <nav className="flex flex-row md:flex-col items-center gap-[18px]">
           <div className="w-[34px] h-[34px] flex items-center justify-center mb-7">
             <AllHandsLogoButton onClick={handleEndSession} />
@@ -94,14 +94,11 @@ export function Sidebar() {
         </nav>
 
         {conversationPanelIsOpen && (
-          <div
-            ref={conversationPanelRef}
-            className="absolute h-full left-[calc(100%+12px)] top-0 z-20" // 12px padding (sidebar parent)
-          >
+          <ConversationPanelWrapper isOpen={conversationPanelIsOpen}>
             <ConversationPanel
               onClose={() => setConversationPanelIsOpen(false)}
             />
-          </div>
+          </ConversationPanelWrapper>
         )}
       </aside>
 

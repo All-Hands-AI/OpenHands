@@ -8,6 +8,7 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
 import { useEndSession } from "#/hooks/use-end-session";
 import { ExitConversationModal } from "./exit-conversation-modal";
+import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 
 interface ConversationPanelProps {
   onClose: () => void;
@@ -17,6 +18,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const { conversationId: cid } = useParams();
   const navigate = useNavigate();
   const endSession = useEndSession();
+  const ref = useClickOutsideElement<HTMLDivElement>(onClose);
 
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
     React.useState(false);
@@ -68,6 +70,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   return (
     <div
+      ref={ref}
       data-testid="conversation-panel"
       className="w-[350px] h-full border border-neutral-700 bg-neutral-800 rounded-xl overflow-y-auto"
     >
