@@ -21,6 +21,9 @@ import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
+import { RuntimeSizeSelector } from "./runtime-size-selector";
+import { useConfig } from "#/hooks/query/use-config";
+
 interface SettingsFormProps {
   disabled?: boolean;
   settings: Settings;
@@ -40,6 +43,7 @@ export function SettingsForm({
 }: SettingsFormProps) {
   const { mutateAsync: saveSettings } = useSaveSettings();
   const endSession = useEndSession();
+  const { data: config } = useConfig();
 
   const location = useLocation();
   const { t } = useTranslation();
@@ -97,6 +101,8 @@ export function SettingsForm({
     posthog.capture("settings_saved", {
       LLM_MODEL: newSettings.LLM_MODEL,
       LLM_API_KEY: newSettings.LLM_API_KEY ? "SET" : "UNSET",
+      REMOTE_RUNTIME_RESOURCE_FACTOR:
+        newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     });
   };
 
@@ -121,6 +127,8 @@ export function SettingsForm({
       handleFormSubmission(formData);
     }
   };
+
+  const isSaasMode = config?.APP_MODE === "saas";
 
   return (
     <div>
@@ -165,15 +173,20 @@ export function SettingsForm({
           />
 
           {showAdvancedOptions && (
-            <AgentInput
-              isDisabled={!!disabled}
-              defaultValue={settings.AGENT}
-              agents={agents}
-            />
-          )}
-
-          {showAdvancedOptions && (
             <>
+              <AgentInput
+                isDisabled={!!disabled}
+                defaultValue={settings.AGENT}
+                agents={agents}
+              />
+
+              {isSaasMode && (
+                <RuntimeSizeSelector
+                  isDisabled={!!disabled}
+                  defaultValue={settings.REMOTE_RUNTIME_RESOURCE_FACTOR}
+                />
+              )}
+
               <SecurityAnalyzerInput
                 isDisabled={!!disabled}
                 defaultValue={settings.SECURITY_ANALYZER}

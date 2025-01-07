@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from openhands.server.routes.manage_conversations import (
+    delete_conversation,
     get_conversation,
     search_conversations,
     update_conversation,
@@ -28,7 +29,7 @@ def _patch_store():
                 'title': 'Some Conversation',
                 'selected_repository': 'foobar',
                 'conversation_id': 'some_conversation_id',
-                'github_user_id': 'github_user',
+                'github_user_id': 12345,
                 'created_at': '2025-01-01T00:00:00',
                 'last_updated_at': '2025-01-01T00:01:00',
             }
@@ -114,3 +115,16 @@ async def test_update_conversation():
             selected_repository='foobar',
         )
         assert conversation == expected
+
+
+@pytest.mark.asyncio
+async def test_delete_conversation():
+    with _patch_store():
+        await delete_conversation(
+            'some_conversation_id',
+            MagicMock(state=MagicMock(github_token='')),
+        )
+        conversation = await get_conversation(
+            'some_conversation_id', MagicMock(state=MagicMock(github_token=''))
+        )
+        assert conversation is None

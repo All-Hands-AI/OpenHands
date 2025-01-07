@@ -153,6 +153,20 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
+def test_complex_commands(temp_dir, runtime_cls):
+    cmd = """count=0; tries=0; while [ $count -lt 3 ]; do result=$(echo "Heads"); tries=$((tries+1)); echo "Flip $tries: $result"; if [ "$result" = "Heads" ]; then count=$((count+1)); else count=0; fi; done; echo "Got 3 heads in a row after $tries flips!";"""
+
+    runtime = _load_runtime(temp_dir, runtime_cls)
+    try:
+        obs = _run_cmd_action(runtime, cmd)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.exit_code == 0, 'The exit code should be 0.'
+        assert 'Got 3 heads in a row after 3 flips!' in obs.content
+
+    finally:
+        _close_test_runtime(runtime)
+
+
 def test_no_ps2_in_output(temp_dir, runtime_cls, run_as_openhands):
     """Test that the PS2 sign is not added to the output of a multiline command."""
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)

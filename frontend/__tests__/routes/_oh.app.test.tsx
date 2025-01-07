@@ -60,6 +60,7 @@ describe("App", () => {
     getConversationSpy.mockResolvedValue({
       conversation_id: "9999",
       last_updated_at: "",
+      created_at: "",
       title: "",
       selected_repository: "",
       status: "STOPPED",
