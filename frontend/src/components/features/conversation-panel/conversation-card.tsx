@@ -9,9 +9,9 @@ import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 
 interface ConversationCardProps {
-  onClick: () => void;
   onDelete: () => void;
   onChangeTitle: (title: string) => void;
+  isActive: boolean;
   title: string;
   selectedRepository: string | null;
   lastUpdatedAt: string; // ISO 8601
@@ -19,9 +19,9 @@ interface ConversationCardProps {
 }
 
 export function ConversationCard({
-  onClick,
   onDelete,
   onChangeTitle,
+  isActive,
   title,
   selectedRepository,
   lastUpdatedAt,
@@ -48,10 +48,12 @@ export function ConversationCard({
   };
 
   const handleInputClick = (event: React.MouseEvent<HTMLInputElement>) => {
+    event.preventDefault();
     event.stopPropagation();
   };
 
   const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
     event.stopPropagation();
     onDelete();
   };
@@ -59,25 +61,28 @@ export function ConversationCard({
   return (
     <div
       data-testid="conversation-card"
-      onClick={onClick}
       className="h-[100px] w-full px-[18px] py-4 border-b border-neutral-600 cursor-pointer"
     >
-      <div className="flex items-center justify-between space-x-1">
-        <input
-          ref={inputRef}
-          data-testid="conversation-card-title"
-          onClick={handleInputClick}
-          onBlur={handleBlur}
-          onKeyUp={handleKeyUp}
-          type="text"
-          defaultValue={title}
-          className="text-sm leading-6 font-semibold bg-transparent w-full"
-        />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 w-full">
+          {isActive && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
+          <input
+            ref={inputRef}
+            data-testid="conversation-card-title"
+            onClick={handleInputClick}
+            onBlur={handleBlur}
+            onKeyUp={handleKeyUp}
+            type="text"
+            defaultValue={title}
+            className="text-sm leading-6 font-semibold bg-transparent w-full"
+          />
+        </div>
 
         <div className="flex items-center gap-2 relative">
           <ConversationStateIndicator status={status} />
           <EllipsisButton
             onClick={(event) => {
+              event.preventDefault();
               event.stopPropagation();
               setContextMenuVisible((prev) => !prev);
             }}
