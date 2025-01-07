@@ -311,7 +311,7 @@ class SessionManager:
             if user_id:
                 data['user_id'] = user_id
             if filter_to_sids:
-                data['filter_to_sids'] = (list(filter_to_sids),)
+                data['filter_to_sids'] = list(filter_to_sids)
             await redis_client.publish('oh_event', json.dumps(data))
             async with asyncio.timeout(_REDIS_POLL_TIMEOUT):
                 await flag.wait()
