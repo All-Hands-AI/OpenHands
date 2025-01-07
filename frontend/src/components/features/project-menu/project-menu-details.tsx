@@ -16,16 +16,24 @@ export function ProjectMenuDetails({
 }: ProjectMenuDetailsProps) {
   const { t } = useTranslation();
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col min-w-0">
       <a
         href={`https://github.com/${repoName}`}
         target="_blank"
         rel="noreferrer noopener"
-        className="flex items-center gap-2"
+        className="flex items-center gap-2 min-w-0"
       >
-        {avatar && <img src={avatar} alt="" className="w-4 h-4 rounded-full" />}
-        <span className="text-sm leading-6 font-semibold">{repoName}</span>
-        <ExternalLinkIcon width={16} height={16} />
+        {avatar && (
+          <img
+            src={avatar}
+            alt=""
+            className="w-4 h-4 rounded-full flex-shrink-0"
+          />
+        )}
+        <span className="text-sm leading-6 font-semibold truncate flex-1">
+          {repoName}
+        </span>
+        <ExternalLinkIcon width={16} height={16} className="flex-shrink-0" />
       </a>
       <a
         href={lastCommit.html_url}
