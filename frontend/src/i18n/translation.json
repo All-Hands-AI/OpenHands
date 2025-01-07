@@ -27,48 +27,6 @@
     "fr": "Nouveau projet",
     "tr": "Yeni proje"
   },
-  "STATUS$CONNECTED": {
-    "en": "Connected",
-    "ja": "接続済み",
-    "zh-CN": "已连接",
-    "zh-TW": "已連接",
-    "ko-KR": "연결됨",
-    "no": "Tilkoblet",
-    "it": "Connesso",
-    "pt": "Conectado",
-    "es": "Conectado",
-    "ar": "متصل",
-    "fr": "Connecté",
-    "tr": "Bağlı"
-  },
-  "BROWSER$EMPTY_MESSAGE": {
-    "en": "No browser content to display",
-    "ja": "表示するブラウザコンテンツがありません",
-    "zh-CN": "没有可显示的浏览器内容",
-    "zh-TW": "沒有可顯示的瀏覽器內容",
-    "ko-KR": "표시할 브라우저 콘텐츠가 없습니다",
-    "no": "Ingen nettleserinnhold å vise",
-    "it": "Nessun contenuto del browser da visualizzare",
-    "pt": "Nenhum conteúdo do navegador para exibir",
-    "es": "No hay contenido del navegador para mostrar",
-    "ar": "لا يوجد محتوى متصفح للعرض",
-    "fr": "Aucun contenu du navigateur à afficher",
-    "tr": "Gösterilecek tarayıcı içeriği yok"
-  },
-  "USER$AVATAR_PLACEHOLDER": {
-    "en": "User avatar placeholder",
-    "ja": "ユーザーアバターのプレースホルダー",
-    "zh-CN": "用户头像占位符",
-    "zh-TW": "使用者頭像佔位符",
-    "ko-KR": "사용자 아바타 플레이스홀더",
-    "no": "Brukeravatar plassholder",
-    "it": "Segnaposto avatar utente",
-    "pt": "Espaço reservado para avatar do usuário",
-    "es": "Marcador de posición del avatar del usuario",
-    "ar": "عنصر نائب لصورة المستخدم",
-    "fr": "Espace réservé pour l'avatar de l'utilisateur",
-    "tr": "Kullanıcı avatar yer tutucusu"
-  },
   "ACCOUNT_SETTINGS$TITLE": {
     "en": "Account Settings",
     "ja": "アカウント設定",
@@ -83,49 +41,6 @@
     "fr": "Paramètres du compte",
     "tr": "Hesap ayarları"
   },
-  "ACCOUNT_SETTINGS$SETTINGS": {
-    "en": "Settings",
-    "ja": "設定",
-    "zh-CN": "设置",
-    "zh-TW": "設定",
-    "ko-KR": "설정",
-    "no": "Innstillinger",
-    "it": "Impostazioni",
-    "pt": "Configurações",
-    "es": "Configuración",
-    "ar": "الإعدادات",
-    "fr": "Paramètres",
-    "tr": "Ayarlar"
-  },
-  "ACCOUNT_SETTINGS$LOGOUT": {
-    "en": "Logout",
-    "ja": "ログアウト",
-    "zh-CN": "退出登录",
-    "zh-TW": "登出",
-    "ko-KR": "로그아웃",
-    "no": "Logg ut",
-    "it": "Esci",
-    "pt": "Sair",
-    "es": "Cerrar sesión",
-    "ar": "تسجيل الخروج",
-    "fr": "Déconnexion",
-    "tr": "Çıkış yap"
-  },
-  "SETTINGS_FORM$ADVANCED_OPTIONS_LABEL": {
-    "en": "Advanced options",
-    "ja": "詳細設定",
-    "zh-CN": "高级选项",
-    "zh-TW": "進階選項",
-    "ko-KR": "고급 옵션",
-    "no": "Avanserte alternativer",
-    "it": "Opzioni avanzate",
-    "pt": "Opções avançadas",
-    "es": "Opciones avanzadas",
-    "ar": "خيارات متقدمة",
-    "fr": "Options avancées",
-    "tr": "Gelişmiş seçenekler"
-  },
-
   "WORKSPACE$TITLE": {
     "en": "Workspace",
     "zh-CN": "工作区",
@@ -953,118 +868,6 @@
     "tr": "Dil Seç",
     "ja": "言語を選択"
   },
-
-  "ACCOUNT_SETTINGS$SETTINGS": {
-    "en": "Settings",
-    "zh-CN": "设置",
-    "de": "Einstellungen",
-    "ko-KR": "설정",
-    "no": "Innstillinger",
-    "zh-TW": "設定",
-    "it": "Impostazioni",
-    "pt": "Configurações",
-    "es": "Configuración",
-    "ar": "الإعدادات",
-    "fr": "Paramètres",
-    "tr": "Ayarlar",
-    "ja": "設定"
-  },
-
-  "ACCOUNT_SETTINGS$LOGOUT": {
-    "en": "Logout",
-    "zh-CN": "退出登录",
-    "de": "Abmelden",
-    "ko-KR": "로그아웃",
-    "no": "Logg ut",
-    "zh-TW": "登出",
-    "it": "Esci",
-    "pt": "Sair",
-    "es": "Cerrar sesión",
-    "ar": "تسجيل الخروج",
-    "fr": "Déconnexion",
-    "tr": "Çıkış yap",
-    "ja": "ログアウト"
-  },
-
-  "CONVERSATION$NO_CONVERSATIONS": {
-    "en": "No conversations yet",
-    "zh-CN": "暂无对话",
-    "de": "Noch keine Gespräche",
-    "ko-KR": "아직 대화가 없습니다",
-    "no": "Ingen samtaler ennå",
-    "zh-TW": "尚無對話",
-    "it": "Nessuna conversazione",
-    "pt": "Nenhuma conversa ainda",
-    "es": "Aún no hay conversaciones",
-    "ar": "لا توجد محادثات بعد",
-    "fr": "Pas encore de conversations",
-    "tr": "Henüz konuşma yok",
-    "ja": "まだ会話がありません"
-  },
-
-  "LANDING$SELECT_REPO": {
-    "en": "Select a repository",
-    "zh-CN": "选择仓库",
-    "de": "Repository auswählen",
-    "ko-KR": "저장소 선택",
-    "no": "Velg et repository",
-    "zh-TW": "選擇儲存庫",
-    "it": "Seleziona un repository",
-    "pt": "Selecione um repositório",
-    "es": "Seleccionar un repositorio",
-    "ar": "اختر مستودعاً",
-    "fr": "Sélectionner un dépôt",
-    "tr": "Bir depo seçin",
-    "ja": "リポジトリを選択"
-  },
-
-  "BUTTON$SEND": {
-    "en": "Send",
-    "zh-CN": "发送",
-    "de": "Senden",
-    "ko-KR": "보내기",
-    "no": "Send",
-    "zh-TW": "發送",
-    "it": "Invia",
-    "pt": "Enviar",
-    "es": "Enviar",
-    "ar": "إرسال",
-    "fr": "Envoyer",
-    "tr": "Gönder",
-    "ja": "送信"
-  },
-
-  "BROWSER$EMPTY_MESSAGE": {
-    "en": "No page loaded",
-    "zh-CN": "未加载页面",
-    "de": "Keine Seite geladen",
-    "ko-KR": "페이지가 로드되지 않음",
-    "no": "Ingen side lastet",
-    "zh-TW": "未載入頁面",
-    "it": "Nessuna pagina caricata",
-    "pt": "Nenhuma página carregada",
-    "es": "Ninguna página cargada",
-    "ar": "لم يتم تحميل أي صفحة",
-    "fr": "Aucune page chargée",
-    "tr": "Sayfa yüklenmedi",
-    "ja": "ページが読み込まれていません"
-  },
-
-  "USER$AVATAR_PLACEHOLDER": {
-    "en": "User avatar placeholder",
-    "zh-CN": "用户头像占位符",
-    "de": "Benutzer-Avatar Platzhalter",
-    "ko-KR": "사용자 아바타 플레이스홀더",
-    "no": "Bruker avatar plassholder",
-    "zh-TW": "使用者頭像佔位符",
-    "it": "Segnaposto avatar utente",
-    "pt": "Espaço reservado para avatar do usuário",
-    "es": "Marcador de posición del avatar del usuario",
-    "ar": "عنصر نائب لصورة المستخدم",
-    "fr": "Espace réservé pour l'avatar utilisateur",
-    "tr": "Kullanıcı avatar yer tutucusu",
-    "ja": "ユーザーアバターのプレースホルダー"
-  },
   "CONFIGURATION$SECURITY_SELECT_LABEL": {
     "en": "Security analyzer",
     "de": "Sicherheitsanalysator",
@@ -1139,22 +942,6 @@
     "tr": "Varsayılanlara Sıfırla",
     "ja": "デフォルトにリセット"
   },
-
-  "STATUS$CONNECTED": {
-    "en": "Connected",
-    "ja": "接続済み",
-    "zh-CN": "已连接",
-    "zh-TW": "已連接",
-    "ko-KR": "연결됨",
-    "de": "Verbunden",
-    "no": "Tilkoblet",
-    "it": "Connesso",
-    "pt": "Conectado",
-    "es": "Conectado",
-    "ar": "متصل",
-    "fr": "Connecté",
-    "tr": "Bağlandı"
-  },
   "STATUS$CONNECTED_TO_SERVER": {
     "en": "Connected to server",
     "ja": "サーバーに接続済み",
@@ -1185,14 +972,9 @@
     "fr": "Nouveau projet",
     "tr": "Yeni Proje"
   },
-
   "BROWSER$SCREENSHOT": {
     "en": "Browser Screenshot",
     "ja": "ブラウザのスクリーンショット"
-  },
-  "STATUS$WAITING_FOR_CLIENT": {
-    "en": "Waiting for client to become ready",
-    "ja": "クライアントの準備を待機中"
   },
   "TIME$MINUTES_AGO": {
     "en": "minutes ago",
@@ -1313,7 +1095,6 @@
     "no": "Kunne ikke hente modeller og agenter",
     "ja": "モデルとエージェントの取得に失敗しました"
   },
-
   "SESSION$SESSION_HANDLING_ERROR_MESSAGE": {
     "en": "Error handling message",
     "zh-CN": "处理消息时发生错误",
@@ -2067,19 +1848,19 @@
     "ja": "エージェントがユーザー入力を待機中..."
   },
   "CHAT_INTERFACE$AGENT_RATE_LIMITED_MESSAGE": {
-  "en": "Agent is Rate Limited",
-  "zh-CN": "智能体已达到速率限制",
-  "zh-TW": "智能體已達到速率限制",
-  "de": "Agent ist ratenbegrenzt",
-  "ko-KR": "에이전트가 속도 제한되었습니다",
-  "no": "Agenten er hastighetsbegrenset",
-  "it": "L'agente è limitato dalla frequenza",
-  "pt": "O agente está com limite de taxa",
-  "es": "El agente está limitado por tasa",
-  "ar": "الوكيل مقيد بحد السرعة",
-  "fr": "L'agent est limité en fréquence",
-  "tr": "Ajan hız sınırına ulaştı",
-  "ja": "エージェントがレート制限中"
+    "en": "Agent is Rate Limited",
+    "zh-CN": "智能体已达到速率限制",
+    "zh-TW": "智能體已達到速率限制",
+    "de": "Agent ist ratenbegrenzt",
+    "ko-KR": "에이전트가 속도 제한되었습니다",
+    "no": "Agenten er hastighetsbegrenset",
+    "it": "L'agente è limitato dalla frequenza",
+    "pt": "O agente está com limite de taxa",
+    "es": "El agente está limitado por tasa",
+    "ar": "الوكيل مقيد بحد السرعة",
+    "fr": "L'agent est limité en fréquence",
+    "tr": "Ajan hız sınırına ulaştı",
+    "ja": "エージェントがレート制限中"
   },
   "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
     "en": "Agent has paused.",
@@ -2095,7 +1876,6 @@
     "fr": "L'agent a mis en pause.",
     "tr": "Ajan duraklatıldı."
   },
-
   "LANDING$TITLE": {
     "en": "Let's start building!",
     "ja": "開発を始めましょう！",
@@ -2167,21 +1947,6 @@
     "ar": "بناء تطبيق لعرض طلبات السحب",
     "no": "Bygg en app for å se pull requests"
   },
-  "SUGGESTIONS$WHAT_TO_BUILD": {
-    "en": "What do you want to build?",
-    "ja": "何を開発しますか？",
-    "zh-CN": "你想要构建什么？",
-    "zh-TW": "你想要建立什麼？",
-    "ko-KR": "무엇을 만들고 싶으신가요?",
-    "de": "Was möchten Sie entwickeln?",
-    "no": "Hva vil du bygge?",
-    "it": "Cosa vuoi costruire?",
-    "pt": "O que você quer construir?",
-    "es": "¿Qué quieres construir?",
-    "ar": "ماذا تريد أن تبني؟",
-    "fr": "Que voulez-vous construire ?",
-    "tr": "Ne inşa etmek istiyorsun?"
-  },
   "SUGGESTIONS$TODO_APP": {
     "en": "Build a todo list application",
     "ja": "ToDoリストアプリを開発する",
@@ -2210,7 +1975,6 @@
     "ar": "كتابة سكربت باش يعرض أهم خبر على هاكر نيوز",
     "no": "Skriv et bash-script som viser topphistorien på Hacker News"
   },
-
   "LANDING$CHANGE_PROMPT": {
     "en": "What would you like to change in {{repo}}?",
     "ja": "{{repo}}で何を変更したいですか？",
@@ -2477,20 +2241,6 @@
     "ar": "شروط الخدمة",
     "no": "vilkårene for bruk"
   },
-  "CONVERSATION$NO_CONVERSATIONS": {
-    "en": "No conversations found",
-    "ja": "会話が見つかりません",
-    "zh-CN": "未找到对话",
-    "zh-TW": "未找到對話",
-    "ko-KR": "대화를 찾을 수 없습니다",
-    "fr": "Aucune conversation trouvée",
-    "es": "No se encontraron conversaciones",
-    "de": "Keine Gespräche gefunden",
-    "it": "Nessuna conversazione trovata",
-    "pt": "Nenhuma conversa encontrada",
-    "ar": "لم يتم العثور على محادثات",
-    "no": "Ingen samtaler funnet"
-  },
   "USER$ACCOUNT_SETTINGS": {
     "en": "Account settings",
     "ja": "アカウント設定",
@@ -2505,20 +2255,6 @@
     "ar": "إعدادات الحساب",
     "no": "Kontoinnstillinger"
   },
-  "USER$AVATAR_PLACEHOLDER": {
-    "en": "user avatar placeholder",
-    "ja": "ユーザーアバターのプレースホルダー",
-    "zh-CN": "用户头像占位符",
-    "zh-TW": "使用者頭像佔位符",
-    "ko-KR": "사용자 아바타 플레이스홀더",
-    "fr": "espace réservé pour l'avatar de l'utilisateur",
-    "es": "marcador de posición del avatar del usuario",
-    "de": "Platzhalter für Benutzeravatar",
-    "it": "segnaposto avatar utente",
-    "pt": "espaço reservado para avatar do usuário",
-    "ar": "عنصر نائب لصورة المستخدم",
-    "no": "plassholder for brukeravatar"
-  },
   "JUPYTER$OUTPUT_LABEL": {
     "en": "STDOUT/STDERR",
     "ja": "標準出力/標準エラー",
@@ -2532,20 +2268,6 @@
     "pt": "STDOUT/STDERR",
     "ar": "المخرجات القياسية/الأخطاء القياسية",
     "no": "STDOUT/STDERR"
-  },
-  "BUTTON$SEND": {
-    "en": "Send",
-    "ja": "送信",
-    "zh-CN": "发送",
-    "zh-TW": "發送",
-    "ko-KR": "보내기",
-    "fr": "Envoyer",
-    "es": "Enviar",
-    "de": "Senden",
-    "it": "Invia",
-    "pt": "Enviar",
-    "ar": "إرسال",
-    "no": "Send"
   },
   "BUTTON$STOP": {
     "en": "Stop",
@@ -2588,20 +2310,6 @@
     "pt": "Abrir um repositório",
     "ar": "فتح مستودع",
     "no": "Åpne et repo"
-  },
-  "LANDING$SELECT_REPO": {
-    "en": "Select a GitHub project",
-    "ja": "GitHubプロジェクトを選択",
-    "zh-CN": "选择GitHub项目",
-    "zh-TW": "選擇GitHub專案",
-    "ko-KR": "GitHub 프로젝트 선택",
-    "fr": "Sélectionner un projet GitHub",
-    "es": "Seleccionar un proyecto de GitHub",
-    "de": "Ein GitHub-Projekt auswählen",
-    "it": "Seleziona un progetto GitHub",
-    "pt": "Selecionar um projeto do GitHub",
-    "ar": "اختر مشروع GitHub",
-    "no": "Velg et GitHub-prosjekt"
   },
   "LANDING$IMPORT_PROJECT": {
     "en": "+ Import Project",
@@ -2686,34 +2394,6 @@
     "pt": "Mesclar automaticamente PRs do Dependabot",
     "ar": "دمج تلقائي لطلبات سحب Dependabot",
     "no": "Auto-flett Dependabot PRs"
-  },
-  "SUGGESTIONS$FIX_README": {
-    "en": "Fix up my README",
-    "ja": "READMEを修正する",
-    "zh-CN": "修复我的README",
-    "zh-TW": "修復我的README",
-    "ko-KR": "README 수정하기",
-    "fr": "Corriger mon README",
-    "es": "Arreglar mi README",
-    "de": "Meine README verbessern",
-    "it": "Sistema il mio README",
-    "pt": "Corrigir meu README",
-    "ar": "إصلاح ملف README",
-    "no": "Fiks README-filen min"
-  },
-  "SUGGESTIONS$CLEAN_DEPENDENCIES": {
-    "en": "Clean up my dependencies",
-    "ja": "依存関係をクリーンアップする",
-    "zh-CN": "清理我的依赖项",
-    "zh-TW": "清理我的相依性",
-    "ko-KR": "의존성 정리하기",
-    "fr": "Nettoyer mes dépendances",
-    "es": "Limpiar mis dependencias",
-    "de": "Meine Abhängigkeiten bereinigen",
-    "it": "Pulisci le mie dipendenze",
-    "pt": "Limpar minhas dependências",
-    "ar": "تنظيف التبعيات",
-    "no": "Rydd opp i avhengighetene mine"
   },
   "CHAT_INTERFACE$AGENT_STOPPED_MESSAGE": {
     "en": "Agent has stopped.",
@@ -3232,20 +2912,6 @@
     "fr": "Activer l'analyseur de sécurité",
     "tr": "Güvenlik Analizörünü Etkinleştir"
   },
-  "BROWSER$EMPTY_MESSAGE": {
-    "en": "No page loaded.",
-    "zh-CN": "页面未加载",
-    "zh-TW": "未加載任何頁面。",
-    "de": "Keine Seite geladen.",
-    "ko-KR": "페이지가 로드되지 않았습니다.",
-    "no": "Ingen side lastet.",
-    "it": "Nessuna pagina caricata.",
-    "pt": "Nenhuma página carregada.",
-    "es": "Ninguna página cargada.",
-    "ar": "لم يتم تحميل أي صفحة.",
-    "fr": "Aucune page chargée.",
-    "tr": "Sayfa yüklenmedi."
-  },
   "PLANNER$EMPTY_MESSAGE": {
     "en": "No plan created.",
     "zh-CN": "计划未创建",
@@ -3344,20 +3010,6 @@
     "fr": "Conteneur démarré.",
     "tr": "Konteyner başlatıldı."
   },
-  "STATUS$WAITING_FOR_CLIENT": {
-    "en": "Waiting for client to become ready...",
-    "zh-CN": "等待客户端准备就绪...",
-    "zh-TW": "等待客戶端準備就緒...",
-    "de": "Warten auf Bereitschaft des Clients...",
-    "ko-KR": "클라이언트가 준비될 때까지 기다리는 중...",
-    "no": "Venter på at klienten skal bli klar...",
-    "it": "In attesa che il client sia pronto...",
-    "pt": "Aguardando o cliente ficar pronto...",
-    "es": "Esperando a que el cliente esté listo...",
-    "ar": "في انتظار جاهزية العميل...",
-    "fr": "En attente que le client soit prêt...",
-    "tr": "İstemcinin hazır olması bekleniyor..."
-  },
   "ACCOUNT_SETTINGS_MODAL$DISCONNECT": {
     "en": "Disconnect",
     "es": "Desconectar"
@@ -3394,7 +3046,6 @@
     "en": "By connecting you agree to our",
     "es": "Al conectarte tu aceptas nuestros"
   },
-
   "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$CONTINUE": {
     "en": "Continue",
     "es": "Continuar"
@@ -3406,10 +3057,6 @@
   "CUSTOM_INPUT$OPTIONAL_LABEL": {
     "en": "(Optional)",
     "es": "(Opcional)"
-  },
-  "SETTINGS_FORM$ADVANCED_OPTIONS_LABEL": {
-    "en": "Advanced Options",
-    "es": "Opciones avanzadas"
   },
   "SETTINGS_FORM$CUSTOM_MODEL_LABEL": {
     "en": "Custom Model",
@@ -3525,12 +3172,6 @@
   },
   "BROWSER$SCREENSHOT_ALT": {
     "en": "Browser Screenshot"
-  },
-  "ACCOUNT_SETTINGS$SETTINGS": {
-    "en": "Account Settings"
-  },
-  "ACCOUNT_SETTINGS$LOGOUT": {
-    "en": "Logout"
   },
   "ERROR_TOAST$CLOSE_BUTTON_LABEL": {
     "en": "Close"
@@ -3687,34 +3328,6 @@
     "fr": "Fusion automatique des PR Dependabot",
     "tr": "Dependabot PR'larını otomatik birleştir"
   },
-  "SUGGESTIONS$FIX_README": {
-    "en": "Fix up my README",
-    "ja": "READMEを改善",
-    "zh-CN": "修复 README",
-    "zh-TW": "修復 README",
-    "ko-KR": "README 개선",
-    "no": "Fiks opp README",
-    "it": "Sistemare il README",
-    "pt": "Corrigir o README",
-    "es": "Arreglar el README",
-    "ar": "تحسين ملف README",
-    "fr": "Améliorer le README",
-    "tr": "README'yi düzelt"
-  },
-  "SUGGESTIONS$CLEAN_DEPENDENCIES": {
-    "en": "Clean up my dependencies",
-    "ja": "依存関係を整理",
-    "zh-CN": "清理依赖项",
-    "zh-TW": "清理依賴項",
-    "ko-KR": "의존성 정리",
-    "no": "Rydd opp i avhengigheter",
-    "it": "Pulire le dipendenze",
-    "pt": "Limpar dependências",
-    "es": "Limpiar dependencias",
-    "ar": "تنظيف التبعيات",
-    "fr": "Nettoyer les dépendances",
-    "tr": "Bağımlılıkları temizle"
-  },
   "SUGGESTIONS$ADD_DOCS": {
     "en": "Add best practices docs for contributors",
     "ja": "コントリビューター向けのベストプラクティスドキュメントを追加",
@@ -3743,6 +3356,115 @@
     "fr": "Ajouter/améliorer un Dockerfile",
     "tr": "Dockerfile ekle/geliştir"
   },
+  "STATUS$CONNECTED": {
+    "en": "Connected",
+    "ja": "接続済み",
+    "zh-CN": "已连接",
+    "zh-TW": "已連接",
+    "ko-KR": "연결됨",
+    "de": "Verbunden",
+    "no": "Tilkoblet",
+    "it": "Connesso",
+    "pt": "Conectado",
+    "es": "Conectado",
+    "ar": "متصل",
+    "fr": "Connecté",
+    "tr": "Bağlandı"
+  },
+  "BROWSER$EMPTY_MESSAGE": {
+    "en": "No page loaded.",
+    "zh-CN": "页面未加载",
+    "zh-TW": "未加載任何頁面。",
+    "de": "Keine Seite geladen.",
+    "ko-KR": "페이지가 로드되지 않았습니다.",
+    "no": "Ingen side lastet.",
+    "it": "Nessuna pagina caricata.",
+    "pt": "Nenhuma página carregada.",
+    "es": "Ninguna página cargada.",
+    "ar": "لم يتم تحميل أي صفحة.",
+    "fr": "Aucune page chargée.",
+    "tr": "Sayfa yüklenmedi."
+  },
+  "USER$AVATAR_PLACEHOLDER": {
+    "en": "user avatar placeholder",
+    "ja": "ユーザーアバターのプレースホルダー",
+    "zh-CN": "用户头像占位符",
+    "zh-TW": "使用者頭像佔位符",
+    "ko-KR": "사용자 아바타 플레이스홀더",
+    "fr": "espace réservé pour l'avatar de l'utilisateur",
+    "es": "marcador de posición del avatar del usuario",
+    "de": "Platzhalter für Benutzeravatar",
+    "it": "segnaposto avatar utente",
+    "pt": "espaço reservado para avatar do usuário",
+    "ar": "عنصر نائب لصورة المستخدم",
+    "no": "plassholder for brukeravatar"
+  },
+  "ACCOUNT_SETTINGS$SETTINGS": {
+    "en": "Account Settings"
+  },
+  "ACCOUNT_SETTINGS$LOGOUT": {
+    "en": "Logout"
+  },
+  "SETTINGS_FORM$ADVANCED_OPTIONS_LABEL": {
+    "en": "Advanced Options",
+    "es": "Opciones avanzadas"
+  },
+  "CONVERSATION$NO_CONVERSATIONS": {
+    "en": "No conversations found",
+    "ja": "会話が見つかりません",
+    "zh-CN": "未找到对话",
+    "zh-TW": "未找到對話",
+    "ko-KR": "대화를 찾을 수 없습니다",
+    "fr": "Aucune conversation trouvée",
+    "es": "No se encontraron conversaciones",
+    "de": "Keine Gespräche gefunden",
+    "it": "Nessuna conversazione trovata",
+    "pt": "Nenhuma conversa encontrada",
+    "ar": "لم يتم العثور على محادثات",
+    "no": "Ingen samtaler funnet"
+  },
+  "LANDING$SELECT_REPO": {
+    "en": "Select a GitHub project",
+    "ja": "GitHubプロジェクトを選択",
+    "zh-CN": "选择GitHub项目",
+    "zh-TW": "選擇GitHub專案",
+    "ko-KR": "GitHub 프로젝트 선택",
+    "fr": "Sélectionner un projet GitHub",
+    "es": "Seleccionar un proyecto de GitHub",
+    "de": "Ein GitHub-Projekt auswählen",
+    "it": "Seleziona un progetto GitHub",
+    "pt": "Selecionar um projeto do GitHub",
+    "ar": "اختر مشروع GitHub",
+    "no": "Velg et GitHub-prosjekt"
+  },
+  "BUTTON$SEND": {
+    "en": "Send",
+    "ja": "送信",
+    "zh-CN": "发送",
+    "zh-TW": "發送",
+    "ko-KR": "보내기",
+    "fr": "Envoyer",
+    "es": "Enviar",
+    "de": "Senden",
+    "it": "Invia",
+    "pt": "Enviar",
+    "ar": "إرسال",
+    "no": "Send"
+  },
+  "STATUS$WAITING_FOR_CLIENT": {
+    "en": "Waiting for client to become ready...",
+    "zh-CN": "等待客户端准备就绪...",
+    "zh-TW": "等待客戶端準備就緒...",
+    "de": "Warten auf Bereitschaft des Clients...",
+    "ko-KR": "클라이언트가 준비될 때까지 기다리는 중...",
+    "no": "Venter på at klienten skal bli klar...",
+    "it": "In attesa che il client sia pronto...",
+    "pt": "Aguardando o cliente ficar pronto...",
+    "es": "Esperando a que el cliente esté listo...",
+    "ar": "في انتظار جاهزية العميل...",
+    "fr": "En attente que le client soit prêt...",
+    "tr": "İstemcinin hazır olması bekleniyor..."
+  },
   "SUGGESTIONS$WHAT_TO_BUILD": {
     "en": "What do you want to build?",
     "ja": "何を開発しますか？",
@@ -3756,5 +3478,33 @@
     "ar": "ماذا تريد أن تبني؟",
     "fr": "Que voulez-vous construire ?",
     "tr": "Ne inşa etmek istiyorsun?"
+  },
+  "SUGGESTIONS$FIX_README": {
+    "en": "Fix up my README",
+    "ja": "READMEを改善",
+    "zh-CN": "修复 README",
+    "zh-TW": "修復 README",
+    "ko-KR": "README 개선",
+    "no": "Fiks opp README",
+    "it": "Sistemare il README",
+    "pt": "Corrigir o README",
+    "es": "Arreglar el README",
+    "ar": "تحسين ملف README",
+    "fr": "Améliorer le README",
+    "tr": "README'yi düzelt"
+  },
+  "SUGGESTIONS$CLEAN_DEPENDENCIES": {
+    "en": "Clean up my dependencies",
+    "ja": "依存関係を整理",
+    "zh-CN": "清理依赖项",
+    "zh-TW": "清理依賴項",
+    "ko-KR": "의존성 정리",
+    "no": "Rydd opp i avhengigheter",
+    "it": "Pulire le dipendenze",
+    "pt": "Limpar dependências",
+    "es": "Limpiar dependencias",
+    "ar": "تنظيف التبعيات",
+    "fr": "Nettoyer les dépendances",
+    "tr": "Bağımlılıkları temizle"
   }
 }
