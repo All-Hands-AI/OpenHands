@@ -5,9 +5,8 @@ import {
   ProjectStatus,
   ConversationStateIndicator,
 } from "./conversation-state-indicator";
-import { ContextMenu } from "../context-menu/context-menu";
-import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 import { EllipsisButton } from "./ellipsis-button";
+import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 
 interface ConversationCardProps {
   onClick: () => void;
@@ -102,14 +101,11 @@ export function ConversationCard({
         </div>
       </div>
       {contextMenuVisible && (
-        <ContextMenu testId="context-menu" className="left-full float-right">
-          <ContextMenuListItem testId="delete-button" onClick={handleDelete}>
-            Delete
-          </ContextMenuListItem>
-          <ContextMenuListItem testId="edit-button" onClick={handleEdit}>
-            Edit Title
-          </ContextMenuListItem>
-        </ContextMenu>
+        <ConversationCardContextMenu
+          onClose={() => setContextMenuVisible(false)}
+          onDelete={handleDelete}
+          onEdit={handleEdit}
+        />
       )}
       {selectedRepository && (
         <ConversationRepoLink

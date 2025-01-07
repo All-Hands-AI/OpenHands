@@ -217,7 +217,7 @@ class AgentController:
             reported = RuntimeError(
                 'There was an unexpected error while running the agent. Please '
                 f'report this error to the developers. Your session ID is {self.id}. '
-                f'Exception: {e}.'
+                f'Error type: {e.__class__.__name__}'
             )
             if isinstance(e, litellm.AuthenticationError) or isinstance(
                 e, litellm.BadRequestError
