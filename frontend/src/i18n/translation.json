@@ -1033,7 +1033,8 @@
     "es": "Configuración de Runtime",
     "ar": "إعدادات وقت التشغيل",
     "fr": "Paramètres d'exécution",
-    "tr": "Çalışma Zamanı Ayarları"
+    "tr": "Çalışma Zamanı Ayarları",
+    "ja": "ランタイムサイズ"
   },
   "CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE": {
     "en": "We've changed some settings in the latest update. Take a minute to review.",
@@ -2422,7 +2423,8 @@
     "es": "El agente ha terminado la tarea.",
     "ar": "أنهى الوكيل المهمة.",
     "fr": "L'agent a terminé la tâche.",
-    "tr": "Ajan görevi tamamladı."
+    "tr": "Ajan görevi tamamladı.",
+    "ja": "エージェントがタスクを完了しました"
   },
   "CHAT_INTERFACE$AGENT_REJECTED_MESSAGE": {
     "en": "Agent has rejected the task.",
@@ -2436,7 +2438,8 @@
     "es": "El agente ha rechazado la tarea.",
     "ar": "رفض الوكيل المهمة.",
     "fr": "L'agent a rejeté la tâche.",
-    "tr": "Ajan görevi reddetti."
+    "tr": "Ajan görevi reddetti.",
+    "ja": "エージェントがタスクを拒否しました"
   },
   "CHAT_INTERFACE$AGENT_ERROR_MESSAGE": {
     "en": "Agent encountered an error.",
@@ -2450,7 +2453,8 @@
     "es": "El agente encontró un error.",
     "ar": "واجه الوكيل خطأ.",
     "fr": "L'agent a rencontré une erreur.",
-    "tr": "Ajan bir hatayla karşılaştı."
+    "tr": "Ajan bir hatayla karşılaştı.",
+    "ja": "エージェントでエラーが発生しました"
   },
   "CHAT_INTERFACE$AGENT_AWAITING_USER_CONFIRMATION_MESSAGE": {
     "en": "Agent is awaiting user confirmation for the pending action.",
@@ -2464,7 +2468,8 @@
     "es": "El agente está esperando la confirmación del usuario para la acción pendiente.",
     "ar": "الوكيل ينتظر تأكيد المستخدم للإجراء المعلق.",
     "fr": "L'agent attend la confirmation de l'utilisateur pour l'action en attente.",
-    "tr": "Ajan, bekleyen işlem için kullanıcı onayını bekliyor."
+    "tr": "Ajan, bekleyen işlem için kullanıcı onayını bekliyor.",
+    "ja": "ユーザーの確認を待っています"
   },
   "CHAT_INTERFACE$AGENT_ACTION_USER_CONFIRMED_MESSAGE": {
     "en": "Agent action has been confirmed!",
@@ -2478,7 +2483,8 @@
     "es": "¡La acción del agente ha sido confirmada!",
     "ar": "تم تأكيد إجراء الوكيل!",
     "fr": "L'action de l'agent a été confirmée !",
-    "tr": "Ajan eylemi onaylandı!"
+    "tr": "Ajan eylemi onaylandı!",
+    "ja": "ユーザーがアクションを承認しました"
   },
   "CHAT_INTERFACE$AGENT_ACTION_USER_REJECTED_MESSAGE": {
     "en": "Agent action has been rejected!",
@@ -2492,7 +2498,8 @@
     "es": "¡La acción del agente ha sido rechazada!",
     "ar": "تم رفض إجراء الوكيل!",
     "fr": "L'action de l'agent a été rejetée !",
-    "tr": "Ajan eylemi reddedildi!"
+    "tr": "Ajan eylemi reddedildi!",
+    "ja": "ユーザーがアクションを拒否しました"
   },
   "CHAT_INTERFACE$INPUT_PLACEHOLDER": {
     "en": "Message assistant...",
@@ -2506,7 +2513,8 @@
     "es": "Mensaje al asistente...",
     "ar": "مراسلة المساعد",
     "fr": "Envoyez un message à l'assistant...",
-    "tr": "Asistana mesaj gönder..."
+    "tr": "Asistana mesaj gönder...",
+    "ja": "メッセージを入力してください..."
   },
   "CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE": {
     "en": "Continue",
@@ -2520,7 +2528,8 @@
     "es": "Continuar",
     "ar": "استمرار",
     "fr": "Continuer",
-    "tr": "Devam et"
+    "tr": "Devam et",
+    "ja": "続行するにはEnterを押してください"
   },
   "CHAT_INTERFACE$USER_ASK_CONFIRMATION": {
     "en": "Do you want to continue with this action?",
@@ -2534,7 +2543,8 @@
     "es": "¿Desea continuar con esta acción?",
     "ar": "هل تريد الاستمرار في هذا الإجراء؟",
     "fr": "Voulez-vous continuer avec cette action ?",
-    "tr": "Bu işleme devam etmek istiyor musunuz?"
+    "tr": "Bu işleme devam etmek istiyor musunuz?",
+    "ja": "このアクションを実行してもよろしいですか？"
   },
   "CHAT_INTERFACE$USER_CONFIRMED": {
     "en": "Confirm the requested action",
@@ -2548,7 +2558,8 @@
     "es": "Confirmar la acción solicitada",
     "ar": "تأكيد الإجراء المطلوب",
     "fr": "Confirmer l'action demandée",
-    "tr": "İstenen eylemi onayla"
+    "tr": "İstenen eylemi onayla",
+    "ja": "ユーザーが承認しました"
   },
   "CHAT_INTERFACE$USER_REJECTED": {
     "en": "Reject the requested action",
@@ -2562,7 +2573,8 @@
     "es": "Rechazar la acción solicitada",
     "ar": "رفض الإجراء المطلوب",
     "fr": "Rejeter l'action demandée",
-    "tr": "İstenen eylemi reddet"
+    "tr": "İstenen eylemi reddet",
+    "ja": "ユーザーが拒否しました"
   },
   "CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT": {
     "en": "Send",
@@ -2575,7 +2587,8 @@
     "pt": "Enviar",
     "es": "Enviar",
     "ar": "إرسال",
-    "fr": "Envoyer"
+    "fr": "Envoyer",
+    "ja": "送信"
   },
   "CHAT_INTERFACE$CHAT_MESSAGE_COPIED": {
     "en": "Message copied to clipboard",
@@ -2589,7 +2602,8 @@
     "es": "Mensaje copiado al portapapeles",
     "ar": "تم نسخ الرسالة إلى الحافظة",
     "fr": "Message copié dans le presse-papiers",
-    "tr": "Mesaj panoya kopyalandı"
+    "tr": "Mesaj panoya kopyalandı",
+    "ja": "メッセージをコピーしました"
   },
   "CHAT_INTERFACE$CHAT_MESSAGE_COPY_FAILED": {
     "en": "Failed to copy message to clipboard",
@@ -2603,7 +2617,8 @@
     "es": "No se pudo copiar el mensaje al portapapeles",
     "ar": "فشل نسخ الرسالة إلى الحافظة",
     "fr": "Échec de la copie du message dans le presse-papiers",
-    "tr": "Mesaj panoya kopyalanamadı"
+    "tr": "Mesaj panoya kopyalanamadı",
+    "ja": "メッセージのコピーに失敗しました"
   },
   "CHAT_INTERFACE$TOOLTIP_COPY_MESSAGE": {
     "en": "Copy message",
@@ -2617,7 +2632,8 @@
     "es": "Copiar mensaje",
     "ar": "نسخ الرسالة",
     "fr": "Copier le message",
-    "tr": "Mesajı kopyala"
+    "tr": "Mesajı kopyala",
+    "ja": "メッセージをコピー"
   },
   "CHAT_INTERFACE$TOOLTIP_SEND_MESSAGE": {
     "en": "Send message",
@@ -2631,7 +2647,8 @@
     "es": "Enviar mensaje",
     "ar": "إرسال الرسالة",
     "fr": "Envoyer le message",
-    "tr": "Mesaj gönder"
+    "tr": "Mesaj gönder",
+    "ja": "メッセージを送信"
   },
   "CHAT_INTERFACE$TOOLTIP_UPLOAD_IMAGE": {
     "en": "Upload image",
@@ -2645,7 +2662,8 @@
     "es": "Subir imagen",
     "ar": "تحميل الصورة",
     "fr": "Télécharger une image",
-    "tr": "Resim yükle"
+    "tr": "Resim yükle",
+    "ja": "画像をアップロード"
   },
   "CHAT_INTERFACE$INITIAL_MESSAGE": {
     "en": "Hi! I'm OpenHands, an AI Software Engineer. What would you like to build with me today?",
@@ -2658,7 +2676,8 @@
     "pt": "Hi! I'm OpenHands, an AI Software Engineer. What would you like to build with me today?",
     "es": "Hi! I'm OpenHands, an AI Software Engineer. What would you like to build with me today?",
     "ar": "مرحبا! أنا OpenHands، مهندس برمجيات AI. ماذا تود أن تبني معي اليوم؟",
-    "fr": "Salut! Je suis OpenHands, un ingénieur logiciel en IA. Que voudriez-vous construire avec moi aujourd'hui?"
+    "fr": "Salut! Je suis OpenHands, un ingénieur logiciel en IA. Que voudriez-vous construire avec moi aujourd'hui?",
+    "ja": "何を作りたいですか？"
   },
   "CHAT_INTERFACE$ASSISTANT": {
     "en": "Assistant",
@@ -2672,7 +2691,8 @@
     "es": "Assistant",
     "ar": "مساعد",
     "fr": "Assistant",
-    "tr": "Gönder"
+    "tr": "Gönder",
+    "ja": "アシスタント"
   },
   "CHAT_INTERFACE$TO_BOTTOM": {
     "en": "To Bottom",
@@ -2686,7 +2706,8 @@
     "es": "Ir al final",
     "ar": "إلى الأسفل",
     "fr": "Vers le bas",
-    "tr": "En alta"
+    "tr": "En alta",
+    "ja": "一番下へ"
   },
   "CHAT_INTERFACE$MESSAGE_ARIA_LABEL": {
     "en": "Message from {{sender}}",
@@ -2700,7 +2721,8 @@
     "es": "Mensaje de {{sender}}",
     "ar": "رسالة من {{sender}}",
     "fr": "Message de {{sender}}",
-    "tr": "{{sender}} tarafından gönderilen mesaj"
+    "tr": "{{sender}} tarafından gönderilen mesaj",
+    "ja": "メッセージ"
   },
   "CHAT_INTERFACE$CHAT_CONVERSATION": {
     "en": "Chat Conversation",
@@ -2714,7 +2736,8 @@
     "es": "Conversación de chat",
     "ar": "محادثة تلقيم",
     "fr": "Conversation de chat",
-    "tr": "Sohbet Konuşması"
+    "tr": "Sohbet Konuşması",
+    "ja": "チャット会話"
   },
   "CHAT_INTERFACE$UNKNOWN_SENDER": {
     "en": "Unknown",
@@ -2728,7 +2751,8 @@
     "es": "Desconocido",
     "ar": "مجهول",
     "fr": "Inconnu",
-    "tr": "Bilinmeyen"
+    "tr": "Bilinmeyen",
+    "ja": "不明な送信者"
   },
   "SECURITY_ANALYZER$UNKNOWN_RISK": {
     "en": "Unknown Risk",
@@ -2742,7 +2766,8 @@
     "es": "Riesgo desconocido",
     "ar": "مخاطر غير معروفة",
     "fr": "Risque inconnu",
-    "tr": "Bilinmeyen risk"
+    "tr": "Bilinmeyen risk",
+    "ja": "不明なリスク"
   },
   "SECURITY_ANALYZER$LOW_RISK": {
     "en": "Low Risk",
@@ -2756,7 +2781,8 @@
     "es": "Riesgo bajo",
     "ar": "مخاطر منخفضة",
     "fr": "Risque faible",
-    "tr": "Düşük risk"
+    "tr": "Düşük risk",
+    "ja": "低リスク"
   },
   "SECURITY_ANALYZER$MEDIUM_RISK": {
     "en": "Medium Risk",
@@ -2770,7 +2796,8 @@
     "es": "Riesgo medio",
     "ar": "مخاطر متوسطة",
     "fr": "Risque moyen",
-    "tr": "Orta risk"
+    "tr": "Orta risk",
+    "ja": "中リスク"
   },
   "SECURITY_ANALYZER$HIGH_RISK": {
     "en": "High Risk",
@@ -2784,7 +2811,8 @@
     "es": "Riesgo alto",
     "ar": "مخاطر عالية",
     "fr": "Risque élevé",
-    "tr": "Yüksek risk"
+    "tr": "Yüksek risk",
+    "ja": "高リスク"
   },
   "SETTINGS$MODEL_TOOLTIP": {
     "en": "Select the language model to use.",
@@ -2798,7 +2826,8 @@
     "es": "Seleccione el modelo de lenguaje a utilizar.",
     "ar": "اختر نموذج اللغة المراد استخدامه.",
     "fr": "Sélectionnez le modèle de langage à utiliser.",
-    "tr": "Kullanılacak dil modelini seçin."
+    "tr": "Kullanılacak dil modelini seçin.",
+    "ja": "使用するモデルを選択"
   },
   "SETTINGS$AGENT_TOOLTIP": {
     "en": "Select the agent to use.",
@@ -2812,7 +2841,8 @@
     "es": "Seleccione el agente a utilizar.",
     "ar": "اختر الوكيل المراد استخدامه.",
     "fr": "Sélectionnez l'agent à utiliser.",
-    "tr": "Kullanılacak ajanı seçin."
+    "tr": "Kullanılacak ajanı seçin.",
+    "ja": "使用するエージェントを選択"
   },
   "SETTINGS$LANGUAGE_TOOLTIP": {
     "en": "Select the language for the UI.",
@@ -2826,7 +2856,8 @@
     "es": "Seleccione el idioma para la interfaz de usuario.",
     "ar": "اختر لغة واجهة المستخدم.",
     "fr": "Sélectionnez la langue de l'interface utilisateur.",
-    "tr": "Kullanıcı arayüzü için dil seçin."
+    "tr": "Kullanıcı arayüzü için dil seçin.",
+    "ja": "インターフェースの言語を選択"
   },
   "SETTINGS$DISABLED_RUNNING": {
     "en": "Cannot be changed while the agent is running.",
@@ -2840,7 +2871,8 @@
     "es": "No se puede cambiar mientras el agente está en ejecución.",
     "ar": "لا يمكن تغييره أثناء تشغيل الوكيل.",
     "fr": "Ne peut pas être modifié pendant que l'agent est en cours d'exécution.",
-    "tr": "Ajan çalışırken değiştirilemez."
+    "tr": "Ajan çalışırken değiştirilemez.",
+    "ja": "エージェントの実行中は設定を変更できません"
   },
   "SETTINGS$API_KEY_PLACEHOLDER": {
     "en": "Enter your API key.",
@@ -2854,7 +2886,8 @@
     "es": "Ingrese su clave de API.",
     "ar": "أدخل مفتاح API الخاص بك.",
     "fr": "Entrez votre clé API.",
-    "tr": "API anahtarınızı girin."
+    "tr": "API anahtarınızı girin.",
+    "ja": "APIキーを入力"
   },
   "SETTINGS$CONFIRMATION_MODE": {
     "en": "Enable Confirmation Mode",
@@ -2868,7 +2901,8 @@
     "es": "Habilitar modo de confirmación",
     "ar": "تفعيل وضع التأكيد",
     "fr": "Activer le mode de confirmation",
-    "tr": "Onay Modunu Etkinleştir"
+    "tr": "Onay Modunu Etkinleştir",
+    "ja": "確認モード"
   },
   "SETTINGS$CONFIRMATION_MODE_TOOLTIP": {
     "en": "Awaits for user confirmation before executing code.",
@@ -2882,7 +2916,8 @@
     "es": "Espera la confirmación del usuario antes de ejecutar el código.",
     "ar": "ينتظر تأكيد المستخدم قبل تنفيذ الكود.",
     "fr": "Attend la confirmation de l'utilisateur avant d'exécuter le code.",
-    "tr": "Kodu çalıştırmadan önce kullanıcı onayını bekler."
+    "tr": "Kodu çalıştırmadan önce kullanıcı onayını bekler.",
+    "ja": "エージェントのアクションを実行前に確認"
   },
   "SETTINGS$AGENT_SELECT_ENABLED": {
     "en": "Enable Agent Selection - Advanced Users",
@@ -2896,7 +2931,8 @@
     "es": "Habilitar selección de agente - Usuarios avanzados",
     "ar": "تمكين اختيار الوكيل - المستخدمين المتقدمين",
     "fr": "Activer la sélection d'agent - Utilisateurs avancés",
-    "tr": "Ajan Seçimini Etkinleştir - İleri Düzey Kullanıcılar"
+    "tr": "Ajan Seçimini Etkinleştir - İleri Düzey Kullanıcılar",
+    "ja": "エージェント選択を有効化"
   },
   "SETTINGS$SECURITY_ANALYZER": {
     "en": "Enable Security Analyzer",
@@ -2910,7 +2946,8 @@
     "es": "Habilitar analizador de seguridad",
     "ar": "تمكين محلل الأمان",
     "fr": "Activer l'analyseur de sécurité",
-    "tr": "Güvenlik Analizörünü Etkinleştir"
+    "tr": "Güvenlik Analizörünü Etkinleştir",
+    "ja": "セキュリティアナライザー"
   },
   "PLANNER$EMPTY_MESSAGE": {
     "en": "No plan created.",
@@ -2924,7 +2961,8 @@
     "es": "Ningún plan creado.",
     "ar": "لم يتم إنشاء أي خطة.",
     "fr": "Aucun plan créé.",
-    "tr": "Plan oluşturulmadı."
+    "tr": "Plan oluşturulmadı.",
+    "ja": "プランナーは空です"
   },
   "FEEDBACK$PUBLIC_LABEL": {
     "en": "Public",
@@ -2938,7 +2976,8 @@
     "es": "Público",
     "ar": "عام",
     "fr": "Public",
-    "tr": "Herkese Açık"
+    "tr": "Herkese Açık",
+    "ja": "公開"
   },
   "FEEDBACK$PRIVATE_LABEL": {
     "en": "Private",
@@ -2952,7 +2991,8 @@
     "es": "Privado",
     "ar": "خاص",
     "fr": "Privé",
-    "tr": "Özel"
+    "tr": "Özel",
+    "ja": "非公開"
   },
   "STATUS$STARTING_RUNTIME": {
     "en": "Starting Runtime...",
@@ -2966,7 +3006,8 @@
     "es": "Iniciando el entorno de ejecución...",
     "ar": "جارٍ بدء بيئة التشغيل...",
     "fr": "Démarrage de l'environnement d'exécution...",
-    "tr": "Çalışma zamanı başlatılıyor..."
+    "tr": "Çalışma zamanı başlatılıyor...",
+    "ja": "ランタイムを開始中"
   },
   "STATUS$STARTING_CONTAINER": {
     "en": "Preparing container, this might take a few minutes...",
@@ -2980,7 +3021,8 @@
     "es": "Preparando el contenedor, esto puede tardar unos minutos...",
     "ar": "جارٍ إعداد الحاوية، قد يستغرق هذا بضع دقائق...",
     "fr": "Préparation du conteneur, cela peut prendre quelques minutes...",
-    "tr": "Konteyner hazırlanıyor, bu işlem birkaç dakika sürebilir..."
+    "tr": "Konteyner hazırlanıyor, bu işlem birkaç dakika sürebilir...",
+    "ja": "コンテナを開始中"
   },
   "STATUS$PREPARING_CONTAINER": {
     "en": "Preparing to start container...",
@@ -2994,7 +3036,8 @@
     "es": "Preparando para iniciar el contenedor...",
     "ar": "جارٍ التحضير لبدء الحاوية...",
     "fr": "Préparation du démarrage du conteneur...",
-    "tr": "Konteyner başlatılmaya hazırlanıyor..."
+    "tr": "Konteyner başlatılmaya hazırlanıyor...",
+    "ja": "コンテナを準備中"
   },
   "STATUS$CONTAINER_STARTED": {
     "en": "Container started.",
@@ -3008,7 +3051,8 @@
     "es": "Contenedor iniciado.",
     "ar": "تم بدء الحاوية.",
     "fr": "Conteneur démarré.",
-    "tr": "Konteyner başlatıldı."
+    "tr": "Konteyner başlatıldı.",
+    "ja": "コンテナが開始されました"
   },
   "ACCOUNT_SETTINGS_MODAL$DISCONNECT": {
     "en": "Disconnect",
@@ -3383,7 +3427,8 @@
     "es": "Ninguna página cargada.",
     "ar": "لم يتم تحميل أي صفحة.",
     "fr": "Aucune page chargée.",
-    "tr": "Sayfa yüklenmedi."
+    "tr": "Sayfa yüklenmedi.",
+    "ja": "ブラウザは空です"
   },
   "USER$AVATAR_PLACEHOLDER": {
     "en": "user avatar placeholder",
@@ -3429,7 +3474,8 @@
   },
   "SETTINGS_FORM$ADVANCED_OPTIONS_LABEL": {
     "en": "Advanced Options",
-    "es": "Opciones avanzadas"
+    "es": "Opciones avanzadas",
+    "ja": "詳細オプション"
   },
   "CONVERSATION$NO_CONVERSATIONS": {
     "en": "No conversations found",
@@ -3485,7 +3531,8 @@
     "es": "Esperando a que el cliente esté listo...",
     "ar": "في انتظار جاهزية العميل...",
     "fr": "En attente que le client soit prêt...",
-    "tr": "İstemcinin hazır olması bekleniyor..."
+    "tr": "İstemcinin hazır olması bekleniyor...",
+    "ja": "クライアントの準備を待機中"
   },
   "SUGGESTIONS$WHAT_TO_BUILD": {
     "en": "What do you want to build?",
