@@ -123,10 +123,10 @@ describe("ConversationPanel", () => {
     await user.click(deleteButton);
 
     // Confirm the deletion
-    const confirmButton = screen.getByText("Confirm");
-    await user.click(confirmButton);
+    const deleteConfirmButton = screen.getByTestId("confirm-delete-button");
+    await user.click(deleteConfirmButton);
 
-    expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("confirm-delete-button")).not.toBeInTheDocument();
 
     // Ensure the conversation is deleted
     cards = await screen.findAllByTestId("conversation-card");
@@ -148,10 +148,10 @@ describe("ConversationPanel", () => {
     await user.click(deleteButton);
 
     // Confirm the deletion
-    const confirmButton = screen.getByText("Confirm");
-    await user.click(confirmButton);
+    const deleteConfirmButton = screen.getByTestId("confirm-delete-button");
+    await user.click(deleteConfirmButton);
 
-    expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("confirm-delete-button")).not.toBeInTheDocument();
 
     // Ensure the conversation is deleted
     cards = await screen.findAllByTestId("conversation-card");

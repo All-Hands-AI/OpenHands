@@ -46,37 +46,11 @@ export function ResizablePanel({
   initialSize,
 }: ResizablePanelProps): JSX.Element {
   const isHorizontal = orientation === Orientation.HORIZONTAL;
-  const getConstraints = useCallback(
-    () => ({
-      min: isHorizontal ? 350 : 300,
-      max: isHorizontal ? window.innerWidth * 0.5 : window.innerHeight * 0.7,
-    }),
-    [isHorizontal],
-  );
-
-  const constrainSize = useCallback(
-    (size: number) => {
-      const { min, max } = getConstraints();
-      return Math.min(Math.max(size, min), max);
-    },
-    [getConstraints],
-  );
-
-  const [firstSize, setFirstSize] = useState(() => constrainSize(initialSize));
+  const [firstSize, setFirstSize] = useState(initialSize);
   const [dividerPosition, setDividerPosition] = useState<number | null>(null);
   const [collapse, setCollapse] = useState(Collapse.SPLIT);
   const firstRef = useRef<HTMLDivElement>(null);
   const secondRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleResize = () => setFirstSize(constrainSize(firstSize));
-    const timeoutId = setTimeout(handleResize, 100);
-    window.addEventListener("resize", handleResize);
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [firstSize, constrainSize]);
 
   useEffect(() => {
     if (!dividerPosition) return undefined;
@@ -84,7 +58,7 @@ export function ResizablePanel({
     const onMouseMove = (e: MouseEvent) => {
       e.preventDefault();
       const delta = (isHorizontal ? e.clientX : e.clientY) - dividerPosition;
-      setFirstSize(constrainSize(firstSize + delta));
+      setFirstSize(firstSize + delta);
       setDividerPosition(isHorizontal ? e.clientX : e.clientY);
     };
 
@@ -93,10 +67,7 @@ export function ResizablePanel({
       if (firstRef.current) firstRef.current.style.transition = "";
       if (secondRef.current) secondRef.current.style.transition = "";
       setFirstSize(
-        constrainSize(
-          firstSize +
-            ((isHorizontal ? e.clientX : e.clientY) - dividerPosition),
-        ),
+        firstSize + ((isHorizontal ? e.clientX : e.clientY) - dividerPosition),
       );
       setDividerPosition(null);
     };
@@ -107,7 +78,7 @@ export function ResizablePanel({
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
     };
-  }, [dividerPosition, firstSize, isHorizontal, constrainSize]);
+  }, [dividerPosition, firstSize, isHorizontal]);
 
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -119,7 +90,6 @@ export function ResizablePanel({
   const getPanelStyle = useCallback(
     (isFirst: boolean): CSSProperties => {
       const style: CSSProperties = { overflow: "hidden" };
-      const { min } = getConstraints();
       const isHidden =
         (isFirst && collapse === Collapse.COLLAPSED) ||
         (!isFirst && collapse === Collapse.FILLED);
@@ -151,7 +121,7 @@ export function ResizablePanel({
         const firstPanelStyle: CSSProperties = {
           ...style,
           [dimension]: `${firstSize}px`,
-          [minDimension]: `${min}px`,
+          [minDimension]: isHorizontal ? "350px" : "300px",
           [maxDimension]: isHorizontal ? "50%" : "70%",
           flexShrink: 0,
         };
@@ -175,7 +145,7 @@ export function ResizablePanel({
       };
       return secondPanelStyle;
     },
-    [collapse, firstSize, isHorizontal, getConstraints],
+    [collapse, firstSize, isHorizontal],
   );
 
   const toggleCollapse = () =>
