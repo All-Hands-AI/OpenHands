@@ -76,7 +76,7 @@ export function updateStatusWhenErrorMessagePresent(data: unknown) {
   ) {
     handleStatusMessage({
       type: "error",
-      message: data.message as string,
+      message: data.message,
       status_update: true,
     });
   }
