@@ -10,7 +10,6 @@ interface ChatInputProps {
   name?: string;
   button?: "submit" | "stop";
   disabled?: boolean;
-  placeholder?: string;
   showButton?: boolean;
   value?: string;
   maxRows?: number;
@@ -28,7 +27,6 @@ export function ChatInput({
   name,
   button = "submit",
   disabled,
-  placeholder,
   showButton = true,
   value,
   maxRows = 4,
@@ -120,7 +118,7 @@ export function ChatInput({
       <TextareaAutosize
         ref={textareaRef}
         name={name}
-        placeholder={placeholder || t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD)}
+        placeholder={t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD)}
         onKeyDown={handleKeyPress}
         onChange={handleChange}
         onFocus={onFocus}
