@@ -983,10 +983,12 @@ class AgentController:
 
     def __repr__(self):
         return (
-            f'AgentController(id={self.id}, agent={self.agent!r}, '
-            f'event_stream={self.event_stream!r}, '
-            f'state={self.state!r}, '
-            f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
+            f'AgentController(id={getattr(self, "id", "<uninitialized>")}, '
+            f'agent={getattr(self, "agent", "<uninitialized>")!r}, '
+            f'event_stream={getattr(self, "event_stream", "<uninitialized>")!r}, '
+            f'state={getattr(self, "state", "<uninitialized>")!r}, '
+            f'delegate={getattr(self, "delegate", "<uninitialized>")!r}, '
+            f'_pending_action={getattr(self, "_pending_action", "<uninitialized>")!r})'
         )
 
     def _is_awaiting_observation(self):
