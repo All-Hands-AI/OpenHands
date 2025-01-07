@@ -2,7 +2,10 @@ import posthog from "posthog-js";
 import React from "react";
 import { io, Socket } from "socket.io-client";
 import EventLogger from "#/utils/event-logger";
-import { handleAssistantMessage } from "#/services/actions";
+import {
+  handleAssistantMessage,
+  handleStatusMessage,
+} from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
 import { OpenHandsParsedEvent } from "#/types/core";
 import {
@@ -104,7 +107,22 @@ export function WsClientProvider({
     handleAssistantMessage(event);
   }
 
-  function handleDisconnect() {
+  function updateStatusWhenErrorMessagePresent(data: unknown) {
+    if (
+      data &&
+      typeof data === "object" &&
+      "message" in data &&
+      typeof data.message === "string"
+    ) {
+      handleStatusMessage({
+        type: "error",
+        message: data.message as string,
+        status_update: true,
+      });
+    }
+  }
+
+  function handleDisconnect(data: unknown) {
     setStatus(WsClientProviderStatus.DISCONNECTED);
     const sio = sioRef.current;
     if (!sio) {
@@ -112,11 +130,13 @@ export function WsClientProvider({
     }
     sio.io.opts.query = sio.io.opts.query || {};
     sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
+    updateStatusWhenErrorMessagePresent(data);
   }
 
-  function handleError() {
-    posthog.capture("socket_error");
+  function handleError(data: unknown) {
     setStatus(WsClientProviderStatus.DISCONNECTED);
+    updateStatusWhenErrorMessagePresent(data);
+    posthog.capture("socket_error");
   }
 
   React.useEffect(() => {
