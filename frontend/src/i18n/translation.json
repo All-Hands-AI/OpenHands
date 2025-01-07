@@ -1913,7 +1913,8 @@
     "es": "El agente ha pausado.",
     "ar": "توقف الوكيل مؤقتًا.",
     "fr": "L'agent a mis en pause.",
-    "tr": "Ajan duraklatıldı."
+    "tr": "Ajan duraklatıldı.",
+    "ja": "エージェントが一時停止中"
   },
   "LANDING$TITLE": {
     "en": "Let's start building!",
@@ -3135,406 +3136,468 @@
     "es": "Desconectar",
     "zh-CN": "断开连接",
     "zh-TW": "中斷連線",
-    "ko-KR": "연결 해제"
+    "ko-KR": "연결 해제",
+    "ja": "切断"
   },
   "ACCOUNT_SETTINGS_MODAL$SAVE": {
     "en": "Save",
     "es": "Guardar",
     "zh-CN": "保存",
     "zh-TW": "儲存",
-    "ko-KR": "저장"
+    "ko-KR": "저장",
+    "ja": "保存"
   },
   "ACCOUNT_SETTINGS_MODAL$CLOSE": {
     "en": "Close",
     "es": "Cerrar",
     "zh-CN": "关闭",
     "zh-TW": "關閉",
-    "ko-KR": "닫기"
+    "ko-KR": "닫기",
+    "ja": "閉じる"
   },
   "ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID": {
     "en": "GitHub token is invalid. Please try again.",
     "es": "",
     "zh-CN": "GitHub令牌无效",
     "zh-TW": "GitHub權杖無效",
-    "ko-KR": "GitHub 토큰이 유효하지 않습니다"
+    "ko-KR": "GitHub 토큰이 유효하지 않습니다",
+    "ja": "GitHubトークンが無効です"
   },
   "CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN": {
     "en": "Get your token",
     "es": "Obten tu token",
     "zh-CN": "获取您的令牌",
     "zh-TW": "取得您的權杖",
-    "ko-KR": "토큰 받기"
+    "ko-KR": "토큰 받기",
+    "ja": "トークンを取得"
   },
   "CONNECT_TO_GITHUB_MODAL$HERE": {
     "en": "here",
     "es": "aquí",
     "zh-CN": "这里",
     "zh-TW": "這裡",
-    "ko-KR": "여기"
+    "ko-KR": "여기",
+    "ja": "こちら"
   },
   "CONNECT_TO_GITHUB_MODAL$CONNECT": {
     "en": "Connect",
     "es": "Conectar",
     "zh-CN": "连接",
     "zh-TW": "連線",
-    "ko-KR": "연결"
+    "ko-KR": "연결",
+    "ja": "接続"
   },
   "CONNECT_TO_GITHUB_MODAL$CLOSE": {
     "en": "Close",
     "es": "Cerrar",
     "zh-CN": "关闭",
     "zh-TW": "關閉",
-    "ko-KR": "닫기"
+    "ko-KR": "닫기",
+    "ja": "閉じる"
   },
   "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$BY_CONNECTING_YOU_AGREE": {
     "en": "By connecting you agree to our",
     "es": "Al conectarte tu aceptas nuestros",
     "zh-CN": "连接即表示您同意",
     "zh-TW": "連線即表示您同意",
-    "ko-KR": "연결함으로써 동의합니다"
+    "ko-KR": "연결함으로써 동의합니다",
+    "ja": "接続することで同意します"
   },
   "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$CONTINUE": {
     "en": "Continue",
     "es": "Continuar",
     "zh-CN": "继续",
     "zh-TW": "繼續",
-    "ko-KR": "계속"
+    "ko-KR": "계속",
+    "ja": "続行"
   },
   "LOADING_PROJECT$LOADING": {
     "en": "Loading...",
     "es": "Cargando...",
     "zh-CN": "加载中...",
     "zh-TW": "載入中...",
-    "ko-KR": "로딩 중..."
+    "ko-KR": "로딩 중...",
+    "ja": "読み込み中..."
   },
   "CUSTOM_INPUT$OPTIONAL_LABEL": {
     "en": "(Optional)",
     "es": "(Opcional)",
     "zh-CN": "可选",
     "zh-TW": "選填",
-    "ko-KR": "선택사항"
+    "ko-KR": "선택사항",
+    "ja": "任意"
   },
   "SETTINGS_FORM$CUSTOM_MODEL_LABEL": {
     "en": "Custom Model",
     "es": "Modelo personalizado",
     "zh-CN": "自定义模型",
     "zh-TW": "自訂模型",
-    "ko-KR": "사용자 정의 모델"
+    "ko-KR": "사용자 정의 모델",
+    "ja": "カスタムモデル"
   },
   "SETTINGS_FORM$BASE_URL_LABEL": {
     "en": "Base URL",
     "es": "URL base",
     "zh-CN": "基础URL",
     "zh-TW": "基礎URL",
-    "ko-KR": "기본 URL"
+    "ko-KR": "기본 URL",
+    "ja": "ベースURL"
   },
   "SETTINGS_FORM$API_KEY_LABEL": {
     "en": "API Key",
     "es": "API Key",
     "zh-CN": "API密钥",
     "zh-TW": "API金鑰",
-    "ko-KR": "API 키"
+    "ko-KR": "API 키",
+    "ja": "APIキー"
   },
   "SETTINGS_FORM$DONT_KNOW_API_KEY_LABEL": {
     "en": "Don't know your API key?",
     "es": "¿No sabes tu API key?",
     "zh-CN": "不知道您的API密钥？",
     "zh-TW": "不知道您的API金鑰？",
-    "ko-KR": "API 키를 모르시나요?"
+    "ko-KR": "API 키를 모르시나요?",
+    "ja": "APIキーがわかりませんか？"
   },
   "SETTINGS_FORM$CLICK_HERE_FOR_INSTRUCTIONS_LABEL": {
     "en": "Click here for instructions",
     "es": "Clic aquí para instrucciones",
     "zh-CN": "点击这里查看说明",
     "zh-TW": "點擊這裡查看說明",
-    "ko-KR": "설명을 보려면 여기를 클릭하세요"
+    "ko-KR": "설명을 보려면 여기를 클릭하세요",
+    "ja": "説明を見るにはここをクリック"
   },
   "SETTINGS_FORM$AGENT_LABEL": {
     "en": "Agent",
     "es": "Agente",
     "zh-CN": "代理",
     "zh-TW": "代理",
-    "ko-KR": "에이전트"
+    "ko-KR": "에이전트",
+    "ja": "エージェント"
   },
   "SETTINGS_FORM$SECURITY_ANALYZER_LABEL": {
     "en": "Security Analyzer (Optional)",
     "es": "Analizador de seguridad (opcional)",
     "zh-CN": "安全分析器",
     "zh-TW": "安全分析器",
-    "ko-KR": "보안 분석기"
+    "ko-KR": "보안 분석기",
+    "ja": "セキュリティアナライザー"
   },
   "SETTINGS_FORM$ENABLE_CONFIRMATION_MODE_LABEL": {
     "en": "Enable Confirmation Mode",
     "es": "Habilitar modo de confirmación",
     "zh-CN": "启用确认模式",
     "zh-TW": "啟用確認模式",
-    "ko-KR": "확인 모드 활성화"
+    "ko-KR": "확인 모드 활성화",
+    "ja": "確認モードを有効化"
   },
   "SETTINGS_FORM$SAVE_LABEL": {
     "en": "Save",
     "es": "Guardar",
     "zh-CN": "保存",
     "zh-TW": "儲存",
-    "ko-KR": "저장"
+    "ko-KR": "저장",
+    "ja": "保存"
   },
   "SETTINGS_FORM$CLOSE_LABEL": {
     "en": "Close",
     "es": "Cerrar",
     "zh-CN": "关闭",
     "zh-TW": "關閉",
-    "ko-KR": "닫기"
+    "ko-KR": "닫기",
+    "ja": "閉じる"
   },
   "SETTINGS_FORM$RESET_TO_DEFAULTS_LABEL": {
     "en": "Reset to defaults",
     "es": "Reiniciar valores por defect",
     "zh-CN": "重置为默认值",
     "zh-TW": "重置為預設值",
-    "ko-KR": "기본값으로 재설정"
+    "ko-KR": "기본값으로 재설정",
+    "ja": "デフォルトに戻す"
   },
   "SETTINGS_FORM$CANCEL_LABEL": {
     "en": "Cancel",
     "es": "Cancelar",
     "zh-CN": "取消",
     "zh-TW": "取消",
-    "ko-KR": "취소"
+    "ko-KR": "취소",
+    "ja": "キャンセル"
   },
   "SETTINGS_FORM$END_SESSION_LABEL": {
     "en": "End Session",
     "es": "Terminar sesión",
     "zh-CN": "结束会话",
     "zh-TW": "結束工作階段",
-    "ko-KR": "세션 종료"
+    "ko-KR": "세션 종료",
+    "ja": "セッションを終了"
   },
   "SETTINGS_FORM$CHANGING_WORKSPACE_WARNING_MESSAGE": {
     "en": "Changing your settings will clear your workspace and start a new session. Are you sure you want to continue?",
     "es": "Cambiar tu configuración limpiará tu espacio de trabajo e iniciará una nueva sesión. ¿Estás seguro de continuar?",
     "zh-CN": "更改工作区将删除所有信息",
     "zh-TW": "更改工作區將刪除所有資訊",
-    "ko-KR": "워크스페이스 변경 시 모든 정보가 삭제됩니다"
+    "ko-KR": "워크스페이스 변경 시 모든 정보가 삭제됩니다",
+    "ja": "ワークスペースを変更すると全ての情報が削除されます"
   },
   "SETTINGS_FORM$ARE_YOU_SURE_LABEL": {
     "en": "Are you sure?",
     "es": "¿Estás seguro?",
     "zh-CN": "确定吗？",
     "zh-TW": "確定嗎？",
-    "ko-KR": "확실합니까?"
+    "ko-KR": "확실합니까?",
+    "ja": "よろしいですか？"
   },
   "SETTINGS_FORM$ALL_INFORMATION_WILL_BE_DELETED_MESSAGE": {
     "en": "All saved information in your AI settings will be deleted, including any API keys.",
     "es": "Toda la información guardada en tu configuración de IA será eliminada, incluyendo tus API Keys",
     "zh-CN": "所有信息将被删除",
     "zh-TW": "所有資訊將被刪除",
-    "ko-KR": "모든 정보가 삭제됩니다"
+    "ko-KR": "모든 정보가 삭제됩니다",
+    "ja": "全ての情報が削除されます"
   },
   "PROJECT_MENU_DETAILS_PLACEHOLDER$NEW_PROJECT_LABEL": {
     "en": "New Project",
     "es": "Nuevo proyecto",
     "zh-CN": "新项目",
     "zh-TW": "新專案",
-    "ko-KR": "새 프로젝트"
+    "ko-KR": "새 프로젝트",
+    "ja": "新規プロジェクト"
   },
   "PROJECT_MENU_DETAILS_PLACEHOLDER$CONNECT_TO_GITHUB": {
     "en": "Connect to GitHub",
     "zh-CN": "连接到GitHub",
     "zh-TW": "連線到GitHub",
-    "ko-KR": "GitHub에 연결"
+    "ko-KR": "GitHub에 연결",
+    "ja": "GitHubに接続"
   },
   "PROJECT_MENU_DETAILS_PLACEHOLDER$CONNECTED": {
     "en": "Connected",
     "zh-CN": "已连接",
     "zh-TW": "已連線",
-    "ko-KR": "연결됨"
+    "ko-KR": "연결됨",
+    "ja": "接続済み"
   },
   "PROJECT_MENU_DETAILS$AGO_LABEL": {
     "en": "ago",
     "es": "atrás",
     "zh-CN": "前",
     "zh-TW": "前",
-    "ko-KR": "전"
+    "ko-KR": "전",
+    "ja": "前"
   },
   "STATUS$ERROR_LLM_AUTHENTICATION": {
     "en": "Error authenticating with the LLM provider. Please check your API key",
     "es": "Error autenticando con el proveedor de LLM. Por favor revisa tu API key",
     "zh-CN": "LLM认证错误",
     "zh-TW": "LLM認證錯誤",
-    "ko-KR": "LLM 인증 오류"
+    "ko-KR": "LLM 인증 오류",
+    "ja": "LLM認証エラー"
   },
   "STATUS$ERROR_RUNTIME_DISCONNECTED": {
     "en": "There was an error while connecting to the runtime. Please refresh the page.",
     "zh-CN": "运行时已断开连接",
     "zh-TW": "執行環境已中斷連線",
-    "ko-KR": "런타임 연결 해제됨"
+    "ko-KR": "런타임 연결 해제됨",
+    "ja": "ランタイムが切断されました"
   },
   "AGENT_ERROR$BAD_ACTION": {
     "en": "Agent tried to execute a malformed action.",
     "zh-CN": "错误的操作",
     "zh-TW": "錯誤的操作",
-    "ko-KR": "잘못된 작업"
+    "ko-KR": "잘못된 작업",
+    "ja": "不正な操作"
   },
   "AGENT_ERROR$ACTION_TIMEOUT": {
     "en": "Action timed out.",
     "zh-CN": "操作超时",
     "zh-TW": "操作逾時",
-    "ko-KR": "작업 시간 초과"
+    "ko-KR": "작업 시간 초과",
+    "ja": "操作がタイムアウトしました"
   },
   "PROJECT_MENU_CARD_CONTEXT_MENU$CONNECT_TO_GITHUB_LABEL": {
     "en": "Connect to GitHub",
     "es": "Conectar a GitHub",
     "zh-CN": "连接到GitHub",
     "zh-TW": "連線到GitHub",
-    "ko-KR": "GitHub에 연결"
+    "ko-KR": "GitHub에 연결",
+    "ja": "GitHubに接続"
   },
   "PROJECT_MENU_CARD_CONTEXT_MENU$PUSH_TO_GITHUB_LABEL": {
     "en": "Push to GitHub",
     "es": "Subir a GitHub",
     "zh-CN": "推送到GitHub",
     "zh-TW": "推送到GitHub",
-    "ko-KR": "GitHub에 푸시"
+    "ko-KR": "GitHub에 푸시",
+    "ja": "GitHubにプッシュ"
   },
   "PROJECT_MENU_CARD_CONTEXT_MENU$DOWNLOAD_FILES_LABEL": {
     "en": "Download files",
     "es": "Descargar archivos",
     "zh-CN": "下载文件",
     "zh-TW": "下載檔案",
-    "ko-KR": "파일 다운로드"
+    "ko-KR": "파일 다운로드",
+    "ja": "ファイルをダウンロード"
   },
   "PROJECT_MENU_CARD$OPEN": {
     "en": "Open project menu",
     "zh-CN": "打开",
     "zh-TW": "開啟",
-    "ko-KR": "열기"
+    "ko-KR": "열기",
+    "ja": "開く"
   },
   "ACTION_BUTTON$RESUME": {
     "en": "Resume the agent task",
     "zh-CN": "继续",
     "zh-TW": "繼續",
-    "ko-KR": "재개"
+    "ko-KR": "재개",
+    "ja": "再開"
   },
   "ACTION_BUTTON$PAUSE": {
     "en": "Pause the current task",
     "zh-CN": "暂停",
     "zh-TW": "暫停",
-    "ko-KR": "일시정지"
+    "ko-KR": "일시정지",
+    "ja": "一時停止"
   },
   "BROWSER$SCREENSHOT_ALT": {
     "en": "Browser Screenshot",
     "zh-CN": "截图",
     "zh-TW": "截圖",
-    "ko-KR": "스크린샷"
+    "ko-KR": "스크린샷",
+    "ja": "スクリーンショット"
   },
   "ERROR_TOAST$CLOSE_BUTTON_LABEL": {
     "en": "Close",
     "zh-CN": "关闭",
     "zh-TW": "關閉",
-    "ko-KR": "닫기"
+    "ko-KR": "닫기",
+    "ja": "閉じる"
   },
   "FILE_EXPLORER$UPLOAD": {
     "en": "Upload File",
     "zh-CN": "上传",
     "zh-TW": "上傳",
-    "ko-KR": "업로드"
+    "ko-KR": "업로드",
+    "ja": "アップロード"
   },
   "FILE_EXPLORER$REFRESH_WORKSPACE": {
     "en": "Refresh workspace",
     "zh-CN": "刷新工作区",
     "zh-TW": "重新整理工作區",
-    "ko-KR": "워크스페이스 새로고침"
+    "ko-KR": "워크스페이스 새로고침",
+    "ja": "ワークスペースを更新"
   },
   "FILE_EXPLORER$OPEN_WORKSPACE": {
     "en": "Open workspace",
     "zh-CN": "打开工作区",
     "zh-TW": "開啟工作區",
-    "ko-KR": "워크스페이스 열기"
+    "ko-KR": "워크스페이스 열기",
+    "ja": "ワークスペースを開く"
   },
   "FILE_EXPLORER$CLOSE_WORKSPACE": {
     "en": "Close workspace",
     "zh-CN": "关闭工作区",
     "zh-TW": "關閉工作區",
-    "ko-KR": "워크스페이스 닫기"
+    "ko-KR": "워크스페이스 닫기",
+    "ja": "ワークスペースを閉じる"
   },
   "ACTION_MESSAGE$RUN": {
     "en": "Running a bash command",
     "zh-CN": "运行",
     "zh-TW": "執行",
-    "ko-KR": "실행"
+    "ko-KR": "실행",
+    "ja": "実行"
   },
   "ACTION_MESSAGE$RUN_IPYTHON": {
     "en": "Running a Python command",
     "zh-CN": "运行IPython",
     "zh-TW": "執行IPython",
-    "ko-KR": "IPython 실행"
+    "ko-KR": "IPython 실행",
+    "ja": "IPythonを実行"
   },
   "ACTION_MESSAGE$READ": {
     "en": "Reading the contents of a file",
     "zh-CN": "读取",
     "zh-TW": "讀取",
-    "ko-KR": "읽기"
+    "ko-KR": "읽기",
+    "ja": "読み取り"
   },
   "ACTION_MESSAGE$EDIT": {
     "en": "Editing the contents of a file",
     "zh-CN": "编辑",
     "zh-TW": "編輯",
-    "ko-KR": "편집"
+    "ko-KR": "편집",
+    "ja": "編集"
   },
   "ACTION_MESSAGE$WRITE": {
     "en": "Writing to a file",
     "zh-CN": "写入",
     "zh-TW": "寫入",
-    "ko-KR": "쓰기"
+    "ko-KR": "쓰기",
+    "ja": "書き込み"
   },
   "ACTION_MESSAGE$BROWSE": {
     "en": "Browsing the web",
     "zh-CN": "浏览",
     "zh-TW": "瀏覽",
-    "ko-KR": "탐색"
+    "ko-KR": "탐색",
+    "ja": "閲覧"
   },
   "OBSERVATION_MESSAGE$RUN": {
     "en": "Ran a bash command",
     "zh-CN": "运行",
     "zh-TW": "執行",
-    "ko-KR": "실행"
+    "ko-KR": "실행",
+    "ja": "実行"
   },
   "OBSERVATION_MESSAGE$RUN_IPYTHON": {
     "en": "Ran a Python command",
     "zh-CN": "运行IPython",
     "zh-TW": "執行IPython",
-    "ko-KR": "IPython 실행"
+    "ko-KR": "IPython 실행",
+    "ja": "IPythonを実行"
   },
   "OBSERVATION_MESSAGE$READ": {
     "en": "Read the contents of a file",
     "zh-CN": "读取",
     "zh-TW": "讀取",
-    "ko-KR": "읽기"
+    "ko-KR": "읽기",
+    "ja": "読み取り"
   },
   "OBSERVATION_MESSAGE$EDIT": {
     "en": "Edited the contents of a file",
     "zh-CN": "编辑",
     "zh-TW": "編輯",
-    "ko-KR": "편집"
+    "ko-KR": "편집",
+    "ja": "編集"
   },
   "OBSERVATION_MESSAGE$WRITE": {
     "en": "Wrote to a file",
     "zh-CN": "写入",
     "zh-TW": "寫入",
-    "ko-KR": "쓰기"
+    "ko-KR": "쓰기",
+    "ja": "書き込み"
   },
   "OBSERVATION_MESSAGE$BROWSE": {
     "en": "Browsing completed",
     "zh-CN": "浏览",
     "zh-TW": "瀏覽",
-    "ko-KR": "탐색"
+    "ko-KR": "탐색",
+    "ja": "閲覧"
   },
   "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
     "en": "Show details",
     "zh-CN": "显示详情",
     "zh-TW": "顯示詳情",
-    "ko-KR": "상세 정보 표시"
+    "ko-KR": "상세 정보 표시",
+    "ja": "詳細を表示"
   },
   "EXPANDABLE_MESSAGE$HIDE_DETAILS": {
     "en": "Hide details",
     "zh-CN": "隐藏详情",
     "zh-TW": "隱藏詳情",
-    "ko-KR": "상세 정보 숨기기"
+    "ko-KR": "상세 정보 숨기기",
+    "ja": "詳細を非表示"
   },
   "SETTINGS$TITLE": {
     "en": "AI Provider Configuration",
