@@ -265,15 +265,13 @@ class SessionManager:
         self, user_id: int | None = None, filter_to_sids: set[str] | None = None
     ) -> set[str]:
         """Get the running session ids. If a user is supplied, then the results are limited to session ids for that user. If a set of filter_to_sids is supplied, then results are limited to these ids of interest."""
-        running_sids = await self.get_running_agent_loops_locally(
-            user_id, filter_to_sids
-        )
+        running_sids = self.get_running_agent_loops_locally(user_id, filter_to_sids)
         running_sids.union(
             await self.get_running_agent_loops_in_cluster(user_id, filter_to_sids)
         )
         return running_sids
 
-    async def get_running_agent_loops_locally(
+    def get_running_agent_loops_locally(
         self, user_id: int | None = None, filter_to_sids: set[str] | None = None
     ) -> set[str]:
         items: Iterable[tuple[str, Session]] = self._local_agent_loops_by_sid.items()
