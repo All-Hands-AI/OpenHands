@@ -11,7 +11,8 @@
     "es": "Iniciar nuevo proyecto",
     "ar": "بدء مشروع جديد",
     "fr": "Démarrer un nouveau projet",
-    "tr": "Yeni proje başlat"
+    "tr": "Yeni proje başlat",
+    "de": "Neues Projekt starten"
   },
   "PROJECT$NEW": {
     "en": "New Project",
@@ -25,7 +26,8 @@
     "es": "Nuevo proyecto",
     "ar": "مشروع جديد",
     "fr": "Nouveau projet",
-    "tr": "Yeni proje"
+    "tr": "Yeni proje",
+    "de": "Neues Projekt"
   },
   "ACCOUNT_SETTINGS$TITLE": {
     "en": "Account Settings",
@@ -39,7 +41,8 @@
     "es": "Configuración de la cuenta",
     "ar": "إعدادات الحساب",
     "fr": "Paramètres du compte",
-    "tr": "Hesap ayarları"
+    "tr": "Hesap ayarları",
+    "de": "Kontoeinstellungen"
   },
   "WORKSPACE$TITLE": {
     "en": "Workspace",
@@ -412,7 +415,8 @@
     "es": "Proveedor LLM",
     "ar": "مزود LLM",
     "fr": "Fournisseur LLM",
-    "tr": "LLM Sağlayıcı"
+    "tr": "LLM Sağlayıcı",
+    "de": "LLM-Anbieter"
   },
   "SELECT_PROVIDER_PLACEHOLDER": {
     "en": "Select a provider",
@@ -426,7 +430,8 @@
     "es": "Seleccione un proveedor",
     "ar": "اختر مزودًا",
     "fr": "Sélectionner un fournisseur",
-    "tr": "Bir sağlayıcı seçin"
+    "tr": "Bir sağlayıcı seçin",
+    "de": "Anbieter auswählen"
   },
   "API_KEY": {
     "en": "API Key",
@@ -440,7 +445,8 @@
     "es": "Clave API",
     "ar": "مفتاح API",
     "fr": "Clé API",
-    "tr": "API Anahtarı"
+    "tr": "API Anahtarı",
+    "de": "API-Schlüssel"
   },
   "DONT_KNOW_API_KEY": {
     "en": "Don't know your API key?",
@@ -454,7 +460,8 @@
     "es": "¿No conoce su clave API?",
     "ar": "لا تعرف مفتاح API الخاص بك؟",
     "fr": "Vous ne connaissez pas votre clé API ?",
-    "tr": "API anahtarınızı bilmiyor musunuz?"
+    "tr": "API anahtarınızı bilmiyor musunuz?",
+    "de": "API-Schlüssel unbekannt?"
   },
   "SAVE_BUTTON": {
     "en": "Save",
@@ -468,7 +475,8 @@
     "es": "Guardar",
     "ar": "حفظ",
     "fr": "Enregistrer",
-    "tr": "Kaydet"
+    "tr": "Kaydet",
+    "de": "Speichern"
   },
   "CLOSE_BUTTON": {
     "en": "Close",
@@ -482,7 +490,8 @@
     "es": "Cerrar",
     "ar": "إغلاق",
     "fr": "Fermer",
-    "tr": "Kapat"
+    "tr": "Kapat",
+    "de": "Schließen"
   },
   "RESET_TO_DEFAULTS": {
     "en": "Reset to defaults",
@@ -496,7 +505,8 @@
     "es": "Restablecer valores predeterminados",
     "ar": "إعادة التعيين إلى الإعدادات الافتراضية",
     "fr": "Réinitialiser aux valeurs par défaut",
-    "tr": "Varsayılanlara sıfırla"
+    "tr": "Varsayılanlara sıfırla",
+    "de": "Auf Standardwerte zurücksetzen"
   },
   "CONFIRM_RESET_TITLE": {
     "en": "Are you sure?",
@@ -510,7 +520,8 @@
     "es": "¿Está seguro?",
     "ar": "هل أنت متأكد؟",
     "fr": "Êtes-vous sûr ?",
-    "tr": "Emin misiniz?"
+    "tr": "Emin misiniz?",
+    "de": "Sind Sie sicher?"
   },
   "CONFIRM_RESET_MESSAGE": {
     "en": "All information will be deleted",
@@ -524,7 +535,8 @@
     "es": "Toda la información será eliminada",
     "ar": "سيتم حذف جميع المعلومات",
     "fr": "Toutes les informations seront supprimées",
-    "tr": "Tüm bilgiler silinecek"
+    "tr": "Tüm bilgiler silinecek",
+    "de": "Möchten Sie alle Einstellungen zurücksetzen?"
   },
   "END_SESSION_TITLE": {
     "en": "End Session",
@@ -538,7 +550,8 @@
     "es": "Finalizar sesión",
     "ar": "إنهاء الجلسة",
     "fr": "Terminer la session",
-    "tr": "Oturumu sonlandır"
+    "tr": "Oturumu sonlandır",
+    "de": "Sitzung beenden"
   },
   "END_SESSION_MESSAGE": {
     "en": "Changing workspace settings will end the current session",
@@ -552,7 +565,8 @@
     "es": "Cambiar la configuración del espacio de trabajo finalizará la sesión actual",
     "ar": "سيؤدي تغيير إعدادات مساحة العمل إلى إنهاء الجلسة الحالية",
     "fr": "La modification des paramètres de l'espace de travail mettra fin à la session en cours",
-    "tr": "Çalışma alanı ayarlarını değiştirmek mevcut oturumu sonlandıracak"
+    "tr": "Çalışma alanı ayarlarını değiştirmek mevcut oturumu sonlandıracak",
+    "de": "Möchten Sie die aktuelle Sitzung beenden?"
   },
   "END_SESSION_BUTTON": {
     "en": "End Session",
@@ -566,7 +580,8 @@
     "es": "Finalizar sesión",
     "ar": "إنهاء الجلسة",
     "fr": "Terminer la session",
-    "tr": "Oturumu sonlandır"
+    "tr": "Oturumu sonlandır",
+    "de": "Sitzung beenden"
   },
   "CANCEL_BUTTON": {
     "en": "Cancel",
@@ -580,7 +595,8 @@
     "es": "Cancelar",
     "ar": "إلغاء",
     "fr": "Annuler",
-    "tr": "İptal"
+    "tr": "İptal",
+    "de": "Abbrechen"
   },
   "LANGUAGE_LABEL": {
     "en": "Language",
@@ -594,7 +610,8 @@
     "es": "Idioma",
     "ar": "اللغة",
     "fr": "Langue",
-    "tr": "Dil"
+    "tr": "Dil",
+    "de": "Sprache"
   },
   "GITHUB_TOKEN_LABEL": {
     "en": "GitHub Token",
@@ -608,7 +625,8 @@
     "es": "Token de GitHub",
     "ar": "رمز GitHub",
     "fr": "Jeton GitHub",
-    "tr": "GitHub Jetonu"
+    "tr": "GitHub Jetonu",
+    "de": "GitHub-Token"
   },
   "GITHUB_TOKEN_OPTIONAL": {
     "en": "GitHub Token (Optional)",
@@ -622,7 +640,8 @@
     "es": "Token de GitHub (opcional)",
     "ar": "رمز GitHub (اختياري)",
     "fr": "Jeton GitHub (facultatif)",
-    "tr": "GitHub Jetonu (İsteğe bağlı)"
+    "tr": "GitHub Jetonu (İsteğe bağlı)",
+    "de": "(Optional)"
   },
   "GET_YOUR_TOKEN": {
     "en": "Get your token",
@@ -636,7 +655,8 @@
     "es": "Obtener su token",
     "ar": "احصل على الرمز الخاص بك",
     "fr": "Obtenir votre jeton",
-    "tr": "Jetonunuzu alın"
+    "tr": "Jetonunuzu alın",
+    "de": "Token abrufen"
   },
   "HERE": {
     "en": "here",
@@ -650,7 +670,8 @@
     "es": "aquí",
     "ar": "هنا",
     "fr": "ici",
-    "tr": "buradan"
+    "tr": "buradan",
+    "de": "Hier"
   },
   "ENABLE_ANALYTICS": {
     "en": "Enable analytics",
@@ -664,7 +685,8 @@
     "es": "Habilitar análisis",
     "ar": "تمكين التحليلات",
     "fr": "Activer les analyses",
-    "tr": "Analitiği etkinleştir"
+    "tr": "Analitiği etkinleştir",
+    "de": "Analyse aktivieren"
   },
   "GITHUB_TOKEN_INVALID": {
     "en": "Invalid GitHub token",
@@ -678,7 +700,8 @@
     "es": "Token de GitHub inválido",
     "ar": "رمز GitHub غير صالح",
     "fr": "Jeton GitHub invalide",
-    "tr": "Geçersiz GitHub jetonu"
+    "tr": "Geçersiz GitHub jetonu",
+    "de": "GitHub-Token ungültig"
   },
   "DISCONNECT_BUTTON": {
     "en": "Disconnect",
@@ -692,7 +715,8 @@
     "es": "Desconectar",
     "ar": "قطع الاتصال",
     "fr": "Déconnecter",
-    "tr": "Bağlantıyı kes"
+    "tr": "Bağlantıyı kes",
+    "de": "Verbindung trennen"
   },
   "CONFIGURE_GITHUB_REPOS": {
     "en": "Configure Github Repositories",
@@ -706,7 +730,8 @@
     "es": "Configurar repositorios de GitHub",
     "ar": "تكوين مستودعات GitHub",
     "fr": "Configurer les dépôts GitHub",
-    "tr": "GitHub depolarını yapılandır"
+    "tr": "GitHub depolarını yapılandır",
+    "de": "GitHub-Repositories konfigurieren"
   },
   "CLICK_FOR_INSTRUCTIONS": {
     "en": "Click here for instructions",
@@ -720,7 +745,8 @@
     "es": "Haga clic aquí para ver las instrucciones",
     "ar": "انقر هنا للتعليمات",
     "fr": "Cliquez ici pour les instructions",
-    "tr": "Talimatlar için buraya tıklayın"
+    "tr": "Talimatlar için buraya tıklayın",
+    "de": "Für Anweisungen klicken"
   },
   "SELECT_MODEL_PLACEHOLDER": {
     "en": "Select a model",
@@ -734,7 +760,8 @@
     "es": "Seleccione un modelo",
     "ar": "اختر نموذجًا",
     "fr": "Sélectionner un modèle",
-    "tr": "Bir model seçin"
+    "tr": "Bir model seçin",
+    "de": "Modell auswählen"
   },
   "LLM_MODEL": {
     "en": "LLM Model",
@@ -748,7 +775,8 @@
     "es": "Modelo LLM",
     "ar": "نموذج LLM",
     "fr": "Modèle LLM",
-    "tr": "LLM Modeli"
+    "tr": "LLM Modeli",
+    "de": "LLM-Modell"
   },
   "CONFIGURATION$OPENHANDS_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
     "en": "Default: ./workspace",
@@ -3477,7 +3505,8 @@
     "es": "Configuración del proveedor de IA",
     "ar": "إعدادات مزود الذكاء الاصطناعي",
     "fr": "Configuration du fournisseur d'IA",
-    "tr": "AI Sağlayıcı Yapılandırması"
+    "tr": "AI Sağlayıcı Yapılandırması",
+    "de": "Einstellungen"
   },
   "SETTINGS$DESCRIPTION": {
     "en": "To continue, connect an OpenAI, Anthropic, or other LLM account",
@@ -3491,7 +3520,8 @@
     "es": "Para continuar, conecte una cuenta de OpenAI, Anthropic u otro LLM",
     "ar": "للمتابعة، قم بتوصيل حساب OpenAI أو Anthropic أو حساب LLM آخر",
     "fr": "Pour continuer, connectez un compte OpenAI, Anthropic ou autre LLM",
-    "tr": "Devam etmek için bir OpenAI, Anthropic veya başka bir LLM hesabı bağlayın"
+    "tr": "Devam etmek için bir OpenAI, Anthropic veya başka bir LLM hesabı bağlayın",
+    "de": "Konfigurieren Sie Ihre OpenHands-Umgebung"
   },
   "SETTINGS$WARNING": {
     "en": "Changing settings during an active session will end the session",
@@ -3505,7 +3535,8 @@
     "es": "Cambiar la configuración durante una sesión activa finalizará la sesión",
     "ar": "سيؤدي تغيير الإعدادات أثناء جلسة نشطة إلى إنهاء الجلسة",
     "fr": "La modification des paramètres pendant une session active mettra fin à la session",
-    "tr": "Aktif bir oturum sırasında ayarları değiştirmek oturumu sonlandıracaktır"
+    "tr": "Aktif bir oturum sırasında ayarları değiştirmek oturumu sonlandıracaktır",
+    "de": "Einige Einstellungen können nicht geändert werden, während der Agent läuft"
   },
   "SIDEBAR$SETTINGS": {
     "en": "Settings",
@@ -3519,7 +3550,8 @@
     "es": "Configuración",
     "ar": "الإعدادات",
     "fr": "Paramètres",
-    "tr": "Ayarlar"
+    "tr": "Ayarlar",
+    "de": "Einstellungen"
   },
   "SIDEBAR$DOCS": {
     "en": "Documentation",
@@ -3533,7 +3565,8 @@
     "es": "Documentación",
     "ar": "التوثيق",
     "fr": "Documentation",
-    "tr": "Belgeler"
+    "tr": "Belgeler",
+    "de": "Dokumentation"
   },
   "SUGGESTIONS$INCREASE_TEST_COVERAGE": {
     "en": "Increase my test coverage",
@@ -3547,7 +3580,8 @@
     "es": "Aumentar cobertura de pruebas",
     "ar": "زيادة تغطية الاختبارات",
     "fr": "Augmenter la couverture des tests",
-    "tr": "Test kapsamını artır"
+    "tr": "Test kapsamını artır",
+    "de": "Testabdeckung erhöhen"
   },
   "SUGGESTIONS$AUTO_MERGE_PRS": {
     "en": "Auto-merge Dependabot PRs",
@@ -3561,7 +3595,8 @@
     "es": "Fusionar automáticamente PRs de Dependabot",
     "ar": "دمج تلقائي لطلبات Dependabot",
     "fr": "Fusion automatique des PR Dependabot",
-    "tr": "Dependabot PR'larını otomatik birleştir"
+    "tr": "Dependabot PR'larını otomatik birleştir",
+    "de": "PRs automatisch zusammenführen"
   },
   "SUGGESTIONS$ADD_DOCS": {
     "en": "Add best practices docs for contributors",
@@ -3575,7 +3610,8 @@
     "es": "Agregar documentación de mejores prácticas para contribuyentes",
     "ar": "إضافة وثائق أفضل الممارسات للمساهمين",
     "fr": "Ajouter des documents sur les meilleures pratiques pour les contributeurs",
-    "tr": "Katkıda bulunanlar için en iyi uygulama belgelerini ekle"
+    "tr": "Katkıda bulunanlar için en iyi uygulama belgelerini ekle",
+    "de": "Dokumentation hinzufügen"
   },
   "SUGGESTIONS$ADD_DOCKERFILE": {
     "en": "Add/improve a Dockerfile",
@@ -3589,7 +3625,8 @@
     "es": "Agregar/mejorar un Dockerfile",
     "ar": "إضافة/تحسين ملف Docker",
     "fr": "Ajouter/améliorer un Dockerfile",
-    "tr": "Dockerfile ekle/geliştir"
+    "tr": "Dockerfile ekle/geliştir",
+    "de": "Dockerfile hinzufügen"
   },
   "STATUS$CONNECTED": {
     "en": "Connected",
@@ -3647,7 +3684,8 @@
     "es": "Configuración de la cuenta",
     "ar": "إعدادات الحساب",
     "fr": "Paramètres du compte",
-    "tr": "Hesap ayarları"
+    "tr": "Hesap ayarları",
+    "de": "Kontoeinstellungen"
   },
   "ACCOUNT_SETTINGS$LOGOUT": {
     "en": "Logout",
@@ -3661,7 +3699,8 @@
     "es": "Cerrar sesión",
     "ar": "تسجيل الخروج",
     "fr": "Déconnexion",
-    "tr": "Çıkış yap"
+    "tr": "Çıkış yap",
+    "de": "Abmelden"
   },
   "SETTINGS_FORM$ADVANCED_OPTIONS_LABEL": {
     "en": "Advanced Options",
@@ -3740,7 +3779,8 @@
     "es": "¿Qué quieres construir?",
     "ar": "ماذا تريد أن تبني؟",
     "fr": "Que voulez-vous construire ?",
-    "tr": "Ne inşa etmek istiyorsun?"
+    "tr": "Ne inşa etmek istiyorsun?",
+    "de": "Was möchten Sie erstellen?"
   },
   "SUGGESTIONS$FIX_README": {
     "en": "Fix up my README",
@@ -3754,7 +3794,8 @@
     "es": "Arreglar el README",
     "ar": "تحسين ملف README",
     "fr": "Améliorer le README",
-    "tr": "README'yi düzelt"
+    "tr": "README'yi düzelt",
+    "de": "README korrigieren"
   },
   "SUGGESTIONS$CLEAN_DEPENDENCIES": {
     "en": "Clean up my dependencies",
@@ -3768,6 +3809,7 @@
     "es": "Limpiar dependencias",
     "ar": "تنظيف التبعيات",
     "fr": "Nettoyer les dépendances",
-    "tr": "Bağımlılıkları temizle"
+    "tr": "Bağımlılıkları temizle",
+    "de": "Abhängigkeiten bereinigen"
   }
 }
