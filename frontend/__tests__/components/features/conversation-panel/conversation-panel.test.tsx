@@ -6,15 +6,22 @@ import {
   QueryClientConfig,
 } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
+import { createRoutesStub } from "react-router";
 import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
 
 describe("ConversationPanel", () => {
   const onCloseMock = vi.fn();
+  const RouterStub = createRoutesStub([
+    {
+      Component: () => <ConversationPanel onClose={onCloseMock} />,
+      path: "/",
+    },
+  ]);
 
   const renderConversationPanel = (config?: QueryClientConfig) =>
-    render(<ConversationPanel onClose={onCloseMock} />, {
+    render(<RouterStub />, {
       wrapper: ({ children }) => (
         <AuthProvider>
           <QueryClientProvider client={new QueryClient(config)}>

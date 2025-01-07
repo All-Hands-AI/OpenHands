@@ -17,8 +17,8 @@ describe("ConversationCard", () => {
     render(
       <ConversationCard
         onDelete={onDelete}
-        onClick={onClick}
         onChangeTitle={onChangeTitle}
+        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -37,8 +37,8 @@ describe("ConversationCard", () => {
     const { rerender } = render(
       <ConversationCard
         onDelete={onDelete}
-        onClick={onClick}
         onChangeTitle={onChangeTitle}
+        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -52,8 +52,8 @@ describe("ConversationCard", () => {
     rerender(
       <ConversationCard
         onDelete={onDelete}
-        onClick={onClick}
         onChangeTitle={onChangeTitle}
+        isActive
         title="Conversation 1"
         selectedRepository="org/selectedRepository"
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -63,32 +63,13 @@ describe("ConversationCard", () => {
     screen.getByTestId("conversation-card-selected-repository");
   });
 
-  it("should call onClick when the card is clicked", async () => {
-    const user = userEvent.setup();
-    render(
-      <ConversationCard
-        onDelete={onDelete}
-        onClick={onClick}
-        onChangeTitle={onChangeTitle}
-        title="Conversation 1"
-        selectedRepository={null}
-        lastUpdatedAt="2021-10-01T12:00:00Z"
-      />,
-    );
-
-    const card = screen.getByTestId("conversation-card");
-    await user.click(card);
-
-    expect(onClick).toHaveBeenCalled();
-  });
-
   it("should toggle a context menu when clicking the ellipsis button", async () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
         onDelete={onDelete}
-        onClick={onClick}
         onChangeTitle={onChangeTitle}
+        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -111,8 +92,8 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
@@ -135,8 +116,8 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository="org/selectedRepository"
@@ -144,7 +125,9 @@ describe("ConversationCard", () => {
       />,
     );
 
-    const selectedRepository = screen.getByTestId("conversation-card-selected-repository");
+    const selectedRepository = screen.getByTestId(
+      "conversation-card-selected-repository",
+    );
     await user.click(selectedRepository);
 
     expect(onClick).not.toHaveBeenCalled();
@@ -154,8 +137,8 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -177,8 +160,8 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
@@ -199,8 +182,8 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
@@ -218,8 +201,8 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
@@ -242,8 +225,8 @@ describe("ConversationCard", () => {
     it("should render the 'STOPPED' indicator by default", () => {
       render(
         <ConversationCard
-          onClick={onClick}
           onDelete={onDelete}
+          isActive
           onChangeTitle={onChangeTitle}
           title="Conversation 1"
           selectedRepository={null}
@@ -257,8 +240,8 @@ describe("ConversationCard", () => {
     it("should render the other indicators when provided", () => {
       render(
         <ConversationCard
-          onClick={onClick}
           onDelete={onDelete}
+          isActive
           onChangeTitle={onChangeTitle}
           title="Conversation 1"
           selectedRepository={null}
