@@ -95,7 +95,6 @@ pytest-forked = "*"
 pytest-xdist = "*"
 flake8 = "*"
 openai = "*"
-opencv-python = "*"
 pandas = "*"
 reportlab = "*"
 
@@ -108,7 +107,6 @@ jupyterlab = "*"
 notebook = "*"
 jupyter_kernel_gateway = "*"
 flake8 = "*"
-opencv-python = "*"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
