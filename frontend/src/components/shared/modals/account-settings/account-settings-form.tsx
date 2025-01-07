@@ -91,7 +91,7 @@ export function AccountSettingsForm({
             <>
               <CustomInput
                 name="ghToken"
-                label={t("GITHUB_TOKEN_LABEL")}
+                label={t("GITHUB_TOKEN_OPTIONAL")}
                 type="password"
                 defaultValue={gitHubToken ?? ""}
               />
