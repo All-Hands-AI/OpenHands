@@ -30,9 +30,7 @@ UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 class InitSessionRequest(BaseModel):
     github_token: str | None = None
-    latest_event_id: int = -1
     selected_repository: str | None = None
-    args: dict | None = None
 
 
 @app.post('/conversations')
@@ -54,7 +52,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         session_init_args = {**settings.__dict__, **session_init_args}
 
     github_token = getattr(request.state, 'github_token', '')
-    session_init_args['github_token'] = github_token
+    session_init_args['github_token'] = github_token or data.github_token or ''
     session_init_args['selected_repository'] = data.selected_repository
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
