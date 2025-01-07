@@ -3,7 +3,6 @@ import React from "react";
 
 interface ModalButtonProps {
   testId?: string;
-  "data-testid"?: string;
   variant?: "default" | "text-like";
   onClick?: () => void;
   text: string;
@@ -16,7 +15,6 @@ interface ModalButtonProps {
 
 export function ModalButton({
   testId,
-  "data-testid": dataTestId,
   variant = "default",
   onClick,
   text,
@@ -28,7 +26,7 @@ export function ModalButton({
 }: ModalButtonProps) {
   return (
     <button
-      data-testid={dataTestId || testId}
+      data-testid={testId}
       type={type === "submit" ? "submit" : "button"}
       disabled={disabled}
       onClick={onClick}
