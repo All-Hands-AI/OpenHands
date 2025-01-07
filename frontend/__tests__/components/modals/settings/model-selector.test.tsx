@@ -115,7 +115,10 @@ describe("ModelSelector", () => {
   it("should have a default value if passed", async () => {
     render(<ModelSelector models={models} currentModel="azure/ada" />);
 
-    expect(screen.getByLabelText("LLM Provider")).toHaveValue("Azure");
-    expect(screen.getByLabelText("LLM Model")).toHaveValue("ada");
+    const providerInput = screen.getByLabelText("LLM Provider");
+    const modelInput = screen.getByLabelText("LLM Model");
+
+    expect(providerInput).toHaveAttribute("value", "Azure");
+    expect(modelInput).toHaveAttribute("value", "ada");
   });
 });

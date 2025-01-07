@@ -2,6 +2,7 @@ import {
   Autocomplete,
   AutocompleteItem,
   AutocompleteSection,
+  Tooltip,
 } from "@nextui-org/react";
 import React from "react";
 import { mapProvider } from "#/utils/map-provider";
@@ -63,7 +64,7 @@ export function ModelSelector({
   return (
     <div data-testid="model-selector" className="flex flex-col gap-2">
       <div className="flex flex-row gap-3">
-        <fieldset className="flex flex-col gap-2">
+        <fieldset className="flex flex-col gap-2 w-1/2">
           <label htmlFor="agent" className="font-[500] text-[#A3A3A3] text-xs">
             LLM Provider
           </label>
@@ -113,7 +114,7 @@ export function ModelSelector({
           </Autocomplete>
         </fieldset>
 
-        <fieldset className="flex flex-col gap-2">
+        <fieldset className="flex flex-col gap-2 w-1/2">
           <label htmlFor="agent" className="font-[500] text-[#A3A3A3] text-xs">
             LLM Model
           </label>
@@ -142,7 +143,9 @@ export function ModelSelector({
                 .filter((model) => VERIFIED_MODELS.includes(model))
                 .map((model) => (
                   <AutocompleteItem key={model} value={model}>
-                    {model}
+                    <Tooltip content={model}>
+                      <span>{model}</span>
+                    </Tooltip>
                   </AutocompleteItem>
                 ))}
             </AutocompleteSection>
@@ -155,7 +158,9 @@ export function ModelSelector({
                     key={model}
                     value={model}
                   >
-                    {model}
+                    <Tooltip content={model}>
+                      <span>{model}</span>
+                    </Tooltip>
                   </AutocompleteItem>
                 ))}
             </AutocompleteSection>
