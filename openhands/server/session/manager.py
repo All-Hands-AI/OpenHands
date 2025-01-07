@@ -267,7 +267,7 @@ class SessionManager:
         """Get the running session ids. If a user is supplied, then the results are limited to session ids for that user. If a set of filter_to_sids is supplied, then results are limited to these ids of interest."""
         running_sids = self.get_running_agent_loops_locally(user_id, filter_to_sids)
         running_sids.union(
-            await self.get_running_agent_loops_in_cluster(user_id, filter_to_sids)
+            await self.get_running_agent_loops_remotely(user_id, filter_to_sids)
         )
         return running_sids
 
@@ -282,7 +282,7 @@ class SessionManager:
         sids = {sid for sid, _ in items}
         return sids
 
-    async def get_running_agent_loops_in_cluster(
+    async def get_running_agent_loops_remotely(
         self,
         user_id: int | None = None,
         filter_to_sids: set[str] | None = None,
@@ -383,7 +383,7 @@ class SessionManager:
             logger.info(f'found_local_agent_loop:{sid}')
             return session.agent_session.event_stream
 
-        if await self.get_running_agent_loops_in_cluster(filter_to_sids={sid}):
+        if await self.get_running_agent_loops_remotely(filter_to_sids={sid}):
             logger.info(f'found_remote_agent_loop:{sid}')
             return EventStream(sid, self.file_store)
 
@@ -407,7 +407,7 @@ class SessionManager:
             next_alive_check = last_alive_at + _CHECK_ALIVE_INTERVAL
             if (
                 next_alive_check > time.time()
-                or await self.get_running_agent_loops_in_cluster(filter_to_sids={sid})
+                or await self.get_running_agent_loops_remotely(filter_to_sids={sid})
             ):
                 # Send the event to the other pod
                 await redis_client.publish(

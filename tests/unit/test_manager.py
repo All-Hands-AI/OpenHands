@@ -44,7 +44,7 @@ async def test_session_not_running_in_cluster():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
-            result = await session_manager.get_running_agent_loops_in_cluster(
+            result = await session_manager.get_running_agent_loops_remotely(
                 filter_to_sids={'non-existant-session'}
             )
             assert result == set()
@@ -76,7 +76,7 @@ async def test_session_is_running_in_cluster():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
-            result = await session_manager.get_running_agent_loops_in_cluster(
+            result = await session_manager.get_running_agent_loops_remotely(
                 1, {'existing-session'}
             )
             assert result == {'existing-session'}
@@ -177,7 +177,7 @@ async def test_join_cluster_session():
             AsyncMock(),
         ),
         patch(
-            'openhands.server.session.manager.SessionManager.get_running_agent_loops_in_cluster',
+            'openhands.server.session.manager.SessionManager.get_running_agent_loops_remotely',
             get_running_agent_loops_mock,
         ),
     ):
@@ -244,7 +244,7 @@ async def test_add_to_cluster_event_stream():
             AsyncMock(),
         ),
         patch(
-            'openhands.server.session.manager.SessionManager.get_running_agent_loops_in_cluster',
+            'openhands.server.session.manager.SessionManager.get_running_agent_loops_remotely',
             get_running_agent_loops_mock,
         ),
     ):
