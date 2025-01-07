@@ -39,4 +39,4 @@ Frontend:
   - Set in `frontend/.env` or as environment variables
   - Available variables: VITE_BACKEND_HOST, VITE_USE_TLS, VITE_INSECURE_SKIP_VERIFY, VITE_FRONTEND_PORT
 - Internationalization:
-  - Generate i18n declaration file: `npm run make-i18n
+  - Generate i18n declaration file: `npm run make-i18n`
