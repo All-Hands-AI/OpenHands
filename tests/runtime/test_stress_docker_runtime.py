@@ -26,10 +26,7 @@ def test_stress_docker_runtime(temp_dir, runtime_cls, repeat=1):
     assert obs.exit_code == 0
 
     for _ in range(repeat):
-        # run stress-ng stress tests for 5 minutes
-        # FIXME: this would make Docker daemon die, even though running this
-        # command on its own in the same container is fine
-        # reduce to 1m
+        # run stress-ng stress tests for 1 minute
         action = CmdRunAction(command='stress-ng --all 1 -t 1m')
         action.timeout = 120
         logger.info(action, extra={'msg_type': 'ACTION'})
