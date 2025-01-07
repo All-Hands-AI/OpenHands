@@ -12,7 +12,7 @@ export function ModalBody({ testID, children, className }: ModalBodyProps) {
     <div
       data-testid={testID}
       className={cn(
-        "bg-root-primary flex flex-col gap-6 items-center w-11/12 max-w-md p-6 rounded-xl",
+        "bg-root-primary flex flex-col gap-6 items-center w-[384px] p-6 rounded-xl",
         className,
       )}
     >
