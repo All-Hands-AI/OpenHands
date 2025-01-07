@@ -314,7 +314,7 @@
         "tr": "Taray\u0131c\u0131",
         "ja": "\u30d6\u30e9\u30a6\u30b6"
     },
-    "OPEN_IN_VSCODE": {
+    "VSCODE$OPEN": {
         "en": "Open in VS Code",
         "ja": "VS Code\u3067\u958b\u304f",
         "zh-CN": "\u5728VS Code\u4e2d\u6253\u5f00",
@@ -404,7 +404,7 @@
         "tr": "OpenHands \u00e7al\u0131\u015fma alan\u0131 dizini",
         "ja": "OpenHands \u30ef\u30fc\u30af\u30b9\u30da\u30fc\u30b9\u30c7\u30a3\u30ec\u30af\u30c8\u30ea"
     },
-    "LLM_PROVIDER": {
+    "LLM$PROVIDER": {
         "en": "LLM Provider",
         "ja": "LLM\u30d7\u30ed\u30d0\u30a4\u30c0\u30fc",
         "zh-CN": "LLM\u63d0\u4f9b\u5546",
@@ -419,7 +419,7 @@
         "tr": "LLM Sa\u011flay\u0131c\u0131",
         "de": "LLM-Anbieter"
     },
-    "SELECT_PROVIDER_PLACEHOLDER": {
+    "LLM$SELECT_PROVIDER_PLACEHOLDER": {
         "en": "Select a provider",
         "ja": "\u30d7\u30ed\u30d0\u30a4\u30c0\u30fc\u3092\u9078\u629e",
         "zh-CN": "\u9009\u62e9\u63d0\u4f9b\u5546",
@@ -434,7 +434,7 @@
         "tr": "Bir sa\u011flay\u0131c\u0131 se\u00e7in",
         "de": "Anbieter ausw\u00e4hlen"
     },
-    "API_KEY": {
+    "API$KEY": {
         "en": "API Key",
         "ja": "API\u30ad\u30fc",
         "zh-CN": "API\u5bc6\u94a5",
@@ -449,7 +449,7 @@
         "tr": "API Anahtar\u0131",
         "de": "API-Schl\u00fcssel"
     },
-    "DONT_KNOW_API_KEY": {
+    "API$DONT_KNOW_KEY": {
         "en": "Don't know your API key?",
         "ja": "API\u30ad\u30fc\u304c\u308f\u304b\u308a\u307e\u305b\u3093\u304b\uff1f",
         "zh-CN": "\u4e0d\u77e5\u9053\u60a8\u7684API\u5bc6\u94a5\uff1f",
@@ -464,7 +464,7 @@
         "tr": "API anahtar\u0131n\u0131z\u0131 bilmiyor musunuz?",
         "de": "API-Schl\u00fcssel unbekannt?"
     },
-    "SAVE_BUTTON": {
+    "BUTTON$SAVE": {
         "en": "Save",
         "ja": "\u4fdd\u5b58",
         "zh-CN": "\u4fdd\u5b58",
@@ -479,7 +479,7 @@
         "tr": "Kaydet",
         "de": "Speichern"
     },
-    "CLOSE_BUTTON": {
+    "BUTTON$CLOSE": {
         "en": "Close",
         "ja": "\u9589\u3058\u308b",
         "zh-CN": "\u5173\u95ed",
@@ -494,7 +494,7 @@
         "tr": "Kapat",
         "de": "Schlie\u00dfen"
     },
-    "RESET_TO_DEFAULTS": {
+    "BUTTON$RESET_TO_DEFAULTS": {
         "en": "Reset to defaults",
         "ja": "\u30c7\u30d5\u30a9\u30eb\u30c8\u306b\u30ea\u30bb\u30c3\u30c8",
         "zh-CN": "\u91cd\u7f6e\u4e3a\u9ed8\u8ba4\u503c",
@@ -509,7 +509,7 @@
         "tr": "Varsay\u0131lanlara s\u0131f\u0131rla",
         "de": "Auf Standardwerte zur\u00fccksetzen"
     },
-    "CONFIRM_RESET_TITLE": {
+    "MODAL$CONFIRM_RESET_TITLE": {
         "en": "Are you sure?",
         "ja": "\u672c\u5f53\u306b\u3088\u308d\u3057\u3044\u3067\u3059\u304b\uff1f",
         "zh-CN": "\u786e\u5b9a\u5417\uff1f",
@@ -524,7 +524,7 @@
         "tr": "Emin misiniz?",
         "de": "Sind Sie sicher?"
     },
-    "CONFIRM_RESET_MESSAGE": {
+    "MODAL$CONFIRM_RESET_MESSAGE": {
         "en": "All information will be deleted",
         "ja": "\u3059\u3079\u3066\u306e\u60c5\u5831\u304c\u524a\u9664\u3055\u308c\u307e\u3059",
         "zh-CN": "\u786e\u5b9a\u8981\u91cd\u7f6e\u6240\u6709\u8bbe\u7f6e\u5417\uff1f",
@@ -539,7 +539,7 @@
         "tr": "T\u00fcm bilgiler silinecek",
         "de": "M\u00f6chten Sie alle Einstellungen zur\u00fccksetzen?"
     },
-    "END_SESSION_TITLE": {
+    "MODAL$END_SESSION_TITLE": {
         "en": "End Session",
         "ja": "\u30bb\u30c3\u30b7\u30e7\u30f3\u3092\u7d42\u4e86",
         "zh-CN": "\u7ed3\u675f\u4f1a\u8bdd",
@@ -554,7 +554,7 @@
         "tr": "Oturumu sonland\u0131r",
         "de": "Sitzung beenden"
     },
-    "END_SESSION_MESSAGE": {
+    "MODAL$END_SESSION_MESSAGE": {
         "en": "Changing workspace settings will end the current session",
         "ja": "\u30ef\u30fc\u30af\u30b9\u30da\u30fc\u30b9\u8a2d\u5b9a\u3092\u5909\u66f4\u3059\u308b\u3068\u3001\u73fe\u5728\u306e\u30bb\u30c3\u30b7\u30e7\u30f3\u304c\u7d42\u4e86\u3057\u307e\u3059",
         "zh-CN": "\u786e\u5b9a\u8981\u7ed3\u675f\u5f53\u524d\u4f1a\u8bdd\u5417\uff1f",
@@ -569,7 +569,7 @@
         "tr": "\u00c7al\u0131\u015fma alan\u0131 ayarlar\u0131n\u0131 de\u011fi\u015ftirmek mevcut oturumu sonland\u0131racak",
         "de": "M\u00f6chten Sie die aktuelle Sitzung beenden?"
     },
-    "END_SESSION_BUTTON": {
+    "BUTTON$END_SESSION": {
         "en": "End Session",
         "ja": "\u30bb\u30c3\u30b7\u30e7\u30f3\u3092\u7d42\u4e86",
         "zh-CN": "\u7ed3\u675f\u4f1a\u8bdd",
@@ -584,7 +584,7 @@
         "tr": "Oturumu sonland\u0131r",
         "de": "Sitzung beenden"
     },
-    "CANCEL_BUTTON": {
+    "BUTTON$CANCEL": {
         "en": "Cancel",
         "ja": "\u30ad\u30e3\u30f3\u30bb\u30eb",
         "zh-CN": "\u53d6\u6d88",
@@ -599,7 +599,7 @@
         "tr": "\u0130ptal",
         "de": "Abbrechen"
     },
-    "LANGUAGE_LABEL": {
+    "LANGUAGE$LABEL": {
         "en": "Language",
         "ja": "\u8a00\u8a9e",
         "zh-CN": "\u8bed\u8a00",
@@ -614,7 +614,7 @@
         "tr": "Dil",
         "de": "Sprache"
     },
-    "GITHUB_TOKEN_LABEL": {
+    "GITHUB$TOKEN_LABEL": {
         "en": "GitHub Token",
         "ja": "GitHub\u30c8\u30fc\u30af\u30f3",
         "zh-CN": "GitHub\u4ee4\u724c",
@@ -629,7 +629,7 @@
         "tr": "GitHub Jetonu",
         "de": "GitHub-Token"
     },
-    "GITHUB_TOKEN_OPTIONAL": {
+    "GITHUB$TOKEN_OPTIONAL": {
         "en": "GitHub Token (Optional)",
         "ja": "GitHub\u30c8\u30fc\u30af\u30f3\uff08\u4efb\u610f\uff09",
         "zh-CN": "\uff08\u53ef\u9009\uff09",
@@ -644,7 +644,7 @@
         "tr": "GitHub Jetonu (\u0130ste\u011fe ba\u011fl\u0131)",
         "de": "(Optional)"
     },
-    "GET_YOUR_TOKEN": {
+    "GITHUB$GET_TOKEN": {
         "en": "Get your token",
         "ja": "\u30c8\u30fc\u30af\u30f3\u3092\u53d6\u5f97",
         "zh-CN": "\u83b7\u53d6\u60a8\u7684\u4ee4\u724c",
@@ -659,7 +659,7 @@
         "tr": "Jetonunuzu al\u0131n",
         "de": "Token abrufen"
     },
-    "HERE": {
+    "COMMON$HERE": {
         "en": "here",
         "ja": "\u3053\u3061\u3089",
         "zh-CN": "\u8fd9\u91cc",
@@ -674,7 +674,7 @@
         "tr": "buradan",
         "de": "Hier"
     },
-    "ENABLE_ANALYTICS": {
+    "ANALYTICS$ENABLE": {
         "en": "Enable analytics",
         "ja": "\u30a2\u30ca\u30ea\u30c6\u30a3\u30af\u30b9\u3092\u6709\u52b9\u306b\u3059\u308b",
         "zh-CN": "\u542f\u7528\u5206\u6790",
@@ -689,7 +689,7 @@
         "tr": "Analiti\u011fi etkinle\u015ftir",
         "de": "Analyse aktivieren"
     },
-    "GITHUB_TOKEN_INVALID": {
+    "GITHUB$TOKEN_INVALID": {
         "en": "Invalid GitHub token",
         "ja": "GitHub\u30c8\u30fc\u30af\u30f3\u304c\u7121\u52b9\u3067\u3059",
         "zh-CN": "GitHub\u4ee4\u724c\u65e0\u6548",
@@ -704,7 +704,7 @@
         "tr": "Ge\u00e7ersiz GitHub jetonu",
         "de": "GitHub-Token ung\u00fcltig"
     },
-    "DISCONNECT_BUTTON": {
+    "BUTTON$DISCONNECT": {
         "en": "Disconnect",
         "ja": "\u5207\u65ad",
         "zh-CN": "\u65ad\u5f00\u8fde\u63a5",
@@ -719,7 +719,7 @@
         "tr": "Ba\u011flant\u0131y\u0131 kes",
         "de": "Verbindung trennen"
     },
-    "CONFIGURE_GITHUB_REPOS": {
+    "GITHUB$CONFIGURE_REPOS": {
         "en": "Configure Github Repositories",
         "ja": "GitHub\u30ea\u30dd\u30b8\u30c8\u30ea\u3092\u8a2d\u5b9a",
         "zh-CN": "\u914d\u7f6eGitHub\u4ed3\u5e93",
@@ -734,7 +734,7 @@
         "tr": "GitHub depolar\u0131n\u0131 yap\u0131land\u0131r",
         "de": "GitHub-Repositories konfigurieren"
     },
-    "CLICK_FOR_INSTRUCTIONS": {
+    "COMMON$CLICK_FOR_INSTRUCTIONS": {
         "en": "Click here for instructions",
         "ja": "\u624b\u9806\u306f\u3053\u3061\u3089\u3092\u30af\u30ea\u30c3\u30af",
         "zh-CN": "\u70b9\u51fb\u67e5\u770b\u8bf4\u660e",
@@ -749,7 +749,7 @@
         "tr": "Talimatlar i\u00e7in buraya t\u0131klay\u0131n",
         "de": "F\u00fcr Anweisungen klicken"
     },
-    "SELECT_MODEL_PLACEHOLDER": {
+    "LLM$SELECT_MODEL_PLACEHOLDER": {
         "en": "Select a model",
         "ja": "\u30e2\u30c7\u30eb\u3092\u9078\u629e",
         "zh-CN": "\u9009\u62e9\u6a21\u578b",
@@ -764,7 +764,7 @@
         "tr": "Bir model se\u00e7in",
         "de": "Modell ausw\u00e4hlen"
     },
-    "LLM_MODEL": {
+    "LLM$MODEL": {
         "en": "LLM Model",
         "ja": "LLM\u30e2\u30c7\u30eb",
         "zh-CN": "LLM\u6a21\u578b",

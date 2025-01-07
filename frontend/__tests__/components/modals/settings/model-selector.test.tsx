@@ -2,16 +2,17 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
+import { I18nKey } from "#/i18n/declaration";
 
 // Mock react-i18next
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string) => {
       const translations: { [key: string]: string } = {
-        LLM_PROVIDER: "LLM Provider",
-        LLM_MODEL: "LLM Model",
-        SELECT_PROVIDER_PLACEHOLDER: "Select a provider",
-        SELECT_MODEL_PLACEHOLDER: "Select a model",
+        LLM$PROVIDER: "LLM Provider",
+        LLM$MODEL: "LLM Model",
+        LLM$SELECT_PROVIDER_PLACEHOLDER: "Select a provider",
+        LLM$SELECT_MODEL_PLACEHOLDER: "Select a model",
       };
       return translations[key] || key;
     },
@@ -42,7 +43,7 @@ describe("ModelSelector", () => {
     const user = userEvent.setup();
     render(<ModelSelector models={models} />);
 
-    const selector = screen.getByLabelText("LLM Provider");
+    const selector = screen.getByLabelText(I18nKey.LLM$PROVIDER);
     expect(selector).toBeInTheDocument();
 
     await user.click(selector);
@@ -57,10 +58,10 @@ describe("ModelSelector", () => {
     const user = userEvent.setup();
     render(<ModelSelector models={models} />);
 
-    const modelSelector = screen.getByLabelText("LLM Model");
+    const modelSelector = screen.getByLabelText(I18nKey.LLM$MODEL);
     expect(modelSelector).toBeDisabled();
 
-    const providerSelector = screen.getByLabelText("LLM Provider");
+    const providerSelector = screen.getByLabelText(I18nKey.LLM$PROVIDER);
     await user.click(providerSelector);
 
     const vertexAI = screen.getByText("VertexAI");
@@ -73,13 +74,13 @@ describe("ModelSelector", () => {
     const user = userEvent.setup();
     render(<ModelSelector models={models} />);
 
-    const providerSelector = screen.getByLabelText("LLM Provider");
+    const providerSelector = screen.getByLabelText(I18nKey.LLM$PROVIDER);
     await user.click(providerSelector);
 
     const azureProvider = screen.getByText("Azure");
     await user.click(azureProvider);
 
-    const modelSelector = screen.getByLabelText("LLM Model");
+    const modelSelector = screen.getByLabelText(I18nKey.LLM$MODEL);
     await user.click(modelSelector);
 
     expect(screen.getByText("ada")).toBeInTheDocument();
@@ -103,8 +104,8 @@ describe("ModelSelector", () => {
     const user = userEvent.setup();
     render(<ModelSelector models={models} />);
 
-    const providerSelector = screen.getByLabelText("LLM Provider");
-    const modelSelector = screen.getByLabelText("LLM Model");
+    const providerSelector = screen.getByLabelText(I18nKey.LLM$PROVIDER);
+    const modelSelector = screen.getByLabelText(I18nKey.LLM$MODEL);
 
     await user.click(providerSelector);
     await user.click(screen.getByText("Azure"));
@@ -130,7 +131,7 @@ describe("ModelSelector", () => {
   it("should have a default value if passed", async () => {
     render(<ModelSelector models={models} currentModel="azure/ada" />);
 
-    expect(screen.getByLabelText("LLM Provider")).toHaveValue("Azure");
-    expect(screen.getByLabelText("LLM Model")).toHaveValue("ada");
+    expect(screen.getByLabelText(I18nKey.LLM$PROVIDER)).toHaveValue("Azure");
+    expect(screen.getByLabelText(I18nKey.LLM$MODEL)).toHaveValue("ada");
   });
 });

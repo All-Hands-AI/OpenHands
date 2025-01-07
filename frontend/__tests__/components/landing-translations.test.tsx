@@ -69,11 +69,11 @@ describe("Landing page translations", () => {
           <UserAvatar onClick={() => {}} />
           <div data-testid="main-content">
             <h1>{t("LANDING$TITLE")}</h1>
-            <button>{t("OPEN_IN_VSCODE")}</button>
-            <button>{t("INCREASE_TEST_COVERAGE")}</button>
-            <button>{t("AUTO_MERGE_PRS")}</button>
-            <button>{t("FIX_README")}</button>
-            <button>{t("CLEAN_DEPENDENCIES")}</button>
+            <button>{t(I18nKey.VSCODE$OPEN)}</button>
+            <button>{t(I18nKey.SUGGESTIONS$INCREASE_TEST_COVERAGE)}</button>
+            <button>{t(I18nKey.SUGGESTIONS$AUTO_MERGE_PRS)}</button>
+            <button>{t(I18nKey.SUGGESTIONS$FIX_README)}</button>
+            <button>{t(I18nKey.SUGGESTIONS$CLEAN_DEPENDENCIES)}</button>
           </div>
           <div data-testid="tabs">
             <span>{t("WORKSPACE$TERMINAL_TAB_LABEL")}</span>

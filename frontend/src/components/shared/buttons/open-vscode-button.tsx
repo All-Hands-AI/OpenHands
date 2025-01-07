@@ -13,7 +13,7 @@ export function OpenVSCodeButton({
   onClick,
 }: OpenVSCodeButtonProps) {
   const { t } = useTranslation();
-  const buttonText = t(I18nKey.OPEN_IN_VSCODE);
+  const buttonText = t(I18nKey.VSCODE$OPEN);
 
   return (
     <button

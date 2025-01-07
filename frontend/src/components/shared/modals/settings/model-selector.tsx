@@ -69,7 +69,7 @@ export function ModelSelector({
       <div className="flex flex-row gap-3">
         <fieldset className="flex flex-col gap-2">
           <label htmlFor="agent" className="font-[500] text-[#A3A3A3] text-xs">
-            {t(I18nKey.LLM_PROVIDER)}
+            {t(I18nKey.LLM$PROVIDER)}
           </label>
           <Autocomplete
             data-testid="llm-provider"
@@ -77,8 +77,8 @@ export function ModelSelector({
             isVirtualized={false}
             name="llm-provider"
             isDisabled={isDisabled}
-            aria-label={t(I18nKey.LLM_PROVIDER)}
-            placeholder={t(I18nKey.SELECT_PROVIDER_PLACEHOLDER)}
+            aria-label={t(I18nKey.LLM$PROVIDER)}
+            placeholder={t(I18nKey.LLM$SELECT_PROVIDER_PLACEHOLDER)}
             isClearable={false}
             onSelectionChange={(e) => {
               if (e?.toString()) handleChangeProvider(e.toString());
@@ -119,15 +119,15 @@ export function ModelSelector({
 
         <fieldset className="flex flex-col gap-2">
           <label htmlFor="agent" className="font-[500] text-[#A3A3A3] text-xs">
-            {t(I18nKey.LLM_MODEL)}
+            {t(I18nKey.LLM$MODEL)}
           </label>
           <Autocomplete
             data-testid="llm-model"
             isRequired
             isVirtualized={false}
             name="llm-model"
-            aria-label={t(I18nKey.LLM_MODEL)}
-            placeholder={t(I18nKey.SELECT_MODEL_PLACEHOLDER)}
+            aria-label={t(I18nKey.LLM$MODEL)}
+            placeholder={t(I18nKey.LLM$SELECT_MODEL_PLACEHOLDER)}
             isClearable={false}
             onSelectionChange={(e) => {
               if (e?.toString()) handleChangeModel(e.toString());

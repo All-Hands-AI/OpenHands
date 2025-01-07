@@ -206,18 +206,18 @@ export function SettingsForm({
             <ModalButton
               disabled={disabled}
               type="submit"
-              text={t(I18nKey.SAVE_BUTTON)}
+              text={t(I18nKey.BUTTON$SAVE)}
               className="bg-[#4465DB] w-full"
             />
             <ModalButton
-              text={t(I18nKey.CLOSE_BUTTON)}
+              text={t(I18nKey.BUTTON$CLOSE)}
               className="bg-[#737373] w-full"
               onClick={onClose}
             />
           </div>
           <ModalButton
             disabled={disabled}
-            text={t(I18nKey.RESET_TO_DEFAULTS)}
+            text={t(I18nKey.BUTTON$RESET_TO_DEFAULTS)}
             variant="text-like"
             className="text-danger self-start"
             onClick={() => {
@@ -231,15 +231,15 @@ export function SettingsForm({
         <ModalBackdrop>
           <DangerModal
             testId="reset-defaults-modal"
-            title={t(I18nKey.CONFIRM_RESET_TITLE)}
-            description={t(I18nKey.CONFIRM_RESET_MESSAGE)}
+            title={t(I18nKey.MODAL$CONFIRM_RESET_TITLE)}
+            description={t(I18nKey.MODAL$CONFIRM_RESET_MESSAGE)}
             buttons={{
               danger: {
-                text: t(I18nKey.RESET_TO_DEFAULTS),
+                text: t(I18nKey.BUTTON$RESET_TO_DEFAULTS),
                 onClick: handleConfirmResetSettings,
               },
               cancel: {
-                text: t(I18nKey.CANCEL_BUTTON),
+                text: t(I18nKey.BUTTON$CANCEL),
                 onClick: () => setConfirmResetDefaultsModalOpen(false),
               },
             }}
@@ -249,15 +249,15 @@ export function SettingsForm({
       {confirmEndSessionModalOpen && (
         <ModalBackdrop>
           <DangerModal
-            title={t(I18nKey.END_SESSION_TITLE)}
-            description={t(I18nKey.END_SESSION_MESSAGE)}
+            title={t(I18nKey.MODAL$END_SESSION_TITLE)}
+            description={t(I18nKey.MODAL$END_SESSION_MESSAGE)}
             buttons={{
               danger: {
-                text: t(I18nKey.END_SESSION_BUTTON),
+                text: t(I18nKey.BUTTON$END_SESSION),
                 onClick: handleConfirmEndSession,
               },
               cancel: {
-                text: t(I18nKey.CANCEL_BUTTON),
+                text: t(I18nKey.BUTTON$CANCEL),
                 onClick: () => setConfirmEndSessionModalOpen(false),
               },
             }}
