@@ -65,10 +65,15 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         conversation_id = uuid.uuid4().hex
     logger.info(f'New conversation ID: {conversation_id}')
 
+    conversation_title = (
+        data.selected_repository or f'Conversation {conversation_id[:5]}'
+    )
+
     logger.info(f'Saving metadata for conversation {conversation_id}')
     await conversation_store.save_metadata(
         ConversationMetadata(
             conversation_id=conversation_id,
+            title=conversation_title,
             github_user_id=user_id,
             selected_repository=data.selected_repository,
         )
@@ -103,6 +108,7 @@ async def search_conversations(
     conversation_ids = set(
         conversation.conversation_id
         for conversation in conversation_metadata_result_set.results
+        if hasattr(conversation, 'created_at')
     )
     running_conversations = await session_manager.get_running_agent_loops(
         get_user_id(request), set(conversation_ids)

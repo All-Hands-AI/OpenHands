@@ -1,4 +1,4 @@
-import CogTooth from "#/assets/cog-tooth";
+import { FaCog } from "react-icons/fa";
 import { TooltipButton } from "./tooltip-button";
 
 interface SettingsButtonProps {
@@ -13,7 +13,7 @@ export function SettingsButton({ onClick }: SettingsButtonProps) {
       ariaLabel="Settings"
       onClick={onClick}
     >
-      <CogTooth />
+      <FaCog size={24} />
     </TooltipButton>
   );
 }
