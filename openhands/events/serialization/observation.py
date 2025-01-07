@@ -1,6 +1,9 @@
 import copy
 
-from openhands.events.observation.agent import AgentStateChangedObservation
+from openhands.events.observation.agent import (
+    AgentCondensationObservation,
+    AgentStateChangedObservation,
+)
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
     CmdOutputMetadata,
@@ -32,6 +35,7 @@ observations = (
     ErrorObservation,
     AgentStateChangedObservation,
     UserRejectObservation,
+    AgentCondensationObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {
