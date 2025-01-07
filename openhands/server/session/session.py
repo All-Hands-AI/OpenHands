@@ -24,6 +24,7 @@ from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
+from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 ROOM_KEY = 'room:{sid}'
 
@@ -63,6 +64,14 @@ class Session:
         self.user_id = user_id
 
     def close(self):
+        if self.sio:
+            call_async_from_sync(
+                self.sio.emit,
+                GENERAL_TIMEOUT,
+                'oh_event',
+                event_to_dict(AgentStateChangedObservation('', AgentState.STOPPED)),
+                to=ROOM_KEY.format(sid=self.sid),
+            )
         self.is_alive = False
         self.agent_session.close()
 

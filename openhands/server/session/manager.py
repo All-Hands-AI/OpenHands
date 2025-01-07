@@ -23,7 +23,7 @@ _CHECK_ALIVE_INTERVAL = 15
 
 _CLEANUP_INTERVAL = 15
 _CLEANUP_EXCEPTION_WAIT_TIME = 15
-MAX_RUNNING_CONVERSATIONS = 3
+MAX_RUNNING_CONVERSATIONS = 1
 
 
 class ConversationDoesNotExistError(Exception):
@@ -125,7 +125,7 @@ class SessionManager:
                     json.dumps(
                         {
                             'request_id': request_id,
-                            'sids': sids,
+                            'sids': list(sids),
                             'message_type': 'running_sids_response',
                         }
                     ),
@@ -356,7 +356,7 @@ class SessionManager:
             logger.info(f'start_agent_loop:{sid}')
 
             running_sids = await self.get_running_agent_loops(user_id)
-            if len(running_sids) > MAX_RUNNING_CONVERSATIONS:
+            if len(running_sids) >= MAX_RUNNING_CONVERSATIONS:
                 logger.info('too_many_sessions_for:{user_id}')
                 await self.close_session(next(iter(running_sids)))
 
