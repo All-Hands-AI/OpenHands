@@ -15,7 +15,6 @@ take precedence.
    - [API Keys](#api-keys)
    - [Workspace](#workspace)
    - [Debugging and Logging](#debugging-and-logging)
-   - [Session Management](#session-management)
    - [Trajectories](#trajectories)
    - [File Store](#file-store)
    - [Task Management](#task-management)
@@ -33,7 +32,7 @@ take precedence.
 - [Agent Configuration](#agent-configuration)
    - [Microagent Configuration](#microagent-configuration)
    - [Memory Configuration](#memory-configuration)
-   - [LLM Configuration](#llm-configuration-2)
+   - [LLM Configuration](#llm-configuration)
    - [ActionSpace Configuration](#actionspace-configuration)
    - [Microagent Usage](#microagent-usage)
 - [Sandbox Configuration](#sandbox-configuration)
@@ -53,7 +52,7 @@ take precedence.
 
 The core configuration options are defined in the `[core]` section of the `config.toml` file.
 
-**API Keys**
+### API Keys {#api-keys}
 - `e2b_api_key`
   - Type: `str`
   - Default: `""`
@@ -69,7 +68,7 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Default: `""`
   - Description: API token secret for Modal
 
-**Workspace**
+### Workspace {#workspace}
 - `workspace_base`
   - Type: `str`
   - Default: `"./workspace"`
@@ -80,7 +79,7 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Default: `"/tmp/cache"`
   - Description: Cache directory path
 
-**Debugging and Logging**
+### Debugging and Logging {#debugging-and-logging}
 - `debug`
   - Type: `bool`
   - Default: `false`
@@ -91,13 +90,13 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Default: `false`
   - Description: Disable color in terminal output
 
-**Trajectories**
+### Trajectories {#trajectories}
 - `trajectories_path`
   - Type: `str`
   - Default: `"./trajectories"`
   - Description: Path to store trajectories (can be a folder or a file). If it's a folder, the trajectories will be saved in a file named with the session id name and .json extension, in that folder.
 
-**File Store**
+### File Store {#file-store}
 - `file_store_path`
   - Type: `str`
   - Default: `"/tmp/file_store"`
@@ -128,7 +127,7 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Default: `[".*"]`
   - Description: List of allowed file extensions for uploads
 
-**Task Management**
+### Task Management {#task-management}
 - `max_budget_per_task`
   - Type: `float`
   - Default: `0.0`
@@ -139,7 +138,7 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Default: `100`
   - Description: Maximum number of iterations
 
-**Sandbox Configuration**
+### Sandbox Configuration {#sandbox-configuration}
 - `workspace_mount_path_in_sandbox`
   - Type: `str`
   - Default: `"/workspace"`
@@ -155,7 +154,7 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Default: `""`
   - Description: Path to rewrite the workspace mount path to. You can usually ignore this, it refers to special cases of running inside another container.
 
-**Miscellaneous**
+### Miscellaneous {#miscellaneous}
 - `run_as_openhands`
   - Type: `bool`
   - Default: `true`
@@ -182,7 +181,7 @@ The LLM (Large Language Model) configuration options are defined in the `[llm]` 
 
 To use these with the docker command, pass in `-e LLM_<option>`. Example: `-e LLM_NUM_RETRIES`.
 
-**AWS Credentials**
+### AWS Credentials {#aws-credentials}
 - `aws_access_key_id`
   - Type: `str`
   - Default: `""`
@@ -198,7 +197,7 @@ To use these with the docker command, pass in `-e LLM_<option>`. Example: `-e LL
   - Default: `""`
   - Description: AWS secret access key
 
-**API Configuration**
+### API Configuration {#api-configuration}
 - `api_key`
   - Type: `str`
   - Default: `None`
@@ -224,13 +223,13 @@ To use these with the docker command, pass in `-e LLM_<option>`. Example: `-e LL
   - Default: `0.0`
   - Description: Cost per output token
 
-**Custom LLM Provider**
+### Custom LLM Provider {#custom-llm-provider}
 - `custom_llm_provider`
   - Type: `str`
   - Default: `""`
   - Description: Custom LLM provider
 
-**Embeddings**
+### Embeddings {#embeddings}
 - `embedding_base_url`
   - Type: `str`
   - Default: `""`
@@ -246,7 +245,7 @@ To use these with the docker command, pass in `-e LLM_<option>`. Example: `-e LL
   - Default: `"local"`
   - Description: Embedding model to use
 
-**Message Handling**
+### Message Handling {#message-handling}
 - `max_message_chars`
   - Type: `int`
   - Default: `30000`
@@ -262,13 +261,13 @@ To use these with the docker command, pass in `-e LLM_<option>`. Example: `-e LL
   - Default: `0`
   - Description: Maximum number of output tokens
 
-**Model Selection**
+### Model Selection {#model-selection}
 - `model`
   - Type: `str`
   - Default: `"claude-3-5-sonnet-20241022"`
   - Description: Model to use
 
-**Retrying**
+### Retrying {#retrying}
 - `num_retries`
   - Type: `int`
   - Default: `8`
@@ -289,7 +288,7 @@ To use these with the docker command, pass in `-e LLM_<option>`. Example: `-e LL
   - Default: `2.0`
   - Description: Multiplier for exponential backoff calculation
 
-**Advanced Options**
+### Advanced Options {#advanced-options}
 - `drop_params`
   - Type: `bool`
   - Default: `false`
@@ -329,13 +328,13 @@ To use these with the docker command, pass in `-e LLM_<option>`. Example: `-e LL
 
 The agent configuration options are defined in the `[agent]` and `[agent.<agent_name>]` sections of the `config.toml` file.
 
-**Microagent Configuration**
+### Microagent Configuration {#microagent-configuration}
 - `micro_agent_name`
   - Type: `str`
   - Default: `""`
   - Description: Name of the micro agent to use for this agent
 
-**Memory Configuration**
+### Memory Configuration {#memory-configuration}
 - `memory_enabled`
   - Type: `bool`
   - Default: `false`
@@ -346,13 +345,13 @@ The agent configuration options are defined in the `[agent]` and `[agent.<agent_
   - Default: `3`
   - Description: The maximum number of threads indexing at the same time for embeddings
 
-**LLM Configuration**
+### LLM Configuration {#llm-configuration}
 - `llm_config`
   - Type: `str`
   - Default: `'your-llm-config-group'`
   - Description: The name of the LLM config to use
 
-**ActionSpace Configuration**
+### ActionSpace Configuration {#actionspace-configuration}
 - `function_calling`
   - Type: `bool`
   - Default: `true`
@@ -373,7 +372,7 @@ The agent configuration options are defined in the `[agent]` and `[agent.<agent_
   - Default: `false`
   - Description: Whether Jupyter is enabled in the action space
 
-**Microagent Usage**
+### Microagent Usage {#microagent-usage}
 - `use_microagents`
   - Type: `bool`
   - Default: `true`
@@ -390,7 +389,7 @@ The sandbox configuration options are defined in the `[sandbox]` section of the 
 
 To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-e SANDBOX_TIMEOUT`.
 
-**Execution**
+### Execution {#execution}
 - `timeout`
   - Type: `int`
   - Default: `120`
@@ -401,19 +400,19 @@ To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-
   - Default: `1000`
   - Description: Sandbox user ID
 
-**Container Image**
+### Container Image {#container-image}
 - `base_container_image`
   - Type: `str`
   - Default: `"nikolaik/python-nodejs:python3.12-nodejs22"`
   - Description: Container image to use for the sandbox
 
-**Networking**
+### Networking {#networking}
 - `use_host_network`
   - Type: `bool`
   - Default: `false`
   - Description: Use host network
 
-**Linting and Plugins**
+### Linting and Plugins {#linting-and-plugins}
 - `enable_auto_lint`
   - Type: `bool`
   - Default: `false`
@@ -424,7 +423,7 @@ To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-
   - Default: `true`
   - Description: Whether to initialize plugins
 
-**Dependencies and Environment**
+### Dependencies and Environment {#dependencies-and-environment}
 - `runtime_extra_deps`
   - Type: `str`
   - Default: `""`
@@ -435,7 +434,7 @@ To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-
   - Default: `{}`
   - Description: Environment variables to set at the launch of the runtime
 
-**Evaluation**
+### Evaluation {#evaluation}
 - `browsergym_eval_env`
   - Type: `str`
   - Default: `""`
@@ -447,13 +446,13 @@ The security configuration options are defined in the `[security]` section of th
 
 To use these with the docker command, pass in `-e SECURITY_<option>`. Example: `-e SECURITY_CONFIRMATION_MODE`.
 
-**Confirmation Mode**
+### Confirmation Mode {#confirmation-mode}
 - `confirmation_mode`
   - Type: `bool`
   - Default: `false`
   - Description: Enable confirmation mode
 
-**Security Analyzer**
+### Security Analyzer {#security-analyzer}
 - `security_analyzer`
   - Type: `str`
   - Default: `""`
