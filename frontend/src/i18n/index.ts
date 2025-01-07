@@ -4,6 +4,22 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 import translations from "./translation.json";
 
+type TranslationValue = {
+  en: string;
+  ja?: string;
+  "zh-CN"?: string;
+  "zh-TW"?: string;
+  "ko-KR"?: string;
+  no?: string;
+  ar?: string;
+  de?: string;
+  fr?: string;
+  it?: string;
+  pt?: string;
+  es?: string;
+  tr?: string;
+};
+
 export const AvailableLanguages = [
   { label: "English", value: "en" },
   { label: "简体中文", value: "zh-CN" },
@@ -32,19 +48,71 @@ i18n
         ? localStorage.getItem("LANGUAGE") || "en"
         : "en",
     resources: {
-      en: { translation: translations },
-      ja: { translation: translations },
-      "zh-CN": { translation: translations },
-      "zh-TW": { translation: translations },
-      "ko-KR": { translation: translations },
-      no: { translation: translations },
-      ar: { translation: translations },
-      de: { translation: translations },
-      fr: { translation: translations },
-      it: { translation: translations },
-      pt: { translation: translations },
-      es: { translation: translations },
-      tr: { translation: translations },
+      en: {
+        translation: Object.fromEntries(
+          Object.entries(translations).map(([key, value]) => [key, (value as TranslationValue).en])
+        ),
+      },
+      ja: {
+        translation: Object.fromEntries(
+          Object.entries(translations).map(([key, value]) => [key, (value as TranslationValue).ja || (value as TranslationValue).en])
+        ),
+      },
+      "zh-CN": {
+        translation: Object.fromEntries(
+          Object.entries(translations).map(([key, value]) => [key, (value as TranslationValue)["zh-CN"] || (value as TranslationValue).en])
+        ),
+      },
+      "zh-TW": {
+        translation: Object.fromEntries(
+          Object.entries(translations).map(([key, value]) => [key, (value as TranslationValue)["zh-TW"] || (value as TranslationValue).en])
+        ),
+      },
+      "ko-KR": {
+        translation: Object.fromEntries(
+          Object.entries(translations).map(([key, value]) => [key, (value as TranslationValue)["ko-KR"] || (value as TranslationValue).en])
+        ),
+      },
+      no: {
+        translation: Object.fromEntries(
+          Object.entries(translations).map(([key, value]) => [key, (value as TranslationValue).no || (value as TranslationValue).en])
+        ),
+      },
+      ar: {
+        translation: Object.fromEntries(
+          Object.entries(translations).map(([key, value]) => [key, (value as TranslationValue).ar || (value as TranslationValue).en])
+        ),
+      },
+      de: {
+        translation: Object.fromEntries(
+          Object.entries(translations).map(([key, value]) => [key, (value as TranslationValue).de || (value as TranslationValue).en])
+        ),
+      },
+      fr: {
+        translation: Object.fromEntries(
+          Object.entries(translations).map(([key, value]) => [key, (value as TranslationValue).fr || (value as TranslationValue).en])
+        ),
+      },
+      it: {
+        translation: Object.fromEntries(
+          Object.entries(translations).map(([key, value]) => [key, (value as TranslationValue).it || (value as TranslationValue).en])
+        ),
+      },
+      pt: {
+        translation: Object.fromEntries(
+          Object.entries(translations).map(([key, value]) => [key, (value as TranslationValue).pt || (value as TranslationValue).en])
+        ),
+      },
+      es: {
+        translation: Object.fromEntries(
+          Object.entries(translations).map(([key, value]) => [key, (value as TranslationValue).es || (value as TranslationValue).en])
+        ),
+      },
+      tr: {
+        translation: Object.fromEntries(
+          Object.entries(translations).map(([key, value]) => [key, (value as TranslationValue).tr || (value as TranslationValue).en])
+        ),
+      },
     },
   });
 
