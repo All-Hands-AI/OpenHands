@@ -212,21 +212,7 @@ class SessionManager:
         self.local_connection_id_to_session_id[connection_id] = sid
         event_stream = await self._get_event_stream(sid)
         if not event_stream:
-            """
-            conversation_store = ConversationStoreImpl.get_instance(self.config, user_id)
-            conversation_result_set = await conversation_store.search(limit=100)
-            conversation_ids = {
-                conversation.conversation_id for conversation in conversation_result_set.results
-            }
-            running_conversations = await self.get_agent_loop_running(
-                set(conversation_ids)
-            )
-            if len(running_conversations) >= MAX_RUNNING_CONVERSATIONS:
-                return JSONResponse(
-                    {'status': 'error', 'message': 'Too many running conversations'}, 400
-                )
-            """
-            return await self.maybe_start_agent_loop(sid, settings)
+            return await self.maybe_start_agent_loop(sid, settings, user_id)
         return event_stream
 
     async def detach_from_conversation(self, conversation: Conversation):
@@ -370,6 +356,12 @@ class SessionManager:
         session: Session | None = None
         if not await self.is_agent_loop_running(sid):
             logger.info(f'start_agent_loop:{sid}')
+
+            running_sids = await self.get_running_agent_loops(user_id)
+            if len(running_sids) > MAX_RUNNING_CONVERSATIONS:
+                logger.info('too_many_sessions_for:{user_id}')
+                await self.close_session(next(iter(running_sids)))
+
             session = Session(
                 sid=sid,
                 file_store=self.file_store,
