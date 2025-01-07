@@ -48,8 +48,15 @@ def apply_patch(repo_dir: str, patch: str) -> None:
         if diff.header.new_path == '/dev/null':
             assert old_path is not None
             if os.path.exists(old_path):
-                os.remove(old_path)
-                print(f'Deleted file: {old_path}')
+                if os.path.islink(old_path):
+                    os.unlink(old_path)
+                    print(f'Deleted symlink: {old_path}')
+                elif os.path.isdir(old_path):
+                    shutil.rmtree(old_path)
+                    print(f'Deleted directory: {old_path}')
+                else:
+                    os.remove(old_path)
+                    print(f'Deleted file: {old_path}')
             continue
 
         # Handle file rename
