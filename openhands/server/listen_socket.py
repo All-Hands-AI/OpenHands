@@ -61,7 +61,7 @@ async def connect(connection_id: str, environ, auth):
 
     try:
         event_stream = await session_manager.join_conversation(
-            conversation_id, connection_id, settings
+            conversation_id, connection_id, settings, user_id
         )
     except ConversationDoesNotExistError:
         logger.error(f'Conversation {conversation_id} does not exist')
