@@ -43,7 +43,7 @@ describe("ModelSelector", () => {
     const user = userEvent.setup();
     render(<ModelSelector models={models} />);
 
-    const selector = screen.getByLabelText(I18nKey.LLM$PROVIDER);
+    const selector = screen.getByLabelText("LLM Provider");
     expect(selector).toBeInTheDocument();
 
     await user.click(selector);
@@ -58,10 +58,10 @@ describe("ModelSelector", () => {
     const user = userEvent.setup();
     render(<ModelSelector models={models} />);
 
-    const modelSelector = screen.getByLabelText(I18nKey.LLM$MODEL);
+    const modelSelector = screen.getByLabelText("LLM Model");
     expect(modelSelector).toBeDisabled();
 
-    const providerSelector = screen.getByLabelText(I18nKey.LLM$PROVIDER);
+    const providerSelector = screen.getByLabelText("LLM Provider");
     await user.click(providerSelector);
 
     const vertexAI = screen.getByText("VertexAI");
@@ -74,13 +74,13 @@ describe("ModelSelector", () => {
     const user = userEvent.setup();
     render(<ModelSelector models={models} />);
 
-    const providerSelector = screen.getByLabelText(I18nKey.LLM$PROVIDER);
+    const providerSelector = screen.getByLabelText("LLM Provider");
     await user.click(providerSelector);
 
     const azureProvider = screen.getByText("Azure");
     await user.click(azureProvider);
 
-    const modelSelector = screen.getByLabelText(I18nKey.LLM$MODEL);
+    const modelSelector = screen.getByLabelText("LLM Model");
     await user.click(modelSelector);
 
     expect(screen.getByText("ada")).toBeInTheDocument();
@@ -104,8 +104,8 @@ describe("ModelSelector", () => {
     const user = userEvent.setup();
     render(<ModelSelector models={models} />);
 
-    const providerSelector = screen.getByLabelText(I18nKey.LLM$PROVIDER);
-    const modelSelector = screen.getByLabelText(I18nKey.LLM$MODEL);
+    const providerSelector = screen.getByLabelText("LLM Provider");
+    const modelSelector = screen.getByLabelText("LLM Model");
 
     await user.click(providerSelector);
     await user.click(screen.getByText("Azure"));
@@ -131,7 +131,7 @@ describe("ModelSelector", () => {
   it("should have a default value if passed", async () => {
     render(<ModelSelector models={models} currentModel="azure/ada" />);
 
-    expect(screen.getByLabelText(I18nKey.LLM$PROVIDER)).toHaveValue("Azure");
-    expect(screen.getByLabelText(I18nKey.LLM$MODEL)).toHaveValue("ada");
+    expect(screen.getByLabelText("LLM Provider")).toHaveValue("Azure");
+    expect(screen.getByLabelText("LLM Model")).toHaveValue("ada");
   });
 });

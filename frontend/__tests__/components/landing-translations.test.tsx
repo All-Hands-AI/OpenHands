@@ -69,11 +69,11 @@ describe("Landing page translations", () => {
           <UserAvatar onClick={() => {}} />
           <div data-testid="main-content">
             <h1>{t("LANDING$TITLE")}</h1>
-            <button>{t(I18nKey.VSCODE$OPEN)}</button>
-            <button>{t(I18nKey.SUGGESTIONS$INCREASE_TEST_COVERAGE)}</button>
-            <button>{t(I18nKey.SUGGESTIONS$AUTO_MERGE_PRS)}</button>
-            <button>{t(I18nKey.SUGGESTIONS$FIX_README)}</button>
-            <button>{t(I18nKey.SUGGESTIONS$CLEAN_DEPENDENCIES)}</button>
+            <button>{t("VSCODE$OPEN")}</button>
+            <button>{t("SUGGESTIONS$INCREASE_TEST_COVERAGE")}</button>
+            <button>{t("SUGGESTIONS$AUTO_MERGE_PRS")}</button>
+            <button>{t("SUGGESTIONS$FIX_README")}</button>
+            <button>{t("SUGGESTIONS$CLEAN_DEPENDENCIES")}</button>
           </div>
           <div data-testid="tabs">
             <span>{t("WORKSPACE$TERMINAL_TAB_LABEL")}</span>
@@ -102,9 +102,9 @@ describe("Landing page translations", () => {
     // Check main content translations
     expect(screen.getByText("開発を始めましょう！")).toBeInTheDocument();
     expect(screen.getByText("VS Codeで開く")).toBeInTheDocument();
-    expect(screen.getByText("テストカバレッジを向上")).toBeInTheDocument();
-    expect(screen.getByText("PRを自動マージ")).toBeInTheDocument();
-    expect(screen.getByText("READMEを修正")).toBeInTheDocument();
+    expect(screen.getByText("テストカバレッジを向上させる")).toBeInTheDocument();
+    expect(screen.getByText("Dependabot PRを自動マージ")).toBeInTheDocument();
+    expect(screen.getByText("READMEを改善")).toBeInTheDocument();
     expect(screen.getByText("依存関係を整理")).toBeInTheDocument();
 
     // Check user avatar tooltip
@@ -143,11 +143,11 @@ describe("Landing page translations", () => {
     // Test all translation keys used in the component
     const translationKeys = [
       "LANDING$TITLE",
-      "OPEN_IN_VSCODE",
-      "INCREASE_TEST_COVERAGE",
-      "AUTO_MERGE_PRS",
-      "FIX_README",
-      "CLEAN_DEPENDENCIES",
+      "VSCODE$OPEN",
+      "SUGGESTIONS$INCREASE_TEST_COVERAGE",
+      "SUGGESTIONS$AUTO_MERGE_PRS",
+      "SUGGESTIONS$FIX_README",
+      "SUGGESTIONS$CLEAN_DEPENDENCIES",
       "WORKSPACE$TERMINAL_TAB_LABEL",
       "WORKSPACE$BROWSER_TAB_LABEL",
       "WORKSPACE$JUPYTER_TAB_LABEL",
