@@ -79,7 +79,7 @@
     "@playwright/test": "^1.49.1",
     "@react-router/dev": "^7.1.1",
     "@tailwindcss/typography": "^0.5.15",
-    "@tanstack/eslint-plugin-query": "^5.62.9",
+    "@tanstack/eslint-plugin-query": "^5.62.16",
     "@testing-library/jest-dom": "^6.6.1",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
