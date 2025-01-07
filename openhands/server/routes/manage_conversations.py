@@ -68,10 +68,15 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         conversation_id = uuid.uuid4().hex
     logger.info(f'New conversation ID: {conversation_id}')
 
+    conversation_title = (
+        data.selected_repository or f'Conversation {conversation_id[:5]}'
+    )
+
     logger.info(f'Saving metadata for conversation {conversation_id}')
     await conversation_store.save_metadata(
         ConversationMetadata(
             conversation_id=conversation_id,
+            title=conversation_title,
             github_user_id=get_user_id(request),
             selected_repository=data.selected_repository,
         )
