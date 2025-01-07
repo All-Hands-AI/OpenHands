@@ -166,7 +166,7 @@
     "zh-CN": "未选择文件",
     "zh-TW": "未選擇檔案",
     "de": "Keine Datei ausgewählt.",
-    "ko-KR": "선택된 파일이 없습니다.",
+    "ko-KR": "선택된 파일이 없습니다",
     "no": "Ingen fil valgt.",
     "it": "Nessun file selezionato.",
     "pt": "Nenhum arquivo selecionado.",
@@ -389,7 +389,7 @@
     "en": "OpenHands Workspace directory",
     "zh-CN": "OpenHands工作区目录",
     "de": "OpenHands Arbeitsverzeichnis",
-    "ko-KR": "OpenHands 워크스페이스 폴더",
+    "ko-KR": "OpenHands 워크스페이스 디렉토리",
     "no": "OpenHands arbeidsmappe",
     "zh-TW": "OpenHands工作區目錄",
     "it": "Directory dell'area di lavoro OpenHands",
@@ -517,7 +517,7 @@
     "ja": "すべての情報が削除されます",
     "zh-CN": "确定要重置所有设置吗？",
     "zh-TW": "確定要重置所有設定嗎？",
-    "ko-KR": "모든 정보가 삭제됩니다",
+    "ko-KR": "모든 설정을 재설정하시겠습니까?",
     "no": "All informasjon vil bli slettet",
     "it": "Tutte le informazioni verranno eliminate",
     "pt": "Todas as informações serão excluídas",
@@ -545,7 +545,7 @@
     "ja": "ワークスペース設定を変更すると、現在のセッションが終了します",
     "zh-CN": "确定要结束当前会话吗？",
     "zh-TW": "確定要結束目前工作階段嗎？",
-    "ko-KR": "작업 공간 설정을 변경하면 현재 세션이 종료됩니다",
+    "ko-KR": "현재 세션을 종료하시겠습니까?",
     "no": "Endring av arbeidsområdeinnstillinger vil avslutte gjeldende økt",
     "it": "La modifica delle impostazioni dell'area di lavoro terminerà la sessione corrente",
     "pt": "Alterar as configurações do espaço de trabalho encerrará a sessão atual",
@@ -615,7 +615,7 @@
     "ja": "GitHubトークン（任意）",
     "zh-CN": "（可选）",
     "zh-TW": "（選填）",
-    "ko-KR": "GitHub 토큰 (선택사항)",
+    "ko-KR": "(선택사항)",
     "no": "GitHub-token (valgfritt)",
     "it": "Token GitHub (opzionale)",
     "pt": "Token do GitHub (opcional)",
@@ -699,7 +699,7 @@
     "ja": "GitHubリポジトリを設定",
     "zh-CN": "配置GitHub仓库",
     "zh-TW": "設定GitHub儲存庫",
-    "ko-KR": "GitHub 저장소 구성",
+    "ko-KR": "GitHub 저장소 설정",
     "no": "Konfigurer GitHub-repositorier",
     "it": "Configura repository GitHub",
     "pt": "Configurar repositórios do GitHub",
@@ -713,7 +713,7 @@
     "ja": "手順はこちらをクリック",
     "zh-CN": "点击查看说明",
     "zh-TW": "點擊查看說明",
-    "ko-KR": "안내를 보려면 여기를 클릭하세요",
+    "ko-KR": "설명을 보려면 클릭하세요",
     "no": "Klikk her for instruksjoner",
     "it": "Clicca qui per le istruzioni",
     "pt": "Clique aqui para instruções",
@@ -754,7 +754,7 @@
     "en": "Default: ./workspace",
     "zh-CN": "输入工作区目录路径",
     "de": "Standard: ./workspace",
-    "ko-KR": "기본: ./workspace",
+    "ko-KR": "워크스페이스 디렉토리 경로 입력",
     "no": "Standard: ./workspace",
     "zh-TW": "輸入工作區目錄路徑",
     "ar": "الافتراضي: ./workspace",
@@ -872,7 +872,7 @@
     "en": "Security analyzer",
     "de": "Sicherheitsanalysator",
     "zh-CN": "安全性",
-    "ko-KR": "보안 분석기",
+    "ko-KR": "보안",
     "no": "Sikkerhetsanalysator",
     "zh-TW": "安全性",
     "it": "Analizzatore di sicurezza",
@@ -887,7 +887,7 @@
     "en": "Select a security analyzer (optional)",
     "de": "Wählen Sie einen Sicherheitsanalysator (optional)",
     "zh-CN": "选择安全级别",
-    "ko-KR": "보안 분석기 선택 (선택사항)",
+    "ko-KR": "보안 수준 선택",
     "no": "Velg en sikkerhetsanalysator (valgfritt)",
     "zh-TW": "選擇安全等級",
     "it": "Seleziona un analizzatore di sicurezza (opzionale)",
@@ -931,7 +931,7 @@
     "en": "Reset to defaults",
     "zh-CN": "重置",
     "de": "Auf Standardwerte zurücksetzen",
-    "ko-KR": "기본값으로 재설정",
+    "ko-KR": "재설정",
     "no": "Tilbakestill til standardverdier",
     "zh-TW": "重置",
     "it": "Reimposta ai valori predefiniti",
@@ -976,14 +976,15 @@
     "en": "Browser Screenshot",
     "ja": "ブラウザのスクリーンショット",
     "zh-CN": "截图",
-    "zh-TW": "截圖"
+    "zh-TW": "截圖",
+    "ko-KR": "스크린샷"
   },
   "TIME$MINUTES_AGO": {
     "en": "minutes ago",
     "ja": "分前",
     "zh-CN": "{minutes}分钟前",
     "zh-TW": "{minutes}分鐘前",
-    "ko-KR": "분 전",
+    "ko-KR": "{minutes}분 전",
     "de": "Minuten her",
     "no": "minutter siden",
     "it": "minuti fa",
@@ -998,7 +999,7 @@
     "ja": "時間前",
     "zh-CN": "{hours}小时前",
     "zh-TW": "{hours}小時前",
-    "ko-KR": "시간 전",
+    "ko-KR": "{hours}시간 전",
     "de": "Stunden her",
     "no": "timer siden",
     "it": "ore fa",
@@ -1013,7 +1014,7 @@
     "ja": "日前",
     "zh-CN": "{days}天前",
     "zh-TW": "{days}天前",
-    "ko-KR": "일 전",
+    "ko-KR": "{days}일 전",
     "de": "Tage her",
     "no": "dager siden",
     "it": "giorni fa",
@@ -1027,7 +1028,7 @@
     "en": "Runtime Settings",
     "zh-CN": "运行时大小",
     "de": "Laufzeiteinstellungen",
-    "ko-KR": "런타임 설정",
+    "ko-KR": "런타임 크기",
     "no": "Kjøretidsinnstillinger",
     "zh-TW": "執行環境大小",
     "it": "Impostazioni Runtime",
@@ -1042,7 +1043,7 @@
     "en": "We've changed some settings in the latest update. Take a minute to review.",
     "de": "Mit dem letzten Update haben wir ein paar Einstellungen geändert. Bitte kontrollieren Ihre Einstellungen.",
     "zh-CN": "设置需要更新",
-    "ko-KR": "최신 업데이트에서 일부 설정을 변경했습니다. 잠시 시간을 내어 검토해 주세요.",
+    "ko-KR": "설정 업데이트 필요",
     "no": "Vi har endret noen innstillinger i den siste oppdateringen. Ta deg tid til å se gjennom dem.",
     "zh-TW": "設定需要更新",
     "it": "Abbiamo modificato alcune impostazioni nell'ultimo aggiornamento. Prenditi un momento per rivederle.",
@@ -1057,7 +1058,7 @@
     "en": "Please wait while the agent loads. This may take a few minutes...",
     "de": "Bitte warten Sie, während der Agent lädt. Das kann ein paar Minuten dauern...",
     "zh-CN": "代理加载中",
-    "ko-KR": "에이전트가 로드되는 동안 기다려 주세요. 몇 분 정도 걸릴 수 있습니다...",
+    "ko-KR": "에이전트 로딩 중",
     "no": "Vennligst vent mens agenten laster. Dette kan ta noen minutter...",
     "zh-TW": "代理載入中",
     "it": "Attendere mentre l'agente si carica. Potrebbe richiedere alcuni minuti...",
@@ -1072,7 +1073,7 @@
     "en": "Please stop the agent before editing these settings.",
     "de": "Bitte beenden Sie den Agenten vor der Bearbeitung der Einstellungen.",
     "zh-CN": "代理运行中",
-    "ko-KR": "이 설정을 편집하기 전에 에이전트를 중지해 주세요.",
+    "ko-KR": "에이전트 실행 중",
     "no": "Vennligst stopp agenten før du redigerer disse innstillingene.",
     "zh-TW": "代理執行中",
     "it": "Si prega di fermare l'agente prima di modificare queste impostazioni.",
@@ -1092,7 +1093,7 @@
     "fr": "Échec de la récupération des modèles et des agents",
     "it": "Impossibile recuperare modelli e agenti",
     "pt": "Falha ao buscar modelos e agentes",
-    "ko-KR": "모델 및 에이전트 가져오기 실패",
+    "ko-KR": "모델 가져오기 오류",
     "ar": "فشل في جلب النماذج والوكلاء",
     "tr": "Modeller ve ajanlar getirilemedi",
     "no": "Kunne ikke hente modeller og agenter",
@@ -1107,7 +1108,7 @@
     "fr": "Erreur lors du traitement du message",
     "it": "Errore durante l'elaborazione del messaggio",
     "pt": "Erro ao processar a mensagem",
-    "ko-KR": "메시지 처리 중 오류 발생",
+    "ko-KR": "세션 처리 중 오류 발생",
     "ar": "خطأ في معالجة الرسالة",
     "tr": "Mesaj işlenirken hata oluştu",
     "no": "Feil ved behandling av melding",
@@ -1122,7 +1123,7 @@
     "fr": "Erreur de connexion à la session",
     "it": "Errore durante la connessione alla sessione",
     "pt": "Erro ao conectar à sessão",
-    "ko-KR": "세션 연결 오류",
+    "ko-KR": "세션 연결 중 오류 발생",
     "ar": "خطأ في الاتصال بالجلسة",
     "tr": "Oturuma bağlanırken hata oluştu",
     "no": "Feil ved tilkobling til økt",
@@ -1152,7 +1153,7 @@
     "fr": "Erreur lors du téléchargement du fichier",
     "it": "Errore durante il caricamento del file",
     "pt": "Erro ao fazer upload do arquivo",
-    "ko-KR": "파일 업로드 중 오류 발생",
+    "ko-KR": "업로드 중 오류 발생",
     "ar": "خطأ في تحميل الملف",
     "tr": "Dosya yüklenirken hata oluştu",
     "no": "Feil ved opplasting av fil",
@@ -1168,7 +1169,7 @@
     "no": "Slipp filer her",
     "it": "Trascina i file qui",
     "pt": "Solte os arquivos aqui",
-    "ko-KR": "파일을 여기에 놓으세요",
+    "ko-KR": "여기에 파일을 드롭하세요",
     "ar": "أسقط الملفات هنا",
     "tr": "Dosyaları buraya bırakın",
     "ja": "ここにファイルをドロップ"
@@ -1182,7 +1183,7 @@
     "fr": "Espace de travail",
     "it": "Area di lavoro",
     "pt": "Espaço de trabalho",
-    "ko-KR": "작업 공간",
+    "ko-KR": "워크스페이스",
     "ar": "مساحة العمل",
     "tr": "Çalışma alanı",
     "no": "Arbeidsområde",
@@ -1197,7 +1198,7 @@
     "fr": "Aucun fichier dans l'espace de travail",
     "it": "Nessun file nell'area di lavoro",
     "pt": "Nenhum arquivo no espaço de trabalho",
-    "ko-KR": "작업 공간에 파일이 없습니다",
+    "ko-KR": "워크스페이스가 비어 있습니다",
     "ar": "لا توجد ملفات في مساحة العمل",
     "tr": "Çalışma alanında dosya yok",
     "no": "Ingen filer i arbeidsområdet",
@@ -1212,7 +1213,7 @@
     "fr": "Chargement de l'espace de travail...",
     "it": "Caricamento dell'area di lavoro...",
     "pt": "Carregando espaço de trabalho...",
-    "ko-KR": "작업 공간 로딩 중...",
+    "ko-KR": "워크스페이스 로딩 중...",
     "ar": "جارٍ تحميل مساحة العمل...",
     "tr": "Çalışma alanı yükleniyor...",
     "no": "Laster arbeidsområde...",
@@ -1227,7 +1228,7 @@
     "fr": "Erreur lors de l'actualisation de l'espace de travail",
     "it": "Errore durante l'aggiornamento dell'area di lavoro",
     "pt": "Erro ao atualizar o espaço de trabalho",
-    "ko-KR": "작업 공간 새로 고침 오류",
+    "ko-KR": "새로고침 중 오류 발생",
     "ar": "خطأ في تحديث مساحة العمل",
     "tr": "Çalışma alanı yenilenirken hata oluştu",
     "no": "Feil ved oppdatering av arbeidsområde",
@@ -1242,7 +1243,7 @@
     "fr": "{{count}} fichier(s) téléchargé(s) avec succès",
     "it": "Caricato con successo {{count}} file",
     "pt": "{{count}} arquivo(s) carregado(s) com sucesso",
-    "ko-KR": "{{count}}개의 파일을 성공적으로 업로드했습니다",
+    "ko-KR": "업로드 성공",
     "ar": "تم تحميل {{count}} ملف (ملفات) بنجاح",
     "tr": "{{count}} dosya başarıyla yüklendi",
     "no": "Lastet opp {{count}} fil(er) vellykket",
@@ -1272,7 +1273,7 @@
     "fr": "{{count}} fichier(s) ont été ignorés pendant le téléchargement",
     "it": "{{count}} file sono stati saltati durante il caricamento",
     "pt": "{{count}} arquivo(s) foram ignorados durante o upload",
-    "ko-KR": "업로드 중 {{count}}개의 파일이 건너뛰어졌습니다",
+    "ko-KR": "일부 파일 업로드 성공",
     "ar": "تم تخطي {{count}} ملف (ملفات) أثناء التحميل",
     "tr": "Yükleme sırasında {{count}} dosya atlandı",
     "no": "{{count}} fil(er) ble hoppet over under opplasting",
@@ -1287,7 +1288,7 @@
     "fr": "Structure de réponse inattendue du serveur",
     "it": "Struttura di risposta inaspettata dal server",
     "pt": "Estrutura de resposta inesperada do servidor",
-    "ko-KR": "서버로부터 예상치 못한 응답 구조",
+    "ko-KR": "업로드 중 예상치 못한 응답",
     "ar": "بنية استجابة غير متوقعة من الخادم",
     "tr": "Sunucudan beklenmeyen yanıt yapısı",
     "no": "Uventet responsstruktur fra serveren",
@@ -1297,13 +1298,15 @@
     "en": "Switching to VS Code in 3 seconds...\nImportant: Please inform the agent of any changes you make in VS Code. To avoid conflicts, wait for the assistant to complete its work before making your own changes.",
     "zh-CN": "切换到VS Code中...",
     "zh-TW": "切換到VS Code中...",
-    "ja": "3秒後にVS Codeに切り替わります...\n重要：VS Codeで行った変更はエージェントに通知してください。競合を避けるため、アシスタントの作業が完了するまで自身の変更を待ってください。"
+    "ja": "3秒後にVS Codeに切り替わります...\n重要：VS Codeで行った変更はエージェントに通知してください。競合を避けるため、アシスタントの作業が完了するまで自身の変更を待ってください。",
+    "ko-KR": "VS Code로 전환 중..."
   },
   "EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE": {
     "en": "Error switching to VS Code: {{error}}",
     "zh-CN": "切换到VS Code时出错",
     "zh-TW": "切換到VS Code時出錯",
-    "ja": "VS Codeへの切り替え中にエラーが発生しました: {{error}}"
+    "ja": "VS Codeへの切り替え中にエラーが発生しました: {{error}}",
+    "ko-KR": "VS Code로 전환 중 오류 발생"
   },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Return to existing session?",
@@ -3060,345 +3063,407 @@
     "en": "Disconnect",
     "es": "Desconectar",
     "zh-CN": "断开连接",
-    "zh-TW": "中斷連線"
+    "zh-TW": "中斷連線",
+    "ko-KR": "연결 해제"
   },
   "ACCOUNT_SETTINGS_MODAL$SAVE": {
     "en": "Save",
     "es": "Guardar",
     "zh-CN": "保存",
-    "zh-TW": "儲存"
+    "zh-TW": "儲存",
+    "ko-KR": "저장"
   },
   "ACCOUNT_SETTINGS_MODAL$CLOSE": {
     "en": "Close",
     "es": "Cerrar",
     "zh-CN": "关闭",
-    "zh-TW": "關閉"
+    "zh-TW": "關閉",
+    "ko-KR": "닫기"
   },
   "ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID": {
     "en": "GitHub token is invalid. Please try again.",
     "es": "",
     "zh-CN": "GitHub令牌无效",
-    "zh-TW": "GitHub權杖無效"
+    "zh-TW": "GitHub權杖無效",
+    "ko-KR": "GitHub 토큰이 유효하지 않습니다"
   },
   "CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN": {
     "en": "Get your token",
     "es": "Obten tu token",
     "zh-CN": "获取您的令牌",
-    "zh-TW": "取得您的權杖"
+    "zh-TW": "取得您的權杖",
+    "ko-KR": "토큰 받기"
   },
   "CONNECT_TO_GITHUB_MODAL$HERE": {
     "en": "here",
     "es": "aquí",
     "zh-CN": "这里",
-    "zh-TW": "這裡"
+    "zh-TW": "這裡",
+    "ko-KR": "여기"
   },
   "CONNECT_TO_GITHUB_MODAL$CONNECT": {
     "en": "Connect",
     "es": "Conectar",
     "zh-CN": "连接",
-    "zh-TW": "連線"
+    "zh-TW": "連線",
+    "ko-KR": "연결"
   },
   "CONNECT_TO_GITHUB_MODAL$CLOSE": {
     "en": "Close",
     "es": "Cerrar",
     "zh-CN": "关闭",
-    "zh-TW": "關閉"
+    "zh-TW": "關閉",
+    "ko-KR": "닫기"
   },
   "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$BY_CONNECTING_YOU_AGREE": {
     "en": "By connecting you agree to our",
     "es": "Al conectarte tu aceptas nuestros",
     "zh-CN": "连接即表示您同意",
-    "zh-TW": "連線即表示您同意"
+    "zh-TW": "連線即表示您同意",
+    "ko-KR": "연결함으로써 동의합니다"
   },
   "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$CONTINUE": {
     "en": "Continue",
     "es": "Continuar",
     "zh-CN": "继续",
-    "zh-TW": "繼續"
+    "zh-TW": "繼續",
+    "ko-KR": "계속"
   },
   "LOADING_PROJECT$LOADING": {
     "en": "Loading...",
     "es": "Cargando...",
     "zh-CN": "加载中...",
-    "zh-TW": "載入中..."
+    "zh-TW": "載入中...",
+    "ko-KR": "로딩 중..."
   },
   "CUSTOM_INPUT$OPTIONAL_LABEL": {
     "en": "(Optional)",
     "es": "(Opcional)",
     "zh-CN": "可选",
-    "zh-TW": "選填"
+    "zh-TW": "選填",
+    "ko-KR": "선택사항"
   },
   "SETTINGS_FORM$CUSTOM_MODEL_LABEL": {
     "en": "Custom Model",
     "es": "Modelo personalizado",
     "zh-CN": "自定义模型",
-    "zh-TW": "自訂模型"
+    "zh-TW": "自訂模型",
+    "ko-KR": "사용자 정의 모델"
   },
   "SETTINGS_FORM$BASE_URL_LABEL": {
     "en": "Base URL",
     "es": "URL base",
     "zh-CN": "基础URL",
-    "zh-TW": "基礎URL"
+    "zh-TW": "基礎URL",
+    "ko-KR": "기본 URL"
   },
   "SETTINGS_FORM$API_KEY_LABEL": {
     "en": "API Key",
     "es": "API Key",
     "zh-CN": "API密钥",
-    "zh-TW": "API金鑰"
+    "zh-TW": "API金鑰",
+    "ko-KR": "API 키"
   },
   "SETTINGS_FORM$DONT_KNOW_API_KEY_LABEL": {
     "en": "Don't know your API key?",
     "es": "¿No sabes tu API key?",
     "zh-CN": "不知道您的API密钥？",
-    "zh-TW": "不知道您的API金鑰？"
+    "zh-TW": "不知道您的API金鑰？",
+    "ko-KR": "API 키를 모르시나요?"
   },
   "SETTINGS_FORM$CLICK_HERE_FOR_INSTRUCTIONS_LABEL": {
     "en": "Click here for instructions",
     "es": "Clic aquí para instrucciones",
     "zh-CN": "点击这里查看说明",
-    "zh-TW": "點擊這裡查看說明"
+    "zh-TW": "點擊這裡查看說明",
+    "ko-KR": "설명을 보려면 여기를 클릭하세요"
   },
   "SETTINGS_FORM$AGENT_LABEL": {
     "en": "Agent",
     "es": "Agente",
     "zh-CN": "代理",
-    "zh-TW": "代理"
+    "zh-TW": "代理",
+    "ko-KR": "에이전트"
   },
   "SETTINGS_FORM$SECURITY_ANALYZER_LABEL": {
     "en": "Security Analyzer (Optional)",
     "es": "Analizador de seguridad (opcional)",
     "zh-CN": "安全分析器",
-    "zh-TW": "安全分析器"
+    "zh-TW": "安全分析器",
+    "ko-KR": "보안 분석기"
   },
   "SETTINGS_FORM$ENABLE_CONFIRMATION_MODE_LABEL": {
     "en": "Enable Confirmation Mode",
     "es": "Habilitar modo de confirmación",
     "zh-CN": "启用确认模式",
-    "zh-TW": "啟用確認模式"
+    "zh-TW": "啟用確認模式",
+    "ko-KR": "확인 모드 활성화"
   },
   "SETTINGS_FORM$SAVE_LABEL": {
     "en": "Save",
     "es": "Guardar",
     "zh-CN": "保存",
-    "zh-TW": "儲存"
+    "zh-TW": "儲存",
+    "ko-KR": "저장"
   },
   "SETTINGS_FORM$CLOSE_LABEL": {
     "en": "Close",
     "es": "Cerrar",
     "zh-CN": "关闭",
-    "zh-TW": "關閉"
+    "zh-TW": "關閉",
+    "ko-KR": "닫기"
   },
   "SETTINGS_FORM$RESET_TO_DEFAULTS_LABEL": {
     "en": "Reset to defaults",
     "es": "Reiniciar valores por defect",
     "zh-CN": "重置为默认值",
-    "zh-TW": "重置為預設值"
+    "zh-TW": "重置為預設值",
+    "ko-KR": "기본값으로 재설정"
   },
   "SETTINGS_FORM$CANCEL_LABEL": {
     "en": "Cancel",
     "es": "Cancelar",
     "zh-CN": "取消",
-    "zh-TW": "取消"
+    "zh-TW": "取消",
+    "ko-KR": "취소"
   },
   "SETTINGS_FORM$END_SESSION_LABEL": {
     "en": "End Session",
     "es": "Terminar sesión",
     "zh-CN": "结束会话",
-    "zh-TW": "結束工作階段"
+    "zh-TW": "結束工作階段",
+    "ko-KR": "세션 종료"
   },
   "SETTINGS_FORM$CHANGING_WORKSPACE_WARNING_MESSAGE": {
     "en": "Changing your settings will clear your workspace and start a new session. Are you sure you want to continue?",
     "es": "Cambiar tu configuración limpiará tu espacio de trabajo e iniciará una nueva sesión. ¿Estás seguro de continuar?",
     "zh-CN": "更改工作区将删除所有信息",
-    "zh-TW": "更改工作區將刪除所有資訊"
+    "zh-TW": "更改工作區將刪除所有資訊",
+    "ko-KR": "워크스페이스 변경 시 모든 정보가 삭제됩니다"
   },
   "SETTINGS_FORM$ARE_YOU_SURE_LABEL": {
     "en": "Are you sure?",
     "es": "¿Estás seguro?",
     "zh-CN": "确定吗？",
-    "zh-TW": "確定嗎？"
+    "zh-TW": "確定嗎？",
+    "ko-KR": "확실합니까?"
   },
   "SETTINGS_FORM$ALL_INFORMATION_WILL_BE_DELETED_MESSAGE": {
     "en": "All saved information in your AI settings will be deleted, including any API keys.",
     "es": "Toda la información guardada en tu configuración de IA será eliminada, incluyendo tus API Keys",
     "zh-CN": "所有信息将被删除",
-    "zh-TW": "所有資訊將被刪除"
+    "zh-TW": "所有資訊將被刪除",
+    "ko-KR": "모든 정보가 삭제됩니다"
   },
   "PROJECT_MENU_DETAILS_PLACEHOLDER$NEW_PROJECT_LABEL": {
     "en": "New Project",
     "es": "Nuevo proyecto",
     "zh-CN": "新项目",
-    "zh-TW": "新專案"
+    "zh-TW": "新專案",
+    "ko-KR": "새 프로젝트"
   },
   "PROJECT_MENU_DETAILS_PLACEHOLDER$CONNECT_TO_GITHUB": {
     "en": "Connect to GitHub",
     "zh-CN": "连接到GitHub",
-    "zh-TW": "連線到GitHub"
+    "zh-TW": "連線到GitHub",
+    "ko-KR": "GitHub에 연결"
   },
   "PROJECT_MENU_DETAILS_PLACEHOLDER$CONNECTED": {
     "en": "Connected",
     "zh-CN": "已连接",
-    "zh-TW": "已連線"
+    "zh-TW": "已連線",
+    "ko-KR": "연결됨"
   },
   "PROJECT_MENU_DETAILS$AGO_LABEL": {
     "en": "ago",
     "es": "atrás",
     "zh-CN": "前",
-    "zh-TW": "前"
+    "zh-TW": "前",
+    "ko-KR": "전"
   },
   "STATUS$ERROR_LLM_AUTHENTICATION": {
     "en": "Error authenticating with the LLM provider. Please check your API key",
     "es": "Error autenticando con el proveedor de LLM. Por favor revisa tu API key",
     "zh-CN": "LLM认证错误",
-    "zh-TW": "LLM認證錯誤"
+    "zh-TW": "LLM認證錯誤",
+    "ko-KR": "LLM 인증 오류"
   },
   "STATUS$ERROR_RUNTIME_DISCONNECTED": {
     "en": "There was an error while connecting to the runtime. Please refresh the page.",
     "zh-CN": "运行时已断开连接",
-    "zh-TW": "執行環境已中斷連線"
+    "zh-TW": "執行環境已中斷連線",
+    "ko-KR": "런타임 연결 해제됨"
   },
   "AGENT_ERROR$BAD_ACTION": {
     "en": "Agent tried to execute a malformed action.",
     "zh-CN": "错误的操作",
-    "zh-TW": "錯誤的操作"
+    "zh-TW": "錯誤的操作",
+    "ko-KR": "잘못된 작업"
   },
   "AGENT_ERROR$ACTION_TIMEOUT": {
     "en": "Action timed out.",
     "zh-CN": "操作超时",
-    "zh-TW": "操作逾時"
+    "zh-TW": "操作逾時",
+    "ko-KR": "작업 시간 초과"
   },
   "PROJECT_MENU_CARD_CONTEXT_MENU$CONNECT_TO_GITHUB_LABEL": {
     "en": "Connect to GitHub",
     "es": "Conectar a GitHub",
     "zh-CN": "连接到GitHub",
-    "zh-TW": "連線到GitHub"
+    "zh-TW": "連線到GitHub",
+    "ko-KR": "GitHub에 연결"
   },
   "PROJECT_MENU_CARD_CONTEXT_MENU$PUSH_TO_GITHUB_LABEL": {
     "en": "Push to GitHub",
     "es": "Subir a GitHub",
     "zh-CN": "推送到GitHub",
-    "zh-TW": "推送到GitHub"
+    "zh-TW": "推送到GitHub",
+    "ko-KR": "GitHub에 푸시"
   },
   "PROJECT_MENU_CARD_CONTEXT_MENU$DOWNLOAD_FILES_LABEL": {
     "en": "Download files",
     "es": "Descargar archivos",
     "zh-CN": "下载文件",
-    "zh-TW": "下載檔案"
+    "zh-TW": "下載檔案",
+    "ko-KR": "파일 다운로드"
   },
   "PROJECT_MENU_CARD$OPEN": {
     "en": "Open project menu",
     "zh-CN": "打开",
-    "zh-TW": "開啟"
+    "zh-TW": "開啟",
+    "ko-KR": "열기"
   },
   "ACTION_BUTTON$RESUME": {
     "en": "Resume the agent task",
     "zh-CN": "继续",
-    "zh-TW": "繼續"
+    "zh-TW": "繼續",
+    "ko-KR": "재개"
   },
   "ACTION_BUTTON$PAUSE": {
     "en": "Pause the current task",
     "zh-CN": "暂停",
-    "zh-TW": "暫停"
+    "zh-TW": "暫停",
+    "ko-KR": "일시정지"
   },
   "BROWSER$SCREENSHOT_ALT": {
     "en": "Browser Screenshot",
     "zh-CN": "截图",
-    "zh-TW": "截圖"
+    "zh-TW": "截圖",
+    "ko-KR": "스크린샷"
   },
   "ERROR_TOAST$CLOSE_BUTTON_LABEL": {
     "en": "Close",
     "zh-CN": "关闭",
-    "zh-TW": "關閉"
+    "zh-TW": "關閉",
+    "ko-KR": "닫기"
   },
   "FILE_EXPLORER$UPLOAD": {
     "en": "Upload File",
     "zh-CN": "上传",
-    "zh-TW": "上傳"
+    "zh-TW": "上傳",
+    "ko-KR": "업로드"
   },
   "FILE_EXPLORER$REFRESH_WORKSPACE": {
     "en": "Refresh workspace",
     "zh-CN": "刷新工作区",
-    "zh-TW": "重新整理工作區"
+    "zh-TW": "重新整理工作區",
+    "ko-KR": "워크스페이스 새로고침"
   },
   "FILE_EXPLORER$OPEN_WORKSPACE": {
     "en": "Open workspace",
     "zh-CN": "打开工作区",
-    "zh-TW": "開啟工作區"
+    "zh-TW": "開啟工作區",
+    "ko-KR": "워크스페이스 열기"
   },
   "FILE_EXPLORER$CLOSE_WORKSPACE": {
     "en": "Close workspace",
     "zh-CN": "关闭工作区",
-    "zh-TW": "關閉工作區"
+    "zh-TW": "關閉工作區",
+    "ko-KR": "워크스페이스 닫기"
   },
   "ACTION_MESSAGE$RUN": {
     "en": "Running a bash command",
     "zh-CN": "运行",
-    "zh-TW": "執行"
+    "zh-TW": "執行",
+    "ko-KR": "실행"
   },
   "ACTION_MESSAGE$RUN_IPYTHON": {
     "en": "Running a Python command",
     "zh-CN": "运行IPython",
-    "zh-TW": "執行IPython"
+    "zh-TW": "執行IPython",
+    "ko-KR": "IPython 실행"
   },
   "ACTION_MESSAGE$READ": {
     "en": "Reading the contents of a file",
     "zh-CN": "读取",
-    "zh-TW": "讀取"
+    "zh-TW": "讀取",
+    "ko-KR": "읽기"
   },
   "ACTION_MESSAGE$EDIT": {
     "en": "Editing the contents of a file",
     "zh-CN": "编辑",
-    "zh-TW": "編輯"
+    "zh-TW": "編輯",
+    "ko-KR": "편집"
   },
   "ACTION_MESSAGE$WRITE": {
     "en": "Writing to a file",
     "zh-CN": "写入",
-    "zh-TW": "寫入"
+    "zh-TW": "寫入",
+    "ko-KR": "쓰기"
   },
   "ACTION_MESSAGE$BROWSE": {
     "en": "Browsing the web",
     "zh-CN": "浏览",
-    "zh-TW": "瀏覽"
+    "zh-TW": "瀏覽",
+    "ko-KR": "탐색"
   },
   "OBSERVATION_MESSAGE$RUN": {
     "en": "Ran a bash command",
     "zh-CN": "运行",
-    "zh-TW": "執行"
+    "zh-TW": "執行",
+    "ko-KR": "실행"
   },
   "OBSERVATION_MESSAGE$RUN_IPYTHON": {
     "en": "Ran a Python command",
     "zh-CN": "运行IPython",
-    "zh-TW": "執行IPython"
+    "zh-TW": "執行IPython",
+    "ko-KR": "IPython 실행"
   },
   "OBSERVATION_MESSAGE$READ": {
     "en": "Read the contents of a file",
     "zh-CN": "读取",
-    "zh-TW": "讀取"
+    "zh-TW": "讀取",
+    "ko-KR": "읽기"
   },
   "OBSERVATION_MESSAGE$EDIT": {
     "en": "Edited the contents of a file",
     "zh-CN": "编辑",
-    "zh-TW": "編輯"
+    "zh-TW": "編輯",
+    "ko-KR": "편집"
   },
   "OBSERVATION_MESSAGE$WRITE": {
     "en": "Wrote to a file",
     "zh-CN": "写入",
-    "zh-TW": "寫入"
+    "zh-TW": "寫入",
+    "ko-KR": "쓰기"
   },
   "OBSERVATION_MESSAGE$BROWSE": {
     "en": "Browsing completed",
     "zh-CN": "浏览",
-    "zh-TW": "瀏覽"
+    "zh-TW": "瀏覽",
+    "ko-KR": "탐색"
   },
   "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
     "en": "Show details",
     "zh-CN": "显示详情",
-    "zh-TW": "顯示詳情"
+    "zh-TW": "顯示詳情",
+    "ko-KR": "상세 정보 표시"
   },
   "EXPANDABLE_MESSAGE$HIDE_DETAILS": {
     "en": "Hide details",
     "zh-CN": "隐藏详情",
-    "zh-TW": "隱藏詳情"
+    "zh-TW": "隱藏詳情",
+    "ko-KR": "상세 정보 숨기기"
   },
   "SETTINGS$TITLE": {
     "en": "AI Provider Configuration",
@@ -3603,7 +3668,8 @@
     "es": "Opciones avanzadas",
     "ja": "詳細オプション",
     "zh-CN": "高级选项",
-    "zh-TW": "進階選項"
+    "zh-TW": "進階選項",
+    "ko-KR": "고급 옵션"
   },
   "CONVERSATION$NO_CONVERSATIONS": {
     "en": "No conversations found",
