@@ -34,7 +34,6 @@ export const useHandleRuntimeActive = () => {
   }, [user]);
 
   const handleUploadFiles = (zip: string) => {
-    console.log('blobbing', zip);
     const blob = base64ToBlob(zip);
     const file = new File([blob], "imported-project.zip", {
       type: blob.type,
