@@ -266,9 +266,10 @@ class SessionManager:
     ) -> set[str]:
         """Get the running session ids. If a user is supplied, then the results are limited to session ids for that user. If a set of filter_to_sids is supplied, then results are limited to these ids of interest."""
         running_sids = self.get_running_agent_loops_locally(user_id, filter_to_sids)
-        running_sids.union(
-            await self.get_running_agent_loops_remotely(user_id, filter_to_sids)
+        remote_sids = await self.get_running_agent_loops_remotely(
+            user_id, filter_to_sids
         )
+        running_sids = running_sids.union(remote_sids)
         return running_sids
 
     def get_running_agent_loops_locally(
