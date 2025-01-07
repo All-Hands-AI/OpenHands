@@ -23,12 +23,12 @@ export function ConfirmDeleteModal({
         <div className="flex flex-col sm:flex-row gap-3 w-full">
           <ModalButton
             onClick={onCancel}
-            className="bg-neutral-500 hover:bg-neutral-600 flex-1"
+            className="bg-neutral-500 hover:bg-neutral-600 flex-1 font-bold"
             text="Cancel"
           />
           <ModalButton
             onClick={onConfirm}
-            className="bg-danger hover:bg-danger/90 flex-1"
+            className="bg-danger hover:bg-danger/90 flex-1 font-bold"
             data-testid="confirm-delete-button"
             text="Delete"
           />

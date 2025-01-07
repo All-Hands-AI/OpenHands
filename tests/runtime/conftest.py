@@ -215,6 +215,7 @@ def _load_runtime(
     use_workspace: bool | None = None,
     force_rebuild_runtime: bool = False,
     runtime_startup_env_vars: dict[str, str] | None = None,
+    docker_runtime_kwargs: dict[str, str] | None = None,
 ) -> Runtime:
     sid = 'rt_' + str(random.randint(100000, 999999))
 
@@ -226,6 +227,7 @@ def _load_runtime(
     config.run_as_openhands = run_as_openhands
     config.sandbox.force_rebuild_runtime = force_rebuild_runtime
     config.sandbox.keep_runtime_alive = False
+    config.sandbox.docker_runtime_kwargs = docker_runtime_kwargs
     # Folder where all tests create their own folder
     global test_mount_path
     if use_workspace:
