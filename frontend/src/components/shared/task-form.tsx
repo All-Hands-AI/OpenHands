@@ -1,8 +1,6 @@
 import React from "react";
 import { useNavigation } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import { addFile, removeFile } from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/features/suggestions/suggestion-bubble";
@@ -22,13 +20,10 @@ interface TaskFormProps {
 }
 
 export function TaskForm({ ref }: TaskFormProps) {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
-  const { selectedRepository, files } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+  const { files } = useSelector((state: RootState) => state.initialQuery);
 
   const [text, setText] = React.useState("");
   const [suggestion, setSuggestion] = React.useState(() => {
@@ -51,14 +46,6 @@ export function TaskForm({ ref }: TaskFormProps) {
   const onClickSuggestion = () => {
     setText(suggestion.value);
   };
-
-  const placeholder = React.useMemo(() => {
-    if (selectedRepository) {
-      return t(I18nKey.LANDING$CHANGE_PROMPT, { repo: selectedRepository });
-    }
-
-    return t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD);
-  }, [selectedRepository]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -107,7 +94,6 @@ export function TaskForm({ ref }: TaskFormProps) {
                   dispatch(addFile(base64));
                 });
               }}
-
               value={text}
               maxRows={15}
               showButton={!!text}
