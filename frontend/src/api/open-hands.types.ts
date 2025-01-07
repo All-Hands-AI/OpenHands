@@ -65,7 +65,7 @@ export interface Conversation {
   title: string;
   selected_repository: string | null;
   last_updated_at: string;
-  created_at?: string;
+  created_at: string;
   status: ProjectStatus;
 }
 

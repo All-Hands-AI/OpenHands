@@ -87,22 +87,20 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           <p className="text-neutral-400">No conversations found</p>
         </div>
       )}
-      {conversations
-        ?.filter((project) => !!project.created_at)
-        .map((project) => (
-          <ConversationCard
-            key={project.conversation_id}
-            onClick={() => handleClickCard(project.conversation_id)}
-            onDelete={() => handleDeleteProject(project.conversation_id)}
-            onChangeTitle={(title) =>
-              handleChangeTitle(project.conversation_id, project.title, title)
-            }
-            title={project.title}
-            selectedRepository={project.selected_repository}
-            lastUpdatedAt={project.last_updated_at}
-            status={project.status}
-          />
-        ))}
+      {conversations?.map((project) => (
+        <ConversationCard
+          key={project.conversation_id}
+          onClick={() => handleClickCard(project.conversation_id)}
+          onDelete={() => handleDeleteProject(project.conversation_id)}
+          onChangeTitle={(title) =>
+            handleChangeTitle(project.conversation_id, project.title, title)
+          }
+          title={project.title}
+          selectedRepository={project.selected_repository}
+          lastUpdatedAt={project.last_updated_at}
+          status={project.status}
+        />
+      ))}
 
       {confirmDeleteModalVisible && (
         <ConfirmDeleteModal
