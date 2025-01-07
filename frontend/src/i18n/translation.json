@@ -266,7 +266,8 @@
     "it": "Pianificatore",
     "pt": "Planejador",
     "es": "Planificador",
-    "ja": "プランナー"
+    "ja": "プランナー",
+    "tr": "Planlayıcı"
   },
   "WORKSPACE$JUPYTER_TAB_LABEL": {
     "en": "Jupyter",
@@ -790,7 +791,8 @@
     "it": "Predefinito: ./workspace",
     "pt": "Padrão: ./workspace",
     "es": "Predeterminado: ./workspace",
-    "ja": "デフォルト: ./workspace"
+    "ja": "デフォルト: ./workspace",
+    "tr": "Çalışma alanı dizinini girin"
   },
   "CONFIGURATION$MODAL_TITLE": {
     "en": "Configuration",
@@ -879,7 +881,8 @@
     "it": "Lingua",
     "pt": "Idioma",
     "es": "Idioma",
-    "ja": "言語"
+    "ja": "言語",
+    "tr": "Dil"
   },
   "CONFIGURATION$LANGUAGE_SELECT_PLACEHOLDER": {
     "en": "Select a language",
@@ -953,7 +956,8 @@
     "it": "Salva",
     "pt": "Salvar",
     "es": "Guardar",
-    "ja": "保存"
+    "ja": "保存",
+    "tr": "Kaydet"
   },
   "CONFIGURATION$MODAL_RESET_BUTTON_LABEL": {
     "en": "Reset to defaults",
@@ -1005,7 +1009,8 @@
     "ja": "ブラウザのスクリーンショット",
     "zh-CN": "截图",
     "zh-TW": "截圖",
-    "ko-KR": "스크린샷"
+    "ko-KR": "스크린샷",
+    "tr": "Ekran görüntüsü"
   },
   "TIME$MINUTES_AGO": {
     "en": "minutes ago",
@@ -1937,7 +1942,8 @@
     "it": "OpenHands rende facile costruire e mantenere software usando un prompt semplice.",
     "pt": "OpenHands torna fácil construir e manter software usando um prompt simples.",
     "ar": "يجعل OpenHands من السهل بناء وصيانة البرمجيات باستخدام موجه بسيط.",
-    "no": "OpenHands gjør det enkelt å bygge og vedlikeholde programvare ved hjelp av en enkel prompt."
+    "no": "OpenHands gjør det enkelt å bygge og vedlikeholde programvare ved hjelp av en enkel prompt.",
+    "tr": "Yapay zeka destekli yazılım geliştirme"
   },
   "LANDING$START_HELP": {
     "en": "Not sure how to start?",
@@ -1951,7 +1957,8 @@
     "it": "Non sai come iniziare?",
     "pt": "Não sabe como começar?",
     "ar": "غير متأكد من كيفية البدء؟",
-    "no": "Usikker på hvordan du skal begynne?"
+    "no": "Usikker på hvordan du skal begynne?",
+    "tr": "Başlamak için yardım"
   },
   "LANDING$START_HELP_LINK": {
     "en": "Read this",
@@ -1965,7 +1972,8 @@
     "it": "Leggi questo",
     "pt": "Leia isto",
     "ar": "اقرأ هذا",
-    "no": "Les dette"
+    "no": "Les dette",
+    "tr": "Başlangıç kılavuzu"
   },
   "LANDING$BUILD_APP_BUTTON": {
     "en": "Build an app to view pull requests",
@@ -1979,7 +1987,8 @@
     "it": "Costruisci un'app per visualizzare le pull request",
     "pt": "Construir um aplicativo para visualizar pull requests",
     "ar": "بناء تطبيق لعرض طلبات السحب",
-    "no": "Bygg en app for å se pull requests"
+    "no": "Bygg en app for å se pull requests",
+    "tr": "Uygulama oluştur"
   },
   "SUGGESTIONS$TODO_APP": {
     "en": "Build a todo list application",
@@ -1993,7 +2002,8 @@
     "it": "Costruisci un'applicazione per la lista delle cose da fare",
     "pt": "Construir um aplicativo de lista de tarefas",
     "ar": "بناء تطبيق قائمة المهام",
-    "no": "Bygg en gjøremålsliste-app"
+    "no": "Bygg en gjøremålsliste-app",
+    "tr": "Yapılacaklar uygulaması"
   },
   "SUGGESTIONS$HACKER_NEWS": {
     "en": "Write a bash script that shows the top story on Hacker News",
@@ -2007,7 +2017,8 @@
     "it": "Scrivi uno script bash che mostra la notizia principale su Hacker News",
     "pt": "Escrever um script bash que mostra a principal notícia do Hacker News",
     "ar": "كتابة سكربت باش يعرض أهم خبر على هاكر نيوز",
-    "no": "Skriv et bash-script som viser topphistorien på Hacker News"
+    "no": "Skriv et bash-script som viser topphistorien på Hacker News",
+    "tr": "Hacker News klonu"
   },
   "LANDING$CHANGE_PROMPT": {
     "en": "What would you like to change in {{repo}}?",
@@ -2021,7 +2032,8 @@
     "it": "Cosa vorresti cambiare in {{repo}}?",
     "pt": "O que você gostaria de mudar em {{repo}}?",
     "ar": "ماذا تريد أن تغير في {{repo}}؟",
-    "no": "Hva vil du endre i {{repo}}?"
+    "no": "Hva vil du endre i {{repo}}?",
+    "tr": "İsteği değiştir"
   },
   "GITHUB$CONNECT": {
     "en": "Connect to GitHub",
@@ -2035,7 +2047,8 @@
     "it": "Connetti a GitHub",
     "pt": "Conectar ao GitHub",
     "ar": "الاتصال بـ GitHub",
-    "no": "Koble til GitHub"
+    "no": "Koble til GitHub",
+    "tr": "GitHub'a bağlan"
   },
   "GITHUB$NO_RESULTS": {
     "en": "No results found.",
@@ -2049,7 +2062,8 @@
     "it": "Nessun risultato trovato.",
     "pt": "Nenhum resultado encontrado.",
     "ar": "لم يتم العثور على نتائج.",
-    "no": "Ingen resultater funnet."
+    "no": "Ingen resultater funnet.",
+    "tr": "Sonuç bulunamadı"
   },
   "GITHUB$ADD_MORE_REPOS": {
     "en": "Add more repositories...",
@@ -2063,7 +2077,8 @@
     "it": "Aggiungi altri repository...",
     "pt": "Adicionar mais repositórios...",
     "ar": "إضافة المزيد من المستودعات...",
-    "no": "Legg til flere repositories..."
+    "no": "Legg til flere repositories...",
+    "tr": "Daha fazla depo ekle"
   },
   "GITHUB$YOUR_REPOS": {
     "en": "Your Repos",
@@ -2077,7 +2092,8 @@
     "it": "I tuoi repository",
     "pt": "Seus repositórios",
     "ar": "مستودعاتك",
-    "no": "Dine repositories"
+    "no": "Dine repositories",
+    "tr": "Depolarınız"
   },
   "GITHUB$PUBLIC_REPOS": {
     "en": "Public Repos",
@@ -2091,7 +2107,8 @@
     "it": "Repository pubblici",
     "pt": "Repositórios públicos",
     "ar": "المستودعات العامة",
-    "no": "Offentlige repositories"
+    "no": "Offentlige repositories",
+    "tr": "Herkese açık depolar"
   },
   "DOWNLOAD$PREPARING": {
     "en": "Preparing Download...",
@@ -2105,7 +2122,8 @@
     "it": "Preparazione download...",
     "pt": "Preparando download...",
     "ar": "جاري تحضير التنزيل...",
-    "no": "Forbereder nedlasting..."
+    "no": "Forbereder nedlasting...",
+    "tr": "Hazırlanıyor"
   },
   "DOWNLOAD$DOWNLOADING": {
     "en": "Downloading Files",
@@ -2119,7 +2137,8 @@
     "it": "Download dei file in corso",
     "pt": "Baixando arquivos",
     "ar": "جاري تنزيل الملفات",
-    "no": "Laster ned filer"
+    "no": "Laster ned filer",
+    "tr": "İndiriliyor"
   },
   "DOWNLOAD$FOUND_FILES": {
     "en": "Found {{count}} files...",
@@ -2133,7 +2152,8 @@
     "it": "Trovati {{count}} file...",
     "pt": "{{count}} arquivos encontrados...",
     "ar": "تم العثور على {{count}} ملف...",
-    "no": "Fant {{count}} filer..."
+    "no": "Fant {{count}} filer...",
+    "tr": "Dosyalar bulundu"
   },
   "DOWNLOAD$SCANNING": {
     "en": "Scanning workspace...",
@@ -2147,7 +2167,8 @@
     "it": "Scansione dell'area di lavoro...",
     "pt": "Escaneando área de trabalho...",
     "ar": "جاري فحص مساحة العمل...",
-    "no": "Skanner arbeidsområde..."
+    "no": "Skanner arbeidsområde...",
+    "tr": "Taranıyor"
   },
   "DOWNLOAD$FILES_PROGRESS": {
     "en": "{{downloaded}} of {{total}} files",
@@ -2161,7 +2182,8 @@
     "it": "{{downloaded}} di {{total}} file",
     "pt": "{{downloaded}} de {{total}} arquivos",
     "ar": "{{downloaded}} من {{total}} ملف",
-    "no": "{{downloaded}} av {{total}} filer"
+    "no": "{{downloaded}} av {{total}} filer",
+    "tr": "Dosya ilerleme durumu"
   },
   "DOWNLOAD$CANCEL": {
     "en": "Cancel",
@@ -2175,7 +2197,8 @@
     "it": "Annulla",
     "pt": "Cancelar",
     "ar": "إلغاء",
-    "no": "Avbryt"
+    "no": "Avbryt",
+    "tr": "İptal"
   },
   "ACTION$CONFIRM": {
     "en": "Confirm action",
@@ -2189,7 +2212,8 @@
     "it": "Conferma azione",
     "pt": "Confirmar ação",
     "ar": "تأكيد الإجراء",
-    "no": "Bekreft handling"
+    "no": "Bekreft handling",
+    "tr": "Onayla"
   },
   "ACTION$REJECT": {
     "en": "Reject action",
@@ -2203,7 +2227,8 @@
     "it": "Rifiuta azione",
     "pt": "Rejeitar ação",
     "ar": "رفض الإجراء",
-    "no": "Avvis handling"
+    "no": "Avvis handling",
+    "tr": "Reddet"
   },
   "BADGE$BETA": {
     "en": "Beta",
@@ -2217,7 +2242,8 @@
     "it": "Beta",
     "pt": "Beta",
     "ar": "تجريبي",
-    "no": "Beta"
+    "no": "Beta",
+    "tr": "Beta"
   },
   "AGENT$RESUME_TASK": {
     "en": "Resume the agent task",
@@ -2231,7 +2257,8 @@
     "it": "Riprendi il compito dell'agente",
     "pt": "Retomar a tarefa do agente",
     "ar": "استئناف مهمة الوكيل",
-    "no": "Gjenoppta agentoppgaven"
+    "no": "Gjenoppta agentoppgaven",
+    "tr": "Görevi devam ettir"
   },
   "AGENT$PAUSE_TASK": {
     "en": "Pause the current task",
@@ -2245,7 +2272,8 @@
     "it": "Metti in pausa il compito corrente",
     "pt": "Pausar a tarefa atual",
     "ar": "إيقاف المهمة الحالية مؤقتًا",
-    "no": "Pause gjeldende oppgave"
+    "no": "Pause gjeldende oppgave",
+    "tr": "Görevi duraklat"
   },
   "TOS$ACCEPT": {
     "en": "I accept the",
@@ -2259,7 +2287,8 @@
     "it": "Accetto i",
     "pt": "Eu aceito os",
     "ar": "أوافق على",
-    "no": "Jeg godtar"
+    "no": "Jeg godtar",
+    "tr": "Kabul et"
   },
   "TOS$TERMS": {
     "en": "terms of service",
@@ -2273,7 +2302,8 @@
     "it": "termini di servizio",
     "pt": "termos de serviço",
     "ar": "شروط الخدمة",
-    "no": "vilkårene for bruk"
+    "no": "vilkårene for bruk",
+    "tr": "Kullanım şartları"
   },
   "USER$ACCOUNT_SETTINGS": {
     "en": "Account settings",
@@ -2287,7 +2317,8 @@
     "it": "Impostazioni account",
     "pt": "Configurações da conta",
     "ar": "إعدادات الحساب",
-    "no": "Kontoinnstillinger"
+    "no": "Kontoinnstillinger",
+    "tr": "Hesap ayarları"
   },
   "JUPYTER$OUTPUT_LABEL": {
     "en": "STDOUT/STDERR",
@@ -2301,7 +2332,8 @@
     "it": "STDOUT/STDERR",
     "pt": "STDOUT/STDERR",
     "ar": "المخرجات القياسية/الأخطاء القياسية",
-    "no": "STDOUT/STDERR"
+    "no": "STDOUT/STDERR",
+    "tr": "Çıktı"
   },
   "BUTTON$STOP": {
     "en": "Stop",
@@ -2315,7 +2347,8 @@
     "it": "Ferma",
     "pt": "Parar",
     "ar": "توقف",
-    "no": "Stopp"
+    "no": "Stopp",
+    "tr": "Durdur"
   },
   "LANDING$ATTACH_IMAGES": {
     "en": "Attach images",
@@ -2329,7 +2362,8 @@
     "it": "Allega immagini",
     "pt": "Anexar imagens",
     "ar": "إرفاق صور",
-    "no": "Legg ved bilder"
+    "no": "Legg ved bilder",
+    "tr": "Resim ekle"
   },
   "LANDING$OPEN_REPO": {
     "en": "Open a Repo",
@@ -2343,7 +2377,8 @@
     "it": "Apri un repository",
     "pt": "Abrir um repositório",
     "ar": "فتح مستودع",
-    "no": "Åpne et repo"
+    "no": "Åpne et repo",
+    "tr": "Depo aç"
   },
   "LANDING$IMPORT_PROJECT": {
     "en": "+ Import Project",
@@ -2357,7 +2392,8 @@
     "it": "+ Importa progetto",
     "pt": "+ Importar projeto",
     "ar": "+ استيراد مشروع",
-    "no": "+ Importer prosjekt"
+    "no": "+ Importer prosjekt",
+    "tr": "Proje içe aktar"
   },
   "LANDING$UPLOAD_ZIP": {
     "en": "Upload a .zip",
@@ -2371,7 +2407,8 @@
     "it": "Carica un .zip",
     "pt": "Fazer upload de um .zip",
     "ar": "تحميل ملف .zip",
-    "no": "Last opp en .zip"
+    "no": "Last opp en .zip",
+    "tr": "ZIP yükle"
   },
   "LANDING$RECENT_CONVERSATION": {
     "en": "jump back to your most recent conversation",
@@ -2385,7 +2422,8 @@
     "it": "torna alla tua conversazione più recente",
     "pt": "volte para sua conversa mais recente",
     "ar": "أو العودة إلى آخر محادثة",
-    "no": "gå tilbake til din siste samtale"
+    "no": "gå tilbake til din siste samtale",
+    "tr": "Son konuşma"
   },
   "LANDING$OR": {
     "en": "Or",
@@ -2399,7 +2437,8 @@
     "it": "O",
     "pt": "Ou",
     "ar": "أو",
-    "no": "Eller"
+    "no": "Eller",
+    "tr": "veya"
   },
   "SUGGESTIONS$TEST_COVERAGE": {
     "en": "Increase my test coverage",
@@ -2413,7 +2452,8 @@
     "it": "Aumenta la mia copertura dei test",
     "pt": "Aumentar minha cobertura de testes",
     "ar": "زيادة تغطية الاختبار",
-    "no": "Øk min testdekning"
+    "no": "Øk min testdekning",
+    "tr": "Test kapsamı"
   },
   "SUGGESTIONS$AUTO_MERGE": {
     "en": "Auto-merge Dependabot PRs",
@@ -2427,7 +2467,8 @@
     "it": "Unione automatica delle PR di Dependabot",
     "pt": "Mesclar automaticamente PRs do Dependabot",
     "ar": "دمج تلقائي لطلبات سحب Dependabot",
-    "no": "Auto-flett Dependabot PRs"
+    "no": "Auto-flett Dependabot PRs",
+    "tr": "Otomatik birleştirme"
   },
   "CHAT_INTERFACE$AGENT_STOPPED_MESSAGE": {
     "en": "Agent has stopped.",
@@ -2621,7 +2662,8 @@
     "es": "Enviar",
     "ar": "إرسال",
     "fr": "Envoyer",
-    "ja": "送信"
+    "ja": "送信",
+    "tr": "Gönder"
   },
   "CHAT_INTERFACE$CHAT_MESSAGE_COPIED": {
     "en": "Message copied to clipboard",
@@ -2710,7 +2752,8 @@
     "es": "Hi! I'm OpenHands, an AI Software Engineer. What would you like to build with me today?",
     "ar": "مرحبا! أنا OpenHands، مهندس برمجيات AI. ماذا تود أن تبني معي اليوم؟",
     "fr": "Salut! Je suis OpenHands, un ingénieur logiciel en IA. Que voudriez-vous construire avec moi aujourd'hui?",
-    "ja": "何を作りたいですか？"
+    "ja": "何を作りたいですか？",
+    "tr": "Ne yapmak istersiniz?"
   },
   "CHAT_INTERFACE$ASSISTANT": {
     "en": "Assistant",
@@ -3670,7 +3713,8 @@
     "it": "segnaposto avatar utente",
     "pt": "espaço reservado para avatar do usuário",
     "ar": "عنصر نائب لصورة المستخدم",
-    "no": "plassholder for brukeravatar"
+    "no": "plassholder for brukeravatar",
+    "tr": "Kullanıcı avatarı yer tutucusu"
   },
   "ACCOUNT_SETTINGS$SETTINGS": {
     "en": "Account Settings",
@@ -3722,7 +3766,8 @@
     "it": "Nessuna conversazione trovata",
     "pt": "Nenhuma conversa encontrada",
     "ar": "لم يتم العثور على محادثات",
-    "no": "Ingen samtaler funnet"
+    "no": "Ingen samtaler funnet",
+    "tr": "Konuşma yok"
   },
   "LANDING$SELECT_REPO": {
     "en": "Select a GitHub project",
@@ -3736,7 +3781,8 @@
     "it": "Seleziona un progetto GitHub",
     "pt": "Selecionar um projeto do GitHub",
     "ar": "اختر مشروع GitHub",
-    "no": "Velg et GitHub-prosjekt"
+    "no": "Velg et GitHub-prosjekt",
+    "tr": "Depo seç"
   },
   "BUTTON$SEND": {
     "en": "Send",
@@ -3750,7 +3796,8 @@
     "it": "Invia",
     "pt": "Enviar",
     "ar": "إرسال",
-    "no": "Send"
+    "no": "Send",
+    "tr": "Gönder"
   },
   "STATUS$WAITING_FOR_CLIENT": {
     "en": "Waiting for client to become ready...",
