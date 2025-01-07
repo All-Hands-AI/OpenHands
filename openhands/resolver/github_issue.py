@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 
@@ -14,11 +12,11 @@ class GithubIssue(BaseModel):
     number: int
     title: str
     body: str
-    thread_comments: Optional[list[str]] = None  # Added field for issue thread comments
-    closing_issues: Optional[list[str]] = None
-    review_comments: Optional[list[str]] = None
-    review_threads: Optional[list[ReviewThread]] = None
-    thread_ids: Optional[list[str]] = None
-    head_branch: Optional[str] = None
-    has_merge_conflicts: Optional[bool] = None
-    failed_checks: Optional[list[dict[str, Optional[str]]]] = None
+    thread_comments: list[str] | None = None  # Added field for issue thread comments
+    closing_issues: list[str] | None = None
+    review_comments: list[str] | None = None
+    review_threads: list[ReviewThread] | None = None
+    thread_ids: list[str] | None = None
+    head_branch: str | None = None
+    has_merge_conflicts: bool | None = None
+    failed_checks: list[dict[str, str | None]] | None = None
