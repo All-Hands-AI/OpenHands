@@ -4,7 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "#/context/auth-context";
 import {
   useWsClient,
-  WsClientProviderStatus,
 } from "#/context/ws-client-provider";
 import { getGitHubTokenCommand } from "#/services/terminal-service";
 import { setImportedProjectZip } from "#/state/initial-query-slice";
@@ -13,17 +12,19 @@ import { base64ToBlob } from "#/utils/base64-to-blob";
 import { useUploadFiles } from "../../../hooks/mutation/use-upload-files";
 import { useGitHubUser } from "../../../hooks/query/use-github-user";
 import { isGitHubErrorReponse } from "#/api/github-axios-instance";
+import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 
 export const useHandleRuntimeActive = () => {
   const { gitHubToken } = useAuth();
-  const { status, send } = useWsClient();
+  const { send } = useWsClient();
 
   const dispatch = useDispatch();
 
   const { data: user } = useGitHubUser();
   const { mutate: uploadFiles } = useUploadFiles();
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
 
-  const runtimeActive = status === WsClientProviderStatus.ACTIVE;
+  const runtimeActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
   const { importedProjectZip } = useSelector(
     (state: RootState) => state.initalQuery,

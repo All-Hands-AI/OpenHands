@@ -19,7 +19,12 @@ export const useCreateConversation = () => {
 
   return useMutation({
     mutationFn: (variables: { q?: string }) => {
-      if (!variables.q?.trim() && !selectedRepository && files.length === 0 && !importedProjectZip) {
+      if (
+        !variables.q?.trim() &&
+        !selectedRepository &&
+        files.length === 0 &&
+        !importedProjectZip
+      ) {
         throw new Error("No query provided");
       }
 
