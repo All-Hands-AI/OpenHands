@@ -364,7 +364,7 @@ class ServiceContext:
 
     def reply_to_comment(self, token, comment_id, reply):
         return self._strategy.reply_to_comment(token, comment_id, reply)
-        
+
     def get_issue_comments(
         self, issue_number: int, comment_id: int | None = None
     ) -> list[str] | None:

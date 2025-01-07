@@ -54,11 +54,11 @@ class IssueHandlerInterface(ABC):
     @abstractmethod
     def branch_exists(self, branch_name: str) -> bool:
         pass
-    
+
     @abstractmethod
     def reply_to_comment(self, token: str, comment_id: str, reply: str):
         pass
-    
+
     @abstractmethod
     def get_authorize_url(self):
         pass
