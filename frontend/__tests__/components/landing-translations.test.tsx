@@ -2,6 +2,16 @@ import { render, screen } from "@testing-library/react";
 import { test, expect, describe, vi } from "vitest";
 import { useTranslation } from "react-i18next";
 import translations from "../../src/i18n/translation.json";
+import { UserAvatar } from "../../src/components/features/sidebar/user-avatar";
+
+vi.mock("@nextui-org/react", () => ({
+  Tooltip: ({ content, children }: { content: string; children: React.ReactNode }) => (
+    <div>
+      {children}
+      <div>{content}</div>
+    </div>
+  ),
+}));
 
 const supportedLanguages = ['en', 'ja', 'zh-CN', 'zh-TW', 'ko-KR', 'de', 'no', 'it', 'pt', 'es', 'ar', 'fr', 'tr'];
 
@@ -56,6 +66,7 @@ describe("Landing page translations", () => {
       const { t } = useTranslation();
       return (
         <div>
+          <UserAvatar onClick={() => {}} />
           <div data-testid="main-content">
             <h1>{t("LANDING$TITLE")}</h1>
             <button>{t("OPEN_IN_VSCODE")}</button>
@@ -96,6 +107,11 @@ describe("Landing page translations", () => {
     expect(screen.getByText("READMEを修正")).toBeInTheDocument();
     expect(screen.getByText("依存関係を整理")).toBeInTheDocument();
 
+    // Check user avatar tooltip
+    const userAvatar = screen.getByTestId("user-avatar");
+    userAvatar.focus();
+    expect(screen.getByText("アカウント設定")).toBeInTheDocument();
+
     // Check tab labels
     const tabs = screen.getByTestId("tabs");
     expect(tabs).toHaveTextContent("ターミナル");
@@ -112,6 +128,9 @@ describe("Landing page translations", () => {
     expect(status).toHaveTextContent("クライアントの準備を待機中");
     expect(status).toHaveTextContent("接続済み");
     expect(status).toHaveTextContent("サーバーに接続済み");
+
+    // Check account settings menu
+    expect(screen.getByText("アカウント設定")).toBeInTheDocument();
 
     // Check time-related translations
     const time = screen.getByTestId("time");

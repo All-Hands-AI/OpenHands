@@ -69,6 +69,20 @@
     "fr": "Espace réservé pour l'avatar de l'utilisateur",
     "tr": "Kullanıcı avatar yer tutucusu"
   },
+  "ACCOUNT_SETTINGS$TITLE": {
+    "en": "Account Settings",
+    "ja": "アカウント設定",
+    "zh-CN": "账户设置",
+    "zh-TW": "帳戶設定",
+    "ko-KR": "계정 설정",
+    "no": "Kontoinnstillinger",
+    "it": "Impostazioni account",
+    "pt": "Configurações da conta",
+    "es": "Configuración de la cuenta",
+    "ar": "إعدادات الحساب",
+    "fr": "Paramètres du compte",
+    "tr": "Hesap ayarları"
+  },
   "ACCOUNT_SETTINGS$SETTINGS": {
     "en": "Settings",
     "ja": "設定",

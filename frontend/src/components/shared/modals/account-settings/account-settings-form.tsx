@@ -64,7 +64,7 @@ export function AccountSettingsForm({
     <ModalBody>
       <form className="flex flex-col w-full gap-6" onSubmit={handleSubmit}>
         <div className="w-full flex flex-col gap-2">
-          <BaseModalTitle title="Account Settings" />
+          <BaseModalTitle title={t(I18nKey.ACCOUNT_SETTINGS$TITLE)} />
 
           {config?.APP_MODE === "saas" && config?.APP_SLUG && (
             <a
