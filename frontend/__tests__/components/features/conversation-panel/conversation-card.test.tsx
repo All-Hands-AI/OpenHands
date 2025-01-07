@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, test, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationCard } from "#/components/features/conversation-panel/conversation-card";
+import { clickOnEditButton } from "./utils";
 
 describe("ConversationCard", () => {
   const onClick = vi.fn();
@@ -144,7 +145,9 @@ describe("ConversationCard", () => {
       />,
     );
 
-    const selectedRepository = screen.getByTestId("conversation-card-selected-repository");
+    const selectedRepository = screen.getByTestId(
+      "conversation-card-selected-repository",
+    );
     await user.click(selectedRepository);
 
     expect(onClick).not.toHaveBeenCalled();
@@ -164,6 +167,14 @@ describe("ConversationCard", () => {
     );
 
     const title = screen.getByTestId("conversation-card-title");
+    expect(title).toBeDisabled();
+
+    await clickOnEditButton(user);
+
+    expect(title).toBeEnabled();
+    expect(screen.queryByTestId("context-menu")).not.toBeInTheDocument();
+    // expect to be focused
+    expect(document.activeElement).toBe(title);
 
     await user.clear(title);
     await user.type(title, "New Conversation Name   ");
@@ -171,6 +182,7 @@ describe("ConversationCard", () => {
 
     expect(onChangeTitle).toHaveBeenCalledWith("New Conversation Name");
     expect(title).toHaveValue("New Conversation Name");
+    expect(title).toBeDisabled();
   });
 
   it("should reset title and not call onChangeTitle when the title is empty", async () => {
@@ -185,6 +197,8 @@ describe("ConversationCard", () => {
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
+
+    await clickOnEditButton(user);
 
     const title = screen.getByTestId("conversation-card-title");
 
