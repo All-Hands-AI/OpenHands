@@ -73,12 +73,12 @@ export function AccountSettingsForm({
               rel="noreferrer noopener"
               className="underline"
             >
-              Configure Github Repositories
+              {t("CONFIGURE_GITHUB_REPOS")}
             </a>
           )}
           <FormFieldset
             id="language"
-            label="Language"
+            label={t("LANGUAGE_LABEL")}
             defaultSelectedKey={selectedLanguage}
             isClearable={false}
             items={AvailableLanguages.map(({ label, value: key }) => ({
@@ -91,32 +91,32 @@ export function AccountSettingsForm({
             <>
               <CustomInput
                 name="ghToken"
-                label="GitHub Token"
+                label={t("GITHUB_TOKEN_LABEL")}
                 type="password"
                 defaultValue={gitHubToken ?? ""}
               />
               <BaseModalDescription>
-                {t(I18nKey.CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN)}{" "}
+                {t("GET_YOUR_TOKEN")}{" "}
                 <a
                   href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
                   target="_blank"
                   rel="noreferrer noopener"
                   className="text-[#791B80] underline"
                 >
-                  {t(I18nKey.CONNECT_TO_GITHUB_MODAL$HERE)}
+                  {t("HERE")}
                 </a>
               </BaseModalDescription>
             </>
           )}
           {gitHubError && (
             <p className="text-danger text-xs">
-              {t(I18nKey.ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID)}
+              {t("GITHUB_TOKEN_INVALID")}
             </p>
           )}
           {gitHubToken && !gitHubError && (
             <ModalButton
               variant="text-like"
-              text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$DISCONNECT)}
+              text={t("DISCONNECT_BUTTON")}
               onClick={() => {
                 logout();
                 onClose();
@@ -132,18 +132,18 @@ export function AccountSettingsForm({
             type="checkbox"
             defaultChecked={analyticsConsent === "true"}
           />
-          Enable analytics
+          {t("ENABLE_ANALYTICS")}
         </label>
 
         <div className="flex flex-col gap-2 w-full">
           <ModalButton
             type="submit"
             intent="account"
-            text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$SAVE)}
+            text={t("SAVE_BUTTON")}
             className="bg-[#4465DB]"
           />
           <ModalButton
-            text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$CLOSE)}
+            text={t("CLOSE_BUTTON")}
             onClick={onClose}
             className="bg-[#737373]"
           />
