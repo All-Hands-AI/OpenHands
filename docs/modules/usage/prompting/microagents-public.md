@@ -1,8 +1,5 @@
 # Public Micro-Agents
 
-OpenHands uses specialized micro-agents to handle specific tasks and contexts efficiently. These micro-agents are small,
-focused components that provide specialized behavior and knowledge for particular scenarios.
-
 ## Overview
 
 Public micro-agents are defined in markdown files under the

@@ -28,6 +28,11 @@ const sidebars: SidebarsConfig = {
           items: [
             {
               type: 'doc',
+              label: 'Overview',
+              id: 'usage/prompting/microagents-overview',
+            },
+            {
+              type: 'doc',
               label: 'Public',
               id: 'usage/prompting/microagents-public',
             },
@@ -131,11 +136,6 @@ const sidebars: SidebarsConfig = {
           type: 'doc',
           label: 'Custom Sandbox',
           id: 'usage/how-to/custom-sandbox-guide',
-        },
-        {
-          type: 'doc',
-          label: 'Persist Session Data',
-          id: 'usage/how-to/persist-session-data',
         },
       ],
     },
