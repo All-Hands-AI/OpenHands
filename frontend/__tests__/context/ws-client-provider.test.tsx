@@ -27,4 +27,17 @@ describe("Propagate error message", () => {
       type: 'error'
      });
   });
+
+  it("should display error including translation id when present", () => {
+    const message = "We have a problem!"
+    const addErrorMessageSpy = vi.spyOn(ChatSlice, "addErrorMessage")
+    updateStatusWhenErrorMessagePresent({message, data: {msg_id: '..id..'}})
+
+    expect(addErrorMessageSpy).toHaveBeenCalledWith({
+      message,
+      id: '..id..',
+      status_update: true,
+      type: 'error'
+     });
+  });
 });

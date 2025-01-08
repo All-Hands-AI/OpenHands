@@ -67,16 +67,36 @@ interface WsClientProviderProps {
   conversationId: string;
 }
 
-export function updateStatusWhenErrorMessagePresent(data: unknown) {
+interface ErrorArg {
+  message?: string;
+  data?: ErrorArgData | unknown;
+}
+
+interface ErrorArgData {
+  msg_id: string;
+}
+
+export function updateStatusWhenErrorMessagePresent(data: ErrorArg | unknown) {
   if (
     data &&
     typeof data === "object" &&
     "message" in data &&
     typeof data.message === "string"
   ) {
+    let msgId: string | undefined;
+    if (
+      "data" in data &&
+      data.data &&
+      typeof data.data === "object" &&
+      "msg_id" in data.data &&
+      typeof data.data.msg_id === "string"
+    ) {
+      msgId = data.data.msg_id;
+    }
     handleStatusMessage({
       type: "error",
       message: data.message,
+      id: msgId,
       status_update: true,
     });
   }
