@@ -1,10 +1,8 @@
 import os
-from dataclasses import fields
 from typing import Optional
 
 from pydantic import BaseModel, Field, SecretStr
 
-from openhands.core.config.config_utils import get_field_info
 from openhands.core.logger import LOG_DIR
 
 LLM_SENSITIVE_FIELDS = ['api_key', 'aws_access_key_id', 'aws_secret_access_key']
@@ -90,13 +88,6 @@ class LLMConfig(BaseModel):
     native_tool_calling: bool | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
-
-    def defaults_to_dict(self) -> dict:
-        """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
-        result = {}
-        for f in fields(self):
-            result[f.name] = get_field_info(f)
-        return result
 
     def __post_init__(self):
         """

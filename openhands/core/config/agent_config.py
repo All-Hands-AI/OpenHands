@@ -1,9 +1,6 @@
-from dataclasses import fields
-
 from pydantic import BaseModel, Field
 
 from openhands.core.config.condenser_config import CondenserConfig, NoOpCondenserConfig
-from openhands.core.config.config_utils import get_field_info
 
 
 class AgentConfig(BaseModel):
@@ -33,10 +30,3 @@ class AgentConfig(BaseModel):
     use_microagents: bool = Field(default=True)
     disabled_microagents: list[str] | None = Field(default=None)
     condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
-
-    def defaults_to_dict(self) -> dict:
-        """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
-        result = {}
-        for f in fields(self):
-            result[f.name] = get_field_info(f)
-        return result

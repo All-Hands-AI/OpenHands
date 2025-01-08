@@ -1,9 +1,6 @@
 import os
-from dataclasses import fields
 
 from pydantic import BaseModel, Field
-
-from openhands.core.config.config_utils import get_field_info
 
 
 class SandboxConfig(BaseModel):
@@ -69,10 +66,3 @@ class SandboxConfig(BaseModel):
     docker_runtime_kwargs: str | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
-
-    def defaults_to_dict(self) -> dict:
-        """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
-        dict = {}
-        for f in fields(self):
-            dict[f.name] = get_field_info(f)
-        return dict
