@@ -1,6 +1,11 @@
 import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
 import { openHands } from "./open-hands-axios";
 
+export const isGitHubErrorReponse = <T extends object | Array<unknown>>(
+  data: T | GitHubErrorReponse | null,
+): data is GitHubErrorReponse =>
+  !!data && "message" in data && data.message !== undefined;
+
 /**
  * Given the user, retrieves app installations IDs for OpenHands Github App
  * Uses user access token for Github App
