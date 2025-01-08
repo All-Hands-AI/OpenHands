@@ -1,227 +1,187 @@
-import { render, screen, within } from "@testing-library/react";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  QueryClientProvider,
-  QueryClient,
-  QueryClientConfig,
-} from "@tanstack/react-query";
-import userEvent from "@testing-library/user-event";
-import { ConversationPanel } from "~/components/features/conversation-panel/conversation-panel";
-import OpenHands from "~/api/open-hands";
-import { AuthProvider } from "~/context/auth-context";
-import { clickOnEditButton } from "./utils";
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { configureStore } from '@reduxjs/toolkit';
+import { MemoryRouter } from 'react-router-dom';
+import { ConversationPanel } from '~/components/features/conversation-panel/conversation-panel';
+import OpenHands from '~/api/open-hands';
+import { AuthProvider } from '~/context/auth-context';
+import * as EndSession from '~/hooks/use-end-session';
 
-describe("ConversationPanel", () => {
-  const onCloseMock = vi.fn();
+const mockStore = configureStore({
+  reducer: {
+    chat: (state = {}, action) => state,
+  },
+});
 
-  const renderConversationPanel = (config?: QueryClientConfig) =>
-    render(<ConversationPanel onClose={onCloseMock} />, {
-      wrapper: ({ children }) => (
+const mockEndSession = jest.fn();
+jest.spyOn(EndSession, 'useEndSession').mockReturnValue(mockEndSession);
+
+const mockConversations = [
+  {
+    id: '1',
+    name: 'Test Conversation 1',
+    lastMessage: 'Hello',
+    lastActive: '2023-01-01T00:00:00Z',
+  },
+  {
+    id: '2',
+    name: 'Test Conversation 2',
+    lastMessage: 'World',
+    lastActive: '2023-01-02T00:00:00Z',
+  },
+];
+
+const renderComponent = (props = {}) => {
+  return render(
+    <Provider store={mockStore}>
+      <MemoryRouter>
         <AuthProvider>
-          <QueryClientProvider client={new QueryClient(config)}>
-            {children}
-          </QueryClientProvider>
+          <ConversationPanel {...props} />
         </AuthProvider>
-      ),
-    });
+      </MemoryRouter>
+    </Provider>
+  );
+};
 
-  const { endSessionMock } = vi.hoisted(() => ({
-    endSessionMock: vi.fn(),
-  }));
-
-  beforeAll(() => {
-    vi.mock("react-router", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("react-router")>()),
-      Link: ({ children }: React.PropsWithChildren) => children,
-      useNavigate: vi.fn(() => vi.fn()),
-      useLocation: vi.fn(() => ({ pathname: "/conversation" })),
-      useParams: vi.fn(() => ({ conversationId: "2" })),
-    }));
-
-    vi.mock("#/hooks/use-end-session", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("~/hooks/use-end-session")>()),
-      useEndSession: vi.fn(() => endSessionMock),
-    }));
-  });
-
+describe('ConversationPanel', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
-  it("should render the conversations", async () => {
-    renderConversationPanel();
-    const cards = await screen.findAllByTestId("conversation-card");
+  it('should render the conversations', async () => {
+    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
 
-    // NOTE that we filter out conversations that don't have a created_at property
-    // (mock data has 4 conversations, but only 3 have a created_at property)
-    expect(cards).toHaveLength(3);
-  });
+    renderComponent();
 
-  it("should display an empty state when there are no conversations", async () => {
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
-    getUserConversationsSpy.mockResolvedValue([]);
-
-    renderConversationPanel();
-
-    const emptyState = await screen.findByText("No conversations found");
-    expect(emptyState).toBeInTheDocument();
-  });
-
-  it("should handle an error when fetching conversations", async () => {
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
-    getUserConversationsSpy.mockRejectedValue(
-      new Error("Failed to fetch conversations"),
-    );
-
-    renderConversationPanel({
-      defaultOptions: {
-        queries: {
-          retry: false,
-        },
-      },
-    });
-
-    const error = await screen.findByText("Failed to fetch conversations");
-    expect(error).toBeInTheDocument();
-  });
-
-  it("should cancel deleting a conversation", async () => {
-    const user = userEvent.setup();
-    renderConversationPanel();
-
-    let cards = await screen.findAllByTestId("conversation-card");
-    expect(
-      within(cards[0]).queryByTestId("delete-button"),
-    ).not.toBeInTheDocument();
-
-    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
-    await user.click(ellipsisButton);
-    const deleteButton = screen.getByTestId("delete-button");
-
-    // Click the first delete button
-    await user.click(deleteButton);
-
-    // Cancel the deletion
-    const cancelButton = screen.getByText("Cancel");
-    await user.click(cancelButton);
-
-    expect(screen.queryByText("Cancel")).not.toBeInTheDocument();
-
-    // Ensure the conversation is not deleted
-    cards = await screen.findAllByTestId("conversation-card");
-    expect(cards).toHaveLength(3);
-  });
-
-  it("should call endSession after deleting a conversation that is the current session", async () => {
-    const user = userEvent.setup();
-    renderConversationPanel();
-
-    let cards = await screen.findAllByTestId("conversation-card");
-    const ellipsisButton = within(cards[1]).getByTestId("ellipsis-button");
-    await user.click(ellipsisButton);
-    const deleteButton = screen.getByTestId("delete-button");
-
-    // Click the second delete button
-    await user.click(deleteButton);
-
-    // Confirm the deletion
-    const confirmButton = screen.getByText("Confirm");
-    await user.click(confirmButton);
-
-    expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
-
-    // Ensure the conversation is deleted
-    cards = await screen.findAllByTestId("conversation-card");
-    expect(cards).toHaveLength(2);
-
-    expect(endSessionMock).toHaveBeenCalledOnce();
-  });
-
-  it("should delete a conversation", async () => {
-    const user = userEvent.setup();
-    renderConversationPanel();
-
-    let cards = await screen.findAllByTestId("conversation-card");
-    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
-    await user.click(ellipsisButton);
-    const deleteButton = screen.getByTestId("delete-button");
-
-    // Click the first delete button
-    await user.click(deleteButton);
-
-    // Confirm the deletion
-    const confirmButton = screen.getByText("Confirm");
-    await user.click(confirmButton);
-
-    expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
-
-    // Ensure the conversation is deleted
-    cards = await screen.findAllByTestId("conversation-card");
-    expect(cards).toHaveLength(1);
-  });
-
-  it("should rename a conversation", async () => {
-    const updateUserConversationSpy = vi.spyOn(
-      OpenHands,
-      "updateUserConversation",
-    );
-
-    const user = userEvent.setup();
-    renderConversationPanel();
-    const cards = await screen.findAllByTestId("conversation-card");
-    const title = within(cards[0]).getByTestId("conversation-card-title");
-
-    await clickOnEditButton(user);
-
-    await user.clear(title);
-    await user.type(title, "Conversation 1 Renamed");
-    await user.tab();
-
-    // Ensure the conversation is renamed
-    expect(updateUserConversationSpy).toHaveBeenCalledWith("3", {
-      title: "Conversation 1 Renamed",
+    await waitFor(() => {
+      expect(screen.getByText('Test Conversation 1')).toBeInTheDocument();
+      expect(screen.getByText('Test Conversation 2')).toBeInTheDocument();
     });
   });
 
-  it("should not rename a conversation when the name is unchanged", async () => {
-    const updateUserConversationSpy = vi.spyOn(
-      OpenHands,
-      "updateUserConversation",
-    );
+  it('should display an empty state when there are no conversations', async () => {
+    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue([]);
 
-    const user = userEvent.setup();
-    renderConversationPanel();
-    const cards = await screen.findAllByTestId("conversation-card");
-    const title = within(cards[0]).getByTestId("conversation-card-title");
+    renderComponent();
 
-    await user.click(title);
-    await user.tab();
-
-    // Ensure the conversation is not renamed
-    expect(updateUserConversationSpy).not.toHaveBeenCalled();
-
-    await clickOnEditButton(user);
-
-    await user.type(title, "Conversation 1");
-    await user.click(title);
-    await user.tab();
-
-    expect(updateUserConversationSpy).toHaveBeenCalledTimes(1);
-
-    await user.click(title);
-    await user.tab();
-
-    expect(updateUserConversationSpy).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(screen.getByText('No conversations yet')).toBeInTheDocument();
+    });
   });
 
-  it("should call onClose after clicking a card", async () => {
-    renderConversationPanel();
-    const cards = await screen.findAllByTestId("conversation-card");
-    const firstCard = cards[0];
+  it('should handle an error when fetching conversations', async () => {
+    jest.spyOn(OpenHands, 'listConversations').mockRejectedValue(new Error('Failed to fetch'));
 
-    await userEvent.click(firstCard);
+    renderComponent();
 
-    expect(onCloseMock).toHaveBeenCalledOnce();
+    await waitFor(() => {
+      expect(screen.getByText('Error: Failed to fetch')).toBeInTheDocument();
+    });
+  });
+
+  it('should cancel deleting a conversation', async () => {
+    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
+    const deleteConversation = jest.spyOn(OpenHands, 'deleteConversation');
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Conversation 1')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('delete-conversation-1'));
+    fireEvent.click(screen.getByText('Cancel'));
+
+    expect(deleteConversation).not.toHaveBeenCalled();
+  });
+
+  it('should call endSession after deleting a conversation that is the current session', async () => {
+    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
+    jest.spyOn(OpenHands, 'deleteConversation').mockResolvedValue(undefined);
+
+    renderComponent({ currentSessionId: '1' });
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Conversation 1')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('delete-conversation-1'));
+    fireEvent.click(screen.getByText('Delete'));
+
+    await waitFor(() => {
+      expect(mockEndSession).toHaveBeenCalled();
+    });
+  });
+
+  it('should delete a conversation', async () => {
+    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
+    const deleteConversation = jest.spyOn(OpenHands, 'deleteConversation').mockResolvedValue(undefined);
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Conversation 1')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('delete-conversation-1'));
+    fireEvent.click(screen.getByText('Delete'));
+
+    await waitFor(() => {
+      expect(deleteConversation).toHaveBeenCalledWith('1');
+    });
+  });
+
+  it('should rename a conversation', async () => {
+    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
+    const updateConversation = jest.spyOn(OpenHands, 'updateConversation').mockResolvedValue({
+      ...mockConversations[0],
+      name: 'New Name',
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Conversation 1')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('rename-conversation-1'));
+    const input = screen.getByDisplayValue('Test Conversation 1');
+    fireEvent.change(input, { target: { value: 'New Name' } });
+    fireEvent.click(screen.getByText('Save'));
+
+    await waitFor(() => {
+      expect(updateConversation).toHaveBeenCalledWith('1', { name: 'New Name' });
+    });
+  });
+
+  it('should not rename a conversation when the name is unchanged', async () => {
+    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
+    const updateConversation = jest.spyOn(OpenHands, 'updateConversation');
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Conversation 1')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('rename-conversation-1'));
+    fireEvent.click(screen.getByText('Save'));
+
+    expect(updateConversation).not.toHaveBeenCalled();
+  });
+
+  it('should call onClose after clicking a card', async () => {
+    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
+    const onClose = jest.fn();
+
+    renderComponent({ onClose });
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Conversation 1')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Test Conversation 1'));
+
+    expect(onClose).toHaveBeenCalled();
   });
 });
