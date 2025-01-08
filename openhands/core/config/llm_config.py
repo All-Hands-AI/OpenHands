@@ -89,6 +89,8 @@ class LLMConfig(BaseModel):
     custom_tokenizer: str | None = Field(default=None)
     native_tool_calling: bool | None = Field(default=None)
 
+    model_config = {'extra': 'forbid'}
+
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
         result = {}

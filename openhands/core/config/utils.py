@@ -10,6 +10,7 @@ from uuid import uuid4
 
 import toml
 from dotenv import load_dotenv
+from pydantic import ValidationError
 
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
@@ -164,7 +165,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     logger.openhands_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'
                     )
-            except (TypeError, KeyError) as e:
+            except (TypeError, KeyError, ValidationError) as e:
                 logger.openhands_logger.warning(
                     f'Cannot parse [{key}] config from toml, values have not been applied.\nError: {e}',
                     exc_info=False,
