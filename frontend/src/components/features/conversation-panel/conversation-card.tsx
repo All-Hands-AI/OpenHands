@@ -14,6 +14,7 @@ interface ConversationCardProps {
   onDelete?: () => void;
   onChangeTitle?: (title: string) => void;
   onDownloadWorkspace?: () => void;
+  isActive: boolean;
   title: string;
   selectedRepository: string | null;
   lastUpdatedAt: string; // ISO 8601
@@ -26,6 +27,7 @@ export function ConversationCard({
   onDelete,
   onChangeTitle,
   onDownloadWorkspace,
+  isActive,
   title,
   selectedRepository,
   lastUpdatedAt,
@@ -56,15 +58,18 @@ export function ConversationCard({
   };
 
   const handleInputClick = (event: React.MouseEvent<HTMLInputElement>) => {
+    event.preventDefault();
     event.stopPropagation();
   };
 
   const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
     event.stopPropagation();
     onDelete?.();
   };
 
   const handleEdit = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
     event.stopPropagation();
     setTitleMode("edit");
     setContextMenuVisible(false);
@@ -93,24 +98,28 @@ export function ConversationCard({
           "h-auto w-fit rounded-xl border border-[#525252]",
       )}
     >
-      <div className="flex items-center justify-between space-x-1">
-        <input
-          data-testid="conversation-card-title"
-          ref={inputRef}
-          disabled={titleMode === "view"}
-          onClick={handleInputClick}
-          onBlur={handleBlur}
-          onKeyUp={handleKeyUp}
-          type="text"
-          defaultValue={title}
-          className="text-sm leading-6 font-semibold bg-transparent w-full"
-        />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 w-full">
+          {isActive && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
+          <input
+            ref={inputRef}
+            disabled={titleMode === "view"}
+            data-testid="conversation-card-title"
+            onClick={handleInputClick}
+            onBlur={handleBlur}
+            onKeyUp={handleKeyUp}
+            type="text"
+            defaultValue={title}
+            className="text-sm leading-6 font-semibold bg-transparent w-full"
+          />
+        </div>
 
         <div className="flex items-center gap-2 relative">
           <ConversationStateIndicator status={status} />
           {hasContextMenu && (
             <EllipsisButton
               onClick={(event) => {
+                event.preventDefault();
                 event.stopPropagation();
                 setContextMenuVisible((prev) => !prev);
               }}
