@@ -3,8 +3,8 @@ import {
   GetConfigResponse,
   Conversation,
   ResultSet,
-} from "#/api/open-hands.types";
-import { DEFAULT_SETTINGS } from "#/services/settings";
+} from "~/api/open-hands.types";
+import { DEFAULT_SETTINGS } from "~/services/settings";
 
 const userPreferences = {
   settings: {

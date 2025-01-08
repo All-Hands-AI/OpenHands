@@ -1,6 +1,6 @@
 import posthog from "posthog-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { handleCaptureConsent } from "#/utils/handle-capture-consent";
+import { handleCaptureConsent } from "~/utils/handle-capture-consent";
 
 describe("handleCaptureConsent", () => {
   const optInSpy = vi.spyOn(posthog, "opt_in_capturing");

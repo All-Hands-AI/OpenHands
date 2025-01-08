@@ -6,9 +6,9 @@ import {
   QueryClientConfig,
 } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
-import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
-import OpenHands from "#/api/open-hands";
-import { AuthProvider } from "#/context/auth-context";
+import { ConversationPanel } from "~/components/features/conversation-panel/conversation-panel";
+import OpenHands from "~/api/open-hands";
+import { AuthProvider } from "~/context/auth-context";
 import { clickOnEditButton } from "./utils";
 
 describe("ConversationPanel", () => {
@@ -39,7 +39,7 @@ describe("ConversationPanel", () => {
     }));
 
     vi.mock("#/hooks/use-end-session", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("#/hooks/use-end-session")>()),
+      ...(await importOriginal<typeof import("~/hooks/use-end-session")>()),
       useEndSession: vi.fn(() => endSessionMock),
     }));
   });

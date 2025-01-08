@@ -1,5 +1,5 @@
-import LoadingSpinnerOuter from "#/icons/loading-outer.svg?react";
-import { cn } from "#/utils/utils";
+import LoadingSpinnerOuter from "~/icons/loading-outer.svg?react";
+import { cn } from "~/utils/utils";
 
 interface LoadingSpinnerProps {
   size: "small" | "large";

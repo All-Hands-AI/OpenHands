@@ -3,8 +3,8 @@ import { useSelector } from "react-redux";
 import { AgentControlBar } from "./agent-control-bar";
 import { AgentStatusBar } from "./agent-status-bar";
 import { ProjectMenuCard } from "../project-menu/ProjectMenuCard";
-import { useAuth } from "#/context/auth-context";
-import { RootState } from "#/store";
+import { useAuth } from "~/context/auth-context";
+import { RootState } from "~/store";
 import { SecurityLock } from "./security-lock";
 
 interface ControlsProps {

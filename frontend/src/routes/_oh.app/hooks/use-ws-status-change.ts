@@ -1,16 +1,16 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useAuth } from "#/context/auth-context";
+import { useAuth } from "~/context/auth-context";
 import {
   useWsClient,
   WsClientProviderStatus,
-} from "#/context/ws-client-provider";
-import { createChatMessage } from "#/services/chat-service";
-import { setCurrentAgentState } from "#/state/agent-slice";
-import { addUserMessage } from "#/state/chat-slice";
-import { clearFiles, clearInitialQuery } from "#/state/initial-query-slice";
-import { RootState } from "#/store";
-import { AgentState } from "#/types/agent-state";
+} from "~/context/ws-client-provider";
+import { createChatMessage } from "~/services/chat-service";
+import { setCurrentAgentState } from "~/state/agent-slice";
+import { addUserMessage } from "~/state/chat-slice";
+import { clearFiles, clearInitialQuery } from "~/state/initial-query-slice";
+import { RootState } from "~/store";
+import { AgentState } from "~/types/agent-state";
 
 export const useWSStatusChange = () => {
   const { send, status } = useWsClient();

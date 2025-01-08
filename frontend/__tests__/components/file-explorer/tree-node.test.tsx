@@ -2,8 +2,8 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import { vi, describe, afterEach, it, expect } from "vitest";
-import TreeNode from "#/components/features/file-explorer/tree-node";
-import OpenHands from "#/api/open-hands";
+import TreeNode from "~/components/features/file-explorer/tree-node";
+import OpenHands from "~/api/open-hands";
 
 const getFileSpy = vi.spyOn(OpenHands, "getFile");
 const getFilesSpy = vi.spyOn(OpenHands, "getFiles");

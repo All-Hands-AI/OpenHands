@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { it, describe, expect, vi, beforeAll, afterAll } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
-import * as CaptureConsent from "#/utils/handle-capture-consent";
+import { WaitlistModal } from "~/components/features/waitlist/waitlist-modal";
+import * as CaptureConsent from "~/utils/handle-capture-consent";
 
 describe("WaitlistModal", () => {
   beforeAll(() => {

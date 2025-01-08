@@ -1,7 +1,7 @@
-import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
-import { ModalBody } from "#/components/shared/modals/modal-body";
-import { ModalButton } from "#/components/shared/buttons/modal-button";
-import { BaseModalTitle } from "#/components/shared/modals/confirmation-modals/base-modal";
+import { ModalBackdrop } from "~/components/shared/modals/modal-backdrop";
+import { ModalBody } from "~/components/shared/modals/modal-body";
+import { ModalButton } from "~/components/shared/buttons/modal-button";
+import { BaseModalTitle } from "~/components/shared/modals/confirmation-modals/base-modal";
 
 interface ExitConversationModalProps {
   onConfirm: () => void;

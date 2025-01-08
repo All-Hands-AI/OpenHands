@@ -1,12 +1,12 @@
 import React from "react";
 import { useSelector } from "react-redux";
 
-import { useFiles } from "#/context/files";
-import { cn } from "#/utils/utils";
-import { useListFiles } from "#/hooks/query/use-list-files";
-import { useListFile } from "#/hooks/query/use-list-file";
+import { useFiles } from "~/context/files";
+import { cn } from "~/utils/utils";
+import { useListFiles } from "~/hooks/query/use-list-files";
+import { useListFile } from "~/hooks/query/use-list-file";
 import { Filename } from "./filename";
-import { RootState } from "#/store";
+import { RootState } from "~/store";
 
 interface TreeNodeProps {
   path: string;

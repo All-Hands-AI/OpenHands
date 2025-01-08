@@ -1,4 +1,4 @@
-import Clip from "#/icons/clip.svg?react";
+import Clip from "~/icons/clip.svg?react";
 
 export function AttachImageLabel() {
   return (

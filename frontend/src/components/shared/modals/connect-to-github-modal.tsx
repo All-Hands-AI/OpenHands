@@ -4,8 +4,8 @@ import {
   BaseModalDescription,
   BaseModalTitle,
 } from "./confirmation-modals/base-modal";
-import { I18nKey } from "#/i18n/declaration";
-import { useAuth } from "#/context/auth-context";
+import { I18nKey } from "~/i18n/declaration";
+import { useAuth } from "~/context/auth-context";
 import { ModalButton } from "../buttons/modal-button";
 import { CustomInput } from "../custom-input";
 

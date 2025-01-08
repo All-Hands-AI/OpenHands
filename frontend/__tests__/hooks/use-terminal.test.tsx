@@ -2,8 +2,8 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { afterEach } from "node:test";
 import { ReactNode } from "react";
-import { useTerminal } from "#/hooks/use-terminal";
-import { Command } from "#/state/command-slice";
+import { useTerminal } from "~/hooks/use-terminal";
+import { Command } from "~/state/command-slice";
 
 interface TestTerminalComponentProps {
   commands: Command[];

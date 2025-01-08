@@ -1,15 +1,15 @@
 import React from "react";
 import { useRouteError, isRouteErrorResponse, Outlet } from "react-router";
-import i18n from "#/i18n";
-import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
-import { useIsAuthed } from "#/hooks/query/use-is-authed";
-import { useAuth } from "#/context/auth-context";
-import { useConfig } from "#/hooks/query/use-config";
-import { Sidebar } from "#/components/features/sidebar/sidebar";
-import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
-import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
-import { useSettings } from "#/hooks/query/use-settings";
-import { useMaybeMigrateSettings } from "#/hooks/use-maybe-migrate-settings";
+import i18n from "~/i18n";
+import { useGitHubAuthUrl } from "~/hooks/use-github-auth-url";
+import { useIsAuthed } from "~/hooks/query/use-is-authed";
+import { useAuth } from "~/context/auth-context";
+import { useConfig } from "~/hooks/query/use-config";
+import { Sidebar } from "~/components/features/sidebar/sidebar";
+import { WaitlistModal } from "~/components/features/waitlist/waitlist-modal";
+import { AnalyticsConsentFormModal } from "~/components/features/analytics/analytics-consent-form-modal";
+import { useSettings } from "~/hooks/query/use-settings";
+import { useMaybeMigrateSettings } from "~/hooks/use-maybe-migrate-settings";
 
 export function ErrorBoundary() {
   const error = useRouteError();

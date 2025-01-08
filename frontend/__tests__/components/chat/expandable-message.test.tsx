@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
-import { ExpandableMessage } from "#/components/features/chat/expandable-message";
+import { ExpandableMessage } from "~/components/features/chat/expandable-message";
 import { vi } from 'vitest';
 
 vi.mock('react-i18next', async () => {

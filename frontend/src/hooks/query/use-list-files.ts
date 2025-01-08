@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
-import OpenHands from "#/api/open-hands";
-import { useConversation } from "#/context/conversation-context";
-import { RootState } from "#/store";
-import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
+import OpenHands from "~/api/open-hands";
+import { useConversation } from "~/context/conversation-context";
+import { RootState } from "~/store";
+import { RUNTIME_INACTIVE_STATES } from "~/types/agent-state";
 
 interface UseListFilesConfig {
   path?: string;

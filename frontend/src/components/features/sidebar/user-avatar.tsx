@@ -1,8 +1,8 @@
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import DefaultUserAvatar from "#/icons/default-user.svg?react";
-import { cn } from "#/utils/utils";
+import { LoadingSpinner } from "~/components/shared/loading-spinner";
+import DefaultUserAvatar from "~/icons/default-user.svg?react";
+import { cn } from "~/utils/utils";
 import { Avatar } from "./avatar";
-import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
+import { TooltipButton } from "~/components/shared/buttons/tooltip-button";
 
 interface UserAvatarProps {
   onClick: () => void;

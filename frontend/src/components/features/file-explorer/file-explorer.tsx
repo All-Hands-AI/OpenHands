@@ -1,16 +1,16 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
-import { ExplorerTree } from "#/components/features/file-explorer/explorer-tree";
-import toast from "#/utils/toast";
-import { RootState } from "#/store";
-import { I18nKey } from "#/i18n/declaration";
-import { useListFiles } from "#/hooks/query/use-list-files";
-import { cn } from "#/utils/utils";
+import { RUNTIME_INACTIVE_STATES } from "~/types/agent-state";
+import { ExplorerTree } from "~/components/features/file-explorer/explorer-tree";
+import toast from "~/utils/toast";
+import { RootState } from "~/store";
+import { I18nKey } from "~/i18n/declaration";
+import { useListFiles } from "~/hooks/query/use-list-files";
+import { cn } from "~/utils/utils";
 import { FileExplorerHeader } from "./file-explorer-header";
-import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
-import { OpenVSCodeButton } from "#/components/shared/buttons/open-vscode-button";
+import { useVSCodeUrl } from "~/hooks/query/use-vscode-url";
+import { OpenVSCodeButton } from "~/components/shared/buttons/open-vscode-button";
 
 interface FileExplorerProps {
   isOpen: boolean;

@@ -1,4 +1,4 @@
-import DocsIcon from "#/icons/docs.svg?react";
+import DocsIcon from "~/icons/docs.svg?react";
 import { TooltipButton } from "./tooltip-button";
 
 export function DocsButton() {

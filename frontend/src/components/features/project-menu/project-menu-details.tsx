@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
-import ExternalLinkIcon from "#/icons/external-link.svg?react";
-import { formatTimeDelta } from "#/utils/format-time-delta";
-import { I18nKey } from "#/i18n/declaration";
+import ExternalLinkIcon from "~/icons/external-link.svg?react";
+import { formatTimeDelta } from "~/utils/format-time-delta";
+import { I18nKey } from "~/i18n/declaration";
 
 interface ProjectMenuDetailsProps {
   repoName: string;

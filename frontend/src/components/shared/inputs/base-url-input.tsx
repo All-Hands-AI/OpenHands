@@ -1,6 +1,6 @@
 import { Input } from "@nextui-org/react";
 import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
+import { I18nKey } from "~/i18n/declaration";
 
 interface BaseUrlInputProps {
   isDisabled: boolean;

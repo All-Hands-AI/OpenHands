@@ -1,5 +1,5 @@
 import { OpenHandsActionEvent } from "./base";
-import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
+import { ActionSecurityRisk } from "~/state/security-analyzer-slice";
 
 export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
   source: "user";

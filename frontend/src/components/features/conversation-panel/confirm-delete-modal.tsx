@@ -1,10 +1,10 @@
-import { ModalButton } from "#/components/shared/buttons/modal-button";
+import { ModalButton } from "~/components/shared/buttons/modal-button";
 import {
   BaseModalDescription,
   BaseModalTitle,
-} from "#/components/shared/modals/confirmation-modals/base-modal";
-import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
-import { ModalBody } from "#/components/shared/modals/modal-body";
+} from "~/components/shared/modals/confirmation-modals/base-modal";
+import { ModalBackdrop } from "~/components/shared/modals/modal-backdrop";
+import { ModalBody } from "~/components/shared/modals/modal-body";
 
 interface ConfirmDeleteModalProps {
   onConfirm: () => void;

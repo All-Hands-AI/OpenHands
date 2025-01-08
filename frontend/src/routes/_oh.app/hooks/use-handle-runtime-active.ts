@@ -1,16 +1,16 @@
 import React from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
-import { useAuth } from "#/context/auth-context";
-import { useWsClient } from "#/context/ws-client-provider";
-import { getGitHubTokenCommand } from "#/services/terminal-service";
-import { setImportedProjectZip } from "#/state/initial-query-slice";
-import { RootState } from "#/store";
-import { base64ToBlob } from "#/utils/base64-to-blob";
+import { useAuth } from "~/context/auth-context";
+import { useWsClient } from "~/context/ws-client-provider";
+import { getGitHubTokenCommand } from "~/services/terminal-service";
+import { setImportedProjectZip } from "~/state/initial-query-slice";
+import { RootState } from "~/store";
+import { base64ToBlob } from "~/utils/base64-to-blob";
 import { useUploadFiles } from "../../../hooks/mutation/use-upload-files";
 import { useGitHubUser } from "../../../hooks/query/use-github-user";
-import { isGitHubErrorReponse } from "#/api/github-axios-instance";
-import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
+import { isGitHubErrorReponse } from "~/api/github-axios-instance";
+import { RUNTIME_INACTIVE_STATES } from "~/types/agent-state";
 
 export const useHandleRuntimeActive = () => {
   const { gitHubToken } = useAuth();

@@ -1,7 +1,7 @@
 import { render, screen, within, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
+import { InteractiveChatBox } from "~/components/features/chat/interactive-chat-box";
 
 describe("InteractiveChatBox", () => {
   const onSubmitMock = vi.fn();

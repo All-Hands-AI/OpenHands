@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { searchPublicRepositories } from "#/api/github";
+import { searchPublicRepositories } from "~/api/github";
 
 export function useSearchRepositories(query: string) {
   return useQuery({

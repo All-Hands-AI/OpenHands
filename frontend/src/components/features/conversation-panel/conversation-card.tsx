@@ -1,5 +1,5 @@
 import React from "react";
-import { formatTimeDelta } from "#/utils/format-time-delta";
+import { formatTimeDelta } from "~/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
 import {
   ProjectStatus,

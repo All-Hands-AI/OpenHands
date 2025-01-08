@@ -1,13 +1,13 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
+import { ActionSecurityRisk } from "~/state/security-analyzer-slice";
 import {
   OpenHandsObservation,
   CommandObservation,
   IPythonObservation,
-} from "#/types/core/observations";
-import { OpenHandsAction } from "#/types/core/actions";
-import { OpenHandsEventType } from "#/types/core/base";
+} from "~/types/core/observations";
+import { OpenHandsAction } from "~/types/core/actions";
+import { OpenHandsEventType } from "~/types/core/base";
 
 type SliceState = { messages: Message[] };
 

@@ -1,6 +1,6 @@
-import { Suggestions } from "#/components/features/suggestions/suggestions";
-import BuildIt from "#/icons/build-it.svg?react";
-import { SUGGESTIONS } from "#/utils/suggestions";
+import { Suggestions } from "~/components/features/suggestions/suggestions";
+import BuildIt from "~/icons/build-it.svg?react";
+import { SUGGESTIONS } from "~/utils/suggestions";
 
 interface ChatSuggestionsProps {
   onSuggestionsClick: (value: string) => void;

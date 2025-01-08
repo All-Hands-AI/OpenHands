@@ -9,9 +9,9 @@ import { I18nextProvider, initReactI18next } from "react-i18next";
 import i18n from "i18next";
 import { vi } from "vitest";
 import { AppStore, RootState, rootReducer } from "./src/store";
-import { AuthProvider } from "#/context/auth-context";
-import { ConversationProvider } from "#/context/conversation-context";
-import { SettingsUpToDateProvider } from "#/context/settings-up-to-date-context";
+import { AuthProvider } from "~/context/auth-context";
+import { ConversationProvider } from "~/context/conversation-context";
+import { SettingsUpToDateProvider } from "~/context/settings-up-to-date-context";
 
 // Mock useParams before importing components
 vi.mock("react-router", async () => {

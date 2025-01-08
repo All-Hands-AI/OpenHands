@@ -1,10 +1,10 @@
 import posthog from "posthog-js";
 import React from "react";
 import { useSelector } from "react-redux";
-import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
-import { useAuth } from "#/context/auth-context";
-import { DownloadModal } from "#/components/shared/download-modal";
-import type { RootState } from "#/store";
+import { SuggestionItem } from "~/components/features/suggestions/suggestion-item";
+import { useAuth } from "~/context/auth-context";
+import { DownloadModal } from "~/components/shared/download-modal";
+import type { RootState } from "~/store";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;

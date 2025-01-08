@@ -1,4 +1,4 @@
-import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
+import AllHandsLogo from "~/assets/branding/all-hands-logo.svg?react";
 import { TooltipButton } from "./tooltip-button";
 
 interface AllHandsLogoButtonProps {

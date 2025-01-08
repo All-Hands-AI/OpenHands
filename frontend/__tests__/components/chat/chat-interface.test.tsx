@@ -2,11 +2,11 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
-import { addUserMessage } from "#/state/chat-slice";
-import { SUGGESTIONS } from "#/utils/suggestions";
-import * as ChatSlice from "#/state/chat-slice";
-import { WsClientProviderStatus } from "#/context/ws-client-provider";
-import { ChatInterface } from "#/components/features/chat/chat-interface";
+import { addUserMessage } from "~/state/chat-slice";
+import { SUGGESTIONS } from "~/utils/suggestions";
+import * as ChatSlice from "~/state/chat-slice";
+import { WsClientProviderStatus } from "~/context/ws-client-provider";
+import { ChatInterface } from "~/components/features/chat/chat-interface";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const renderChatInterface = (messages: Message[]) =>
@@ -32,7 +32,7 @@ describe("Empty state", () => {
     }));
 
     vi.mock("#/context/socket", async (importActual) => ({
-      ...(await importActual<typeof import("#/context/ws-client-provider")>()),
+      ...(await importActual<typeof import("~/context/ws-client-provider")>()),
       useWsClient: useWsClientMock,
     }));
   });

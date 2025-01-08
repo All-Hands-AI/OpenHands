@@ -1,7 +1,7 @@
 import Markdown from "react-markdown";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import { JupyterLine } from "#/utils/parse-cell-content";
+import { JupyterLine } from "~/utils/parse-cell-content";
 
 interface JupyterCellOutputProps {
   lines: JupyterLine[];

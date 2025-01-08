@@ -1,6 +1,6 @@
 import React from "react";
-import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
-import { GetConfigResponse } from "#/api/open-hands.types";
+import { generateGitHubAuthUrl } from "~/utils/generate-github-auth-url";
+import { GetConfigResponse } from "~/api/open-hands.types";
 
 interface UseGitHubAuthUrlConfig {
   gitHubToken: string | null;

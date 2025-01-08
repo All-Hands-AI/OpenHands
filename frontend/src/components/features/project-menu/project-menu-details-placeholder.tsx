@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { cn } from "#/utils/utils";
-import CloudConnection from "#/icons/cloud-connection.svg?react";
-import { I18nKey } from "#/i18n/declaration";
+import { cn } from "~/utils/utils";
+import CloudConnection from "~/icons/cloud-connection.svg?react";
+import { I18nKey } from "~/i18n/declaration";
 
 interface ProjectMenuDetailsPlaceholderProps {
   isConnectedToGitHub: boolean;

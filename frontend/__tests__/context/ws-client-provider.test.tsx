@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import * as ChatSlice from "#/state/chat-slice";
+import * as ChatSlice from "~/state/chat-slice";
 import {
   updateStatusWhenErrorMessagePresent,
-} from "#/context/ws-client-provider";
+} from "~/context/ws-client-provider";
 
 describe("Propagate error message", () => {
   it("should do nothing when no message was passed from server", () => {

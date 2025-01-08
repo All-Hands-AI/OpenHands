@@ -4,10 +4,10 @@ import { createRoutesStub } from "react-router";
 import { screen, waitFor, within } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import userEvent from "@testing-library/user-event";
-import MainApp from "#/routes/_oh/route";
-import i18n from "#/i18n";
-import * as CaptureConsent from "#/utils/handle-capture-consent";
-import OpenHands from "#/api/open-hands";
+import MainApp from "~/routes/_oh/route";
+import i18n from "~/i18n";
+import * as CaptureConsent from "~/utils/handle-capture-consent";
+import OpenHands from "~/api/open-hands";
 
 describe("frontend/routes/_oh", () => {
   const RouteStub = createRoutesStub([{ Component: MainApp, path: "/" }]);
@@ -25,7 +25,7 @@ describe("frontend/routes/_oh", () => {
     }));
 
     vi.mock("#/services/settings", async (importOriginal) => ({
-      ...(await importOriginal<typeof import("#/services/settings")>()),
+      ...(await importOriginal<typeof import("~/services/settings")>()),
       settingsAreUpToDate: settingsAreUpToDateMock,
     }));
   });

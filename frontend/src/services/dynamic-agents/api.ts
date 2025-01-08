@@ -1,104 +1,54 @@
-
 import { getAuthToken } from '~/utils/auth';
-import type { 
-  DynamicAgent, 
-  AgentTemplate, 
-  TechAnalysisResult 
-} from '~/types/agents';
-
-const API_BASE = '/api/v1';
-
-class APIError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-    public code?: string
-  ) {
-    super(message);
-    this.name = 'APIError';
-  }
-}
+import type { DynamicAgent } from '~/types/agents';
 
 export class DynamicAgentAPI {
-  private static async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  private baseUrl: string;
+
+  constructor(baseUrl: string = '/api/v1/agents') {
+    this.baseUrl = baseUrl;
+  }
+
+  private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const token = getAuthToken();
-    if (!token) {
-      throw new APIError('Authentication required', 401, 'AUTH_REQUIRED');
-    }
-    
-    const response = await fetch(`${API_BASE}${endpoint}`, {
+    const response = await fetch(`${this.baseUrl}${path}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        ...options.headers
-      }
+        Authorization: `Bearer ${token}`,
+        ...options.headers,
+      },
     });
-    
+
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new APIError(
-        error.message || 'API request failed',
-        response.status,
-        error.code
-      );
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     return response.json();
   }
 
-  static async analyzeStack(
-    technologies: string[]
-  ): Promise<TechAnalysisResult> {
-    return this.request('/agents/analyze', {
-      method: 'POST',
-      body: JSON.stringify({ technologies })
-    });
-  }
-
-  static async createAgent(
-    name: string,
-    technologies: string[],
-    analysis: TechAnalysisResult
-  ): Promise<DynamicAgent> {
-    return this.request('/agents', {
-      method: 'POST',
-      body: JSON.stringify({ name, technologies, analysis })
-    });
-  }
-
   static async listAgents(): Promise<DynamicAgent[]> {
-    return this.request('/agents');
+    const api = new DynamicAgentAPI();
+    return api.request<DynamicAgent[]>('/');
   }
 
-  static async getAgent(id: string): Promise<DynamicAgent> {
-    return this.request(`/agents/${id}`);
+  static async createAgent(name: string, technologies: string[]): Promise<DynamicAgent> {
+    const api = new DynamicAgentAPI();
+    return api.request<DynamicAgent>('/', {
+      method: 'POST',
+      body: JSON.stringify({ name, technologies }),
+    });
   }
 
-  static async updateAgent(
-    id: string,
-    updates: Partial<DynamicAgent>
-  ): Promise<DynamicAgent> {
-    return this.request(`/agents/${id}`, {
+  static async updateAgent(id: string, updates: Partial<DynamicAgent>): Promise<DynamicAgent> {
+    const api = new DynamicAgentAPI();
+    return api.request<DynamicAgent>(`/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify(updates)
+      body: JSON.stringify(updates),
     });
   }
 
   static async deleteAgent(id: string): Promise<void> {
-    await this.request(`/agents/${id}`, {
-      method: 'DELETE'
-    });
-  }
-
-  static async listTemplates(): Promise<AgentTemplate[]> {
-    return this.request('/templates');
-  }
-
-  static async getTemplate(name: string): Promise<AgentTemplate> {
-    return this.request(`/templates/${name}`);
+    const api = new DynamicAgentAPI();
+    await api.request(`/${id}`, { method: 'DELETE' });
   }
 }

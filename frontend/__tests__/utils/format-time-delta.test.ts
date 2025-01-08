@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { formatTimeDelta } from "#/utils/format-time-delta";
+import { formatTimeDelta } from "~/utils/format-time-delta";
 
 describe("formatTimeDelta", () => {
   beforeEach(() => {

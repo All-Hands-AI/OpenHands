@@ -1,24 +1,24 @@
 import { useDispatch, useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
-import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
+import { convertImageToBase64 } from "~/utils/convert-image-to-base-64";
 import { FeedbackActions } from "../feedback/feedback-actions";
-import { createChatMessage } from "#/services/chat-service";
+import { createChatMessage } from "~/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
-import { addUserMessage } from "#/state/chat-slice";
-import { RootState } from "#/store";
-import { AgentState } from "#/types/agent-state";
-import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
+import { addUserMessage } from "~/state/chat-slice";
+import { RootState } from "~/store";
+import { AgentState } from "~/types/agent-state";
+import { generateAgentStateChangeEvent } from "~/services/agent-state-service";
 import { FeedbackModal } from "../feedback/feedback-modal";
-import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
+import { useScrollToBottom } from "~/hooks/use-scroll-to-bottom";
 import { TypingIndicator } from "./typing-indicator";
-import { useWsClient } from "#/context/ws-client-provider";
+import { useWsClient } from "~/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
-import { ContinueButton } from "#/components/shared/buttons/continue-button";
-import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { ContinueButton } from "~/components/shared/buttons/continue-button";
+import { ScrollToBottomButton } from "~/components/shared/buttons/scroll-to-bottom-button";
+import { LoadingSpinner } from "~/components/shared/loading-spinner";
 
 function getEntryPoint(
   hasRepository: boolean | null,

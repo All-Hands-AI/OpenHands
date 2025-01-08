@@ -1,5 +1,5 @@
 import { NavLink } from "react-router";
-import { cn } from "#/utils/utils";
+import { cn } from "~/utils/utils";
 import { BetaBadge } from "./beta-badge";
 
 interface NavTabProps {

@@ -2,9 +2,9 @@ import React from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { code } from "../markdown/code";
-import { cn } from "#/utils/utils";
+import { cn } from "~/utils/utils";
 import { ul, ol } from "../markdown/list";
-import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
+import { CopyToClipboardButton } from "~/components/shared/buttons/copy-to-clipboard-button";
 import { anchor } from "../markdown/anchor";
 
 interface ChatMessageProps {

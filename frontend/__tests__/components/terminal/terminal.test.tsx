@@ -1,8 +1,8 @@
 import { act, screen } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import { vi, describe, afterEach, it, expect } from "vitest";
-import { Command, appendInput, appendOutput } from "#/state/command-slice";
-import Terminal from "#/components/features/terminal/terminal";
+import { Command, appendInput, appendOutput } from "~/state/command-slice";
+import Terminal from "~/components/features/terminal/terminal";
 
 const renderTerminal = (commands: Command[] = []) =>
   renderWithProviders(<Terminal secrets={[]} />, {

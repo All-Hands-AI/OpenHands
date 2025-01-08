@@ -1,4 +1,4 @@
-import { Settings } from "#/services/settings";
+import { Settings } from "~/services/settings";
 
 const extractBasicFormData = (formData: FormData) => {
   const provider = formData.get("llm-provider")?.toString();

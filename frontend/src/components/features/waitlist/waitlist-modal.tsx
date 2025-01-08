@@ -1,13 +1,13 @@
 import React from "react";
-import GitHubLogo from "#/assets/branding/github-logo.svg?react";
-import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
+import GitHubLogo from "~/assets/branding/github-logo.svg?react";
+import AllHandsLogo from "~/assets/branding/all-hands-logo.svg?react";
 import { JoinWaitlistAnchor } from "./join-waitlist-anchor";
 import { WaitlistMessage } from "./waitlist-message";
-import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
-import { ModalButton } from "#/components/shared/buttons/modal-button";
-import { ModalBody } from "#/components/shared/modals/modal-body";
+import { ModalBackdrop } from "~/components/shared/modals/modal-backdrop";
+import { ModalButton } from "~/components/shared/buttons/modal-button";
+import { ModalBody } from "~/components/shared/modals/modal-body";
 import { TOSCheckbox } from "./tos-checkbox";
-import { handleCaptureConsent } from "#/utils/handle-capture-consent";
+import { handleCaptureConsent } from "~/utils/handle-capture-consent";
 
 interface WaitlistModalProps {
   ghToken: string | null;

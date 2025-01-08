@@ -1,6 +1,6 @@
 import toast, { Toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
+import { I18nKey } from "~/i18n/declaration";
 
 interface ErrorToastProps {
   id: Toast["id"];

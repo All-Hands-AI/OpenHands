@@ -4,11 +4,11 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { code } from "../markdown/code";
 import { ol, ul } from "../markdown/list";
-import ArrowUp from "#/icons/angle-up-solid.svg?react";
-import ArrowDown from "#/icons/angle-down-solid.svg?react";
-import CheckCircle from "#/icons/check-circle-solid.svg?react";
-import XCircle from "#/icons/x-circle-solid.svg?react";
-import { cn } from "#/utils/utils";
+import ArrowUp from "~/icons/angle-up-solid.svg?react";
+import ArrowDown from "~/icons/angle-down-solid.svg?react";
+import CheckCircle from "~/icons/check-circle-solid.svg?react";
+import XCircle from "~/icons/x-circle-solid.svg?react";
+import { cn } from "~/utils/utils";
 
 interface ExpandableMessageProps {
   id?: string;

@@ -1,4 +1,4 @@
-import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
+import { extractNextPageFromLink } from "~/utils/extract-next-page-from-link";
 import { github } from "./github-axios-instance";
 import { openHands } from "./open-hands-axios";
 

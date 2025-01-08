@@ -2,8 +2,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import { RootState } from "#/store";
-import { AgentState } from "#/types/agent-state";
+import { RootState } from "~/store";
+import { AgentState } from "~/types/agent-state";
 import { AGENT_STATUS_MAP } from "../../agent-status-map.constant";
 
 export function AgentStatusBar() {

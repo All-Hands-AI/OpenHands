@@ -1,6 +1,6 @@
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
-import { Conversation } from "#/api/open-hands.types";
+import OpenHands from "~/api/open-hands";
+import { Conversation } from "~/api/open-hands.types";
 
 export const useUpdateConversation = () => {
   const queryClient = useQueryClient();

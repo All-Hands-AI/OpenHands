@@ -1,15 +1,15 @@
 import posthog from "posthog-js";
 import React from "react";
-import OpenHands from "#/api/open-hands";
+import OpenHands from "~/api/open-hands";
 import {
   removeGitHubTokenHeader as removeOpenHandsGitHubTokenHeader,
   setGitHubTokenHeader as setOpenHandsGitHubTokenHeader,
-} from "#/api/open-hands-axios";
+} from "~/api/open-hands-axios";
 import {
   setAuthTokenHeader as setGitHubAuthTokenHeader,
   removeAuthTokenHeader as removeGitHubAuthTokenHeader,
   setupAxiosInterceptors as setupGithubAxiosInterceptors,
-} from "#/api/github-axios-instance";
+} from "~/api/github-axios-instance";
 
 interface AuthContextType {
   gitHubToken: string | null;

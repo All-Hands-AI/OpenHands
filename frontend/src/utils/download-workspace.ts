@@ -1,4 +1,4 @@
-import OpenHands from "#/api/open-hands";
+import OpenHands from "~/api/open-hands";
 
 /**
  * Downloads the current workspace as a .zip file.

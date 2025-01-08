@@ -1,5 +1,5 @@
-import ChevronDoubleRight from "#/icons/chevron-double-right.svg?react";
-import { cn } from "#/utils/utils";
+import ChevronDoubleRight from "~/icons/chevron-double-right.svg?react";
+import { cn } from "~/utils/utils";
 
 interface ContinueButtonProps {
   onClick: () => void;

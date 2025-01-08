@@ -2,9 +2,9 @@ import { screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { createRoutesStub } from "react-router";
-import { DEFAULT_SETTINGS } from "#/services/settings";
-import { SettingsForm } from "#/components/shared/modals/settings/settings-form";
-import OpenHands from "#/api/open-hands";
+import { DEFAULT_SETTINGS } from "~/services/settings";
+import { SettingsForm } from "~/components/shared/modals/settings/settings-form";
+import OpenHands from "~/api/open-hands";
 
 describe("SettingsForm", () => {
   const getConfigSpy = vi.spyOn(OpenHands, "getConfig");

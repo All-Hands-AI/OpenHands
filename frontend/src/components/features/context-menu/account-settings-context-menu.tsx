@@ -2,8 +2,8 @@ import { useTranslation } from "react-i18next";
 import { ContextMenu } from "./context-menu";
 import { ContextMenuListItem } from "./context-menu-list-item";
 import { ContextMenuSeparator } from "./context-menu-separator";
-import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
-import { I18nKey } from "#/i18n/declaration";
+import { useClickOutsideElement } from "~/hooks/use-click-outside-element";
+import { I18nKey } from "~/i18n/declaration";
 
 interface AccountSettingsContextMenuProps {
   onClickAccountSettings: () => void;

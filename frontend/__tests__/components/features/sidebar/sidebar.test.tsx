@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { createRoutesStub } from "react-router";
-import { Sidebar } from "#/components/features/sidebar/sidebar";
-import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
+import { Sidebar } from "~/components/features/sidebar/sidebar";
+import { MULTI_CONVERSATION_UI } from "~/utils/feature-flags";
 
 const renderSidebar = () => {
   const RouterStub = createRoutesStub([

@@ -2,10 +2,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import posthog from "posthog-js";
 import { useDispatch, useSelector } from "react-redux";
-import OpenHands from "#/api/open-hands";
-import { setInitialQuery } from "#/state/initial-query-slice";
-import { RootState } from "#/store";
-import { useAuth } from "#/context/auth-context";
+import OpenHands from "~/api/open-hands";
+import { setInitialQuery } from "~/state/initial-query-slice";
+import { RootState } from "~/store";
+import { useAuth } from "~/context/auth-context";
 
 export const useCreateConversation = () => {
   const navigate = useNavigate();

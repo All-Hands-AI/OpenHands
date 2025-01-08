@@ -1,4 +1,4 @@
-import Refresh from "#/icons/refresh.svg?react";
+import Refresh from "~/icons/refresh.svg?react";
 
 interface RefreshButtonProps {
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;

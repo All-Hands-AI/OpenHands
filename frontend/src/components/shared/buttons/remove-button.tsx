@@ -1,5 +1,5 @@
-import { cn } from "#/utils/utils";
-import CloseIcon from "#/icons/close.svg?react";
+import { cn } from "~/utils/utils";
+import CloseIcon from "~/icons/close.svg?react";
 
 interface RemoveButtonProps {
   onClick: () => void;

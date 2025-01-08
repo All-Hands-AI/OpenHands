@@ -2,8 +2,8 @@ import React from "react";
 import { useRouteError } from "react-router";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { FileExplorer } from "#/components/features/file-explorer/file-explorer";
-import { useFiles } from "#/context/files";
+import { FileExplorer } from "~/components/features/file-explorer/file-explorer";
+import { useFiles } from "~/context/files";
 
 export function ErrorBoundary() {
   const error = useRouteError();

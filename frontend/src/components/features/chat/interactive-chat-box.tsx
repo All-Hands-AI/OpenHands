@@ -1,6 +1,6 @@
 import React from "react";
 import { ChatInput } from "./chat-input";
-import { cn } from "#/utils/utils";
+import { cn } from "~/utils/utils";
 import { ImageCarousel } from "../images/image-carousel";
 import { UploadImageInput } from "../images/upload-image-input";
 

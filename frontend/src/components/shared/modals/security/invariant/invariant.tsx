@@ -6,21 +6,21 @@ import { Editor, Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
 import { Button, Select, SelectItem } from "@nextui-org/react";
 import { useMutation } from "@tanstack/react-query";
-import { RootState } from "#/store";
+import { RootState } from "~/store";
 import {
   ActionSecurityRisk,
   SecurityAnalyzerLog,
-} from "#/state/security-analyzer-slice";
-import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
-import { I18nKey } from "#/i18n/declaration";
-import toast from "#/utils/toast";
+} from "~/state/security-analyzer-slice";
+import { useScrollToBottom } from "~/hooks/use-scroll-to-bottom";
+import { I18nKey } from "~/i18n/declaration";
+import toast from "~/utils/toast";
 import InvariantLogoIcon from "./assets/logo";
-import { getFormattedDateTime } from "#/utils/gget-formatted-datetime";
-import { downloadJSON } from "#/utils/download-json";
-import InvariantService from "#/api/invariant-service";
-import { useGetPolicy } from "#/hooks/query/use-get-policy";
-import { useGetRiskSeverity } from "#/hooks/query/use-get-risk-severity";
-import { useGetTraces } from "#/hooks/query/use-get-traces";
+import { getFormattedDateTime } from "~/utils/gget-formatted-datetime";
+import { downloadJSON } from "~/utils/download-json";
+import InvariantService from "~/api/invariant-service";
+import { useGetPolicy } from "~/hooks/query/use-get-policy";
+import { useGetRiskSeverity } from "~/hooks/query/use-get-risk-severity";
+import { useGetTraces } from "~/hooks/query/use-get-traces";
 
 type SectionType = "logs" | "policy" | "settings";
 

@@ -1,14 +1,14 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router";
 import { ConversationCard } from "./conversation-card";
-import { useUserConversations } from "#/hooks/query/use-user-conversations";
-import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
+import { useUserConversations } from "~/hooks/query/use-user-conversations";
+import { useDeleteConversation } from "~/hooks/mutation/use-delete-conversation";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
-import { useEndSession } from "#/hooks/use-end-session";
+import { LoadingSpinner } from "~/components/shared/loading-spinner";
+import { useUpdateConversation } from "~/hooks/mutation/use-update-conversation";
+import { useEndSession } from "~/hooks/use-end-session";
 import { ExitConversationModal } from "./exit-conversation-modal";
-import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
+import { useClickOutsideElement } from "~/hooks/use-click-outside-element";
 
 interface ConversationPanelProps {
   onClose: () => void;

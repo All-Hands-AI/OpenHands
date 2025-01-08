@@ -3,20 +3,20 @@ import {
   addAssistantAction,
   addUserMessage,
   addErrorMessage,
-} from "#/state/chat-slice";
-import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
-import { setCode, setActiveFilepath } from "#/state/code-slice";
-import { appendJupyterInput } from "#/state/jupyter-slice";
-import { setCurStatusMessage } from "#/state/status-slice";
-import store from "#/store";
-import ActionType from "#/types/action-type";
+} from "~/state/chat-slice";
+import { appendSecurityAnalyzerInput } from "~/state/security-analyzer-slice";
+import { setCode, setActiveFilepath } from "~/state/code-slice";
+import { appendJupyterInput } from "~/state/jupyter-slice";
+import { setCurStatusMessage } from "~/state/status-slice";
+import store from "~/store";
+import ActionType from "~/types/action-type";
 import {
   ActionMessage,
   ObservationMessage,
   StatusMessage,
-} from "#/types/message";
+} from "~/types/message";
 import { handleObservationMessage } from "./observations";
-import { appendInput } from "#/state/command-slice";
+import { appendInput } from "~/state/command-slice";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {

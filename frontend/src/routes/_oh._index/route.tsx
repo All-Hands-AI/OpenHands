@@ -1,16 +1,16 @@
 import React from "react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
-import { setImportedProjectZip } from "#/state/initial-query-slice";
-import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
-import { useGitHubUser } from "#/hooks/query/use-github-user";
-import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
-import { useConfig } from "#/hooks/query/use-config";
-import { useAuth } from "#/context/auth-context";
+import { setImportedProjectZip } from "~/state/initial-query-slice";
+import { convertZipToBase64 } from "~/utils/convert-zip-to-base64";
+import { useGitHubUser } from "~/hooks/query/use-github-user";
+import { useGitHubAuthUrl } from "~/hooks/use-github-auth-url";
+import { useConfig } from "~/hooks/query/use-config";
+import { useAuth } from "~/context/auth-context";
 import { ImportProjectSuggestionBox } from "../../components/features/suggestions/import-project-suggestion-box";
-import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
-import { HeroHeading } from "#/components/shared/hero-heading";
-import { TaskForm } from "#/components/shared/task-form";
+import { GitHubRepositoriesSuggestionBox } from "~/components/features/github/github-repositories-suggestion-box";
+import { HeroHeading } from "~/components/shared/hero-heading";
+import { TaskForm } from "~/components/shared/task-form";
 
 function Home() {
   const { gitHubToken } = useAuth();

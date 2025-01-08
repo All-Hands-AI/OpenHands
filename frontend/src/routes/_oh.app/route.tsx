@@ -6,35 +6,35 @@ import toast from "react-hot-toast";
 import {
   ConversationProvider,
   useConversation,
-} from "#/context/conversation-context";
-import { Controls } from "#/components/features/controls/controls";
-import { RootState } from "#/store";
-import { clearMessages } from "#/state/chat-slice";
-import { clearTerminal } from "#/state/command-slice";
-import { useEffectOnce } from "#/hooks/use-effect-once";
-import CodeIcon from "#/icons/code.svg?react";
-import GlobeIcon from "#/icons/globe.svg?react";
-import ListIcon from "#/icons/list-type-number.svg?react";
-import { clearJupyter } from "#/state/jupyter-slice";
-import { FilesProvider } from "#/context/files";
+} from "~/context/conversation-context";
+import { Controls } from "~/components/features/controls/controls";
+import { RootState } from "~/store";
+import { clearMessages } from "~/state/chat-slice";
+import { clearTerminal } from "~/state/command-slice";
+import { useEffectOnce } from "~/hooks/use-effect-once";
+import CodeIcon from "~/icons/code.svg?react";
+import GlobeIcon from "~/icons/globe.svg?react";
+import ListIcon from "~/icons/list-type-number.svg?react";
+import { clearJupyter } from "~/state/jupyter-slice";
+import { FilesProvider } from "~/context/files";
 import { ChatInterface } from "../../components/features/chat/chat-interface";
-import { WsClientProvider } from "#/context/ws-client-provider";
+import { WsClientProvider } from "~/context/ws-client-provider";
 import { EventHandler } from "./event-handler";
-import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
-import { useAuth } from "#/context/auth-context";
-import { useConversationConfig } from "#/hooks/query/use-conversation-config";
-import { Container } from "#/components/layout/container";
+import { useLatestRepoCommit } from "~/hooks/query/use-latest-repo-commit";
+import { useAuth } from "~/context/auth-context";
+import { useConversationConfig } from "~/hooks/query/use-conversation-config";
+import { Container } from "~/components/layout/container";
 import {
   Orientation,
   ResizablePanel,
-} from "#/components/layout/resizable-panel";
-import Security from "#/components/shared/modals/security/security";
-import { useEndSession } from "#/hooks/use-end-session";
-import { useUserConversation } from "#/hooks/query/get-conversation-permissions";
-import { CountBadge } from "#/components/layout/count-badge";
-import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
-import { useSettings } from "#/hooks/query/use-settings";
-import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
+} from "~/components/layout/resizable-panel";
+import Security from "~/components/shared/modals/security/security";
+import { useEndSession } from "~/hooks/use-end-session";
+import { useUserConversation } from "~/hooks/query/get-conversation-permissions";
+import { CountBadge } from "~/components/layout/count-badge";
+import { TerminalStatusLabel } from "~/components/features/terminal/terminal-status-label";
+import { useSettings } from "~/hooks/query/use-settings";
+import { MULTI_CONVERSATION_UI } from "~/utils/feature-flags";
 
 function AppContent() {
   const { gitHubToken } = useAuth();
@@ -68,7 +68,7 @@ function AppContent() {
   );
 
   const Terminal = React.useMemo(
-    () => React.lazy(() => import("#/components/features/terminal/terminal")),
+    () => React.lazy(() => import("~/components/features/terminal/terminal")),
     [],
   );
 

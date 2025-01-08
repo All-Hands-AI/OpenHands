@@ -1,8 +1,8 @@
 import React from "react";
-import { ChevronLeft } from "#/assets/chevron-left";
-import { ChevronRight } from "#/assets/chevron-right";
+import { ChevronLeft } from "~/assets/chevron-left";
+import { ChevronRight } from "~/assets/chevron-right";
 import { ImagePreview } from "./image-preview";
-import { cn } from "#/utils/utils";
+import { cn } from "~/utils/utils";
 
 interface ImageCarouselProps {
   size: "small" | "large";

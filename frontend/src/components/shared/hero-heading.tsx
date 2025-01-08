@@ -1,4 +1,4 @@
-import BuildIt from "#/icons/build-it.svg?react";
+import BuildIt from "~/icons/build-it.svg?react";
 
 export function HeroHeading() {
   return (

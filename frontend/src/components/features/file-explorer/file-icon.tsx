@@ -1,5 +1,5 @@
 import { FaFile } from "react-icons/fa";
-import { getExtension } from "#/utils/utils";
+import { getExtension } from "~/utils/utils";
 import { EXTENSION_ICON_MAP } from "../../extension-icon-map.constant";
 
 interface FileIconProps {

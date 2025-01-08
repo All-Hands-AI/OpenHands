@@ -1,12 +1,12 @@
 // Sometimes we ship major changes, like a new default agent.
 
 import React from "react";
-import { useSettingsUpToDate } from "#/context/settings-up-to-date-context";
+import { useSettingsUpToDate } from "~/context/settings-up-to-date-context";
 import {
   getCurrentSettingsVersion,
   DEFAULT_SETTINGS,
   getLocalStorageSettings,
-} from "#/services/settings";
+} from "~/services/settings";
 import { useSaveSettings } from "./mutation/use-save-settings";
 
 // In this case, we may want to override a previous choice made by the user.

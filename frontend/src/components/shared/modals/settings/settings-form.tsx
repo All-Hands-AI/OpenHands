@@ -2,13 +2,13 @@ import { useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import React from "react";
 import posthog from "posthog-js";
-import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
-import { getDefaultSettings, Settings } from "#/services/settings";
-import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
+import { organizeModelsAndProviders } from "~/utils/organize-models-and-providers";
+import { getDefaultSettings, Settings } from "~/services/settings";
+import { extractModelAndProvider } from "~/utils/extract-model-and-provider";
 import { DangerModal } from "../confirmation-modals/danger-modal";
-import { I18nKey } from "#/i18n/declaration";
-import { extractSettings, saveSettingsView } from "#/utils/settings-utils";
-import { useEndSession } from "#/hooks/use-end-session";
+import { I18nKey } from "~/i18n/declaration";
+import { extractSettings, saveSettingsView } from "~/utils/settings-utils";
+import { useEndSession } from "~/hooks/use-end-session";
 import { ModalButton } from "../../buttons/modal-button";
 import { AdvancedOptionSwitch } from "../../inputs/advanced-option-switch";
 import { AgentInput } from "../../inputs/agent-input";
@@ -19,10 +19,10 @@ import { CustomModelInput } from "../../inputs/custom-model-input";
 import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
-import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import { useSaveSettings } from "~/hooks/mutation/use-save-settings";
 
 import { RuntimeSizeSelector } from "./runtime-size-selector";
-import { useConfig } from "#/hooks/query/use-config";
+import { useConfig } from "~/hooks/query/use-config";
 
 interface SettingsFormProps {
   disabled?: boolean;

@@ -1,4 +1,4 @@
-import ArrowSendIcon from "#/icons/arrow-send.svg?react";
+import ArrowSendIcon from "~/icons/arrow-send.svg?react";
 
 interface ScrollToBottomButtonProps {
   onClick: () => void;

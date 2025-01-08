@@ -3,9 +3,9 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { screen, waitFor } from "@testing-library/react";
 import toast from "react-hot-toast";
-import App from "#/routes/_oh.app/route";
-import OpenHands from "#/api/open-hands";
-import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
+import App from "~/routes/_oh.app/route";
+import OpenHands from "~/api/open-hands";
+import { MULTI_CONVERSATION_UI } from "~/utils/feature-flags";
 
 describe("App", () => {
   const RouteStub = createRoutesStub([

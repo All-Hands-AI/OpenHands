@@ -1,4 +1,4 @@
-import OpenHands from "#/api/open-hands";
+import OpenHands from "~/api/open-hands";
 import { downloadWorkspace } from "./download-workspace";
 
 interface DownloadProgress {

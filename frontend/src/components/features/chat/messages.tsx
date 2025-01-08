@@ -1,6 +1,6 @@
 import React from "react";
-import { ChatMessage } from "#/components/features/chat/chat-message";
-import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
+import { ChatMessage } from "~/components/features/chat/chat-message";
+import { ConfirmationButtons } from "~/components/shared/buttons/confirmation-buttons";
 import { ImageCarousel } from "../images/image-carousel";
 import { ExpandableMessage } from "./expandable-message";
 

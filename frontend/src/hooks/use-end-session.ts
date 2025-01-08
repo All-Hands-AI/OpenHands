@@ -4,8 +4,8 @@ import {
   initialState as browserInitialState,
   setScreenshotSrc,
   setUrl,
-} from "#/state/browser-slice";
-import { clearSelectedRepository } from "#/state/initial-query-slice";
+} from "~/state/browser-slice";
+import { clearSelectedRepository } from "~/state/initial-query-slice";
 
 export const useEndSession = () => {
   const navigate = useNavigate();

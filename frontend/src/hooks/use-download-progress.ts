@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { downloadFiles } from "#/utils/download-files";
-import { DownloadProgressState } from "#/components/shared/download-progress";
-import { useConversation } from "#/context/conversation-context";
+import { downloadFiles } from "~/utils/download-files";
+import { DownloadProgressState } from "~/components/shared/download-progress";
+import { useConversation } from "~/context/conversation-context";
 
 export const INITIAL_PROGRESS: DownloadProgressState = {
   filesTotal: 0,

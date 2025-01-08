@@ -1,9 +1,9 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
-import { GitHubRepositorySelector } from "#/components/features/github/github-repo-selector";
-import OpenHands from "#/api/open-hands";
-import * as GitHubAPI from "#/api/github";
+import { GitHubRepositorySelector } from "~/components/features/github/github-repo-selector";
+import OpenHands from "~/api/open-hands";
+import * as GitHubAPI from "~/api/github";
 
 describe("GitHubRepositorySelector", () => {
   const onInputChangeMock = vi.fn();

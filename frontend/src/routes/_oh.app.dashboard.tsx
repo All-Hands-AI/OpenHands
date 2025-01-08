@@ -7,18 +7,28 @@ import { ErrorToast } from '~/components/shared/error-toast';
 import { DashboardIcon } from '~/icons/dashboard';
 
 export default function Dashboard() {
-  const { data: stats, isLoading, error } = useQuery(['dashboard-stats'], async () => {
-    // Replace with actual API call when backend is ready
-    return {
-      activeAgents: 3,
-      indexedAgents: 5,
-      systemLoad: 0.45,
-      activeWorkflows: 2
-    };
+  interface DashboardStats {
+    activeAgents: number;
+    indexedAgents: number;
+    systemLoad: number;
+    activeWorkflows: number;
+  }
+
+  const { data: stats, isLoading, error } = useQuery<DashboardStats>({ 
+    queryKey: ['dashboard-stats'], 
+    queryFn: async () => {
+      // Replace with actual API call when backend is ready
+      return {
+        activeAgents: 3,
+        indexedAgents: 5,
+        systemLoad: 0.45,
+        activeWorkflows: 2
+      };
+    }
   });
 
-  if (isLoading) return <LoadingSpinner />;
-  if (error) return <ErrorToast error={error as Error} />;
+  if (isLoading || !stats) return <LoadingSpinner size="small" />;
+  if (error) return <ErrorToast id="dashboard-error" error={error instanceof Error ? error.message : String(error)} />;
 
   return (
     <Container>

@@ -1,5 +1,5 @@
-import CheckmarkIcon from "#/icons/checkmark.svg?react";
-import CopyIcon from "#/icons/copy.svg?react";
+import CheckmarkIcon from "~/icons/checkmark.svg?react";
+import CopyIcon from "~/icons/copy.svg?react";
 
 interface CopyToClipboardButtonProps {
   isHidden: boolean;

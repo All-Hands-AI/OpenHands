@@ -1,9 +1,9 @@
 import {
   BaseModalTitle,
   BaseModalDescription,
-} from "#/components/shared/modals/confirmation-modals/base-modal";
-import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
-import { ModalBody } from "#/components/shared/modals/modal-body";
+} from "~/components/shared/modals/confirmation-modals/base-modal";
+import { ModalBackdrop } from "~/components/shared/modals/modal-backdrop";
+import { ModalBody } from "~/components/shared/modals/modal-body";
 import { FeedbackForm } from "./feedback-form";
 
 interface FeedbackModalProps {

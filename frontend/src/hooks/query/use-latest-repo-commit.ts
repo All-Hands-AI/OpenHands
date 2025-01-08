@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { retrieveLatestGitHubCommit } from "#/api/github";
-import { useAuth } from "#/context/auth-context";
+import { retrieveLatestGitHubCommit } from "~/api/github";
+import { useAuth } from "~/context/auth-context";
 
 interface UseLatestRepoCommitConfig {
   repository: string | null;

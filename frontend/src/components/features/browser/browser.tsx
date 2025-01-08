@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux";
-import { RootState } from "#/store";
+import { RootState } from "~/store";
 import { BrowserSnapshot } from "./browser-snapshot";
 import { EmptyBrowserMessage } from "./empty-browser-message";
 

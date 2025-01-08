@@ -26,7 +26,7 @@ vi.mock("react-i18next", async () => {
 
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "../../test-utils";
-import { BrowserPanel } from "#/components/features/browser/browser";
+import { BrowserPanel } from "~/components/features/browser/browser";
 
 
 describe("Browser", () => {

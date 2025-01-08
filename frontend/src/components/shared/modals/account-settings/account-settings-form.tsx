@@ -5,15 +5,15 @@ import {
   BaseModalTitle,
 } from "../confirmation-modals/base-modal";
 import { ModalBody } from "../modal-body";
-import { AvailableLanguages } from "#/i18n";
-import { I18nKey } from "#/i18n/declaration";
-import { useAuth } from "#/context/auth-context";
-import { handleCaptureConsent } from "#/utils/handle-capture-consent";
+import { AvailableLanguages } from "~/i18n";
+import { I18nKey } from "~/i18n/declaration";
+import { useAuth } from "~/context/auth-context";
+import { handleCaptureConsent } from "~/utils/handle-capture-consent";
 import { ModalButton } from "../../buttons/modal-button";
 import { CustomInput } from "../../custom-input";
 import { FormFieldset } from "../../form-fieldset";
-import { useConfig } from "#/hooks/query/use-config";
-import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import { useConfig } from "~/hooks/query/use-config";
+import { useSaveSettings } from "~/hooks/mutation/use-save-settings";
 
 interface AccountSettingsFormProps {
   onClose: () => void;

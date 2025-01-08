@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "#/context/auth-context";
+import { useAuth } from "~/context/auth-context";
 import { useConfig } from "./use-config";
-import { retrieveGitHubAppInstallations } from "#/api/github";
+import { retrieveGitHubAppInstallations } from "~/api/github";
 
 export const useAppInstallations = () => {
   const { data: config } = useConfig();

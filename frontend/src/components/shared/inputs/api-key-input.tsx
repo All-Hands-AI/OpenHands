@@ -1,7 +1,7 @@
 import { Input, Tooltip } from "@nextui-org/react";
 import { useTranslation } from "react-i18next";
 import { FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
-import { I18nKey } from "#/i18n/declaration";
+import { I18nKey } from "~/i18n/declaration";
 
 interface APIKeyInputProps {
   isDisabled: boolean;

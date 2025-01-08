@@ -1,5 +1,5 @@
-import { useGitHubUser } from "#/hooks/query/use-github-user";
-import { useSettings } from "#/hooks/query/use-settings";
+import { useGitHubUser } from "~/hooks/query/use-github-user";
+import { useSettings } from "~/hooks/query/use-settings";
 import { ModalBackdrop } from "../modal-backdrop";
 import { AccountSettingsForm } from "./account-settings-form";
 

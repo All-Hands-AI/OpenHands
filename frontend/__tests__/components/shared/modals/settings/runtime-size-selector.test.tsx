@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { renderWithProviders } from "test-utils";
-import { RuntimeSizeSelector } from "#/components/shared/modals/settings/runtime-size-selector";
+import { RuntimeSizeSelector } from "~/components/shared/modals/settings/runtime-size-selector";
 
 const renderRuntimeSizeSelector = () =>
   renderWithProviders(<RuntimeSizeSelector isDisabled={false} />);

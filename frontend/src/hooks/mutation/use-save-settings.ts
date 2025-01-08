@@ -4,9 +4,9 @@ import {
   DEFAULT_SETTINGS,
   LATEST_SETTINGS_VERSION,
   Settings,
-} from "#/services/settings";
-import OpenHands from "#/api/open-hands";
-import { useSettingsUpToDate } from "#/context/settings-up-to-date-context";
+} from "~/services/settings";
+import OpenHands from "~/api/open-hands";
+import { useSettingsUpToDate } from "~/context/settings-up-to-date-context";
 
 const saveSettingsMutationFn = async (settings: Partial<Settings>) => {
   const apiSettings: Partial<ApiSettings> = {

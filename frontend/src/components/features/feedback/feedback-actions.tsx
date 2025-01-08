@@ -1,6 +1,6 @@
-import ThumbsUpIcon from "#/icons/thumbs-up.svg?react";
-import ThumbDownIcon from "#/icons/thumbs-down.svg?react";
-import { FeedbackActionButton } from "#/components/shared/buttons/feedback-action-button";
+import ThumbsUpIcon from "~/icons/thumbs-up.svg?react";
+import ThumbDownIcon from "~/icons/thumbs-down.svg?react";
+import { FeedbackActionButton } from "~/components/shared/buttons/feedback-action-button";
 
 interface FeedbackActionsProps {
   onPositiveFeedback: () => void;

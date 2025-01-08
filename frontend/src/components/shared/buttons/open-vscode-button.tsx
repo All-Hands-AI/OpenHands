@@ -1,5 +1,5 @@
-import { cn } from "#/utils/utils";
-import VSCodeIcon from "#/assets/vscode-alt.svg?react";
+import { cn } from "~/utils/utils";
+import VSCodeIcon from "~/assets/vscode-alt.svg?react";
 
 interface OpenVSCodeButtonProps {
   isDisabled: boolean;

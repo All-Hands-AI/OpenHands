@@ -1,17 +1,17 @@
 import posthog from "posthog-js";
 import React from "react";
 import { io, Socket } from "socket.io-client";
-import EventLogger from "#/utils/event-logger";
+import EventLogger from "~/utils/event-logger";
 import {
   handleAssistantMessage,
   handleStatusMessage,
-} from "#/services/actions";
-import { useRate } from "#/hooks/use-rate";
-import { OpenHandsParsedEvent } from "#/types/core";
+} from "~/services/actions";
+import { useRate } from "~/hooks/use-rate";
+import { OpenHandsParsedEvent } from "~/types/core";
 import {
   AssistantMessageAction,
   UserMessageAction,
-} from "#/types/core/actions";
+} from "~/types/core/actions";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&

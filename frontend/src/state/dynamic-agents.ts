@@ -1,100 +1,78 @@
-
 import { create } from 'zustand';
-import type { DynamicAgent, AgentTemplate, TechAnalysisResult } from '~/types/agents';
-import { DynamicAgentAPI } from './api';
+import type { DynamicAgent, TechAnalysisResult } from '~/types/agents';
+import { DynamicAgentAPI } from '~/services/dynamic-agents/api';
 
 interface DynamicAgentState {
   agents: DynamicAgent[];
-  templates: AgentTemplate[];
+  templates: DynamicAgent[];
   loading: boolean;
   error: Error | null;
-  
-  // Actions
-  loadAgents: () => Promise<void>;
-  loadTemplates: () => Promise<void>;
-  createAgent: (name: string, technologies: string[]) => Promise<void>;
-  updateAgent: (id: string, updates: Partial<DynamicAgent>) => Promise<void>;
+  createAgent: (name: string, technologies: string[]) => Promise<boolean>;
+  updateAgent: (id: string, updates: Partial<DynamicAgent>) => Promise<boolean>;
   deleteAgent: (id: string) => Promise<void>;
   analyzeStack: (technologies: string[]) => Promise<TechAnalysisResult>;
 }
 
-export const useDynamicAgentStore = create<DynamicAgentState>((set, get) => ({
+export const useDynamicAgentStore = create<DynamicAgentState>((set) => ({
   agents: [],
   templates: [],
   loading: false,
   error: null,
 
-  loadAgents: async () => {
-    set({ loading: true, error: null });
+  async createAgent(name: string, technologies: string[]): Promise<boolean> {
     try {
-      const agents = await DynamicAgentAPI.listAgents();
-      set({ agents, loading: false });
+      set((state) => ({ ...state, loading: true, error: null }));
+      const agent = await DynamicAgentAPI.createAgent(name, technologies);
+      set((state) => ({ ...state, loading: false, agents: [...state.agents, agent] }));
+      return true;
     } catch (error) {
-      set({ error: error as Error, loading: false });
+      set((state) => ({ ...state, loading: false, error: error as Error }));
+      return false;
     }
   },
 
-  loadTemplates: async () => {
-    set({ loading: true, error: null });
+  async updateAgent(id: string, updates: Partial<DynamicAgent>): Promise<boolean> {
     try {
-      const templates = await DynamicAgentAPI.listTemplates();
-      set({ templates, loading: false });
-    } catch (error) {
-      set({ error: error as Error, loading: false });
-    }
-  },
-
-  createAgent: async (name: string, technologies: string[]) => {
-    set({ loading: true, error: null });
-    try {
-      const analysis = await DynamicAgentAPI.analyzeStack(technologies);
-      const agent = await DynamicAgentAPI.createAgent(name, technologies, analysis);
-      set(state => ({
-        agents: [...state.agents, agent],
-        loading: false
-      }));
-    } catch (error) {
-      set({ error: error as Error, loading: false });
-    }
-  },
-
-  updateAgent: async (id: string, updates: Partial<DynamicAgent>) => {
-    set({ loading: true, error: null });
-    try {
+      set((state) => ({ ...state, loading: true, error: null }));
       const updatedAgent = await DynamicAgentAPI.updateAgent(id, updates);
-      set(state => ({
-        agents: state.agents.map(agent =>
-          agent.id === id ? updatedAgent : agent
+      set((state) => ({
+        ...state,
+        loading: false,
+        agents: state.agents.map((agent) =>
+          agent.id === id ? { ...agent, ...updatedAgent } : agent
         ),
-        loading: false
       }));
+      return true;
     } catch (error) {
-      set({ error: error as Error, loading: false });
+      set((state) => ({ ...state, loading: false, error: error as Error }));
+      return false;
     }
   },
 
-  deleteAgent: async (id: string) => {
-    set({ loading: true, error: null });
+  async deleteAgent(id: string): Promise<void> {
     try {
+      set((state) => ({ ...state, loading: true, error: null }));
       await DynamicAgentAPI.deleteAgent(id);
-      set(state => ({
-        agents: state.agents.filter(agent => agent.id !== id),
-        loading: false
+      set((state) => ({
+        ...state,
+        loading: false,
+        agents: state.agents.filter((agent) => agent.id !== id),
       }));
     } catch (error) {
-      set({ error: error as Error, loading: false });
-    }
-  },
-
-  analyzeStack: async (technologies: string[]) => {
-    set({ loading: true, error: null });
-    try {
-      const analysis = await DynamicAgentAPI.analyzeStack(technologies);
-      set({ loading: false });
-      return analysis;
-    } catch (error) {
-      set({ error: error as Error, loading: false });
+      set((state) => ({ ...state, loading: false, error: error as Error }));
       throw error;
     }
-  }
+  },
+
+  async analyzeStack(technologies: string[]): Promise<TechAnalysisResult> {
+    try {
+      set((state) => ({ ...state, loading: true, error: null }));
+      const result = await DynamicAgentAPI.analyzeStack(technologies);
+      set((state) => ({ ...state, loading: false }));
+      return result;
+    } catch (error) {
+      set((state) => ({ ...state, loading: false, error: error as Error }));
+      throw error;
+    }
+  },
 }));

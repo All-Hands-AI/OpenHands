@@ -1,10 +1,10 @@
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import React from "react";
-import { Command } from "#/state/command-slice";
-import { getTerminalCommand } from "#/services/terminal-service";
-import { parseTerminalOutput } from "#/utils/parse-terminal-output";
-import { useWsClient } from "#/context/ws-client-provider";
+import { Command } from "~/state/command-slice";
+import { getTerminalCommand } from "~/services/terminal-service";
+import { parseTerminalOutput } from "~/utils/parse-terminal-output";
+import { useWsClient } from "~/context/ws-client-provider";
 
 /*
   NOTE: Tests for this hook are indirectly covered by the tests for the XTermTerminal component.

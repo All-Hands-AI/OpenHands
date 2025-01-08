@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
-import { JupyterEditor } from "#/components/features/jupyter/jupyter";
-import { jupyterReducer } from "#/state/jupyter-slice";
+import { JupyterEditor } from "~/components/features/jupyter/jupyter";
+import { jupyterReducer } from "~/state/jupyter-slice";
 import { vi, describe, it, expect } from "vitest";
 
 describe("JupyterEditor", () => {

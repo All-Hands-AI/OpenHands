@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import posthog from "posthog-js";
 import { AxiosError } from "axios";
-import { DEFAULT_SETTINGS, getLocalStorageSettings } from "#/services/settings";
-import OpenHands from "#/api/open-hands";
+import { DEFAULT_SETTINGS, getLocalStorageSettings } from "~/services/settings";
+import OpenHands from "~/api/open-hands";
 
 const getSettingsQueryFn = async () => {
   try {

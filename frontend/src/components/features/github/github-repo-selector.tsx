@@ -6,9 +6,9 @@ import {
 } from "@nextui-org/react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
-import { setSelectedRepository } from "#/state/initial-query-slice";
-import { useConfig } from "#/hooks/query/use-config";
-import { sanitizeQuery } from "#/utils/sanitize-query";
+import { setSelectedRepository } from "~/state/initial-query-slice";
+import { useConfig } from "~/hooks/query/use-config";
+import { sanitizeQuery } from "~/utils/sanitize-query";
 
 interface GitHubRepositorySelectorProps {
   onInputChange: (value: string) => void;

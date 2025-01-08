@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
-import { server } from "#/mocks/node";
+import { server } from "~/mocks/node";
 import "@testing-library/jest-dom/vitest";
 
 // @ts-expect-error - Mock for Terminal tests

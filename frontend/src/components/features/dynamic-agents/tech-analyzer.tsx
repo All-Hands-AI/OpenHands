@@ -1,56 +1,31 @@
-
-import { useState, useCallback } from 'react';
-import { TechInfo, TechAnalysisResult } from '~/types/agents';
-
-export function useTechAnalyzer() {
-  const [analyzing, setAnalyzing] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const analyzeStack = useCallback(async (technologies: string[]): Promise<TechAnalysisResult> => {
-    setAnalyzing(true);
-    setError(null);
-    
-    try {
-      // Implement actual analysis logic here
-      const result: TechAnalysisResult = {
-        completeness: calculateCompleteness(technologies),
-        compatibility: calculateCompatibility(technologies),
-        missingComponents: findMissingComponents(technologies),
-        recommendations: generateRecommendations(technologies)
-      };
-      
-      return result;
-    } catch (err) {
-      setError(err as Error);
-      throw err;
-    } finally {
-      setAnalyzing(false);
-    }
-  }, []);
-
-  return {
-    analyzeStack,
-    analyzing,
-    error
-  };
-}
+import type { TechAnalysisResult } from '~/types/agents';
 
 function calculateCompleteness(technologies: string[]): number {
-  // Implementation
-  return 0.8;
+  // TODO: Implement actual completeness calculation
+  return technologies.length > 0 ? 0.8 : 0.2;
 }
 
 function calculateCompatibility(technologies: string[]): number {
-  // Implementation
-  return 0.9;
+  // TODO: Implement actual compatibility calculation
+  return technologies.length > 0 ? 0.9 : 0.3;
 }
 
 function findMissingComponents(technologies: string[]): string[] {
-  // Implementation
-  return [];
+  // TODO: Implement actual missing components detection
+  return technologies.length > 0 ? [] : ['react', 'typescript'];
 }
 
 function generateRecommendations(technologies: string[]): string[] {
-  // Implementation
-  return [];
+  // TODO: Implement actual recommendations generation
+  return technologies.length > 0 ? [] : ['Add React', 'Add TypeScript'];
+}
+
+export function analyzeTechStack(technologies: string[]): TechAnalysisResult {
+  return {
+    completeness: calculateCompleteness(technologies),
+    compatibility: calculateCompatibility(technologies),
+    confidence: 0.8,
+    missingComponents: findMissingComponents(technologies).map(tech => ({ name: tech, type: 'library' as const })),
+    recommendations: generateRecommendations(technologies)
+  };
 }

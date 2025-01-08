@@ -1,5 +1,5 @@
-import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
-import { Settings } from "#/services/settings";
+import { useAIConfigOptions } from "~/hooks/query/use-ai-config-options";
+import { Settings } from "~/services/settings";
 import { LoadingSpinner } from "../../loading-spinner";
 import { ModalBackdrop } from "../modal-backdrop";
 import { SettingsForm } from "./settings-form";

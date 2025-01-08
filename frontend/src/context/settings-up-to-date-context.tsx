@@ -1,5 +1,5 @@
 import React from "react";
-import { settingsAreUpToDate } from "#/services/settings";
+import { settingsAreUpToDate } from "~/services/settings";
 
 interface SettingsUpToDateContextType {
   isUpToDate: boolean;

@@ -1,8 +1,8 @@
 import { Tooltip } from "@nextui-org/react";
 import { useTranslation } from "react-i18next";
-import ConfirmIcon from "#/assets/confirm";
-import RejectIcon from "#/assets/reject";
-import { I18nKey } from "#/i18n/declaration";
+import ConfirmIcon from "~/assets/confirm";
+import RejectIcon from "~/assets/reject";
+import { I18nKey } from "~/i18n/declaration";
 
 interface ActionTooltipProps {
   type: "confirm" | "reject";

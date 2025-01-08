@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, test, vi, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { UserActions } from "#/components/features/sidebar/user-actions";
+import { UserActions } from "~/components/features/sidebar/user-actions";
 
 describe("UserActions", () => {
   const user = userEvent.setup();

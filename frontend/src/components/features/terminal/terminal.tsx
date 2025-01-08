@@ -1,8 +1,8 @@
 import { useSelector } from "react-redux";
-import { RootState } from "#/store";
-import { useTerminal } from "#/hooks/use-terminal";
+import { RootState } from "~/store";
+import { useTerminal } from "~/hooks/use-terminal";
 import "@xterm/xterm/css/xterm.css";
-import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
+import { RUNTIME_INACTIVE_STATES } from "~/types/agent-state";
 
 interface TerminalProps {
   secrets: string[];

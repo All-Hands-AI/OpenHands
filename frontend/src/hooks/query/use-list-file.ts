@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
-import { useConversation } from "#/context/conversation-context";
+import OpenHands from "~/api/open-hands";
+import { useConversation } from "~/context/conversation-context";
 
 interface UseListFileConfig {
   path: string;

@@ -1,4 +1,4 @@
-import NewProjectIcon from "#/icons/new-project.svg?react";
+import NewProjectIcon from "~/icons/new-project.svg?react";
 import { TooltipButton } from "./tooltip-button";
 
 interface ExitProjectButtonProps {
