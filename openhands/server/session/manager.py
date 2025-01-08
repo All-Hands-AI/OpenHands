@@ -181,7 +181,7 @@ class SessionManager:
             for (
                 connection_id,
                 local_sid,
-            ) in self._local_connection_id_to_session_id.items():
+            ) in list(self._local_connection_id_to_session_id.items()):
                 if sid == local_sid:
                     logger.warning(
                         'local_connection_to_closing_session:{connection_id}:{sid}'
