@@ -10,7 +10,7 @@ import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { cn } from "#/utils/utils";
 
 interface ConversationCardProps {
-  onClick: () => void;
+  onClick?: () => void;
   onDelete?: () => void;
   onChangeTitle?: (title: string) => void;
   onDownloadWorkspace?: () => void;
