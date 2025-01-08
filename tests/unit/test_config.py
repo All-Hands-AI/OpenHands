@@ -412,7 +412,7 @@ def test_security_config_from_dict():
     # Test with all fields
     config_dict = {'confirmation_mode': True, 'security_analyzer': 'some_analyzer'}
 
-    security_config = SecurityConfig.from_dict(config_dict)
+    security_config = SecurityConfig(**config_dict)
 
     # Verify all fields are correctly set
     assert security_config.confirmation_mode is True

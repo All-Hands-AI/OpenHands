@@ -170,7 +170,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     logger.openhands_logger.debug(
                         'Attempt to load security config from config toml'
                     )
-                    security_config = SecurityConfig.from_dict(value)
+                    security_config = SecurityConfig(**value)
                     cfg.security = security_config
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.openhands_logger.warning(
