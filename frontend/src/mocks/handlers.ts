@@ -265,4 +265,6 @@ export const handlers = [
 
     return HttpResponse.json(null, { status: 404 });
   }),
+
+  http.get("/api/credits", () => {}),
 ];
