@@ -1,0 +1,25 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apk add --no-cache docker-cli python3 py3-pip git
+
+# Copy package files
+COPY package*.json ./
+COPY frontend/package*.json ./frontend/
+
+# Install dependencies
+RUN npm install
+RUN cd frontend && npm install
+
+# Copy source code
+COPY . .
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip3 install -r requirements.txt
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]
