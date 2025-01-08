@@ -10,7 +10,7 @@ from uuid import uuid4
 
 import toml
 from dotenv import load_dotenv
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
@@ -51,7 +51,9 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
             # e.g. LLM_BASE_URL
             env_var_name = (prefix + field_name).upper()
 
-            if is_dataclass(field_type):
+            if is_dataclass(field_type) or (
+                isinstance(field_type, type) and issubclass(field_type, BaseModel)
+            ):
                 # nested dataclass
                 nested_sub_config = getattr(sub_config, field_name)
                 set_attr_from_env(nested_sub_config, prefix=field_name + '_')
@@ -202,7 +204,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                 logger.openhands_logger.warning(
                     f'Unknown config key "{key}" in [core] section'
                 )
-    except (TypeError, KeyError) as e:
+    except (TypeError, KeyError, ValidationError) as e:
         logger.openhands_logger.warning(
             f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}',
             exc_info=False,
