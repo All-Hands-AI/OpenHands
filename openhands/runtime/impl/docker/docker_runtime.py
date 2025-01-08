@@ -29,9 +29,10 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
 
-APP_PORT_RANGE = (50000, 59999)
-VSCODE_PORT_RANGE = (40000, 49999)
 EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
+VSCODE_PORT_RANGE = (40000, 49999)
+APP_PORT_RANGE_1 = (50000, 59999)
+APP_PORT_RANGE_2 = (60000, 69999)
 
 
 def remove_all_runtime_containers():
@@ -191,7 +192,10 @@ class DockerRuntime(ActionExecutionClient):
         self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
         self._container_port = self._host_port
         self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
-        self._app_ports = [self._find_available_port(APP_PORT_RANGE) for _ in range(2)]
+        self._app_ports = [
+            self._find_available_port(APP_PORT_RANGE_1),
+            self._find_available_port(APP_PORT_RANGE_2),
+        ]
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
@@ -279,10 +283,7 @@ class DockerRuntime(ActionExecutionClient):
                 environment=environment,
                 volumes=volumes,
                 device_requests=(
-                    [docker.types.DeviceRequest(
-                        capabilities=[['gpu']],
-                        count=-1
-                    )]
+                    [docker.types.DeviceRequest(capabilities=[['gpu']], count=-1)]
                     if self.config.sandbox.enable_gpu
                     else None
                 ),
@@ -325,7 +326,9 @@ class DockerRuntime(ActionExecutionClient):
                 self._container_port = port
             if port >= VSCODE_PORT_RANGE[0] and port <= VSCODE_PORT_RANGE[1]:
                 self._vscode_port = port
-            if port >= APP_PORT_RANGE[0] and port <= APP_PORT_RANGE[1]:
+            elif port >= APP_PORT_RANGE_1[0] and port <= APP_PORT_RANGE_1[1]:
+                self._app_ports.append(port)
+            elif port >= APP_PORT_RANGE_2[0] and port <= APP_PORT_RANGE_2[1]:
                 self._app_ports.append(port)
         self._host_port = self._container_port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
