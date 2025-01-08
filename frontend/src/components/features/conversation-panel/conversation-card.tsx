@@ -28,6 +28,7 @@ export function ConversationCard({
   status = "STOPPED",
 }: ConversationCardProps) {
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
+  const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const handleBlur = () => {
@@ -39,6 +40,8 @@ export function ConversationCard({
       // reset the value if it's empty
       inputRef.current!.value = title;
     }
+
+    setTitleMode("view");
   };
 
   const handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -58,6 +61,18 @@ export function ConversationCard({
     onDelete();
   };
 
+  const handleEdit = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setTitleMode("edit");
+    setContextMenuVisible(false);
+  };
+
+  React.useEffect(() => {
+    if (titleMode === "edit") {
+      inputRef.current?.focus();
+    }
+  }, [titleMode]);
+
   return (
     <div
       data-testid="conversation-card"
@@ -68,6 +83,7 @@ export function ConversationCard({
           {isActive && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
           <input
             ref={inputRef}
+            disabled={titleMode === "view"}
             data-testid="conversation-card-title"
             onClick={handleInputClick}
             onBlur={handleBlur}
@@ -93,6 +109,7 @@ export function ConversationCard({
         <ConversationCardContextMenu
           onClose={() => setContextMenuVisible(false)}
           onDelete={handleDelete}
+          onEdit={handleEdit}
         />
       )}
       {selectedRepository && (

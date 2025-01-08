@@ -5,11 +5,13 @@ import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 interface ConversationCardContextMenuProps {
   onClose: () => void;
   onDelete: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onEdit: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 export function ConversationCardContextMenu({
   onClose,
   onDelete,
+  onEdit,
 }: ConversationCardContextMenuProps) {
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
 
@@ -21,6 +23,9 @@ export function ConversationCardContextMenu({
     >
       <ContextMenuListItem testId="delete-button" onClick={onDelete}>
         Delete
+      </ContextMenuListItem>
+      <ContextMenuListItem testId="edit-button" onClick={onEdit}>
+        Edit Title
       </ContextMenuListItem>
     </ContextMenu>
   );

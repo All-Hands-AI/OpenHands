@@ -1,14 +1,14 @@
 import React from "react";
-import { NavLink, useLocation, useParams } from "react-router";
+import { NavLink, useParams } from "react-router";
 import { ConversationCard } from "./conversation-card";
 import { useUserConversations } from "#/hooks/query/use-user-conversations";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
-import { NewConversationButton } from "./new-conversation-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
 import { useEndSession } from "#/hooks/use-end-session";
 import { ExitConversationModal } from "./exit-conversation-modal";
+import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 
 interface ConversationPanelProps {
   onClose: () => void;
@@ -16,9 +16,8 @@ interface ConversationPanelProps {
 
 export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const { conversationId: cid } = useParams();
-  const location = useLocation();
-
   const endSession = useEndSession();
+  const ref = useClickOutsideElement<HTMLDivElement>(onClose);
 
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
     React.useState(false);
@@ -65,15 +64,11 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   return (
     <div
+      ref={ref}
       data-testid="conversation-panel"
       className="w-[350px] h-full border border-neutral-700 bg-neutral-800 rounded-xl overflow-y-auto"
     >
       <div className="pt-4 px-4 flex items-center justify-between">
-        {location.pathname.startsWith("/conversation") && (
-          <NewConversationButton
-            onClick={() => setConfirmExitConversationModalVisible(true)}
-          />
-        )}
         {isFetching && <LoadingSpinner size="small" />}
       </div>
       {error && (
