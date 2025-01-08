@@ -5,23 +5,33 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - NODE_ENV=development
     ports:
       - "3000:3000"
     environment:
       - SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.19-nikolaik
       - LOG_ALL_EVENTS=true
       - NODE_ENV=development
+      - REDIS_URL=redis://redis:6379
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${HOME}/.openhands-state:/.openhands-state
       - ./frontend:/app/frontend
       - ./backend:/app/backend
+      - node_modules:/app/node_modules
+      - frontend_node_modules:/app/frontend/node_modules
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
       - openhands-network
     depends_on:
       - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   redis:
     image: redis:alpine
@@ -31,6 +41,11 @@ services:
       - openhands-network
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   openhands-network:
@@ -38,3 +53,5 @@ networks:
 
 volumes:
   redis-data:
+  node_modules:
+  frontend_node_modules:
