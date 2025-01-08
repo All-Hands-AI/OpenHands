@@ -15,10 +15,10 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@docusaurus/core": "^3.6.3",
-    "@docusaurus/plugin-content-pages": "^3.6.3",
-    "@docusaurus/preset-classic": "^3.6.3",
-    "@docusaurus/theme-mermaid": "^3.6.3",
+    "@docusaurus/core": "^3.7.0",
+    "@docusaurus/plugin-content-pages": "^3.7.0",
+    "@docusaurus/preset-classic": "^3.7.0",
+    "@docusaurus/theme-mermaid": "^3.7.0",
     "@mdx-js/react": "^3.1.0",
     "clsx": "^2.0.0",
     "prism-react-renderer": "^2.4.1",
@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "^3.5.1",
-    "@docusaurus/tsconfig": "^3.6.3",
+    "@docusaurus/tsconfig": "^3.7.0",
     "@docusaurus/types": "^3.5.1",
     "typescript": "~5.7.2"
   },
