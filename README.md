@@ -15,7 +15,7 @@ cd OpenHands
 docker-compose up -d
 ```
 
-The application will be available at http://localhost:3000
+The application will be available at http://localhost:4200
 
 ## Installation Options
 
@@ -62,7 +62,7 @@ docker run -it --rm --pull=always \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
-    -p 3000:3000 \
+    -p 4200:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
     docker.all-hands.dev/all-hands-ai/openhands:0.19
