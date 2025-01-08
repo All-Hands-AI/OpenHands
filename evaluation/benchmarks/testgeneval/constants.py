@@ -27,6 +27,14 @@ class TestGenEvalInstance(TypedDict):
     baseline_covs: dict
 
 
+class TestStatus(Enum):
+    FAILED = 'FAILED'
+    PASSED = 'PASSED'
+    SKIPPED = 'SKIPPED'
+    ERROR = 'ERROR'
+    XFAIL = 'XFAIL'
+
+
 FAIL_TO_PASS = 'FAIL_TO_PASS'
 FAIL_TO_FAIL = 'FAIL_TO_FAIL'
 PASS_TO_PASS = 'PASS_TO_PASS'
@@ -1521,7 +1529,7 @@ test-command = "{test_cmd}"
 name = "local"
 """
 
-MUTATION_TIMEOUT = 3600
+MUTATION_TIMEOUT = 600
 MUTATION_BUFFER = 500
 
 UPDATE_TOX = r"""

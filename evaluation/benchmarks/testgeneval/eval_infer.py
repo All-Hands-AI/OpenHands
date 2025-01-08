@@ -17,7 +17,6 @@ from evaluation.benchmarks.testgeneval.constants import (
     MUTATION_BUFFER,
     MUTATION_TEMPLATE,
     MUTATION_TIMEOUT,
-    TESTS_FAILED,
     TESTS_SUFFIX,
 )
 from evaluation.benchmarks.testgeneval.metrics import (
@@ -29,6 +28,7 @@ from evaluation.benchmarks.testgeneval.metrics import (
 )
 from evaluation.benchmarks.testgeneval.pygments_utils import tokenize_code
 from evaluation.benchmarks.testgeneval.run_infer import get_instance_docker_image
+from evaluation.benchmarks.testgeneval.test_filter import filter_passing_tests
 from evaluation.benchmarks.testgeneval.test_spec import (
     TestGenEvalInstance,
     TestSpec,
@@ -194,17 +194,76 @@ def run_mutation_testing(
     assert isinstance(
         mutation_obs, CmdOutputObservation
     ), 'Failed to retrieve mutation output.'
+    print(mutation_obs.content)
     return mutation_obs.exit_code, mutation_obs.content
 
 
-def grade_test_output(test_output: str, test_spec: TestSpec):
+def grade_test_output(
+    test_suite: str, instance: pd.Series, test_output: str, test_spec: TestSpec, runtime
+):
+    """
+    Two-pass test grading:
+    1. Run all tests to identify passing/failing tests
+    2. Run only passing tests for coverage analysis
+    """
     unit_test_output, coverage_output = '', ''
     if TESTS_SUFFIX in test_output:
         unit_test_output = test_output.split(TESTS_SUFFIX)[0]
-    if COVERAGE_PREFIX in test_output:
-        coverage_output = test_output.split(COVERAGE_PREFIX)[1]
-    coverage_success, coverage = check_coverage(coverage_output, test_spec.code_file)
-    return coverage_success, coverage, unit_test_output, coverage_output
+
+    if not unit_test_output:
+        return (
+            False,
+            0,
+            '',
+            '',
+            {
+                'total_tests': 0,
+                'passing_tests': 0,
+                'failing_tests': 0,
+                'any_pass': False,
+                'all_pass': False,
+                'passing_test_names': [],
+                'failing_test_names': [],
+            },
+        )
+
+    # Filter tests and create new content with only passing tests
+    filtered_content, passing_tests, failing_tests = filter_passing_tests(
+        test_suite, unit_test_output, test_spec.repo
+    )
+
+    # Second pass - run coverage on passing tests
+    coverage_success, coverage = False, 0
+    if filtered_content and passing_tests:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            test_suite_path = os.path.join(temp_dir, 'test_suite.py')
+            with open(test_suite_path, 'w') as f:
+                f.write(filtered_content)
+            runtime.copy_to(test_suite_path, '/tmp')
+
+        run_command(runtime, f'cp /tmp/test_suite.py /testbed/{test_spec.test_file}')
+
+        # Run tests using the existing run_tests function
+        _, test_output_second_pass, _ = run_tests(runtime, instance, '/tmp/test.sh')
+        if COVERAGE_PREFIX in test_output_second_pass:
+            coverage_output = test_output_second_pass.split(COVERAGE_PREFIX)[1]
+            unit_test_output = test_output_second_pass.split(TESTS_SUFFIX)[0]
+            coverage_success, coverage = check_coverage(
+                coverage_output, test_spec.code_file
+            )
+
+    total_tests = len(passing_tests) + len(failing_tests)
+    test_stats = {
+        'total_tests': total_tests,
+        'passing_tests': len(passing_tests),
+        'failing_tests': len(failing_tests),
+        'any_pass': len(passing_tests) > 0,
+        'all_pass': len(failing_tests) == 0 and total_tests > 0,
+        'passing_test_names': passing_tests,
+        'failing_test_names': failing_tests,
+    }
+
+    return coverage_success, coverage, unit_test_output, coverage_output, test_stats
 
 
 def process_instance(
@@ -308,57 +367,61 @@ def process_instance(
         run_command(runtime, 'chmod +x /tmp/test.sh /tmp/mutation.sh')
         run_command(runtime, f'cp /tmp/test_suite.py /testbed/{test_spec.test_file}')
 
+        # First pass - run all tests
         _, test_output, test_time = run_tests(runtime, instance, '/tmp/test.sh')
-        instance['test_result']['report']['test_output'] = test_output
-        if TESTS_FAILED not in test_output:
-            coverage_success, coverage, unit_test_output, coverage_output = (
-                grade_test_output(test_output, test_spec)
+
+        # Grade tests with two-pass approach
+        coverage_success, coverage, unit_test_output, coverage_output, test_stats = (
+            grade_test_output(test_suite, instance, test_output, test_spec, runtime)
+        )
+
+        # Update report with test statistics
+        instance['test_result']['report'].update(
+            {
+                'test_output': unit_test_output,
+                'coverage_output': coverage_output,
+                'test_pass': test_stats['any_pass'],  # Changed to use any_pass
+                'all_tests_pass': test_stats['all_pass'],  # Added all_pass metric
+                'coverage_success': coverage_success,
+                'coverage': coverage if coverage_success else 0,
+                'test_stats': test_stats,
+            }
+        )
+
+        # Only run mutation testing if we have passing tests and coverage
+        if not args.skip_mutation and coverage_success and test_stats['any_pass']:
+            mutation_timeout = max(10, 1.5 * test_time)
+            mutation_toml = MUTATION_TEMPLATE.format(
+                test_cmd=test_spec.test_cmd,
+                source_fp=test_spec.code_file,
+                timeout=mutation_timeout,
             )
-            instance['test_result']['report'].update(
-                {
-                    'test_output': unit_test_output,
-                    'coverage_output': coverage_output,
-                    'test_pass': True,
-                    'coverage_success': coverage_success,
-                    'coverage': coverage if coverage_success else 0,
-                }
+
+            with tempfile.TemporaryDirectory() as temp_dir:
+                mutation_toml_path = os.path.join(temp_dir, 'mutation.toml')
+                with open(mutation_toml_path, 'w') as f:
+                    f.write(mutation_toml)
+                runtime.copy_to(mutation_toml_path, '/tmp')
+
+            run_command(runtime, 'cp /tmp/mutation.toml /testbed/mutation.toml')
+
+            mutation_code, mutation_output = run_mutation_testing(
+                runtime, instance, '/tmp/mutation.sh'
             )
-
-            if not args.skip_mutation and coverage_success:
-                mutation_timeout = max(10, 1.5 * test_time)
-                mutation_toml = MUTATION_TEMPLATE.format(
-                    test_cmd=test_spec.test_cmd,
-                    source_fp=test_spec.code_file,
-                    timeout=mutation_timeout,
+            instance['test_result']['report']['mutation_output'] = mutation_output
+            if mutation_output and mutation_code == 0:
+                (
+                    mutation_success,
+                    num_mutants,
+                    mutation_score,
+                    mutation_confidence_interval,
+                ) = check_mutation(mutation_output)
+                instance['test_result']['report']['num_mutants'] = num_mutants
+                instance['test_result']['report']['mutation_success'] = mutation_success
+                instance['test_result']['report']['mutation_score'] = mutation_score
+                instance['test_result']['report']['mutation_error_interval'] = (
+                    mutation_confidence_interval
                 )
-
-                with tempfile.TemporaryDirectory() as temp_dir:
-                    mutation_toml_path = os.path.join(temp_dir, 'mutation.toml')
-                    with open(mutation_toml_path, 'w') as f:
-                        f.write(mutation_toml)
-                    runtime.copy_to(mutation_toml_path, '/tmp')
-
-                run_command(runtime, 'cp /tmp/mutation.toml /testbed/mutation.toml')
-
-                mutation_code, mutation_output = run_mutation_testing(
-                    runtime, instance, '/tmp/mutation.sh'
-                )
-                instance['test_result']['report']['mutation_output'] = mutation_output
-                if mutation_output and mutation_code == 0:
-                    (
-                        mutation_success,
-                        num_mutants,
-                        mutation_score,
-                        mutation_confidence_interval,
-                    ) = check_mutation(mutation_output)
-                    instance['test_result']['report']['num_mutants'] = num_mutants
-                    instance['test_result']['report']['mutation_success'] = (
-                        mutation_success
-                    )
-                    instance['test_result']['report']['mutation_score'] = mutation_score
-                    instance['test_result']['report']['mutation_error_interval'] = (
-                        mutation_confidence_interval
-                    )
 
         return EvalOutput(
             instance_id=instance.instance_id, test_result=instance['test_result']
