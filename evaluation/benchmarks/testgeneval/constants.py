@@ -1529,7 +1529,7 @@ test-command = "{test_cmd}"
 name = "local"
 """
 
-MUTATION_TIMEOUT = 600
+MUTATION_TIMEOUT = 3600
 MUTATION_BUFFER = 500
 
 UPDATE_TOX = r"""
