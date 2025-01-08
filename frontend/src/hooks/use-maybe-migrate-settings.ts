@@ -3,8 +3,8 @@
 import React from "react";
 import { useSettingsUpToDate } from "#/context/settings-up-to-date-context";
 import {
-  DEFAULT_SETTINGS,
   getCurrentSettingsVersion,
+  DEFAULT_SETTINGS,
   getLocalStorageSettings,
 } from "#/services/settings";
 import { useSaveSettings } from "./mutation/use-save-settings";
