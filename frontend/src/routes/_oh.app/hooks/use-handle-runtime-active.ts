@@ -9,7 +9,7 @@ import { RootState } from "#/store";
 import { base64ToBlob } from "#/utils/base64-to-blob";
 import { useUploadFiles } from "../../../hooks/mutation/use-upload-files";
 import { useGitHubUser } from "../../../hooks/query/use-github-user";
-import { isGitHubErrorReponse } from "#/api/github-axios-instance";
+import { isGitHubErrorReponse } from "#/api/github";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 
 export const useHandleRuntimeActive = () => {

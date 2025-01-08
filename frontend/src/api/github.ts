@@ -1,5 +1,4 @@
 import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
-import { github } from "./github-axios-instance";
 import { openHands } from "./open-hands-axios";
 
 /**
@@ -7,8 +6,8 @@ import { openHands } from "./open-hands-axios";
  * Uses user access token for Github App
  */
 export const retrieveGitHubAppInstallations = async (): Promise<number[]> => {
-  const response = await github.get<GithubAppInstallation>(
-    "/user/installations",
+  const response = await openHands.get<GithubAppInstallation>(
+    "/api/github/installations",
   );
 
   return response.data.installations.map((installation) => installation.id);
@@ -88,20 +87,8 @@ export const retrieveGitHubUserRepositories = async (
  * @returns The authenticated user or an error response
  */
 export const retrieveGitHubUser = async () => {
-  const response = await github.get<GitHubUser>("/user");
-
-  const { data } = response;
-
-  const user: GitHubUser = {
-    id: data.id,
-    login: data.login,
-    avatar_url: data.avatar_url,
-    company: data.company,
-    name: data.name,
-    email: data.email,
-  };
-
-  return user;
+  const response = await openHands.get<GitHubUser>("/api/github/user");
+  return response.data;
 };
 
 export const searchPublicRepositories = async (
@@ -110,11 +97,11 @@ export const searchPublicRepositories = async (
   sort: "" | "updated" | "stars" | "forks" = "stars",
   order: "desc" | "asc" = "desc",
 ): Promise<GitHubRepository[]> => {
-  const response = await github.get<{ items: GitHubRepository[] }>(
-    "/search/repositories",
+  const response = await openHands.get<{ items: GitHubRepository[] }>(
+    "/api/github/search/repositories",
     {
       params: {
-        q: query,
+        query,
         per_page,
         sort,
         order,
@@ -128,8 +115,9 @@ export const retrieveLatestGitHubCommit = async (
   repository: string,
 ): Promise<GitHubCommit | null> => {
   try {
-    const response = await github.get<GitHubCommit[]>(
-      `/repos/${repository}/commits`,
+    const [owner, repo] = repository.split("/");
+    const response = await openHands.get<GitHubCommit[]>(
+      `/api/github/repos/${owner}/${repo}/commits`,
       {
         params: {
           per_page: 1,

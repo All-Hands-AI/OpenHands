@@ -2,14 +2,9 @@ import posthog from "posthog-js";
 import React from "react";
 import OpenHands from "#/api/open-hands";
 import {
-  removeGitHubTokenHeader as removeOpenHandsGitHubTokenHeader,
-  setGitHubTokenHeader as setOpenHandsGitHubTokenHeader,
+  removeGitHubTokenHeader,
+  setGitHubTokenHeader,
 } from "#/api/open-hands-axios";
-import {
-  setAuthTokenHeader as setGitHubAuthTokenHeader,
-  removeAuthTokenHeader as removeGitHubAuthTokenHeader,
-  setupAxiosInterceptors as setupGithubAxiosInterceptors,
-} from "#/api/github-axios-instance";
 
 interface AuthContextType {
   gitHubToken: string | null;
@@ -37,8 +32,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     localStorage.removeItem("ghToken");
     localStorage.removeItem("userId");
 
-    removeOpenHandsGitHubTokenHeader();
-    removeGitHubAuthTokenHeader();
+    removeGitHubTokenHeader();
   };
 
   const setGitHubToken = (token: string | null) => {
@@ -46,8 +40,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
     if (token) {
       localStorage.setItem("ghToken", token);
-      setOpenHandsGitHubTokenHeader(token);
-      setGitHubAuthTokenHeader(token);
+      setGitHubTokenHeader(token);
     } else {
       clearGitHubToken();
     }
@@ -87,7 +80,6 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
     setGitHubToken(storedGitHubToken);
     setUserId(userId);
-    setupGithubAxiosInterceptors(refreshToken, logout);
   }, []);
 
   const value = React.useMemo(

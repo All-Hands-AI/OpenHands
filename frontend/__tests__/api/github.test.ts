@@ -2,13 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 import { retrieveLatestGitHubCommit } from "../../src/api/github";
 
 describe("retrieveLatestGitHubCommit", () => {
-  const { githubGetMock } = vi.hoisted(() => ({
-    githubGetMock: vi.fn(),
+  const { openHandsGetMock } = vi.hoisted(() => ({
+    openHandsGetMock: vi.fn(),
   }));
 
-  vi.mock("../../src/api/github-axios-instance", () => ({
-    github: {
-      get: githubGetMock,
+  vi.mock("../../src/api/open-hands-axios", () => ({
+    openHands: {
+      get: openHandsGetMock,
     },
   }));
 
@@ -20,7 +20,7 @@ describe("retrieveLatestGitHubCommit", () => {
       },
     };
 
-    githubGetMock.mockResolvedValueOnce({
+    openHandsGetMock.mockResolvedValueOnce({
       data: [mockCommit],
     });
 
@@ -31,7 +31,7 @@ describe("retrieveLatestGitHubCommit", () => {
   it("should return null when repository is empty", async () => {
     const error = new Error("Repository is empty");
     (error as any).response = { status: 409 };
-    githubGetMock.mockRejectedValueOnce(error);
+    openHandsGetMock.mockRejectedValueOnce(error);
 
     const result = await retrieveLatestGitHubCommit("user/empty-repo");
     expect(result).toBeNull();
@@ -40,7 +40,7 @@ describe("retrieveLatestGitHubCommit", () => {
   it("should throw error for other error cases", async () => {
     const error = new Error("Network error");
     (error as any).response = { status: 500 };
-    githubGetMock.mockRejectedValueOnce(error);
+    openHandsGetMock.mockRejectedValueOnce(error);
 
     await expect(retrieveLatestGitHubCommit("user/repo")).rejects.toThrow();
   });
