@@ -37,8 +37,6 @@ class SandboxConfig:
         enable_gpu: Whether to enable GPU.
         docker_runtime_kwargs: Additional keyword arguments to pass to the Docker runtime when running containers.
             This should be a JSON string that will be parsed into a dictionary.
-            Example in config.toml:
-            docker_runtime_kwargs = '{"mem_limit": "4g", "cpu_quota": 100000}'
     """
 
     remote_runtime_api_url: str = 'http://localhost:8000'
