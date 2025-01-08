@@ -1,4 +1,11 @@
-import React, { CSSProperties, JSX, useEffect, useRef, useState } from "react";
+import React, {
+  CSSProperties,
+  JSX,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   VscChevronDown,
   VscChevronLeft,
@@ -38,137 +45,123 @@ export function ResizablePanel({
   orientation,
   initialSize,
 }: ResizablePanelProps): JSX.Element {
-  const [firstSize, setFirstSize] = useState<number>(initialSize);
+  const isHorizontal = orientation === Orientation.HORIZONTAL;
+  const [firstSize, setFirstSize] = useState(initialSize);
   const [dividerPosition, setDividerPosition] = useState<number | null>(null);
+  const [collapse, setCollapse] = useState(Collapse.SPLIT);
   const firstRef = useRef<HTMLDivElement>(null);
   const secondRef = useRef<HTMLDivElement>(null);
-  const [collapse, setCollapse] = useState<Collapse>(Collapse.SPLIT);
-  const isHorizontal = orientation === Orientation.HORIZONTAL;
 
   useEffect(() => {
-    if (dividerPosition == null || !firstRef.current) {
-      return undefined;
-    }
-    const getFirstSizeFromEvent = (e: MouseEvent) => {
-      const position = isHorizontal ? e.clientX : e.clientY;
-      return firstSize + position - dividerPosition;
-    };
+    if (!dividerPosition) return undefined;
+
     const onMouseMove = (e: MouseEvent) => {
       e.preventDefault();
-      const newFirstSize = `${getFirstSizeFromEvent(e)}px`;
-      const { current } = firstRef;
-      if (current) {
-        if (isHorizontal) {
-          current.style.width = newFirstSize;
-          current.style.minWidth = newFirstSize;
-        } else {
-          current.style.height = newFirstSize;
-          current.style.minHeight = newFirstSize;
-        }
-      }
+      const delta = (isHorizontal ? e.clientX : e.clientY) - dividerPosition;
+      setFirstSize(firstSize + delta);
+      setDividerPosition(isHorizontal ? e.clientX : e.clientY);
     };
+
     const onMouseUp = (e: MouseEvent) => {
       e.preventDefault();
-      if (firstRef.current) {
-        firstRef.current.style.transition = "";
-      }
-      if (secondRef.current) {
-        secondRef.current.style.transition = "";
-      }
-      setFirstSize(getFirstSizeFromEvent(e));
+      if (firstRef.current) firstRef.current.style.transition = "";
+      if (secondRef.current) secondRef.current.style.transition = "";
+      setFirstSize(
+        firstSize + ((isHorizontal ? e.clientX : e.clientY) - dividerPosition),
+      );
       setDividerPosition(null);
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
     };
+
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
     return () => {
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
     };
-  }, [dividerPosition, firstSize, orientation]);
+  }, [dividerPosition, firstSize, isHorizontal]);
 
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (firstRef.current) {
-      firstRef.current.style.transition = "none";
-    }
-    if (secondRef.current) {
-      secondRef.current.style.transition = "none";
-    }
-    const position = isHorizontal ? e.clientX : e.clientY;
-    setDividerPosition(position);
+    if (firstRef.current) firstRef.current.style.transition = "none";
+    if (secondRef.current) secondRef.current.style.transition = "none";
+    setDividerPosition(isHorizontal ? e.clientX : e.clientY);
   };
 
-  const getStyleForFirst = () => {
-    const style: CSSProperties = { overflow: "hidden" };
-    if (collapse === Collapse.COLLAPSED) {
-      style.opacity = 0;
-      style.width = 0;
-      style.minWidth = 0;
-      style.height = 0;
-      style.minHeight = 0;
-    } else if (collapse === Collapse.SPLIT) {
-      const firstSizePx = `${firstSize}px`;
-      if (isHorizontal) {
-        style.width = firstSizePx;
-        style.minWidth = "350px";
-        style.maxWidth = "50%";
-      } else {
-        style.height = firstSizePx;
-        style.minHeight = "300px";
-        style.maxHeight = "70%";
+  const getPanelStyle = useCallback(
+    (isFirst: boolean): CSSProperties => {
+      const style: CSSProperties = { overflow: "hidden" };
+      const isHidden =
+        (isFirst && collapse === Collapse.COLLAPSED) ||
+        (!isFirst && collapse === Collapse.FILLED);
+
+      const hiddenStyle: CSSProperties = {
+        ...style,
+        opacity: 0,
+        width: 0,
+        minWidth: 0,
+        height: 0,
+        minHeight: 0,
+      };
+
+      const expandedStyle: CSSProperties = { ...style, flexGrow: 1 };
+
+      if (isHidden) {
+        return hiddenStyle;
       }
-    } else {
-      style.flexGrow = 1;
-    }
-    return style;
-  };
 
-  const getStyleForSecond = () => {
-    const style: CSSProperties = { overflow: "hidden" };
-    if (collapse === Collapse.FILLED) {
-      style.opacity = 0;
-      style.width = 0;
-      style.minWidth = 0;
-      style.height = 0;
-      style.minHeight = 0;
-    } else if (collapse === Collapse.SPLIT) {
-      style.flexGrow = 1;
-      if (isHorizontal) {
-        style.minWidth = "30%";
-        style.maxWidth = "70%";
-      } else {
-        style.minHeight = "300px";
+      if (collapse !== Collapse.SPLIT) {
+        return expandedStyle;
       }
-    } else {
-      style.flexGrow = 1;
-    }
-    return style;
-  };
 
-  const onCollapse = () => {
-    if (collapse === Collapse.SPLIT) {
-      setCollapse(Collapse.COLLAPSED);
-    } else {
-      setCollapse(Collapse.SPLIT);
-    }
-  };
+      if (isFirst) {
+        const dimension = isHorizontal ? "width" : "height";
+        const minDimension = isHorizontal ? "minWidth" : "minHeight";
+        const maxDimension = isHorizontal ? "maxWidth" : "maxHeight";
 
-  const onExpand = () => {
-    if (collapse === Collapse.SPLIT) {
-      setCollapse(Collapse.FILLED);
-    } else {
-      setCollapse(Collapse.SPLIT);
-    }
-  };
+        const firstPanelStyle: CSSProperties = {
+          ...style,
+          [dimension]: `${firstSize}px`,
+          [minDimension]: isHorizontal ? "350px" : "300px",
+          [maxDimension]: isHorizontal ? "50%" : "70%",
+          flexShrink: 0,
+        };
+        return firstPanelStyle;
+      }
+
+      const secondPanelStyle: CSSProperties = {
+        ...style,
+        flexGrow: 1,
+        flexShrink: 1,
+        ...(isHorizontal
+          ? {
+              minWidth: "30%",
+              maxWidth: "70%",
+            }
+          : {
+              minHeight: "300px",
+              display: "flex",
+              flexDirection: "column",
+            }),
+      };
+      return secondPanelStyle;
+    },
+    [collapse, firstSize, isHorizontal],
+  );
+
+  const toggleCollapse = () =>
+    setCollapse(
+      collapse === Collapse.SPLIT ? Collapse.COLLAPSED : Collapse.SPLIT,
+    );
+
+  const toggleExpand = () =>
+    setCollapse(collapse === Collapse.SPLIT ? Collapse.FILLED : Collapse.SPLIT);
 
   return (
     <div className={twMerge("flex", !isHorizontal && "flex-col", className)}>
       <div
         ref={firstRef}
         className={twMerge(firstClassName, "transition-all ease-soft-spring")}
-        style={getStyleForFirst()}
+        style={getPanelStyle(true)}
       >
         {firstChild}
       </div>
@@ -179,18 +172,18 @@ export function ResizablePanel({
         <IconButton
           icon={isHorizontal ? <VscChevronLeft /> : <VscChevronUp />}
           ariaLabel="Collapse"
-          onClick={onCollapse}
+          onClick={toggleCollapse}
         />
         <IconButton
           icon={isHorizontal ? <VscChevronRight /> : <VscChevronDown />}
           ariaLabel="Expand"
-          onClick={onExpand}
+          onClick={toggleExpand}
         />
       </div>
       <div
         ref={secondRef}
         className={twMerge(secondClassName, "transition-all ease-soft-spring")}
-        style={getStyleForSecond()}
+        style={getPanelStyle(false)}
       >
         {secondChild}
       </div>
