@@ -8,7 +8,7 @@ services:
       args:
         - NODE_ENV=development
     ports:
-      - "3000:3000"
+      - "4200:3000"
     environment:
       - SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.19-nikolaik
       - LOG_ALL_EVENTS=true
