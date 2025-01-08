@@ -534,11 +534,16 @@ class SessionManager:
 
         logger.info(f'closing_session:{session.sid}')
         # We alert the cluster in case they are interested
-        redis_client = self._get_redis_client()
-        if redis_client:
-            await redis_client.publish(
-                'session_msg',
-                json.dumps({'sid': session.sid, 'message_type': 'session_closing'}),
+        try:
+            redis_client = self._get_redis_client()
+            if redis_client:
+                await redis_client.publish(
+                    'session_msg',
+                    json.dumps({'sid': session.sid, 'message_type': 'session_closing'}),
+                )
+        except Exception:
+            logger.info(
+                'error_publishing_close_session_event', exc_info=True, stack_info=True
             )
 
         await session.close()
