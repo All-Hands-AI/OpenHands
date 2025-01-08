@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      - SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.19-nikolaik
+      - LOG_ALL_EVENTS=true
+      - NODE_ENV=development
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${HOME}/.openhands-state:/.openhands-state
+      - .:/app
+      - /app/node_modules
+      - /app/frontend/node_modules
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - openhands-network
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - openhands-network
+    volumes:
+      - redis-data:/data
+
+networks:
+  openhands-network:
+    driver: bridge
+
+volumes:
+  redis-data:
