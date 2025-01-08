@@ -1,38 +1,19 @@
-import React from "react";
-import { useSelector } from "react-redux";
+import { useParams } from "react-router";
 import { AgentControlBar } from "./agent-control-bar";
 import { AgentStatusBar } from "./agent-status-bar";
-import { ProjectMenuCard } from "../project-menu/ProjectMenuCard";
-import { useAuth } from "#/context/auth-context";
-import { RootState } from "#/store";
 import { SecurityLock } from "./security-lock";
+import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { ConversationCard } from "../conversation-panel/conversation-card";
 
 interface ControlsProps {
   setSecurityOpen: (isOpen: boolean) => void;
   showSecurityLock: boolean;
-  lastCommitData: GitHubCommit | null;
 }
 
-export function Controls({
-  setSecurityOpen,
-  showSecurityLock,
-  lastCommitData,
-}: ControlsProps) {
-  const { gitHubToken } = useAuth();
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
-
-  const projectMenuCardData = React.useMemo(
-    () =>
-      selectedRepository && lastCommitData
-        ? {
-            repoName: selectedRepository,
-            lastCommit: lastCommitData,
-            avatar: null, // TODO: fetch repo avatar
-          }
-        : null,
-    [selectedRepository, lastCommitData],
+export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
+  const params = useParams();
+  const { data: conversation } = useUserConversation(
+    params.conversationId ?? null,
   );
 
   return (
@@ -46,9 +27,13 @@ export function Controls({
         )}
       </div>
 
-      <ProjectMenuCard
-        isConnectedToGitHub={!!gitHubToken}
-        githubData={projectMenuCardData}
+      <ConversationCard
+        variant="compact"
+        onDownloadWorkspace={() => console.log("Download workspace")}
+        title={conversation?.title ?? ""}
+        lastUpdatedAt={conversation?.created_at ?? ""}
+        selectedRepository={conversation?.selected_repository ?? null}
+        status={conversation?.status}
       />
     </div>
   );
