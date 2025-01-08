@@ -62,6 +62,7 @@ export function ConversationCard({
   };
 
   const handleEdit = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
     event.stopPropagation();
     setTitleMode("edit");
     setContextMenuVisible(false);
