@@ -2,7 +2,7 @@ import os
 from dataclasses import fields
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 
 from openhands.core.config.config_utils import get_field_info
 from openhands.core.logger import LOG_DIR
@@ -50,14 +50,14 @@ class LLMConfig(BaseModel):
     """
 
     model: str = Field(default='claude-3-5-sonnet-20241022')
-    api_key: str | None = Field(default=None)
+    api_key: SecretStr | None = Field(default=None)
     base_url: str | None = Field(default=None)
     api_version: str | None = Field(default=None)
     embedding_model: str = Field(default='local')
     embedding_base_url: str | None = Field(default=None)
     embedding_deployment_name: str | None = Field(default=None)
-    aws_access_key_id: str | None = Field(default=None)
-    aws_secret_access_key: str | None = Field(default=None)
+    aws_access_key_id: SecretStr | None = Field(default=None)
+    aws_secret_access_key: SecretStr | None = Field(default=None)
     aws_region_name: str | None = Field(default=None)
     openrouter_site_url: str = Field(default='https://docs.all-hands.dev/')
     openrouter_app_name: str = Field(default='OpenHands')
@@ -107,42 +107,3 @@ class LLMConfig(BaseModel):
             os.environ['OR_SITE_URL'] = self.openrouter_site_url
         if self.openrouter_app_name:
             os.environ['OR_APP_NAME'] = self.openrouter_app_name
-
-    def __str__(self):
-        attr_str = []
-        for f in fields(self):
-            attr_name = f.name
-            attr_value = getattr(self, f.name)
-
-            if attr_name in LLM_SENSITIVE_FIELDS:
-                attr_value = '******' if attr_value else None
-
-            attr_str.append(f'{attr_name}={repr(attr_value)}')
-
-        return f"LLMConfig({', '.join(attr_str)})"
-
-    def __repr__(self):
-        return self.__str__()
-
-    def to_safe_dict(self):
-        """Return a dict with the sensitive fields replaced with ******."""
-        ret = self.__dict__.copy()
-        for k, v in ret.items():
-            if k in LLM_SENSITIVE_FIELDS:
-                ret[k] = '******' if v else None
-            elif isinstance(v, LLMConfig):
-                ret[k] = v.to_safe_dict()
-        return ret
-
-    @classmethod
-    def from_dict(cls, llm_config_dict: dict) -> 'LLMConfig':
-        """Create an LLMConfig object from a dictionary.
-
-        This function is used to create an LLMConfig object from a dictionary,
-        with the exception of the 'draft_editor' key, which is a nested LLMConfig object.
-        """
-        args = {k: v for k, v in llm_config_dict.items() if not isinstance(v, dict)}
-        if 'draft_editor' in llm_config_dict:
-            draft_editor_config = LLMConfig(**llm_config_dict['draft_editor'])
-            args['draft_editor'] = draft_editor_config
-        return cls(**args)

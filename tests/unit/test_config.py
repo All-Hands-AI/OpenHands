@@ -63,7 +63,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
 
     assert config.workspace_base == '/repos/openhands/workspace'
     assert isinstance(config.get_llm_config(), LLMConfig)
-    assert config.get_llm_config().api_key == 'sk-proj-rgMV0...'
+    assert config.get_llm_config().api_key.get_secret_value() == 'sk-proj-rgMV0...'
     assert config.get_llm_config().model == 'gpt-4o'
     assert isinstance(config.get_agent_config(), AgentConfig)
     assert isinstance(config.get_agent_config().memory_max_threads, int)
@@ -83,7 +83,7 @@ def test_load_from_old_style_env(monkeypatch, default_config):
 
     load_from_env(default_config, os.environ)
 
-    assert default_config.get_llm_config().api_key == 'test-api-key'
+    assert default_config.get_llm_config().api_key.get_secret_value() == 'test-api-key'
     assert default_config.get_agent_config().memory_enabled is True
     assert default_config.default_agent == 'BrowsingAgent'
     assert default_config.workspace_base == '/opt/files/workspace'
@@ -126,7 +126,7 @@ default_agent = "TestAgent"
     # default llm & agent configs
     assert default_config.default_agent == 'TestAgent'
     assert default_config.get_llm_config().model == 'test-model'
-    assert default_config.get_llm_config().api_key == 'toml-api-key'
+    assert default_config.get_llm_config().api_key.get_secret_value() == 'toml-api-key'
     assert default_config.get_agent_config().memory_enabled is True
 
     # undefined agent config inherits default ones
@@ -291,7 +291,7 @@ sandbox_user_id = 1001
     assert default_config.get_llm_config().model == 'test-model'
     assert default_config.get_llm_config('llm').model == 'test-model'
     assert default_config.get_llm_config_from_agent().model == 'test-model'
-    assert default_config.get_llm_config().api_key == 'env-api-key'
+    assert default_config.get_llm_config().api_key.get_secret_value() == 'env-api-key'
 
     # after we set workspace_base to 'UNDEFINED' in the environment,
     # workspace_base should be set to that
@@ -336,7 +336,7 @@ user_id = 1001
     assert default_config.workspace_mount_path is None
 
     # before load_from_env, values are set to the values from the toml file
-    assert default_config.get_llm_config().api_key == 'toml-api-key'
+    assert default_config.get_llm_config().api_key.get_secret_value() == 'toml-api-key'
     assert default_config.sandbox.timeout == 500
     assert default_config.sandbox.user_id == 1001
 
@@ -345,7 +345,7 @@ user_id = 1001
     # values from env override values from toml
     assert os.environ.get('LLM_MODEL') is None
     assert default_config.get_llm_config().model == 'test-model'
-    assert default_config.get_llm_config().api_key == 'env-api-key'
+    assert default_config.get_llm_config().api_key.get_secret_value() == 'env-api-key'
 
     assert default_config.sandbox.timeout == 1000
     assert default_config.sandbox.user_id == 1002
@@ -635,12 +635,14 @@ def test_api_keys_repr_str():
         aws_access_key_id='my_access_key',
         aws_secret_access_key='my_secret_key',
     )
-    assert "api_key='******'" in repr(llm_config)
-    assert "aws_access_key_id='******'" in repr(llm_config)
-    assert "aws_secret_access_key='******'" in repr(llm_config)
-    assert "api_key='******'" in str(llm_config)
-    assert "aws_access_key_id='******'" in str(llm_config)
-    assert "aws_secret_access_key='******'" in str(llm_config)
+
+    # Check that no secret keys are emitted in representations of the config object
+    assert 'my_api_key' not in repr(llm_config)
+    assert 'my_api_key' not in str(llm_config)
+    assert 'my_access_key' not in repr(llm_config)
+    assert 'my_access_key' not in str(llm_config)
+    assert 'my_secret_key' not in repr(llm_config)
+    assert 'my_secret_key' not in str(llm_config)
 
     # Check that no other attrs in LLMConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
