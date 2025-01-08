@@ -116,9 +116,9 @@ The `session.py` file defines the `Session` class, which represents a WebSocket 
 - Dispatching events between the client and the agent
 - Sending messages and errors to the client
 
-### 2. session/agent.py
+### 2. session/agent_session.py
 
-The `agent.py` file contains the `AgentSession` class, which manages the lifecycle of an agent within a session. Key features include:
+The `agent_session.py` file contains the `AgentSession` class, which manages the lifecycle of an agent within a session. Key features include:
 
 - Creating and managing the runtime environment
 - Initializing the agent controller

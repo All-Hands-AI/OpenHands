@@ -21,7 +21,8 @@ from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
-from openhands.server.session.session_init_data import SessionInitData
+from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
 
 ROOM_KEY = 'room:{sid}'
@@ -35,6 +36,7 @@ class Session:
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
     config: AppConfig
+    file_store: FileStore
 
     def __init__(
         self,
@@ -46,6 +48,7 @@ class Session:
         self.sid = sid
         self.sio = sio
         self.last_active_ts = int(time.time())
+        self.file_store = file_store
         self.agent_session = AgentSession(
             sid, file_store, status_callback=self.queue_status_message
         )
@@ -60,41 +63,42 @@ class Session:
         self.is_alive = False
         self.agent_session.close()
 
-    async def initialize_agent(self, session_init_data: SessionInitData):
+    async def initialize_agent(
+        self,
+        settings: Settings,
+    ):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
         )
-        # Extract the agent-relevant arguments from the request
-        agent_cls = session_init_data.agent or self.config.default_agent
+
+        agent_cls = settings.agent or self.config.default_agent
         self.config.security.confirmation_mode = (
             self.config.security.confirmation_mode
-            if session_init_data.confirmation_mode is None
-            else session_init_data.confirmation_mode
+            if settings.confirmation_mode is None
+            else settings.confirmation_mode
         )
         self.config.security.security_analyzer = (
-            session_init_data.security_analyzer
-            or self.config.security.security_analyzer
+            settings.security_analyzer or self.config.security.security_analyzer
         )
-        max_iterations = session_init_data.max_iterations or self.config.max_iterations
-        # override default LLM config
+        max_iterations = settings.max_iterations or self.config.max_iterations
 
         default_llm_config = self.config.get_llm_config()
-        default_llm_config.model = (
-            session_init_data.llm_model or default_llm_config.model
-        )
-        default_llm_config.api_key = (
-            session_init_data.llm_api_key or default_llm_config.api_key
-        )
-        default_llm_config.base_url = (
-            session_init_data.llm_base_url or default_llm_config.base_url
-        )
+        default_llm_config.model = settings.llm_model or ''
+        default_llm_config.api_key = settings.llm_api_key
+        default_llm_config.base_url = settings.llm_base_url
 
         # TODO: override other LLM config & agent config groups (#2075)
 
         llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
         agent_config = self.config.get_agent_config(agent_cls)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
+
+        github_token = None
+        selected_repository = None
+        if isinstance(settings, ConversationInitData):
+            github_token = settings.github_token
+            selected_repository = settings.selected_repository
 
         try:
             await self.agent_session.start(
@@ -105,8 +109,8 @@ class Session:
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
-                github_token=session_init_data.github_token,
-                selected_repository=session_init_data.selected_repository,
+                github_token=github_token,
+                selected_repository=selected_repository,
             )
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
@@ -115,7 +119,10 @@ class Session:
             )
             return
 
-    async def on_event(self, event: Event):
+    def on_event(self, event: Event):
+        asyncio.get_event_loop().run_until_complete(self._on_event(event))
+
+    async def _on_event(self, event: Event):
         """Callback function for events that mainly come from the agent.
         Event is the base class for any agent action and observation.
 

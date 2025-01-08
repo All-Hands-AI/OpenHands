@@ -4,15 +4,13 @@ from datetime import datetime, timedelta
 from typing import Callable
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, Request, status
+from fastapi import Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from openhands.core.logger import openhands_logger as logger
-from openhands.server.auth import get_sid_from_token
-from openhands.server.shared import config, session_manager
+from openhands.server.shared import session_manager
 from openhands.server.types import SessionMiddlewareInterface
 
 
@@ -108,11 +106,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-class AttachSessionMiddleware(SessionMiddlewareInterface):
-    def __init__(self, app, target_router: APIRouter):
+class AttachConversationMiddleware(SessionMiddlewareInterface):
+    def __init__(self, app):
         self.app = app
-        self.target_router = target_router
-        self.target_paths = {route.path for route in target_router.routes}
 
     def _should_attach(self, request) -> bool:
         """
@@ -120,26 +116,24 @@ class AttachSessionMiddleware(SessionMiddlewareInterface):
         """
         if request.method == 'OPTIONS':
             return False
-        if request.url.path not in self.target_paths:
+
+        conversation_id = ''
+        if request.url.path.startswith('/api/conversation'):
+            # FIXME: we should be able to use path_params
+            path_parts = request.url.path.split('/')
+            if len(path_parts) > 4:
+                conversation_id = request.url.path.split('/')[3]
+        if not conversation_id:
             return False
+
+        request.state.sid = conversation_id
+
         return True
 
-    async def _attach_session(self, request: Request) -> JSONResponse | None:
+    async def _attach_conversation(self, request: Request) -> JSONResponse | None:
         """
         Attach the user's session based on the provided authentication token.
         """
-        auth_token = request.headers.get('Authorization', '')
-        if 'Bearer' in auth_token:
-            auth_token = auth_token.split('Bearer')[1].strip()
-
-        request.state.sid = get_sid_from_token(auth_token, config.jwt_secret)
-        if not request.state.sid:
-            logger.warning('Invalid token')
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'error': 'Invalid token'},
-            )
-
         request.state.conversation = await session_manager.attach_to_conversation(
             request.state.sid
         )
@@ -160,7 +154,7 @@ class AttachSessionMiddleware(SessionMiddlewareInterface):
         if not self._should_attach(request):
             return await call_next(request)
 
-        response = await self._attach_session(request)
+        response = await self._attach_conversation(request)
         if response:
             return response
 

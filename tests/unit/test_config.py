@@ -1,4 +1,6 @@
+import logging
 import os
+from io import StringIO
 
 import pytest
 
@@ -11,6 +13,10 @@ from openhands.core.config import (
     load_from_env,
     load_from_toml,
 )
+from openhands.core.config.condenser_config import (
+    NoOpCondenserConfig,
+)
+from openhands.core.logger import openhands_logger
 
 
 @pytest.fixture
@@ -71,7 +77,7 @@ def test_load_from_old_style_env(monkeypatch, default_config):
     # Test loading configuration from old-style environment variables using monkeypatch
     monkeypatch.setenv('LLM_API_KEY', 'test-api-key')
     monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
-    monkeypatch.setenv('DEFAULT_AGENT', 'PlannerAgent')
+    monkeypatch.setenv('DEFAULT_AGENT', 'BrowsingAgent')
     monkeypatch.setenv('WORKSPACE_BASE', '/opt/files/workspace')
     monkeypatch.setenv('SANDBOX_BASE_CONTAINER_IMAGE', 'custom_image')
 
@@ -79,7 +85,7 @@ def test_load_from_old_style_env(monkeypatch, default_config):
 
     assert default_config.get_llm_config().api_key == 'test-api-key'
     assert default_config.get_agent_config().memory_enabled is True
-    assert default_config.default_agent == 'PlannerAgent'
+    assert default_config.default_agent == 'BrowsingAgent'
     assert default_config.workspace_base == '/opt/files/workspace'
     assert default_config.workspace_mount_path is None  # before finalize_config
     assert default_config.workspace_mount_path_in_sandbox is not None
@@ -152,6 +158,60 @@ default_agent = "TestAgent"
     # after finalize_config, workspace_mount_path is set to the absolute path of workspace_base
     # if it was undefined
     assert default_config.workspace_mount_path == '/opt/files2/workspace'
+
+
+def test_llm_config_native_tool_calling(default_config, temp_toml_file, monkeypatch):
+    # default is None
+    assert default_config.get_llm_config().native_tool_calling is None
+
+    # without `[core]` section, native_tool_calling is not set because the file is not loaded
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write(
+            """
+[llm.gpt4o-mini]
+native_tool_calling = true
+"""
+        )
+
+    load_from_toml(default_config, temp_toml_file)
+    assert default_config.get_llm_config().native_tool_calling is None
+    assert default_config.get_llm_config('gpt4o-mini').native_tool_calling is None
+
+    # set to false
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write(
+            """
+[core]
+
+[llm.gpt4o-mini]
+native_tool_calling = false
+"""
+        )
+    load_from_toml(default_config, temp_toml_file)
+    assert default_config.get_llm_config().native_tool_calling is None
+    assert default_config.get_llm_config('gpt4o-mini').native_tool_calling is False
+
+    # set to true using string
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write(
+            """
+[core]
+
+[llm.gpt4o-mini]
+native_tool_calling = true
+"""
+        )
+    load_from_toml(default_config, temp_toml_file)
+    assert default_config.get_llm_config('gpt4o-mini').native_tool_calling is True
+
+    # override to false by env
+    # see utils.set_attr_from_env
+    monkeypatch.setenv('LLM_NATIVE_TOOL_CALLING', 'false')
+    load_from_env(default_config, os.environ)
+    assert default_config.get_llm_config().native_tool_calling is False
+    assert (
+        default_config.get_llm_config('gpt4o-mini').native_tool_calling is True
+    )  # load_from_env didn't override the named config set in the toml file under [llm.gpt4o-mini]
 
 
 def test_compat_load_sandbox_from_toml(default_config: AppConfig, temp_toml_file: str):
@@ -323,6 +383,42 @@ user_id = 1001
     assert default_config.sandbox.user_id == 1001
 
 
+def test_security_config_from_toml(default_config, temp_toml_file):
+    """Test loading security specific configurations."""
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write(
+            """
+[core]  # make sure core is loaded first
+workspace_base = "/opt/files/workspace"
+
+[llm]
+model = "test-model"
+
+[security]
+confirmation_mode = false
+security_analyzer = "semgrep"
+"""
+        )
+
+    load_from_toml(default_config, temp_toml_file)
+    assert default_config.security.confirmation_mode is False
+    assert default_config.security.security_analyzer == 'semgrep'
+
+
+def test_security_config_from_dict():
+    """Test creating SecurityConfig instance from dictionary."""
+    from openhands.core.config.security_config import SecurityConfig
+
+    # Test with all fields
+    config_dict = {'confirmation_mode': True, 'security_analyzer': 'some_analyzer'}
+
+    security_config = SecurityConfig.from_dict(config_dict)
+
+    # Verify all fields are correctly set
+    assert security_config.confirmation_mode is True
+    assert security_config.security_analyzer == 'some_analyzer'
+
+
 def test_defaults_dict_after_updates(default_config):
     # Test that `defaults_dict` retains initial values after updates.
     initial_defaults = default_config.defaults_dict
@@ -333,8 +429,10 @@ def test_defaults_dict_after_updates(default_config):
     updated_config.get_llm_config().api_key = 'updated-api-key'
     updated_config.get_llm_config('llm').api_key = 'updated-api-key'
     updated_config.get_llm_config_from_agent('agent').api_key = 'updated-api-key'
-    updated_config.get_llm_config_from_agent('PlannerAgent').api_key = 'updated-api-key'
-    updated_config.default_agent = 'PlannerAgent'
+    updated_config.get_llm_config_from_agent(
+        'BrowsingAgent'
+    ).api_key = 'updated-api-key'
+    updated_config.default_agent = 'BrowsingAgent'
 
     defaults_after_updates = updated_config.defaults_dict
     assert defaults_after_updates['default_agent']['default'] == 'CodeActAgent'
@@ -352,10 +450,11 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
     monkeypatch.setenv('LLM_MODEL', 'gpt-5-turbo-1106')
     monkeypatch.setenv('WORKSPACE_MOUNT_PATH', '/home/user/project')
     monkeypatch.delenv('LLM_API_KEY', raising=False)
+
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
         toml_file.write('INVALID TOML CONTENT')
 
-    load_from_toml(default_config)
+    load_from_toml(default_config, temp_toml_file)
     load_from_env(default_config, os.environ)
     default_config.jwt_secret = None  # prevent leak
     for llm in default_config.llms.values():
@@ -363,6 +462,122 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
     assert default_config.get_llm_config().model == 'gpt-5-turbo-1106'
     assert default_config.get_llm_config().custom_llm_provider is None
     assert default_config.workspace_mount_path == '/home/user/project'
+
+
+def test_load_from_toml_file_not_found(default_config):
+    """Test loading configuration when the TOML file doesn't exist.
+
+    This ensures that:
+    1. The program doesn't crash when the config file is missing
+    2. The config object retains its default values
+    3. The application remains usable
+    """
+    # Try to load from a non-existent file
+    load_from_toml(default_config, 'nonexistent.toml')
+
+    # Verify that config object maintains default values
+    assert default_config.get_llm_config() is not None
+    assert default_config.get_agent_config() is not None
+    assert default_config.sandbox is not None
+
+
+def test_core_not_in_toml(default_config, temp_toml_file):
+    """Test loading configuration when the core section is not in the TOML file.
+
+    default values should be used for the missing sections.
+    """
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write("""
+[llm]
+model = "test-model"
+
+[agent]
+memory_enabled = true
+
+[sandbox]
+timeout = 1
+base_container_image = "custom_image"
+user_id = 1001
+
+[security]
+security_analyzer = "semgrep"
+""")
+
+    load_from_toml(default_config, temp_toml_file)
+    assert default_config.get_llm_config().model == 'claude-3-5-sonnet-20241022'
+    assert default_config.get_agent_config().memory_enabled is False
+    assert (
+        default_config.sandbox.base_container_image
+        == 'nikolaik/python-nodejs:python3.12-nodejs22'
+    )
+    # assert default_config.sandbox.user_id == 1007
+    assert default_config.security.security_analyzer is None
+
+
+def test_load_from_toml_partial_invalid(default_config, temp_toml_file, caplog):
+    """Test loading configuration with partially invalid TOML content.
+
+    This ensures that:
+    1. Valid configuration sections are properly loaded
+    2. Invalid fields are ignored gracefully
+    3. The config object maintains correct values for valid fields
+    4. Appropriate warnings are logged for invalid fields
+
+    See `openhands/core/schema/config.py` for the list of valid fields.
+    """
+    with open(temp_toml_file, 'w', encoding='utf-8') as f:
+        f.write("""
+[core]
+debug = true
+
+[llm]
+# No set in `openhands/core/schema/config.py`
+invalid_field = "test"
+model = "gpt-4"
+
+[agent]
+memory_enabled = true
+
+[sandbox]
+invalid_field_in_sandbox = "test"
+""")
+
+    # Create a string buffer to capture log output
+    # Referenced from test_logging.py and `mock_logger`
+    log_output = StringIO()
+    handler = logging.StreamHandler(log_output)
+    handler.setLevel(logging.WARNING)
+    formatter = logging.Formatter('%(message)s')
+    handler.setFormatter(formatter)
+    openhands_logger.addHandler(handler)
+
+    try:
+        load_from_toml(default_config, temp_toml_file)
+        log_content = log_output.getvalue()
+
+        # invalid [llm] config
+        # Verify that the appropriate warning was logged
+        assert 'Cannot parse [llm] config from toml' in log_content
+        assert 'values have not been applied' in log_content
+        # Error: LLMConfig.__init__() got an unexpected keyword argume
+        assert (
+            'Error: LLMConfig.__init__() got an unexpected keyword argume'
+            in log_content
+        )
+        assert 'invalid_field' in log_content
+
+        # invalid [sandbox] config
+        assert 'Cannot parse [sandbox] config from toml' in log_content
+        assert 'values have not been applied' in log_content
+        assert 'invalid_field_in_sandbox' in log_content
+
+        # Verify valid configurations are loaded. Load from default instead of `config.toml`
+        # assert default_config.debug is True
+        assert default_config.debug is False
+        assert default_config.get_llm_config().model == 'claude-3-5-sonnet-20241022'
+        assert default_config.get_agent_config().memory_enabled is True
+    finally:
+        openhands_logger.removeHandler(handler)
 
 
 def test_finalize_config(default_config):
@@ -404,6 +619,13 @@ def test_cache_dir_creation(default_config, tmpdir):
     default_config.cache_dir = str(tmpdir.join('test_cache'))
     finalize_config(default_config)
     assert os.path.exists(default_config.cache_dir)
+
+
+def test_agent_config_condenser_default():
+    """Test that default agent condenser is NoOpCondenser."""
+    config = AppConfig()
+    agent_config = config.get_agent_config()
+    assert isinstance(agent_config.condenser, NoOpCondenserConfig)
 
 
 def test_api_keys_repr_str():
@@ -547,7 +769,7 @@ max_budget_per_task = 4.0
 [agent.CodeActAgent]
 memory_enabled = true
 
-[agent.PlannerAgent]
+[agent.BrowsingAgent]
 memory_max_threads = 10
 """
 
@@ -558,5 +780,5 @@ memory_max_threads = 10
 
     codeact_config = default_config.get_agent_configs().get('CodeActAgent')
     assert codeact_config.memory_enabled is True
-    planner_config = default_config.get_agent_configs().get('PlannerAgent')
-    assert planner_config.memory_max_threads == 10
+    browsing_config = default_config.get_agent_configs().get('BrowsingAgent')
+    assert browsing_config.memory_max_threads == 10

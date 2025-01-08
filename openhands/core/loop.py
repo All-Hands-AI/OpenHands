@@ -16,7 +16,6 @@ async def run_agent_until_done(
     the agent until it reaches a terminal state.
     Note that runtime must be connected before being passed in here.
     """
-    controller.agent_task = asyncio.create_task(controller.start_step_loop())
 
     def status_callback(msg_type, msg_id, msg):
         if msg_type == 'error':
@@ -41,10 +40,3 @@ async def run_agent_until_done(
 
     while controller.state.agent_state not in end_states:
         await asyncio.sleep(1)
-
-    if not controller.agent_task.done():
-        controller.agent_task.cancel()
-        try:
-            await controller.agent_task
-        except asyncio.CancelledError:
-            pass

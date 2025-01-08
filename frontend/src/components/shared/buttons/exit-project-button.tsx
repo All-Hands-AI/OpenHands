@@ -1,4 +1,5 @@
 import NewProjectIcon from "#/icons/new-project.svg?react";
+import { TooltipButton } from "./tooltip-button";
 
 interface ExitProjectButtonProps {
   onClick: () => void;
@@ -6,13 +7,13 @@ interface ExitProjectButtonProps {
 
 export function ExitProjectButton({ onClick }: ExitProjectButtonProps) {
   return (
-    <button
-      data-testid="new-project-button"
-      type="button"
-      aria-label="Start new project"
+    <TooltipButton
+      tooltip="Start new project"
+      ariaLabel="Start new project"
       onClick={onClick}
+      testId="new-project-button"
     >
-      <NewProjectIcon width={28} height={28} />
-    </button>
+      <NewProjectIcon width={26} height={26} />
+    </TooltipButton>
   );
 }

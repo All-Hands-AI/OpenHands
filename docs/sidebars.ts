@@ -20,13 +20,24 @@ const sidebars: SidebarsConfig = {
         {
           type: 'doc',
           label: 'Best Practices',
-          id: 'usage/prompting-best-practices',
+          id: 'usage/prompting/prompting-best-practices',
         },
         {
-          type: 'doc',
+          type: 'category',
           label: 'Micro-Agents',
-          id: 'usage/micro-agents',
-        },
+          items: [
+            {
+              type: 'doc',
+              label: 'Public',
+              id: 'usage/prompting/microagents-public',
+            },
+            {
+              type: 'doc',
+              label: 'Repository',
+              id: 'usage/prompting/microagents-repo',
+            },
+          ],
+        }
       ],
     },
     {
@@ -167,11 +178,6 @@ const sidebars: SidebarsConfig = {
           type: 'doc',
           label: 'Evaluation',
           id: 'usage/how-to/evaluation-harness',
-        },
-        {
-          type: 'doc',
-          label: 'Kubernetes Deployment',
-          id: 'usage/how-to/openshift-example',
         },
       ],
     },

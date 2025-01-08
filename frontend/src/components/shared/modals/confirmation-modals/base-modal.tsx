@@ -35,14 +35,20 @@ export function BaseModalDescription({
 }
 
 interface BaseModalProps {
+  testId?: string;
   title: string;
   description: string;
   buttons: ButtonConfig[];
 }
 
-export function BaseModal({ title, description, buttons }: BaseModalProps) {
+export function BaseModal({
+  testId,
+  title,
+  description,
+  buttons,
+}: BaseModalProps) {
   return (
-    <ModalBody>
+    <ModalBody testID={testId}>
       <div className="flex flex-col gap-2 self-start">
         <BaseModalTitle title={title} />
         <BaseModalDescription description={description} />

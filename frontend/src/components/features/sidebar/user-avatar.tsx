@@ -2,6 +2,7 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import DefaultUserAvatar from "#/icons/default-user.svg?react";
 import { cn } from "#/utils/utils";
 import { Avatar } from "./avatar";
+import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 
 interface UserAvatarProps {
   onClick: () => void;
@@ -11,12 +12,13 @@ interface UserAvatarProps {
 
 export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
   return (
-    <button
-      data-testid="user-avatar"
-      type="button"
+    <TooltipButton
+      testId="user-avatar"
+      tooltip="Account settings"
+      ariaLabel="Account settings"
       onClick={onClick}
       className={cn(
-        "bg-white w-8 h-8 rounded-full flex items-center justify-center",
+        "w-8 h-8 rounded-full flex items-center justify-center border-2 border-gray-200",
         isLoading && "bg-transparent",
       )}
     >
@@ -29,6 +31,6 @@ export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
         />
       )}
       {isLoading && <LoadingSpinner size="small" />}
-    </button>
+    </TooltipButton>
   );
 }
