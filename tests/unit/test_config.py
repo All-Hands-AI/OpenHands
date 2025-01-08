@@ -652,7 +652,7 @@ def test_api_keys_repr_str():
         'output_cost_per_token',
         'custom_tokenizer',
     ]
-    for attr_name in dir(LLMConfig):
+    for attr_name in LLMConfig.model_fields.keys():
         if (
             not attr_name.startswith('__')
             and attr_name not in known_key_token_attrs_llm
@@ -667,7 +667,7 @@ def test_api_keys_repr_str():
     # Test AgentConfig
     # No attrs in AgentConfig have 'key' or 'token' in their name
     agent_config = AgentConfig(memory_enabled=True, memory_max_threads=4)
-    for attr_name in dir(AgentConfig):
+    for attr_name in AgentConfig.model_fields.keys():
         if not attr_name.startswith('__'):
             assert (
                 'key' not in attr_name.lower()

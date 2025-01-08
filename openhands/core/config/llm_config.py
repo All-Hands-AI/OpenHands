@@ -1,6 +1,8 @@
 import os
-from dataclasses import dataclass, fields
+from dataclasses import fields
 from typing import Optional
+
+from pydantic import BaseModel, Field
 
 from openhands.core.config.config_utils import get_field_info
 from openhands.core.logger import LOG_DIR
@@ -8,8 +10,7 @@ from openhands.core.logger import LOG_DIR
 LLM_SENSITIVE_FIELDS = ['api_key', 'aws_access_key_id', 'aws_secret_access_key']
 
 
-@dataclass
-class LLMConfig:
+class LLMConfig(BaseModel):
     """Configuration for the LLM model.
 
     Attributes:
@@ -48,43 +49,45 @@ class LLMConfig:
         native_tool_calling: Whether to use native tool calling if supported by the model. Can be True, False, or not set.
     """
 
-    model: str = 'claude-3-5-sonnet-20241022'
-    api_key: str | None = None
-    base_url: str | None = None
-    api_version: str | None = None
-    embedding_model: str = 'local'
-    embedding_base_url: str | None = None
-    embedding_deployment_name: str | None = None
-    aws_access_key_id: str | None = None
-    aws_secret_access_key: str | None = None
-    aws_region_name: str | None = None
-    openrouter_site_url: str = 'https://docs.all-hands.dev/'
-    openrouter_app_name: str = 'OpenHands'
-    num_retries: int = 8
-    retry_multiplier: float = 2
-    retry_min_wait: int = 15
-    retry_max_wait: int = 120
-    timeout: int | None = None
-    max_message_chars: int = 30_000  # maximum number of characters in an observation's content when sent to the llm
-    temperature: float = 0.0
-    top_p: float = 1.0
-    custom_llm_provider: str | None = None
-    max_input_tokens: int | None = None
-    max_output_tokens: int | None = None
-    input_cost_per_token: float | None = None
-    output_cost_per_token: float | None = None
-    ollama_base_url: str | None = None
+    model: str = Field(default='claude-3-5-sonnet-20241022')
+    api_key: str | None = Field(default=None)
+    base_url: str | None = Field(default=None)
+    api_version: str | None = Field(default=None)
+    embedding_model: str = Field(default='local')
+    embedding_base_url: str | None = Field(default=None)
+    embedding_deployment_name: str | None = Field(default=None)
+    aws_access_key_id: str | None = Field(default=None)
+    aws_secret_access_key: str | None = Field(default=None)
+    aws_region_name: str | None = Field(default=None)
+    openrouter_site_url: str = Field(default='https://docs.all-hands.dev/')
+    openrouter_app_name: str = Field(default='OpenHands')
+    num_retries: int = Field(default=8)
+    retry_multiplier: float = Field(default=2)
+    retry_min_wait: int = Field(default=15)
+    retry_max_wait: int = Field(default=120)
+    timeout: int | None = Field(default=None)
+    max_message_chars: int = Field(
+        default=30_000
+    )  # maximum number of characters in an observation's content when sent to the llm
+    temperature: float = Field(default=0.0)
+    top_p: float = Field(default=1.0)
+    custom_llm_provider: str | None = Field(default=None)
+    max_input_tokens: int | None = Field(default=None)
+    max_output_tokens: int | None = Field(default=None)
+    input_cost_per_token: float | None = Field(default=None)
+    output_cost_per_token: float | None = Field(default=None)
+    ollama_base_url: str | None = Field(default=None)
     # This setting can be sent in each call to litellm
-    drop_params: bool = True
+    drop_params: bool = Field(default=True)
     # Note: this setting is actually global, unlike drop_params
-    modify_params: bool = True
-    disable_vision: bool | None = None
-    caching_prompt: bool = True
-    log_completions: bool = False
-    log_completions_folder: str = os.path.join(LOG_DIR, 'completions')
-    draft_editor: Optional['LLMConfig'] = None
-    custom_tokenizer: str | None = None
-    native_tool_calling: bool | None = None
+    modify_params: bool = Field(default=True)
+    disable_vision: bool | None = Field(default=None)
+    caching_prompt: bool = Field(default=True)
+    log_completions: bool = Field(default=False)
+    log_completions_folder: str = Field(default=os.path.join(LOG_DIR, 'completions'))
+    draft_editor: Optional['LLMConfig'] = Field(default=None)
+    custom_tokenizer: str | None = Field(default=None)
+    native_tool_calling: bool | None = Field(default=None)
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
