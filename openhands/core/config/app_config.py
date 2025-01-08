@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field, fields, is_dataclass
 from typing import ClassVar
 
+from pydantic import BaseModel
+
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.config_utils import (
@@ -128,6 +130,11 @@ class AppConfig:
             # dataclasses compute their defaults themselves
             if is_dataclass(type(field_value)):
                 result[f.name] = field_value.defaults_to_dict()
+            elif isinstance(field_value, BaseModel):
+                result[f.name] = {
+                    name: get_field_info(field)
+                    for name, field in field_value.model_fields.items()
+                }
             else:
                 result[f.name] = get_field_info(f)
         return result

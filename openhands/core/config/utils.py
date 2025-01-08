@@ -145,18 +145,27 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             agent_config = AgentConfig(**nested_value)
                             cfg.set_agent_config(agent_config, nested_key)
                 elif key is not None and key.lower() == 'llm':
+                    # Every entry here is either a field for the default `llm` config group, or itself a group
+                    # The best way to tell the difference is to try to parse it as an LLMConfig object
+                    config_group_ids: set[str] = set()
+                    for nested_key, nested_value in value.items():
+                        if isinstance(nested_value, dict):
+                            try:
+                                llm_config = LLMConfig(**nested_value)
+                            except ValidationError:
+                                continue
+                            config_group_ids.add(nested_key)
+                            cfg.set_llm_config(llm_config, nested_key)
+
                     logger.openhands_logger.debug(
                         'Attempt to load default LLM config from config toml'
                     )
-                    llm_config = LLMConfig(**value)
+                    value_without_config_groups = {
+                        k: v for k, v in value.items() if k not in config_group_ids
+                    }
+                    llm_config = LLMConfig(**value_without_config_groups)
                     cfg.set_llm_config(llm_config, 'llm')
-                    for nested_key, nested_value in value.items():
-                        if isinstance(nested_value, dict):
-                            logger.openhands_logger.debug(
-                                f'Attempt to load group {nested_key} from config toml as llm config'
-                            )
-                            llm_config = LLMConfig(**nested_value)
-                            cfg.set_llm_config(llm_config, nested_key)
+
                 elif key is not None and key.lower() == 'security':
                     logger.openhands_logger.debug(
                         'Attempt to load security config from config toml'

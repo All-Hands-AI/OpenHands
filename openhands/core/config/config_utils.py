@@ -1,19 +1,22 @@
+from dataclasses import Field
 from types import UnionType
-from typing import get_args, get_origin
+from typing import Any, get_args, get_origin
+
+from pydantic.fields import FieldInfo
 
 OH_DEFAULT_AGENT = 'CodeActAgent'
 OH_MAX_ITERATIONS = 500
 
 
-def get_field_info(f):
+def get_field_info(field: Field | FieldInfo) -> dict[str, Any]:
     """Extract information about a dataclass field: type, optional, and default.
 
     Args:
-        f: The field to extract information from.
+        field: The field to extract information from.
 
     Returns: A dict with the field's type, whether it's optional, and its default value.
     """
-    field_type = f.type
+    field_type = field.type if isinstance(field, Field) else field.annotation
     optional = False
 
     # for types like str | None, find the non-None type and set optional to True
@@ -33,7 +36,7 @@ def get_field_info(f):
     )
 
     # default is always present
-    default = f.default
+    default = field.default
 
     # return a schema with the useful info for frontend
     return {'type': type_name.lower(), 'optional': optional, 'default': default}
