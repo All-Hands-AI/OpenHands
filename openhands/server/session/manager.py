@@ -155,7 +155,7 @@ class SessionManager:
                     json.dumps(
                         {
                             'query_id': query_id,
-                            'connections': list(connections),
+                            'connections': connections,
                             'message_type': 'connections_response',
                         }
                     ),
@@ -262,13 +262,14 @@ class SessionManager:
                     ):
                         sid_to_close.append(sid)
 
-                connections = await self.get_connections(
-                    filter_to_sids=set(sid_to_close)
-                )
-                connected_sids = {sid for _, sid in connections.items()}
-                sid_to_close = [
-                    sid for sid in sid_to_close if sid not in connected_sids
-                ]
+                if sid_to_close:
+                    connections = await self.get_connections(
+                        filter_to_sids=set(sid_to_close)
+                    )
+                    connected_sids = {sid for _, sid in connections.items()}
+                    sid_to_close = [
+                        sid for sid in sid_to_close if sid not in connected_sids
+                    ]
 
                 await wait_all(self._close_session(sid) for sid in sid_to_close)
                 await asyncio.sleep(_CLEANUP_INTERVAL)
