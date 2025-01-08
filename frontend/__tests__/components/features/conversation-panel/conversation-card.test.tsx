@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, test, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationCard } from "#/components/features/conversation-panel/conversation-card";
+import { clickOnEditButton } from "./utils";
 
 describe("ConversationCard", () => {
   const onClick = vi.fn();
@@ -17,8 +18,8 @@ describe("ConversationCard", () => {
     render(
       <ConversationCard
         onDelete={onDelete}
-        onClick={onClick}
         onChangeTitle={onChangeTitle}
+        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -37,8 +38,8 @@ describe("ConversationCard", () => {
     const { rerender } = render(
       <ConversationCard
         onDelete={onDelete}
-        onClick={onClick}
         onChangeTitle={onChangeTitle}
+        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -52,8 +53,8 @@ describe("ConversationCard", () => {
     rerender(
       <ConversationCard
         onDelete={onDelete}
-        onClick={onClick}
         onChangeTitle={onChangeTitle}
+        isActive
         title="Conversation 1"
         selectedRepository="org/selectedRepository"
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -63,32 +64,13 @@ describe("ConversationCard", () => {
     screen.getByTestId("conversation-card-selected-repository");
   });
 
-  it("should call onClick when the card is clicked", async () => {
-    const user = userEvent.setup();
-    render(
-      <ConversationCard
-        onDelete={onDelete}
-        onClick={onClick}
-        onChangeTitle={onChangeTitle}
-        title="Conversation 1"
-        selectedRepository={null}
-        lastUpdatedAt="2021-10-01T12:00:00Z"
-      />,
-    );
-
-    const card = screen.getByTestId("conversation-card");
-    await user.click(card);
-
-    expect(onClick).toHaveBeenCalled();
-  });
-
   it("should toggle a context menu when clicking the ellipsis button", async () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
         onDelete={onDelete}
-        onClick={onClick}
         onChangeTitle={onChangeTitle}
+        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -111,8 +93,8 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
@@ -135,8 +117,8 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository="org/selectedRepository"
@@ -144,7 +126,9 @@ describe("ConversationCard", () => {
       />,
     );
 
-    const selectedRepository = screen.getByTestId("conversation-card-selected-repository");
+    const selectedRepository = screen.getByTestId(
+      "conversation-card-selected-repository",
+    );
     await user.click(selectedRepository);
 
     expect(onClick).not.toHaveBeenCalled();
@@ -154,8 +138,8 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -164,6 +148,14 @@ describe("ConversationCard", () => {
     );
 
     const title = screen.getByTestId("conversation-card-title");
+    expect(title).toBeDisabled();
+
+    await clickOnEditButton(user);
+
+    expect(title).toBeEnabled();
+    expect(screen.queryByTestId("context-menu")).not.toBeInTheDocument();
+    // expect to be focused
+    expect(document.activeElement).toBe(title);
 
     await user.clear(title);
     await user.type(title, "New Conversation Name   ");
@@ -171,20 +163,23 @@ describe("ConversationCard", () => {
 
     expect(onChangeTitle).toHaveBeenCalledWith("New Conversation Name");
     expect(title).toHaveValue("New Conversation Name");
+    expect(title).toBeDisabled();
   });
 
   it("should reset title and not call onChangeTitle when the title is empty", async () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
+
+    await clickOnEditButton(user);
 
     const title = screen.getByTestId("conversation-card-title");
 
@@ -199,8 +194,8 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
@@ -218,8 +213,8 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
@@ -242,8 +237,8 @@ describe("ConversationCard", () => {
     it("should render the 'STOPPED' indicator by default", () => {
       render(
         <ConversationCard
-          onClick={onClick}
           onDelete={onDelete}
+          isActive
           onChangeTitle={onChangeTitle}
           title="Conversation 1"
           selectedRepository={null}
@@ -257,8 +252,8 @@ describe("ConversationCard", () => {
     it("should render the other indicators when provided", () => {
       render(
         <ConversationCard
-          onClick={onClick}
           onDelete={onDelete}
+          isActive
           onChangeTitle={onChangeTitle}
           title="Conversation 1"
           selectedRepository={null}

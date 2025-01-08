@@ -30,9 +30,7 @@ UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 class InitSessionRequest(BaseModel):
     github_token: str | None = None
-    latest_event_id: int = -1
     selected_repository: str | None = None
-    args: dict | None = None
 
 
 @app.post('/conversations')
@@ -53,7 +51,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         session_init_args = {**settings.__dict__, **session_init_args}
 
     github_token = getattr(request.state, 'github_token', '')
-    session_init_args['github_token'] = github_token
+    session_init_args['github_token'] = github_token or data.github_token or ''
     session_init_args['selected_repository'] = data.selected_repository
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
@@ -68,10 +66,16 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         conversation_id = uuid.uuid4().hex
     logger.info(f'New conversation ID: {conversation_id}')
 
+    repository_title = (
+        data.selected_repository.split('/')[-1] if data.selected_repository else None
+    )
+    conversation_title = f'{repository_title or "Conversation"} {conversation_id[:5]}'
+
     logger.info(f'Saving metadata for conversation {conversation_id}')
     await conversation_store.save_metadata(
         ConversationMetadata(
             conversation_id=conversation_id,
+            title=conversation_title,
             github_user_id=get_user_id(request),
             selected_repository=data.selected_repository,
         )
@@ -106,6 +110,7 @@ async def search_conversations(
     conversation_ids = set(
         conversation.conversation_id
         for conversation in conversation_metadata_result_set.results
+        if hasattr(conversation, 'created_at')
     )
     running_conversations = await session_manager.get_agent_loop_running(
         set(conversation_ids)
@@ -168,7 +173,7 @@ async def delete_conversation(
         return False
     is_running = await session_manager.is_agent_loop_running(conversation_id)
     if is_running:
-        return False
+        await session_manager.close_session(conversation_id)
     await conversation_store.delete_metadata(conversation_id)
     return True
 

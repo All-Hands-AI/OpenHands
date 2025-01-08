@@ -75,7 +75,7 @@ def test_get_messages(codeact_agent: CodeActAgent):
 
     codeact_agent.reset()
     messages = codeact_agent._get_messages(
-        Mock(history=history, max_iterations=5, iteration=0)
+        Mock(history=history, max_iterations=5, iteration=0, extra_data={})
     )
 
     assert (
@@ -111,7 +111,7 @@ def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
 
     codeact_agent.reset()
     messages = codeact_agent._get_messages(
-        Mock(history=history, max_iterations=10, iteration=5)
+        Mock(history=history, max_iterations=10, iteration=5, extra_data={})
     )
 
     # Check that only the last two user messages have cache_prompt=True

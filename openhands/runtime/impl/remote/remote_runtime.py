@@ -249,6 +249,8 @@ class RemoteRuntime(ActionExecutionClient):
             timeout=60,
         ):
             pass
+        self._wait_until_alive()
+        self.setup_initial_env()
         self.log('debug', 'Runtime resumed.')
 
     def _parse_runtime_response(self, response: requests.Response):
@@ -388,7 +390,6 @@ class RemoteRuntime(ActionExecutionClient):
             elif e.response.status_code == 503:
                 self.log('warning', 'Runtime appears to be paused. Resuming...')
                 self._resume_runtime()
-                self._wait_until_alive()
                 return super()._send_action_server_request(method, url, **kwargs)
             else:
                 raise e
