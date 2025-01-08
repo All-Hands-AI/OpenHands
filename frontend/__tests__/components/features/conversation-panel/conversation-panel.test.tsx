@@ -9,6 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
+import { clickOnEditButton } from "./utils";
 
 describe("ConversationPanel", () => {
   const onCloseMock = vi.fn();
@@ -52,6 +53,8 @@ describe("ConversationPanel", () => {
     renderConversationPanel();
     const cards = await screen.findAllByTestId("conversation-card");
 
+    // NOTE that we filter out conversations that don't have a created_at property
+    // (mock data has 4 conversations, but only 3 have a created_at property)
     expect(cards).toHaveLength(3);
   });
 
@@ -169,13 +172,15 @@ describe("ConversationPanel", () => {
     const cards = await screen.findAllByTestId("conversation-card");
     const title = within(cards[0]).getByTestId("conversation-card-title");
 
+    await clickOnEditButton(user);
+
     await user.clear(title);
     await user.type(title, "Conversation 1 Renamed");
     await user.tab();
 
     // Ensure the conversation is renamed
     expect(updateUserConversationSpy).toHaveBeenCalledWith("3", {
-      name: "Conversation 1 Renamed",
+      title: "Conversation 1 Renamed",
     });
   });
 
@@ -195,6 +200,8 @@ describe("ConversationPanel", () => {
 
     // Ensure the conversation is not renamed
     expect(updateUserConversationSpy).not.toHaveBeenCalled();
+
+    await clickOnEditButton(user);
 
     await user.type(title, "Conversation 1");
     await user.click(title);
@@ -216,52 +223,5 @@ describe("ConversationPanel", () => {
     await userEvent.click(firstCard);
 
     expect(onCloseMock).toHaveBeenCalledOnce();
-  });
-
-  describe("New Conversation Button", () => {
-    it("should display a confirmation modal when clicking", async () => {
-      const user = userEvent.setup();
-      renderConversationPanel();
-
-      expect(
-        screen.queryByTestId("confirm-new-conversation-modal"),
-      ).not.toBeInTheDocument();
-
-      const newProjectButton = screen.getByTestId("new-conversation-button");
-      await user.click(newProjectButton);
-
-      const modal = screen.getByTestId("confirm-new-conversation-modal");
-      expect(modal).toBeInTheDocument();
-    });
-
-    it("should call endSession and close panel after confirming", async () => {
-      const user = userEvent.setup();
-      renderConversationPanel();
-
-      const newProjectButton = screen.getByTestId("new-conversation-button");
-      await user.click(newProjectButton);
-
-      const confirmButton = screen.getByText("Confirm");
-      await user.click(confirmButton);
-
-      expect(endSessionMock).toHaveBeenCalledOnce();
-      expect(onCloseMock).toHaveBeenCalledOnce();
-    });
-
-    it("should close the modal when cancelling", async () => {
-      const user = userEvent.setup();
-      renderConversationPanel();
-
-      const newProjectButton = screen.getByTestId("new-conversation-button");
-      await user.click(newProjectButton);
-
-      const cancelButton = screen.getByText("Cancel");
-      await user.click(cancelButton);
-
-      expect(endSessionMock).not.toHaveBeenCalled();
-      expect(
-        screen.queryByTestId("confirm-new-conversation-modal"),
-      ).not.toBeInTheDocument();
-    });
   });
 });

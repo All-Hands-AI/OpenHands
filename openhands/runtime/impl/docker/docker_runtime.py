@@ -271,6 +271,7 @@ class DockerRuntime(ActionExecutionClient):
                     if self.config.sandbox.enable_gpu
                     else None
                 ),
+                **(self.config.sandbox.docker_runtime_kwargs or {}),
             )
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')
