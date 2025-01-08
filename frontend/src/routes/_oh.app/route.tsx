@@ -122,7 +122,7 @@ function AppContent() {
       <ResizablePanel
         orientation={Orientation.HORIZONTAL}
         className="grow h-full min-h-0 min-w-0"
-        initialSize={500}
+        initialSize={window.innerWidth * 0.3}
         firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-neutral-800"
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
@@ -130,7 +130,7 @@ function AppContent() {
           <ResizablePanel
             orientation={Orientation.VERTICAL}
             className="grow h-full min-h-0 min-w-0"
-            initialSize={500}
+            initialSize={window.innerHeight * 0.7}
             firstClassName="rounded-xl overflow-hidden border border-neutral-600"
             secondClassName="flex flex-col overflow-hidden"
             firstChild={
