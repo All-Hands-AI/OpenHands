@@ -85,7 +85,7 @@ class SessionManager:
         logger.debug('_redis_subscribe')
         redis_client = self._get_redis_client()
         pubsub = redis_client.pubsub()
-        await pubsub.subscribe('oh_event')
+        await pubsub.subscribe('session_msg')
         while should_continue():
             try:
                 message = await pubsub.get_message(
@@ -121,7 +121,7 @@ class SessionManager:
             )
             if sids:
                 await self._get_redis_client().publish(
-                    'oh_event',
+                    'session_msg',
                     json.dumps(
                         {
                             'request_id': request_id,
@@ -147,7 +147,7 @@ class SessionManager:
             required = sid in self.local_connection_id_to_session_id.values()
             if required:
                 await self._get_redis_client().publish(
-                    'oh_event',
+                    'session_msg',
                     json.dumps(
                         {'sid': sid, 'message_type': 'has_remote_connections_response'}
                     ),
@@ -311,7 +311,7 @@ class SessionManager:
                 data['user_id'] = user_id
             if filter_to_sids:
                 data['filter_to_sids'] = list(filter_to_sids)
-            await redis_client.publish('oh_event', json.dumps(data))
+            await redis_client.publish('session_msg', json.dumps(data))
             async with asyncio.timeout(_REDIS_POLL_TIMEOUT):
                 await flag.wait()
 
@@ -329,7 +329,7 @@ class SessionManager:
         self._has_remote_connections_flags[sid] = flag
         try:
             await self._get_redis_client().publish(
-                'oh_event',
+                'session_msg',
                 json.dumps(
                     {
                         'sid': sid,
@@ -412,7 +412,7 @@ class SessionManager:
             ):
                 # Send the event to the other pod
                 await redis_client.publish(
-                    'oh_event',
+                    'session_msg',
                     json.dumps(
                         {
                             'sid': sid,
@@ -451,7 +451,7 @@ class SessionManager:
         # We alert the cluster in case they are interested
         if redis_client:
             await redis_client.publish(
-                'oh_event',
+                'session_msg',
                 json.dumps({'sid': sid, 'message_type': 'session_closing'}),
             )
 
@@ -466,7 +466,7 @@ class SessionManager:
         redis_client = self._get_redis_client()
         if redis_client:
             await redis_client.publish(
-                'oh_event',
+                'session_msg',
                 json.dumps({'sid': sid, 'message_type': 'close_session'}),
             )
 
@@ -493,7 +493,7 @@ class SessionManager:
         redis_client = self._get_redis_client()
         if redis_client:
             await redis_client.publish(
-                'oh_event',
+                'session_msg',
                 json.dumps({'sid': session.sid, 'message_type': 'session_closing'}),
             )
 
