@@ -58,7 +58,7 @@ export function TemplateList() {
 
   useEffect(() => {
     const loadTemplates = async () => {
-      const service = new AgentFactoryService();
+      const service = AgentFactoryService.getInstance();
       const loadedTemplates = await service.getTemplates();
       setTemplates(loadedTemplates);
     };

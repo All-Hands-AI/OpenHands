@@ -13,8 +13,8 @@ const mockStore = configureStore({
   },
 });
 
-const mockEndSession = jest.fn();
-jest.spyOn(EndSession, 'useEndSession').mockReturnValue(mockEndSession);
+const mockEndSession = vi.fn();
+vi.spyOn(EndSession, 'useEndSession').mockReturnValue(mockEndSession);
 
 const mockConversations = [
   {
@@ -31,7 +31,12 @@ const mockConversations = [
   },
 ];
 
-const renderComponent = (props = {}) => {
+interface Props {
+  onClose?: () => void;
+  currentSessionId?: string;
+}
+
+const renderComponent = (props: Props = { onClose: () => {} }) => {
   return render(
     <Provider store={mockStore}>
       <MemoryRouter>
@@ -45,11 +50,11 @@ const renderComponent = (props = {}) => {
 
 describe('ConversationPanel', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should render the conversations', async () => {
-    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
+    vi.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
 
     renderComponent();
 
@@ -60,7 +65,7 @@ describe('ConversationPanel', () => {
   });
 
   it('should display an empty state when there are no conversations', async () => {
-    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue([]);
+    vi.spyOn(OpenHands, 'listConversations').mockResolvedValue([]);
 
     renderComponent();
 
@@ -70,7 +75,7 @@ describe('ConversationPanel', () => {
   });
 
   it('should handle an error when fetching conversations', async () => {
-    jest.spyOn(OpenHands, 'listConversations').mockRejectedValue(new Error('Failed to fetch'));
+    vi.spyOn(OpenHands, 'listConversations').mockRejectedValue(new Error('Failed to fetch'));
 
     renderComponent();
 
@@ -80,8 +85,8 @@ describe('ConversationPanel', () => {
   });
 
   it('should cancel deleting a conversation', async () => {
-    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
-    const deleteConversation = jest.spyOn(OpenHands, 'deleteConversation');
+    vi.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
+    const deleteConversation = vi.spyOn(OpenHands, 'deleteConversation');
 
     renderComponent();
 
@@ -96,10 +101,10 @@ describe('ConversationPanel', () => {
   });
 
   it('should call endSession after deleting a conversation that is the current session', async () => {
-    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
-    jest.spyOn(OpenHands, 'deleteConversation').mockResolvedValue(undefined);
+    vi.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
+    vi.spyOn(OpenHands, 'deleteConversation').mockResolvedValue(undefined);
 
-    renderComponent({ currentSessionId: '1' });
+    renderComponent({ onClose: () => {}, currentSessionId: '1' });
 
     await waitFor(() => {
       expect(screen.getByText('Test Conversation 1')).toBeInTheDocument();
@@ -114,8 +119,8 @@ describe('ConversationPanel', () => {
   });
 
   it('should delete a conversation', async () => {
-    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
-    const deleteConversation = jest.spyOn(OpenHands, 'deleteConversation').mockResolvedValue(undefined);
+    vi.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
+    const deleteConversation = vi.spyOn(OpenHands, 'deleteConversation').mockResolvedValue(undefined);
 
     renderComponent();
 
@@ -132,8 +137,8 @@ describe('ConversationPanel', () => {
   });
 
   it('should rename a conversation', async () => {
-    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
-    const updateConversation = jest.spyOn(OpenHands, 'updateConversation').mockResolvedValue({
+    vi.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
+    const updateConversation = vi.spyOn(OpenHands, 'updateConversation').mockResolvedValue({
       ...mockConversations[0],
       name: 'New Name',
     });
@@ -155,8 +160,8 @@ describe('ConversationPanel', () => {
   });
 
   it('should not rename a conversation when the name is unchanged', async () => {
-    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
-    const updateConversation = jest.spyOn(OpenHands, 'updateConversation');
+    vi.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
+    const updateConversation = vi.spyOn(OpenHands, 'updateConversation');
 
     renderComponent();
 
@@ -171,8 +176,8 @@ describe('ConversationPanel', () => {
   });
 
   it('should call onClose after clicking a card', async () => {
-    jest.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
-    const onClose = jest.fn();
+    vi.spyOn(OpenHands, 'listConversations').mockResolvedValue(mockConversations);
+    const onClose = vi.fn();
 
     renderComponent({ onClose });
 

@@ -18,6 +18,8 @@
     "types": [
       "@react-router/node",
       "vite/client",
+      "vitest/globals",
+      "@testing-library/jest-dom"
     ],
     "rootDirs": [
       ".",
