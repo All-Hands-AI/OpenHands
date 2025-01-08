@@ -262,6 +262,14 @@ class SessionManager:
                     ):
                         sid_to_close.append(sid)
 
+                connections = self._get_connections_locally(
+                    filter_to_sids=set(sid_to_close)
+                )
+                connected_sids = {sid for _, sid in connections.items()}
+                sid_to_close = [
+                    sid for sid in sid_to_close if sid not in connected_sids
+                ]
+
                 if sid_to_close:
                     connections = await self._get_connections_remotely(
                         filter_to_sids=set(sid_to_close)
