@@ -4,13 +4,16 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=development
     ports:
       - "3000:3000"
     environment:
       - SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.19-nikolaik
       - LOG_ALL_EVENTS=true
       - NODE_ENV=development
+      - REDIS_URL=redis://redis:6379
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${HOME}/.openhands-state:/.openhands-state
@@ -23,6 +26,7 @@ services:
       - openhands-network
     depends_on:
       - redis
+    command: npm run dev
 
   redis:
     image: redis:alpine
