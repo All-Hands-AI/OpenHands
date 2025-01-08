@@ -204,10 +204,13 @@ class AgentSession:
                 )
             return
 
-        if selected_repository:
-            await call_sync_from_async(
-                self.runtime.clone_repo, github_token, selected_repository
-            )
+        if github_token:
+            await call_sync_from_async(self.runtime.set_github_token, github_token)
+
+            if selected_repository:
+                await call_sync_from_async(
+                    self.runtime.clone_repo, github_token, selected_repository
+                )
         if agent.prompt_manager:
             microagents: list[BaseMicroAgent] = await call_sync_from_async(
                 self.runtime.get_microagents_from_selected_repo, selected_repository

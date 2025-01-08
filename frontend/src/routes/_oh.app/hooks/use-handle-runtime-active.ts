@@ -3,7 +3,6 @@ import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "#/context/auth-context";
 import { useWsClient } from "#/context/ws-client-provider";
-import { getGitHubTokenCommand } from "#/services/terminal-service";
 import { setImportedProjectZip } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { base64ToBlob } from "#/utils/base64-to-blob";
@@ -48,13 +47,6 @@ export const useHandleRuntimeActive = () => {
     );
     dispatch(setImportedProjectZip(null));
   };
-
-  React.useEffect(() => {
-    if (runtimeActive && userId && gitHubToken) {
-      // Export if the user valid, this could happen mid-session so it is handled here
-      send(getGitHubTokenCommand(gitHubToken));
-    }
-  }, [userId, gitHubToken, runtimeActive]);
 
   React.useEffect(() => {
     if (runtimeActive && importedProjectZip) {

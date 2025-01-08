@@ -210,6 +210,13 @@ class Runtime(FileEditRuntimeMixin):
         source = event.source if event.source else EventSource.AGENT
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
+    def set_github_token(self, github_token: str):
+        if not github_token:
+            raise ValueError('github_token must be provided to set a github token')
+        action = CmdRunAction(command=f'export GITHUB_TOKEN={github_token}')
+        self.log('info', 'Setting github token')
+        self.run_action(action)
+
     def clone_repo(self, github_token: str, selected_repository: str):
         if not github_token or not selected_repository:
             raise ValueError(
