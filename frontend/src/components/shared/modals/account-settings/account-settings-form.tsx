@@ -14,24 +14,26 @@ import { CustomInput } from "../../custom-input";
 import { FormFieldset } from "../../form-fieldset";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import { useGitHubUser } from "#/hooks/query/use-github-user";
+import { useBalance } from "#/hooks/query/use-balance";
 
 interface AccountSettingsFormProps {
   onClose: () => void;
   selectedLanguage: string;
-  gitHubError: boolean;
   analyticsConsent: string | null;
 }
 
 export function AccountSettingsForm({
   onClose,
   selectedLanguage,
-  gitHubError,
   analyticsConsent,
 }: AccountSettingsFormProps) {
+  const { t } = useTranslation();
+  const user = useGitHubUser();
   const { gitHubToken, setGitHubToken, logout } = useAuth();
   const { data: config } = useConfig();
   const { mutate: saveSettings } = useSaveSettings();
-  const { t } = useTranslation();
+  const { data: userBalance } = useBalance(user.data?.login ?? "");
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -76,6 +78,21 @@ export function AccountSettingsForm({
               Configure Github Repositories
             </a>
           )}
+          {userBalance && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-bold">Balance</span>
+                <button
+                  type="button"
+                  className="text-xs font-semibold border rounded-md px-2 py-0.5"
+                >
+                  Top up
+                </button>
+              </div>
+              <span data-testid="current-balance">${userBalance.balance}</span>
+            </div>
+          )}
+
           <FormFieldset
             id="language"
             label="Language"
@@ -108,12 +125,12 @@ export function AccountSettingsForm({
               </BaseModalDescription>
             </>
           )}
-          {gitHubError && (
+          {user.isError && (
             <p className="text-danger text-xs">
               {t(I18nKey.ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID)}
             </p>
           )}
-          {gitHubToken && !gitHubError && (
+          {gitHubToken && !user.isError && (
             <ModalButton
               variant="text-like"
               text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$DISCONNECT)}

@@ -315,6 +315,11 @@ class OpenHands {
     const data = await openHands.post("/api/settings", settings);
     return data.status === 200;
   }
+
+  static async getBalance(): Promise<number> {
+    const { data } = await openHands.get<number>("/api/credits");
+    return data;
+  }
 }
 
 export default OpenHands;
