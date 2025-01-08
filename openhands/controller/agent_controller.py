@@ -209,10 +209,15 @@ class AgentController:
         try:
             await self._step()
         except Exception as e:
-            traceback.print_exc()
-            self.log('error', f'Error while running the agent: {e}')
+            self.log(
+                'error',
+                f'Error while running the agent (session ID: {self.id}): {e}. '
+                f'Traceback: {traceback.format_exc()}',
+            )
             reported = RuntimeError(
-                'There was an unexpected error while running the agent.'
+                'There was an unexpected error while running the agent. Please '
+                f'report this error to the developers. Your session ID is {self.id}. '
+                f'Error type: {e.__class__.__name__}'
             )
             if isinstance(e, litellm.AuthenticationError) or isinstance(
                 e, litellm.BadRequestError
@@ -390,7 +395,7 @@ class AgentController:
 
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
             # sync existing metrics BEFORE resetting the agent
-            self.update_state_after_step()
+            await self.update_state_after_step()
             self.state.metrics.merge(self.state.local_metrics)
             self._reset()
         elif (
@@ -988,10 +993,12 @@ class AgentController:
 
     def __repr__(self):
         return (
-            f'AgentController(id={self.id}, agent={self.agent!r}, '
-            f'event_stream={self.event_stream!r}, '
-            f'state={self.state!r}, '
-            f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
+            f'AgentController(id={getattr(self, "id", "<uninitialized>")}, '
+            f'agent={getattr(self, "agent", "<uninitialized>")!r}, '
+            f'event_stream={getattr(self, "event_stream", "<uninitialized>")!r}, '
+            f'state={getattr(self, "state", "<uninitialized>")!r}, '
+            f'delegate={getattr(self, "delegate", "<uninitialized>")!r}, '
+            f'_pending_action={getattr(self, "_pending_action", "<uninitialized>")!r})'
         )
 
     def _is_awaiting_observation(self):

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, test, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationCard } from "#/components/features/conversation-panel/conversation-card";
+import { clickOnEditButton } from "./utils";
 
 describe("ConversationCard", () => {
   const onClick = vi.fn();
@@ -17,11 +18,11 @@ describe("ConversationCard", () => {
     render(
       <ConversationCard
         onDelete={onDelete}
-        onClick={onClick}
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        isActive
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
     const expectedDate = `${formatTimeDelta(new Date("2021-10-01T12:00:00Z"))} ago`;
@@ -33,53 +34,34 @@ describe("ConversationCard", () => {
     within(card).getByText(expectedDate);
   });
 
-  it("should render the repo if available", () => {
+  it("should render the selectedRepository if available", () => {
     const { rerender } = render(
       <ConversationCard
         onDelete={onDelete}
-        onClick={onClick}
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        isActive
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
     expect(
-      screen.queryByTestId("conversation-card-repo"),
+      screen.queryByTestId("conversation-card-selected-repository"),
     ).not.toBeInTheDocument();
 
     rerender(
       <ConversationCard
         onDelete={onDelete}
-        onClick={onClick}
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo="org/repo"
-        lastUpdated="2021-10-01T12:00:00Z"
+        isActive
+        title="Conversation 1"
+        selectedRepository="org/selectedRepository"
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
-    screen.getByTestId("conversation-card-repo");
-  });
-
-  it("should call onClick when the card is clicked", async () => {
-    const user = userEvent.setup();
-    render(
-      <ConversationCard
-        onDelete={onDelete}
-        onClick={onClick}
-        onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
-      />,
-    );
-
-    const card = screen.getByTestId("conversation-card");
-    await user.click(card);
-
-    expect(onClick).toHaveBeenCalled();
+    screen.getByTestId("conversation-card-selected-repository");
   });
 
   it("should toggle a context menu when clicking the ellipsis button", async () => {
@@ -87,11 +69,11 @@ describe("ConversationCard", () => {
     render(
       <ConversationCard
         onDelete={onDelete}
-        onClick={onClick}
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        isActive
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
@@ -111,12 +93,12 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
@@ -131,21 +113,23 @@ describe("ConversationCard", () => {
     expect(onDelete).toHaveBeenCalled();
   });
 
-  test("clicking the repo should not trigger the onClick handler", async () => {
+  test("clicking the selectedRepository should not trigger the onClick handler", async () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo="org/repo"
-        lastUpdated="2021-10-01T12:00:00Z"
+        title="Conversation 1"
+        selectedRepository="org/selectedRepository"
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
-    const repo = screen.getByTestId("conversation-card-repo");
-    await user.click(repo);
+    const selectedRepository = screen.getByTestId(
+      "conversation-card-selected-repository",
+    );
+    await user.click(selectedRepository);
 
     expect(onClick).not.toHaveBeenCalled();
   });
@@ -154,16 +138,24 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
-        name="Conversation 1"
-        repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        isActive
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
         onChangeTitle={onChangeTitle}
       />,
     );
 
     const title = screen.getByTestId("conversation-card-title");
+    expect(title).toBeDisabled();
+
+    await clickOnEditButton(user);
+
+    expect(title).toBeEnabled();
+    expect(screen.queryByTestId("context-menu")).not.toBeInTheDocument();
+    // expect to be focused
+    expect(document.activeElement).toBe(title);
 
     await user.clear(title);
     await user.type(title, "New Conversation Name   ");
@@ -171,20 +163,23 @@ describe("ConversationCard", () => {
 
     expect(onChangeTitle).toHaveBeenCalledWith("New Conversation Name");
     expect(title).toHaveValue("New Conversation Name");
+    expect(title).toBeDisabled();
   });
 
   it("should reset title and not call onChangeTitle when the title is empty", async () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
+
+    await clickOnEditButton(user);
 
     const title = screen.getByTestId("conversation-card-title");
 
@@ -199,12 +194,12 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
@@ -218,12 +213,12 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
         onDelete={onDelete}
+        isActive
         onChangeTitle={onChangeTitle}
-        name="Conversation 1"
-        repo={null}
-        lastUpdated="2021-10-01T12:00:00Z"
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
 
@@ -239,36 +234,36 @@ describe("ConversationCard", () => {
   });
 
   describe("state indicator", () => {
-    it("should render the 'cold' indicator by default", () => {
+    it("should render the 'STOPPED' indicator by default", () => {
       render(
         <ConversationCard
-          onClick={onClick}
           onDelete={onDelete}
+          isActive
           onChangeTitle={onChangeTitle}
-          name="Conversation 1"
-          repo={null}
-          lastUpdated="2021-10-01T12:00:00Z"
+          title="Conversation 1"
+          selectedRepository={null}
+          lastUpdatedAt="2021-10-01T12:00:00Z"
         />,
       );
 
-      screen.getByTestId("cold-indicator");
+      screen.getByTestId("STOPPED-indicator");
     });
 
     it("should render the other indicators when provided", () => {
       render(
         <ConversationCard
-          onClick={onClick}
           onDelete={onDelete}
+          isActive
           onChangeTitle={onChangeTitle}
-          name="Conversation 1"
-          repo={null}
-          lastUpdated="2021-10-01T12:00:00Z"
-          state="warm"
+          title="Conversation 1"
+          selectedRepository={null}
+          lastUpdatedAt="2021-10-01T12:00:00Z"
+          status="RUNNING"
         />,
       );
 
-      expect(screen.queryByTestId("cold-indicator")).not.toBeInTheDocument();
-      screen.getByTestId("warm-indicator");
+      expect(screen.queryByTestId("STOPPED-indicator")).not.toBeInTheDocument();
+      screen.getByTestId("RUNNING-indicator");
     });
   });
 });
