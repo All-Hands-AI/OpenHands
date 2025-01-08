@@ -50,7 +50,7 @@ async def test_session_not_running_in_cluster():
             assert result == set()
             assert sio.manager.redis.publish.await_count == 1
             sio.manager.redis.publish.assert_called_once_with(
-                'oh_event',
+                'session_msg',
                 '{"request_id": "'
                 + str(id)
                 + '", "message_type": "running_agent_loops_query", "filter_to_sids": ["non-existant-session"]}',
@@ -82,7 +82,7 @@ async def test_session_is_running_in_cluster():
             assert result == {'existing-session'}
             assert sio.manager.redis.publish.await_count == 1
             sio.manager.redis.publish.assert_called_once_with(
-                'oh_event',
+                'session_msg',
                 '{"request_id": "'
                 + str(id)
                 + '", "message_type": "running_agent_loops_query", "user_id": 1, "filter_to_sids": ["existing-session"]}',
@@ -151,7 +151,7 @@ async def test_join_local_session():
                 'new-session-id', ConversationInitData()
             )
             await session_manager.join_conversation(
-                'new-session-id', 'new-session-id', ConversationInitData(), 0
+                'new-session-id', 'new-session-id', ConversationInitData(), None
             )
             await session_manager.join_conversation(
                 'new-session-id', 'new-session-id', ConversationInitData(), 0
@@ -259,7 +259,7 @@ async def test_add_to_cluster_event_stream():
             )
     assert sio.manager.redis.publish.await_count == 1
     sio.manager.redis.publish.assert_called_once_with(
-        'oh_event',
+        'session_msg',
         '{"sid": "new-session-id", "message_type": "event", "data": {"event_type": "some_event"}}',
     )
 

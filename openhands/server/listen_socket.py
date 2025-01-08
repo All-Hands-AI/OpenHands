@@ -30,7 +30,7 @@ async def connect(connection_id: str, environ, auth):
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
 
-    user_id = -1
+    user_id = None
     if openhands_config.app_mode != AppMode.OSS:
         cookies_str = environ.get('HTTP_COOKIE', '')
         cookies = dict(cookie.split('=', 1) for cookie in cookies_str.split('; '))

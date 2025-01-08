@@ -37,7 +37,7 @@ class Session:
     loop: asyncio.AbstractEventLoop
     config: AppConfig
     file_store: FileStore
-    user_id: int
+    user_id: int | None
 
     def __init__(
         self,
@@ -45,7 +45,7 @@ class Session:
         config: AppConfig,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
-        user_id: int = 0,
+        user_id: int | None = None,
     ):
         self.sid = sid
         self.sio = sio
