@@ -685,16 +685,16 @@ def test_api_keys_repr_str():
         modal_api_token_secret='my_modal_api_token_secret',
         runloop_api_key='my_runloop_api_key',
     )
-    assert "e2b_api_key='******'" in repr(app_config)
-    assert "e2b_api_key='******'" in str(app_config)
-    assert "jwt_secret='******'" in repr(app_config)
-    assert "jwt_secret='******'" in str(app_config)
-    assert "modal_api_token_id='******'" in repr(app_config)
-    assert "modal_api_token_id='******'" in str(app_config)
-    assert "modal_api_token_secret='******'" in repr(app_config)
-    assert "modal_api_token_secret='******'" in str(app_config)
-    assert "runloop_api_key='******'" in repr(app_config)
-    assert "runloop_api_key='******'" in str(app_config)
+    assert 'my_e2b_api_key' not in repr(app_config)
+    assert 'my_e2b_api_key' not in str(app_config)
+    assert 'my_jwt_secret' not in repr(app_config)
+    assert 'my_jwt_secret' not in str(app_config)
+    assert 'my_modal_api_token_id' not in repr(app_config)
+    assert 'my_modal_api_token_id' not in str(app_config)
+    assert 'my_modal_api_token_secret' not in repr(app_config)
+    assert 'my_modal_api_token_secret' not in str(app_config)
+    assert 'my_runloop_api_key' not in repr(app_config)
+    assert 'my_runloop_api_key' not in str(app_config)
 
     # Check that no other attrs in AppConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
@@ -704,7 +704,7 @@ def test_api_keys_repr_str():
         'modal_api_token_secret',
         'runloop_api_key',
     ]
-    for attr_name in dir(AppConfig):
+    for attr_name in AppConfig.model_fields.keys():
         if (
             not attr_name.startswith('__')
             and attr_name not in known_key_token_attrs_app

@@ -1,7 +1,7 @@
-from dataclasses import dataclass, field, fields, is_dataclass
+from dataclasses import fields, is_dataclass
 from typing import ClassVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, SecretStr
 
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
@@ -15,8 +15,7 @@ from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 
 
-@dataclass
-class AppConfig:
+class AppConfig(BaseModel):
     """Configuration for the app.
 
     Attributes:
@@ -48,34 +47,34 @@ class AppConfig:
             input is read line by line. When enabled, input continues until /exit command.
     """
 
-    llms: dict[str, LLMConfig] = field(default_factory=dict)
-    agents: dict = field(default_factory=dict)
-    default_agent: str = OH_DEFAULT_AGENT
-    sandbox: SandboxConfig = field(default_factory=SandboxConfig)
-    security: SecurityConfig = field(default_factory=SecurityConfig)
-    runtime: str = 'docker'
-    file_store: str = 'local'
-    file_store_path: str = '/tmp/openhands_file_store'
-    trajectories_path: str | None = None
-    workspace_base: str | None = None
-    workspace_mount_path: str | None = None
-    workspace_mount_path_in_sandbox: str = '/workspace'
-    workspace_mount_rewrite: str | None = None
-    cache_dir: str = '/tmp/cache'
-    run_as_openhands: bool = True
-    max_iterations: int = OH_MAX_ITERATIONS
-    max_budget_per_task: float | None = None
-    e2b_api_key: str = ''
-    modal_api_token_id: str = ''
-    modal_api_token_secret: str = ''
-    disable_color: bool = False
-    jwt_secret: str = ''
-    debug: bool = False
-    file_uploads_max_file_size_mb: int = 0
-    file_uploads_restrict_file_types: bool = False
-    file_uploads_allowed_extensions: list[str] = field(default_factory=lambda: ['.*'])
-    runloop_api_key: str | None = None
-    cli_multiline_input: bool = False
+    llms: dict[str, LLMConfig] = Field(default_factory=dict)
+    agents: dict = Field(default_factory=dict)
+    default_agent: str = Field(default=OH_DEFAULT_AGENT)
+    sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
+    security: SecurityConfig = Field(default_factory=SecurityConfig)
+    runtime: str = Field(default='docker')
+    file_store: str = Field(default='local')
+    file_store_path: str = Field(default='/tmp/openhands_file_store')
+    trajectories_path: str | None = Field(default=None)
+    workspace_base: str | None = Field(default=None)
+    workspace_mount_path: str | None = Field(default=None)
+    workspace_mount_path_in_sandbox: str = Field(default='/workspace')
+    workspace_mount_rewrite: str | None = Field(default=None)
+    cache_dir: str = Field(default='/tmp/cache')
+    run_as_openhands: bool = Field(default=True)
+    max_iterations: int = Field(default=OH_MAX_ITERATIONS)
+    max_budget_per_task: float | None = Field(default=None)
+    e2b_api_key: SecretStr | None = Field(default=None)
+    modal_api_token_id: SecretStr | None = Field(default=None)
+    modal_api_token_secret: SecretStr | None = Field(default=None)
+    disable_color: bool = Field(default=False)
+    jwt_secret: SecretStr | None = Field(default=None)
+    debug: bool = Field(default=False)
+    file_uploads_max_file_size_mb: int = Field(default=0)
+    file_uploads_restrict_file_types: bool = Field(default=False)
+    file_uploads_allowed_extensions: list[str] = Field(default_factory=lambda: ['.*'])
+    runloop_api_key: SecretStr | None = Field(default=None)
+    cli_multiline_input: bool = Field(default=False)
 
     defaults_dict: ClassVar[dict] = {}
 
@@ -138,26 +137,3 @@ class AppConfig:
             else:
                 result[f.name] = get_field_info(f)
         return result
-
-    def __str__(self):
-        attr_str = []
-        for f in fields(self):
-            attr_name = f.name
-            attr_value = getattr(self, f.name)
-
-            if attr_name in [
-                'e2b_api_key',
-                'github_token',
-                'jwt_secret',
-                'modal_api_token_id',
-                'modal_api_token_secret',
-                'runloop_api_key',
-            ]:
-                attr_value = '******' if attr_value else None
-
-            attr_str.append(f'{attr_name}={repr(attr_value)}')
-
-        return f"AppConfig({', '.join(attr_str)}"
-
-    def __repr__(self):
-        return self.__str__()
