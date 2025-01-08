@@ -213,7 +213,9 @@ class Runtime(FileEditRuntimeMixin):
     def set_github_token(self, github_token: str):
         if not github_token:
             raise ValueError('github_token must be provided to set a github token')
-        action = CmdRunAction(command=f'export GITHUB_TOKEN={github_token}')
+        action = CmdRunAction(
+            command=f'export GITHUB_TOKEN={github_token}', hidden=True
+        )
         self.log('info', 'Setting github token')
         self.run_action(action)
 
