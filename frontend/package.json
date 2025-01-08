@@ -37,6 +37,7 @@
     "react-markdown": "^9.0.1",
     "react-redux": "^9.2.0",
     "react-router": "^7.1.1",
+    "react-router-dom": "^7.1.1",
     "react-syntax-highlighter": "^15.6.1",
     "react-textarea-autosize": "^8.5.4",
     "remark-gfm": "^4.0.0",
