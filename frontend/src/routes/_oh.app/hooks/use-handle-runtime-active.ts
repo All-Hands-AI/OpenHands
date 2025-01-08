@@ -8,16 +8,16 @@ import { RootState } from "#/store";
 import { base64ToBlob } from "#/utils/base64-to-blob";
 import { useUploadFiles } from "../../../hooks/mutation/use-upload-files";
 import { useGitHubUser } from "../../../hooks/query/use-github-user";
-import { isGitHubErrorReponse } from "#/api/github-axios-instance";
+
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 
 export const useHandleRuntimeActive = () => {
-  const { gitHubToken } = useAuth();
-  const { send } = useWsClient();
+  useAuth();
+  useWsClient();
 
   const dispatch = useDispatch();
 
-  const { data: user } = useGitHubUser();
+  useGitHubUser();
   const { mutate: uploadFiles } = useUploadFiles();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
@@ -26,11 +26,6 @@ export const useHandleRuntimeActive = () => {
   const { importedProjectZip } = useSelector(
     (state: RootState) => state.initialQuery,
   );
-
-  const userId = React.useMemo(() => {
-    if (user && !isGitHubErrorReponse(user)) return user.id;
-    return null;
-  }, [user]);
 
   const handleUploadFiles = (zip: string) => {
     const blob = base64ToBlob(zip);
