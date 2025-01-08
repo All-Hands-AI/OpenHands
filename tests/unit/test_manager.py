@@ -44,28 +44,28 @@ async def test_session_not_running_in_cluster():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
-            result = await session_manager.get_running_agent_loops_remotely(
+            result = await session_manager._get_running_agent_loops_remotely(
                 filter_to_sids={'non-existant-session'}
             )
             assert result == set()
             assert sio.manager.redis.publish.await_count == 1
             sio.manager.redis.publish.assert_called_once_with(
                 'session_msg',
-                '{"request_id": "'
+                '{"query_id": "'
                 + str(id)
                 + '", "message_type": "running_agent_loops_query", "filter_to_sids": ["non-existant-session"]}',
             )
 
 
 @pytest.mark.asyncio
-async def test_session_is_running_in_cluster():
+async def test_get_running_agent_loops_remotely():
     id = uuid4()
     sio = get_mock_sio(
         GetMessageMock(
             {
-                'request_id': str(id),
+                'query_id': str(id),
                 'sids': ['existing-session'],
-                'message_type': 'running_sids_response',
+                'message_type': 'running_agent_loops_response',
             }
         )
     )
@@ -76,14 +76,14 @@ async def test_session_is_running_in_cluster():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
-            result = await session_manager.get_running_agent_loops_remotely(
+            result = await session_manager._get_running_agent_loops_remotely(
                 1, {'existing-session'}
             )
             assert result == {'existing-session'}
             assert sio.manager.redis.publish.await_count == 1
             sio.manager.redis.publish.assert_called_once_with(
                 'session_msg',
-                '{"request_id": "'
+                '{"query_id": "'
                 + str(id)
                 + '", "message_type": "running_agent_loops_query", "user_id": 1, "filter_to_sids": ["existing-session"]}',
             )
@@ -177,7 +177,7 @@ async def test_join_cluster_session():
             AsyncMock(),
         ),
         patch(
-            'openhands.server.session.manager.SessionManager.get_running_agent_loops_remotely',
+            'openhands.server.session.manager.SessionManager._get_running_agent_loops_remotely',
             get_running_agent_loops_mock,
         ),
     ):
@@ -244,7 +244,7 @@ async def test_add_to_cluster_event_stream():
             AsyncMock(),
         ),
         patch(
-            'openhands.server.session.manager.SessionManager.get_running_agent_loops_remotely',
+            'openhands.server.session.manager.SessionManager._get_running_agent_loops_remotely',
             get_running_agent_loops_mock,
         ),
     ):
@@ -277,7 +277,7 @@ async def test_cleanup_session_connections():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
-            session_manager.local_connection_id_to_session_id.update(
+            session_manager._local_connection_id_to_session_id.update(
                 {
                     'conn1': 'session1',
                     'conn2': 'session1',
@@ -286,9 +286,9 @@ async def test_cleanup_session_connections():
                 }
             )
 
-            await session_manager._on_close_session('session1')
+            await session_manager._close_session('session1')
 
-            remaining_connections = session_manager.local_connection_id_to_session_id
+            remaining_connections = session_manager._local_connection_id_to_session_id
             assert 'conn1' not in remaining_connections
             assert 'conn2' not in remaining_connections
             assert 'conn3' in remaining_connections

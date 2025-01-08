@@ -2,7 +2,7 @@ import asyncio
 import json
 import time
 from dataclasses import dataclass, field
-from typing import Iterable
+from typing import Generic, Iterable, TypeVar
 from uuid import uuid4
 
 import socketio
@@ -10,6 +10,7 @@ import socketio
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema.agent import AgentState
 from openhands.events.stream import EventStream, session_exists
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
@@ -24,6 +25,7 @@ _CHECK_ALIVE_INTERVAL = 15
 _CLEANUP_INTERVAL = 15
 _CLEANUP_EXCEPTION_WAIT_TIME = 15
 MAX_RUNNING_CONVERSATIONS = 3
+T = TypeVar('T')
 
 
 class ConversationDoesNotExistError(Exception):
@@ -31,10 +33,10 @@ class ConversationDoesNotExistError(Exception):
 
 
 @dataclass
-class _AgentLoopRunningCheck:
-    request_id: str
-    request_sids: set[str] | None
-    running_sids: set[str] = field(default_factory=set)
+class _ClusterQuery(Generic[T]):
+    query_id: str
+    request_ids: set[str] | None
+    result: T
     flag: asyncio.Event = field(default_factory=asyncio.Event)
 
 
@@ -44,10 +46,10 @@ class SessionManager:
     config: AppConfig
     file_store: FileStore
     _local_agent_loops_by_sid: dict[str, Session] = field(default_factory=dict)
-    local_connection_id_to_session_id: dict[str, str] = field(default_factory=dict)
+    _local_connection_id_to_session_id: dict[str, str] = field(default_factory=dict)
     _last_alive_timestamps: dict[str, float] = field(default_factory=dict)
     _redis_listen_task: asyncio.Task | None = None
-    _running_sid_queries: dict[str, _AgentLoopRunningCheck] = field(
+    _running_sid_queries: dict[str, _ClusterQuery[set[str]]] = field(
         default_factory=dict
     )
     _active_conversations: dict[str, tuple[Conversation, int]] = field(
@@ -55,7 +57,7 @@ class SessionManager:
     )
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
-    _has_remote_connections_flags: dict[str, asyncio.Event] = field(
+    _connection_queries: dict[str, _ClusterQuery[dict[str, str]]] = field(
         default_factory=dict
     )
 
@@ -115,8 +117,8 @@ class SessionManager:
                 await session.dispatch(data['data'])
         elif message_type == 'running_agent_loops_query':
             # Another node in the cluster is asking if the current node is running the session given.
-            request_id = data['request_id']
-            sids = self.get_running_agent_loops_locally(
+            query_id = data['query_id']
+            sids = self._get_running_agent_loops_locally(
                 data.get('user_id'), data.get('filter_to_sids')
             )
             if sids:
@@ -124,43 +126,53 @@ class SessionManager:
                     'session_msg',
                     json.dumps(
                         {
-                            'request_id': request_id,
+                            'query_id': query_id,
                             'sids': list(sids),
-                            'message_type': 'running_sids_response',
+                            'message_type': 'running_agent_loops_response',
                         }
                     ),
                 )
-        elif message_type == 'running_sids_response':
-            request_id = data['request_id']
+        elif message_type == 'running_agent_loops_response':
+            query_id = data['query_id']
             for sid in data['sids']:
                 self._last_alive_timestamps[sid] = time.time()
-            check = self._running_sid_queries.get(request_id)
-            if check:
-                check.running_sids.update(data['sids'])
-                if check.request_sids is not None and len(check.request_sids) == len(
-                    check.running_sids
-                ):
-                    check.flag.set()
-        elif message_type == 'has_remote_connections_query':
+            running_query = self._running_sid_queries.get(query_id)
+            if running_query:
+                running_query.result.update(data['sids'])
+                if running_query.request_ids is not None and len(
+                    running_query.request_ids
+                ) == len(running_query.result):
+                    running_query.flag.set()
+        elif message_type == 'connections_query':
             # Another node in the cluster is asking if the current node is connected to a session
-            sid = data['sid']
-            required = sid in self.local_connection_id_to_session_id.values()
-            if required:
+            query_id = data['query_id']
+            connections = self._get_connections_locally(
+                data.get('user_id'), data.get('filter_to_sids')
+            )
+            if connections:
                 await self._get_redis_client().publish(
                     'session_msg',
                     json.dumps(
-                        {'sid': sid, 'message_type': 'has_remote_connections_response'}
+                        {
+                            'query_id': query_id,
+                            'connections': list(connections),
+                            'message_type': 'connections_response',
+                        }
                     ),
                 )
-        elif message_type == 'has_remote_connections_response':
-            sid = data['sid']
-            flag = self._has_remote_connections_flags.get(sid)
-            if flag:
-                flag.set()
+        elif message_type == 'connections_response':
+            query_id = data['query_id']
+            connection_query = self._connection_queries.get(query_id)
+            if connection_query:
+                connection_query.result.update(**data['connections'])
+                if connection_query.request_ids is not None and len(
+                    connection_query.request_ids
+                ) == len(connection_query.result):
+                    connection_query.flag.set()
         elif message_type == 'close_session':
             sid = data['sid']
             if sid in self._local_agent_loops_by_sid:
-                await self._on_close_session(sid)
+                await self._close_session(sid)
         elif message_type == 'session_closing':
             # Session closing event - We only get this in the event of graceful shutdown,
             # which can't be guaranteed - nodes can simply vanish unexpectedly!
@@ -169,7 +181,7 @@ class SessionManager:
             for (
                 connection_id,
                 local_sid,
-            ) in self.local_connection_id_to_session_id.items():
+            ) in self._local_connection_id_to_session_id.items():
                 if sid == local_sid:
                     logger.warning(
                         'local_connection_to_closing_session:{connection_id}:{sid}'
@@ -209,7 +221,7 @@ class SessionManager:
     ):
         logger.info(f'join_conversation:{sid}:{connection_id}')
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
-        self.local_connection_id_to_session_id[connection_id] = sid
+        self._local_connection_id_to_session_id[connection_id] = sid
         event_stream = await self._get_event_stream(sid)
         if not event_stream:
             return await self.maybe_start_agent_loop(sid, settings, user_id)
@@ -234,7 +246,7 @@ class SessionManager:
                     f'Running agent loops: {len(self._local_agent_loops_by_sid)}'
                 )
                 logger.info(
-                    f'Local connections: {len(self.local_connection_id_to_session_id)}'
+                    f'Local connections: {len(self._local_connection_id_to_session_id)}'
                 )
             try:
                 close_threshold = time.time() - self.config.sandbox.close_delay
@@ -242,15 +254,27 @@ class SessionManager:
                 running_loops.sort(key=lambda item: item[1].last_active_ts)
                 sid_to_close: list[str] = []
                 for sid, session in running_loops:
-                    if session.last_active_ts < close_threshold:
+                    controller = session.agent_session.controller
+                    state = controller.state if controller else AgentState.STOPPED
+                    if (
+                        session.last_active_ts < close_threshold
+                        and state != AgentState.RUNNING
+                    ):
                         sid_to_close.append(sid)
 
-                await wait_all(self._cleanup_session(sid) for sid in sid_to_close)
+                connections = await self.get_connections(
+                    filter_to_sids=set(sid_to_close)
+                )
+                connected_sids = {sid for _, sid in connections.items()}
+                sid_to_close = [
+                    sid for sid in sid_to_close if sid not in connected_sids
+                ]
+
+                await wait_all(self._close_session(sid) for sid in sid_to_close)
                 await asyncio.sleep(_CLEANUP_INTERVAL)
             except asyncio.CancelledError:
                 await wait_all(
-                    self._on_close_session(sid)
-                    for sid in self._local_agent_loops_by_sid
+                    self._close_session(sid) for sid in self._local_agent_loops_by_sid
                 )
                 return
             except Exception:
@@ -258,21 +282,20 @@ class SessionManager:
                 await asyncio.sleep(_CLEANUP_EXCEPTION_WAIT_TIME)
 
     async def is_agent_loop_running(self, sid: str) -> bool:
-        running_sids = await self.get_running_agent_loops(filter_to_sids={sid})
-        return bool(running_sids)
+        sids = await self.get_running_agent_loops(filter_to_sids={sid})
+        return bool(sids)
 
     async def get_running_agent_loops(
         self, user_id: int | None = None, filter_to_sids: set[str] | None = None
     ) -> set[str]:
         """Get the running session ids. If a user is supplied, then the results are limited to session ids for that user. If a set of filter_to_sids is supplied, then results are limited to these ids of interest."""
-        running_sids = self.get_running_agent_loops_locally(user_id, filter_to_sids)
-        remote_sids = await self.get_running_agent_loops_remotely(
+        sids = self._get_running_agent_loops_locally(user_id, filter_to_sids)
+        remote_sids = await self._get_running_agent_loops_remotely(
             user_id, filter_to_sids
         )
-        running_sids = running_sids.union(remote_sids)
-        return running_sids
+        return sids.union(remote_sids)
 
-    def get_running_agent_loops_locally(
+    def _get_running_agent_loops_locally(
         self, user_id: int | None = None, filter_to_sids: set[str] | None = None
     ) -> set[str]:
         items: Iterable[tuple[str, Session]] = self._local_agent_loops_by_sid.items()
@@ -283,7 +306,7 @@ class SessionManager:
         sids = {sid for sid, _ in items}
         return sids
 
-    async def get_running_agent_loops_remotely(
+    async def _get_running_agent_loops_remotely(
         self,
         user_id: int | None = None,
         filter_to_sids: set[str] | None = None,
@@ -294,17 +317,17 @@ class SessionManager:
             return set()
 
         flag = asyncio.Event()
-        request_id = str(uuid4())
-        check = _AgentLoopRunningCheck(
-            request_id=request_id, request_sids=filter_to_sids
+        query_id = str(uuid4())
+        query = _ClusterQuery[set[str]](
+            query_id=query_id, request_ids=filter_to_sids, result=set()
         )
-        self._running_sid_queries[request_id] = check
+        self._running_sid_queries[query_id] = query
         try:
             logger.debug(
-                f'publish:running_agent_loops_query:{user_id}:{filter_to_sids}'
+                f'publish:_get_running_agent_loops_remotely_query:{user_id}:{filter_to_sids}'
             )
             data: dict = {
-                'request_id': request_id,
+                'query_id': query_id,
                 'message_type': 'running_agent_loops_query',
             }
             if user_id:
@@ -315,38 +338,75 @@ class SessionManager:
             async with asyncio.timeout(_REDIS_POLL_TIMEOUT):
                 await flag.wait()
 
-            return check.running_sids
+            return query.result
         except TimeoutError:
             # Nobody replied in time
-            return check.running_sids
+            return query.result
         finally:
-            self._running_sid_queries.pop(request_id, None)
+            self._running_sid_queries.pop(query_id, None)
 
-    async def _has_remote_connections(self, sid: str) -> bool:
-        """As the rest of the cluster if they still want this session running. Wait a for a short timeout for a reply"""
-        # Create a flag for the callback
+    async def get_connections(
+        self, user_id: int | None = None, filter_to_sids: set[str] | None = None
+    ) -> dict[str, str]:
+        connection_ids = self._get_connections_locally(user_id, filter_to_sids)
+        remote_connection_ids = await self._get_connections_remotely(
+            user_id, filter_to_sids
+        )
+        connection_ids.update(**remote_connection_ids)
+        return connection_ids
+
+    def _get_connections_locally(
+        self, user_id: int | None = None, filter_to_sids: set[str] | None = None
+    ) -> dict[str, str]:
+        connections = dict(**self._local_connection_id_to_session_id)
+        if filter_to_sids is not None:
+            connections = {
+                connection_id: sid
+                for connection_id, sid in connections.items()
+                if sid in filter_to_sids
+            }
+        if user_id:
+            for connection_id, sid in list(connections.items()):
+                session = self._local_agent_loops_by_sid.get(sid)
+                if not session or session.user_id != user_id:
+                    connections.pop(connection_id)
+        return connections
+
+    async def _get_connections_remotely(
+        self, user_id: int | None = None, filter_to_sids: set[str] | None = None
+    ) -> dict[str, str]:
+        redis_client = self._get_redis_client()
+        if not redis_client:
+            return {}
+
         flag = asyncio.Event()
-        self._has_remote_connections_flags[sid] = flag
+        query_id = str(uuid4())
+        query = _ClusterQuery[dict[str, str]](
+            query_id=query_id, request_ids=filter_to_sids, result={}
+        )
+        self._connection_queries[query_id] = query
         try:
-            await self._get_redis_client().publish(
-                'session_msg',
-                json.dumps(
-                    {
-                        'sid': sid,
-                        'message_type': 'has_remote_connections_query',
-                    }
-                ),
+            logger.debug(
+                f'publish:get_connections_remotely_query:{user_id}:{filter_to_sids}'
             )
+            data: dict = {
+                'query_id': query_id,
+                'message_type': 'connections_query',
+            }
+            if user_id:
+                data['user_id'] = user_id
+            if filter_to_sids:
+                data['filter_to_sids'] = list(filter_to_sids)
+            await redis_client.publish('session_msg', json.dumps(data))
             async with asyncio.timeout(_REDIS_POLL_TIMEOUT):
                 await flag.wait()
 
-            result = flag.is_set()
-            return result
+            return query.result
         except TimeoutError:
             # Nobody replied in time
-            return False
+            return query.result
         finally:
-            self._has_remote_connections_flags.pop(sid, None)
+            self._connection_queries.pop(query_id, None)
 
     async def maybe_start_agent_loop(
         self, sid: str, settings: Settings, user_id: int | None = None
@@ -356,10 +416,10 @@ class SessionManager:
         if not await self.is_agent_loop_running(sid):
             logger.info(f'start_agent_loop:{sid}')
 
-            running_sids = await self.get_running_agent_loops(user_id)
-            if len(running_sids) >= MAX_RUNNING_CONVERSATIONS:
+            response_ids = await self.get_running_agent_loops(user_id)
+            if len(response_ids) >= MAX_RUNNING_CONVERSATIONS:
                 logger.info('too_many_sessions_for:{user_id}')
-                await self.close_session(next(iter(running_sids)))
+                await self.close_session(next(iter(response_ids)))
 
             session = Session(
                 sid=sid,
@@ -384,7 +444,7 @@ class SessionManager:
             logger.info(f'found_local_agent_loop:{sid}')
             return session.agent_session.event_stream
 
-        if await self.get_running_agent_loops_remotely(filter_to_sids={sid}):
+        if await self._get_running_agent_loops_remotely(filter_to_sids={sid}):
             logger.info(f'found_remote_agent_loop:{sid}')
             return EventStream(sid, self.file_store)
 
@@ -392,7 +452,7 @@ class SessionManager:
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
         # If there is a local session running, send to that
-        sid = self.local_connection_id_to_session_id.get(connection_id)
+        sid = self._local_connection_id_to_session_id.get(connection_id)
         if not sid:
             raise RuntimeError(f'no_connected_session:{connection_id}')
 
@@ -408,7 +468,7 @@ class SessionManager:
             next_alive_check = last_alive_at + _CHECK_ALIVE_INTERVAL
             if (
                 next_alive_check > time.time()
-                or await self.get_running_agent_loops_remotely(filter_to_sids={sid})
+                or await self._get_running_agent_loops_remotely(filter_to_sids={sid})
             ):
                 # Send the event to the other pod
                 await redis_client.publish(
@@ -426,42 +486,17 @@ class SessionManager:
         raise RuntimeError(f'no_connected_session:{connection_id}:{sid}')
 
     async def disconnect_from_session(self, connection_id: str):
-        sid = self.local_connection_id_to_session_id.pop(connection_id, None)
+        sid = self._local_connection_id_to_session_id.pop(connection_id, None)
         logger.info(f'disconnect_from_session:{connection_id}:{sid}')
         if not sid:
             # This can occur if the init action was never run.
             logger.warning(f'disconnect_from_uninitialized_session:{connection_id}')
             return
 
-    async def _cleanup_session(self, sid: str) -> bool:
-        # Get local connections
-        logger.info(f'_cleanup_session:{sid}')
-        has_local_connections = next(
-            (True for v in self.local_connection_id_to_session_id.values() if v == sid),
-            False,
-        )
-        if has_local_connections:
-            return False
-
-        # If no local connections, get connections through redis
-        redis_client = self._get_redis_client()
-        if redis_client and await self._has_remote_connections(sid):
-            return False
-
-        # We alert the cluster in case they are interested
-        if redis_client:
-            await redis_client.publish(
-                'session_msg',
-                json.dumps({'sid': sid, 'message_type': 'session_closing'}),
-            )
-
-        await self._on_close_session(sid)
-        return True
-
     async def close_session(self, sid: str):
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
-            await self._on_close_session(sid)
+            await self._close_session(sid)
 
         redis_client = self._get_redis_client()
         if redis_client:
@@ -470,18 +505,18 @@ class SessionManager:
                 json.dumps({'sid': sid, 'message_type': 'close_session'}),
             )
 
-    async def _on_close_session(self, sid: str):
+    async def _close_session(self, sid: str):
         logger.info(f'_close_session:{sid}')
 
         # Clear up local variables
         connection_ids_to_remove = list(
             connection_id
-            for connection_id, conn_sid in self.local_connection_id_to_session_id.items()
+            for connection_id, conn_sid in self._local_connection_id_to_session_id.items()
             if sid == conn_sid
         )
         logger.info(f'removing connections: {connection_ids_to_remove}')
         for connnnection_id in connection_ids_to_remove:
-            self.local_connection_id_to_session_id.pop(connnnection_id, None)
+            self._local_connection_id_to_session_id.pop(connnnection_id, None)
 
         session = self._local_agent_loops_by_sid.pop(sid, None)
         if not session:
