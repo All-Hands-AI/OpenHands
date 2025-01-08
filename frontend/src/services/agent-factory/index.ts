@@ -3,12 +3,20 @@ import { DynamicAgent, AgentTemplate, TechAnalysisResult } from '~/types/agents'
 import { analyzeTechStack } from '~/components/features/dynamic-agents/tech-analyzer';
 
 export class AgentFactoryService {
+  private static instance: AgentFactoryService;
   private agents: Map<string, DynamicAgent>;
   private templates: Map<string, AgentTemplate>;
 
-  constructor() {
+  private constructor() {
     this.agents = new Map();
     this.templates = new Map();
+  }
+
+  static getInstance(): AgentFactoryService {
+    if (!AgentFactoryService.instance) {
+      AgentFactoryService.instance = new AgentFactoryService();
+    }
+    return AgentFactoryService.instance;
   }
 
   async getTemplates(): Promise<AgentTemplate[]> {

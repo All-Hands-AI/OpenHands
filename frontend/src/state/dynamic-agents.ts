@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { DynamicAgent, TechAnalysisResult } from '~/types/agents';
 import { DynamicAgentAPI } from '~/services/dynamic-agents/api';
+import { AgentFactoryService } from '~/services/agent-factory';
 
 interface DynamicAgentState {
   agents: DynamicAgent[];
@@ -67,7 +68,7 @@ export const useDynamicAgentStore = create<DynamicAgentState>((set) => ({
   async analyzeStack(technologies: string[]): Promise<TechAnalysisResult> {
     try {
       set((state) => ({ ...state, loading: true, error: null }));
-      const result = await DynamicAgentAPI.analyzeStack(technologies);
+      const result = await AgentFactoryService.analyzeStack(technologies);
       set((state) => ({ ...state, loading: false }));
       return result;
     } catch (error) {

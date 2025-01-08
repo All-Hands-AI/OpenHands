@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { TechAnalysisResult } from '~/types/agents';
 
 function calculateCompleteness(technologies: string[]): number {
@@ -27,5 +28,29 @@ export function analyzeTechStack(technologies: string[]): TechAnalysisResult {
     confidence: 0.8,
     missingComponents: findMissingComponents(technologies).map(tech => ({ name: tech, type: 'library' as const })),
     recommendations: generateRecommendations(technologies)
+  };
+}
+
+export function useTechAnalyzer() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const analyze = async (technologies: string[]): Promise<TechAnalysisResult> => {
+    try {
+      setLoading(true);
+      setError(null);
+      return analyzeTechStack(technologies);
+    } catch (err) {
+      setError(err as Error);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    analyze,
+    loading,
+    error
   };
 }
