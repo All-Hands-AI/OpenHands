@@ -117,6 +117,8 @@ while true; do
     else
         echo "### Evaluation failed with exit code $EVAL_STATUS. Retrying... ###"
     fi
+
+    ./evaluation/utils/scripts/cleanup_remote_runtime.sh
 done
 
 # update the output with evaluation results
