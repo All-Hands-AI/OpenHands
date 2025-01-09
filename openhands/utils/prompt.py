@@ -12,6 +12,12 @@ from openhands.microagent import (
     RepoMicroAgent,
     load_microagents_from_dir,
 )
+from openhands.runtime.base import Runtime
+
+
+@dataclass
+class RuntimeInfo:
+    available_hosts: dict[str, int]
 
 
 @dataclass
@@ -52,6 +58,7 @@ class PromptManager:
 
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
+        self.runtime_info = RuntimeInfo(available_hosts={})
 
         self.knowledge_microagents: dict[str, KnowledgeMicroAgent] = {}
         self.repo_microagents: dict[str, RepoMicroAgent] = {}
@@ -109,8 +116,12 @@ class PromptManager:
         return self.system_template.render(
             repo_instructions=repo_instructions,
             github_repo=self.repository_info.repo_name,
+            runtime_info=self.runtime_info,
             repo_directory=self.repository_info.repo_directory,
         ).strip()
+
+    def set_runtime_info(self, runtime: Runtime):
+        self.runtime_info.available_hosts = runtime.web_hosts
 
     def set_repository_info(
         self, repo_name: str | None, repo_directory: str | None = None
@@ -134,6 +145,7 @@ class PromptManager:
         These additional context will convert the current generic agent
         into a more specialized agent that is tailored to the user's task.
         """
+
         return self.user_template.render().strip()
 
     def enhance_message(self, message: Message) -> None:

@@ -10,9 +10,8 @@ from openhands.core.config import AppConfig
 from openhands.core.exceptions import (
     AgentRuntimeDisconnectedError,
     AgentRuntimeNotFoundError,
-    AgentRuntimeNotReadyError,
 )
-from openhands.core.logger import DEBUG
+from openhands.core.logger import DEBUG, DEBUG_RUNTIME
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.builder import DockerRuntimeBuilder
@@ -28,6 +27,11 @@ from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
+
+EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
+VSCODE_PORT_RANGE = (40000, 49999)
+APP_PORT_RANGE_1 = (50000, 54999)
+APP_PORT_RANGE_2 = (55000, 59999)
 
 
 def remove_all_runtime_containers():
@@ -66,13 +70,17 @@ class DockerRuntime(ActionExecutionClient):
             atexit.register(remove_all_runtime_containers)
 
         self.config = config
-        self._host_port = 30000  # initial dummy value
-        self._container_port = 30001  # initial dummy value
         self._runtime_initialized: bool = False
-        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.status_callback = status_callback
 
+        self._host_port = -1
+        self._container_port = -1
+        self._vscode_port = -1
+        self._app_ports: list[int] = []
+
         self.docker_client: docker.DockerClient = self._init_docker_client()
+        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
+
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
         self.container_name = CONTAINER_NAME_PREFIX + sid
@@ -139,7 +147,10 @@ class DockerRuntime(ActionExecutionClient):
                 f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
             )
 
-        self.log_streamer = LogStreamer(self.container, self.log)
+        if DEBUG_RUNTIME:
+            self.log_streamer = LogStreamer(self.container, self.log)
+        else:
+            self.log_streamer = None
 
         if not self.attach_to_existing:
             self.log('info', f'Waiting for client to become ready at {self.api_url}...')
@@ -180,22 +191,35 @@ class DockerRuntime(ActionExecutionClient):
             plugin_arg = (
                 f'--plugins {" ".join([plugin.name for plugin in self.plugins])} '
             )
-        self._host_port = self._find_available_port()
-        self._container_port = (
-            self._host_port
-        )  # in future this might differ from host port
+        self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
+        self._container_port = self._host_port
+        self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
+        self._app_ports = [
+            self._find_available_port(APP_PORT_RANGE_1),
+            self._find_available_port(APP_PORT_RANGE_2),
+        ]
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
         network_mode: str | None = 'host' if use_host_network else None
 
-        port_mapping: dict[str, list[dict[str, str]]] | None = (
-            None
-            if use_host_network
-            else {f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}]}
-        )
+        use_host_network = self.config.sandbox.use_host_network
 
-        if use_host_network:
+        # Initialize port mappings
+        port_mapping: dict[str, list[dict[str, str]]] | None = None
+        if not use_host_network:
+            port_mapping = {
+                f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}],
+            }
+
+            if self.vscode_enabled:
+                port_mapping[f'{self._vscode_port}/tcp'] = [
+                    {'HostPort': str(self._vscode_port)}
+                ]
+
+            for port in self._app_ports:
+                port_mapping[f'{port}/tcp'] = [{'HostPort': str(port)}]
+        else:
             self.log(
                 'warn',
                 'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
@@ -205,16 +229,10 @@ class DockerRuntime(ActionExecutionClient):
         environment = {
             'port': str(self._container_port),
             'PYTHONUNBUFFERED': 1,
+            'VSCODE_PORT': str(self._vscode_port),
         }
         if self.config.debug or DEBUG:
             environment['DEBUG'] = 'true'
-
-        if self.vscode_enabled:
-            # vscode is on port +1 from container port
-            if isinstance(port_mapping, dict):
-                port_mapping[f'{self._container_port + 1}/tcp'] = [
-                    {'HostPort': str(self._host_port + 1)}
-                ]
 
         self.log('debug', f'Workspace Base: {self.config.workspace_base}')
         if (
@@ -289,6 +307,8 @@ class DockerRuntime(ActionExecutionClient):
                     'error',
                     f'Error: Instance {self.container_name} FAILED to start container!\n',
                 )
+                self.log('error', str(e))
+                raise e
         except Exception as e:
             self.log(
                 'error',
@@ -299,11 +319,20 @@ class DockerRuntime(ActionExecutionClient):
             raise e
 
     def _attach_to_container(self):
-        self._container_port = 0
         self.container = self.docker_client.containers.get(self.container_name)
         for port in self.container.attrs['NetworkSettings']['Ports']:  # type: ignore
-            self._container_port = int(port.split('/')[0])
-            break
+            port = int(port.split('/')[0])
+            if (
+                port >= EXECUTION_SERVER_PORT_RANGE[0]
+                and port <= EXECUTION_SERVER_PORT_RANGE[1]
+            ):
+                self._container_port = port
+            if port >= VSCODE_PORT_RANGE[0] and port <= VSCODE_PORT_RANGE[1]:
+                self._vscode_port = port
+            elif port >= APP_PORT_RANGE_1[0] and port <= APP_PORT_RANGE_1[1]:
+                self._app_ports.append(port)
+            elif port >= APP_PORT_RANGE_2[0] and port <= APP_PORT_RANGE_2[1]:
+                self._app_ports.append(port)
         self._host_port = self._container_port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(
@@ -330,9 +359,6 @@ class DockerRuntime(ActionExecutionClient):
             raise AgentRuntimeNotFoundError(
                 f'Container {self.container_name} not found.'
             )
-
-        if not self.log_streamer:
-            raise AgentRuntimeNotReadyError('Runtime client is not ready.')
 
         self.check_if_alive()
 
@@ -364,10 +390,10 @@ class DockerRuntime(ActionExecutionClient):
                 return True
         return False
 
-    def _find_available_port(self, max_attempts=5):
-        port = 39999
+    def _find_available_port(self, port_range, max_attempts=5):
+        port = port_range[1]
         for _ in range(max_attempts):
-            port = find_available_tcp_port(30000, 39999)
+            port = find_available_tcp_port(port_range[0], port_range[1])
             if not self._is_port_in_use_docker(port):
                 return port
         # If no port is found after max_attempts, return the last tried port
@@ -378,5 +404,15 @@ class DockerRuntime(ActionExecutionClient):
         token = super().get_vscode_token()
         if not token:
             return None
-        vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+
+        vscode_url = f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return vscode_url
+
+    @property
+    def web_hosts(self):
+        hosts: dict[str, int] = {}
+
+        for port in self._app_ports:
+            hosts[f'http://localhost:{port}'] = port
+
+        return hosts

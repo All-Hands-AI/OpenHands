@@ -72,7 +72,7 @@ export function Sidebar() {
           <ExitProjectButton onClick={handleEndSession} />
           {MULTI_CONVERSATION_UI && (
             <TooltipButton
-              data-testid="toggle-conversation-panel"
+              testId="toggle-conversation-panel"
               tooltip="Conversations"
               ariaLabel="Conversations"
               onClick={() => setConversationPanelIsOpen((prev) => !prev)}
