@@ -14,7 +14,7 @@ interface ConversationCardProps {
   onDelete?: () => void;
   onChangeTitle?: (title: string) => void;
   onDownloadWorkspace?: () => void;
-  isActive: boolean;
+  isActive?: boolean;
   title: string;
   selectedRepository: string | null;
   lastUpdatedAt: string; // ISO 8601
