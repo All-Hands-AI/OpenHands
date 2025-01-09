@@ -101,6 +101,7 @@ class LLM(RetryMixin, DebugMixin):
         )
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
+        self.model_routing_config = model_routing_config
 
         self.model_info: ModelInfo | None = None
 
@@ -159,6 +160,7 @@ class LLM(RetryMixin, DebugMixin):
 
             messages: list[dict[str, Any]] | dict[str, Any] = []
             mock_function_calling = kwargs.pop('mock_function_calling', False)
+            use_reasoning_model = kwargs.pop('use_reasoning_model', False)
 
             # some callers might send the model and messages directly
             # litellm allows positional args, like completion(model, messages, **kwargs)
@@ -189,6 +191,15 @@ class LLM(RetryMixin, DebugMixin):
                 kwargs['messages'] = messages
                 kwargs['stop'] = STOP_WORDS
                 mock_fncall_tools = kwargs.pop('tools')
+
+            if use_reasoning_model:
+                if self.model_routing_config is None:
+                    raise ValueError(
+                        'Model routing config is required for model routing.'
+                    )
+
+                # Replace the model with the reasoning model
+                kwargs['model'] = self.model_routing_config.reasoning_model
 
             # if we have no messages, something went very wrong
             if not messages:

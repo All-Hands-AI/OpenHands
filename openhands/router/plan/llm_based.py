@@ -18,26 +18,12 @@ litellm_config = {
 }
 
 
-class PlanRouter(BaseRouter):
+class LLMBasedPlanRouter(BaseRouter):
     """
-    Router that routes the prompt requiring plan generation to specialized reasoning models.
+    Router that routes the prompt that is judged by a LLM as complex and requires a step-by-step plan.
     """
 
-    REASONING_MODEL: str = 'o1-preview-2024-09-12'
-
-    def route(self, prompt: str) -> str:
-        """
-        Routes the prompt to the specialized reasoning model.
-
-        Parameters:
-        - prompt (str): the prompt to be routed
-
-        Returns:
-        - str: the response from the specialized reasoning model
-        """
-        return self.REASONING_MODEL
-
-    def _requires_plan_generation(self, prompt: str) -> bool:
+    def should_route_to_custom_model(self, prompt: str) -> bool:
         messages = []
 
         messages.append(
