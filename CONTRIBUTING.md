@@ -121,3 +121,20 @@ We need to be more careful with changes to the core agent, as it is imperative t
 If it improves accuracy, efficiency, or both with only a minimal change to code quality, that's great we're happy to merge it in!
 If there are bigger tradeoffs (e.g. helping efficiency a lot and hurting accuracy a little) we might want to put it behind a feature flag.
 Either way, please feel free to discuss on github issues or slack, and we will give guidance and preliminary feedback.
+
+### Slack Etiquettes
+
+These Slack etiquette guidelines are designed to foster an inclusive, respectful, and productive environment for all community members. By following these best practices, we ensure effective communication and collaboration while minimizing disruptions. Let’s work together to build a supportive and welcoming community!
+
+- Communicate respectfully and professionally, avoiding sarcasm or harsh language, and remember that tone can be difficult to interpret in text.
+- Use threads for specific discussions to keep channels organized and easier to follow.
+- Tag others only when their input is critical or urgent, and use @here or @channel sparingly to minimize disruptions.
+- Before asking questions, check existing resources such as pinned messages, documentation, or previous conversations.
+- Be patient, as open-source contributors and maintainers often have other commitments and may need time to respond.
+- Avoid using flashing, blinking, or flickering emojis and GIFs, as they may trigger photosensitive epilepsy.
+- Post questions or discussions in the most relevant channel (e.g., [#general](https://app.slack.com/client/T06P212QSEA/C06P5NCGSFP) for general topics, [#questions](https://openhands-ai.slack.com/archives/C06U8UTKSAD) for queries/questions).
+- When asking for help or raising issues, include necessary details like links, screenshots, or clear explanations to provide context.
+- Keep discussions in public channels whenever possible to allow others to benefit from the conversation, unless the matter is sensitive or private.
+- Always adhere to the [Code of Conduct](https://github.com/All-Hands-AI/OpenHands/blob/main/CODE_OF_CONDUCT.md) to ensure a welcoming and collaborative environment.
+- After posting a message containing links, disable any auto-generated previews unless they provide essential context to the message.
+If you choose to mute a channel, consider setting up alerts for topics that still interest you to stay engaged. Go to Settings → Notifications → My Keywords to add specific keywords that will notify you when mentioned. For example, if you're here for discussions about LLMs, mute the channel if it’s too busy, but set notifications to alert you only when “LLMs” appears in messages.
