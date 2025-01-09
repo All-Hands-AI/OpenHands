@@ -1,4 +1,3 @@
-from dataclasses import is_dataclass
 from typing import ClassVar
 
 from pydantic import BaseModel, Field, SecretStr
@@ -8,7 +7,7 @@ from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
-    get_field_info,
+    model_defaults_to_dict,
 )
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
@@ -121,22 +120,4 @@ class AppConfig(BaseModel):
     def model_post_init(self, __context):
         """Post-initialization hook, called when the instance is created with only default values."""
         super().model_post_init(__context)
-        AppConfig.defaults_dict = self.defaults_to_dict()
-
-    def defaults_to_dict(self) -> dict:
-        """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
-        result = {}
-        for field, info in self.model_fields.items():
-            field_value = getattr(self, field)
-
-            # dataclasses compute their defaults themselves
-            if is_dataclass(type(field_value)):
-                result[field] = field_value.defaults_to_dict()
-            elif isinstance(field_value, BaseModel):
-                result[field] = {
-                    name: get_field_info(field)
-                    for name, field in field_value.model_fields.items()
-                }
-            else:
-                result[field] = get_field_info(info)
-        return result
+        AppConfig.defaults_dict = model_defaults_to_dict(self)

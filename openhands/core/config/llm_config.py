@@ -1,11 +1,11 @@
+from __future__ import annotations
+
 import os
-from typing import Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, SecretStr
 
 from openhands.core.logger import LOG_DIR
-
-LLM_SENSITIVE_FIELDS = ['api_key', 'aws_access_key_id', 'aws_secret_access_key']
 
 
 class LLMConfig(BaseModel):
@@ -83,17 +83,18 @@ class LLMConfig(BaseModel):
     caching_prompt: bool = Field(default=True)
     log_completions: bool = Field(default=False)
     log_completions_folder: str = Field(default=os.path.join(LOG_DIR, 'completions'))
-    draft_editor: Optional['LLMConfig'] = Field(default=None)
+    draft_editor: LLMConfig | None = Field(default=None)
     custom_tokenizer: str | None = Field(default=None)
     native_tool_calling: bool | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
 
-    def __post_init__(self):
-        """
-        Post-initialization hook to assign OpenRouter-related variables to environment variables.
+    def model_post_init(self, __context: Any):
+        """Post-initialization hook to assign OpenRouter-related variables to environment variables.
+
         This ensures that these values are accessible to litellm at runtime.
         """
+        super().model_post_init(__context)
 
         # Assign OpenRouter-specific variables to environment variables
         if self.openrouter_site_url:

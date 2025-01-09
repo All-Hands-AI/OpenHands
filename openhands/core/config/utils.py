@@ -3,7 +3,6 @@ import os
 import pathlib
 import platform
 import sys
-from dataclasses import is_dataclass
 from types import UnionType
 from typing import Any, MutableMapping, get_args, get_origin
 from uuid import uuid4
@@ -44,19 +43,19 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
         return next((t for t in types if t is not type(None)), None)
 
     # helper function to set attributes based on env vars
-    def set_attr_from_env(sub_config: Any, prefix=''):
-        """Set attributes of a config dataclass based on environment variables."""
-        for field_name, field_type in sub_config.__annotations__.items():
+    def set_attr_from_env(sub_config: BaseModel, prefix=''):
+        """Set attributes of a config model based on environment variables."""
+        for field_name, field_info in sub_config.model_fields.items():
+            field_value = getattr(sub_config, field_name)
+            field_type = field_info.annotation
+
             # compute the expected env var name from the prefix and field name
             # e.g. LLM_BASE_URL
             env_var_name = (prefix + field_name).upper()
 
-            if is_dataclass(field_type) or (
-                isinstance(field_type, type) and issubclass(field_type, BaseModel)
-            ):
-                # nested dataclass
-                nested_sub_config = getattr(sub_config, field_name)
-                set_attr_from_env(nested_sub_config, prefix=field_name + '_')
+            if isinstance(field_value, BaseModel):
+                set_attr_from_env(field_value, prefix=field_name + '_')
+
             elif env_var_name in env_or_toml_dict:
                 # convert the env var to the correct type and set it
                 value = env_or_toml_dict[env_var_name]
@@ -129,41 +128,47 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         if isinstance(value, dict):
             try:
                 if key is not None and key.lower() == 'agent':
+                    # Every entry here is either a field for the default `agent` config group, or itself a group
+                    # The best way to tell the difference is to try to parse it as an AgentConfig object
+                    agent_group_ids: set[str] = set()
+                    for nested_key, nested_value in value.items():
+                        if isinstance(nested_value, dict):
+                            try:
+                                agent_config = AgentConfig(**nested_value)
+                            except ValidationError:
+                                continue
+                            agent_group_ids.add(nested_key)
+                            cfg.set_agent_config(agent_config, nested_key)
+
                     logger.openhands_logger.debug(
                         'Attempt to load default agent config from config toml'
                     )
-                    non_dict_fields = {
-                        k: v for k, v in value.items() if not isinstance(v, dict)
+                    value_without_groups = {
+                        k: v for k, v in value.items() if k not in agent_group_ids
                     }
-                    agent_config = AgentConfig(**non_dict_fields)
+                    agent_config = AgentConfig(**value_without_groups)
                     cfg.set_agent_config(agent_config, 'agent')
-                    for nested_key, nested_value in value.items():
-                        if isinstance(nested_value, dict):
-                            logger.openhands_logger.debug(
-                                f'Attempt to load group {nested_key} from config toml as agent config'
-                            )
-                            agent_config = AgentConfig(**nested_value)
-                            cfg.set_agent_config(agent_config, nested_key)
+
                 elif key is not None and key.lower() == 'llm':
                     # Every entry here is either a field for the default `llm` config group, or itself a group
                     # The best way to tell the difference is to try to parse it as an LLMConfig object
-                    config_group_ids: set[str] = set()
+                    llm_group_ids: set[str] = set()
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
                             try:
                                 llm_config = LLMConfig(**nested_value)
                             except ValidationError:
                                 continue
-                            config_group_ids.add(nested_key)
+                            llm_group_ids.add(nested_key)
                             cfg.set_llm_config(llm_config, nested_key)
 
                     logger.openhands_logger.debug(
                         'Attempt to load default LLM config from config toml'
                     )
-                    value_without_config_groups = {
-                        k: v for k, v in value.items() if k not in config_group_ids
+                    value_without_groups = {
+                        k: v for k, v in value.items() if k not in llm_group_ids
                     }
-                    llm_config = LLMConfig(**value_without_config_groups)
+                    llm_config = LLMConfig(**value_without_groups)
                     cfg.set_llm_config(llm_config, 'llm')
 
                 elif key is not None and key.lower() == 'security':

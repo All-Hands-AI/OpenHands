@@ -1,14 +1,14 @@
-from dataclasses import Field
 from types import UnionType
 from typing import Any, get_args, get_origin
 
+from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
 OH_DEFAULT_AGENT = 'CodeActAgent'
 OH_MAX_ITERATIONS = 500
 
 
-def get_field_info(field: Field | FieldInfo) -> dict[str, Any]:
+def get_field_info(field: FieldInfo) -> dict[str, Any]:
     """Extract information about a dataclass field: type, optional, and default.
 
     Args:
@@ -16,7 +16,7 @@ def get_field_info(field: Field | FieldInfo) -> dict[str, Any]:
 
     Returns: A dict with the field's type, whether it's optional, and its default value.
     """
-    field_type = field.type if isinstance(field, Field) else field.annotation
+    field_type = field.annotation
     optional = False
 
     # for types like str | None, find the non-None type and set optional to True
@@ -40,3 +40,17 @@ def get_field_info(field: Field | FieldInfo) -> dict[str, Any]:
 
     # return a schema with the useful info for frontend
     return {'type': type_name.lower(), 'optional': optional, 'default': default}
+
+
+def model_defaults_to_dict(model: BaseModel) -> dict[str, Any]:
+    """Serialize field information in a dict for the frontend, including type hints, defaults, and whether it's optional."""
+    result = {}
+    for name, field in model.model_fields.items():
+        field_value = getattr(model, name)
+
+        if isinstance(field_value, BaseModel):
+            result[name] = model_defaults_to_dict(field_value)
+        else:
+            result[name] = get_field_info(field)
+
+    return result
