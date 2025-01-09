@@ -33,13 +33,13 @@ const sidebars: SidebarsConfig = {
             },
             {
               type: 'doc',
-              label: 'Public',
-              id: 'usage/prompting/microagents-public',
+              label: 'Repository',
+              id: 'usage/prompting/microagents-repo',
             },
             {
               type: 'doc',
-              label: 'Repository',
-              id: 'usage/prompting/microagents-repo',
+              label: 'Public',
+              id: 'usage/prompting/microagents-public',
             },
           ],
         }
