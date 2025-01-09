@@ -1,4 +1,4 @@
-from dataclasses import fields, is_dataclass
+from dataclasses import is_dataclass
 from typing import ClassVar
 
 from pydantic import BaseModel, Field, SecretStr
@@ -78,6 +78,8 @@ class AppConfig(BaseModel):
 
     defaults_dict: ClassVar[dict] = {}
 
+    model_config = {'extra': 'forbid'}
+
     def get_llm_config(self, name='llm') -> LLMConfig:
         """'llm' is the name for default config (for backward compatibility prior to 0.8)."""
         if name in self.llms:
@@ -116,24 +118,25 @@ class AppConfig(BaseModel):
     def get_agent_configs(self) -> dict[str, AgentConfig]:
         return self.agents
 
-    def __post_init__(self):
+    def model_post_init(self, __context):
         """Post-initialization hook, called when the instance is created with only default values."""
+        super().model_post_init(__context)
         AppConfig.defaults_dict = self.defaults_to_dict()
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
         result = {}
-        for f in fields(self):
-            field_value = getattr(self, f.name)
+        for field, info in self.model_fields.items():
+            field_value = getattr(self, field)
 
             # dataclasses compute their defaults themselves
             if is_dataclass(type(field_value)):
-                result[f.name] = field_value.defaults_to_dict()
+                result[field] = field_value.defaults_to_dict()
             elif isinstance(field_value, BaseModel):
-                result[f.name] = {
+                result[field] = {
                     name: get_field_info(field)
                     for name, field in field_value.model_fields.items()
                 }
             else:
-                result[f.name] = get_field_info(f)
+                result[field] = get_field_info(info)
         return result
