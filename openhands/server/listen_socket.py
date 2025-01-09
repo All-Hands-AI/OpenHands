@@ -57,7 +57,9 @@ async def connect(connection_id: str, environ, auth):
     settings = await settings_store.load()
 
     if not settings:
-        raise ConnectionRefusedError('Settings not found')
+        raise ConnectionRefusedError(
+            'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
+        )
 
     try:
         event_stream = await session_manager.join_conversation(

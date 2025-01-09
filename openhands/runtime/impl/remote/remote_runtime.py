@@ -127,7 +127,6 @@ class RemoteRuntime(ActionExecutionClient):
             with self._send_runtime_api_request(
                 'GET',
                 f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
-                timeout=60,
             ) as response:
                 data = response.json()
                 status = data.get('status')
@@ -157,7 +156,6 @@ class RemoteRuntime(ActionExecutionClient):
         with self._send_runtime_api_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
-            timeout=60,
         ) as response:
             response_json = response.json()
         registry_prefix = response_json['registry_prefix']
@@ -188,7 +186,6 @@ class RemoteRuntime(ActionExecutionClient):
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
             params={'image': self.container_image},
-            timeout=60,
         ) as response:
             if not response.json()['exists']:
                 raise AgentRuntimeError(
@@ -231,7 +228,6 @@ class RemoteRuntime(ActionExecutionClient):
                 'POST',
                 f'{self.config.sandbox.remote_runtime_api_url}/start',
                 json=start_request,
-                timeout=60,
             ) as response:
                 self._parse_runtime_response(response)
             self.log(
@@ -247,7 +243,6 @@ class RemoteRuntime(ActionExecutionClient):
             'POST',
             f'{self.config.sandbox.remote_runtime_api_url}/resume',
             json={'runtime_id': self.runtime_id},
-            timeout=60,
         ):
             pass
         self._wait_until_alive()
@@ -302,7 +297,6 @@ class RemoteRuntime(ActionExecutionClient):
         with self._send_runtime_api_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
-            timeout=60,
         ) as runtime_info_response:
             runtime_data = runtime_info_response.json()
         assert 'runtime_id' in runtime_data
@@ -354,7 +348,7 @@ class RemoteRuntime(ActionExecutionClient):
         )
         raise AgentRuntimeNotReadyError()
 
-    def close(self, timeout: int = 10):
+    def close(self):
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             super().close()
             return
@@ -363,7 +357,6 @@ class RemoteRuntime(ActionExecutionClient):
                 'POST',
                 f'{self.config.sandbox.remote_runtime_api_url}/stop',
                 json={'runtime_id': self.runtime_id},
-                timeout=timeout,
             ):
                 self.log('debug', 'Runtime stopped.')
         except Exception as e:
