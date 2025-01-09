@@ -156,7 +156,6 @@ class RemoteRuntime(ActionExecutionClient):
         with self._send_runtime_api_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
-            timeout=60,
         ) as response:
             response_json = response.json()
         registry_prefix = response_json['registry_prefix']
