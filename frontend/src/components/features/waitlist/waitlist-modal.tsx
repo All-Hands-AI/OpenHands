@@ -17,6 +17,10 @@ interface WaitlistModalProps {
 export function WaitlistModal({ ghToken, githubAuthUrl }: WaitlistModalProps) {
   const [isTosAccepted, setIsTosAccepted] = React.useState(false);
 
+  if (ghToken) {
+    return null; // Do not render the modal if ghToken is available
+  }
+
   const handleGitHubAuth = () => {
     if (githubAuthUrl) {
       handleCaptureConsent(true);

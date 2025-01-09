@@ -98,7 +98,7 @@ export function GitHubRepositorySelector({
               key={repo.id}
               value={repo.id}
               className="data-[selected=true]:bg-default-100"
-              textValue={repo.full_name}
+              textValue={repo.full_name || ""}
             >
               {repo.full_name}
             </AutocompleteItem>
@@ -113,7 +113,7 @@ export function GitHubRepositorySelector({
               key={repo.id}
               value={repo.id}
               className="data-[selected=true]:bg-default-100"
-              textValue={repo.full_name}
+              textValue={repo.full_name || ""}
             >
               {repo.full_name}
               <span className="ml-1 text-gray-400">

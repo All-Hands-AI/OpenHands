@@ -4,6 +4,7 @@ import OpenHands from "#/api/open-hands";
 import {
   removeGitHubTokenHeader as removeOpenHandsGitHubTokenHeader,
   setGitHubTokenHeader as setOpenHandsGitHubTokenHeader,
+  setupOpenhandsAxiosInterceptors
 } from "#/api/open-hands-axios";
 import {
   setAuthTokenHeader as setGitHubAuthTokenHeader,
@@ -13,9 +14,10 @@ import {
 
 interface AuthContextType {
   gitHubToken: string | null;
+  keycloakToken: string | null;
   setUserId: (userId: string) => void;
-  setGitHubToken: (token: string | null) => void;
-  clearGitHubToken: () => void;
+  setAccessTokens: (gitHubToken: string | null, keycloakToken: string | null) => void;
+  clearAccessTokens: () => void;
   refreshToken: () => Promise<boolean>;
   logout: () => void;
 }
@@ -27,79 +29,95 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     () => localStorage.getItem("ghToken"),
   );
 
+  const [keycloakTokenState, setKeycloakTokenState] = React.useState<string | null>(
+    () => localStorage.getItem("kcToken"),
+  );
+
   const [userIdState, setUserIdState] = React.useState<string>(
     () => localStorage.getItem("userId") || "",
   );
 
-  const clearGitHubToken = () => {
+  const clearAccessTokens = () => {
     setGitHubTokenState(null);
+    setKeycloakTokenState(null);
     setUserIdState("");
     localStorage.removeItem("ghToken");
+    localStorage.removeItem("kcToken");
     localStorage.removeItem("userId");
 
     removeOpenHandsGitHubTokenHeader();
     removeGitHubAuthTokenHeader();
   };
 
-  const setGitHubToken = (token: string | null) => {
-    setGitHubTokenState(token);
+  const setAccessTokens = (gitHubToken: string | null, keycloakToken: string | null) => {
+    setGitHubTokenState(gitHubToken);
+    setKeycloakTokenState(keycloakToken);
 
-    if (token) {
-      localStorage.setItem("ghToken", token);
-      setOpenHandsGitHubTokenHeader(token);
-      setGitHubAuthTokenHeader(token);
+    if (gitHubToken && keycloakToken) {
+      localStorage.setItem("ghToken", gitHubToken);
+      localStorage.setItem("kcToken", keycloakToken);
+      setOpenHandsGitHubTokenHeader(keycloakToken);
+      setGitHubAuthTokenHeader(gitHubToken);
     } else {
-      clearGitHubToken();
+      clearAccessTokens();
     }
   };
 
   const setUserId = (userId: string) => {
-    setUserIdState(userIdState);
+    setUserIdState(userId);
     localStorage.setItem("userId", userId);
+    const stored_userid = localStorage.getItem("userId")
+    console.log(`userId ${userId}, stored userID ${stored_userid}`)
   };
 
   const logout = () => {
-    clearGitHubToken();
+    clearAccessTokens();
     posthog.reset();
   };
 
   const refreshToken = async (): Promise<boolean> => {
-    const config = await OpenHands.getConfig();
+    // const config = await OpenHands.getConfig();
 
-    if (config.APP_MODE !== "saas" || !gitHubTokenState) {
-      return false;
-    }
+    // if (config.APP_MODE !== "saas" || !gitHubTokenState) {
+    //   return false;
+    // }
 
-    const newToken = await OpenHands.refreshToken(config.APP_MODE, userIdState);
-    if (newToken) {
-      setGitHubToken(newToken);
+    const stored_userid = localStorage.getItem("userId") || ""
+    console.log(`calling /refresh-token with userID ${stored_userid}`)
+    const data = await OpenHands.refreshToken("saas", stored_userid);
+    console.log(data)
+    if (data) {
+      setAccessTokens(data.providerAccessToken, data.keycloakAccessToken);
       return true;
     }
 
-    clearGitHubToken();
+    clearAccessTokens();
     return false;
   };
 
   React.useEffect(() => {
     const storedGitHubToken = localStorage.getItem("ghToken");
+    const storedKeycloakToken = localStorage.getItem("kcToken");
 
     const userId = localStorage.getItem("userId") || "";
 
-    setGitHubToken(storedGitHubToken);
+    setAccessTokens(storedGitHubToken, storedKeycloakToken);
     setUserId(userId);
     setupGithubAxiosInterceptors(refreshToken, logout);
+    setupOpenhandsAxiosInterceptors(refreshToken, logout)
   }, []);
 
   const value = React.useMemo(
     () => ({
       gitHubToken: gitHubTokenState,
-      setGitHubToken,
+      keycloakToken: keycloakTokenState,
+      setAccessTokens,
       setUserId,
-      clearGitHubToken,
+      clearAccessTokens,
       refreshToken,
       logout,
     }),
-    [gitHubTokenState],
+    [gitHubTokenState, keycloakTokenState],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

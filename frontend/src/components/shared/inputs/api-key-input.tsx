@@ -32,6 +32,7 @@ export function APIKeyInput({ isDisabled, isSet }: APIKeyInputProps) {
         aria-label="API Key"
         type="password"
         defaultValue=""
+        autoComplete="current-password"
         classNames={{
           inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
         }}

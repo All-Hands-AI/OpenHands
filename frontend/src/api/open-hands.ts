@@ -147,7 +147,7 @@ class OpenHands {
     appMode: GetConfigResponse["APP_MODE"],
   ): Promise<boolean> {
     if (appMode === "oss") return true;
-
+    console.trace();
     const response =
       await openHands.post<AuthenticateResponse>("/api/authenticate");
     return response.status === 200;
@@ -160,8 +160,8 @@ class OpenHands {
   static async refreshToken(
     appMode: GetConfigResponse["APP_MODE"],
     userId: string,
-  ): Promise<string> {
-    if (appMode === "oss") return "";
+  ): Promise<{ keycloakAccessToken: string; providerAccessToken: string; keycloakUserId: string }>  {
+    if (appMode === "oss") return { keycloakAccessToken: "", providerAccessToken: "", keycloakUserId: "" };
 
     const response = await openHands.post<GitHubAccessTokenResponse>(
       "/api/refresh-token",
@@ -169,8 +169,13 @@ class OpenHands {
         userId,
       },
     );
-    return response.data.access_token;
-  }
+    console.log(`refresh data token ${response.data.keycloakAccessToken}`)
+    return {
+      keycloakAccessToken: response.data.keycloakAccessToken,
+      providerAccessToken: response.data.providerAccessToken,
+      keycloakUserId: response.data.keycloakUserId,
+    };
+    }
 
   /**
    * Get the blob of the workspace zip
@@ -190,12 +195,16 @@ class OpenHands {
    */
   static async getGitHubAccessToken(
     code: string,
+    redirectUri: string,
   ): Promise<GitHubAccessTokenResponse> {
-    const { data } = await openHands.post<GitHubAccessTokenResponse>(
+    const { data } = await openHands.get<GitHubAccessTokenResponse>(
       "/api/github/callback",
       {
-        code,
-      },
+        params: {
+          code,
+          redirectUri
+        },
+      }
     );
     return data;
   }

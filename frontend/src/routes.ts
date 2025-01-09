@@ -16,4 +16,5 @@ export default [
   ]),
 
   route("oauth/github/callback", "routes/oauth.github.callback.tsx"),
+  // route("oauth/keycloak/callback", "routes/oauth.keycloak.callback.tsx"),
 ] satisfies RouteConfig;
