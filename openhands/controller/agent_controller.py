@@ -233,6 +233,12 @@ class AgentController:
         if isinstance(event, Action):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 return True
+            if (
+                isinstance(event, MessageAction)
+                and self.get_agent_state() != AgentState.AWAITING_USER_INPUT
+            ):
+                # TODO: this is fragile, but how else to check if eligible?
+                return True
             if isinstance(event, AgentDelegateAction):
                 return True
             return False
@@ -250,6 +256,8 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
+
+        print(f'CONTROLLER{self.id}:on_event: {event.__class__.__name__}')
 
         # If we have a delegate that is not finished or errored, forward events to it
         if self.delegate is not None:
