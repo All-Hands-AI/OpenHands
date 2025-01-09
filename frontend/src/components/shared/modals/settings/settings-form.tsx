@@ -204,6 +204,7 @@ export function SettingsForm({
         <div className="flex flex-col gap-2">
           <div className="flex gap-2">
             <ModalButton
+              testId="save-settings-button"
               disabled={disabled}
               type="submit"
               text={t(I18nKey.SETTINGS_FORM$SAVE_LABEL)}
