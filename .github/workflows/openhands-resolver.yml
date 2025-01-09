@@ -259,16 +259,19 @@ jobs:
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
           PYTHONPATH: ""
         run: |
+          cd /tmp && BASE_COMMIT=$(cd repo && git rev-parse HEAD) && \
           if [ "${{ steps.check_result.outputs.RESOLUTION_SUCCESS }}" == "true" ]; then
-            cd /tmp && python -m openhands.resolver.send_pull_request \
+            python -m openhands.resolver.send_pull_request \
               --issue-number ${{ env.ISSUE_NUMBER }} \
               --pr-type draft \
-              --reviewer ${{ github.actor }} | tee pr_result.txt && \
+              --reviewer ${{ github.actor }} \
+              --base-commit "$BASE_COMMIT" | tee pr_result.txt && \
               grep "draft created" pr_result.txt | sed 's/.*\///g' > pr_number.txt
           else
-            cd /tmp && python -m openhands.resolver.send_pull_request \
+            python -m openhands.resolver.send_pull_request \
               --issue-number ${{ env.ISSUE_NUMBER }} \
               --pr-type branch \
+              --base-commit "$BASE_COMMIT" \
               --send-on-failure | tee branch_result.txt && \
               grep "branch created" branch_result.txt | sed 's/.*\///g; s/.expand=1//g' > branch_name.txt
           fi
