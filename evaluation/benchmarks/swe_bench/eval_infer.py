@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 import time
@@ -11,6 +12,7 @@ from swebench.harness.run_evaluation import (
 )
 from swebench.harness.test_spec import SWEbenchInstance, TestSpec, make_test_spec
 from swebench.harness.utils import load_swebench_dataset
+from tqdm import tqdm
 
 from evaluation.benchmarks.swe_bench.run_infer import get_instance_docker_image
 from evaluation.utils.shared import (
@@ -352,7 +354,13 @@ if __name__ == '__main__':
 
     # Load predictions
     assert args.input_file.endswith('.jsonl'), 'Input file must be a jsonl file.'
-    predictions = pd.read_json(args.input_file, lines=True)
+    required_fields = ['instance_id', 'model_patch', 'test_result']
+    predictions = pd.DataFrame.from_records(
+        [
+            {k: v for k, v in json.loads(line).items() if k in required_fields}
+            for line in tqdm(open(args.input_file), desc='Loading predictions')
+        ]
+    )
     assert (
         'instance_id' in predictions.columns
     ), 'Input file must contain instance_id column.'

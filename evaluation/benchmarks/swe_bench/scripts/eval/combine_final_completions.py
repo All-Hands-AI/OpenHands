@@ -1,9 +1,9 @@
 import argparse
+import gzip
 import json
 import os
 from glob import glob
 
-import pandas as pd
 from tqdm import tqdm
 
 tqdm.pandas()
@@ -36,18 +36,19 @@ parser.add_argument('jsonl_path', type=str)
 args = parser.parse_args()
 
 output_dir = os.path.dirname(args.jsonl_path)
-df = pd.read_json(args.jsonl_path, lines=True, orient='records')
-df['raw_completions'] = df['instance_id'].progress_apply(
-    lambda x: load_completions(output_dir, x)
-)
-print(f'Successfully loaded {len(df)} completions')
+output_path = os.path.join(output_dir, 'output.with_completions.jsonl.gz')
 
-output_path = os.path.join(output_dir, 'output.with_completions.jsonl')
 if os.path.exists(output_path):
     print(f'Output file already exists at {output_path}, overwriting? (y/n)')
     if input() != 'y':
         print('Exiting...')
         exit(0)
-# save to jsonl
-df.to_json(output_path, lines=True, orient='records')
-print(f'Saved to {output_path}')
+
+# Process line by line
+with open(args.jsonl_path, 'r') as f_in, gzip.open(output_path, 'wt') as f_out:
+    for line in tqdm(f_in):
+        data = json.loads(line)
+        data['raw_completions'] = load_completions(output_dir, data['instance_id'])
+        f_out.write(json.dumps(data) + '\n')
+
+print(f'Saved compressed output to {output_path}')
