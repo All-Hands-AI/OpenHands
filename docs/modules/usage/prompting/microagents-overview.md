@@ -11,8 +11,6 @@ Currently OpenHands supports the following types of microagents:
 * [Repository Microagents](./microagents-repo): Repository-specific context and guidelines for OpenHands.
 * [Public Microagents](./microagents-public): General guidelines triggered by keywords for all OpenHands users.
 
-## Loading Order
-
 When OpenHands works with a repository, it:
 
 1. Loads repository-specific instructions from `.openhands/microagents/` if present in the repository.

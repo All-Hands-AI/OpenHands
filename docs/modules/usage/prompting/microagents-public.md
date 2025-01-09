@@ -85,7 +85,7 @@ Create a new markdown file in [`microagents/knowledge/`](https://github.com/All-
 with a descriptive name (e.g., `docker.md` for a Docker-focused agent).
 
 Update the file with the required frontmatter [according to the required format](./microagents-overview#microagent-format)
-and the required specialized guidelines while following the [best practices above](#public-microaagents-best-practices).
+and the required specialized guidelines while following the [best practices above](#public-microagents-best-practices).
 
 #### 3. Testing the Public Microagent
 
