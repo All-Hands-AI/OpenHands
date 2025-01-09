@@ -1,39 +1,30 @@
+import { useParams } from "react-router";
 import React from "react";
-import { useSelector } from "react-redux";
+import posthog from "posthog-js";
 import { AgentControlBar } from "./agent-control-bar";
 import { AgentStatusBar } from "./agent-status-bar";
-import { ProjectMenuCard } from "../project-menu/ProjectMenuCard";
-import { useAuth } from "#/context/auth-context";
-import { RootState } from "#/store";
 import { SecurityLock } from "./security-lock";
+import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { ConversationCard } from "../conversation-panel/conversation-card";
+import { DownloadModal } from "#/components/shared/download-modal";
 
 interface ControlsProps {
   setSecurityOpen: (isOpen: boolean) => void;
   showSecurityLock: boolean;
-  lastCommitData: GitHubCommit | null;
 }
 
-export function Controls({
-  setSecurityOpen,
-  showSecurityLock,
-  lastCommitData,
-}: ControlsProps) {
-  const { gitHubToken } = useAuth();
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.initialQuery,
+export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
+  const params = useParams();
+  const { data: conversation } = useUserConversation(
+    params.conversationId ?? null,
   );
 
-  const projectMenuCardData = React.useMemo(
-    () =>
-      selectedRepository && lastCommitData
-        ? {
-            repoName: selectedRepository,
-            lastCommit: lastCommitData,
-            avatar: null, // TODO: fetch repo avatar
-          }
-        : null,
-    [selectedRepository, lastCommitData],
-  );
+  const [downloading, setDownloading] = React.useState(false);
+
+  const handleDownloadWorkspace = () => {
+    posthog.capture("download_workspace_button_clicked");
+    setDownloading(true);
+  };
 
   return (
     <div className="flex items-center justify-between">
@@ -46,9 +37,19 @@ export function Controls({
         )}
       </div>
 
-      <ProjectMenuCard
-        isConnectedToGitHub={!!gitHubToken}
-        githubData={projectMenuCardData}
+      <ConversationCard
+        variant="compact"
+        onDownloadWorkspace={handleDownloadWorkspace}
+        title={conversation?.title ?? ""}
+        lastUpdatedAt={conversation?.created_at ?? ""}
+        selectedRepository={conversation?.selected_repository ?? null}
+        status={conversation?.status}
+      />
+
+      <DownloadModal
+        initialPath=""
+        onClose={() => setDownloading(false)}
+        isOpen={downloading}
       />
     </div>
   );

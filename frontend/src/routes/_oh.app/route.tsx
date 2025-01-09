@@ -20,7 +20,6 @@ import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "../../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "./event-handler";
-import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 import { useAuth } from "#/context/auth-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
@@ -30,37 +29,25 @@ import {
 } from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
-import { useUserConversation } from "#/hooks/query/get-conversation-permissions";
+import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { CountBadge } from "#/components/layout/count-badge";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
 import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 
 function AppContent() {
+  useConversationConfig();
   const { gitHubToken } = useAuth();
   const { data: settings } = useSettings();
-
-  const endSession = useEndSession();
-  const [width, setWidth] = React.useState(window.innerWidth);
-
   const { conversationId } = useConversation();
-
-  const dispatch = useDispatch();
-
-  useConversationConfig();
   const { data: conversation, isFetched } = useUserConversation(
     conversationId || null,
   );
+  const dispatch = useDispatch();
+  const endSession = useEndSession();
 
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
-
+  const [width, setWidth] = React.useState(window.innerWidth);
   const { updateCount } = useSelector((state: RootState) => state.browser);
-
-  const { data: latestGitHubCommit } = useLatestRepoCommit({
-    repository: selectedRepository,
-  });
 
   const secrets = React.useMemo(
     () => [gitHubToken].filter((secret) => secret !== null),
@@ -180,13 +167,10 @@ function AppContent() {
         <div data-testid="app-route" className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto">{renderMain()}</div>
 
-          <div className="h-[60px]">
-            <Controls
-              setSecurityOpen={onSecurityModalOpen}
-              showSecurityLock={!!settings.SECURITY_ANALYZER}
-              lastCommitData={latestGitHubCommit || null}
-            />
-          </div>
+          <Controls
+            setSecurityOpen={onSecurityModalOpen}
+            showSecurityLock={!!settings.SECURITY_ANALYZER}
+          />
           <Security
             isOpen={securityModalIsOpen}
             onOpenChange={onSecurityModalOpenChange}
