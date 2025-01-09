@@ -33,6 +33,6 @@ triggers:
 - <Optional keywords triggering the micro-agent. If triggers are removed, it will always be included>
 ---
 
-<Any special guidelines, instructions, and prompts that OpenHands should follow.
+<Markdown with any special guidelines, instructions, and prompts that OpenHands should follow.
 Check out the specific documentation for each micro-agent on best practices for more information.>
 ```
