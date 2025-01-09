@@ -8,12 +8,14 @@ from evaluation.integration_tests.tests.base import BaseIntegrationTest, TestRes
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
-    codeact_user_response,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
     update_llm_config_for_completions_logging,
+)
+from evaluation.utils.shared import (
+    codeact_user_response as fake_user_response,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -31,7 +33,8 @@ from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
 FAKE_RESPONSES = {
-    'CodeActAgent': codeact_user_response,
+    'CodeActAgent': fake_user_response,
+    'DelegatorAgent': fake_user_response,
 }
 
 
