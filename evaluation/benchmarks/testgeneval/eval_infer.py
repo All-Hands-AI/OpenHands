@@ -34,9 +34,7 @@ from evaluation.benchmarks.testgeneval.test_spec import (
     TestSpec,
     make_test_spec,
 )
-from evaluation.benchmarks.testgeneval.utils import (
-    load_testgeneval_dataset,
-)
+from evaluation.benchmarks.testgeneval.utils import load_testgeneval_dataset
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
@@ -194,7 +192,6 @@ def run_mutation_testing(
     assert isinstance(
         mutation_obs, CmdOutputObservation
     ), 'Failed to retrieve mutation output.'
-    print(mutation_obs.content)
     return mutation_obs.exit_code, mutation_obs.content
 
 
@@ -202,9 +199,10 @@ def grade_test_output(
     test_suite: str, instance: pd.Series, test_output: str, test_spec: TestSpec, runtime
 ):
     """
-    Two-pass test grading:
+    Two-pass test grading with short-circuiting:
     1. Run all tests to identify passing/failing tests
-    2. Run only passing tests for coverage analysis
+    2. If no failing tests, evaluate coverage immediately
+    3. Otherwise, run only passing tests for coverage analysis
     """
     unit_test_output, coverage_output = '', ''
     if TESTS_SUFFIX in test_output:
@@ -224,33 +222,14 @@ def grade_test_output(
                 'all_pass': False,
                 'passing_test_names': [],
                 'failing_test_names': [],
+                'filtered_suite': '',
             },
         )
 
-    # Filter tests and create new content with only passing tests
+    logger.info('Calling filter unit tests')
     filtered_content, passing_tests, failing_tests = filter_passing_tests(
         test_suite, unit_test_output, test_spec.repo
     )
-
-    # Second pass - run coverage on passing tests
-    coverage_success, coverage = False, 0
-    if filtered_content and passing_tests:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            test_suite_path = os.path.join(temp_dir, 'test_suite.py')
-            with open(test_suite_path, 'w') as f:
-                f.write(filtered_content)
-            runtime.copy_to(test_suite_path, '/tmp')
-
-        run_command(runtime, f'cp /tmp/test_suite.py /testbed/{test_spec.test_file}')
-
-        # Run tests using the existing run_tests function
-        _, test_output_second_pass, _ = run_tests(runtime, instance, '/tmp/test.sh')
-        if COVERAGE_PREFIX in test_output_second_pass:
-            coverage_output = test_output_second_pass.split(COVERAGE_PREFIX)[1]
-            unit_test_output = test_output_second_pass.split(TESTS_SUFFIX)[0]
-            coverage_success, coverage = check_coverage(
-                coverage_output, test_spec.code_file
-            )
 
     total_tests = len(passing_tests) + len(failing_tests)
     test_stats = {
@@ -261,9 +240,40 @@ def grade_test_output(
         'all_pass': len(failing_tests) == 0 and total_tests > 0,
         'passing_test_names': passing_tests,
         'failing_test_names': failing_tests,
+        'filtered_suite': '',
     }
 
-    return coverage_success, coverage, unit_test_output, coverage_output, test_stats
+    if not passing_tests:
+        return False, 0, unit_test_output, coverage_output, test_stats
+
+    # If all tests pass, evaluate coverage immediately
+    if not failing_tests:
+        if COVERAGE_PREFIX in test_output:
+            coverage_output = test_output.split(COVERAGE_PREFIX)[1]
+            _, coverage = check_coverage(coverage_output, test_spec.code_file)
+        test_stats['filtered_suite'] = test_suite
+        return True, coverage, unit_test_output, coverage_output, test_stats
+
+    # Second pass - run coverage on passing tests
+    if filtered_content:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            test_suite_path = os.path.join(temp_dir, 'test_suite.py')
+            with open(test_suite_path, 'w') as f:
+                f.write(filtered_content)
+            runtime.copy_to(test_suite_path, '/tmp')
+
+        run_command(runtime, f'cp /tmp/test_suite.py /testbed/{test_spec.test_file}')
+        _, test_output_second_pass, _ = run_tests(runtime, instance, '/tmp/test.sh')
+
+        coverage, coverage_output, unit_test_output = 0, '', test_output_second_pass
+
+        if COVERAGE_PREFIX in test_output_second_pass:
+            coverage_output = test_output_second_pass.split(COVERAGE_PREFIX)[1]
+            unit_test_output = test_output_second_pass.split(TESTS_SUFFIX)[0]
+            _, coverage = check_coverage(coverage_output, test_spec.code_file)
+
+    test_stats['filtered_suite'] = filtered_content
+    return True, coverage, unit_test_output, coverage_output, test_stats
 
 
 def process_instance(
@@ -304,7 +314,8 @@ def process_instance(
         'mutation_output': '',
         'empty_generation': False,
         'error_eval': False,
-        'test_pass': False,
+        'all_tests_pass': False,
+        'tests_pass': False,
         'test_timeout': False,
         'mutation_timeout': False,
         'coverage_success': False,
@@ -380,7 +391,7 @@ def process_instance(
             {
                 'test_output': unit_test_output,
                 'coverage_output': coverage_output,
-                'test_pass': test_stats['any_pass'],  # Changed to use any_pass
+                'tests_pass': test_stats['any_pass'],  # Changed to use any_pass
                 'all_tests_pass': test_stats['all_pass'],  # Added all_pass metric
                 'coverage_success': coverage_success,
                 'coverage': coverage if coverage_success else 0,
@@ -597,7 +608,8 @@ if __name__ == '__main__':
     report_fields = [
         'coverage',
         'mutation_score',
-        'test_pass',
+        'tests_pass',
+        'all_tests_pass',
         'empty_generation',
         'coverage_success',
         'test_timeout',

@@ -92,7 +92,7 @@ def make_test_script_list(test_cmd, specs, env_name, repo_directory):
     includes_tox = 'tox' in test_cmd
     eval_commands = make_test_setup(specs, env_name, repo_directory, includes_tox)
     eval_commands += [
-        f'{test_cmd} || {{ echo "{TESTS_FAILED}" && exit 1; }}',
+        f'{test_cmd} || {{ echo "{TESTS_FAILED}\n{TESTS_SUFFIX}\n" && exit 1; }}',
         f'echo "{TESTS_SUFFIX}"\n',
         'coverage json -o coverage.json',
         f'echo "{COVERAGE_PREFIX}"\n',

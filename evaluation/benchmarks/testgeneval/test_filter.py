@@ -19,13 +19,11 @@ def extract_preamble_classes_and_functions(code):
         r'(^(\s*@[\w\.\(\)\', ]+\s*)*^\s*class ([\w]+)\([^)]+\):)', re.MULTILINE
     )
     # Capture methods with or without decorators
-    test_method_pattern = re.compile(
-        r'(^(\s*@.*\s*)*^\s*def\s+test\w+\(.*\):)', re.MULTILINE
-    )
+    method_pattern = re.compile(r'(^(\s*@.*\s*)*^\s*def\s+[\w_]+\(.*\):)', re.MULTILINE)
 
     # Capture functions with or without decorators
-    test_function_pattern = re.compile(
-        r'(^(\s*@.*\s*)*^\s*def\s+test\w+\(.*\):)', re.MULTILINE
+    function_pattern = re.compile(
+        r'(^(\s*@.*\s*)*^\s*def\s+[\w_]+\(.*\):)', re.MULTILINE
     )
 
     preamble = ''
@@ -77,7 +75,7 @@ def extract_preamble_classes_and_functions(code):
 
     while current_position < len(code):
         class_match = class_pattern.search(code, current_position)
-        method_match = test_function_pattern.search(code, current_position)
+        method_match = method_pattern.search(code, current_position)
 
         if class_match and (
             not method_match or class_match.start() < method_match.start()
@@ -89,13 +87,13 @@ def extract_preamble_classes_and_functions(code):
             methods = []
             class_prefix = class_name
             set_prefix = False
-            for method_match in test_method_pattern.finditer(class_body):
+            for method_match in method_pattern.finditer(class_body):
                 method_name = method_match.group()
                 method_start = method_match.start()
                 if not set_prefix:
                     class_prefix = class_name + class_body[:method_start]
                     set_prefix = True
-                next_method = test_method_pattern.search(
+                next_method = method_pattern.search(
                     class_body, method_start + len(method_name)
                 )
                 method_body = (
@@ -105,24 +103,46 @@ def extract_preamble_classes_and_functions(code):
                 )
                 methods.append((method_name, method_body))
 
-            if methods:
-                classes.append((class_prefix, methods, class_match.start()))
-            else:
-                preamble += class_name + class_body
+            classes.append((class_prefix, methods, class_match.start()))
 
         elif method_match:
             function_name = method_match.group(0)
             start_idx = method_match.start()
-            next_function = test_function_pattern.search(
+
+            # Extract the current function's indentation level
+            lines = code[start_idx:].split('\n')
+            current_indent = len(lines[0]) - len(lines[0].lstrip())
+
+            next_function = function_pattern.search(
                 code, start_idx + len(function_name)
             )
-            function_body = (
-                code[start_idx : next_function.start()]
-                if next_function
-                else code[start_idx:]
-            )
+            while next_function and (
+                class_match is None or next_function.start() < class_match.start()
+            ):
+                # Calculate the indentation of the next function
+                next_function_start = next_function.start()
+                next_line = code[next_function_start:].split('\n', 1)[0]
+                next_indent = len(next_line) - len(next_line.lstrip())
+
+                # Check if the next function is top-level
+                if next_indent <= current_indent:
+                    break
+
+                # Continue searching for the next top-level function
+                next_function = function_pattern.search(
+                    code, next_function.start() + len(next_function.group(0))
+                )
+
+            if next_function:
+                next_function_start = next_function.start()
+                if class_match and next_function_start > class_match.start():
+                    next_function_start = class_match.start()
+                function_body = code[start_idx:next_function_start]
+            else:
+                function_body = code[start_idx:]
+
             test_functions.append((function_body, start_idx))
-            current_position = method_match.end()
+            current_position = start_idx + len(function_body)
 
         else:
             break
@@ -174,19 +194,31 @@ def filter_passing_tests(
     # Filter classes to only include passing methods
     filtered_classes = []
     for class_name, methods, start_idx in classes:
-        passing_methods = []
+        non_fail_methods = []
         for method_name, method_body in methods:
-            method_full_name = method_name.split('(')[0].strip()
-            if method_full_name in passing_tests:
-                passing_methods.append((method_name, method_body))
-        if passing_methods:
-            filtered_classes.append((class_name, passing_methods, start_idx))
+            # Extract the base method name for matching
+            method_full_name = (
+                method_name.split('.')[-1].split('(')[0].strip().split(' ')[-1]
+            )
+            # Check if the method name is in passing_tests or if any passing_test is in the method name
+            if not (
+                any(method_full_name in failing_test for failing_test in failing_tests)
+                and any(
+                    failing_test in method_full_name for failing_test in failing_tests
+                )
+            ):
+                non_fail_methods.append((method_name, method_body))
+
+        if non_fail_methods:
+            filtered_classes.append((class_name, non_fail_methods, start_idx))
 
     # Filter standalone functions
     filtered_functions = []
     for func_body, start_idx in functions:
         func_name = func_body.split('def ')[1].split('(')[0].strip()
-        if func_name in passing_tests:
+        if any(func_name in passing_test for passing_test in passing_tests) or any(
+            passing_test in func_name for passing_test in passing_tests
+        ):
             filtered_functions.append((func_body, start_idx))
 
     # Reconstruct test content with only passing tests
