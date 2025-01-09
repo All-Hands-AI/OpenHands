@@ -75,6 +75,7 @@ export function handleActionMessage(message: ActionMessage) {
     if (message.args && message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
+    // Need to convert ActionMessage to RejectAction
     // @ts-expect-error TODO: fix
     store.dispatch(addAssistantAction(message));
   }

@@ -34,7 +34,7 @@ import { useUserConversation } from "#/hooks/query/get-conversation-permissions"
 import { CountBadge } from "#/components/layout/count-badge";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
-import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
+import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 
 function AppContent() {
   const { gitHubToken } = useAuth();
@@ -73,7 +73,7 @@ function AppContent() {
   );
 
   React.useEffect(() => {
-    if (MULTI_CONVO_UI_IS_ENABLED && isFetched && !conversation) {
+    if (MULTI_CONVERSATION_UI && isFetched && !conversation) {
       toast.error(
         "This conversation does not exist, or you do not have permission to access it.",
       );
@@ -175,7 +175,7 @@ function AppContent() {
   }
 
   return (
-    <WsClientProvider ghToken={gitHubToken} conversationId={conversationId}>
+    <WsClientProvider conversationId={conversationId}>
       <EventHandler>
         <div data-testid="app-route" className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto">{renderMain()}</div>

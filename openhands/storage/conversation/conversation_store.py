@@ -40,7 +40,5 @@ class ConversationStore(ABC):
 
     @classmethod
     @abstractmethod
-    async def get_instance(
-        cls, config: AppConfig, token: str | None
-    ) -> ConversationStore:
+    async def get_instance(cls, config: AppConfig, user_id: int) -> ConversationStore:
         """Get a store for the user represented by the token given"""

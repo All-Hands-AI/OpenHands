@@ -1,14 +1,14 @@
 import React from "react";
-import { useLocation, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { ConversationCard } from "./conversation-card";
 import { useUserConversations } from "#/hooks/query/use-user-conversations";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
-import { NewConversationButton } from "./new-conversation-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
 import { useEndSession } from "#/hooks/use-end-session";
 import { ExitConversationModal } from "./exit-conversation-modal";
+import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 
 interface ConversationPanelProps {
   onClose: () => void;
@@ -17,9 +17,8 @@ interface ConversationPanelProps {
 export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const { conversationId: cid } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-
   const endSession = useEndSession();
+  const ref = useClickOutsideElement<HTMLDivElement>(onClose);
 
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
     React.useState(false);
@@ -60,7 +59,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     if (oldTitle !== newTitle)
       updateConversation({
         id: conversationId,
-        conversation: { name: newTitle },
+        conversation: { title: newTitle },
       });
   };
 
@@ -71,15 +70,11 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   return (
     <div
+      ref={ref}
       data-testid="conversation-panel"
-      className="w-[350px] h-full border border-neutral-700 bg-neutral-800 rounded-xl"
+      className="w-[350px] h-full border border-neutral-700 bg-neutral-800 rounded-xl overflow-y-auto"
     >
       <div className="pt-4 px-4 flex items-center justify-between">
-        {location.pathname.startsWith("/conversation") && (
-          <NewConversationButton
-            onClick={() => setConfirmExitConversationModalVisible(true)}
-          />
-        )}
         {isFetching && <LoadingSpinner size="small" />}
       </div>
       {error && (
@@ -98,12 +93,12 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           onClick={() => handleClickCard(project.conversation_id)}
           onDelete={() => handleDeleteProject(project.conversation_id)}
           onChangeTitle={(title) =>
-            handleChangeTitle(project.conversation_id, project.name, title)
+            handleChangeTitle(project.conversation_id, project.title, title)
           }
-          name={project.name}
-          repo={project.repo}
-          lastUpdated={project.lastUpdated}
-          state={project.state}
+          title={project.title}
+          selectedRepository={project.selected_repository}
+          lastUpdatedAt={project.last_updated_at}
+          status={project.status}
         />
       ))}
 
