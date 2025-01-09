@@ -132,7 +132,7 @@ export const useTerminal = ({
         });
 
         terminal.current?.writeln(
-          parseTerminalOutput(content.replaceAll("\n", "\r\n")),
+          parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
         );
 
         if (type === "output") {
