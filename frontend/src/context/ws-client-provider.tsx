@@ -77,19 +77,16 @@ interface ErrorArgData {
 }
 
 export function updateStatusWhenErrorMessagePresent(data: ErrorArg | unknown) {
-  if (
-    data &&
-    typeof data === "object" &&
-    "message" in data &&
-    typeof data.message === "string"
-  ) {
+  const isObject = (val: unknown): val is object =>
+    !!val && typeof val === "object";
+  const isString = (val: unknown): val is string => typeof val === "string";
+  if (isObject(data) && "message" in data && isString(data.message)) {
     let msgId: string | undefined;
     if (
       "data" in data &&
-      data.data &&
-      typeof data.data === "object" &&
+      isObject(data.data) &&
       "msg_id" in data.data &&
-      typeof data.data.msg_id === "string"
+      isString(data.data.msg_id)
     ) {
       msgId = data.data.msg_id;
     }
