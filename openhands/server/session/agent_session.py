@@ -16,7 +16,7 @@ from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import call_async_from_sync, call_sync_from_async
+from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
 
 WAIT_TIME_BEFORE_CLOSE = 300
@@ -111,14 +111,11 @@ class AgentSession:
         )
         self._initializing = False
 
-    def close(self):
+    async def close(self):
         """Closes the Agent session"""
         if self._closed:
             return
         self._closed = True
-        call_async_from_sync(self._close)
-
-    async def _close(self):
         seconds_waited = 0
         while self._initializing and should_continue():
             logger.debug(
