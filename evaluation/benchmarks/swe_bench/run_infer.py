@@ -41,8 +41,11 @@ from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
-USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 'true'
+USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'true').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
+DEFAULT_RUNTIME_RESOURCE_FACTOR = int(
+    os.environ.get('DEFAULT_RUNTIME_RESOURCE_FACTOR', 1)
+)
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -135,6 +138,7 @@ def get_config(
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             keep_runtime_alive=False,
             remote_runtime_init_timeout=3600,
+            remote_runtime_resource_factor=int(DEFAULT_RUNTIME_RESOURCE_FACTOR),
         ),
         # do not mount workspace
         workspace_base=None,
@@ -239,7 +243,7 @@ def initialize_runtime(
         assert_and_raise(obs.exit_code == 0, f'Failed to source ~/.bashrc: {str(obs)}')
 
         action = CmdRunAction(command='source /swe_util/instance_swe_entry.sh')
-        action.timeout = 3600
+        action.timeout = 600
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -351,7 +355,7 @@ def complete_runtime(
         action = CmdRunAction(
             command=f'git diff --no-color --cached {instance["base_commit"]}'
         )
-        action.timeout = 600 + 100 * n_retries
+        action.timeout = max(300 + 100 * n_retries, 600)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -399,7 +403,7 @@ def process_instance(
             8,
         )
         logger.warning(
-            f'This is the second attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
+            f'This is the {runtime_failure_count + 1}th attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
         )
     runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
@@ -482,6 +486,10 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
     return dataset
 
 
+SWEGYM_EXCLUDE_IDS = [
+    'dask__dask-10422',
+]
+
 if __name__ == '__main__':
     parser = get_parser()
     parser.add_argument(
@@ -501,8 +509,17 @@ if __name__ == '__main__':
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenHands's repo
     dataset = load_dataset(args.dataset, split=args.split)
-    logger.info(f'Loaded dataset {args.dataset} with split {args.split}')
     swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
+    logger.info(
+        f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks'
+    )
+    if 'SWE-Gym' in args.dataset:
+        swe_bench_tests = swe_bench_tests[
+            ~swe_bench_tests['instance_id'].isin(SWEGYM_EXCLUDE_IDS)
+        ]
+        logger.info(
+            f'{len(swe_bench_tests)} tasks left after excluding SWE-Gym excluded tasks'
+        )
 
     llm_config = None
     if args.llm_config:
@@ -531,6 +548,7 @@ if __name__ == '__main__':
     )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
+    print(f'### OUTPUT FILE: {output_file} ###')
     instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
 
     if len(instances) > 0 and not isinstance(

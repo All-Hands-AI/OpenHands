@@ -191,7 +191,7 @@ class AgentController:
         self,
         e: Exception,
     ):
-        """React to an exception by setting the agent state to error and sending a status message."""
+        """React to an exception by setting the agent state to error and updating the metrics."""
         await self.set_agent_state_to(AgentState.ERROR)
         if self.status_callback is not None:
             err_id = ''

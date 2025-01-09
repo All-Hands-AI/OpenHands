@@ -250,8 +250,9 @@ class ActionExecutionClient(Runtime):
                     'POST',
                     f'{self._get_action_execution_server_host()}/execute_action',
                     json={'action': event_to_dict(action)},
-                    # wait a few more seconds to get the timeout error from client side
-                    timeout=action.timeout + 5,
+                    # be slightly more lenient for timeout
+                    # as there's some overhead in the server side
+                    timeout=action.timeout + 60,
                 ) as response:
                     output = response.json()
                     obs = observation_from_dict(output)

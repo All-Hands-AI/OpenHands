@@ -67,6 +67,10 @@ class Event:
     @timeout.setter
     def timeout(self, value: int | None) -> None:
         self._timeout = value
+        if value is not None and value > 600:
+            raise NotImplementedError(
+                'Timeout greater than 600 seconds is not supported yet.'
+            )
 
         # Check if .blocking is an attribute of the event
         if hasattr(self, 'blocking'):
