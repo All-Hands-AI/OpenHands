@@ -157,46 +157,46 @@ def process_instance(
             f'This is the second attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
         )
 
-    runtime = create_runtime(config)
-    call_async_from_sync(runtime.connect)
-    # Get patch and save it to /tmp/patch.diff
-    with tempfile.TemporaryDirectory() as temp_dir:
-        # Patch file
-        patch_file_path = os.path.join(temp_dir, 'patch.diff')
-        with open(patch_file_path, 'w') as f:
-            f.write(model_patch)
-        runtime.copy_to(patch_file_path, '/tmp')
-        # Eval script
-        eval_script_path = os.path.join(temp_dir, 'eval.sh')
-        with open(eval_script_path, 'w') as f:
-            f.write(test_spec.eval_script)
-        runtime.copy_to(eval_script_path, '/tmp')
-
-    # Set +x
-    action = CmdRunAction(command='chmod +x /tmp/eval.sh')
-    action.timeout = 600
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.exit_code == 0
-
-    # Apply patch
-    exec_command = (
-        'cd /testbed && '
-        "(git apply -v /tmp/patch.diff && echo 'APPLY_PATCH_PASS' || "
-        "(echo 'Failed to apply patch with git apply, trying with patch command...' && "
-        "(patch --batch --fuzz=5 -p1 -i /tmp/patch.diff && echo 'APPLY_PATCH_PASS' || "
-        "echo 'APPLY_PATCH_FAIL')))"
-    )
-    action = CmdRunAction(command=exec_command)
-    action.timeout = 600
-    obs = runtime.run_action(action)
-    assert isinstance(obs, CmdOutputObservation)
-    apply_patch_output = obs.content
-    assert isinstance(apply_patch_output, str)
-    instance['test_result']['apply_patch_output'] = apply_patch_output
-
     try:
+        runtime = create_runtime(config)
+        call_async_from_sync(runtime.connect)
+        # Get patch and save it to /tmp/patch.diff
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Patch file
+            patch_file_path = os.path.join(temp_dir, 'patch.diff')
+            with open(patch_file_path, 'w') as f:
+                f.write(model_patch)
+            runtime.copy_to(patch_file_path, '/tmp')
+            # Eval script
+            eval_script_path = os.path.join(temp_dir, 'eval.sh')
+            with open(eval_script_path, 'w') as f:
+                f.write(test_spec.eval_script)
+            runtime.copy_to(eval_script_path, '/tmp')
+
+        # Set +x
+        action = CmdRunAction(command='chmod +x /tmp/eval.sh')
+        action.timeout = 600
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.exit_code == 0
+
+        # Apply patch
+        exec_command = (
+            'cd /testbed && '
+            "(git apply -v /tmp/patch.diff && echo 'APPLY_PATCH_PASS' || "
+            "(echo 'Failed to apply patch with git apply, trying with patch command...' && "
+            "(patch --batch --fuzz=5 -p1 -i /tmp/patch.diff && echo 'APPLY_PATCH_PASS' || "
+            "echo 'APPLY_PATCH_FAIL')))"
+        )
+        action = CmdRunAction(command=exec_command)
+        action.timeout = 600
+        obs = runtime.run_action(action)
+        assert isinstance(obs, CmdOutputObservation)
+        apply_patch_output = obs.content
+        assert isinstance(apply_patch_output, str)
+        instance['test_result']['apply_patch_output'] = apply_patch_output
+
         if 'APPLY_PATCH_FAIL' in apply_patch_output:
             logger.info(f'[{instance_id}] {APPLY_PATCH_FAIL}:\n{apply_patch_output}')
             instance['test_result']['report']['failed_apply_patch'] = True
