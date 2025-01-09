@@ -86,9 +86,9 @@ def test_prompt_manager_template_rendering(prompt_dir):
     # Create temporary template files
     with open(os.path.join(prompt_dir, 'system_prompt.j2'), 'w') as f:
         f.write("""System prompt: bar
-{% if github_repo %}
+{% if repository_info %}
 <REPOSITORY_INFO>
-At the user's request, repository {{ github_repo }} has been cloned to directory {{ repo_directory }}.
+At the user's request, repository {{ repository_info.repo_name }} has been cloned to directory {{ repository_info.repo_directory }}.
 </REPOSITORY_INFO>
 {% endif %}
 {{ repo_instructions }}""")
@@ -103,6 +103,7 @@ At the user's request, repository {{ github_repo }} has been cloned to directory
     # Test with GitHub repo
     manager = PromptManager(prompt_dir=prompt_dir, microagent_dir='')
     manager.set_repository_info('owner/repo', '/workspace/repo')
+    assert manager.repository_info.repo_name == 'owner/repo'
     system_msg = manager.get_system_message()
     assert 'System prompt: bar' in system_msg
     assert '<REPOSITORY_INFO>' in system_msg
@@ -126,23 +127,12 @@ def test_prompt_manager_repository_info(prompt_dir):
 
     # Test setting repository info
     manager = PromptManager(prompt_dir=prompt_dir, microagent_dir='')
-    assert manager.repository_info.repo_name is None
-    assert manager.repository_info.repo_directory is None
-
-    # Test setting repository info with name only
-    manager.set_repository_info('owner/repo')
-    assert manager.repository_info.repo_name == 'owner/repo'
-    assert manager.repository_info.repo_directory is None
+    assert manager.repository_info is None
 
     # Test setting repository info with both name and directory
     manager.set_repository_info('owner/repo2', '/workspace/repo2')
     assert manager.repository_info.repo_name == 'owner/repo2'
     assert manager.repository_info.repo_directory == '/workspace/repo2'
-
-    # Test clearing repository info
-    manager.set_repository_info(None)
-    assert manager.repository_info.repo_name is None
-    assert manager.repository_info.repo_directory is None
 
 
 def test_prompt_manager_disabled_microagents(prompt_dir):
