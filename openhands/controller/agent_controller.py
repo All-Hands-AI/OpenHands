@@ -266,48 +266,7 @@ class AgentController:
                 return
             else:
                 # delegate is done
-                # update iteration that shall be shared across agents
-                self.state.iteration = self.delegate.state.iteration
-
-                # close the delegate controller before adding new events
-                # then add the delegate observation
-                asyncio.get_event_loop().run_until_complete(self.delegate.close())
-
-                if delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
-                    # retrieve delegate result
-                    delegate_outputs = (
-                        self.delegate.state.outputs if self.delegate.state else {}
-                    )
-
-                    # prepare delegate result observation
-                    # TODO: replace this with AI-generated summary (#2395)
-                    formatted_output = ', '.join(
-                        f'{key}: {value}' for key, value in delegate_outputs.items()
-                    )
-                    content = f'{self.delegate.agent.name} finishes task with {formatted_output}'
-
-                    # emit the delegate result observation
-                    obs = AgentDelegateObservation(
-                        outputs=delegate_outputs, content=content
-                    )
-                    self.event_stream.add_event(obs, EventSource.AGENT)
-                else:
-                    # delegate state is ERROR
-                    # emit AgentDelegateObservation with error content
-                    delegate_outputs = (
-                        self.delegate.state.outputs if self.delegate.state else {}
-                    )
-                    content = f'{self.delegate.agent.name} encountered an error during execution.'
-
-                    # emit the delegate result observation
-                    obs = AgentDelegateObservation(
-                        outputs=delegate_outputs, content=content
-                    )
-                    self.event_stream.add_event(obs, EventSource.AGENT)
-
-                # unset delegate so parent can resume normal handling
-                self.delegate = None
-                self.delegateAction = None
+                self.end_delegate()
 
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
 
@@ -576,6 +535,55 @@ class AgentController:
         )
 
         await self.delegate.set_agent_state_to(AgentState.RUNNING)
+
+    def end_delegate(self) -> None:
+        if self.delegate is None:
+            return
+
+        delegate_state = self.delegate.get_agent_state()
+
+        # update iteration that shall be shared across agents
+        self.state.iteration = self.delegate.state.iteration
+
+        # close the delegate controller before adding new events
+        # then add the delegate observation
+        asyncio.get_event_loop().run_until_complete(self.delegate.close())
+
+        if delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
+            # retrieve delegate result
+            delegate_outputs = (
+                self.delegate.state.outputs if self.delegate.state else {}
+            )
+
+            # prepare delegate result observation
+            # TODO: replace this with AI-generated summary (#2395)
+            formatted_output = ', '.join(
+                f'{key}: {value}' for key, value in delegate_outputs.items()
+            )
+            content = (
+                f'{self.delegate.agent.name} finishes task with {formatted_output}'
+            )
+
+            # emit the delegate result observation
+            obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+            self.event_stream.add_event(obs, EventSource.AGENT)
+        else:
+            # delegate state is ERROR
+            # emit AgentDelegateObservation with error content
+            delegate_outputs = (
+                self.delegate.state.outputs if self.delegate.state else {}
+            )
+            content = (
+                f'{self.delegate.agent.name} encountered an error during execution.'
+            )
+
+            # emit the delegate result observation
+            obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+            self.event_stream.add_event(obs, EventSource.AGENT)
+
+        # unset delegate so parent can resume normal handling
+        self.delegate = None
+        self.delegateAction = None
 
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
