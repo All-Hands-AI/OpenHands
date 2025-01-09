@@ -273,7 +273,7 @@ def update_progress(
     logger.info(
         f'Finished evaluation for instance {result.instance_id}: {str(result.test_result)[:300]}...\n'
     )
-    output_fp.write(json.dumps(result.model_dump()) + '\n')
+    output_fp.write(result.model_dump_json() + '\n')
     output_fp.flush()
 
 
