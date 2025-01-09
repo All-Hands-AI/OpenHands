@@ -17,7 +17,7 @@ When OpenHands works with a repository, it:
 
 1. Loads repository-specific instructions from `.openhands/microagents/` if present in the repository.
 2. Loads general guidelines triggered by keywords in conversations.
-See current [Public Micro-Agents](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge).
+See current [Public Microagents](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge).
 
 ## Microagent Format
 

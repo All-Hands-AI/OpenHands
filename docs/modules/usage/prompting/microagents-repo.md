@@ -1,4 +1,4 @@
-# Repository Micro-Agents
+# Repository Microagents
 
 ## Overview
 
@@ -12,7 +12,7 @@ At minimum it should contain the file
 `.openhands/microagents/repo.md`, which includes instructions that will
 be given to the agent every time it works with this repository.
 
-### Repository Micro-Agents Best Practices
+### Repository Microagents Best Practices
 
 - **Keep Instructions Updated**: Regularly update your `.openhands/microagents/` directory as your project evolves.
 - **Be Specific**: Include specific paths, patterns, and requirements unique to your project.
@@ -20,9 +20,9 @@ be given to the agent every time it works with this repository.
 - **Include Examples**: Provide examples of good code patterns from your project.
 - **Specify Conventions**: Document naming conventions, file organization, and code style preferences.
 
-### Steps to Create a Repository Micro-Agent
+### Steps to Create a Repository Microagent
 
-#### 1. Plan the Repository Micro-Agent
+#### 1. Plan the Repository Microagent
 When creating a repository-specific micro-agent, we suggest including the following information:
 - **Repository Overview**: A brief description of your project's purpose and architecture.
 - **Directory Structure**: Key directories and their purposes.
@@ -34,10 +34,10 @@ When creating a repository-specific micro-agent, we suggest including the follow
 
 Create a file in your repository under `.openhands/microagents/` (Example: `.openhands/microagents/repo.md`)
 
-Update the file with the required frontmatter [according to the required format](./microagents-overview#micro-agent-format)
+Update the file with the required frontmatter [according to the required format](./microagents-overview#microagent-format)
 and the required specialized guidelines for your repository.
 
-### Example Repository Micro-Agent
+### Example Repository Microagent
 
 ```
 ---
