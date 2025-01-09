@@ -265,6 +265,14 @@ class AgentController:
                 )
                 return
             else:
+                # delegate is done
+                # update iteration that shall be shared across agents
+                self.state.iteration = self.delegate.state.iteration
+
+                # close the delegate controller before adding new events
+                # then add the delegate observation
+                asyncio.get_event_loop().run_until_complete(self.delegate.close())
+
                 if delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
                     # retrieve delegate result
                     delegate_outputs = (
@@ -296,10 +304,6 @@ class AgentController:
                         outputs=delegate_outputs, content=content
                     )
                     self.event_stream.add_event(obs, EventSource.AGENT)
-
-                # delegate is done
-                # update iteration that shall be shared across agents
-                self.state.iteration = self.delegate.state.iteration
 
                 # unset delegate so parent can resume normal handling
                 self.delegate = None
@@ -382,15 +386,6 @@ class AgentController:
             if self.is_delegate:
                 delegate_state = observation.agent_state
                 self.log('debug', f'Delegate state: {delegate_state}')
-
-                if delegate_state in (
-                    AgentState.FINISHED,
-                    AgentState.REJECTED,
-                    AgentState.ERROR,
-                ):
-                    # close delegate controller: we must close the delegate controller before adding new events
-                    # including its delegate observation
-                    await self.close()
 
     async def _handle_message_action(self, action: MessageAction) -> None:
         """Handles message actions from the event stream.
