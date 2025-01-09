@@ -20,6 +20,9 @@ DISABLE_COLOR_PRINTING = False
 
 LOG_ALL_EVENTS = os.getenv('LOG_ALL_EVENTS', 'False').lower() in ['true', '1', 'yes']
 
+# Controls whether to stream Docker container logs
+DEBUG_RUNTIME = os.getenv('DEBUG_RUNTIME', 'False').lower() in ['true', '1', 'yes']
+
 ColorType = Literal[
     'red',
     'green',
