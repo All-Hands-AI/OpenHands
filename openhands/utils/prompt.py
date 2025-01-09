@@ -47,15 +47,10 @@ class PromptManager:
         prompt_dir: str,
         microagent_dir: str | None = None,
         disabled_microagents: list[str] | None = None,
-        github_repo: str | None = None,
-        repo_directory: str | None = None,
     ):
         self.disabled_microagents: list[str] = disabled_microagents or []
         self.prompt_dir: str = prompt_dir
         self.repository_info: RepositoryInfo | None = None
-        if github_repo:
-            self.set_repository_info(github_repo, repo_directory)
-
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
         self.runtime_info = RuntimeInfo(available_hosts={})
@@ -123,7 +118,9 @@ class PromptManager:
         self.runtime_info.available_hosts = runtime.web_hosts
 
     def set_repository_info(
-        self, repo_name: str | None, repo_directory: str | None = None
+        self,
+        repo_name: str,
+        repo_directory: str,
     ) -> None:
         """Sets information about the GitHub repository that has been cloned.
 
