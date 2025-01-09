@@ -126,6 +126,20 @@ jobs:
           echo "base_url = \"$LLM_BASE_URL\"" >> config.toml
           echo "temperature = 0.0" >> config.toml
 
+      - name: Run integration test evaluation for DelegatorAgent (Haiku)
+        env:
+          SANDBOX_FORCE_REBUILD_RUNTIME: True
+        run: |
+          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD DelegatorAgent '' $N_PROCESSES "t01_fix_simple_typo,t02_add_bash_hello" 'delegator_haiku_run'
+
+          # Find and export the delegator test results
+          REPORT_FILE_DELEGATOR_HAIKU=$(find evaluation/evaluation_outputs/outputs/integration_tests/DelegatorAgent/*haiku*_maxiter_10_N* -name "report.md" -type f | head -n 1)
+          echo "REPORT_FILE_DELEGATOR_HAIKU: $REPORT_FILE_DELEGATOR_HAIKU"
+          echo "INTEGRATION_TEST_REPORT_DELEGATOR_HAIKU<<EOF" >> $GITHUB_ENV
+          cat $REPORT_FILE_DELEGATOR_HAIKU >> $GITHUB_ENV
+          echo >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       # -------------------------------------------------------------
       # Run DelegatorAgent tests for DeepSeek, limited to t01 and t02
       - name: Wait a little bit (again)
