@@ -24,7 +24,7 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: 'category',
-          label: 'Micro-Agents',
+          label: 'Microagents',
           items: [
             {
               type: 'doc',

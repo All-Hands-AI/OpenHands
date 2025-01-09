@@ -1,21 +1,21 @@
-# Public Micro-Agents
+# Public Microagents
 
 ## Overview
 
-Public micro-agents are specialized guidelines triggered by keywords for all OpenHands users.
+Public microagents are specialized guidelines triggered by keywords for all OpenHands users.
 They are defined in markdown files under the
 [`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge) directory.
 
-Public micro-agents:
+Public microagents:
 - Monitor incoming commands for their trigger words.
 - Activate when relevant triggers are detected.
 - Apply their specialized knowledge and capabilities.
 - Follow their specific guidelines and restrictions.
 
-## Current Public Micro-Agents
+## Current Public Microagents
 
-For more information about specific micro-agents, refer to their individual documentation files in
-the [`micro-agents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/) directory.
+For more information about specific microagents, refer to their individual documentation files in
+the [`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/) directory.
 
 ### GitHub Agent
 **File**: `github.md`
@@ -56,24 +56,24 @@ Usage Example:
 yes | npm install package-name
 ```
 
-## Contributing a Public Micro-Agent
+## Contributing a Public Microagent
 
-You can create your own public micro-agents by adding new markdown files to the
-[`micro-agents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/) directory.
+You can create your own public microagents by adding new markdown files to the
+[`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/) directory.
 
-### Public Micro-Agents Best Practices
+### Public Microagents Best Practices
 
-- **Clear Scope**: Keep the micro-agent focused on a specific domain or task.
+- **Clear Scope**: Keep the microagent focused on a specific domain or task.
 - **Explicit Instructions**: Provide clear, unambiguous guidelines.
 - **Useful Examples**: Include practical examples of common use cases.
 - **Safety First**: Include necessary warnings and constraints.
-- **Integration Awareness**: Consider how the micro-agent interacts with other components.
+- **Integration Awareness**: Consider how the microagent interacts with other components.
 
-### Steps to Contribute a Public Micro-Agent
+### Steps to Contribute a Public Microagent
 
-#### 1. Plan the Public Micro-Agent
+#### 1. Plan the Public Microagent
 
-Before creating a public micro-agent, consider:
+Before creating a public microagent, consider:
 - What specific problem or use case will it address?
 - What unique capabilities or knowledge should it have?
 - What trigger words make sense for activating it?
@@ -81,13 +81,13 @@ Before creating a public micro-agent, consider:
 
 #### 2. Create File
 
-Create a new markdown file in [`micro-agents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/)
+Create a new markdown file in [`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/)
 with a descriptive name (e.g., `docker.md` for a Docker-focused agent).
 
-Update the file with the required frontmatter [according to the required format](./microagents-overview#micro-agent-format)
-and the required specialized guidelines while following the [best practices above](#public-micro-agents-best-practices).
+Update the file with the required frontmatter [according to the required format](./microagents-overview#microagent-format)
+and the required specialized guidelines while following the [best practices above](#public-microaagents-best-practices).
 
-#### 3. Testing the Public Micro-Agent
+#### 3. Testing the Public Microagent
 
 - Test the agent with various prompts.
 - Verify trigger words activate the agent correctly.
@@ -97,13 +97,13 @@ and the required specialized guidelines while following the [best practices abov
 #### 4. Submission Process
 
 Submit a pull request with:
-- The new micro-agent file.
+- The new microagent file.
 - Updated documentation if needed.
 - Description of the agent's purpose and capabilities.
 
-### Example Public Micro-Agent Implementation
+### Example Public Microagent Implementation
 
-Here's a template for a new micro-agent:
+Here's a template for a new microagent:
 
 ```markdown
 ---
