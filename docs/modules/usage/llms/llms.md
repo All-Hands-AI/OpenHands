@@ -5,23 +5,14 @@ OpenHands can connect to any LLM supported by LiteLLM. However, it requires a po
 ## Model Recommendations
 
 Based on our evaluations of language models for coding tasks (using the SWE-bench dataset), we can provide some
-recommendations for model selection. Some analyses can be found in [this blog article comparing LLMs](https://www.all-hands.dev/blog/evaluation-of-llms-as-coding-agents-on-swe-bench-at-30x-speed) and
-[this blog article with some more recent results](https://www.all-hands.dev/blog/openhands-codeact-21-an-open-state-of-the-art-software-development-agent).
-
-When choosing a model, consider both the quality of outputs and the associated costs. Here's a summary of the findings:
-
-- Claude 3.5 Sonnet is the best by a fair amount, achieving a 53% resolve rate on SWE-Bench Verified with the default agent in OpenHands.
-- GPT-4o lags behind, and o1-mini actually performed somewhat worse than GPT-4o. We went in and analyzed the results a little, and briefly it seemed like o1 was sometimes "overthinking" things, performing extra environment configuration tasks when it could just go ahead and finish the task.
-- Finally, the strongest open models were Llama 3.1 405 B and deepseek-v2.5, and they performed reasonably, even besting some of the closed models.
-
-Please refer to the [full article](https://www.all-hands.dev/blog/evaluation-of-llms-as-coding-agents-on-swe-bench-at-30x-speed) for more details.
+recommendations for model selection. Our latest benchmarking results can be found in [this spreadsheet](https://docs.google.com/spreadsheets/d/1wOUdFCMyY6Nt0AIqF705KN4JKOWgeI4wUGUP60krXXs/edit?gid=0).
 
 Based on these findings and community feedback, the following models have been verified to work reasonably well with OpenHands:
 
-- claude-3-5-sonnet (recommended)
-- gpt-4 / gpt-4o
-- llama-3.1-405b
-- deepseek-v2.5
+- anthropic/claude-3-5-sonnet-20241022 (recommended)
+- anthropic/claude-3-5-haiku-20241022
+- deepseek/deepseek-chat
+- gpt-4o
 
 :::warning
 OpenHands will issue many prompts to the LLM you configure. Most of these LLMs cost money, so be sure to set spending
