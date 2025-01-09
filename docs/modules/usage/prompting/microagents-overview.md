@@ -30,7 +30,7 @@ type: <Micro-Agent type>
 version: <Micro-Agent version>
 agent: <The agent type (Typically CodeActAgent)>
 triggers:
-- <Optional keywords triggering the micro-agent. If triggers are removed, it will always be followed>
+- <Optional keywords triggering the micro-agent. If triggers are removed, it will always be included>
 ---
 
 <Any special guidelines, instructions, and prompts that OpenHands should follow.
