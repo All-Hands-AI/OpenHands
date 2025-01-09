@@ -23,6 +23,8 @@ class PlanRouter(BaseRouter):
     Router that routes the prompt requiring plan generation to specialized reasoning models.
     """
 
+    REASONING_MODEL: str = 'o1-preview-2024-09-12'
+
     def route(self, prompt: str) -> str:
         """
         Routes the prompt to the specialized reasoning model.
@@ -33,8 +35,7 @@ class PlanRouter(BaseRouter):
         Returns:
         - str: the response from the specialized reasoning model
         """
-
-        raise NotImplementedError
+        return self.REASONING_MODEL
 
     def _requires_plan_generation(self, prompt: str) -> bool:
         messages = []

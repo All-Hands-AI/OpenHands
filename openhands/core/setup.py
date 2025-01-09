@@ -6,9 +6,7 @@ import openhands.agenthub  # noqa F401 (we import this to get the agents registe
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
-from openhands.core.config import (
-    AppConfig,
-)
+from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.llm.llm import LLM
@@ -61,8 +59,9 @@ def create_agent(runtime: Runtime, config: AppConfig) -> Agent:
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
+    model_routing_config = config.model_routing
     agent = agent_cls(
-        llm=LLM(config=llm_config),
+        llm=LLM(config=llm_config, model_routing_config=model_routing_config),
         config=agent_config,
     )
     if agent.prompt_manager:

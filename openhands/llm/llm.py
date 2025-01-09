@@ -7,7 +7,7 @@ from typing import Any
 
 import requests
 
-from openhands.core.config import LLMConfig
+from openhands.core.config import LLMConfig, ModelRoutingConfig
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -85,6 +85,7 @@ class LLM(RetryMixin, DebugMixin):
         self,
         config: LLMConfig,
         metrics: Metrics | None = None,
+        model_routing_config: ModelRoutingConfig | None = None,
     ):
         """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
 
