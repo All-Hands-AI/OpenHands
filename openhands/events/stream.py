@@ -258,7 +258,7 @@ class EventStream:
     def add_event(self, event: Event, source: EventSource):
         if hasattr(event, '_id') and event.id is not None:
             raise ValueError(
-                'Event already has an ID. It was probably added back to the EventStream from inside a handler, trigging a loop.'
+                f'Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop.'
             )
         with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
