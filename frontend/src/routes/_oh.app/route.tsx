@@ -2,6 +2,7 @@ import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
+import { FaServer } from "react-icons/fa";
 import toast from "react-hot-toast";
 import {
   ConversationProvider,
@@ -31,6 +32,7 @@ import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { CountBadge } from "#/components/layout/count-badge";
+import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
 import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
@@ -126,6 +128,11 @@ function AppContent() {
                 labels={[
                   { label: "Workspace", to: "", icon: <CodeIcon /> },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
+                  {
+                    label: <ServedAppLabel />,
+                    to: "served",
+                    icon: <FaServer />,
+                  },
                   {
                     label: (
                       <div className="flex items-center gap-1">

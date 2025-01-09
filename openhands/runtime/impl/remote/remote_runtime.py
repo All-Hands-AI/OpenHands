@@ -70,6 +70,7 @@ class RemoteRuntime(ActionExecutionClient):
         )
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
+        self.available_hosts: dict[str, int] = {}
         self._runtime_initialized: bool = False
 
     def _get_action_execution_server_host(self):
@@ -257,6 +258,8 @@ class RemoteRuntime(ActionExecutionClient):
         start_response = response.json()
         self.runtime_id = start_response['runtime_id']
         self.runtime_url = start_response['url']
+        self.available_hosts = start_response.get('work_hosts', {})
+
         if 'session_api_key' in start_response:
             self.session.headers.update(
                 {'X-Session-API-Key': start_response['session_api_key']}
@@ -277,6 +280,10 @@ class RemoteRuntime(ActionExecutionClient):
             f'VSCode URL: {vscode_url}',
         )
         return vscode_url
+
+    @property
+    def web_hosts(self) -> dict[str, int]:
+        return self.available_hosts
 
     def _wait_until_alive(self):
         retry_decorator = tenacity.retry(
