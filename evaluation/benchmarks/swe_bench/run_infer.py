@@ -241,7 +241,7 @@ def initialize_runtime(
         assert_and_raise(obs.exit_code == 0, f'Failed to source ~/.bashrc: {str(obs)}')
 
         action = CmdRunAction(command='source /swe_util/instance_swe_entry.sh')
-        action.timeout = 3600
+        action.timeout = 600
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -353,7 +353,7 @@ def complete_runtime(
         action = CmdRunAction(
             command=f'git diff --no-color --cached {instance["base_commit"]}'
         )
-        action.timeout = 600 + 100 * n_retries
+        action.timeout = max(300 + 100 * n_retries, 600)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
