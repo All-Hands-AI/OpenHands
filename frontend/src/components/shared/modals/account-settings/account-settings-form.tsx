@@ -15,7 +15,7 @@ import { FormFieldset } from "../../form-fieldset";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
-import { useBalance } from "#/hooks/query/use-balance";
+import { UserBalance } from "#/components/features/payment/user-balance";
 
 interface AccountSettingsFormProps {
   onClose: () => void;
@@ -33,7 +33,6 @@ export function AccountSettingsForm({
   const { gitHubToken, setGitHubToken, logout } = useAuth();
   const { data: config } = useConfig();
   const { mutate: saveSettings } = useSaveSettings();
-  const { data: userBalance } = useBalance(user.data?.login ?? "");
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -78,20 +77,7 @@ export function AccountSettingsForm({
               Configure Github Repositories
             </a>
           )}
-          {userBalance && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="font-bold">Balance</span>
-                <button
-                  type="button"
-                  className="text-xs font-semibold border rounded-md px-2 py-0.5"
-                >
-                  Top up
-                </button>
-              </div>
-              <span data-testid="current-balance">${userBalance.balance}</span>
-            </div>
-          )}
+          <UserBalance user={user.data?.login ?? ""} />
 
           <FormFieldset
             id="language"

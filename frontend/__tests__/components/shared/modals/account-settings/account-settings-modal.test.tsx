@@ -19,7 +19,7 @@ describe("AccountSettingsModal", () => {
       const balance = await screen.findByTestId("current-balance");
       expect(balance).toBeInTheDocument();
 
-      await within(balance).findByText("$12.34");
+      await within(balance).findByText("$100.00");
     });
 
     it("should not show the current balance if not in saas mode", async () => {

@@ -316,9 +316,16 @@ class OpenHands {
     return data.status === 200;
   }
 
+  static async createCheckoutSession(): Promise<string> {
+    const { data } = await openHands.post<{ clientSecret: string }>(
+      "/api/create-checkout-session",
+    );
+    return data.clientSecret;
+  }
+
   static async getBalance(): Promise<number> {
-    const { data } = await openHands.get<number>("/api/credits");
-    return data;
+    const { data } = await openHands.get<{ credits: number }>("/api/credits");
+    return data.credits;
   }
 }
 

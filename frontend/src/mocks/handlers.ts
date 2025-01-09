@@ -266,5 +266,10 @@ export const handlers = [
     return HttpResponse.json(null, { status: 404 });
   }),
 
-  http.get("/api/credits", () => {}),
+  http.get("/api/credits", () => HttpResponse.json({ credits: 100 })),
+
+  http.post("/api/create-checkout-session", async () => {
+    const clientSecret = "fake-client-secret";
+    return HttpResponse.json({ clientSecret });
+  }),
 ];
