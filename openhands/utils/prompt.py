@@ -52,7 +52,7 @@ class PromptManager:
     ):
         self.disabled_microagents: list[str] = disabled_microagents or []
         self.prompt_dir: str = prompt_dir
-        self.repository_info = RepositoryInfo()
+        self.repository_info: RepositoryInfo | None = None
         if github_repo:
             self.set_repository_info(github_repo, repo_directory)
 
@@ -117,7 +117,6 @@ class PromptManager:
             repository_instructions=repo_instructions,
             repository_info=self.repository_info,
             runtime_info=self.runtime_info,
-            repo_directory=self.repository_info.repo_directory,
         ).strip()
 
     def set_runtime_info(self, runtime: Runtime):
@@ -132,8 +131,9 @@ class PromptManager:
             repo_name: The name of the GitHub repository (e.g. 'owner/repo')
             repo_directory: The directory where the repository has been cloned
         """
-        self.repository_info.repo_name = repo_name
-        self.repository_info.repo_directory = repo_directory
+        self.repository_info = RepositoryInfo(
+            repo_name=repo_name, repo_directory=repo_directory
+        )
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent
