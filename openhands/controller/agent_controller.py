@@ -262,7 +262,7 @@ class AgentController:
         # If we have a delegate that is not finished or errored, forward events to it
         if self.delegate is not None:
             delegate_state = self.delegate.get_agent_state()
-            if delegate_state not in (
+            if self.should_step(event) and delegate_state not in (
                 AgentState.FINISHED,
                 AgentState.ERROR,
                 AgentState.REJECTED,
@@ -272,7 +272,7 @@ class AgentController:
                     self.delegate._on_event(event)
                 )
                 return
-            else:
+            elif self.should_step(event):
                 # delegate is done
                 self.end_delegate()
                 return
