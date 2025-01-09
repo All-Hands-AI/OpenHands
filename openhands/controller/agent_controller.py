@@ -169,7 +169,11 @@ class AgentController:
         )
 
         # unsubscribe from the event stream
-        self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER, self.id)
+        # only the root parent controller subscribes to the event stream
+        if not self.is_delegate:
+            self.event_stream.unsubscribe(
+                EventStreamSubscriber.AGENT_CONTROLLER, self.id
+            )
         self._closed = True
 
     def log(self, level: str, message: str, extra: dict | None = None) -> None:
@@ -230,6 +234,10 @@ class AgentController:
             await self._react_to_exception(reported)
 
     def should_step(self, event: Event) -> bool:
+        # it might be the delegate's day in the sun
+        if self.delegate is not None:
+            return False
+
         if isinstance(event, Action):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 return True
@@ -262,7 +270,7 @@ class AgentController:
         # If we have a delegate that is not finished or errored, forward events to it
         if self.delegate is not None:
             delegate_state = self.delegate.get_agent_state()
-            if self.should_step(event) and delegate_state not in (
+            if delegate_state not in (
                 AgentState.FINISHED,
                 AgentState.ERROR,
                 AgentState.REJECTED,
@@ -272,7 +280,7 @@ class AgentController:
                     self.delegate._on_event(event)
                 )
                 return
-            elif self.should_step(event):
+            else:
                 # delegate is done
                 self.end_delegate()
                 return
@@ -297,17 +305,22 @@ class AgentController:
             self.step()
 
     async def _handle_action(self, action: Action) -> None:
-        """Handles actions from the event stream.
-
-        Args:
-            action (Action): The action to handle.
-        """
+        """Handles an Action from the agent or delegate."""
         if isinstance(action, ChangeAgentStateAction):
             await self.set_agent_state_to(action.agent_state)  # type: ignore
         elif isinstance(action, MessageAction):
             await self._handle_message_action(action)
         elif isinstance(action, AgentDelegateAction):
             await self.start_delegate(action)
+            assert self.delegate is not None
+            # Post a MessageAction with the task for the delegate
+            if 'task' in action.inputs:
+                self.event_stream.add_event(
+                    MessageAction(content='TASK: ' + action.inputs['task']),
+                    EventSource.USER,
+                )
+                await self.delegate.set_agent_state_to(AgentState.RUNNING)
+            return
 
         elif isinstance(action, AgentFinishAction):
             self.state.outputs = action.outputs
@@ -470,6 +483,7 @@ class AgentController:
             self._pending_action._id = None  # type: ignore[attr-defined]
             self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
+        print(f'CONTROLLER {self.id}:set_agent_state_to: {new_state}')
         self.state.agent_state = new_state
         self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state),
@@ -539,8 +553,6 @@ class AgentController:
             headless_mode=self.headless_mode,
         )
 
-        await self.delegate.set_agent_state_to(AgentState.RUNNING)
-
     def end_delegate(self) -> None:
         print(f'CONTROLLER {self.id}:end_delegate')
         if self.delegate is None:
@@ -598,14 +610,6 @@ class AgentController:
             return
 
         if self._pending_action:
-            return
-
-        if self.delegate is not None:
-            assert self.delegate != self
-            # TODO this conditional will always be false, because the parent controllers are unsubscribed
-            # remove if it's still useless when delegation is reworked
-            if self.delegate.get_agent_state() != AgentState.PAUSED:
-                await self._delegate_step()
             return
 
         self.log(
@@ -696,12 +700,6 @@ class AgentController:
 
         log_level = 'info' if LOG_ALL_EVENTS else 'debug'
         self.log(log_level, str(action), extra={'msg_type': 'ACTION'})
-
-    async def _delegate_step(self) -> None:
-        """Executes a single step of the delegate agent."""
-        await self.delegate._step()  # type: ignore[union-attr]
-
-        return
 
     async def _handle_traffic_control(
         self, limit_type: str, current_value: float, max_value: float

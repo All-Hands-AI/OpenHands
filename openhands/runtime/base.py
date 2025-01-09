@@ -176,7 +176,7 @@ class Runtime(FileEditRuntimeMixin):
             )
 
     def on_event(self, event: Event) -> None:
-        print(f'RUNTIME:on_event: {event.__class__.__name__}({event.id})')
+        print(f'RUNTIME:on_event: {event.__class__.__name__}({event.id})\n')
         if isinstance(event, Action):
             asyncio.get_event_loop().run_until_complete(self._handle_action(event))
 
