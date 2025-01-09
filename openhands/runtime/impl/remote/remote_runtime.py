@@ -127,7 +127,6 @@ class RemoteRuntime(ActionExecutionClient):
             with self._send_runtime_api_request(
                 'GET',
                 f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
-                timeout=60,
             ) as response:
                 data = response.json()
                 status = data.get('status')
