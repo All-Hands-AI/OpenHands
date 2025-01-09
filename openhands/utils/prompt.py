@@ -114,8 +114,8 @@ class PromptManager:
             repo_instructions += microagent.content
 
         return self.system_template.render(
-            repo_instructions=repo_instructions,
-            github_repo=self.repository_info.repo_name,
+            repository_instructions=repo_instructions,
+            repository_info=self.repository_info,
             runtime_info=self.runtime_info,
             repo_directory=self.repository_info.repo_directory,
         ).strip()
