@@ -350,11 +350,6 @@ class AgentController:
         elif isinstance(observation, ErrorObservation):
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
-        elif isinstance(observation, AgentStateChangedObservation):
-            # if this is a delegate, check for stop conditions
-            if self.is_delegate:
-                delegate_state = observation.agent_state
-                self.log('debug', f'Delegate state: {delegate_state}')
 
     async def _handle_message_action(self, action: MessageAction) -> None:
         """Handles message actions from the event stream.
