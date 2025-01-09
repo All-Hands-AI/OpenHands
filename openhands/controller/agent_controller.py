@@ -275,6 +275,7 @@ class AgentController:
             else:
                 # delegate is done
                 self.end_delegate()
+                return
 
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
 

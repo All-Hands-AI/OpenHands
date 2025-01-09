@@ -1,4 +1,5 @@
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import AsyncMock, MagicMock, Mock
 from uuid import uuid4
 
@@ -272,9 +273,25 @@ async def test_delegate_step_different_states(
     mock_delegate._step = AsyncMock()
     mock_delegate.close = AsyncMock()
 
-    await controller._delegate_step()
+    def call_on_event_with_new_loop():
+        """
+        In this thread, create and set a fresh event loop, so that the run_until_complete()
+        calls inside controller.on_event(...) find a valid loop.
+        """
+        loop_in_thread = asyncio.new_event_loop()
+        try:
+            asyncio.set_event_loop(loop_in_thread)
+            msg_action = MessageAction(content='Test message')
+            msg_action._source = EventSource.USER
+            controller.on_event(msg_action)
+        finally:
+            # If you like, you can close the loop afterward
+            loop_in_thread.close()
 
-    mock_delegate._step.assert_called_once()
+    loop = asyncio.get_running_loop()
+    with ThreadPoolExecutor() as executor:
+        future = loop.run_in_executor(executor, call_on_event_with_new_loop)
+        await future
 
     if delegate_state == AgentState.RUNNING:
         assert controller.delegate is not None
