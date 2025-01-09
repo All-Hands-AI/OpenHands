@@ -13,7 +13,7 @@ C'est le Runtime par défaut qui est utilisé lorsque vous démarrez OpenHands. 
 
 ```
 docker run # ...
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.19-nikolaik \
     -v /var/run/docker.sock:/var/run/docker.sock \
     # ...
 ```

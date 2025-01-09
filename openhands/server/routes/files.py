@@ -45,7 +45,7 @@ async def list_files(request: Request, conversation_id: str, path: str | None = 
 
     To list files:
     ```sh
-    curl http://localhost:3000/api/list-files
+    curl http://localhost:3000/api/conversations/{conversation_id}/list-files
     ```
 
     Args:
@@ -110,7 +110,7 @@ async def select_file(file: str, request: Request):
 
     To select a file:
     ```sh
-    curl http://localhost:3000/api/select-file?file=<file_path>
+    curl http://localhost:3000/api/conversations/{conversation_id}select-file?file=<file_path>
     ```
 
     Args:
@@ -154,7 +154,7 @@ async def upload_file(request: Request, conversation_id: str, files: list[Upload
 
     To upload a files:
     ```sh
-    curl -X POST -F "file=@<file_path1>" -F "file=@<file_path2>" http://localhost:3000/api/upload-files
+    curl -X POST -F "file=@<file_path1>" -F "file=@<file_path2>" http://localhost:3000/api/conversations/{conversation_id}/upload-files
     ```
 
     Args:

@@ -97,6 +97,8 @@ def get_config(
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
+    agent_config = config.get_agent_config(metadata.agent_class)
+    agent_config.use_microagents = False
     return config
 
 
@@ -169,9 +171,7 @@ def complete_runtime(
     num_workers = LANGUAGE_TO_NUM_WORKERS[language]
     python_imports = '\n'.join(IMPORT_HELPER[language])
 
-    action = CmdRunAction(
-        command=f'cat /workspace/{_get_instance_id(instance)}.py', keep_prompt=False
-    )
+    action = CmdRunAction(command=f'cat /workspace/{_get_instance_id(instance)}.py')
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 

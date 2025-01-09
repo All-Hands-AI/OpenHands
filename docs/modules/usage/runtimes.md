@@ -16,7 +16,7 @@ some flags being passed to `docker run` that make this possible:
 
 ```
 docker run # ...
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.19-nikolaik \
     -v /var/run/docker.sock:/var/run/docker.sock \
     # ...
 ```
@@ -26,30 +26,29 @@ that contains our Runtime server, as well as some basic utilities for Python and
 You can also [build your own runtime image](how-to/custom-sandbox-guide).
 
 ### Connecting to Your filesystem
-One useful feature here is the ability to connect to your local filesystem.
+One useful feature here is the ability to connect to your local filesystem. To mount your filesystem into the runtime:
+1. Set `WORKSPACE_BASE`:
 
-To mount your filesystem into the runtime, first set WORKSPACE_BASE:
-```bash
-export WORKSPACE_BASE=/path/to/your/code
+    ```bash
+    export WORKSPACE_BASE=/path/to/your/code
 
-# Linux and Mac Example
-# export WORKSPACE_BASE=$HOME/OpenHands
-# Will set $WORKSPACE_BASE to /home/<username>/OpenHands
-#
-# WSL on Windows Example
-# export WORKSPACE_BASE=/mnt/c/dev/OpenHands
-# Will set $WORKSPACE_BASE to C:\dev\OpenHands
-```
+    # Linux and Mac Example
+    # export WORKSPACE_BASE=$HOME/OpenHands
+    # Will set $WORKSPACE_BASE to /home/<username>/OpenHands
+    #
+    # WSL on Windows Example
+    # export WORKSPACE_BASE=/mnt/c/dev/OpenHands
+    # Will set $WORKSPACE_BASE to C:\dev\OpenHands
+    ```
+2. Add the following options to the `docker run` command:
 
-then add the following options to the `docker run` command:
-
-```bash
-docker run # ...
-    -e SANDBOX_USER_ID=$(id -u) \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
-    # ...
-```
+    ```bash
+    docker run # ...
+        -e SANDBOX_USER_ID=$(id -u) \
+        -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+        -v $WORKSPACE_BASE:/opt/workspace_base \
+        # ...
+    ```
 
 Be careful! There's nothing stopping the OpenHands agent from deleting or modifying
 any files that are mounted into its workspace.
@@ -59,7 +58,7 @@ but seems to work well on most systems.
 
 ## All Hands Runtime
 The All Hands Runtime is currently in beta. You can request access by joining
-the #remote-runtime-limited-beta channel on Slack ([see the README](https://github.com/All-Hands-AI/OpenHands?tab=readme-ov-file#-join-our-community) for an invite).
+the #remote-runtime-limited-beta channel on Slack ([see the README](https://github.com/All-Hands-AI/OpenHands?tab=readme-ov-file#-how-to-join-the-community) for an invite).
 
 To use the All Hands Runtime, set the following environment variables when
 starting OpenHands:

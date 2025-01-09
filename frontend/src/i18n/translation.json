@@ -426,6 +426,20 @@
     "fr": "Réinitialiser aux valeurs par défaut",
     "tr": "Varsayılanlara Sıfırla"
   },
+  "SETTINGS_FORM$RUNTIME_SIZE_LABEL": {
+    "en": "Runtime Settings",
+    "zh-CN": "运行时设置",
+    "de": "Laufzeiteinstellungen",
+    "ko-KR": "런타임 설정",
+    "no": "Kjøretidsinnstillinger",
+    "zh-TW": "運行時設定",
+    "it": "Impostazioni Runtime",
+    "pt": "Configurações de Runtime",
+    "es": "Configuración de Runtime",
+    "ar": "إعدادات وقت التشغيل",
+    "fr": "Paramètres d'exécution",
+    "tr": "Çalışma Zamanı Ayarları"
+  },
   "CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE": {
     "en": "We've changed some settings in the latest update. Take a minute to review.",
     "de": "Mit dem letzten Update haben wir ein paar Einstellungen geändert. Bitte kontrollieren Ihre Einstellungen.",
@@ -439,6 +453,10 @@
     "ar": "لقد قمنا بتغيير بعض الإعدادات في التحديث الأخير. خذ دقيقة لمراجعتها.",
     "fr": "Nous avons modifié certains paramètres dans la dernière mise à jour. Prenez un moment pour les examiner.",
     "tr": "Son güncellemede bazı ayarları değiştirdik. Gözden geçirmek için bir dakikanızı ayırın."
+  },
+  "CONFIGURATION$SETTINGS_NOT_FOUND": {
+    "en": "Settings not found. Please check your API key",
+    "es": "Configuraciones no encontradas. Por favor revisa tu API key"
   },
   "CONFIGURATION$AGENT_LOADING": {
     "en": "Please wait while the agent loads. This may take a few minutes...",
@@ -1195,6 +1213,20 @@
     "ar": "الوكيل في انتظار إدخال المستخدم...",
     "fr": "L'agent attend l'entrée de l'utilisateur...",
     "tr": "Ajan kullanıcı girdisini bekliyor..."
+  },
+  "CHAT_INTERFACE$AGENT_RATE_LIMITED_MESSAGE": {
+  "en": "Agent is Rate Limited",
+  "zh-CN": "智能体已达到速率限制",
+  "zh-TW": "智能體已達到速率限制",
+  "de": "Agent ist ratenbegrenzt",
+  "ko-KR": "에이전트가 속도 제한되었습니다",
+  "no": "Agenten er hastighetsbegrenset",
+  "it": "L'agente è limitato dalla frequenza",
+  "pt": "O agente está com limite de taxa",
+  "es": "El agente está limitado por tasa",
+  "ar": "الوكيل مقيد بحد السرعة",
+  "fr": "L'agent est limité en fréquence",
+  "tr": "Ajan hız sınırına ulaştı"
   },
   "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
     "en": "Agent has paused.",

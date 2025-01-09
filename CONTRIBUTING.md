@@ -11,11 +11,11 @@ To understand the codebase, please refer to the README in each module:
    - [agenthub](./openhands/agenthub/README.md)
    - [server](./openhands/server/README.md)
 
-## Setting up your development environment
+## Setting up Your Development Environment
 
 We have a separate doc [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) that tells you how to set up a development workflow.
 
-## How can I contribute?
+## How Can I Contribute?
 
 There are many ways that you can contribute:
 
@@ -23,7 +23,7 @@ There are many ways that you can contribute:
 2. **Send feedback** after each session by [clicking the thumbs-up thumbs-down buttons](https://docs.all-hands.dev/modules/usage/feedback), so we can see where things are working and failing, and also build an open dataset for training code agents.
 3. **Improve the Codebase** by sending [PRs](#sending-pull-requests-to-openhands) (see details below). In particular, we have some [good first issues](https://github.com/All-Hands-AI/OpenHands/labels/good%20first%20issue) that may be ones to start on.
 
-## What can I build?
+## What Can I Build?
 Here are a few ways you can help improve the codebase.
 
 #### UI/UX
@@ -35,7 +35,7 @@ of the application, please open an issue first, or better, join the #frontend ch
 to gather consensus from our design team first.
 
 #### Improving the agent
-Our main agent is the CodeAct agent. You can [see its prompts here](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/agenthub/codeact_agent)
+Our main agent is the CodeAct agent. You can [see its prompts here](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/agenthub/codeact_agent).
 
 Changes to these prompts, and to the underlying behavior in Python, can have a huge impact on user experience.
 You can try modifying the prompts to see how they change the behavior of the agent as you use the app
@@ -63,7 +63,7 @@ At the moment, we have two kinds of tests: [`unit`](./tests/unit) and [`integrat
 ## Sending Pull Requests to OpenHands
 
 You'll need to fork our repository to send us a Pull Request. You can learn more
-about how to fork a GitHub repo and open a PR with your changes in [this article](https://medium.com/swlh/forks-and-pull-requests-how-to-contribute-to-github-repos-8843fac34ce8)
+about how to fork a GitHub repo and open a PR with your changes in [this article](https://medium.com/swlh/forks-and-pull-requests-how-to-contribute-to-github-repos-8843fac34ce8).
 
 ### Pull Request title
 As described [here](https://github.com/commitizen/conventional-commit-types/blob/master/index.json), a valid PR title should begin with one of the following prefixes:
@@ -103,7 +103,7 @@ Further, if you see an issue you like, please leave a "thumbs-up" or a comment, 
 
 ### Making Pull Requests
 
-We're generally happy to consider all [PRs](https://github.com/All-Hands-AI/OpenHands/pulls), with the evaluation process varying based on the type of change:
+We're generally happy to consider all pull requests with the evaluation process varying based on the type of change:
 
 #### For Small Improvements
 

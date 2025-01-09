@@ -3,9 +3,6 @@ import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setImportedProjectZip } from "#/state/initial-query-slice";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
-import { useUserRepositories } from "#/hooks/query/use-user-repositories";
-import { useAppRepositories } from "#/hooks/query/use-app-repositories";
-
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
@@ -22,8 +19,6 @@ function Home() {
 
   const { data: config } = useConfig();
   const { data: user } = useGitHubUser();
-  const { data: appRepositories } = useAppRepositories();
-  const { data: userRepositories } = useUserRepositories();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     gitHubToken,
@@ -34,10 +29,7 @@ function Home() {
   const latestConversation = localStorage.getItem("latest_conversation_id");
 
   return (
-    <div
-      data-testid="root-index"
-      className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto px-2"
-    >
+    <div className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto px-2">
       <HeroHeading />
       <div className="flex flex-col gap-8 w-full md:w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
@@ -47,11 +39,6 @@ function Home() {
         <div className="flex gap-4 w-full flex-col md:flex-row">
           <GitHubRepositoriesSuggestionBox
             handleSubmit={() => formRef.current?.requestSubmit()}
-            repositories={
-              userRepositories?.pages.flatMap((page) => page.data) ||
-              appRepositories?.pages.flatMap((page) => page.data) ||
-              []
-            }
             gitHubAuthUrl={gitHubAuthUrl}
             user={user || null}
           />

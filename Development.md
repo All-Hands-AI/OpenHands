@@ -3,7 +3,7 @@ This guide is for people working on OpenHands and editing the source code.
 If you wish to contribute your changes, check out the [CONTRIBUTING.md](https://github.com/All-Hands-AI/OpenHands/blob/main/CONTRIBUTING.md) on how to clone and setup the project initially before moving on.
 Otherwise, you can clone the OpenHands project directly.
 
-## Start the server for development
+## Start the Server for Development
 ### 1. Requirements
 * Linux, Mac OS, or [WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)  [Ubuntu <= 22.04]
 * [Docker](https://docs.docker.com/engine/install/) (For those on MacOS, make sure to allow the default Docker socket to be used from advanced settings!)
@@ -58,7 +58,7 @@ See [our documentation](https://docs.all-hands.dev/modules/usage/llms) for recom
 
 ### 4. Running the application
 #### Option A: Run the Full Application
-Once the setup is complete, launching OpenHands is as simple as running a single command. This command starts both the backend and frontend servers seamlessly, allowing you to interact with OpenHands:
+Once the setup is complete, this command starts both the backend and frontend servers, allowing you to interact with OpenHands:
 ```bash
 make run
 ```
@@ -75,11 +75,11 @@ make run
     ```
 
 ### 6. LLM Debugging
-If you encounter any issues with the Language Model (LM) or you're simply curious, you can inspect the actual LLM prompts and responses. To do so, export DEBUG=1 in the environment and restart the backend.
-OpenHands will then log the prompts and responses in the logs/llm/CURRENT_DATE directory, allowing you to identify the causes.
+If you encounter any issues with the Language Model (LM) or you're simply curious, export DEBUG=1 in the environment and restart the backend.
+OpenHands will log the prompts and responses in the logs/llm/CURRENT_DATE directory, allowing you to identify the causes.
 
 ### 7. Help
-Need assistance or information on available targets and commands? The help command provides all the necessary guidance to ensure a smooth experience with OpenHands.
+Need help or info on available targets and commands? Use the help command for all the guidance you need with OpenHands.
 ```bash
 make help
  ```
@@ -93,14 +93,14 @@ poetry run pytest ./tests/unit/test_*.py
 ```
 
 ### 9. Add or update dependency
-1. Add your dependency in `pyproject.toml` or use `poetry add xxx`
-2. Update the poetry.lock file via `poetry lock --no-update`
+1. Add your dependency in `pyproject.toml` or use `poetry add xxx`.
+2. Update the poetry.lock file via `poetry lock --no-update`.
 
 ### 9. Use existing Docker image
 To reduce build time (e.g., if no changes were made to the client-runtime component), you can use an existing Docker container image by
 setting the SANDBOX_RUNTIME_CONTAINER_IMAGE environment variable to the desired Docker image.
 
-Example: `export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.17-nikolaik`
+Example: `export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.19-nikolaik`
 
 ## Develop inside Docker container
 
@@ -110,7 +110,7 @@ TL;DR
 make docker-dev
 ```
 
-See more details [here](./containers/dev/README.md)
+See more details [here](./containers/dev/README.md).
 
 If you are just interested in running `OpenHands` without installing all the required tools on your host.
 

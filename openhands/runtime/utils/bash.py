@@ -1,18 +1,22 @@
 import os
 import re
+import time
+import traceback
+import uuid
+from enum import Enum
 
 import bashlex
-import pexpect
+import libtmux
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
-from openhands.events.event import EventSource
-from openhands.events.observation import (
+from openhands.events.observation import ErrorObservation
+from openhands.events.observation.commands import (
+    CMD_OUTPUT_PS1_END,
+    CmdOutputMetadata,
     CmdOutputObservation,
-    ErrorObservation,
 )
-
-SOFT_TIMEOUT_SECONDS = 5
+from openhands.utils.shutdown_listener import should_continue
 
 
 def split_bash_commands(commands):
@@ -20,11 +24,11 @@ def split_bash_commands(commands):
         return ['']
     try:
         parsed = bashlex.parse(commands)
-    except bashlex.errors.ParsingError as e:
+    except (bashlex.errors.ParsingError, NotImplementedError):
         logger.debug(
             f'Failed to parse bash commands\n'
             f'[input]: {commands}\n'
-            f'[warning]: {e}\n'
+            f'[warning]: {traceback.format_exc()}\n'
             f'The original command will be returned as is.'
         )
         # If parsing fails, return the original commands
@@ -66,269 +70,497 @@ def split_bash_commands(commands):
     return result
 
 
-class BashSession:
-    """A class that maintains a pexpect process and provides a simple interface for running commands and interacting with the shell."""
+def escape_bash_special_chars(command: str) -> str:
+    r"""
+    Escapes characters that have different interpretations in bash vs python.
+    Specifically handles escape sequences like \;, \|, \&, etc.
+    """
+    if command.strip() == '':
+        return ''
 
-    def __init__(self, work_dir: str, username: str):
-        self._pwd = work_dir
+    try:
+        parts = []
+        last_pos = 0
 
-        self.shell = pexpect.spawn(
-            f'su {username}',
-            encoding='utf-8',
-            codec_errors='replace',
-            echo=False,
+        def visit_node(node):
+            nonlocal last_pos
+            if (
+                node.kind == 'redirect'
+                and hasattr(node, 'heredoc')
+                and node.heredoc is not None
+            ):
+                # We're entering a heredoc - preserve everything as-is until we see EOF
+                # Store the heredoc end marker (usually 'EOF' but could be different)
+                between = command[last_pos : node.pos[0]]
+                parts.append(between)
+                # Add the heredoc start marker
+                parts.append(command[node.pos[0] : node.heredoc.pos[0]])
+                # Add the heredoc content as-is
+                parts.append(command[node.heredoc.pos[0] : node.heredoc.pos[1]])
+                last_pos = node.pos[1]
+                return
+
+            if node.kind == 'word':
+                # Get the raw text between the last position and current word
+                between = command[last_pos : node.pos[0]]
+                word_text = command[node.pos[0] : node.pos[1]]
+
+                # Add the between text, escaping special characters
+                between = re.sub(r'\\([;&|><])', r'\\\\\1', between)
+                parts.append(between)
+
+                # Check if word_text is a quoted string or command substitution
+                if (
+                    (word_text.startswith('"') and word_text.endswith('"'))
+                    or (word_text.startswith("'") and word_text.endswith("'"))
+                    or (word_text.startswith('$(') and word_text.endswith(')'))
+                    or (word_text.startswith('`') and word_text.endswith('`'))
+                ):
+                    # Preserve quoted strings, command substitutions, and heredoc content as-is
+                    parts.append(word_text)
+                else:
+                    # Escape special chars in unquoted text
+                    word_text = re.sub(r'\\([;&|><])', r'\\\\\1', word_text)
+                    parts.append(word_text)
+
+                last_pos = node.pos[1]
+                return
+
+            # Visit child nodes
+            if hasattr(node, 'parts'):
+                for part in node.parts:
+                    visit_node(part)
+
+        # Process all nodes in the AST
+        nodes = list(bashlex.parse(command))
+        for node in nodes:
+            between = command[last_pos : node.pos[0]]
+            between = re.sub(r'\\([;&|><])', r'\\\\\1', between)
+            parts.append(between)
+            last_pos = node.pos[0]
+            visit_node(node)
+
+        # Handle any remaining text after the last word
+        remaining = command[last_pos:]
+        parts.append(remaining)
+        return ''.join(parts)
+    except (bashlex.errors.ParsingError, NotImplementedError):
+        logger.debug(
+            f'Failed to parse bash commands for special characters escape\n'
+            f'[input]: {command}\n'
+            f'[warning]: {traceback.format_exc()}\n'
+            f'The original command will be returned as is.'
         )
-        self._init_bash_shell(work_dir)
+        return command
+
+
+class BashCommandStatus(Enum):
+    CONTINUE = 'continue'
+    COMPLETED = 'completed'
+    NO_CHANGE_TIMEOUT = 'no_change_timeout'
+    HARD_TIMEOUT = 'hard_timeout'
+
+
+def _remove_command_prefix(command_output: str, command: str) -> str:
+    return command_output.lstrip().removeprefix(command.lstrip()).lstrip()
+
+
+class BashSession:
+    POLL_INTERVAL = 0.5
+    HISTORY_LIMIT = 10_000
+    PS1 = CmdOutputMetadata.to_ps1_prompt()
+
+    def __init__(
+        self,
+        work_dir: str,
+        username: str | None = None,
+        no_change_timeout_seconds: float = 30.0,
+    ):
+        self.NO_CHANGE_TIMEOUT_SECONDS = no_change_timeout_seconds
+        self.work_dir = work_dir
+        self.username = username
+        self._initialized = False
+
+    def initialize(self):
+        self.server = libtmux.Server()
+        window_command = '/bin/bash'
+        if self.username:
+            # This starts a non-login (new) shell for the given user
+            window_command = f'su {self.username} -'
+
+        session_name = f'openhands-{self.username}-{uuid.uuid4()}'
+        self.session = self.server.new_session(
+            session_name=session_name,
+            window_name='bash',
+            window_command=window_command,
+            start_directory=self.work_dir,
+            kill_session=True,
+            x=1000,
+            y=1000,
+        )
+
+        # Set history limit to a large number to avoid losing history
+        # https://unix.stackexchange.com/questions/43414/unlimited-history-in-tmux
+        self.session.set_option('history-limit', str(self.HISTORY_LIMIT), _global=True)
+        self.session.history_limit = self.HISTORY_LIMIT
+        # We need to create a new pane because the initial pane's history limit is (default) 2000
+        _initial_window = self.session.attached_window
+        self.window = self.session.new_window(
+            window_shell=window_command,
+            start_directory=self.work_dir,
+        )
+        self.pane = self.window.attached_pane
+        logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
+        _initial_window.kill_window()
+
+        # Configure bash to use simple PS1 and disable PS2
+        self.pane.send_keys(
+            f'export PROMPT_COMMAND=\'export PS1="{self.PS1}"\'; export PS2=""'
+        )
+        time.sleep(0.1)  # Wait for command to take effect
+        self._clear_screen()
+
+        # Store the last command for interactive input handling
+        self.prev_status: BashCommandStatus | None = None
+        self.prev_output: str = ''
+        self._closed: bool = False
+        logger.debug(f'Bash session initialized with work dir: {self.work_dir}')
+
+        # Maintain the current working directory
+        self._cwd = os.path.abspath(self.work_dir)
+        self._initialized = True
+
+    def __del__(self):
+        """Ensure the session is closed when the object is destroyed."""
+        self.close()
+
+    def _get_pane_content(self) -> str:
+        """Capture the current pane content and update the buffer."""
+        content = '\n'.join(
+            map(
+                # avoid double newlines
+                lambda line: line.rstrip(),
+                self.pane.cmd('capture-pane', '-J', '-pS', '-').stdout,
+            )
+        )
+        return content
 
     def close(self):
-        self.shell.close()
+        """Clean up the session."""
+        if self._closed:
+            return
+        self.session.kill_session()
+        self._closed = True
 
     @property
-    def pwd(self):
-        return self._pwd
+    def cwd(self):
+        return self._cwd
 
-    @property
-    def workdir(self):
-        return self._get_working_directory()
+    def _is_special_key(self, command: str) -> bool:
+        """Check if the command is a special key."""
+        # Special keys are of the form C-<key>
+        _command = command.strip()
+        return _command.startswith('C-') and len(_command) == 3
 
-    def _get_working_directory(self):
-        # NOTE: this is part of initialization, so we hard code the timeout
-        result, exit_code = self._execute_bash('pwd', timeout=60, keep_prompt=False)
-        if exit_code != 0:
-            raise RuntimeError(
-                f'Failed to get working directory (exit code: {exit_code}): {result}'
-            )
-        return result.strip()
+    def _clear_screen(self):
+        """Clear the tmux pane screen and history."""
+        self.pane.send_keys('C-l', enter=False)
+        time.sleep(0.1)
+        self.pane.cmd('clear-history')
 
-    def _init_bash_shell(self, work_dir: str):
-        self.__bash_PS1 = (
-            r'[PEXPECT_BEGIN]\n'
-            r'$(which python >/dev/null 2>&1 && echo "[Python Interpreter: $(which python)]\n")'
-            r'\u@\h:\w\n'
-            r'[PEXPECT_END]'
-        )
-
-        # This should NOT match "PS1=\u@\h:\w [PEXPECT]$" when `env` is executed
-        self.__bash_expect_regex = r'\[PEXPECT_BEGIN\]\s*(.*?)\s*([a-z0-9_-]*)@([a-zA-Z0-9.-]*):(.+)\s*\[PEXPECT_END\]'
-        # Set umask to allow group write permissions
-        self.shell.sendline(f'umask 002; export PS1="{self.__bash_PS1}"; export PS2=""')
-        self.shell.expect(self.__bash_expect_regex)
-
-        self.shell.sendline(
-            f'if [ ! -d "{work_dir}" ]; then mkdir -p "{work_dir}"; fi && cd "{work_dir}"'
-        )
-        self.shell.expect(self.__bash_expect_regex)
-        logger.debug(
-            f'Bash initialized. Working directory: {work_dir}. Output: [{self.shell.before}]'
-        )
-        # Ensure the group has write permissions on the working directory
-        self.shell.sendline(f'chmod g+rw "{work_dir}"')
-        self.shell.expect(self.__bash_expect_regex)
-
-    def _get_bash_prompt_and_update_pwd(self):
-        ps1 = self.shell.after
-        if ps1 == pexpect.EOF:
-            logger.error(f'Bash shell EOF! {self.shell.after=}, {self.shell.before=}')
-            raise RuntimeError('Bash shell EOF')
-        if ps1 == pexpect.TIMEOUT:
-            logger.warning('Bash shell timeout')
-            return ''
-
-        # begin at the last occurrence of '[PEXPECT_BEGIN]'.
-        # In multi-line bash commands, the prompt will be repeated
-        # and the matched regex captures all of them
-        # - we only want the last one (newest prompt)
-        _begin_pos = ps1.rfind('[PEXPECT_BEGIN]')
-        if _begin_pos != -1:
-            ps1 = ps1[_begin_pos:]
-
-        # parse the ps1 to get username, hostname, and working directory
-        matched = re.match(self.__bash_expect_regex, ps1)
-        assert (
-            matched is not None
-        ), f'Failed to parse bash prompt: {ps1}. This should not happen.'
-        other_info, username, hostname, working_dir = matched.groups()
-        working_dir = working_dir.rstrip()
-        self._pwd = os.path.expanduser(working_dir)
-
-        # re-assemble the prompt
-        # ignore the hostname AND use 'openhands-workspace'
-        prompt = f'{other_info.strip()}\n{username}@openhands-workspace:{working_dir} '
-        if username == 'root':
-            prompt += '#'
-        else:
-            prompt += '$'
-        return prompt + ' '
-
-    def _execute_bash(
+    def _get_command_output(
         self,
         command: str,
-        timeout: int,
-        keep_prompt: bool = True,
-        kill_on_timeout: bool = True,
-    ) -> tuple[str, int]:
-        logger.debug(f'Executing command: {command}')
-        self.shell.sendline(command)
-        return self._continue_bash(
-            timeout=timeout, keep_prompt=keep_prompt, kill_on_timeout=kill_on_timeout
+        raw_command_output: str,
+        metadata: CmdOutputMetadata,
+        continue_prefix: str = '',
+    ) -> str:
+        """Get the command output with the previous command output removed.
+
+        Args:
+            command: The command that was executed.
+            raw_command_output: The raw output from the command.
+            metadata: The metadata object to store prefix/suffix in.
+            continue_prefix: The prefix to add to the command output if it's a continuation of the previous command.
+        """
+        # remove the previous command output from the new output if any
+        if self.prev_output:
+            command_output = raw_command_output.removeprefix(self.prev_output)
+            metadata.prefix = continue_prefix
+        else:
+            command_output = raw_command_output
+        self.prev_output = raw_command_output  # update current command output anyway
+        command_output = _remove_command_prefix(command_output, command)
+        return command_output.rstrip()
+
+    def _handle_completed_command(
+        self, command: str, pane_content: str, ps1_matches: list[re.Match]
+    ) -> CmdOutputObservation:
+        is_special_key = self._is_special_key(command)
+        assert len(ps1_matches) >= 1, (
+            f'Expected at least one PS1 metadata block, but got {len(ps1_matches)}.\n'
+            f'---FULL OUTPUT---\n{pane_content!r}\n---END OF OUTPUT---'
+        )
+        metadata = CmdOutputMetadata.from_ps1_match(ps1_matches[-1])
+
+        # Special case where the previous command output is truncated due to history limit
+        # We should get the content BEFORE the last PS1 prompt
+        get_content_before_last_match = bool(len(ps1_matches) == 1)
+
+        # Update the current working directory if it has changed
+        if metadata.working_dir != self._cwd and metadata.working_dir:
+            self._cwd = metadata.working_dir
+
+        logger.debug(f'COMMAND OUTPUT: {pane_content}')
+        # Extract the command output between the two PS1 prompts
+        raw_command_output = self._combine_outputs_between_matches(
+            pane_content,
+            ps1_matches,
+            get_content_before_last_match=get_content_before_last_match,
         )
 
-    def _interrupt_bash(
+        if get_content_before_last_match:
+            # Count the number of lines in the truncated output
+            num_lines = len(raw_command_output.splitlines())
+            metadata.prefix = f'[Previous command outputs are truncated. Showing the last {num_lines} lines of the output below.]\n'
+
+        metadata.suffix = (
+            f'\n[The command completed with exit code {metadata.exit_code}.]'
+            if not is_special_key
+            else f'\n[The command completed with exit code {metadata.exit_code}. CTRL+{command[-1].upper()} was sent.]'
+        )
+        command_output = self._get_command_output(
+            command,
+            raw_command_output,
+            metadata,
+        )
+        self.prev_status = BashCommandStatus.COMPLETED
+        self.prev_output = ''  # Reset previous command output
+        self._ready_for_next_command()
+        return CmdOutputObservation(
+            content=command_output,
+            command=command,
+            metadata=metadata,
+        )
+
+    def _handle_nochange_timeout_command(
         self,
-        action_timeout: int | None,
-        interrupt_timeout: int | None = None,
-        max_retries: int = 2,
-    ) -> tuple[str, int]:
-        interrupt_timeout = interrupt_timeout or 1  # default timeout for SIGINT
-        # try to interrupt the bash shell use SIGINT
-        while max_retries > 0:
-            self.shell.sendintr()  # send SIGINT to the shell
-            logger.debug('Sent SIGINT to bash. Waiting for output...')
-            try:
-                self.shell.expect(self.__bash_expect_regex, timeout=interrupt_timeout)
-                output = self.shell.before
-                logger.debug(f'Received output after SIGINT: {output}')
-                exit_code = 130  # SIGINT
-
-                _additional_msg = ''
-                if action_timeout is not None:
-                    _additional_msg = (
-                        f'Command timed out after {action_timeout} seconds. '
-                    )
-                output += (
-                    '\r\n\r\n'
-                    + f'[{_additional_msg}SIGINT was sent to interrupt the command.]'
-                )
-                return output, exit_code
-            except pexpect.TIMEOUT as e:
-                logger.warning(f'Bash pexpect.TIMEOUT while waiting for SIGINT: {e}')
-                max_retries -= 1
-
-        # fall back to send control-z
-        logger.error(
-            'Failed to get output after SIGINT. Max retries reached. Sending control-z...'
+        command: str,
+        pane_content: str,
+        ps1_matches: list[re.Match],
+    ) -> CmdOutputObservation:
+        self.prev_status = BashCommandStatus.NO_CHANGE_TIMEOUT
+        if len(ps1_matches) != 1:
+            logger.warning(
+                'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
+                f'but got {len(ps1_matches)} PS1 metadata blocks:\n---\n{pane_content!r}\n---'
+            )
+        raw_command_output = self._combine_outputs_between_matches(
+            pane_content, ps1_matches
         )
-        self.shell.sendcontrol('z')
-        self.shell.expect(self.__bash_expect_regex)
-        output = self.shell.before
-        logger.debug(f'Received output after control-z: {output}')
-        # Try to kill the job
-        self.shell.sendline('kill -9 %1')
-        self.shell.expect(self.__bash_expect_regex)
-        logger.debug(f'Received output after killing job %1: {self.shell.before}')
-        output += self.shell.before
-
-        _additional_msg = ''
-        if action_timeout is not None:
-            _additional_msg = f'Command timed out after {action_timeout} seconds. '
-        output += (
-            '\r\n\r\n'
-            + f'[{_additional_msg}SIGINT was sent to interrupt the command, but failed. The command was killed.]'
+        metadata = CmdOutputMetadata()  # No metadata available
+        metadata.suffix = (
+            f'\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
+            "You may wait longer to see additional output by sending empty command '', "
+            'send other commands to interact with the current process, '
+            'or send keys to interrupt/kill the command.]'
+        )
+        command_output = self._get_command_output(
+            command,
+            raw_command_output,
+            metadata,
+            continue_prefix='[Command output continued from previous command]\n',
+        )
+        return CmdOutputObservation(
+            content=command_output,
+            command=command,
+            metadata=metadata,
         )
 
-        # Try to get the exit code again
-        self.shell.sendline('echo $?')
-        self.shell.expect(self.__bash_expect_regex)
-        _exit_code_output = self.shell.before
-        exit_code = self._parse_exit_code(_exit_code_output)
-
-        return output, exit_code
-
-    def _parse_exit_code(self, output: str) -> int:
-        try:
-            exit_code = int(output.strip().split()[0])
-        except Exception:
-            logger.error('Error getting exit code from bash script')
-            # If we try to run an invalid shell script the output sometimes includes error text
-            # rather than the error code - we assume this is an error
-            exit_code = 2
-        return exit_code
-
-    def _continue_bash(
+    def _handle_hard_timeout_command(
         self,
-        timeout: int,
-        keep_prompt: bool = True,
-        kill_on_timeout: bool = True,
-    ) -> tuple[str, int]:
-        logger.debug(f'Continuing bash with timeout={timeout}')
-        try:
-            self.shell.expect(self.__bash_expect_regex, timeout=timeout)
+        command: str,
+        pane_content: str,
+        ps1_matches: list[re.Match],
+        timeout: float,
+    ) -> CmdOutputObservation:
+        self.prev_status = BashCommandStatus.HARD_TIMEOUT
+        if len(ps1_matches) != 1:
+            logger.warning(
+                'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
+                f'but got {len(ps1_matches)} PS1 metadata blocks:\n---\n{pane_content!r}\n---'
+            )
+        raw_command_output = self._combine_outputs_between_matches(
+            pane_content, ps1_matches
+        )
+        metadata = CmdOutputMetadata()  # No metadata available
+        metadata.suffix = (
+            f'\n[The command timed out after {timeout} seconds. '
+            "You may wait longer to see additional output by sending empty command '', "
+            'send other commands to interact with the current process, '
+            'or send keys to interrupt/kill the command.]'
+        )
+        command_output = self._get_command_output(
+            command,
+            raw_command_output,
+            metadata,
+            continue_prefix='[Command output continued from previous command]\n',
+        )
 
-            output = self.shell.before
+        return CmdOutputObservation(
+            command=command,
+            content=command_output,
+            metadata=metadata,
+        )
 
-            # Get exit code
-            self.shell.sendline('echo $?')
-            logger.debug('Requesting exit code...')
-            self.shell.expect(self.__bash_expect_regex, timeout=timeout)
-            _exit_code_output = self.shell.before
-            exit_code = self._parse_exit_code(_exit_code_output)
-        except pexpect.TIMEOUT as e:
-            logger.warning(f'Bash pexpect.TIMEOUT while executing bash command: {e}')
-            if kill_on_timeout:
-                output, exit_code = self._interrupt_bash(action_timeout=timeout)
+    def _ready_for_next_command(self):
+        """Reset the content buffer for a new command."""
+        # Clear the current content
+        self._clear_screen()
+
+    def _combine_outputs_between_matches(
+        self,
+        pane_content: str,
+        ps1_matches: list[re.Match],
+        get_content_before_last_match: bool = False,
+    ) -> str:
+        """Combine all outputs between PS1 matches.
+
+        Args:
+            pane_content: The full pane content containing PS1 prompts and command outputs
+            ps1_matches: List of regex matches for PS1 prompts
+            get_content_before_last_match: when there's only one PS1 match, whether to get
+                the content before the last PS1 prompt (True) or after the last PS1 prompt (False)
+        Returns:
+            Combined string of all outputs between matches
+        """
+        if len(ps1_matches) == 1:
+            if get_content_before_last_match:
+                # The command output is the content before the last PS1 prompt
+                return pane_content[: ps1_matches[0].start()]
             else:
-                output = self.shell.before or ''
-                exit_code = -1
-        finally:
-            bash_prompt = self._get_bash_prompt_and_update_pwd()
-            if keep_prompt:
-                output += '\r\n' + bash_prompt
-        return output, exit_code
+                # The command output is the content after the last PS1 prompt
+                return pane_content[ps1_matches[0].end() + 1 :]
+        combined_output = ''
+        for i in range(len(ps1_matches) - 1):
+            # Extract content between current and next PS1 prompt
+            output_segment = pane_content[
+                ps1_matches[i].end() + 1 : ps1_matches[i + 1].start()
+            ]
+            combined_output += output_segment + '\n'
+        logger.debug(f'COMBINED OUTPUT: {combined_output}')
+        return combined_output
 
-    def run(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
-        try:
-            assert (
-                action.timeout is not None
-            ), f'Timeout argument is required for CmdRunAction: {action}'
-            commands = split_bash_commands(action.command)
-            all_output = ''
-            python_interpreter = ''
-            for command in commands:
-                if command == '':
-                    output, exit_code = self._continue_bash(
-                        timeout=SOFT_TIMEOUT_SECONDS,
-                        keep_prompt=action.keep_prompt,
-                        kill_on_timeout=False,
-                    )
-                elif command.lower() == 'ctrl+c':
-                    output, exit_code = self._interrupt_bash(
-                        action_timeout=None,  # intentionally None
-                    )
-                else:
-                    output, exit_code = self._execute_bash(
-                        command,
-                        timeout=SOFT_TIMEOUT_SECONDS
-                        if not action.blocking
-                        else action.timeout,
-                        keep_prompt=action.keep_prompt,
-                        kill_on_timeout=False if not action.blocking else True,
-                    )
-                    # Get rid of the python interpreter string from each line of the output.
-                    # We need it only once at the end.
-                    parts = output.rsplit('[Python Interpreter: ', 1)
-                    output = parts[0]
-                    if len(parts) == 2:
-                        python_interpreter = '[Python Interpreter: ' + parts[1]
-                if all_output:
-                    # previous output already exists so we add a newline
-                    all_output += '\r\n'
+    def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
+        """Execute a command in the bash session."""
+        if not self._initialized:
+            raise RuntimeError('Bash session is not initialized')
 
-                # If the command originated with the agent, append the command that was run...
-                if action.source == EventSource.AGENT:
-                    all_output += command + '\r\n'
+        # Strip the command of any leading/trailing whitespace
+        logger.debug(f'RECEIVED ACTION: {action}')
+        command = action.command.strip()
 
-                all_output += str(output)
-                if exit_code != 0:
-                    break
+        if command == '' and self.prev_status not in {
+            BashCommandStatus.CONTINUE,
+            BashCommandStatus.NO_CHANGE_TIMEOUT,
+            BashCommandStatus.HARD_TIMEOUT,
+        }:
             return CmdOutputObservation(
-                command_id=-1,
-                content=all_output.rstrip('\r\n'),
-                command=action.command,
-                hidden=action.hidden,
-                exit_code=exit_code,
-                interpreter_details=python_interpreter,
+                content='ERROR: No previous command to continue from. '
+                + 'Previous command has to be timeout to be continued.',
+                command='',
+                metadata=CmdOutputMetadata(),
             )
-        except UnicodeDecodeError as e:
+
+        splited_commands = split_bash_commands(command)
+        if len(splited_commands) > 1:
             return ErrorObservation(
-                f'Runtime bash execution failed: Command output could not be decoded as utf-8. {str(e)}',
+                content=(
+                    f'ERROR: Cannot execute multiple commands at once.\n'
+                    f'Please run each command separately OR chain them into a single command via && or ;\n'
+                    f'Provided commands:\n{"\n".join(f"({i+1}) {cmd}" for i, cmd in enumerate(splited_commands))}'
+                )
             )
+
+        start_time = time.time()
+        last_change_time = start_time
+        last_pane_output = self._get_pane_content()
+
+        _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
+        assert len(_ps1_matches) >= 1, (
+            'Expected at least one PS1 metadata block BEFORE the execution of a command, '
+            f'but got {len(_ps1_matches)} PS1 metadata blocks:\n---\n{last_pane_output!r}\n---'
+        )
+        if len(_ps1_matches) > 1:
+            logger.warning(
+                'Found multiple PS1 metadata blocks BEFORE the execution of a command. '
+                'Only the last one will be used.'
+            )
+            _ps1_matches = [_ps1_matches[-1]]
+
+        if command != '':
+            # convert command to raw string
+            command = escape_bash_special_chars(command)
+            logger.debug(f'SENDING COMMAND: {command!r}')
+            self.pane.send_keys(
+                command,
+                enter=not self._is_special_key(command),
+            )
+
+        # Loop until the command completes or times out
+        while should_continue():
+            _start_time = time.time()
+            logger.debug(f'GETTING PANE CONTENT at {_start_time}')
+            cur_pane_output = self._get_pane_content()
+            logger.debug(
+                f'PANE CONTENT GOT after {time.time() - _start_time:.2f} seconds'
+            )
+            logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_output.split("\n")[:10]}')
+            logger.debug(f'END OF PANE CONTENT: {cur_pane_output.split("\n")[-10:]}')
+            ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
+            if cur_pane_output != last_pane_output:
+                last_pane_output = cur_pane_output
+                last_change_time = time.time()
+                logger.debug(f'CONTENT UPDATED DETECTED at {last_change_time}')
+
+            # 1) Execution completed
+            # if the last command output contains the end marker
+            if cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip()):
+                return self._handle_completed_command(
+                    command,
+                    pane_content=cur_pane_output,
+                    ps1_matches=ps1_matches,
+                )
+
+            # 2) Execution timed out since there's no change in output
+            # for a while (self.NO_CHANGE_TIMEOUT_SECONDS)
+            # We ignore this if the command is *blocking
+            time_since_last_change = time.time() - last_change_time
+            logger.debug(
+                f'CHECKING NO CHANGE TIMEOUT ({self.NO_CHANGE_TIMEOUT_SECONDS}s): elapsed {time_since_last_change}'
+            )
+            if (
+                not action.blocking
+                and time_since_last_change >= self.NO_CHANGE_TIMEOUT_SECONDS
+            ):
+                return self._handle_nochange_timeout_command(
+                    command,
+                    pane_content=cur_pane_output,
+                    ps1_matches=ps1_matches,
+                )
+
+            # 3) Execution timed out due to hard timeout
+            logger.debug(
+                f'CHECKING HARD TIMEOUT ({action.timeout}s): elapsed {time.time() - start_time}'
+            )
+            if action.timeout and time.time() - start_time >= action.timeout:
+                return self._handle_hard_timeout_command(
+                    command,
+                    pane_content=cur_pane_output,
+                    ps1_matches=ps1_matches,
+                    timeout=action.timeout,
+                )
+
+            logger.debug(f'SLEEPING for {self.POLL_INTERVAL} seconds for next poll')
+            time.sleep(self.POLL_INTERVAL)
+        raise RuntimeError('Bash session was likely interrupted...')

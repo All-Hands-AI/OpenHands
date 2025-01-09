@@ -94,7 +94,12 @@ export function ChatInput({
   };
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey && !disabled) {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      !disabled &&
+      !event.nativeEvent.isComposing
+    ) {
       event.preventDefault();
       handleSubmitMessage();
     }

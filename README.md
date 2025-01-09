@@ -43,17 +43,17 @@ See the [Installation](https://docs.all-hands.dev/modules/usage/installation) gu
 system requirements and more information.
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.19-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.19-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.17
+    docker.all-hands.dev/all-hands-ai/openhands:0.19
 ```
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
@@ -64,16 +64,16 @@ works best, but you have [many options](https://docs.all-hands.dev/modules/usage
 
 ---
 
-You can also [connect OpenHands to your local filesystem](https://docs.all-hands.dev/modules/usage/runtimes),
+You can also [connect OpenHands to your local filesystem](https://docs.all-hands.dev/modules/usage/runtimes#connecting-to-your-filesystem),
 run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
 interact with it via a [friendly CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode),
-or run it on tagged issues with [a github action](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/resolver/README.md).
+or run it on tagged issues with [a github action](https://docs.all-hands.dev/modules/usage/how-to/github-action).
 
 Visit [Installation](https://docs.all-hands.dev/modules/usage/installation) for more information and setup instructions.
 
 > [!CAUTION]
 > OpenHands is meant to be run by a single user on their local workstation.
-> It is not appropriate for multi-tenant deployments, where multiple users share the same instance--there is no built-in isolation or scalability.
+> It is not appropriate for multi-tenant deployments where multiple users share the same instance. There is no built-in isolation or scalability.
 >
 > If you're interested in running OpenHands in a multi-tenant environment, please
 > [get in touch with us](https://docs.google.com/forms/d/e/1FAIpQLSet3VbGaz8z32gW9Wm-Grl4jpt5WgMXPgJ4EDPVmCETCBpJtQ/viewform)
@@ -86,7 +86,7 @@ Having issues? The [Troubleshooting Guide](https://docs.all-hands.dev/modules/us
 ## 📖 Documentation
 
 To learn more about the project, and for tips on using OpenHands,
-**check out our [documentation](https://docs.all-hands.dev/modules/usage/getting-started)**.
+check out our [documentation](https://docs.all-hands.dev/modules/usage/getting-started).
 
 There you'll find resources on how to use different LLM providers,
 troubleshooting resources, and advanced configuration options.

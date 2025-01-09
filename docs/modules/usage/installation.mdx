@@ -2,33 +2,36 @@
 
 ## System Requirements
 
-* Docker version 26.0.0+ or Docker Desktop 4.31.0+.
-* You must be using Linux or Mac OS.
-  * If you are on Windows, you must use [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+- Docker version 26.0.0+ or Docker Desktop 4.31.0+.
+- You must be using Linux or Mac OS.
+  - If you are on Windows, you must use [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
 
 ## Start the app
 
 The easiest way to run OpenHands is in Docker.
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.19-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.17-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.19-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.17
+    docker.all-hands.dev/all-hands-ai/openhands:0.19
 ```
 
-You can also run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode), as an [interactive CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode), or using the [OpenHands GitHub Action](https://docs.all-hands.dev/modules/usage/how-to/github-action).
+You'll find OpenHands running at http://localhost:3000!
+
+You can also [connect OpenHands to your local filesystem](https://docs.all-hands.dev/modules/usage/runtimes#connecting-to-your-filesystem),
+run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
+interact with it via a [friendly CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode),
+or run it on tagged issues with [a github action](https://docs.all-hands.dev/modules/usage/how-to/github-action).
 
 ## Setup
-
-After running the command above, you'll find OpenHands running at [http://localhost:3000](http://localhost:3000).
 
 Upon launching OpenHands, you'll see a settings modal. You **must** select an `LLM Provider` and `LLM Model` and enter a corresponding `API Key`.
 These can be changed at any time by selecting the `Settings` button (gear icon) in the UI.

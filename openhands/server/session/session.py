@@ -82,7 +82,6 @@ class Session:
             settings.security_analyzer or self.config.security.security_analyzer
         )
         max_iterations = settings.max_iterations or self.config.max_iterations
-        # override default LLM config
 
         default_llm_config = self.config.get_llm_config()
         default_llm_config.model = settings.llm_model or ''
@@ -120,7 +119,10 @@ class Session:
             )
             return
 
-    async def on_event(self, event: Event):
+    def on_event(self, event: Event):
+        asyncio.get_event_loop().run_until_complete(self._on_event(event))
+
+    async def _on_event(self, event: Event):
         """Callback function for events that mainly come from the agent.
         Event is the base class for any agent action and observation.
 
