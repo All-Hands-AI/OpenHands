@@ -103,6 +103,14 @@ class LocalRuntime(ActionExecutionClient):
         self.server_process: Optional[subprocess.Popen[str]] = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
+        # A temporary directory is created for the agent to run in
+        # This is used for the local runtime only
+        self._temp_workspace = tempfile.mkdtemp(
+            prefix=f'openhands_workspace_{sid}',
+        )
+        self.config.workspace_mount_path_in_sandbox = self._temp_workspace
+
+        # Initialize the action_execution_server
         super().__init__(
             config,
             event_stream,
@@ -113,10 +121,12 @@ class LocalRuntime(ActionExecutionClient):
             attach_to_existing,
             headless_mode,
         )
+
         logger.warning(
             'Initializing LocalRuntime. WARNING: NO SANDBOX IS USED. '
             'We highly recommend using a sandbox (eg. DockerRuntime) unless you '
-            'are running in a controlled environment.'
+            'are running in a controlled environment.\n'
+            f'Temp workspace: {self._temp_workspace}'
         )
 
     def _get_action_execution_server_host(self):
@@ -243,142 +253,17 @@ class LocalRuntime(ActionExecutionClient):
 
         super().close()
 
-    def run(self, action: CmdRunAction) -> Observation:
-        """Execute a command in the local machine."""
-        try:
-            response = self.session.post(
-                f'{self.api_url}/action',
-                json={'action': event_to_dict(action)},
-            )
-            return observation_from_dict(response.json())
-        except requests.exceptions.ConnectionError:
-            raise AgentRuntimeDisconnectedError('Server connection lost')
-        except requests.exceptions.RequestException as e:
-            return ErrorObservation(f'Failed to execute command: {e}')
-
-    def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        """Execute a Python cell in IPython."""
-        try:
-            response = self.session.post(
-                f'{self.api_url}/action',
-                json={'action': event_to_dict(action)},
-            )
-            return observation_from_dict(response.json())
-        except requests.exceptions.ConnectionError:
-            raise AgentRuntimeDisconnectedError('Server connection lost')
-        except requests.exceptions.RequestException as e:
-            return ErrorObservation(f'Failed to execute IPython cell: {e}')
-
-    def read(self, action: FileReadAction) -> Observation:
-        """Read a file from the local machine."""
-        try:
-            response = self.session.post(
-                f'{self.api_url}/action',
-                json={'action': event_to_dict(action)},
-            )
-            return observation_from_dict(response.json())
-        except requests.exceptions.ConnectionError:
-            raise AgentRuntimeDisconnectedError('Server connection lost')
-        except requests.exceptions.RequestException as e:
-            return ErrorObservation(f'Failed to read file: {e}')
-
-    def write(self, action: FileWriteAction) -> Observation:
-        """Write to a file in the local machine."""
-        try:
-            response = self.session.post(
-                f'{self.api_url}/action',
-                json={'action': event_to_dict(action)},
-            )
-            return observation_from_dict(response.json())
-        except requests.exceptions.ConnectionError:
-            raise AgentRuntimeDisconnectedError('Server connection lost')
-        except requests.exceptions.RequestException as e:
-            return ErrorObservation(f'Failed to write file: {e}')
-
-    def browse(self, action: BrowseURLAction) -> Observation:
-        """Browse a URL."""
-        try:
-            response = self.session.post(
-                f'{self.api_url}/action',
-                json={'action': event_to_dict(action)},
-            )
-            return observation_from_dict(response.json())
-        except requests.exceptions.ConnectionError:
-            raise AgentRuntimeDisconnectedError('Server connection lost')
-        except requests.exceptions.RequestException as e:
-            return ErrorObservation(f'Failed to browse URL: {e}')
-
-    def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        """Execute interactive browser actions."""
-        try:
-            response = self.session.post(
-                f'{self.api_url}/action',
-                json={'action': event_to_dict(action)},
-            )
-            return observation_from_dict(response.json())
-        except requests.exceptions.ConnectionError:
-            raise AgentRuntimeDisconnectedError('Server connection lost')
-        except requests.exceptions.RequestException as e:
-            return ErrorObservation(f'Failed to execute browser action: {e}')
-
-    def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
-        """Copy a file or directory from host to sandbox."""
-        try:
-            response = self.session.post(
-                f'{self.api_url}/copy_to',
-                json={
-                    'host_src': host_src,
-                    'sandbox_dest': sandbox_dest,
-                    'recursive': recursive,
-                },
-            )
-            response.raise_for_status()
-        except requests.exceptions.ConnectionError:
-            raise AgentRuntimeDisconnectedError('Server connection lost')
-        except requests.exceptions.RequestException as e:
-            raise RuntimeError(f'Failed to copy file: {e}')
-
-    def list_files(self, path: str | None = None) -> list[str]:
-        """List files in the sandbox."""
-        try:
-            response = self.session.get(
-                f'{self.api_url}/list_files',
-                params={'path': path} if path else None,
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.ConnectionError:
-            raise AgentRuntimeDisconnectedError('Server connection lost')
-        except requests.exceptions.RequestException as e:
-            raise RuntimeError(f'Failed to list files: {e}')
-
-    def copy_from(self, path: str) -> Path:
-        """Copy a file or directory from sandbox to host."""
-        try:
-            response = self.session.post(
-                f'{self.api_url}/copy_from',
-                json={'path': path},
-            )
-            response.raise_for_status()
-            return Path(response.json()['path'])
-        except requests.exceptions.ConnectionError:
-            raise AgentRuntimeDisconnectedError('Server connection lost')
-        except requests.exceptions.RequestException as e:
-            raise RuntimeError(f'Failed to copy file: {e}')
+        # Cleanup the temp workspace
+        if self._temp_workspace:
+            shutil.rmtree(self._temp_workspace)
 
     @property
     def vscode_url(self) -> str | None:
-        """Get the VSCode URL."""
-        if not self.vscode_enabled:
+        token = super().get_vscode_token()
+        if not token:
             return None
-        try:
-            response = self.session.get(f'{self.api_url}/vscode_url')
-            response.raise_for_status()
-            return response.json()['url']
-        except requests.exceptions.ConnectionError:
-            raise AgentRuntimeDisconnectedError('Server connection lost')
-        except requests.exceptions.RequestException as e:
-            raise RuntimeError(f'Failed to get VSCode URL: {e}')
+        vscode_url = f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        return vscode_url
 
     @property
     def web_hosts(self):
