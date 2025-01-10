@@ -14,3 +14,14 @@ class AgentStateChangedObservation(Observation):
     @property
     def message(self) -> str:
         return ''
+
+
+@dataclass
+class AgentCondensationObservation(Observation):
+    """The output of a condensation action."""
+
+    observation: str = ObservationType.CONDENSE
+
+    @property
+    def message(self) -> str:
+        return self.content

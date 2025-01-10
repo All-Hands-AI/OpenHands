@@ -1,7 +1,12 @@
 import jwt
+from fastapi import Request
 from jwt.exceptions import InvalidTokenError
 
 from openhands.core.logger import openhands_logger as logger
+
+
+def get_user_id(request: Request) -> int:
+    return getattr(request.state, 'github_user_id', 0)
 
 
 def get_sid_from_token(token: str, jwt_secret: str) -> str:

@@ -115,13 +115,15 @@ class RunloopRuntime(ActionExecutionClient):
 
         devbox = self.runloop_api_client.devboxes.create(
             entrypoint=entrypoint,
-            setup_commands=[f'mkdir -p {self.config.workspace_mount_path_in_sandbox}'],
             name=self.sid,
             environment_variables={'DEBUG': 'true'} if self.config.debug else {},
             prebuilt='openhands',
             launch_parameters=LaunchParameters(
                 available_ports=[self._sandbox_port, self._vscode_port],
                 resource_size_request='LARGE',
+                launch_commands=[
+                    f'mkdir -p {self.config.workspace_mount_path_in_sandbox}'
+                ],
             ),
             metadata={'container-name': self.container_name},
         )
