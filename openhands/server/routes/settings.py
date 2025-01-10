@@ -67,7 +67,6 @@ async def store_settings(
                 settings.remote_runtime_resource_factor
             )
 
-        logger.info(f'Storing settings: {settings}')
         await settings_store.store(settings)
 
         return JSONResponse(
