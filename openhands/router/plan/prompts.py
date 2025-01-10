@@ -31,6 +31,8 @@ In context of software engineering, below are some scenarios where plan generati
 3. Infrastructure and Resource Planning
 	* Designing and optimizing Infrastructure as Code (IaC) changes and dynamic resource allocation.
 	* Example: Planning cloud resource provisioning while adhering to dependency constraints.
+4. High-level Requirements to Low-level Implementation Mapping
+    * Translating high-level requirements into detailed implementation steps and ensuring consistency.
 
 === BEGIN USER MESSAGE ===
 {message}
