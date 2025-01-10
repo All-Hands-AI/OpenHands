@@ -52,8 +52,12 @@ async def store_settings(
             config, get_user_id(request)
         )
         existing_settings = await settings_store.load()
+        logger.info(f'Existing settings: {existing_settings}')
 
         if existing_settings:
+            for key, value in settings.__dict__.items():
+                if value is None:
+                    setattr(settings, key, getattr(existing_settings, key))
             # LLM key isn't on the frontend, so we need to keep it if unset
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
@@ -64,6 +68,7 @@ async def store_settings(
                 settings.remote_runtime_resource_factor
             )
 
+        logger.info(f'Storing settings: {settings}')
         await settings_store.store(settings)
 
         return JSONResponse(

@@ -13,7 +13,7 @@ const saveSettingsMutationFn = async (settings: Partial<Settings>) => {
     llm_model: settings.LLM_MODEL,
     llm_base_url: settings.LLM_BASE_URL,
     agent: settings.AGENT || DEFAULT_SETTINGS.AGENT,
-    language: settings.LANGUAGE || DEFAULT_SETTINGS.LANGUAGE,
+    language: settings.LANGUAGE,
     confirmation_mode: settings.CONFIRMATION_MODE,
     security_analyzer: settings.SECURITY_ANALYZER,
     llm_api_key: settings.LLM_API_KEY?.trim() || undefined,
