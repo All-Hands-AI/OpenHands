@@ -21,7 +21,7 @@ class RequestHTTPError(requests.HTTPError):
         return s
 
 
-def is_rate_limit_error(exception):
+def is_retryable_error(exception):
     return (
         isinstance(exception, requests.HTTPError)
         and exception.response.status_code == 429
@@ -29,7 +29,7 @@ def is_rate_limit_error(exception):
 
 
 @retry(
-    retry=retry_if_exception(is_rate_limit_error),
+    retry=retry_if_exception(is_retryable_error),
     stop=stop_after_attempt(3) | stop_if_should_exit(),
     wait=wait_exponential(multiplier=1, min=4, max=60),
 )
