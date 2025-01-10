@@ -649,7 +649,7 @@ class LLM(RetryMixin, DebugMixin):
             return f'LLM(model={self.config.model}, api_version={self.config.api_version}, base_url={self.config.base_url})'
         elif self.config.base_url:
             return f'LLM(model={self.config.model}, base_url={self.config.base_url})'
-        return f'LLM(model={self.config.model})'
+        return f'LLM(model={self.config.model},reasoning_model={self.model_routing_config.reasoning_model if self.model_routing_config else None})'
 
     def __repr__(self):
         return str(self)

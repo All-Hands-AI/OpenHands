@@ -90,7 +90,10 @@ class Session:
 
         # TODO: override other LLM config & agent config groups (#2075)
 
-        llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
+        llm = LLM(
+            config=self.config.get_llm_config_from_agent(agent_cls),
+            model_routing_config=self.config.model_routing,
+        )
         agent_config = self.config.get_agent_config(agent_cls)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
