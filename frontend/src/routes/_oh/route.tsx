@@ -63,10 +63,10 @@ export default function MainApp() {
   });
 
   React.useEffect(() => {
-    if (settings.LANGUAGE) {
+    if (settings?.LANGUAGE) {
       i18n.changeLanguage(settings.LANGUAGE);
     }
-  }, [settings.LANGUAGE]);
+  }, [settings?.LANGUAGE]);
 
   const isInWaitlist =
     !isFetchingAuth && !isAuthed && config.data?.APP_MODE === "saas";
