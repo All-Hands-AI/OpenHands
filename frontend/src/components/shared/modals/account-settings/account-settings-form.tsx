@@ -13,7 +13,7 @@ import { ModalButton } from "../../buttons/modal-button";
 import { CustomInput } from "../../custom-input";
 import { FormFieldset } from "../../form-fieldset";
 import { useConfig } from "#/hooks/query/use-config";
-import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import { useCurrentSettings } from "#/context/settings-context";
 
 interface AccountSettingsFormProps {
   onClose: () => void;
@@ -30,10 +30,10 @@ export function AccountSettingsForm({
 }: AccountSettingsFormProps) {
   const { gitHubToken, setGitHubToken, logout } = useAuth();
   const { data: config } = useConfig();
-  const { mutate: saveSettings } = useSaveSettings();
+  const { saveUserSettings } = useCurrentSettings();
   const { t } = useTranslation();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
@@ -50,7 +50,7 @@ export function AccountSettingsForm({
         ({ label }) => label === language,
       )?.value;
 
-      if (languageKey) saveSettings({ LANGUAGE: languageKey });
+      if (languageKey) await saveUserSettings({ LANGUAGE: languageKey });
     }
 
     handleCaptureConsent(analytics);
@@ -61,7 +61,7 @@ export function AccountSettingsForm({
   };
 
   return (
-    <ModalBody>
+    <ModalBody testID="account-settings-form">
       <form className="flex flex-col w-full gap-6" onSubmit={handleSubmit}>
         <div className="w-full flex flex-col gap-2">
           <BaseModalTitle title="Account Settings" />
@@ -137,6 +137,7 @@ export function AccountSettingsForm({
 
         <div className="flex flex-col gap-2 w-full">
           <ModalButton
+            testId="save-settings"
             type="submit"
             intent="account"
             text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$SAVE)}
