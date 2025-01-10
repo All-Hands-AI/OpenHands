@@ -20,8 +20,7 @@ const renderWithI18n = (component: React.ReactNode, language: string = 'en') => 
 };
 
 describe('Translations', () => {
-  describe('Translation Coverage', () => {
-    it('should have translations for all supported languages', () => {
+  it('should have translations for all supported languages', () => {
       // Get all language codes from AvailableLanguages
       const languageCodes = AvailableLanguages.map(lang => lang.value);
 
@@ -57,5 +56,4 @@ describe('Translations', () => {
       // Expect no missing translations
       expect(missingTranslations).toHaveLength(0);
     });
-  });
 });
