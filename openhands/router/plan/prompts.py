@@ -1,4 +1,4 @@
-ANALYZE_PROMPT = """Analyze this prompt to see if it already contains a step-by-step plan or requires more detailed plan generation.
+ANALYZE_PROMPT = """Analyze this prompt to see if it requires a detailed plan generation.
 
 Some example scenarios that require generating a step-by-step plan:
 
