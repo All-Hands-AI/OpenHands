@@ -381,11 +381,21 @@ class CodeActAgent(Agent):
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
+        params: dict = {}
+
+        # check if the user requests a plan
+        if (
+            latest_user_message
+            and self.plan_router
+            and self.plan_router.should_route_to_custom_model(
+                latest_user_message.content
+            )
+        ):
+            params['use_reasoning_model'] = True
+
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
-        params: dict = {
-            'messages': self.llm.format_messages_for_llm(messages),
-        }
+        params['messages'] = (self.llm.format_messages_for_llm(messages),)
         params['tools'] = self.tools
         if self.mock_function_calling:
             params['mock_function_calling'] = True

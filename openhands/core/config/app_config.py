@@ -52,7 +52,7 @@ class AppConfig:
     default_agent: str = OH_DEFAULT_AGENT
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
-    model_routing = field(default_factory=ModelRoutingConfig)
+    model_routing: ModelRoutingConfig = field(default_factory=ModelRoutingConfig)
     runtime: str = 'docker'
     file_store: str = 'local'
     file_store_path: str = '/tmp/openhands_file_store'
