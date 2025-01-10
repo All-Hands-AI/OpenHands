@@ -43,7 +43,7 @@ fi
 COMMAND="poetry run python evaluation/integration_tests/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
-  --max-iterations 10 \
+  --max-iterations ${MAX_ITERATIONS:-10} \
   --eval-num-workers $NUM_WORKERS \
   --eval-note $EVAL_NOTE"
 

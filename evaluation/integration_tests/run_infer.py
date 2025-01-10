@@ -222,7 +222,7 @@ if __name__ == '__main__':
 
     df = pd.read_json(output_file, lines=True, orient='records')
 
-    # record success and reason for failure for the final report
+    # record success and reason
     df['success'] = df['test_result'].apply(lambda x: x['success'])
     df['reason'] = df['test_result'].apply(lambda x: x['reason'])
     logger.info('-' * 100)
@@ -237,15 +237,27 @@ if __name__ == '__main__':
     logger.info('-' * 100)
 
     # record cost for each instance, with 3 decimal places
-    df['cost'] = df['metrics'].apply(lambda x: round(x['accumulated_cost'], 3))
+    # we sum up all the "costs" from the metrics array
+    df['cost'] = df['metrics'].apply(
+        lambda m: round(sum(c['cost'] for c in m['costs']), 3)
+        if m and 'costs' in m
+        else 0.0
+    )
+
+    # capture the top-level error if present, per instance
+    df['error_message'] = df['error']
+
     logger.info(f'Total cost: USD {df["cost"].sum():.2f}')
 
     report_file = os.path.join(metadata.eval_output_dir, 'report.md')
     with open(report_file, 'w') as f:
         f.write(
-            f'Success rate: {df["success"].mean():.2%} ({df["success"].sum()}/{len(df)})\n'
+            f'Success rate: {df["success"].mean():.2%}'
+            f' ({df["success"].sum()}/{len(df)})\n'
         )
         f.write(f'\nTotal cost: USD {df["cost"].sum():.2f}\n')
         f.write(
-            df[['instance_id', 'success', 'reason', 'cost']].to_markdown(index=False)
+            df[
+                ['instance_id', 'success', 'reason', 'cost', 'error_message']
+            ].to_markdown(index=False)
         )

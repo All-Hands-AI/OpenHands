@@ -57,6 +57,7 @@ jobs:
       #     LLM_MODEL: "litellm_proxy/claude-3-5-haiku-20241022"
       #     LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
       #     LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+      #     MAX_ITERATIONS: 10
       #   run: |
       #     echo "[llm.eval]" > config.toml
       #     echo "model = \"$LLM_MODEL\"" >> config.toml
@@ -89,6 +90,7 @@ jobs:
       #     LLM_MODEL: "litellm_proxy/deepseek-chat"
       #     LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
       #     LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+      #     MAX_ITERATIONS: 10
       #   run: |
       #     echo "[llm.eval]" > config.toml
       #     echo "model = \"$LLM_MODEL\"" >> config.toml
@@ -120,6 +122,7 @@ jobs:
           LLM_MODEL: "litellm_proxy/claude-3-5-haiku-20241022"
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          MAX_ITERATIONS: 30
         run: |
           echo "[llm.eval]" > config.toml
           echo "model = \"$LLM_MODEL\"" >> config.toml
@@ -151,6 +154,7 @@ jobs:
           LLM_MODEL: "litellm_proxy/deepseek-chat"
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          MAX_ITERATIONS: 30
         run: |
           echo "[llm.eval]" > config.toml
           echo "model = \"$LLM_MODEL\"" >> config.toml
