@@ -16,6 +16,7 @@ def get_action_execution_server_startup_command(
     plugins: list[PluginRequirement],
     app_config: AppConfig,
     python_prefix: list[str] = DEFAULT_PYTHON_PREFIX,
+    use_nice_for_root: bool = True,
 ):
     sandbox_config = app_config.sandbox
 
@@ -50,7 +51,7 @@ def get_action_execution_server_startup_command(
         *browsergym_args,
     ]
 
-    if is_root:
+    if is_root and use_nice_for_root:
         # If running as root, set highest priority and lowest OOM score
         cmd_str = ' '.join(base_cmd)
         return [
@@ -62,5 +63,5 @@ def get_action_execution_server_startup_command(
             f'echo -1000 > /proc/self/oom_score_adj && exec {cmd_str}',
         ]
     else:
-        # If not root, run with normal priority
+        # If not root OR not using nice for root, run with normal priority
         return base_cmd
