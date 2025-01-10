@@ -121,7 +121,7 @@ class CodeActAgent(Agent):
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {self.condenser}')
 
-        self.plan_router = None if config.enable_plan_routing else RuleBasedPlanRouter()
+        self.plan_router = RuleBasedPlanRouter() if config.enable_plan_routing else None
 
     def get_action_message(
         self,

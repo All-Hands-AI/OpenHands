@@ -226,6 +226,9 @@ codeact_enable_jupyter = true
 # List of microagents to disable
 #disabled_microagents = []
 
+# Whether to enable plan routing to reasoning models
+#enable_plan_routing = false
+
 [agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially
 # useful when an agent doesn't demand high quality but uses a lot of tokens
@@ -275,6 +278,14 @@ llm_config = 'gpt3'
 
 # The security analyzer to use (For Headless / CLI only -  In Web this is overridden by Session Init)
 #security_analyzer = ""
+
+################################ Model Routing ###############################
+# Configuration for model routing features
+##############################################################################
+[model_routing]
+
+# The reasoning model to use for plan generation
+reasoning_model = "o1-preview-2024-09-12"
 
 #################################### Eval ####################################
 # Configuration for the evaluation, please refer to the specific evaluation

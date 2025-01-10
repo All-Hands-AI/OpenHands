@@ -20,6 +20,7 @@ class AgentConfig:
         use_microagents: Whether to use microagents at all. Default is True.
         disabled_microagents: A list of microagents to disable. Default is None.
         condenser: Configuration for the memory condenser. Default is NoOpCondenserConfig.
+        enable_plan_routing: Whether to enable plan routing to reasoning models. Default is False.
     """
 
     codeact_enable_browsing: bool = True
