@@ -2,11 +2,11 @@
 This runtime runs the action_execution_server directly on the local machine without Docker.
 """
 
+import os
 import shutil
 import subprocess
 import tempfile
 import threading
-from pathlib import Path
 from typing import Callable, Optional
 
 import requests
@@ -18,12 +18,6 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
     Action,
-    BrowseInteractiveAction,
-    BrowseURLAction,
-    CmdRunAction,
-    FileReadAction,
-    FileWriteAction,
-    IPythonRunCellAction,
 )
 from openhands.events.observation import (
     ErrorObservation,
@@ -110,6 +104,9 @@ class LocalRuntime(ActionExecutionClient):
         )
         self.config.workspace_mount_path_in_sandbox = self._temp_workspace
 
+        self._user_id = os.getuid()
+        self._username = os.getenv('USER')
+
         # Initialize the action_execution_server
         super().__init__(
             config,
@@ -124,9 +121,12 @@ class LocalRuntime(ActionExecutionClient):
 
         logger.warning(
             'Initializing LocalRuntime. WARNING: NO SANDBOX IS USED. '
+            '`run_as_openhands` will be ignored since the current user will be used to launch the server. '
             'We highly recommend using a sandbox (eg. DockerRuntime) unless you '
             'are running in a controlled environment.\n'
-            f'Temp workspace: {self._temp_workspace}'
+            f'Temp workspace: {self._temp_workspace}. '
+            f'User ID: {self._user_id}. '
+            f'Username: {self._username}.'
         )
 
     def _get_action_execution_server_host(self):
@@ -149,7 +149,9 @@ class LocalRuntime(ActionExecutionClient):
             server_port=self._host_port,
             plugins=self.plugins,
             app_config=self.config,
-            python_prefix=[],  # empty
+            python_prefix=[],
+            override_user_id=self._user_id,
+            override_username=self._username,
         )
 
         self.log('debug', f'Starting server with command: {cmd}')
