@@ -52,7 +52,6 @@ async def store_settings(
             config, get_user_id(request)
         )
         existing_settings = await settings_store.load()
-        logger.info(f'Existing settings: {existing_settings}')
 
         if existing_settings:
             for key, value in settings.__dict__.items():
