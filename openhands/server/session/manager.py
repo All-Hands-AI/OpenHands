@@ -165,10 +165,9 @@ class SessionManager:
             # which can't be guaranteed - nodes can simply vanish unexpectedly!
             sid = data['sid']
             logger.debug(f'session_closing:{sid}')
-            for (
-                connection_id,
-                local_sid,
-            ) in self.local_connection_id_to_session_id.items():
+            # Create a list of items to process to avoid modifying dict during iteration
+            items = list(self.local_connection_id_to_session_id.items())
+            for connection_id, local_sid in items:
                 if sid == local_sid:
                     logger.warning(
                         'local_connection_to_closing_session:{connection_id}:{sid}'
