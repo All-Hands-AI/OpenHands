@@ -78,7 +78,10 @@ export default function MainApp() {
     >
       <Sidebar />
 
-      <div className="h-[calc(100%-50px)] md:h-full w-full relative">
+      <div
+        id="root-outlet"
+        className="h-[calc(100%-50px)] md:h-full w-full relative"
+      >
         <Outlet />
       </div>
 

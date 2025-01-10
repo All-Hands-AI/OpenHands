@@ -1,5 +1,9 @@
 import { delay, http, HttpResponse } from "msw";
-import { GetConfigResponse, Conversation } from "#/api/open-hands.types";
+import {
+  GetConfigResponse,
+  Conversation,
+  ResultSet,
+} from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 
 const userPreferences = {
@@ -17,26 +21,33 @@ const userPreferences = {
 const conversations: Conversation[] = [
   {
     conversation_id: "1",
-    name: "My New Project",
-    repo: null,
-    lastUpdated: new Date().toISOString(),
-    state: "running",
+    title: "My New Project",
+    selected_repository: null,
+    last_updated_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    status: "RUNNING",
   },
   {
     conversation_id: "2",
-    name: "Repo Testing",
-    repo: "octocat/hello-world",
+    title: "Repo Testing",
+    selected_repository: "octocat/hello-world",
     // 2 days ago
-    lastUpdated: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    state: "cold",
+    last_updated_at: new Date(
+      Date.now() - 2 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    status: "STOPPED",
   },
   {
     conversation_id: "3",
-    name: "Another Project",
-    repo: "octocat/earth",
+    title: "Another Project",
+    selected_repository: "octocat/earth",
     // 5 days ago
-    lastUpdated: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    state: "finished",
+    last_updated_at: new Date(
+      Date.now() - 5 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    status: "STOPPED",
   },
 ];
 
@@ -182,9 +193,15 @@ export const handlers = [
 
   http.get("/api/options/config", () => HttpResponse.json({ APP_MODE: "oss" })),
 
-  http.get("/api/conversations", async () =>
-    HttpResponse.json(Array.from(CONVERSATIONS.values())),
-  ),
+  http.get("/api/conversations", async () => {
+    const values = Array.from(CONVERSATIONS.values());
+    const results: ResultSet<Conversation> = {
+      results: values,
+      next_page_id: null,
+    };
+
+    return HttpResponse.json(results, { status: 200 });
+  }),
 
   http.delete("/api/conversations/:conversationId", async ({ params }) => {
     const { conversationId } = params;
@@ -197,7 +214,7 @@ export const handlers = [
     return HttpResponse.json(null, { status: 404 });
   }),
 
-  http.put(
+  http.patch(
     "/api/conversations/:conversationId",
     async ({ params, request }) => {
       const { conversationId } = params;
@@ -207,10 +224,10 @@ export const handlers = [
 
         if (conversation) {
           const body = await request.json();
-          if (typeof body === "object" && body?.name) {
+          if (typeof body === "object" && body?.title) {
             CONVERSATIONS.set(conversationId, {
               ...conversation,
-              name: body.name,
+              title: body.title,
             });
             return HttpResponse.json(null, { status: 200 });
           }
@@ -224,10 +241,11 @@ export const handlers = [
   http.post("/api/conversations", () => {
     const conversation: Conversation = {
       conversation_id: (Math.random() * 100).toString(),
-      name: "New Conversation",
-      repo: null,
-      lastUpdated: new Date().toISOString(),
-      state: "warm",
+      title: "New Conversation",
+      selected_repository: null,
+      last_updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      status: "RUNNING",
     };
 
     CONVERSATIONS.set(conversation.conversation_id, conversation);

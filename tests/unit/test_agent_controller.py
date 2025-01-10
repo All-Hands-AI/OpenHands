@@ -39,7 +39,7 @@ def event_loop():
 def mock_agent():
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
-    agent.llm.metrics = MagicMock(spec=Metrics)
+    agent.llm.metrics = Metrics()
     return agent
 
 
@@ -292,6 +292,7 @@ async def test_delegate_step_different_states(
 async def test_max_iterations_extension(mock_agent, mock_event_stream):
     # Test with headless_mode=False - should extend max_iterations
     initial_state = State(max_iterations=10)
+
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
@@ -544,3 +545,59 @@ async def test_reset_with_pending_action_no_metadata(
     # Verify that agent.reset() was called
     mock_agent.reset.assert_called_once()
     await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_run_controller_max_iterations_has_metrics():
+    config = AppConfig(
+        max_iterations=3,
+    )
+    file_store = InMemoryFileStore({})
+    event_stream = EventStream(sid='test', file_store=file_store)
+
+    agent = MagicMock(spec=Agent)
+    agent.llm = MagicMock(spec=LLM)
+    agent.llm.metrics = Metrics()
+    agent.llm.config = config.get_llm_config()
+
+    def agent_step_fn(state):
+        print(f'agent_step_fn received state: {state}')
+        # Mock the cost of the LLM
+        agent.llm.metrics.add_cost(10.0)
+        print(
+            f'agent.llm.metrics.accumulated_cost: {agent.llm.metrics.accumulated_cost}'
+        )
+        return CmdRunAction(command='ls')
+
+    agent.step = agent_step_fn
+
+    runtime = MagicMock(spec=Runtime)
+
+    def on_event(event: Event):
+        if isinstance(event, CmdRunAction):
+            non_fatal_error_obs = ErrorObservation(
+                'Non fatal error. event id: ' + str(event.id)
+            )
+            non_fatal_error_obs._cause = event.id
+            event_stream.add_event(non_fatal_error_obs, EventSource.ENVIRONMENT)
+
+    event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
+    runtime.event_stream = event_stream
+
+    state = await run_controller(
+        config=config,
+        initial_user_action=MessageAction(content='Test message'),
+        runtime=runtime,
+        sid='test',
+        agent=agent,
+        fake_user_response_fn=lambda _: 'repeat',
+    )
+    assert state.iteration == 3
+    assert state.agent_state == AgentState.ERROR
+    assert (
+        state.last_error
+        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
+    )
+    assert (
+        state.metrics.accumulated_cost == 10.0 * 3
+    ), f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'

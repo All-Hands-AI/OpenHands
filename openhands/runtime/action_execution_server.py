@@ -57,7 +57,6 @@ from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCode
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
-from openhands.runtime.utils.system import check_port_available
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
 
@@ -435,8 +434,6 @@ if __name__ == '__main__':
     )
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
-    os.environ['VSCODE_PORT'] = str(int(args.port) + 1)
-    assert check_port_available(int(os.environ['VSCODE_PORT']))
 
     plugins_to_load: list[Plugin] = []
     if args.plugins:
