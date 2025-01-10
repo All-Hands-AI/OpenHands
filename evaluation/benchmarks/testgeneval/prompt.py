@@ -12,7 +12,7 @@ IMPORTANT TIPS:
 
 2. Next start by trying to generate a high quality test suite at {test_file} that tests {code_file}.
     When you think you've successfully generated a test suite, run it on for the current project using {coverage_command}.
-    Then run coverage report --include {code_file} to see how well your test suite covers the code.
+    Then run coverage report -m --include {code_file} to see how well your test suite covers the code.
     Try to maximize coverage of your generated test suite.
 
 3. If you run a command and it doesn't work, try running a different command. A command that did not work once will not work the second time unless you modify it!
