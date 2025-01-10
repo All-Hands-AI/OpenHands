@@ -61,7 +61,7 @@ export function AccountSettingsForm({
   };
 
   return (
-    <ModalBody>
+    <ModalBody testID="account-settings-form">
       <form className="flex flex-col w-full gap-6" onSubmit={handleSubmit}>
         <div className="w-full flex flex-col gap-2">
           <BaseModalTitle title="Account Settings" />
@@ -137,6 +137,7 @@ export function AccountSettingsForm({
 
         <div className="flex flex-col gap-2 w-full">
           <ModalButton
+            testId="save-settings"
             type="submit"
             intent="account"
             text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$SAVE)}
