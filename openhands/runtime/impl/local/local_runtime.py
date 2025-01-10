@@ -64,17 +64,26 @@ class LocalRuntime(ActionExecutionClient):
         headless_mode: bool = True,
     ):
         self.config = config
-        if self.config.run_as_openhands:
-            raise RuntimeError(
-                'Local runtime does not support running as openhands. It only supports running as root.'
-            )
-        if self.config.sandbox.user_id != 0:
-            logger.warning(
-                'Local runtime does not support running as a non-root user. Setting user ID to 0.'
-            )
-            self.config.sandbox.user_id = 0
+        self._user_id = os.getuid()
+        self._username = os.getenv('USER')
 
-        self._temp_workspace: str | None = None
+        # A temporary directory is created for the agent to run in
+        # This is used for the local runtime only
+        self._temp_workspace = tempfile.mkdtemp(
+            prefix=f'openhands_workspace_{sid}',
+        )
+        self.config.workspace_mount_path_in_sandbox = self._temp_workspace
+
+        logger.warning(
+            'Initializing LocalRuntime. WARNING: NO SANDBOX IS USED. '
+            '`run_as_openhands` will be ignored since the current user will be used to launch the server. '
+            'We highly recommend using a sandbox (eg. DockerRuntime) unless you '
+            'are running in a controlled environment.\n'
+            f'Temp workspace: {self._temp_workspace}. '
+            f'User ID: {self._user_id}. '
+            f'Username: {self._username}.'
+        )
+
         if self.config.workspace_base is not None:
             logger.warning(
                 f'Workspace base path is set to {self.config.workspace_base}. It will be used as the path for the agent to run in.'
@@ -97,16 +106,6 @@ class LocalRuntime(ActionExecutionClient):
         self.server_process: Optional[subprocess.Popen[str]] = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
-        # A temporary directory is created for the agent to run in
-        # This is used for the local runtime only
-        self._temp_workspace = tempfile.mkdtemp(
-            prefix=f'openhands_workspace_{sid}',
-        )
-        self.config.workspace_mount_path_in_sandbox = self._temp_workspace
-
-        self._user_id = os.getuid()
-        self._username = os.getenv('USER')
-
         # Initialize the action_execution_server
         super().__init__(
             config,
@@ -117,16 +116,6 @@ class LocalRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
-        )
-
-        logger.warning(
-            'Initializing LocalRuntime. WARNING: NO SANDBOX IS USED. '
-            '`run_as_openhands` will be ignored since the current user will be used to launch the server. '
-            'We highly recommend using a sandbox (eg. DockerRuntime) unless you '
-            'are running in a controlled environment.\n'
-            f'Temp workspace: {self._temp_workspace}. '
-            f'User ID: {self._user_id}. '
-            f'Username: {self._username}.'
         )
 
     def _get_action_execution_server_host(self):
@@ -156,7 +145,7 @@ class LocalRuntime(ActionExecutionClient):
 
         self.log('debug', f'Starting server with command: {cmd}')
         self.server_process = subprocess.Popen(
-            cmd.split(),
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,
@@ -200,7 +189,7 @@ class LocalRuntime(ActionExecutionClient):
 
     @tenacity.retry(
         wait=tenacity.wait_exponential(multiplier=0.1, min=0.1, max=1),
-        stop=stop_if_should_exit,
+        stop=stop_if_should_exit(),
         before_sleep=lambda retry_state: logger.debug(
             f'Waiting for server to be ready... (attempt {retry_state.attempt_number})'
         ),
