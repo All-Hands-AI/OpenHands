@@ -184,9 +184,10 @@ class BashSession:
     def initialize(self):
         self.server = libtmux.Server()
         window_command = '/bin/bash'
-        if self.username:
+        if self.username in ['root', 'openhands']:
             # This starts a non-login (new) shell for the given user
             window_command = f'su {self.username} -'
+        # otherwise, we are running as the CURRENT USER (e.g., when running LocalRuntime)
 
         session_name = f'openhands-{self.username}-{uuid.uuid4()}'
         self.session = self.server.new_session(

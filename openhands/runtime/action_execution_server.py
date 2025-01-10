@@ -67,7 +67,7 @@ class ActionRequest(BaseModel):
 
 ROOT_GID = 0
 INIT_COMMANDS = [
-    'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"',
+    'git config --file ./.git_config user.name "openhands" && git config --file ./.git_config user.email "openhands@all-hands.dev" && alias git="git --no-pager" && export GIT_CONFIG_FILE=$(pwd)/.git_config',
 ]
 
 SESSION_API_KEY = os.environ.get('SESSION_API_KEY')
@@ -171,7 +171,6 @@ class ActionExecutor:
                 f'Init command outputs (exit code: {obs.exit_code}): {obs.content}'
             )
             assert obs.exit_code == 0
-
         logger.debug('Bash init commands completed')
 
     async def run_action(self, action) -> Observation:

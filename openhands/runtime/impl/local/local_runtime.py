@@ -12,6 +12,7 @@ from typing import Callable, Optional
 import requests
 import tenacity
 
+import openhands
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
 from openhands.core.logger import openhands_logger as logger
@@ -144,25 +145,50 @@ class LocalRuntime(ActionExecutionClient):
         )
 
         self.log('debug', f'Starting server with command: {cmd}')
+        env = os.environ.copy()
+        # Get the code repo path
+        code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
+        env['PYTHONPATH'] = f'{code_repo_path}:$PYTHONPATH'
+        env['OPENHANDS_REPO_PATH'] = code_repo_path
+        # run poetry show -v | head -n 1 | awk '{print $2}'
+        poetry_venvs_path = (
+            subprocess.check_output(
+                ['poetry', 'show', '-v'],
+                env=env,
+                cwd=code_repo_path,
+                text=True,
+                shell=False,
+            )
+            .splitlines()[0]
+            .split(':')[1]
+            .strip()
+        )
+        env['POETRY_VIRTUALENVS_PATH'] = poetry_venvs_path
+        logger.debug(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
+
         self.server_process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,
             bufsize=1,
+            env=env,
         )
 
         # Start a thread to read and log server output
         def log_output():
-            if self.server_process and self.server_process.stdout:
-                while True:
-                    line = self.server_process.stdout.readline()
-                    if not line:
-                        break
-                    self.log('debug', f'Server: {line.strip()}')
+            while (
+                self.server_process
+                and self.server_process.poll()
+                and self.server_process.stdout
+            ):
+                line = self.server_process.stdout.readline()
+                if not line:
+                    break
+                self.log('debug', f'Server: {line.strip()}')
 
-        log_thread = threading.Thread(target=log_output, daemon=True)
-        log_thread.start()
+        self._log_thread = threading.Thread(target=log_output, daemon=True)
+        self._log_thread.start()
 
         self.log('info', f'Waiting for server to become ready at {self.api_url}...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
@@ -238,6 +264,7 @@ class LocalRuntime(ActionExecutionClient):
             except subprocess.TimeoutExpired:
                 self.server_process.kill()
             self.server_process = None
+            self._log_thread.join()
 
         if self._temp_workspace:
             shutil.rmtree(self._temp_workspace)
