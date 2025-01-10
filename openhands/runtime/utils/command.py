@@ -31,7 +31,7 @@ def get_action_execution_server_startup_command(
             '--browsergym-eval-env'
         ] + sandbox_config.browsergym_eval_env.split(' ')
 
-    is_root = app_config.run_as_user == 'root'
+    is_root = not app_config.run_as_openhands
 
     base_cmd = [
         *python_prefix,
@@ -44,7 +44,7 @@ def get_action_execution_server_startup_command(
         app_config.workspace_mount_path_in_sandbox,
         *plugin_args,
         '--username',
-        app_config.run_as_user,
+        'openhands' if app_config.run_as_openhands else 'root',
         '--user-id',
         str(sandbox_config.user_id),
         *browsergym_args,

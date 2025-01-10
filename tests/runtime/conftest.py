@@ -142,16 +142,15 @@ def get_runtime_classes() -> list[type[Runtime]]:
         raise ValueError(f'Invalid runtime: {runtime}')
 
 
-def get_run_as_user() -> list[bool]:
+def get_run_as_openhands() -> list[bool]:
     print(
         '\n\n########################################################################'
     )
-    user = 'openhands' if RUN_AS_OPENHANDS else 'root'
-    print('USER: ' + user)
+    print('USER: ' + 'openhands' if RUN_AS_OPENHANDS else 'root')
     print(
         '########################################################################\n\n'
     )
-    return [user]
+    return [RUN_AS_OPENHANDS]
 
 
 @pytest.fixture(scope='module')  # for xdist
@@ -178,8 +177,8 @@ def runtime_cls(request):
 
 # TODO: We will change this to `run_as_user` when `ServerRuntime` is deprecated.
 # since `DockerRuntime` supports running as an arbitrary user.
-@pytest.fixture(scope='module', params=get_run_as_user())
-def run_as_user(request):
+@pytest.fixture(scope='module', params=get_run_as_openhands())
+def run_as_openhands(request):
     time.sleep(1)
     return request.param
 
@@ -212,7 +211,7 @@ def base_container_image(request):
 def _load_runtime(
     temp_dir,
     runtime_cls,
-    run_as_user: bool = True,
+    run_as_openhands: bool = True,
     enable_auto_lint: bool = False,
     base_container_image: str | None = None,
     browsergym_eval_env: str | None = None,
@@ -228,7 +227,7 @@ def _load_runtime(
     plugins = [AgentSkillsRequirement(), JupyterRequirement()]
 
     config = load_app_config()
-    config.run_as_user = run_as_user
+    config.run_as_openhands = run_as_openhands
     config.sandbox.force_rebuild_runtime = force_rebuild_runtime
     config.sandbox.keep_runtime_alive = False
     config.sandbox.docker_runtime_kwargs = docker_runtime_kwargs

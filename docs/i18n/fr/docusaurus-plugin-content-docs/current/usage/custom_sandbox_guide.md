@@ -41,7 +41,7 @@ Créez un fichier ```config.toml``` dans le répertoire OpenHands et entrez ces 
 ```toml
 [core]
 workspace_base="./workspace"
-run_as_user="openhands"
+run_as_openhands=true
 sandbox_base_container_image="image_personnalisée"
 ```
 
@@ -87,7 +87,7 @@ Si vous voyez cette erreur dans la sortie de la console, il s'agit du fait que O
 ```toml
 [core]
 workspace_base="./workspace"
-run_as_user="openhands"
+run_as_openhands=true
 sandbox_base_container_image="image_personnalisée"
 sandbox_user_id="1001"
 ```

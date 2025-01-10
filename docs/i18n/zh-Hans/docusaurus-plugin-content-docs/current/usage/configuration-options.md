@@ -155,9 +155,9 @@
   - 描述: 重写工作区挂载路径的路径。通常可以忽略这个,它指的是在另一个容器内运行的特殊情况。
 
 **其他**
-- `run_as_user`
-  - 类型: `str`
-  - 默认值: `openhands`
+- `run_as_openhands`
+  - 类型: `bool`
+  - 默认值: `true`
   - 描述: 以 OpenHands 身份运行
 
 - `runtime`

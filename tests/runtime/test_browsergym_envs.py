@@ -32,7 +32,7 @@ def test_browsergym_eval_env(runtime_cls, temp_dir):
     runtime = _load_runtime(
         temp_dir,
         runtime_cls=runtime_cls,
-        run_as_user='root',  # need root permission to access file
+        run_as_openhands=False,  # need root permission to access file
         base_container_image='xingyaoww/od-eval-miniwob:v1.0',
         browsergym_eval_env='browsergym/miniwob.choose-list',
         force_rebuild_runtime=True,

@@ -13,9 +13,9 @@ from openhands.events.observation import CmdOutputObservation
 # ============================================================================================================================
 
 
-def test_env_vars_os_environ(temp_dir, runtime_cls, run_as_user):
+def test_env_vars_os_environ(temp_dir, runtime_cls, run_as_openhands):
     with patch.dict(os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}):
-        runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+        runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
         obs: CmdOutputObservation = runtime.run_action(CmdRunAction(command='env'))
         print(obs)

@@ -27,8 +27,8 @@ if __name__ == '__main__':
     TEST_IN_CI != 'True',
     reason='This test requires LLM to run.',
 )
-def test_edit_from_scratch(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_edit_from_scratch(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         action = FileEditAction(
             content=ORGINAL,
@@ -67,8 +67,8 @@ def index():
     TEST_IN_CI != 'True',
     reason='This test requires LLM to run.',
 )
-def test_edit(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_edit(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         action = FileEditAction(
             content=ORGINAL,
@@ -126,8 +126,8 @@ This is line 101 + 10
     TEST_IN_CI != 'True',
     reason='This test requires LLM to run.',
 )
-def test_edit_long_file(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_edit_long_file(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         action = FileEditAction(
             content=ORIGINAL_LONG,

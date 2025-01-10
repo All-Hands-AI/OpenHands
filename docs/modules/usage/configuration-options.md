@@ -156,9 +156,9 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Description: Path to rewrite the workspace mount path to. You can usually ignore this, it refers to special cases of running inside another container.
 
 **Miscellaneous**
-- `run_as_user`
-  - Type: `str`
-  - Default: `"openhands"`
+- `run_as_openhands`
+  - Type: `bool`
+  - Default: `true`
   - Description: Run as OpenHands
 
 - `runtime`

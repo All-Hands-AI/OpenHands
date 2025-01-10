@@ -36,7 +36,7 @@ def get_config(
     llm_config: LLMConfig,
 ) -> AppConfig:
     config = AppConfig(
-        run_as_user='root',
+        run_as_openhands=False,
         max_budget_per_task=4,
         max_iterations=100,
         trajectories_path=os.path.join(

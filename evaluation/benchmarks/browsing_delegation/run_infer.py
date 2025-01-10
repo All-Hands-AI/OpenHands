@@ -38,7 +38,7 @@ def get_config(
     ), 'max_iterations must be 1 for browsing delegation evaluation.'
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_user='root',
+        run_as_openhands=False,
         runtime='docker',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(

@@ -5,7 +5,7 @@ import platform
 import sys
 from dataclasses import is_dataclass
 from types import UnionType
-from typing import Any, Callable, MutableMapping, get_args, get_origin
+from typing import Any, MutableMapping, get_args, get_origin
 from uuid import uuid4
 
 import toml
@@ -36,13 +36,6 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
         cfg: The AppConfig object to set attributes on.
         env_or_toml_dict: The environment variables or a config.toml dict.
     """
-    COMPATIBILITY_MAP: dict[str, tuple[str, Callable[[str], str]]] = {
-        # new env var name -> (old env var name, old to new conversion function)
-        'RUN_AS_USER': (
-            'RUN_AS_OPENHANDS',
-            lambda old_value: 'openhands' if old_value else 'root',
-        )
-    }
 
     def get_optional_type(union_type: UnionType) -> Any:
         """Returns the non-None type from a Union."""
@@ -64,14 +57,6 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
             elif env_var_name in env_or_toml_dict:
                 # convert the env var to the correct type and set it
                 value = env_or_toml_dict[env_var_name]
-
-                if env_var_name in COMPATIBILITY_MAP:
-                    old_env_var_name, conversion_func = COMPATIBILITY_MAP[env_var_name]
-                    if old_env_var_name in env_or_toml_dict:
-                        value = conversion_func(env_or_toml_dict[old_env_var_name])
-                    logger.openhands_logger.warning(
-                        f'Compatibility warning: {old_env_var_name} is deprecated, please use {env_var_name} instead.'
-                    )
 
                 # skip empty config values (fall back to default)
                 if not value:

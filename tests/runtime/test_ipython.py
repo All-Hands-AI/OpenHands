@@ -29,8 +29,8 @@ from openhands.events.observation import (
 # ============================================================================================================================
 
 
-def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     # Test run command
     action_cmd = CmdRunAction(command='ls -l')
@@ -101,8 +101,8 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_user):
     TEST_IN_CI != 'True',
     reason='This test is not working in WSL (file ownership)',
 )
-def test_ipython_multi_user(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_ipython_multi_user(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     # Test run ipython
     # get username
@@ -113,7 +113,7 @@ def test_ipython_multi_user(temp_dir, runtime_cls, run_as_user):
     assert isinstance(obs, IPythonRunCellObservation)
 
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    if run_as_user:
+    if run_as_openhands:
         assert 'openhands' in obs.content
     else:
         assert 'root' in obs.content
@@ -156,7 +156,7 @@ def test_ipython_multi_user(temp_dir, runtime_cls, run_as_user):
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
-    if run_as_user:
+    if run_as_openhands:
         # -rw-r--r-- 1 openhands root 13 Jul 28 03:53 test.txt
         assert 'openhands' in obs.content.split('\r\n')[0]
     else:
@@ -196,9 +196,9 @@ def test_ipython_simple(temp_dir, runtime_cls):
     _close_test_runtime(runtime)
 
 
-def test_ipython_package_install(temp_dir, runtime_cls, run_as_user):
+def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
     """Make sure that cd in bash also update the current working directory in ipython."""
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     # It should error out since pymsgbox is not installed
     action = IPythonRunCellAction(code='import pymsgbox')
@@ -233,7 +233,7 @@ def test_ipython_package_install(temp_dir, runtime_cls, run_as_user):
 
 def test_ipython_file_editor_permissions_as_openhands(temp_dir, runtime_cls):
     """Test file editor permission behavior when running as different users."""
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user=True)
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands=True)
 
     # Create a file owned by root with restricted permissions
     action = CmdRunAction(
@@ -312,8 +312,8 @@ print(file_editor(command='undo_edit', path='/openhands/workspace/test.txt'))
     _close_test_runtime(runtime)
 
 
-def test_file_read_and_edit_via_oh_aci(runtime_cls, run_as_user):
-    runtime = _load_runtime(None, runtime_cls, run_as_user)
+def test_file_read_and_edit_via_oh_aci(runtime_cls, run_as_openhands):
+    runtime = _load_runtime(None, runtime_cls, run_as_openhands)
     sandbox_dir = '/openhands/workspace'
 
     actions = [

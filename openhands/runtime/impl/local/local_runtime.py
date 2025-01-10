@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import tempfile
 import threading
+from pathlib import Path
 from typing import Callable, Optional
 
 import requests
@@ -13,10 +14,17 @@ import tenacity
 
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
-from openhands.core.logger import DEBUG_RUNTIME
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
-from openhands.events.action import Action
+from openhands.events.action import (
+    Action,
+    BrowseInteractiveAction,
+    BrowseURLAction,
+    CmdRunAction,
+    FileReadAction,
+    FileWriteAction,
+    IPythonRunCellAction,
+)
 from openhands.events.observation import (
     ErrorObservation,
     Observation,
@@ -62,6 +70,15 @@ class LocalRuntime(ActionExecutionClient):
         headless_mode: bool = True,
     ):
         self.config = config
+        if self.config.run_as_openhands:
+            raise RuntimeError(
+                'Local runtime does not support running as openhands. It only supports running as root.'
+            )
+        if self.config.sandbox.user_id != 0:
+            logger.warning(
+                'Local runtime does not support running as a non-root user. Setting user ID to 0.'
+            )
+            self.config.sandbox.user_id = 0
 
         self._temp_workspace: str | None = None
         if self.config.workspace_base is not None:
@@ -93,9 +110,6 @@ class LocalRuntime(ActionExecutionClient):
         )
         self.config.workspace_mount_path_in_sandbox = self._temp_workspace
 
-        # self.user_id = os.getuid()
-        # self.username = os.getenv('USER')
-
         # Initialize the action_execution_server
         super().__init__(
             config,
@@ -112,8 +126,7 @@ class LocalRuntime(ActionExecutionClient):
             'Initializing LocalRuntime. WARNING: NO SANDBOX IS USED. '
             'We highly recommend using a sandbox (eg. DockerRuntime) unless you '
             'are running in a controlled environment.\n'
-            f'Temp workspace: {self._temp_workspace}\n'
-            f'NOTE:'
+            f'Temp workspace: {self._temp_workspace}'
         )
 
     def _get_action_execution_server_host(self):
@@ -157,9 +170,8 @@ class LocalRuntime(ActionExecutionClient):
                         break
                     self.log('debug', f'Server: {line.strip()}')
 
-        if DEBUG_RUNTIME:
-            log_thread = threading.Thread(target=log_output, daemon=True)
-            log_thread.start()
+        log_thread = threading.Thread(target=log_output, daemon=True)
+        log_thread.start()
 
         self.log('info', f'Waiting for server to become ready at {self.api_url}...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')

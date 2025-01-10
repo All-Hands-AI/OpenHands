@@ -29,8 +29,8 @@ def _run_cmd_action(runtime, custom_command: str):
     return obs
 
 
-def test_bash_command_env(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_bash_command_env(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         obs = runtime.run_action(CmdRunAction(command='env'))
         assert isinstance(
@@ -41,8 +41,8 @@ def test_bash_command_env(temp_dir, runtime_cls, run_as_user):
         _close_test_runtime(runtime)
 
 
-def test_bash_server(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         action = CmdRunAction(command='python3 -m http.server 8080')
         action.timeout = 1
@@ -108,7 +108,7 @@ def test_multiline_commands(temp_dir, runtime_cls):
         _close_test_runtime(runtime)
 
 
-def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_user):
+def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
     cmds = [
         'ls -l',
         'echo -e "hello\nworld"',
@@ -122,7 +122,7 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_user):
     ]
     joined_cmds = '\n'.join(cmds)
 
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # First test that running multiple commands at once fails
         obs = _run_cmd_action(runtime, joined_cmds)
@@ -167,9 +167,9 @@ def test_complex_commands(temp_dir, runtime_cls):
         _close_test_runtime(runtime)
 
 
-def test_no_ps2_in_output(temp_dir, runtime_cls, run_as_user):
+def test_no_ps2_in_output(temp_dir, runtime_cls, run_as_openhands):
     """Test that the PS2 sign is not added to the output of a multiline command."""
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         obs = _run_cmd_action(runtime, 'echo -e "hello\nworld"')
         assert obs.exit_code == 0, 'The exit code should be 0.'
@@ -207,8 +207,8 @@ done && echo "success"
         _close_test_runtime(runtime)
 
 
-def test_cmd_run(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         obs = _run_cmd_action(runtime, 'ls -l /openhands/workspace')
         assert obs.exit_code == 0
@@ -222,7 +222,7 @@ def test_cmd_run(temp_dir, runtime_cls, run_as_user):
 
         obs = _run_cmd_action(runtime, 'ls -l')
         assert obs.exit_code == 0
-        if run_as_user:
+        if run_as_openhands:
             assert 'openhands' in obs.content
         else:
             assert 'root' in obs.content
@@ -244,12 +244,12 @@ def test_cmd_run(temp_dir, runtime_cls, run_as_user):
         _close_test_runtime(runtime)
 
 
-def test_run_as_user_correct_home_dir(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_run_as_user_correct_home_dir(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         obs = _run_cmd_action(runtime, 'cd ~ && pwd')
         assert obs.exit_code == 0
-        if run_as_user:
+        if run_as_openhands:
             assert '/home/openhands' in obs.content
         else:
             assert '/root' in obs.content
@@ -449,7 +449,7 @@ def test_git_operation(runtime_cls):
         use_workspace=False,
         runtime_cls=runtime_cls,
         # Need to use non-root user to expose issues
-        run_as_user=True,
+        run_as_openhands=True,
     )
     # this will happen if permission of runtime is not properly configured
     # fatal: detected dubious ownership in repository at '/workspace'
@@ -498,8 +498,8 @@ def test_git_operation(runtime_cls):
         _close_test_runtime(runtime)
 
 
-def test_python_version(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_python_version(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         obs = runtime.run_action(CmdRunAction(command='python --version'))
 
@@ -512,8 +512,8 @@ def test_python_version(temp_dir, runtime_cls, run_as_user):
         _close_test_runtime(runtime)
 
 
-def test_pwd_property(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_pwd_property(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a subdirectory and verify pwd updates
         obs = _run_cmd_action(runtime, 'mkdir -p random_dir')
@@ -526,8 +526,8 @@ def test_pwd_property(temp_dir, runtime_cls, run_as_user):
         _close_test_runtime(runtime)
 
 
-def test_basic_command(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_basic_command(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Test simple command
         obs = _run_cmd_action(runtime, "echo 'hello world'")
@@ -554,8 +554,8 @@ def test_basic_command(temp_dir, runtime_cls, run_as_user):
         _close_test_runtime(runtime)
 
 
-def test_interactive_command(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_interactive_command(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Test interactive command
         action = CmdRunAction('read -p "Enter name: " name && echo "Hello $name"')
@@ -585,8 +585,8 @@ EOF""")
         _close_test_runtime(runtime)
 
 
-def test_long_output(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_long_output(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Generate a long output
         action = CmdRunAction('for i in $(seq 1 5000); do echo "Line $i"; done')
@@ -599,8 +599,8 @@ def test_long_output(temp_dir, runtime_cls, run_as_user):
         _close_test_runtime(runtime)
 
 
-def test_long_output_exceed_history_limit(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_long_output_exceed_history_limit(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Generate a long output
         action = CmdRunAction('for i in $(seq 1 50000); do echo "Line $i"; done')
@@ -615,8 +615,8 @@ def test_long_output_exceed_history_limit(temp_dir, runtime_cls, run_as_user):
         _close_test_runtime(runtime)
 
 
-def test_long_output_from_nested_directories(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_long_output_from_nested_directories(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create nested directories with many files
         setup_cmd = 'mkdir -p /tmp/test_dir && cd /tmp/test_dir && for i in $(seq 1 100); do mkdir -p "folder_$i"; for j in $(seq 1 100); do touch "folder_$i/file_$j.txt"; done; done'
@@ -640,8 +640,8 @@ def test_long_output_from_nested_directories(temp_dir, runtime_cls, run_as_user)
         _close_test_runtime(runtime)
 
 
-def test_command_backslash(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_command_backslash(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a file with the content "implemented_function"
         action = CmdRunAction(
@@ -667,8 +667,8 @@ def test_command_backslash(temp_dir, runtime_cls, run_as_user):
         _close_test_runtime(runtime)
 
 
-def test_command_output_continuation(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Start a command that produces output slowly
         action = CmdRunAction('for i in {1..5}; do echo $i; sleep 3; done')
@@ -706,8 +706,10 @@ def test_command_output_continuation(temp_dir, runtime_cls, run_as_user):
         _close_test_runtime(runtime)
 
 
-def test_long_running_command_follow_by_execute(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_long_running_command_follow_by_execute(
+    temp_dir, runtime_cls, run_as_openhands
+):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Test command that produces output slowly
         action = CmdRunAction('for i in {1..3}; do echo $i; sleep 3; done')
@@ -744,8 +746,8 @@ def test_long_running_command_follow_by_execute(temp_dir, runtime_cls, run_as_us
         _close_test_runtime(runtime)
 
 
-def test_empty_command_errors(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_empty_command_errors(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Test empty command without previous command
         obs = runtime.run_action(CmdRunAction(''))
@@ -755,8 +757,8 @@ def test_empty_command_errors(temp_dir, runtime_cls, run_as_user):
         _close_test_runtime(runtime)
 
 
-def test_python_interactive_input(temp_dir, runtime_cls, run_as_user):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_user)
+def test_python_interactive_input(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Test Python program that asks for input - properly escaped for bash
         python_script = """name = input('Enter your name: '); age = input('Enter your age: '); print(f'Hello {name}, you are {age} years old')"""
