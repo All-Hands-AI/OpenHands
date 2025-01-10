@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   QueryClientProvider,
@@ -7,10 +7,12 @@ import {
 } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
+import React from "react";
 import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
 import { clickOnEditButton } from "./utils";
+import { queryClientConfig } from "#/query-client-config";
 
 describe("ConversationPanel", () => {
   const onCloseMock = vi.fn();
@@ -230,5 +232,48 @@ describe("ConversationPanel", () => {
     await userEvent.click(firstCard);
 
     expect(onCloseMock).toHaveBeenCalledOnce();
+  });
+
+  it("should refetch data on rerenders", async () => {
+    // We need to simulate the toggling of the component to test the refetching
+    function PanelWithToggle() {
+      const [isOpen, setIsOpen] = React.useState(true);
+      return (
+        <>
+          <button type="button" onClick={() => setIsOpen((prev) => !prev)}>
+            Toggle
+          </button>
+          {isOpen && <ConversationPanel onClose={onCloseMock} />}
+        </>
+      );
+    }
+
+    const MyRouterStub = createRoutesStub([
+      {
+        Component: PanelWithToggle,
+        path: "/",
+      },
+    ]);
+
+    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    render(<MyRouterStub />, {
+      wrapper: ({ children }) => (
+        <AuthProvider>
+          <QueryClientProvider client={new QueryClient(queryClientConfig)}>
+            {children}
+          </QueryClientProvider>
+        </AuthProvider>
+      ),
+    });
+
+    await waitFor(() => expect(getUserConversationsSpy).toHaveBeenCalledOnce());
+
+    const button = screen.getByText("Toggle");
+    await userEvent.click(button);
+    await userEvent.click(button);
+
+    await waitFor(() =>
+      expect(getUserConversationsSpy).toHaveBeenCalledTimes(2),
+    );
   });
 });
