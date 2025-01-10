@@ -30,14 +30,23 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
-from openhands.runtime.base import Runtime
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
+from openhands.runtime.impl.docker.docker_runtime import (
+    APP_PORT_RANGE_1,
+    APP_PORT_RANGE_2,
+    EXECUTION_SERVER_PORT_RANGE,
+    VSCODE_PORT_RANGE,
+)
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
+from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
-class LocalRuntime(Runtime):
+class LocalRuntime(ActionExecutionClient):
     """This runtime will run the action_execution_server directly on the local machine.
     When receiving an event, it will send the event to the server via HTTP.
 
@@ -84,8 +93,10 @@ class LocalRuntime(Runtime):
             self._temp_workspace = tempfile.mkdtemp()
             self.config.workspace_mount_path_in_sandbox = self._temp_workspace
 
-        self._host_port = 30000  # initial dummy value
-        self._runtime_initialized: bool = False
+        self._host_port = -1
+        self._vscode_port = -1
+        self._app_ports: list[int] = []
+
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._host_port}'
         self.session = requests.Session()
         self.status_callback = status_callback
@@ -102,35 +113,33 @@ class LocalRuntime(Runtime):
             attach_to_existing,
             headless_mode,
         )
+        logger.warning(
+            'Initializing LocalRuntime. WARNING: NO SANDBOX IS USED. '
+            'We highly recommend using a sandbox (eg. DockerRuntime) unless you '
+            'are running in a controlled environment.'
+        )
+
+    def _get_action_execution_server_host(self):
+        return self.api_url
 
     async def connect(self):
         """Start the action_execution_server on the local machine."""
         self.send_status_message('STATUS$STARTING_RUNTIME')
 
-        self._host_port = self._find_available_port()
+        self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
+        self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
+        self._app_ports = [
+            self._find_available_port(APP_PORT_RANGE_1),
+            self._find_available_port(APP_PORT_RANGE_2),
+        ]
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._host_port}'
 
-        plugin_arg = ''
-        if self.plugins is not None and len(self.plugins) > 0:
-            plugin_arg = (
-                f"--plugins {' '.join([plugin.name for plugin in self.plugins])} "
-            )
-
-        if self.config.sandbox.browsergym_eval_env is not None:
-            browsergym_arg = (
-                f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
-            )
-        else:
-            browsergym_arg = ''
-
         # Start the server process
-        cmd = (
-            f'python -u -m openhands.runtime.action_execution_server {self._host_port} '
-            f'--working-dir {self.config.workspace_mount_path_in_sandbox} '
-            f'{plugin_arg}'
-            f'--username root '
-            f'--user-id {self.config.sandbox.user_id} '
-            f'{browsergym_arg}'
+        cmd = get_action_execution_server_startup_command(
+            server_port=self._host_port,
+            plugins=self.plugins,
+            app_config=self.config,
+            python_prefix=[],  # empty
         )
 
         self.log('debug', f'Starting server with command: {cmd}')
@@ -170,9 +179,12 @@ class LocalRuntime(Runtime):
             self.send_status_message(' ')
         self._runtime_initialized = True
 
-    def _find_available_port(self) -> int:
-        """Find an available port to use for the server."""
-        return find_available_tcp_port()
+    def _find_available_port(self, port_range, max_attempts=5):
+        port = port_range[1]
+        for _ in range(max_attempts):
+            port = find_available_tcp_port(port_range[0], port_range[1])
+            return port
+        return port
 
     @tenacity.retry(
         wait=tenacity.wait_exponential(multiplier=0.1, min=0.1, max=1),
@@ -367,3 +379,10 @@ class LocalRuntime(Runtime):
             raise AgentRuntimeDisconnectedError('Server connection lost')
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f'Failed to get VSCode URL: {e}')
+
+    @property
+    def web_hosts(self):
+        hosts: dict[str, int] = {}
+        for port in self._app_ports:
+            hosts[f'http://localhost:{port}'] = port
+        return hosts
