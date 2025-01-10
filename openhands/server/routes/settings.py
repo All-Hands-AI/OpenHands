@@ -54,9 +54,6 @@ async def store_settings(
         existing_settings = await settings_store.load()
 
         if existing_settings:
-            for key, value in settings.__dict__.items():
-                if value is None:
-                    setattr(settings, key, getattr(existing_settings, key))
             # LLM key isn't on the frontend, so we need to keep it if unset
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key

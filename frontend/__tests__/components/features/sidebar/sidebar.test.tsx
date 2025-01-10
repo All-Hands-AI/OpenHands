@@ -72,9 +72,13 @@ describe("Sidebar", () => {
       );
       await user.click(saveButton);
 
-      expect(saveSettingsSpy).toHaveBeenCalledWith(
-        MOCK_USER_PREFERENCES.settings,
-      );
+      expect(saveSettingsSpy).toHaveBeenCalledWith({
+        ...MOCK_USER_PREFERENCES.settings,
+        // the actual values are falsey (null or "") but we're checking for undefined
+        llm_api_key: undefined,
+        llm_base_url: undefined,
+        security_analyzer: undefined,
+      });
     });
 
     it("should send all settings data when saving account settings", async () => {
@@ -95,9 +99,47 @@ describe("Sidebar", () => {
         within(accountSettingsModal).getByTestId("save-settings");
       await user.click(saveButton);
 
-      expect(saveSettingsSpy).toHaveBeenCalledWith(
-        MOCK_USER_PREFERENCES.settings,
+      expect(saveSettingsSpy).toHaveBeenCalledWith({
+        ...MOCK_USER_PREFERENCES.settings,
+        llm_api_key: undefined, // null or undefined
+      });
+    });
+
+    it("should not reset AI configuration when saving account settings", async () => {
+      const user = userEvent.setup();
+      renderSidebar();
+
+      const userAvatar = screen.getByTestId("user-avatar");
+      await user.click(userAvatar);
+
+      const menu = screen.getByTestId("account-settings-context-menu");
+      const accountSettingsButton = within(menu).getByTestId(
+        "account-settings-button",
       );
+      await user.click(accountSettingsButton);
+
+      const accountSettingsModal = screen.getByTestId("account-settings-form");
+
+      const languageInput =
+        within(accountSettingsModal).getByLabelText(/language/i);
+      await user.click(languageInput);
+
+      const norskOption = screen.getByText(/norsk/i);
+      await user.click(norskOption);
+
+      const tokenInput =
+        within(accountSettingsModal).getByLabelText(/github token/i);
+      await user.type(tokenInput, "new-token");
+
+      const saveButton =
+        within(accountSettingsModal).getByTestId("save-settings");
+      await user.click(saveButton);
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith({
+        ...MOCK_USER_PREFERENCES.settings,
+        language: "no",
+        llm_api_key: undefined, // null or undefined
+      });
     });
   });
 });
