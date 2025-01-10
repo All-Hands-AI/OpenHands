@@ -1,4 +1,5 @@
 import asyncio
+import time
 from typing import Callable, Optional
 
 from openhands.controller import AgentController
@@ -36,7 +37,8 @@ class AgentSession:
     controller: AgentController | None = None
     runtime: Runtime | None = None
     security_analyzer: SecurityAnalyzer | None = None
-    _initializing: bool = False
+    _starting: bool = False
+    _started_at: float = 0
     _closed: bool = False
     loop: asyncio.AbstractEventLoop | None = None
 
@@ -88,7 +90,8 @@ class AgentSession:
         if self._closed:
             logger.warning('Session closed before starting')
             return
-        self._initializing = True
+        self._starting = True
+        self._started_at = time.time()
         self._create_security_analyzer(config.security.security_analyzer)
         await self._create_runtime(
             runtime_name=runtime_name,
@@ -109,21 +112,19 @@ class AgentSession:
         self.event_stream.add_event(
             ChangeAgentStateAction(AgentState.INIT), EventSource.ENVIRONMENT
         )
-        self._initializing = False
+        self._starting = False
 
     async def close(self):
         """Closes the Agent session"""
         if self._closed:
             return
         self._closed = True
-        seconds_waited = 0
-        while self._initializing and should_continue():
+        while self._starting and should_continue():
             logger.debug(
                 f'Waiting for initialization to finish before closing session {self.sid}'
             )
             await asyncio.sleep(WAIT_TIME_BEFORE_CLOSE_INTERVAL)
-            seconds_waited += WAIT_TIME_BEFORE_CLOSE_INTERVAL
-            if seconds_waited > WAIT_TIME_BEFORE_CLOSE:
+            if time.time() <= self._started_at + WAIT_TIME_BEFORE_CLOSE:
                 logger.error(
                     f'Waited too long for initialization to finish before closing session {self.sid}'
                 )
