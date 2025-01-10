@@ -395,7 +395,7 @@ class CodeActAgent(Agent):
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
-        params['messages'] = (self.llm.format_messages_for_llm(messages),)
+        params['messages'] = self.llm.format_messages_for_llm(messages)
         params['tools'] = self.tools
         if self.mock_function_calling:
             params['mock_function_calling'] = True

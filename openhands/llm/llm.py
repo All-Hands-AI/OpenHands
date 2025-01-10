@@ -12,6 +12,7 @@ from openhands.core.config import LLMConfig, ModelRoutingConfig
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+    # litellm.set_verbose = True
 
 from litellm import ChatCompletionMessageToolCall, ModelInfo, PromptTokensDetails
 from litellm import Message as LiteLLMMessage
