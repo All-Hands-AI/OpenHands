@@ -245,7 +245,7 @@ if __name__ == '__main__':
     )
 
     # capture the top-level error if present, per instance
-    df['error_message'] = df['error']
+    df['error_message'] = df.get('error', None)
 
     logger.info(f'Total cost: USD {df["cost"].sum():.2f}')
 
