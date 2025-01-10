@@ -64,7 +64,7 @@ workspace_base = "./workspace"
 #workspace_mount_rewrite = ""
 
 # Run as openhands
-#run_as_openhands = true
+#run_as_user = "openhands"
 
 # Runtime environment
 #runtime = "eventstream"

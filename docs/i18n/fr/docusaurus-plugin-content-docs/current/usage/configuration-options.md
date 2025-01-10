@@ -158,9 +158,9 @@ Les options de configuration de base sont définies dans la section `[core]` du 
   - Description : Chemin pour réécrire le chemin de montage de l'espace de travail. Vous pouvez généralement ignorer cela, cela fait référence à des cas spéciaux d'exécution à l'intérieur d'un autre conteneur.
 
 **Divers**
-- `run_as_openhands`
-  - Type : `bool`
-  - Valeur par défaut : `true`
+- `run_as_user`
+  - Type : `str`
+  - Valeur par défaut : `openhands`
   - Description : Exécuter en tant qu'OpenHands
 
 - `runtime`

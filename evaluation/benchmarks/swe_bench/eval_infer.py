@@ -75,7 +75,7 @@ def get_config(instance: pd.Series) -> AppConfig:
         f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
     )
     config = AppConfig(
-        run_as_openhands=False,
+        run_as_user='root',
         runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox=SandboxConfig(
             base_container_image=base_container_image,

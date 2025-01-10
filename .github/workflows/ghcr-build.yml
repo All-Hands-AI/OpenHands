@@ -279,7 +279,7 @@ jobs:
         run: |
           TEST_RUNTIME=local \
           TEST_IN_CI=true \
-          RUN_AS_OPENHANDS=false \
+          RUN_AS_USER=root \
           poetry run pytest -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py
       - name: Run docker runtime tests
         run: |
@@ -296,7 +296,7 @@ jobs:
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
-          RUN_AS_OPENHANDS=false \
+          RUN_AS_USER=root \
           poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -373,7 +373,7 @@ jobs:
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
-          RUN_AS_OPENHANDS=true \
+          RUN_AS_USER=openhands \
           poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5

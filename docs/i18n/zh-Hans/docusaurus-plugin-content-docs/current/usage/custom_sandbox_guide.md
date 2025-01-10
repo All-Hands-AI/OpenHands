@@ -57,7 +57,7 @@ docker build -t custom_image .
 ```
 [core]
 workspace_base="./workspace"
-run_as_openhands=true
+run_as_user="openhands"
 sandbox_base_container_image="custom_image"
 ```
 
@@ -88,7 +88,7 @@ sandbox_base_container_image="custom_image"
 ```
 [core]
 workspace_base="./workspace"
-run_as_openhands=true
+run_as_user="openhands"
 sandbox_base_container_image="custom_image"
 sandbox_user_id="1001"
 ```

@@ -61,7 +61,7 @@ def get_config(
 ) -> AppConfig:
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_openhands=False,
+        run_as_user='root',
         runtime=os.environ.get('RUNTIME', 'docker'),
         max_budget_per_task=4,
         max_iterations=metadata.max_iterations,

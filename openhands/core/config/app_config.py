@@ -33,7 +33,8 @@ class AppConfig:
         workspace_mount_path_in_sandbox: Path to mount the workspace in sandbox. Defaults to `/workspace`.
         workspace_mount_rewrite: Path to rewrite the workspace mount path.
         cache_dir: Path to cache directory. Defaults to `/tmp/cache`.
-        run_as_openhands: Whether to run as openhands.
+        run_as_user: User to run as. Defaults to `openhands`, other options are `root`.
+            Only local runtime has official support for running as the current user.
         max_iterations: Maximum number of iterations allowed.
         max_budget_per_task: Maximum budget per task, agent stops if exceeded.
         e2b_api_key: E2B API key.
@@ -60,7 +61,7 @@ class AppConfig:
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
-    run_as_openhands: bool = True
+    run_as_user: str = 'openhands'
     max_iterations: int = OH_MAX_ITERATIONS
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''

@@ -53,7 +53,7 @@ def get_config(
     ), 'ALLHANDS_API_KEY must be set.'
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_openhands=False,
+        run_as_user='root',
         max_iterations=metadata.max_iterations,
         runtime='remote',
         sandbox=SandboxConfig(

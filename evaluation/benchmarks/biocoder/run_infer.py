@@ -60,7 +60,7 @@ def get_config(
 
     config = AppConfig(
         default_agent=metadata.agent_class,
-        run_as_openhands=False,
+        run_as_user='root',
         runtime='docker',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
