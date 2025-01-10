@@ -21,6 +21,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 from openhands.runtime.impl.docker.containers import remove_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
+from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
@@ -186,11 +187,7 @@ class DockerRuntime(ActionExecutionClient):
     def _init_container(self):
         self.log('debug', 'Preparing to start container...')
         self.send_status_message('STATUS$PREPARING_CONTAINER')
-        plugin_arg = ''
-        if self.plugins is not None and len(self.plugins) > 0:
-            plugin_arg = (
-                f'--plugins {" ".join([plugin.name for plugin in self.plugins])} '
-            )
+
         self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
         self._container_port = self._host_port
         self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
@@ -202,8 +199,6 @@ class DockerRuntime(ActionExecutionClient):
 
         use_host_network = self.config.sandbox.use_host_network
         network_mode: str | None = 'host' if use_host_network else None
-
-        use_host_network = self.config.sandbox.use_host_network
 
         # Initialize port mappings
         port_mapping: dict[str, list[dict[str, str]]] | None = None
@@ -257,26 +252,17 @@ class DockerRuntime(ActionExecutionClient):
             f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
         )
 
-        if self.config.sandbox.browsergym_eval_env is not None:
-            browsergym_arg = (
-                f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
-            )
-        else:
-            browsergym_arg = ''
+        command = get_action_execution_server_startup_command(
+            server_port=self._container_port,
+            plugins=self.plugins,
+            app_config=self.config,
+            use_nice_for_root=False,
+        )
 
         try:
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
-                command=(
-                    f'/openhands/micromamba/bin/micromamba run -n openhands '
-                    f'poetry run '
-                    f'python -u -m openhands.runtime.action_execution_server {self._container_port} '
-                    f'--working-dir "{self.config.workspace_mount_path_in_sandbox}" '
-                    f'{plugin_arg}'
-                    f'--username {"openhands" if self.config.run_as_openhands else "root"} '
-                    f'--user-id {self.config.sandbox.user_id} '
-                    f'{browsergym_arg}'
-                ),
+                command=command,
                 network_mode=network_mode,
                 ports=port_mapping,
                 working_dir='/openhands/code/',  # do not change this!
