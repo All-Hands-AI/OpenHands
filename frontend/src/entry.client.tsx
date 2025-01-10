@@ -11,16 +11,12 @@ import { hydrateRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import posthog from "posthog-js";
 import "./i18n";
-import {
-  QueryCache,
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
 import { SettingsUpToDateProvider } from "./context/settings-up-to-date-context";
+import { queryClientConfig } from "./query-client-config";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -50,27 +46,7 @@ async function prepareApp() {
   }
 }
 
-const QUERY_KEYS_TO_IGNORE = ["authenticated", "hosts"];
-const queryClient = new QueryClient({
-  queryCache: new QueryCache({
-    onError: (error, query) => {
-      if (!QUERY_KEYS_TO_IGNORE.some((key) => query.queryKey.includes(key))) {
-        toast.error(error.message);
-      }
-    },
-  }),
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 15, // 15 minutes
-    },
-    mutations: {
-      onError: (error) => {
-        toast.error(error.message);
-      },
-    },
-  },
-});
+const queryClient = new QueryClient(queryClientConfig);
 
 prepareApp().then(() =>
   startTransition(() => {
