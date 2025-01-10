@@ -38,7 +38,7 @@ from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
-from openhands.router.plan import RuleBasedPlanRouter
+from openhands.router.plan import LLMBasedPlanRouter
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -121,7 +121,10 @@ class CodeActAgent(Agent):
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {self.condenser}')
 
-        self.plan_router = RuleBasedPlanRouter() if config.enable_plan_routing else None
+        # self.plan_router = RuleBasedPlanRouter() if config.enable_plan_routing else None
+        self.plan_router = (
+            LLMBasedPlanRouter(self.llm.config) if config.enable_plan_routing else None
+        )
 
     def get_action_message(
         self,
