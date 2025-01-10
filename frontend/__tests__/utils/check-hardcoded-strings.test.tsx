@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { test, expect, describe, vi } from "vitest";
 import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
 import { ChatInput } from "#/components/features/chat/chat-input";
@@ -34,14 +34,7 @@ describe("Check for hardcoded English strings", () => {
   });
 
   test("ChatInput should use translation key for placeholder", () => {
-    const { container } = render(
-      <ChatInput
-        onSubmit={() => {}}
-      />
-    );
-
-    // The placeholder should be a translation key, not English text
-    const textarea = container.querySelector("textarea");
-    expect(textarea?.placeholder).toBe("SUGGESTIONS$WHAT_TO_BUILD");
+    render(<ChatInput onSubmit={() => {}} />);
+    screen.getByPlaceholderText("SUGGESTIONS$WHAT_TO_BUILD");
   });
 });
