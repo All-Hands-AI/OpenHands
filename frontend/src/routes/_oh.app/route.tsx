@@ -176,13 +176,15 @@ function AppContent() {
 
           <Controls
             setSecurityOpen={onSecurityModalOpen}
-            showSecurityLock={!!settings.SECURITY_ANALYZER}
+            showSecurityLock={!!settings?.SECURITY_ANALYZER}
           />
-          <Security
-            isOpen={securityModalIsOpen}
-            onOpenChange={onSecurityModalOpenChange}
-            securityAnalyzer={settings.SECURITY_ANALYZER}
-          />
+          {settings && (
+            <Security
+              isOpen={securityModalIsOpen}
+              onOpenChange={onSecurityModalOpenChange}
+              securityAnalyzer={settings.SECURITY_ANALYZER}
+            />
+          )}
         </div>
       </EventHandler>
     </WsClientProvider>
