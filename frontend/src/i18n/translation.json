@@ -454,6 +454,10 @@
     "fr": "Nous avons modifié certains paramètres dans la dernière mise à jour. Prenez un moment pour les examiner.",
     "tr": "Son güncellemede bazı ayarları değiştirdik. Gözden geçirmek için bir dakikanızı ayırın."
   },
+  "CONFIGURATION$SETTINGS_NOT_FOUND": {
+    "en": "Settings not found. Please check your API key",
+    "es": "Configuraciones no encontradas. Por favor revisa tu API key"
+  },
   "CONFIGURATION$AGENT_LOADING": {
     "en": "Please wait while the agent loads. This may take a few minutes...",
     "de": "Bitte warten Sie, während der Agent lädt. Das kann ein paar Minuten dauern...",

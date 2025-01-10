@@ -32,6 +32,7 @@ const selectConversationCard = async (page: Page, index: number) => {
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => {
+    localStorage.setItem("FEATURE_MULTI_CONVERSATION_UI", "true");
     localStorage.setItem("analytics-consent", "true");
     localStorage.setItem("SETTINGS_VERSION", "5");
   });
@@ -110,4 +111,29 @@ test("should redirect to home screen if conversation deos not exist", async ({
 }) => {
   await page.goto("/conversations/9999");
   await page.waitForURL("/");
+});
+
+test("display the conversation details during a conversation", async ({
+  page,
+}) => {
+  const conversationPanelButton = page.getByTestId("toggle-conversation-panel");
+  await expect(conversationPanelButton).toBeVisible();
+  await conversationPanelButton.click();
+
+  const panel = page.getByTestId("conversation-panel");
+
+  // select a conversation
+  const conversationItem = panel.getByTestId("conversation-card").first();
+  await conversationItem.click();
+
+  // panel should close
+  await expect(panel).not.toBeVisible();
+
+  await page.waitForURL("/conversations/1");
+  expect(page.url()).toBe("http://localhost:3001/conversations/1");
+
+  const conversationDetails = page.getByTestId("conversation-card");
+
+  await expect(conversationDetails).toBeVisible();
+  await expect(conversationDetails).toHaveText("Conversation 1");
 });
