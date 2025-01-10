@@ -11,6 +11,8 @@ class LLMBasedPlanRouter(BaseRouter):
     Router that routes the prompt that is judged by a LLM as complex and requires a step-by-step plan.
     """
 
+    JUDGE_MODEL = 'gpt-4o'
+
     def __init__(self, llm_config: LLMConfig):
         super().__init__()
 
@@ -29,5 +31,6 @@ class LLMBasedPlanRouter(BaseRouter):
 
         response = self.judge_llm.completion(
             messages=messages,
+            model=self.JUDGE_MODEL,
         )
         return int(response['choices'][0]['message']['content'].strip()) == 1
