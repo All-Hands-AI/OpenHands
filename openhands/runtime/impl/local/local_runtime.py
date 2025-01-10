@@ -271,10 +271,6 @@ class LocalRuntime(ActionExecutionClient):
 
         super().close()
 
-        # Cleanup the temp workspace
-        if self._temp_workspace:
-            shutil.rmtree(self._temp_workspace)
-
     @property
     def vscode_url(self) -> str | None:
         token = super().get_vscode_token()
