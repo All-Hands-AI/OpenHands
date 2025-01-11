@@ -9,6 +9,9 @@ import toml
 from datasets import load_dataset
 
 import openhands.agenthub
+from evaluation.benchmarks.swe_bench.resource.mapping import (
+    get_instance_resource_factor,
+)
 from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
@@ -42,9 +45,7 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'true').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
-DEFAULT_RUNTIME_RESOURCE_FACTOR = int(
-    os.environ.get('DEFAULT_RUNTIME_RESOURCE_FACTOR', 1)
-)
+
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -137,7 +138,10 @@ def get_config(
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             keep_runtime_alive=False,
             remote_runtime_init_timeout=3600,
-            remote_runtime_resource_factor=int(DEFAULT_RUNTIME_RESOURCE_FACTOR),
+            remote_runtime_resource_factor=get_instance_resource_factor(
+                dataset_name=metadata.dataset,
+                instance_id=instance['instance_id'],
+            ),
         ),
         # do not mount workspace
         workspace_base=None,
@@ -481,11 +485,25 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
                 subset = dataset[dataset[filter_column].isin(selected_ids)]
                 logger.info(f'Retained {subset.shape[0]} tasks after filtering')
                 return subset
+    skip_ids = os.environ.get('SKIP_IDS', '').split(',')
+    if len(skip_ids) > 0:
+        logger.info(f'Filtering {len(skip_ids)} tasks from "SKIP_IDS"...')
+        return dataset[~dataset[filter_column].isin(skip_ids)]
     return dataset
 
 
+# A list of instances that are known to be tricky to infer
+# (will cause runtime failure even with resource factor = 8)
 SWEGYM_EXCLUDE_IDS = [
     'dask__dask-10422',
+    'pandas-dev__pandas-50548',
+    'pandas-dev__pandas-53672',
+    'pandas-dev__pandas-54174',
+    'pandas-dev__pandas-55518',
+    'pandas-dev__pandas-58383',
+    'pydata__xarray-6721',
+    'pytest-dev__pytest-10081',
+    'pytest-dev__pytest-7236',
 ]
 
 if __name__ == '__main__':
