@@ -13,7 +13,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.utils.command import get_remote_startup_command
+from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.runtime.utils.runtime_build import (
     BuildFromImageType,
     prep_build_folder,
@@ -203,11 +203,6 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
     ):
         try:
             self.log('debug', 'Preparing to start container...')
-            plugin_args = []
-            if plugins is not None and len(plugins) > 0:
-                plugin_args.append('--plugins')
-                plugin_args.extend([plugin.name for plugin in plugins])
-
             # Combine environment variables
             environment: dict[str, str | None] = {
                 'port': str(self.container_port),
@@ -216,24 +211,13 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
             if self.config.debug:
                 environment['DEBUG'] = 'true'
 
-            browsergym_args = []
-            if self.config.sandbox.browsergym_eval_env is not None:
-                browsergym_args = [
-                    '-browsergym-eval-env',
-                    self.config.sandbox.browsergym_eval_env,
-                ]
-
             env_secret = modal.Secret.from_dict(environment)
 
             self.log('debug', f'Sandbox workspace: {sandbox_workspace_dir}')
-            sandbox_start_cmd = get_remote_startup_command(
-                self.container_port,
-                sandbox_workspace_dir,
-                'openhands' if self.config.run_as_openhands else 'root',
-                self.config.sandbox.user_id,
-                plugin_args,
-                browsergym_args,
-                is_root=not self.config.run_as_openhands,  # is_root=True when running as root
+            sandbox_start_cmd = get_action_execution_server_startup_command(
+                server_port=self.container_port,
+                plugins=self.plugins,
+                app_config=self.config,
             )
             self.log('debug', f'Starting container with command: {sandbox_start_cmd}')
             self.sandbox = modal.Sandbox.create(

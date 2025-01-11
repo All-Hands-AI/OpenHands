@@ -19,10 +19,10 @@ import { CustomModelInput } from "../../inputs/custom-model-input";
 import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
-import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
 import { RuntimeSizeSelector } from "./runtime-size-selector";
 import { useConfig } from "#/hooks/query/use-config";
+import { useCurrentSettings } from "#/context/settings-context";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -41,7 +41,7 @@ export function SettingsForm({
   securityAnalyzers,
   onClose,
 }: SettingsFormProps) {
-  const { mutateAsync: saveSettings } = useSaveSettings();
+  const { saveUserSettings } = useCurrentSettings();
   const endSession = useEndSession();
   const { data: config } = useConfig();
 
@@ -95,7 +95,8 @@ export function SettingsForm({
     const newSettings = extractSettings(formData);
 
     saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
-    await saveSettings(newSettings, { onSuccess: onClose });
+    await saveUserSettings(newSettings);
+    onClose();
     resetOngoingSession();
 
     posthog.capture("settings_saved", {
@@ -107,7 +108,8 @@ export function SettingsForm({
   };
 
   const handleConfirmResetSettings = async () => {
-    await saveSettings(getDefaultSettings(), { onSuccess: onClose });
+    await saveUserSettings(getDefaultSettings());
+    onClose();
     resetOngoingSession();
     posthog.capture("settings_reset");
   };
@@ -204,6 +206,7 @@ export function SettingsForm({
         <div className="flex flex-col gap-2">
           <div className="flex gap-2">
             <ModalButton
+              testId="save-settings-button"
               disabled={disabled}
               type="submit"
               text={t(I18nKey.SETTINGS_FORM$SAVE_LABEL)}

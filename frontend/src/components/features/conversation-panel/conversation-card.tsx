@@ -7,25 +7,32 @@ import {
 } from "./conversation-state-indicator";
 import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
+import { cn } from "#/utils/utils";
 
 interface ConversationCardProps {
-  onDelete: () => void;
-  onChangeTitle: (title: string) => void;
-  isActive: boolean;
+  onClick?: () => void;
+  onDelete?: () => void;
+  onChangeTitle?: (title: string) => void;
+  onDownloadWorkspace?: () => void;
+  isActive?: boolean;
   title: string;
   selectedRepository: string | null;
   lastUpdatedAt: string; // ISO 8601
   status?: ProjectStatus;
+  variant?: "compact" | "default";
 }
 
 export function ConversationCard({
+  onClick,
   onDelete,
   onChangeTitle,
+  onDownloadWorkspace,
   isActive,
   title,
   selectedRepository,
   lastUpdatedAt,
   status = "STOPPED",
+  variant = "default",
 }: ConversationCardProps) {
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
@@ -34,7 +41,7 @@ export function ConversationCard({
   const handleBlur = () => {
     if (inputRef.current?.value) {
       const trimmed = inputRef.current.value.trim();
-      onChangeTitle(trimmed);
+      onChangeTitle?.(trimmed);
       inputRef.current!.value = trimmed;
     } else {
       // reset the value if it's empty
@@ -58,7 +65,7 @@ export function ConversationCard({
   const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    onDelete();
+    onDelete?.();
   };
 
   const handleEdit = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -68,16 +75,28 @@ export function ConversationCard({
     setContextMenuVisible(false);
   };
 
+  const handleDownload = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onDownloadWorkspace?.();
+  };
+
   React.useEffect(() => {
     if (titleMode === "edit") {
       inputRef.current?.focus();
     }
   }, [titleMode]);
 
+  const hasContextMenu = !!(onDelete || onChangeTitle || onDownloadWorkspace);
+
   return (
     <div
       data-testid="conversation-card"
-      className="h-[100px] w-full px-[18px] py-4 border-b border-neutral-600 cursor-pointer"
+      onClick={onClick}
+      className={cn(
+        "h-[100px] w-full px-[18px] py-4 border-b border-neutral-600 cursor-pointer",
+        variant === "compact" &&
+          "h-auto w-fit rounded-xl border border-[#525252]",
+      )}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 w-full">
@@ -97,31 +116,42 @@ export function ConversationCard({
 
         <div className="flex items-center gap-2 relative">
           <ConversationStateIndicator status={status} />
-          <EllipsisButton
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              setContextMenuVisible((prev) => !prev);
-            }}
-          />
+          {hasContextMenu && (
+            <EllipsisButton
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setContextMenuVisible((prev) => !prev);
+              }}
+            />
+          )}
+          {contextMenuVisible && (
+            <ConversationCardContextMenu
+              onClose={() => setContextMenuVisible(false)}
+              onDelete={onDelete && handleDelete}
+              onEdit={onChangeTitle && handleEdit}
+              onDownload={onDownloadWorkspace && handleDownload}
+              position={variant === "compact" ? "top" : "bottom"}
+            />
+          )}
         </div>
       </div>
-      {contextMenuVisible && (
-        <ConversationCardContextMenu
-          onClose={() => setContextMenuVisible(false)}
-          onDelete={handleDelete}
-          onEdit={handleEdit}
-        />
-      )}
-      {selectedRepository && (
-        <ConversationRepoLink
-          selectedRepository={selectedRepository}
-          onClick={(e) => e.stopPropagation()}
-        />
-      )}
-      <p className="text-xs text-neutral-400">
-        <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>
-      </p>
+
+      <div
+        className={cn(
+          variant === "compact" && "flex items-center justify-between mt-1",
+        )}
+      >
+        {selectedRepository && (
+          <ConversationRepoLink
+            selectedRepository={selectedRepository}
+            onClick={(e) => e.stopPropagation()}
+          />
+        )}
+        <p className="text-xs text-neutral-400">
+          <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>
+        </p>
+      </div>
     </div>
   );
 }
