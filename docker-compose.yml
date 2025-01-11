@@ -1,4 +1,4 @@
-#
+
 services:
   openhands:
     build:
@@ -7,8 +7,8 @@ services:
     image: openhands:latest
     container_name: openhands-app-${DATE:-}
     environment:
-      - SANDBOX_RUNTIME_CONTAINER_IMAGE=${SANDBOX_RUNTIME_CONTAINER_IMAGE:-ghcr.io/all-hands-ai/runtime:0.19-nikolaik}
-      - SANDBOX_USER_ID=${SANDBOX_USER_ID:-1234}
+      - SANDBOX_RUNTIME_CONTAINER_IMAGE=${SANDBOX_RUNTIME_CONTAINER_IMAGE:-docker.all-hands.dev/all-hands-ai/runtime:0.19-nikolaik}
+      #- SANDBOX_USER_ID=${SANDBOX_USER_ID:-1234} # enable this only if you want a specific non-root sandbox user but you will have to manually adjust permissions of openhands-state for this user
       - WORKSPACE_MOUNT_PATH=${WORKSPACE_BASE:-$PWD/workspace}
     ports:
       - "3000:3000"
@@ -16,6 +16,7 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.openhands-state:/.openhands-state
       - ${WORKSPACE_BASE:-$PWD/workspace}:/opt/workspace_base
     pull_policy: build
     stdin_open: true
