@@ -209,6 +209,7 @@ yarn-debug.log*
 yarn-error.log*
 
 logs
+jan_logs
 
 # agent
 .envrc
