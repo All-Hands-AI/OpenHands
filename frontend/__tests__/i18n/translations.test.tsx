@@ -21,7 +21,14 @@ const renderWithI18n = (component: React.ReactNode, language: string = 'en') => 
 
 describe('Translations', () => {
   it('should render translated text', () => {
-    renderWithI18n(<AccountSettingsContextMenu />);
+    renderWithI18n(
+      <AccountSettingsContextMenu
+        onClickAccountSettings={() => {}}
+        onLogout={() => {}}
+        onClose={() => {}}
+        isLoggedIn={true}
+      />
+    );
     expect(screen.getByTestId('account-settings-context-menu')).toBeInTheDocument();
   });
 });
