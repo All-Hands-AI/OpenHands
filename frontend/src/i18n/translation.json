@@ -1,4 +1,19 @@
 {
+    "SETTINGS$TITLE": {
+        "en": "Settings",
+        "ja": "設定",
+        "zh-CN": "设置",
+        "zh-TW": "設定",
+        "ko-KR": "설정",
+        "no": "Innstillinger",
+        "it": "Impostazioni",
+        "pt": "Configurações",
+        "es": "Configuración",
+        "ar": "الإعدادات",
+        "fr": "Paramètres",
+        "tr": "Ayarlar",
+        "de": "Einstellungen"
+    },
     "PROJECT$START_NEW": {
         "en": "Start new project",
         "ja": "新規プロジェクトを開始",
@@ -4154,12 +4169,12 @@
         "es": "Ocultar detalles",
         "tr": "Detayları gizle"
     },
-    "SETTINGS$TITLE": {
+    "AI_SETTINGS$TITLE": {
         "en": "AI Provider Configuration",
         "ja": "AI プロバイダー設定",
         "zh-CN": "AI 提供商配置",
         "zh-TW": "AI 提供商配置",
-        "ko-KR": "AI 제공자 설정",
+        "ko-KR": "AI 제공자 設정",
         "no": "AI-leverandørkonfigurasjon",
         "it": "Configurazione del provider AI",
         "pt": "Configuração do provedor de IA",

@@ -12,8 +12,8 @@ export function SettingsButton({ onClick }: SettingsButtonProps) {
   return (
     <TooltipButton
       testId="settings-button"
-      tooltip={t(I18nKey.ACCOUNT_SETTINGS$TITLE)}
-      ariaLabel={t(I18nKey.ACCOUNT_SETTINGS$TITLE)}
+      tooltip={t(I18nKey.SETTINGS$TITLE)}
+      ariaLabel={t(I18nKey.SETTINGS$TITLE)}
       onClick={onClick}
     >
       <FaCog size={24} />
