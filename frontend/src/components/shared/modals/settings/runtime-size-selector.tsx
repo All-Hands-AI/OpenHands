@@ -22,6 +22,7 @@ export function RuntimeSizeSelector({
         {t(I18nKey.SETTINGS_FORM$RUNTIME_SIZE_LABEL)}
       </label>
       <Select
+        data-testid="runtime-size"
         id="runtime-size"
         name="runtime-size"
         defaultSelectedKeys={[String(defaultValue || 1)]}
