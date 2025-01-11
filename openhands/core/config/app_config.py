@@ -46,6 +46,9 @@ class AppConfig:
             input is read line by line. When enabled, input continues until /exit command.
     """
 
+    approved_hostnames: list[str] = field(
+        default_factory=lambda: ['localhost', '127.0.0.1']
+    )
     llms: dict[str, LLMConfig] = field(default_factory=dict)
     agents: dict = field(default_factory=dict)
     default_agent: str = OH_DEFAULT_AGENT
