@@ -213,7 +213,35 @@ class LLM(RetryMixin, DebugMixin):
                     'The messages list is empty. At least one message is required.'
                 )
 
-            # log the entire LLM prompt
+            # Detailed logging of the LLM prompt
+            prompt_log_path = os.path.join(
+                'jan_logs/llm',
+                time.strftime('%y-%m-%d_%H-%M'),
+                f'prompt_{str(int(time.time()))[-3:]}.log',
+            )
+            os.makedirs(os.path.dirname(prompt_log_path), exist_ok=True)
+
+            with open(prompt_log_path, 'w') as f:
+                f.write('=== LLM INTERACTION LOG ===\n\n')
+                f.write(f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f'Model: {self.config.model}\n\n')
+
+                f.write('=== PROMPT ===\n')
+                f.write('Messages:\n')
+                for msg in messages:
+                    f.write(f"\nRole: {msg.get('role', 'unknown')}\n")
+                    f.write(f"Content: {msg.get('content', '')}\n")
+                    if 'tool_calls' in msg:
+                        f.write(f"Tool Calls: {msg['tool_calls']}\n")
+                f.write('\n---\n\n')
+
+                # Log tool calls if present
+                if 'tools' in kwargs:
+                    f.write('\n=== TOOLS ===\n')
+                    f.write(json.dumps(kwargs['tools'], indent=2))
+                    f.write('\n\n')
+
+            # Original prompt logging
             self.log_prompt(messages)
 
             if self.is_caching_prompt_active():
@@ -266,11 +294,28 @@ class LLM(RetryMixin, DebugMixin):
                         fn_args = tool_call.function.arguments
                         message_back += f'\nFunction call: {fn_name}({fn_args})'
 
-                # log the LLM response
-                self.log_response(message_back)
-
                 # post-process the response first to calculate cost
                 cost = self._post_completion(resp)
+
+                # Detailed logging of the LLM response
+                with open(prompt_log_path, 'a') as f:
+                    f.write('\n=== RESPONSE ===\n')
+                    f.write(f'Content: {message_back}\n')
+                    if tool_calls:
+                        f.write('\n=== TOOL CALLS ===\n')
+                        for tool_call in tool_calls:
+                            f.write(f'Function: {tool_call.function.name}\n')
+                            f.write(f'Arguments: {tool_call.function.arguments}\n')
+                    f.write(f'\nRaw response: {resp}\n')
+                    f.write('\n=== END OF INTERACTION ===\n\n')
+
+                    # Add latency and cost information
+                    f.write('\n=== METRICS ===\n')
+                    f.write(f'Latency: {latency:.3f} seconds\n')
+                    f.write(f'Cost: {cost:.2f} USD\n')
+
+                # Original response logging
+                self.log_response(message_back)
 
                 # log for evals or other scripts that need the raw completion
                 if self.config.log_completions:
