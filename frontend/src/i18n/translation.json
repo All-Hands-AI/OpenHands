@@ -1,4 +1,49 @@
 {
+    "APP$TITLE": {
+        "en": "App",
+        "ja": "アプリ",
+        "zh-CN": "应用",
+        "zh-TW": "應用",
+        "ko-KR": "앱",
+        "no": "App",
+        "it": "App",
+        "pt": "App",
+        "es": "App",
+        "ar": "تطبيق",
+        "fr": "App",
+        "tr": "Uygulama",
+        "de": "App"
+    },
+    "BROWSER$TITLE": {
+        "en": "Browser",
+        "ja": "ブラウザ",
+        "zh-CN": "浏览器",
+        "zh-TW": "瀏覽器",
+        "ko-KR": "브라우저",
+        "no": "Nettleser",
+        "it": "Browser",
+        "pt": "Navegador",
+        "es": "Navegador",
+        "ar": "المتصفح",
+        "fr": "Navigateur",
+        "tr": "Tarayıcı",
+        "de": "Browser"
+    },
+    "BROWSER$EMPTY_MESSAGE": {
+        "en": "If you tell OpenHands to start a web server, the app will appear here.",
+        "ja": "OpenHandsにWebサーバーの起動を指示すると、ここにアプリが表示されます。",
+        "zh-CN": "如果您告诉OpenHands启动Web服务器，应用将在此处显示。",
+        "zh-TW": "如果您告訴OpenHands啟動Web伺服器，應用將在此處顯示。",
+        "ko-KR": "OpenHands에게 웹 서버를 시작하도록 지시하면 여기에 앱이 표시됩니다.",
+        "no": "Hvis du ber OpenHands om å starte en webserver, vil appen vises her.",
+        "it": "Se chiedi a OpenHands di avviare un server web, l'app apparirà qui.",
+        "pt": "Se você disser ao OpenHands para iniciar um servidor web, o aplicativo aparecerá aqui.",
+        "es": "Si le dices a OpenHands que inicie un servidor web, la aplicación aparecerá aquí.",
+        "ar": "إذا طلبت من OpenHands بدء خادم ويب، سيظهر التطبيق هنا.",
+        "fr": "Si vous demandez à OpenHands de démarrer un serveur web, l'application apparaîtra ici.",
+        "tr": "OpenHands'e bir web sunucusu başlatmasını söylerseniz, uygulama burada görünecektir.",
+        "de": "Wenn Sie OpenHands anweisen, einen Webserver zu starten, erscheint die App hier."
+    },
     "SETTINGS$TITLE": {
         "en": "Settings",
         "ja": "設定",
@@ -4289,8 +4334,9 @@
         "fr": "Connecté",
         "tr": "Bağlandı"
     },
-    "BROWSER$EMPTY_MESSAGE": {
+    "BROWSER$NO_PAGE_LOADED": {
         "en": "No page loaded.",
+        "ja": "ページが読み込まれていません。",
         "zh-CN": "页面未加载",
         "zh-TW": "未加載任何頁面。",
         "de": "Keine Seite geladen.",
