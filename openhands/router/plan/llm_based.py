@@ -3,7 +3,10 @@ import copy
 from openhands.core.config import LLMConfig
 from openhands.llm.llm import LLM
 from openhands.router.base import BaseRouter
-from openhands.router.plan.prompts import USER_MESSAGE_PLANNING_ANALYZE_PROMPT
+from openhands.router.plan.prompts import (
+    TRAJECTORY_JUDGE_REASONING_SYSTEM_PROMPT,
+    TRAJECTORY_JUDGE_REASONING_USER_PROMPT,
+)
 
 
 class LLMBasedPlanRouter(BaseRouter):
@@ -20,14 +23,18 @@ class LLMBasedPlanRouter(BaseRouter):
         self.judge_llm = LLM(judge_llm_config)
 
     def should_route_to_custom_model(self, prompt: str) -> bool:
-        messages = []
-
-        messages.append(
+        messages = [
+            {
+                'role': 'system',
+                'content': TRAJECTORY_JUDGE_REASONING_SYSTEM_PROMPT,
+            },
             {
                 'role': 'user',
-                'content': USER_MESSAGE_PLANNING_ANALYZE_PROMPT.format(message=prompt),
-            }
-        )
+                'content': TRAJECTORY_JUDGE_REASONING_USER_PROMPT.format(
+                    interaction_log=prompt
+                ),
+            },
+        ]
 
         response = self.judge_llm.completion(
             messages=messages,

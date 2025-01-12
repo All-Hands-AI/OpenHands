@@ -45,6 +45,7 @@ from openhands.runtime.plugins import (
     PluginRequirement,
 )
 from openhands.utils.prompt import PromptManager
+from openhands.utils.trajectory import format_trajectory
 
 
 class CodeActAgent(Agent):
@@ -385,19 +386,19 @@ class CodeActAgent(Agent):
 
         params: dict = {}
 
-        # check if the user requests a plan
-        if (
-            latest_user_message
-            and self.plan_router
-            and self.plan_router.should_route_to_custom_model(
-                latest_user_message.content
-            )
+        # prepare what we want to send to the LLM
+        messages = self._get_messages(state)
+        messages_dict = self.llm.format_messages_for_llm(messages)
+        params['messages'] = messages_dict
+
+        formatted_trajectory = format_trajectory(messages_dict)
+
+        # check if model routing is needed
+        if self.plan_router and self.plan_router.should_route_to_custom_model(
+            formatted_trajectory
         ):
             params['use_reasoning_model'] = True
 
-        # prepare what we want to send to the LLM
-        messages = self._get_messages(state)
-        params['messages'] = self.llm.format_messages_for_llm(messages)
         params['tools'] = self.tools
         if self.mock_function_calling:
             params['mock_function_calling'] = True

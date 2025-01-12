@@ -58,7 +58,7 @@ Respond only with 0 if the AI assistant is not struggling or the task is not com
 TRAJECTORY_JUDGE_REASONING_USER_PROMPT = """Please evaluate the following interaction (or part of the recent interaction) between an AI assistant and a user:
 
 === INTERACTION LOG ===
-{interaction}
+{interaction_log}
 === END INTERACTION ===
 
 Based on the above interaction, do we need to provide additional guidance to the AI assistant or is the task complex and requires careful reasoning to solve? Respond with 0 if no guidance is needed or the task is not complex. Otherwise, respond with 1."""
