@@ -1,5 +1,7 @@
 import hashlib
+import json
 import uuid
+from pathlib import Path
 from typing import Tuple, Type
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
@@ -11,6 +13,8 @@ from openhands.core.config import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.events.event import Event
+from openhands.events.serialization import event_from_dict
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
@@ -92,6 +96,10 @@ def create_controller(
     except Exception as e:
         logger.debug(f'Cannot restore agent state: {e}')
 
+    replay_logs: list[Event] | None = None
+    if config.replay_trajectory_path:
+        replay_logs = load_replay_log(config.replay_trajectory_path)
+
     controller = AgentController(
         agent=agent,
         max_iterations=config.max_iterations,
@@ -101,8 +109,38 @@ def create_controller(
         initial_state=initial_state,
         headless_mode=headless_mode,
         confirmation_mode=config.security.confirmation_mode,
+        replay_logs=replay_logs,
     )
     return (controller, initial_state)
+
+
+def load_replay_log(trajectory_path: str) -> list[Event] | None:
+    try:
+        path = Path(trajectory_path).resolve()
+
+        if not path.exists():
+            logger.error(f'Trajectory file not found: {path}')
+            return None
+
+        if not path.is_file():
+            logger.error(f'Trajectory path is a directory, not a file: {path}')
+            return None
+
+        with open(path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+            if not isinstance(data, list):
+                logger.error(f'Expected a list in {path}, got {type(data).__name__}')
+                return None
+            return [event_from_dict(item) for item in data]
+
+    except json.JSONDecodeError as e:
+        logger.error(f'Invalid JSON format in {trajectory_path}: {e}')
+    except ValueError as e:
+        logger.error(f'Invalid Event in {trajectory_path}: {e}')
+    except Exception as e:
+        logger.error(f'Unexpected error loading {trajectory_path}: {e}')
+
+    return None
 
 
 def generate_sid(config: AppConfig, session_name: str | None = None) -> str:

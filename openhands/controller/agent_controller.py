@@ -90,6 +90,7 @@ class AgentController:
         is_delegate: bool = False,
         headless_mode: bool = True,
         status_callback: Callable | None = None,
+        replay_logs: list[Event] | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -108,6 +109,7 @@ class AgentController:
             is_delegate: Whether this controller is a delegate.
             headless_mode: Whether the agent is run in headless mode.
             status_callback: Optional callback function to handle status updates.
+            replay_logs: A list of logs to replay.
         """
         self.id = sid
         self.agent = agent
@@ -134,6 +136,12 @@ class AgentController:
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
         self.status_callback = status_callback
+
+        # replay-related
+        self.replay_logs = replay_logs
+        self.replay_index = 0
+        if self.replay_logs:
+            logger.info(f'Replay logs loaded, events length = {len(self.replay_logs)}')
 
     async def close(self) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -225,7 +233,31 @@ class AgentController:
                 reported = e
             await self._react_to_exception(reported)
 
+    def should_replay(self) -> bool:
+        """
+        Whether the controller is in trajectory replay mode, and the replay
+        hasn't finished. Note: after the replay is finished, the user and
+        the agent could continue to message/act.
+
+        This method also moves "replay_index" to the next action, if applicable.
+        """
+        if not self.replay_logs:
+            # not in replay mode
+            return False
+        while self.replay_index < len(self.replay_logs) and not isinstance(
+            self.replay_logs[self.replay_index], Action
+        ):
+            self.replay_index += 1
+        return self.replay_index < len(self.replay_logs) and isinstance(
+            self.replay_logs[self.replay_index], Action
+        )
+
     def should_step(self, event: Event) -> bool:
+        """
+        Whether the agent should take a step based on an event. In general,
+        the agent should take a step if it receives a message from the user,
+        or observes something in the environment (after acting).
+        """
         if isinstance(event, Action):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 return True
@@ -551,42 +583,53 @@ class AgentController:
 
         self.update_state_before_step()
         action: Action = NullAction()
-        try:
-            action = self.agent.step(self.state)
-            if action is None:
-                raise LLMNoActionError('No action was returned')
-        except (
-            LLMMalformedActionError,
-            LLMNoActionError,
-            LLMResponseError,
-            FunctionCallValidationError,
-            FunctionCallNotExistsError,
-        ) as e:
-            self.event_stream.add_event(
-                ErrorObservation(
-                    content=str(e),
-                ),
-                EventSource.AGENT,
-            )
-            return
-        except (ContextWindowExceededError, BadRequestError) as e:
-            # FIXME: this is a hack until a litellm fix is confirmed
-            # Check if this is a nested context window error
-            error_str = str(e).lower()
-            if (
-                'contextwindowexceedederror' in error_str
-                or 'prompt is too long' in error_str
-                or isinstance(e, ContextWindowExceededError)
-            ):
-                # When context window is exceeded, keep roughly half of agent interactions
-                self.state.history = self._apply_conversation_window(self.state.history)
 
-                # Save the ID of the first event in our truncated history for future reloading
-                if self.state.history:
-                    self.state.start_id = self.state.history[0].id
-                # Don't add error event - let the agent retry with reduced context
+        if self.should_replay():
+            # in replay mode, we don't let the agent to proceed
+            # instead, we replay the action from the replay trajectory
+            assert self.replay_logs is not None
+            event = self.replay_logs[self.replay_index]
+            assert isinstance(event, Action)
+            action = event
+        else:
+            try:
+                action = self.agent.step(self.state)
+                if action is None:
+                    raise LLMNoActionError('No action was returned')
+            except (
+                LLMMalformedActionError,
+                LLMNoActionError,
+                LLMResponseError,
+                FunctionCallValidationError,
+                FunctionCallNotExistsError,
+            ) as e:
+                self.event_stream.add_event(
+                    ErrorObservation(
+                        content=str(e),
+                    ),
+                    EventSource.AGENT,
+                )
                 return
-            raise
+            except (ContextWindowExceededError, BadRequestError) as e:
+                # FIXME: this is a hack until a litellm fix is confirmed
+                # Check if this is a nested context window error
+                error_str = str(e).lower()
+                if (
+                    'contextwindowexceedederror' in error_str
+                    or 'prompt is too long' in error_str
+                    or isinstance(e, ContextWindowExceededError)
+                ):
+                    # When context window is exceeded, keep roughly half of agent interactions
+                    self.state.history = self._apply_conversation_window(
+                        self.state.history
+                    )
+
+                    # Save the ID of the first event in our truncated history for future reloading
+                    if self.state.history:
+                        self.state.start_id = self.state.history[0].id
+                    # Don't add error event - let the agent retry with reduced context
+                    return
+                raise
 
         if action.runnable:
             if self.state.confirmation_mode and (
