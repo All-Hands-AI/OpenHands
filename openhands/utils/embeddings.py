@@ -90,9 +90,7 @@ class EmbeddingsLoader:
 
             return OpenAIEmbedding(
                 model='text-embedding-ada-002',
-                api_key=llm_config.api_key.get_secret_value()
-                if llm_config.api_key
-                else None,
+                api_key=llm_config.api_key,
             )
         elif strategy == 'azureopenai':
             from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding

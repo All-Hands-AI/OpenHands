@@ -132,9 +132,7 @@ class LLM(RetryMixin, DebugMixin):
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
-            api_key=self.config.api_key.get_secret_value()
-            if self.config.api_key
-            else None,
+            api_key=self.config.api_key,
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
@@ -320,9 +318,7 @@ class LLM(RetryMixin, DebugMixin):
             # GET {base_url}/v1/model/info with litellm_model_id as path param
             response = requests.get(
                 f'{self.config.base_url}/v1/model/info',
-                headers={
-                    'Authorization': f'Bearer {self.config.api_key.get_secret_value() if self.config.api_key else None}'
-                },
+                headers={'Authorization': f'Bearer {self.config.api_key}'},
             )
             resp_json = response.json()
             if 'data' not in resp_json:

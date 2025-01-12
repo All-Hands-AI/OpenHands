@@ -1,14 +1,15 @@
-from __future__ import annotations
-
 import os
-from typing import Any
+from dataclasses import dataclass, fields
+from typing import Optional
 
-from pydantic import BaseModel, Field, SecretStr
-
+from openhands.core.config.config_utils import get_field_info
 from openhands.core.logger import LOG_DIR
 
+LLM_SENSITIVE_FIELDS = ['api_key', 'aws_access_key_id', 'aws_secret_access_key']
 
-class LLMConfig(BaseModel):
+
+@dataclass
+class LLMConfig:
     """Configuration for the LLM model.
 
     Attributes:
@@ -47,57 +48,98 @@ class LLMConfig(BaseModel):
         native_tool_calling: Whether to use native tool calling if supported by the model. Can be True, False, or not set.
     """
 
-    model: str = Field(default='claude-3-5-sonnet-20241022')
-    api_key: SecretStr | None = Field(default=None)
-    base_url: str | None = Field(default=None)
-    api_version: str | None = Field(default=None)
-    embedding_model: str = Field(default='local')
-    embedding_base_url: str | None = Field(default=None)
-    embedding_deployment_name: str | None = Field(default=None)
-    aws_access_key_id: SecretStr | None = Field(default=None)
-    aws_secret_access_key: SecretStr | None = Field(default=None)
-    aws_region_name: str | None = Field(default=None)
-    openrouter_site_url: str = Field(default='https://docs.all-hands.dev/')
-    openrouter_app_name: str = Field(default='OpenHands')
-    num_retries: int = Field(default=8)
-    retry_multiplier: float = Field(default=2)
-    retry_min_wait: int = Field(default=15)
-    retry_max_wait: int = Field(default=120)
-    timeout: int | None = Field(default=None)
-    max_message_chars: int = Field(
-        default=30_000
-    )  # maximum number of characters in an observation's content when sent to the llm
-    temperature: float = Field(default=0.0)
-    top_p: float = Field(default=1.0)
-    custom_llm_provider: str | None = Field(default=None)
-    max_input_tokens: int | None = Field(default=None)
-    max_output_tokens: int | None = Field(default=None)
-    input_cost_per_token: float | None = Field(default=None)
-    output_cost_per_token: float | None = Field(default=None)
-    ollama_base_url: str | None = Field(default=None)
+    model: str = 'claude-3-5-sonnet-20241022'
+    api_key: str | None = None
+    base_url: str | None = None
+    api_version: str | None = None
+    embedding_model: str = 'local'
+    embedding_base_url: str | None = None
+    embedding_deployment_name: str | None = None
+    aws_access_key_id: str | None = None
+    aws_secret_access_key: str | None = None
+    aws_region_name: str | None = None
+    openrouter_site_url: str = 'https://docs.all-hands.dev/'
+    openrouter_app_name: str = 'OpenHands'
+    num_retries: int = 8
+    retry_multiplier: float = 2
+    retry_min_wait: int = 15
+    retry_max_wait: int = 120
+    timeout: int | None = None
+    max_message_chars: int = 30_000  # maximum number of characters in an observation's content when sent to the llm
+    temperature: float = 0.0
+    top_p: float = 1.0
+    custom_llm_provider: str | None = None
+    max_input_tokens: int | None = None
+    max_output_tokens: int | None = None
+    input_cost_per_token: float | None = None
+    output_cost_per_token: float | None = None
+    ollama_base_url: str | None = None
     # This setting can be sent in each call to litellm
-    drop_params: bool = Field(default=True)
+    drop_params: bool = True
     # Note: this setting is actually global, unlike drop_params
-    modify_params: bool = Field(default=True)
-    disable_vision: bool | None = Field(default=None)
-    caching_prompt: bool = Field(default=True)
-    log_completions: bool = Field(default=False)
-    log_completions_folder: str = Field(default=os.path.join(LOG_DIR, 'completions'))
-    draft_editor: LLMConfig | None = Field(default=None)
-    custom_tokenizer: str | None = Field(default=None)
-    native_tool_calling: bool | None = Field(default=None)
+    modify_params: bool = True
+    disable_vision: bool | None = None
+    caching_prompt: bool = True
+    log_completions: bool = False
+    log_completions_folder: str = os.path.join(LOG_DIR, 'completions')
+    draft_editor: Optional['LLMConfig'] = None
+    custom_tokenizer: str | None = None
+    native_tool_calling: bool | None = None
 
-    model_config = {'extra': 'forbid'}
+    def defaults_to_dict(self) -> dict:
+        """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
+        result = {}
+        for f in fields(self):
+            result[f.name] = get_field_info(f)
+        return result
 
-    def model_post_init(self, __context: Any):
-        """Post-initialization hook to assign OpenRouter-related variables to environment variables.
-
+    def __post_init__(self):
+        """
+        Post-initialization hook to assign OpenRouter-related variables to environment variables.
         This ensures that these values are accessible to litellm at runtime.
         """
-        super().model_post_init(__context)
 
         # Assign OpenRouter-specific variables to environment variables
         if self.openrouter_site_url:
             os.environ['OR_SITE_URL'] = self.openrouter_site_url
         if self.openrouter_app_name:
             os.environ['OR_APP_NAME'] = self.openrouter_app_name
+
+    def __str__(self):
+        attr_str = []
+        for f in fields(self):
+            attr_name = f.name
+            attr_value = getattr(self, f.name)
+
+            if attr_name in LLM_SENSITIVE_FIELDS:
+                attr_value = '******' if attr_value else None
+
+            attr_str.append(f'{attr_name}={repr(attr_value)}')
+
+        return f"LLMConfig({', '.join(attr_str)})"
+
+    def __repr__(self):
+        return self.__str__()
+
+    def to_safe_dict(self):
+        """Return a dict with the sensitive fields replaced with ******."""
+        ret = self.__dict__.copy()
+        for k, v in ret.items():
+            if k in LLM_SENSITIVE_FIELDS:
+                ret[k] = '******' if v else None
+            elif isinstance(v, LLMConfig):
+                ret[k] = v.to_safe_dict()
+        return ret
+
+    @classmethod
+    def from_dict(cls, llm_config_dict: dict) -> 'LLMConfig':
+        """Create an LLMConfig object from a dictionary.
+
+        This function is used to create an LLMConfig object from a dictionary,
+        with the exception of the 'draft_editor' key, which is a nested LLMConfig object.
+        """
+        args = {k: v for k, v in llm_config_dict.items() if not isinstance(v, dict)}
+        if 'draft_editor' in llm_config_dict:
+            draft_editor_config = LLMConfig(**llm_config_dict['draft_editor'])
+            args['draft_editor'] = draft_editor_config
+        return cls(**args)
