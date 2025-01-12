@@ -201,6 +201,23 @@ else:
     )
     exit()
 
+# Before backup and update, check if any changes would be made
+needs_update = False
+with open(args.input_file, 'r') as infile:
+    for line in tqdm(infile, desc='Checking for changes'):
+        data = json.loads(line)
+        instance_id = data['instance_id']
+        if instance_id in instance_id_to_status:
+            current_report = data.get('report', {})
+            new_report = instance_id_to_status[instance_id]
+            if current_report != new_report:
+                needs_update = True
+                break
+
+if not needs_update:
+    print('No updates detected. Skipping file update.')
+    exit()
+
 # Backup and update the original file row by row
 if os.path.exists(args.input_file + '.bak'):
     conf = input('Existing backup file found. Do you want to overwrite it? (y/n)')

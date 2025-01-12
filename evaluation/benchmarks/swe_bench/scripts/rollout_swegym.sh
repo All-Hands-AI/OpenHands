@@ -11,7 +11,7 @@ N_WORKERS=${3:-64}
 N_RUNS=${4:-1}
 
 export EXP_NAME=$EXP_NAME
-export DEFAULT_RUNTIME_RESOURCE_FACTOR=2  # use 2x resources for rollout since some codebase are pretty resource-intensive
+# export DEFAULT_RUNTIME_RESOURCE_FACTOR=2  # use 2x resources for rollout since some codebase are pretty resource-intensive
 echo "MODEL: $MODEL"
 echo "EXP_NAME: $EXP_NAME"
 DATASET="SWE-Gym/SWE-Gym"  # change this to the "/SWE-Gym-Lite" if you want to rollout the lite subset
@@ -67,66 +67,65 @@ function run_eval() {
   eval $COMMAND
 }
 
-while true; do
-    echo "### Running inference... ###"
+for run_idx in $(seq 1 $N_RUNS); do
 
-    unset SANDBOX_ENV_GITHUB_TOKEN # prevent the agent from using the github token to push
-
-    for i in $(seq 1 $N_RUNS); do
-        current_eval_note="$EVAL_NOTE-run_$i"
+    while true; do
+        echo "### Running inference... ###"
+        unset SANDBOX_ENV_GITHUB_TOKEN # prevent the agent from using the github token to push
+        current_eval_note="$EVAL_NOTE-run_$run_idx"
         echo "EVAL_NOTE: $current_eval_note"
-        run_eval $current_eval_note
+        INFER_OUTPUT=$(run_eval $current_eval_note)
         INFER_STATUS=$?  # Capture the exit status of run_infer.sh
         echo "INFER_STATUS: $INFER_STATUS"
+
+        echo "### Cleaning up remote runtime... ###"
+        ./evaluation/utils/scripts/cleanup_remote_runtime.sh
+
+        if [ $INFER_STATUS -eq 0 ]; then
+            echo "### Inference completed successfully. ###"
+            break
+        else
+            echo "### Inference failed with exit code $INFER_STATUS. Retrying... ###"
+        fi
     done
 
-    echo "### Cleaning up remote runtime... ###"
-    ./evaluation/utils/scripts/cleanup_remote_runtime.sh
+    # Extract the output directory using the special delimiters
+    OUTPUT_FILE=$(echo "$INFER_OUTPUT" | grep -o '### OUTPUT FILE:.* ###' | sed 's/### OUTPUT FILE: \(.*\) ###/\1/')
+    echo "Got OUTPUT_FILE: $OUTPUT_FILE"
 
-    if [ $INFER_STATUS -eq 0 ]; then
-        echo "### Inference completed successfully. ###"
-        break
-    else
-        echo "### Inference failed with exit code $INFER_STATUS. Retrying... ###"
-    fi
+    while true; do
+        echo "### Evaluating on $OUTPUT_FILE ... ###"
+        COMMAND="poetry run python evaluation/benchmarks/swe_bench/eval_infer.py \
+        --eval-num-workers $((N_WORKERS * 2)) \
+        --input-file $OUTPUT_FILE \
+        --dataset $DATASET \
+        --split $SPLIT"
+
+        if [ -n "$EVAL_LIMIT" ]; then
+        echo "EVAL_LIMIT: $EVAL_LIMIT"
+        COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
+        fi
+        echo "Running command: $COMMAND"
+        # Run the command
+        eval $COMMAND
+        EVAL_STATUS=$?
+        if [ $EVAL_STATUS -eq 0 ]; then
+            echo "### Evaluation completed successfully. ###"
+            break
+        else
+            echo "### Evaluation failed with exit code $EVAL_STATUS. Retrying... ###"
+        fi
+
+        ./evaluation/utils/scripts/cleanup_remote_runtime.sh
+    done
+
+    # update the output with evaluation results
+    echo "### Updating the output with evaluation results... ###"
+    poetry run python evaluation/benchmarks/swe_bench/scripts/eval/update_output_with_eval.py $OUTPUT_FILE
+
+    echo "### Combining the final completions... ###"
+    poetry run python evaluation/benchmarks/swe_bench/scripts/eval/combine_final_completions.py $OUTPUT_FILE
+
+    echo "### DONE for run $run_idx! ###"
+    echo "You can find the final output at $(dirname $OUTPUT_FILE)/$FINAL_OUTPUT_FILE"
 done
-
-# Extract the output directory using the special delimiters
-OUTPUT_FILE=$(echo "$INFER_OUTPUT" | grep -o '### OUTPUT FILE:.* ###' | sed 's/### OUTPUT FILE: \(.*\) ###/\1/')
-echo "Got OUTPUT_FILE: $OUTPUT_FILE"
-
-while true; do
-    echo "### Evaluating on $OUTPUT_FILE ... ###"
-    COMMAND="poetry run python evaluation/benchmarks/swe_bench/eval_infer.py \
-    --eval-num-workers $((N_WORKERS * 2)) \
-    --input-file $OUTPUT_FILE \
-    --dataset $DATASET \
-    --split $SPLIT"
-
-    if [ -n "$EVAL_LIMIT" ]; then
-    echo "EVAL_LIMIT: $EVAL_LIMIT"
-    COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
-    fi
-    echo "Running command: $COMMAND"
-    # Run the command
-    eval $COMMAND
-    EVAL_STATUS=$?
-    if [ $EVAL_STATUS -eq 0 ]; then
-        echo "### Evaluation completed successfully. ###"
-        break
-    else
-        echo "### Evaluation failed with exit code $EVAL_STATUS. Retrying... ###"
-    fi
-
-    ./evaluation/utils/scripts/cleanup_remote_runtime.sh
-done
-
-# update the output with evaluation results
-echo "### Updating the output with evaluation results... ###"
-poetry run python evaluation/benchmarks/swe_bench/scripts/eval/update_output_with_eval.py $OUTPUT_FILE
-
-echo "### Combining the final completions... ###"
-poetry run python evaluation/benchmarks/swe_bench/scripts/eval/combine_final_completions.py $OUTPUT_FILE
-
-echo "### DONE! ###"
-echo "You can find the final output at $(dirname $OUTPUT_FILE)/$FINAL_OUTPUT_FILE"
