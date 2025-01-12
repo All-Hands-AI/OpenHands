@@ -39,7 +39,7 @@ def event_loop():
 def mock_agent():
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
-    agent.llm.metrics = MagicMock(spec=Metrics)
+    agent.llm.metrics = Metrics()
     return agent
 
 
@@ -292,6 +292,7 @@ async def test_delegate_step_different_states(
 async def test_max_iterations_extension(mock_agent, mock_event_stream):
     # Test with headless_mode=False - should extend max_iterations
     initial_state = State(max_iterations=10)
+
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,

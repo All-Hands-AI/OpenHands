@@ -43,6 +43,6 @@ export interface ObservationMessage {
 export interface StatusMessage {
   status_update: true;
   type: string;
-  id: string;
+  id?: string;
   message: string;
 }

@@ -124,12 +124,6 @@ class LLM(RetryMixin, DebugMixin):
         if self.is_function_calling_active():
             logger.debug('LLM: model supports function calling')
 
-        # Compatibility flag: use string serializer for DeepSeek models
-        # See this issue: https://github.com/All-Hands-AI/OpenHands/issues/5818
-        self._use_string_serializer = False
-        if 'deepseek' in self.config.model:
-            self._use_string_serializer = True
-
         # if using a custom tokenizer, make sure it's loaded and accessible in the format expected by litellm
         if self.config.custom_tokenizer is not None:
             self.tokenizer = create_pretrained_tokenizer(self.config.custom_tokenizer)
@@ -451,20 +445,13 @@ class LLM(RetryMixin, DebugMixin):
 
         # Handle native_tool_calling user-defined configuration
         if self.config.native_tool_calling is None:
-            logger.debug(
-                f'Using default tool calling behavior based on model evaluation: {model_name_supported}'
-            )
             return model_name_supported
         elif self.config.native_tool_calling is False:
-            logger.debug('Function calling explicitly disabled via configuration')
             return False
         else:
             # try to enable native tool calling if supported by the model
             supports_fn_call = litellm.supports_function_calling(
                 model=self.config.model
-            )
-            logger.debug(
-                f'Function calling explicitly enabled, litellm support: {supports_fn_call}'
             )
             return supports_fn_call
 

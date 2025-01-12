@@ -210,9 +210,11 @@ class Runtime(FileEditRuntimeMixin):
         source = event.source if event.source else EventSource.AGENT
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    def clone_repo(self, github_token: str | None, selected_repository: str | None):
+    def clone_repo(self, github_token: str, selected_repository: str):
         if not github_token or not selected_repository:
-            return
+            raise ValueError(
+                'github_token and selected_repository must be provided to clone a repository'
+            )
         url = f'https://{github_token}@github.com/{selected_repository}.git'
         dir_name = selected_repository.split('/')[1]
         # add random branch name to avoid conflicts
@@ -398,3 +400,7 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def vscode_url(self) -> str | None:
         raise NotImplementedError('This method is not implemented in the base class.')
+
+    @property
+    def web_hosts(self) -> dict[str, int]:
+        return {}

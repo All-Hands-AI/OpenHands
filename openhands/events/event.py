@@ -68,8 +68,11 @@ class Event:
     def timeout(self, value: int | None) -> None:
         self._timeout = value
         if value is not None and value > 600:
-            raise NotImplementedError(
-                'Timeout greater than 600 seconds is not supported yet.'
+            from openhands.core.logger import openhands_logger as logger
+
+            logger.warning(
+                'Timeout greater than 600 seconds may not be supported by '
+                'the runtime. Consider setting a lower timeout.'
             )
 
         # Check if .blocking is an attribute of the event
