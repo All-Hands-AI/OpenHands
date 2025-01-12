@@ -3,7 +3,7 @@ import copy
 from openhands.core.config import LLMConfig
 from openhands.llm.llm import LLM
 from openhands.router.base import BaseRouter
-from openhands.router.plan.prompts import ANALYZE_PROMPT
+from openhands.router.plan.prompts import USER_MESSAGE_PLANNING_ANALYZE_PROMPT
 
 
 class LLMBasedPlanRouter(BaseRouter):
@@ -25,7 +25,7 @@ class LLMBasedPlanRouter(BaseRouter):
         messages.append(
             {
                 'role': 'user',
-                'content': ANALYZE_PROMPT.format(message=prompt),
+                'content': USER_MESSAGE_PLANNING_ANALYZE_PROMPT.format(message=prompt),
             }
         )
 

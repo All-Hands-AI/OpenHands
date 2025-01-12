@@ -1,4 +1,8 @@
-ANALYZE_PROMPT = """Analyze this prompt to see if it requires a detailed plan generation.
+############################################
+########  PLAN GENERATION PROMPTS   ########
+############################################
+
+USER_MESSAGE_PLANNING_ANALYZE_PROMPT = """Analyze this prompt to see if it requires a detailed plan generation.
 
 Some example scenarios that require generating a step-by-step plan:
 
@@ -24,13 +28,13 @@ In context of software engineering, below are some scenarios where plan generati
 
 1. Dependency and Workflow Management
     * Automating and optimizing CI/CD pipelines, build processes, and package dependency resolution.
-	* Example: Resolving complex dependency graphs or sequencing multi-step deployments.
+    * Example: Resolving complex dependency graphs or sequencing multi-step deployments.
 2. Code Refactoring and Debugging
-	* Planning systematic changes for refactoring large codebases and isolating root causes during debugging.
-	* Example: Refactoring monolithic code into modular components while preserving functionality.
+    * Planning systematic changes for refactoring large codebases and isolating root causes during debugging.
+    * Example: Refactoring monolithic code into modular components while preserving functionality.
 3. Infrastructure and Resource Planning
-	* Designing and optimizing Infrastructure as Code (IaC) changes and dynamic resource allocation.
-	* Example: Planning cloud resource provisioning while adhering to dependency constraints.
+    * Designing and optimizing Infrastructure as Code (IaC) changes and dynamic resource allocation.
+    * Example: Planning cloud resource provisioning while adhering to dependency constraints.
 4. High-level Requirements to Low-level Implementation Mapping
     * Translating high-level requirements into detailed implementation steps and ensuring consistency.
 
@@ -40,3 +44,21 @@ In context of software engineering, below are some scenarios where plan generati
 
 Only respond with 0 for no plan generation required or 1 for plan generation required.
 """
+
+############################################
+########  REASONING JUDGE PROMPTS   ########
+############################################
+
+TRAJECTORY_JUDGE_REASONING_SYSTEM_PROMPT = """You are an expert judge evaluating AI assistant interactions. Your task is to determine if:
+- the AI assistant is struggling with some issues when performing the task and needs help from a human expert to guide it
+- the next step is complex and needs to be carefully reasoned to solve e.g. identifying a hard-to-find bug in a codebase
+
+Respond only with 0 if the AI assistant is not struggling or the task is not complex. Otherwise, respond with 1."""
+
+TRAJECTORY_JUDGE_REASONING_USER_PROMPT = """Please evaluate the following interaction (or part of the recent interaction) between an AI assistant and a user:
+
+=== INTERACTION LOG ===
+{interaction}
+=== END INTERACTION ===
+
+Based on the above interaction, do we need to provide additional guidance to the AI assistant or is the task complex and requires careful reasoning to solve? Respond with 0 if no guidance is needed or the task is not complex. Otherwise, respond with 1."""

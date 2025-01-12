@@ -12,6 +12,7 @@ from openhands.core.config import LLMConfig, ModelRoutingConfig
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+    # litellm.set_verbose = True
 
 from litellm import ChatCompletionMessageToolCall, ModelInfo, PromptTokensDetails
 from litellm import Message as LiteLLMMessage
@@ -94,6 +95,7 @@ class LLM(RetryMixin, DebugMixin):
         Args:
             config: The LLM configuration.
             metrics: The metrics to use.
+            model_routing_config: The model routing configuration.
         """
         self._tried_model_info = False
         self.metrics: Metrics = (
