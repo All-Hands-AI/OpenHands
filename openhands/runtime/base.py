@@ -125,7 +125,7 @@ class Runtime(FileEditRuntimeMixin):
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
             return
-        logger.debug(f'Adding env vars: {self.initial_env_vars}')
+        logger.debug(f'Adding env vars: {self.initial_env_vars.keys()}')
         self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
@@ -168,7 +168,6 @@ class Runtime(FileEditRuntimeMixin):
         if not cmd:
             return
         cmd = cmd.strip()
-        logger.debug(f'Adding env var: {cmd}')
         obs = self.run(CmdRunAction(cmd))
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(

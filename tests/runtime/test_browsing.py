@@ -1,4 +1,4 @@
-"""Browsing-related tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
+"""Browsing-related tests for the DockerRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 from conftest import _close_test_runtime, _load_runtime
 

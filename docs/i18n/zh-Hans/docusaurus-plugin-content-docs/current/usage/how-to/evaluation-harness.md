@@ -112,7 +112,7 @@ OpenHands 的主要入口点在 `openhands/core/main.py` 中。以下是它的�
    def get_config(instance: pd.Series, metadata: EvalMetadata) -> AppConfig:
        config = AppConfig(
            default_agent=metadata.agent_class,
-           runtime='eventstream',
+           runtime='docker',
            max_iterations=metadata.max_iterations,
            sandbox=SandboxConfig(
                base_container_image='your_container_image',

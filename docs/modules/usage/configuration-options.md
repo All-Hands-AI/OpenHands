@@ -163,7 +163,7 @@ The core configuration options are defined in the `[core]` section of the `confi
 
 - `runtime`
   - Type: `str`
-  - Default: `"eventstream"`
+  - Default: `"docker"`
   - Description: Runtime environment
 
 - `default_agent`

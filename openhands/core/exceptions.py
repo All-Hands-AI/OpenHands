@@ -98,12 +98,6 @@ class OperationCancelled(Exception):
         super().__init__(message)
 
 
-class CloudFlareBlockageError(Exception):
-    """Exception raised when a request is blocked by CloudFlare."""
-
-    pass
-
-
 # ============================================
 # LLM function calling Exceptions
 # ============================================

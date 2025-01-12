@@ -1,4 +1,4 @@
-"""Image-related tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
+"""Image-related tests for the DockerRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import pytest
 from conftest import _close_test_runtime, _load_runtime

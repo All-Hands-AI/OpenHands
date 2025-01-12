@@ -1,8 +1,8 @@
 以下是翻译后的内容:
 
-# 📦 EventStream 运行时
+# 📦 Docker 运行时
 
-OpenHands EventStream 运行时是实现 AI 代理操作安全灵活执行的核心组件。
+OpenHands Docker 运行时是实现 AI 代理操作安全灵活执行的核心组件。
 它使用 Docker 创建一个沙盒环境,可以安全地运行任意代码而不会危及主机系统。
 
 ## 为什么我们需要沙盒运行时?
