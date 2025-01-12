@@ -13,7 +13,7 @@ export function ExitProjectButton({ onClick }: ExitProjectButtonProps) {
       onClick={onClick}
       testId="new-project-button"
     >
-      <NewProjectIcon width={28} height={28} />
+      <NewProjectIcon width={26} height={26} />
     </TooltipButton>
   );
 }

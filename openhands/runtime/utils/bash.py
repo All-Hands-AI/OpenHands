@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import traceback
 import uuid
 from enum import Enum
 
@@ -23,11 +24,11 @@ def split_bash_commands(commands):
         return ['']
     try:
         parsed = bashlex.parse(commands)
-    except bashlex.errors.ParsingError as e:
+    except (bashlex.errors.ParsingError, NotImplementedError):
         logger.debug(
             f'Failed to parse bash commands\n'
             f'[input]: {commands}\n'
-            f'[warning]: {e}\n'
+            f'[warning]: {traceback.format_exc()}\n'
             f'The original command will be returned as is.'
         )
         # If parsing fails, return the original commands
@@ -143,9 +144,13 @@ def escape_bash_special_chars(command: str) -> str:
         remaining = command[last_pos:]
         parts.append(remaining)
         return ''.join(parts)
-    except bashlex.errors.ParsingError:
-        # Fallback if parsing fails
-        logger.warning(f'Failed to parse command: {command}')
+    except (bashlex.errors.ParsingError, NotImplementedError):
+        logger.debug(
+            f'Failed to parse bash commands for special characters escape\n'
+            f'[input]: {command}\n'
+            f'[warning]: {traceback.format_exc()}\n'
+            f'The original command will be returned as is.'
+        )
         return command
 
 
@@ -480,18 +485,6 @@ class BashSession:
         start_time = time.time()
         last_change_time = start_time
         last_pane_output = self._get_pane_content()
-
-        _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
-        assert len(_ps1_matches) >= 1, (
-            'Expected at least one PS1 metadata block BEFORE the execution of a command, '
-            f'but got {len(_ps1_matches)} PS1 metadata blocks:\n---\n{last_pane_output!r}\n---'
-        )
-        if len(_ps1_matches) > 1:
-            logger.warning(
-                'Found multiple PS1 metadata blocks BEFORE the execution of a command. '
-                'Only the last one will be used.'
-            )
-            _ps1_matches = [_ps1_matches[-1]]
 
         if command != '':
             # convert command to raw string

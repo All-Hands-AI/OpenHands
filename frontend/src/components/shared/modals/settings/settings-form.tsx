@@ -19,7 +19,10 @@ import { CustomModelInput } from "../../inputs/custom-model-input";
 import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
-import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+
+import { RuntimeSizeSelector } from "./runtime-size-selector";
+import { useConfig } from "#/hooks/query/use-config";
+import { useCurrentSettings } from "#/context/settings-context";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -38,8 +41,9 @@ export function SettingsForm({
   securityAnalyzers,
   onClose,
 }: SettingsFormProps) {
-  const { mutateAsync: saveSettings } = useSaveSettings();
+  const { saveUserSettings } = useCurrentSettings();
   const endSession = useEndSession();
+  const { data: config } = useConfig();
 
   const location = useLocation();
   const { t } = useTranslation();
@@ -91,17 +95,21 @@ export function SettingsForm({
     const newSettings = extractSettings(formData);
 
     saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
-    await saveSettings(newSettings, { onSuccess: onClose });
+    await saveUserSettings(newSettings);
+    onClose();
     resetOngoingSession();
 
     posthog.capture("settings_saved", {
       LLM_MODEL: newSettings.LLM_MODEL,
       LLM_API_KEY: newSettings.LLM_API_KEY ? "SET" : "UNSET",
+      REMOTE_RUNTIME_RESOURCE_FACTOR:
+        newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     });
   };
 
   const handleConfirmResetSettings = async () => {
-    await saveSettings(getDefaultSettings(), { onSuccess: onClose });
+    await saveUserSettings(getDefaultSettings());
+    onClose();
     resetOngoingSession();
     posthog.capture("settings_reset");
   };
@@ -121,6 +129,8 @@ export function SettingsForm({
       handleFormSubmission(formData);
     }
   };
+
+  const isSaasMode = config?.APP_MODE === "saas";
 
   return (
     <div>
@@ -165,15 +175,20 @@ export function SettingsForm({
           />
 
           {showAdvancedOptions && (
-            <AgentInput
-              isDisabled={!!disabled}
-              defaultValue={settings.AGENT}
-              agents={agents}
-            />
-          )}
-
-          {showAdvancedOptions && (
             <>
+              <AgentInput
+                isDisabled={!!disabled}
+                defaultValue={settings.AGENT}
+                agents={agents}
+              />
+
+              {isSaasMode && (
+                <RuntimeSizeSelector
+                  isDisabled={!!disabled}
+                  defaultValue={settings.REMOTE_RUNTIME_RESOURCE_FACTOR}
+                />
+              )}
+
               <SecurityAnalyzerInput
                 isDisabled={!!disabled}
                 defaultValue={settings.SECURITY_ANALYZER}
@@ -191,6 +206,7 @@ export function SettingsForm({
         <div className="flex flex-col gap-2">
           <div className="flex gap-2">
             <ModalButton
+              testId="save-settings-button"
               disabled={disabled}
               type="submit"
               text={t(I18nKey.SETTINGS_FORM$SAVE_LABEL)}

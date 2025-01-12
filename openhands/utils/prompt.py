@@ -1,4 +1,5 @@
 import os
+from dataclasses import dataclass
 from itertools import islice
 
 from jinja2 import Template
@@ -11,6 +12,12 @@ from openhands.microagent import (
     RepoMicroAgent,
     load_microagents_from_dir,
 )
+from openhands.runtime.base import Runtime
+
+
+@dataclass
+class RuntimeInfo:
+    available_hosts: dict[str, int]
 
 
 class PromptManager:
@@ -38,6 +45,7 @@ class PromptManager:
 
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
+        self.runtime_info = RuntimeInfo(available_hosts={})
 
         self.knowledge_microagents: dict[str, KnowledgeMicroAgent] = {}
         self.repo_microagents: dict[str, RepoMicroAgent] = {}
@@ -72,6 +80,9 @@ class PromptManager:
             elif isinstance(microagent, RepoMicroAgent):
                 self.repo_microagents[microagent.name] = microagent
 
+    def set_runtime_info(self, runtime: Runtime):
+        self.runtime_info.available_hosts = runtime.web_hosts
+
     def _load_template(self, template_name: str) -> Template:
         if self.prompt_dir is None:
             raise ValueError('Prompt directory is not set')
@@ -91,7 +102,9 @@ class PromptManager:
             if repo_instructions:
                 repo_instructions += '\n\n'
             repo_instructions += microagent.content
-        return self.system_template.render(repo_instructions=repo_instructions).strip()
+        return self.system_template.render(
+            runtime_info=self.runtime_info, repo_instructions=repo_instructions
+        ).strip()
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent
@@ -103,6 +116,7 @@ class PromptManager:
         These additional context will convert the current generic agent
         into a more specialized agent that is tailored to the user's task.
         """
+
         return self.user_template.render().strip()
 
     def enhance_message(self, message: Message) -> None:
