@@ -11,12 +11,8 @@ function OAuthGitHubCallback() {
   const { setAccessTokens, setUserId } = useAuth();
 
   const code = searchParams.get("code");
-  const state = searchParams.get("state");
-  const session_state = searchParams.get("session_state");
-  const iss = searchParams.get("iss");
   const requesterUrl = new URL(window.location.href)
   const redirectUrl = `${requesterUrl.origin}/oauth/github/callback`
-  console.log("code:", code, "\nstate:", state, "\nredirectUrl:", redirectUrl, "\nsession_state:", session_state, "\niss:", iss);
 
   const { data, isSuccess, error } = useQuery({
     queryKey: ["access_token", code],
@@ -26,7 +22,6 @@ function OAuthGitHubCallback() {
 
   React.useEffect(() => {
     if (isSuccess) {
-      console.log("data:", data);
       setAccessTokens(data.providerAccessToken, data.keycloakAccessToken);
       setUserId(data.keycloakUserId)
       navigate("/");

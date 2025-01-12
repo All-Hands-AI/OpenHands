@@ -147,7 +147,6 @@ class OpenHands {
     appMode: GetConfigResponse["APP_MODE"],
   ): Promise<boolean> {
     if (appMode === "oss") return true;
-    console.trace();
     const response =
       await openHands.post<AuthenticateResponse>("/api/authenticate");
     return response.status === 200;
@@ -169,7 +168,6 @@ class OpenHands {
         userId,
       },
     );
-    console.log(`refresh data token ${response.data.keycloakAccessToken}`)
     return {
       keycloakAccessToken: response.data.keycloakAccessToken,
       providerAccessToken: response.data.providerAccessToken,

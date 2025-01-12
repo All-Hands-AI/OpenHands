@@ -48,7 +48,6 @@ const setupAxiosInterceptors = (
     // Pass successful responses through
     (response) => {
       const parsedData = response.data;
-      console.log(parsedData)
       if (isGitHubErrorReponse(parsedData)) {
         const error = new AxiosError(
           "Failed",
@@ -70,7 +69,6 @@ const setupAxiosInterceptors = (
       const originalRequest = error.config;
 
       // Check if the error is due to an expired token
-      console.log('check if expired token')
       if (
         error.response.status === 401 &&
         !originalRequest._retry // Prevent infinite retry loops

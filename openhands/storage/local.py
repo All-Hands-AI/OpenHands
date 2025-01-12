@@ -22,17 +22,12 @@ class LocalFileStore(FileStore):
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
         mode = 'w' if isinstance(contents, str) else 'wb'
         with open(full_path, mode) as f:
-            logger.info(f'Writing {str(contents)} to file {full_path}')
             f.write(contents)
-            logger.info(f'Wrote {str(contents)} to file {full_path}')
 
     def read(self, path: str) -> str:
         full_path = self.get_full_path(path)
         with open(full_path, 'r') as f:
-            logger.info(f'reading from file {full_path}')
-            result = f.read()
-            logger.info(f'read {result} from file {full_path}')
-            return result
+            return f.read()
 
     def list(self, path: str) -> list[str]:
         full_path = self.get_full_path(path)

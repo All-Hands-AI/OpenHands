@@ -8,12 +8,10 @@ export const setAuthTokenHeader = (token: string) => {
 };
 
 export const setGitHubTokenHeader = (token: string) => {
-  console.log(`setting X-GitHub-Token to ${token}`)
   openHands.defaults.headers.common["X-GitHub-Token"] = token;
 };
 
 export const removeAuthTokenHeader = () => {
-  console.log("removing X-GitHub-Token")
   if (openHands.defaults.headers.common.Authorization) {
     delete openHands.defaults.headers.common.Authorization;
   }
@@ -56,8 +54,6 @@ export const setupOpenhandsAxiosInterceptors = (
     // Pass successful responses through
     (response) => {
       const parsedData = response.data;
-      console.log("Openhands API call response:")
-      console.log(parsedData)
       if (isKeycloakErrorResponse(parsedData)) {
         const error = new AxiosError(
           "Failed",
@@ -79,7 +75,6 @@ export const setupOpenhandsAxiosInterceptors = (
       const originalRequest = error.config;
 
       // Check if the error is due to an expired token
-      console.log('check if expired keycloak token')
       if (
         error.response.status === 401 &&
         !originalRequest._retry // Prevent infinite retry loops

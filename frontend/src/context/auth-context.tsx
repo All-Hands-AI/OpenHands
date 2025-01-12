@@ -66,8 +66,6 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   const setUserId = (userId: string) => {
     setUserIdState(userId);
     localStorage.setItem("userId", userId);
-    const stored_userid = localStorage.getItem("userId")
-    console.log(`userId ${userId}, stored userID ${stored_userid}`)
   };
 
   const logout = () => {
@@ -83,9 +81,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     // }
 
     const stored_userid = localStorage.getItem("userId") || ""
-    console.log(`calling /refresh-token with userID ${stored_userid}`)
     const data = await OpenHands.refreshToken("saas", stored_userid);
-    console.log(data)
     if (data) {
       setAccessTokens(data.providerAccessToken, data.keycloakAccessToken);
       return true;

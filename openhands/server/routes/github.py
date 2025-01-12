@@ -16,15 +16,6 @@ async def get_github_repositories(
     sort: str = 'pushed',
     installation_id: int | None = None,
 ):
-    print(f'get repos request state: {request.state._state}')
-    # Extract the GitHub token from the headers
-    # keycloak_access_token = request.headers.get('X-GitHub-Token')
-    # print(request.cookies)
-    # if not keycloak_access_token:
-    #     raise HTTPException(status_code=400, detail='Missing X-GitHub-Token header')
-    # response = get_github_tokens(keycloak_access_token)
-    # provider_access_token = response['access_token']
-
     github_token = request.state.github_token
     if not github_token:
         raise HTTPException(status_code=400, detail='Missing Github Token')

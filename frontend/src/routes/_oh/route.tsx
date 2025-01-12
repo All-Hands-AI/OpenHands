@@ -10,7 +10,6 @@ import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useMaybeMigrateSettings } from "#/hooks/use-maybe-migrate-settings";
-import { DEFAULT_SETTINGS } from "#/services/settings";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -49,7 +48,6 @@ export default function MainApp() {
 
   const { data: isAuthed, isFetching: isFetchingAuth } = useIsAuthed();
   const { gitHubToken } = useAuth();
-  // const { data: settings } = isAuthed && !isFetchingAuth ? useSettings() : { data: DEFAULT_SETTINGS };
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
     !localStorage.getItem("analytics-consent"),
   );

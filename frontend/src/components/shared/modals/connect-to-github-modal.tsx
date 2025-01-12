@@ -20,12 +20,8 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    console.log("FormData:", formData)
     const ghToken = formData.get("ghToken")?.toString();
-    console.log("ghToken:", ghToken)
     const kcToken = formData.get("kcToken")?.toString();
-    console.log("kcToken:", kcToken)
-
     if (ghToken && kcToken) setAccessTokens(ghToken, kcToken);
     onClose();
   };
@@ -51,7 +47,7 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
         />
       </div>
       <form onSubmit={handleSubmit} className="w-full flex flex-col gap-6">
-      <CustomInput
+        <CustomInput
           label="GitHub Token"
           name="ghToken"
           required
