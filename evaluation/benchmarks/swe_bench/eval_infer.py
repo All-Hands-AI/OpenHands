@@ -14,6 +14,9 @@ from swebench.harness.test_spec import SWEbenchInstance, TestSpec, make_test_spe
 from swebench.harness.utils import load_swebench_dataset
 from tqdm import tqdm
 
+from evaluation.benchmarks.swe_bench.resource.mapping import (
+    get_instance_resource_factor,
+)
 from evaluation.benchmarks.swe_bench.run_infer import get_instance_docker_image
 from evaluation.utils.shared import (
     EvalMetadata,
@@ -87,6 +90,10 @@ def get_config(instance: pd.Series) -> AppConfig:
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             remote_runtime_init_timeout=3600,
+            remote_runtime_resource_factor=get_instance_resource_factor(
+                dataset_name=metadata.dataset,
+                instance_id=instance['instance_id'],
+            ),
         ),
         # do not mount workspace
         workspace_base=None,
