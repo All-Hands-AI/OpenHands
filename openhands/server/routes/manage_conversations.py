@@ -214,11 +214,9 @@ async def _get_conversation_info(
             if is_running
             else ConversationStatus.STOPPED,
         )
-    except Exception:  # type: ignore
-        logger.warning(
-            f'Error loading conversation: {conversation.conversation_id[:5]}',
-            exc_info=True,
-            stack_info=True,
+    except Exception as e:
+        logger.error(
+            f'Error loading conversation {conversation.conversation_id}: {str(e)}',
         )
         return None
 

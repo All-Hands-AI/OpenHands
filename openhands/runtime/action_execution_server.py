@@ -522,9 +522,7 @@ if __name__ == '__main__':
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
-            logger.error(
-                f'Error processing command: {str(e)}', exc_info=True, stack_info=True
-            )
+            logger.error(f'Error while running /execute_action: {str(e)}')
             raise HTTPException(
                 status_code=500,
                 detail=traceback.format_exc(),
@@ -716,7 +714,7 @@ if __name__ == '__main__':
             return sorted_entries
 
         except Exception as e:
-            logger.error(f'Error listing files: {e}', exc_info=True)
+            logger.error(f'Error listing files: {e}')
             return []
 
     logger.debug(f'Starting action execution API on port {args.port}')

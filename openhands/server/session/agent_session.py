@@ -205,7 +205,7 @@ class AgentSession:
         try:
             await self.runtime.connect()
         except AgentRuntimeUnavailableError as e:
-            logger.error(f'Runtime initialization failed: {e}', exc_info=True)
+            logger.error(f'Runtime initialization failed: {e}')
             if self._status_callback:
                 self._status_callback(
                     'error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e)

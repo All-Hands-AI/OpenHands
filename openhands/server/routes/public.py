@@ -70,7 +70,7 @@ async def get_litellm_models() -> list[str]:
                     model_list.append('ollama/' + model['name'])
                 break
             except requests.exceptions.RequestException as e:
-                logger.error(f'Error getting OLLAMA models: {e}', exc_info=True)
+                logger.error(f'Error getting OLLAMA models: {e}')
 
     return list(sorted(set(model_list)))
 
