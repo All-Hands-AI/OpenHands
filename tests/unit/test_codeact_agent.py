@@ -60,7 +60,6 @@ def mock_state() -> State:
 
 
 def test_cmd_output_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = CmdOutputObservation(
         command='echo hello',
         content='Command output',
@@ -82,7 +81,6 @@ def test_cmd_output_observation_message(agent: CodeActAgent):
 
 
 def test_ipython_run_cell_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = IPythonRunCellObservation(
         code='plt.plot()',
         content='IPython output\n![image](data:image/png;base64,ABC123)',
@@ -105,7 +103,6 @@ def test_ipython_run_cell_observation_message(agent: CodeActAgent):
 
 
 def test_agent_delegate_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = AgentDelegateObservation(
         content='Content', outputs={'content': 'Delegated agent output'}
     )
@@ -122,7 +119,6 @@ def test_agent_delegate_observation_message(agent: CodeActAgent):
 
 
 def test_error_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = ErrorObservation('Error message')
 
     results = agent.get_observation_message(obs, tool_call_id_to_message={})
@@ -145,7 +141,6 @@ def test_unknown_observation_message(agent: CodeActAgent):
 
 
 def test_file_edit_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = FileEditObservation(
         path='/test/file.txt',
         prev_exist=True,
@@ -167,7 +162,6 @@ def test_file_edit_observation_message(agent: CodeActAgent):
 
 
 def test_file_read_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = FileReadObservation(
         path='/test/file.txt',
         content='File content',
@@ -186,7 +180,6 @@ def test_file_read_observation_message(agent: CodeActAgent):
 
 
 def test_browser_output_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = BrowserOutputObservation(
         url='http://example.com',
         trigger_by_action='browse',
@@ -207,7 +200,6 @@ def test_browser_output_observation_message(agent: CodeActAgent):
 
 
 def test_user_reject_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = UserRejectObservation('Action rejected')
 
     results = agent.get_observation_message(obs, tool_call_id_to_message={})
@@ -223,7 +215,6 @@ def test_user_reject_observation_message(agent: CodeActAgent):
 
 
 def test_function_calling_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = True
     mock_response = {
         'id': 'mock_id',
         'total_calls_in_response': 1,

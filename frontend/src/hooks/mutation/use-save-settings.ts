@@ -1,12 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  ApiSettings,
-  DEFAULT_SETTINGS,
-  LATEST_SETTINGS_VERSION,
-  Settings,
-} from "#/services/settings";
+import { ApiSettings, DEFAULT_SETTINGS, Settings } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
-import { useSettingsUpToDate } from "#/context/settings-up-to-date-context";
 
 const saveSettingsMutationFn = async (settings: Partial<Settings>) => {
   const apiSettings: Partial<ApiSettings> = {
@@ -24,19 +18,11 @@ const saveSettingsMutationFn = async (settings: Partial<Settings>) => {
 
 export const useSaveSettings = () => {
   const queryClient = useQueryClient();
-  const { isUpToDate, setIsUpToDate } = useSettingsUpToDate();
 
   return useMutation({
     mutationFn: saveSettingsMutationFn,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["settings"] });
-      if (!isUpToDate) {
-        localStorage.setItem(
-          "SETTINGS_VERSION",
-          LATEST_SETTINGS_VERSION.toString(),
-        );
-        setIsUpToDate(true);
-      }
     },
   });
 };
