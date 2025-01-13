@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Dict, Optional
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action
@@ -74,6 +74,7 @@ class AgentDelegateAction(Action):
     inputs: dict
     thought: str = ''
     action: str = ActionType.DELEGATE
+    llm_config: Optional[Dict[str, Any]] = None
 
     @property
     def message(self) -> str:

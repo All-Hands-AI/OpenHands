@@ -1,4 +1,3 @@
-import json
 import os
 from collections import deque
 
@@ -9,8 +8,10 @@ import openhands.agenthub.codeact_agent.function_calling as codeact_function_cal
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
+from openhands.core.utils import json
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -85,6 +86,17 @@ class CodeActAgent(Agent):
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
+
+        # import pdb; pdb.set_trace()
+        llm_config = LLMConfig(
+            model='litellm_proxy/claude-3-5-sonnet-20241022',
+            api_key='REDACTED',
+            temperature=0.0,
+            base_url='https://llm-proxy.app.all-hands.dev',
+        )
+        llm = LLM(llm_config)
+        # TODO: Remove this once we have a real AgentConfig
+        config = AgentConfig()
         super().__init__(llm, config)
         self.pending_actions: deque[Action] = deque()
         self.reset()
@@ -369,6 +381,11 @@ class CodeActAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
+
+        # If this agent has a supervisor, we need to get the time to stop from the supervisor
+        if self.when_to_stop < 0 and state.inputs.get('when_to_stop', None):
+            self.when_to_stop: bool = state.inputs['when_to_stop']
+
         # Continue with pending actions if any
         if self.pending_actions:
             return self.pending_actions.popleft()
@@ -469,6 +486,14 @@ class CodeActAgent(Agent):
             else:
                 raise ValueError(f'Unknown event type: {type(event)}')
 
+            if state.inputs.get('next_step', ''):
+                messages_to_add = [
+                    Message(
+                        role='user',
+                        content=[TextContent(text=state.inputs['next_step'])],
+                    )
+                ]
+
             # Check pending tool call action messages and see if they are complete
             _response_ids_to_remove = []
             for (
@@ -500,6 +525,13 @@ class CodeActAgent(Agent):
                     if message.role == 'user':
                         self.prompt_manager.enhance_message(message)
                     messages.append(message)
+
+        if state.inputs.get('next_step', ''):
+            messages.append(
+                Message(
+                    role='user', content=[TextContent(text=state.inputs['next_step'])]
+                )
+            )
 
         if self.llm.is_caching_prompt_active():
             # NOTE: this is only needed for anthropic

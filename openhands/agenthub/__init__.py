@@ -19,6 +19,7 @@ __all__ = [
     'delegator_agent',
     'dummy_agent',
     'browsing_agent',
+    'supervisor_agent',
 ]
 
 for agent in all_microagents.values():
