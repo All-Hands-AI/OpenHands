@@ -118,9 +118,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
             # Wait before polling again
             sleep_if_should_continue(30)
 
-        raise AgentRuntimeBuildError(
-            'Build interrupted (likely received SIGTERM or SIGINT).'
-        )
+        raise AgentRuntimeBuildError('Build interrupted')
 
     def image_exists(self, image_name: str, pull_from_repo: bool = True) -> bool:
         """Checks if an image exists in the remote registry using the /image_exists endpoint."""

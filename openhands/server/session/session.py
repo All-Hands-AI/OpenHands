@@ -116,9 +116,9 @@ class Session:
                 selected_repository=selected_repository,
             )
         except Exception as e:
-            logger.exception(f'Error creating controller: {e}')
+            logger.exception(f'Error creating agent_session: {e}')
             await self.send_error(
-                f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
+                f'Error creating agent_session. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
             return
 
