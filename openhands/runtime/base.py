@@ -5,6 +5,7 @@ import json
 import os
 import random
 import string
+import tempfile
 from abc import abstractmethod
 from pathlib import Path
 from typing import Callable
@@ -37,9 +38,7 @@ from openhands.events.observation import (
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.microagent import (
     BaseMicroAgent,
-    KnowledgeMicroAgent,
-    RepoMicroAgent,
-    TaskMicroAgent,
+    load_microagents_from_dir,
 )
 from openhands.runtime.plugins import (
     JupyterRequirement,
@@ -256,44 +255,36 @@ class Runtime(FileEditRuntimeMixin):
                 )
             )
 
-        # Check for local repository microagents
+        # Load microagents from directory
         files = self.list_files(str(dir_name))
-        self.log('info', f'Found {len(files)} local microagents.')
-        if 'repo.md' in files:
-            obs = self.read(FileReadAction(path=str(dir_name / 'repo.md')))
-            if isinstance(obs, FileReadObservation):
-                self.log('info', 'repo.md microagent loaded.')
-                loaded_microagents.append(
-                    RepoMicroAgent.load(
-                        path=str(dir_name / 'repo.md'), file_content=obs.content
-                    )
+        if files:
+            self.log('info', f'Found {len(files)} files in microagents directory.')
+            # Create a temporary directory to store files for loading
+            with tempfile.TemporaryDirectory() as temp_dir:
+                temp_path = Path(temp_dir)
+                for file in files:
+                    # Remove any trailing slashes and get the relative path
+                    file_path = Path(file.rstrip('/'))
+                    if file_path.suffix != '.md':
+                        continue
+
+                    # Create necessary parent directories
+                    target_path = temp_path / file_path
+                    target_path.parent.mkdir(parents=True, exist_ok=True)
+
+                    # Read and write the file content
+                    obs = self.read(FileReadAction(path=str(dir_name / file_path)))
+                    if isinstance(obs, FileReadObservation):
+                        target_path.write_text(obs.content)
+
+                # Load all microagents using the existing function
+                repo_agents, knowledge_agents, task_agents = load_microagents_from_dir(
+                    temp_path
                 )
+                loaded_microagents.extend(repo_agents.values())
+                loaded_microagents.extend(knowledge_agents.values())
+                loaded_microagents.extend(task_agents.values())
 
-        if 'knowledge' in files:
-            knowledge_dir = dir_name / 'knowledge'
-            _knowledge_microagents_files = self.list_files(str(knowledge_dir))
-            for fname in _knowledge_microagents_files:
-                obs = self.read(FileReadAction(path=str(knowledge_dir / fname)))
-                if isinstance(obs, FileReadObservation):
-                    self.log('info', f'knowledge/{fname} microagent loaded.')
-                    loaded_microagents.append(
-                        KnowledgeMicroAgent.load(
-                            path=str(knowledge_dir / fname), file_content=obs.content
-                        )
-                    )
-
-        if 'tasks' in files:
-            tasks_dir = dir_name / 'tasks'
-            _tasks_microagents_files = self.list_files(str(tasks_dir))
-            for fname in _tasks_microagents_files:
-                obs = self.read(FileReadAction(path=str(tasks_dir / fname)))
-                if isinstance(obs, FileReadObservation):
-                    self.log('info', f'tasks/{fname} microagent loaded.')
-                    loaded_microagents.append(
-                        TaskMicroAgent.load(
-                            path=str(tasks_dir / fname), file_content=obs.content
-                        )
-                    )
         return loaded_microagents
 
     def run_action(self, action: Action) -> Observation:
