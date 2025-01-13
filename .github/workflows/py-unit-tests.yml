@@ -75,7 +75,9 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: poetry install --without evaluation,llama-index
       - name: Build Environment
-        run: make build
+        run: |
+          make build
+          poetry run playwright install --with-deps chromium
       - name: Run Local Runtime Tests
         run: |
           # We install pytest-xdist in order to run tests across CPUs
