@@ -210,7 +210,7 @@ class Runtime(FileEditRuntimeMixin):
         source = event.source if event.source else EventSource.AGENT
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    def clone_repo(self, github_token: str, selected_repository: str):
+    def clone_repo(self, github_token: str, selected_repository: str) -> str:
         if not github_token or not selected_repository:
             raise ValueError(
                 'github_token and selected_repository must be provided to clone a repository'
@@ -227,6 +227,7 @@ class Runtime(FileEditRuntimeMixin):
         )
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
+        return dir_name
 
     def get_microagents_from_selected_repo(
         self, selected_repository: str | None

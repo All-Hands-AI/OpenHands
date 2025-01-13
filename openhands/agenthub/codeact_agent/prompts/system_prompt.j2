@@ -5,9 +5,14 @@ You are OpenHands agent, a helpful AI assistant that can interact with a compute
 * The assistant MUST NOT include comments in the code unless they are necessary to describe non-obvious behavior.
 {{ runtime_info }}
 </IMPORTANT>
-{% if repo_instructions -%}
+{% if repository_info %}
+<REPOSITORY_INFO>
+At the user's request, repository {{ repository_info.repo_name }} has been cloned to directory {{ repository_info.repo_directory }}.
+</REPOSITORY_INFO>
+{% endif %}
+{% if repository_instructions -%}
 <REPOSITORY_INSTRUCTIONS>
-{{ repo_instructions }}
+{{ repository_instructions }}
 </REPOSITORY_INSTRUCTIONS>
 {% endif %}
 {% if runtime_info and runtime_info.available_hosts -%}
