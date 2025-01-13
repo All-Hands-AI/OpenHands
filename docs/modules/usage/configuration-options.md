@@ -92,7 +92,7 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Description: Disable color in terminal output
 
 **Trajectories**
-- `trajectories_path`
+- `save_trajectory_path`
   - Type: `str`
   - Default: `"./trajectories"`
   - Description: Path to store trajectories (can be a folder or a file). If it's a folder, the trajectories will be saved in a file named with the session id name and .json extension, in that folder.

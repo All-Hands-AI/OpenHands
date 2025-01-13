@@ -94,7 +94,7 @@ Les options de configuration de base sont définies dans la section `[core]` du 
   - Description : Désactiver la couleur dans la sortie du terminal
 
 **Trajectoires**
-- `trajectories_path`
+- `save_trajectory_path`
   - Type : `str`
   - Valeur par défaut : `"./trajectories"`
   - Description : Chemin pour stocker les trajectoires (peut être un dossier ou un fichier). Si c'est un dossier, les trajectoires seront enregistrées dans un fichier nommé avec l'ID de session et l'extension .json, dans ce dossier.
