@@ -269,7 +269,10 @@ class Runtime(FileEditRuntimeMixin):
                     )
                 )
 
-        if 'knowledge' in files:
+        def _is_dir_in_files(dir_name: str, files: list[str]) -> bool:
+            return dir_name in files or f"{dir_name}/" in files
+
+        if _is_dir_in_files('knowledge', files):
             knowledge_dir = dir_name / 'knowledge'
             _knowledge_microagents_files = self.list_files(str(knowledge_dir))
             for fname in _knowledge_microagents_files:
@@ -282,7 +285,7 @@ class Runtime(FileEditRuntimeMixin):
                         )
                     )
 
-        if 'tasks' in files:
+        if _is_dir_in_files('tasks', files):
             tasks_dir = dir_name / 'tasks'
             _tasks_microagents_files = self.list_files(str(tasks_dir))
             for fname in _tasks_microagents_files:
