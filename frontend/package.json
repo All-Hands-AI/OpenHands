@@ -37,7 +37,7 @@
     "react-redux": "^9.2.0",
     "react-router": "^7.1.1",
     "react-syntax-highlighter": "^15.6.1",
-    "react-textarea-autosize": "^8.5.4",
+    "react-textarea-autosize": "^8.5.7",
     "remark-gfm": "^4.0.0",
     "sirv-cli": "^3.0.0",
     "socket.io-client": "^4.8.1",

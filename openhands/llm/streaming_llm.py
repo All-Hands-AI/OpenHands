@@ -16,9 +16,7 @@ class StreamingLLM(AsyncLLM):
         self._async_streaming_completion = partial(
             self._call_acompletion,
             model=self.config.model,
-            api_key=self.config.api_key.get_secret_value()
-            if self.config.api_key
-            else None,
+            api_key=self.config.api_key,
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
