@@ -92,12 +92,10 @@ class SessionManager:
                     await self._process_message(message)
             except asyncio.CancelledError:
                 return
-            except Exception:
+            except Exception as e:
                 try:
                     asyncio.get_running_loop()
-                    logger.warning(
-                        'error_reading_from_redis', exc_info=True, stack_info=True
-                    )
+                    logger.error(f'error_reading_from_redis:{str(e)}')
                 except RuntimeError:
                     return  # Loop has been shut down
 
@@ -259,8 +257,8 @@ class SessionManager:
                         await conversation.disconnect()
                     self._detached_conversations.clear()
                 return
-            except Exception:
-                logger.warning('error_cleaning_detached_conversations', exc_info=True)
+            except Exception as e:
+                logger.warning(f'error_cleaning_detached_conversations: {str(e)}')
                 await asyncio.sleep(_CLEANUP_EXCEPTION_WAIT_TIME)
 
     async def get_agent_loop_running(self, user_id, sids: set[str]) -> set[str]:
