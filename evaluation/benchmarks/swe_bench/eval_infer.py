@@ -86,7 +86,7 @@ def get_config(instance: pd.Series) -> AppConfig:
             base_container_image=base_container_image,
             use_host_network=False,
             # large enough timeout, since some testcases take very long to run
-            timeout=1800,
+            timeout=600,
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             remote_runtime_init_timeout=3600,
