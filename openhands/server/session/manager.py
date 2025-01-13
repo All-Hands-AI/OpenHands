@@ -24,10 +24,6 @@ _CLEANUP_INTERVAL = 15
 _CLEANUP_EXCEPTION_WAIT_TIME = 15
 
 
-class ConversationDoesNotExistError(Exception):
-    pass
-
-
 @dataclass
 class _SessionIsRunningCheck:
     request_id: str
