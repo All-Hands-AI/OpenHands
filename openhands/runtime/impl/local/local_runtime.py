@@ -41,6 +41,49 @@ from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
+def check_dependencies(code_repo_path: str, poetry_venvs_path: str):
+    ERROR_MESSAGE = 'Please follow the instructions in https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md to install OpenHands.'
+    if not os.path.exists(code_repo_path):
+        raise ValueError(
+            f'Code repo path {code_repo_path} does not exist. ' + ERROR_MESSAGE
+        )
+    if not os.path.exists(poetry_venvs_path):
+        raise ValueError(
+            f'Poetry venvs path {poetry_venvs_path} does not exist. ' + ERROR_MESSAGE
+        )
+    # Check jupyter is installed
+    logger.debug('Checking dependencies: Jupyter')
+    output = subprocess.check_output(
+        'poetry run jupyter --version',
+        shell=True,
+        text=True,
+        cwd=code_repo_path,
+    )
+    logger.debug(f'Jupyter output: {output}')
+    if 'jupyter' not in output.lower():
+        raise ValueError('Jupyter is not properly installed. ' + ERROR_MESSAGE)
+
+    # Check libtmux is installed
+    logger.debug('Checking dependencies: libtmux')
+    import libtmux
+
+    server = libtmux.Server()
+    session = server.new_session(session_name='test-session')
+    pane = session.attached_pane
+    pane.send_keys('echo "test"')
+    pane_output = '\n'.join(pane.cmd('capture-pane', '-p').stdout)
+    session.kill_session()
+    if 'test' not in pane_output:
+        raise ValueError('libtmux is not properly installed. ' + ERROR_MESSAGE)
+
+    # Check browser works
+    logger.debug('Checking dependencies: browser')
+    from openhands.runtime.browser.browser_env import BrowserEnv
+
+    browser = BrowserEnv()
+    browser.close()
+
+
 class LocalRuntime(ActionExecutionClient):
     """This runtime will run the action_execution_server directly on the local machine.
     When receiving an event, it will send the event to the server via HTTP.
@@ -75,6 +118,7 @@ class LocalRuntime(ActionExecutionClient):
                 'Be careful, the agent can EDIT files in this directory!'
             )
             self.config.workspace_mount_path_in_sandbox = self.config.workspace_base
+            self._temp_workspace = None
         else:
             # A temporary directory is created for the agent to run in
             # This is used for the local runtime only
@@ -174,6 +218,7 @@ class LocalRuntime(ActionExecutionClient):
         env['POETRY_VIRTUALENVS_PATH'] = poetry_venvs_path
         logger.debug(f'POETRY_VIRTUALENVS_PATH: {poetry_venvs_path}')
 
+        check_dependencies(code_repo_path, poetry_venvs_path)
         self.server_process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -222,7 +267,7 @@ class LocalRuntime(ActionExecutionClient):
         return port
 
     @tenacity.retry(
-        wait=tenacity.wait_exponential(multiplier=0.1, min=0.1, max=1),
+        wait=tenacity.wait_exponential(min=1, max=10),
         stop=stop_if_should_exit(),
         before_sleep=lambda retry_state: logger.debug(
             f'Waiting for server to be ready... (attempt {retry_state.attempt_number})'
