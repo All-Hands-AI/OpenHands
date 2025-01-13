@@ -94,7 +94,7 @@ class FileConversationStore(ConversationStore):
 
     @classmethod
     async def get_instance(
-        cls, config: AppConfig, user_id: int
+        cls, config: AppConfig, user_id: int | None
     ) -> FileConversationStore:
         file_store = get_file_store(config.file_store, config.file_store_path)
         return FileConversationStore(file_store)
