@@ -66,9 +66,6 @@ class ActionRequest(BaseModel):
 
 
 ROOT_GID = 0
-INIT_COMMANDS = [
-    'git config --file ./.git_config user.name "openhands" && git config --file ./.git_config user.email "openhands@all-hands.dev" && alias git="git --no-pager" && export GIT_CONFIG_FILE=$(pwd)/.git_config',
-]
 
 SESSION_API_KEY = os.environ.get('SESSION_API_KEY')
 api_key_header = APIKeyHeader(name='X-Session-API-Key', auto_error=False)
@@ -160,6 +157,9 @@ class ActionExecutor:
             )
 
     async def _init_bash_commands(self):
+        INIT_COMMANDS = [
+            'git config --file ./.git_config user.name "openhands" && git config --file ./.git_config user.email "openhands@all-hands.dev" && alias git="git --no-pager" && echo "export GIT_CONFIG_FILE=$(pwd)/.git_config" >> ~/.bashrc && source ~/.bashrc',
+        ]
         logger.debug(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
         for command in INIT_COMMANDS:
             action = CmdRunAction(command=command)
