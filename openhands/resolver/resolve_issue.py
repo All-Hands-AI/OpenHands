@@ -14,12 +14,7 @@ from termcolor import colored
 
 import openhands
 from openhands.controller.state.state import State
-from openhands.core.config import (
-    AgentConfig,
-    AppConfig,
-    LLMConfig,
-    SandboxConfig,
-)
+from openhands.core.config import AgentConfig, AppConfig, LLMConfig, SandboxConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
@@ -153,7 +148,7 @@ async def process_issue(
     max_iterations: int,
     llm_config: LLMConfig,
     output_dir: str,
-    runtime_container_image: str,
+    runtime_container_image: str | None,
     prompt_template: str,
     issue_handler: IssueHandlerInterface,
     repo_instruction: str | None = None,
@@ -306,7 +301,7 @@ async def resolve_issue(
     max_iterations: int,
     output_dir: str,
     llm_config: LLMConfig,
-    runtime_container_image: str,
+    runtime_container_image: str | None,
     prompt_template: str,
     issue_type: str,
     repo_instruction: str | None,
@@ -583,11 +578,16 @@ def main():
         default=None,
         help="Target branch to pull and create PR against (for PRs). If not specified, uses the PR's base branch.",
     )
+    parser.add_argument(
+        '--is-experimental',
+        type=lambda x: x.lower() == 'true',
+        help='Whether to run in experimental mode.',
+    )
 
     my_args = parser.parse_args()
 
     runtime_container_image = my_args.runtime_container_image
-    if runtime_container_image is None:
+    if runtime_container_image is None and not my_args.is_experimental:
         runtime_container_image = (
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
