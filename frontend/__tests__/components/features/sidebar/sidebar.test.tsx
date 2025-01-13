@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
@@ -8,7 +8,7 @@ import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 import OpenHands from "#/api/open-hands";
 import { MOCK_USER_PREFERENCES } from "#/mocks/handlers";
 
-const renderSidebar = () => {
+describe("Sidebar", () => {
   const RouterStub = createRoutesStub([
     {
       path: "/conversation/:conversationId",
@@ -16,10 +16,9 @@ const renderSidebar = () => {
     },
   ]);
 
-  renderWithProviders(<RouterStub initialEntries={["/conversation/123"]} />);
-};
+  const renderSidebar = () =>
+    renderWithProviders(<RouterStub initialEntries={["/conversation/123"]} />);
 
-describe("Sidebar", () => {
   it.skipIf(!MULTI_CONVERSATION_UI)(
     "should have the conversation panel open by default",
     () => {
@@ -54,9 +53,16 @@ describe("Sidebar", () => {
       vi.clearAllMocks();
     });
 
-    it("should fetch settings data on mount", () => {
-      renderSidebar();
-      expect(getSettingsSpy).toHaveBeenCalledOnce();
+    it("should fetch settings data on mount and if the user is authenticated", async () => {
+      const authenticateSpy = vi.spyOn(OpenHands, "authenticate");
+
+      const { rerender } = renderSidebar();
+      expect(getSettingsSpy).not.toHaveBeenCalled();
+
+      authenticateSpy.mockResolvedValueOnce(true);
+      rerender(<RouterStub initialEntries={["/conversation/123"]} />);
+
+      await waitFor(() => expect(getSettingsSpy).toHaveBeenCalledOnce());
     });
 
     it("should send all settings data when saving AI configuration", async () => {
@@ -139,6 +145,31 @@ describe("Sidebar", () => {
         ...MOCK_USER_PREFERENCES.settings,
         language: "no",
         llm_api_key: undefined, // null or undefined
+      });
+    });
+
+    it("should not send the api key if its SET", async () => {
+      const user = userEvent.setup();
+      renderSidebar();
+
+      const settingsButton = screen.getByTestId("settings-button");
+      await user.click(settingsButton);
+
+      const settingsModal = screen.getByTestId("ai-config-modal");
+
+      const apiKeyInput = within(settingsModal).getByLabelText(/api key/i);
+      await user.type(apiKeyInput, "SET");
+
+      const saveButton = within(settingsModal).getByTestId(
+        "save-settings-button",
+      );
+      await user.click(saveButton);
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith({
+        ...MOCK_USER_PREFERENCES.settings,
+        llm_api_key: undefined,
+        llm_base_url: undefined,
+        security_analyzer: undefined,
       });
     });
   });
