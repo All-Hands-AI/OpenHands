@@ -14,15 +14,15 @@ interface ConnectToGitHubModalProps {
 }
 
 export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
-  const { gitHubToken, setGitHubToken } = useAuth();
+  const { gitHubToken, keycloakToken, setAccessTokens } = useAuth();
   const { t } = useTranslation();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const ghToken = formData.get("ghToken")?.toString();
-
-    if (ghToken) setGitHubToken(ghToken);
+    const kcToken = formData.get("kcToken")?.toString();
+    if (ghToken && kcToken) setAccessTokens(ghToken, kcToken);
     onClose();
   };
 
@@ -53,6 +53,13 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
           required
           type="password"
           defaultValue={gitHubToken ?? ""}
+        />
+        <CustomInput
+          label="Keycloak Token"
+          name="kcToken"
+          required
+          type="password"
+          defaultValue={keycloakToken ?? ""}
         />
 
         <div className="flex flex-col gap-2 w-full">

@@ -46,15 +46,14 @@ export function ErrorBoundary() {
 export default function MainApp() {
   useMaybeMigrateSettings();
 
+  const { data: isAuthed, isFetching: isFetchingAuth } = useIsAuthed();
   const { gitHubToken } = useAuth();
-  const { data: settings } = useSettings();
-
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
     !localStorage.getItem("analytics-consent"),
   );
 
+  const { data: settings } = useSettings();
   const config = useConfig();
-  const { data: isAuthed, isFetching: isFetchingAuth } = useIsAuthed();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     gitHubToken,

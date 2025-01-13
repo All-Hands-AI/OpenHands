@@ -16,10 +16,9 @@ async def get_github_repositories(
     sort: str = 'pushed',
     installation_id: int | None = None,
 ):
-    # Extract the GitHub token from the headers
-    github_token = request.headers.get('X-GitHub-Token')
+    github_token = request.state.github_token
     if not github_token:
-        raise HTTPException(status_code=400, detail='Missing X-GitHub-Token header')
+        raise HTTPException(status_code=400, detail='Missing Github Token')
 
     openhands_config.verify_github_repo_list(installation_id)
 
