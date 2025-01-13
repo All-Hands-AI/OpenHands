@@ -55,6 +55,9 @@ class SessionManager:
     _active_conversations: dict[str, tuple[Conversation, int]] = field(
         default_factory=dict
     )
+    _detached_conversations: dict[str, tuple[Conversation, float]] = field(
+        default_factory=dict
+    )
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
     _connection_queries: dict[str, _ClusterQuery[dict[str, str]]] = field(
@@ -200,6 +203,13 @@ class SessionManager:
                 logger.info(f'Reusing active conversation {sid}')
                 return conversation
 
+            # Check if we have a detached conversation we can reuse
+            if sid in self._detached_conversations:
+                conversation, _ = self._detached_conversations.pop(sid)
+                self._active_conversations[sid] = (conversation, 1)
+                logger.info(f'Reusing detached conversation {sid}')
+                return conversation
+
             # Create new conversation if none exists
             c = Conversation(sid, file_store=self.file_store, config=self.config)
             try:
@@ -236,11 +246,18 @@ class SessionManager:
                     return
                 else:
                     self._active_conversations.pop(sid)
+                    self._detached_conversations[sid] = (conversation, time.time())
 
     async def _cleanup_stale(self):
         while should_continue():
             if self._get_redis_client():
                 # Debug info for HA envs
+                logger.info(
+                    f'Attached conversations: {len(self._active_conversations)}'
+                )
+                logger.info(
+                    f'Detached conversations: {len(self._detached_conversations)}'
+                )
                 logger.info(
                     f'Running agent loops: {len(self._local_agent_loops_by_sid)}'
                 )
@@ -248,6 +265,13 @@ class SessionManager:
                     f'Local connections: {len(self._local_connection_id_to_session_id)}'
                 )
             try:
+                async with self._conversations_lock:
+                    # Create a list of items to process to avoid modifying dict during iteration
+                    items = list(self._detached_conversations.items())
+                    for sid, (conversation, detach_time) in items:
+                        await conversation.disconnect()
+                        self._detached_conversations.pop(sid, None)
+
                 close_threshold = time.time() - self.config.sandbox.close_delay
                 running_loops = list(self._local_agent_loops_by_sid.items())
                 running_loops.sort(key=lambda item: item[1].last_active_ts)
@@ -281,6 +305,10 @@ class SessionManager:
                 await wait_all(self._close_session(sid) for sid in sid_to_close)
                 await asyncio.sleep(_CLEANUP_INTERVAL)
             except asyncio.CancelledError:
+                async with self._conversations_lock:
+                    for conversation, _ in self._detached_conversations.values():
+                        await conversation.disconnect()
+                    self._detached_conversations.clear()
                 await wait_all(
                     self._close_session(sid) for sid in self._local_agent_loops_by_sid
                 )
