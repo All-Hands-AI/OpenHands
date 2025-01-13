@@ -1,13 +1,21 @@
 """Tests for microagent loading in runtime."""
 
+import os
 from pathlib import Path
 
+import pytest
 from conftest import (
     _close_test_runtime,
     _load_runtime,
 )
 
 from openhands.microagent import KnowledgeMicroAgent, RepoMicroAgent, TaskMicroAgent
+
+# Skip tests if Docker is not available
+pytestmark = pytest.mark.skipif(
+    os.system('docker info > /dev/null 2>&1') != 0,
+    reason='Docker is not available or not properly configured',
+)
 
 
 def _create_test_microagents(test_dir: str):
