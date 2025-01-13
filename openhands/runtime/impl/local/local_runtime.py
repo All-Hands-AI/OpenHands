@@ -68,12 +68,20 @@ class LocalRuntime(ActionExecutionClient):
         self._user_id = os.getuid()
         self._username = os.getenv('USER')
 
-        # A temporary directory is created for the agent to run in
-        # This is used for the local runtime only
-        self._temp_workspace = tempfile.mkdtemp(
-            prefix=f'openhands_workspace_{sid}',
-        )
-        self.config.workspace_mount_path_in_sandbox = self._temp_workspace
+        if self.config.workspace_base is not None:
+            logger.warning(
+                f'Workspace base path is set to {self.config.workspace_base}. '
+                'It will be used as the path for the agent to run in. '
+                'Be careful, the agent can EDIT files in this directory!'
+            )
+            self.config.workspace_mount_path_in_sandbox = self.config.workspace_base
+        else:
+            # A temporary directory is created for the agent to run in
+            # This is used for the local runtime only
+            self._temp_workspace = tempfile.mkdtemp(
+                prefix=f'openhands_workspace_{sid}',
+            )
+            self.config.workspace_mount_path_in_sandbox = self._temp_workspace
 
         logger.warning(
             'Initializing LocalRuntime. WARNING: NO SANDBOX IS USED. '
