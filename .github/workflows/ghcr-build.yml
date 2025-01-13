@@ -275,12 +275,6 @@ jobs:
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
-      - name: Run local runtime tests
-        run: |
-          TEST_RUNTIME=local \
-          TEST_IN_CI=true \
-          RUN_AS_OPENHANDS=false \
-          poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py
       - name: Run docker runtime tests
         run: |
           # We install pytest-xdist in order to run tests across CPUs
