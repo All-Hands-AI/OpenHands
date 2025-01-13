@@ -70,6 +70,14 @@ function AuthProvider({ children }: React.PropsWithChildren) {
       return false;
     }
 
+    const storedGitHubToken = localStorage.getItem("ghToken");
+
+    const userId = localStorage.getItem("userId") || "";
+
+    setGitHubToken(storedGitHubToken);
+    setUserId(userId);
+    setupGithubAxiosInterceptors(refreshToken, logout);
+
     const newToken = await OpenHands.refreshToken(config.APP_MODE, userIdState);
     if (newToken) {
       setGitHubToken(newToken);
