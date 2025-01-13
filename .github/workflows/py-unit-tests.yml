@@ -78,6 +78,12 @@ jobs:
         run: make build
       - name: Run Local Runtime Tests
         run: |
+          # We install pytest-xdist in order to run tests across CPUs
+          poetry run pip install pytest-xdist
+
+          # Install to be able to retry on failures for flaky tests
+          poetry run pip install pytest-rerunfailures
+
           TEST_RUNTIME=local \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
