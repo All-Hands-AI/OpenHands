@@ -1,11 +1,9 @@
 import os
-from dataclasses import dataclass, field, fields
 
-from openhands.core.config.config_utils import get_field_info
+from pydantic import BaseModel, Field
 
 
-@dataclass
-class SandboxConfig:
+class SandboxConfig(BaseModel):
     """Configuration for the sandbox.
 
     Attributes:
@@ -39,48 +37,32 @@ class SandboxConfig:
             This should be a JSON string that will be parsed into a dictionary.
     """
 
-    remote_runtime_api_url: str = 'http://localhost:8000'
-    local_runtime_url: str = 'http://localhost'
-    keep_runtime_alive: bool = True
-    rm_all_containers: bool = False
-    api_key: str | None = None
-    base_container_image: str = 'nikolaik/python-nodejs:python3.12-nodejs22'  # default to nikolaik/python-nodejs:python3.12-nodejs22 for eventstream runtime
-    runtime_container_image: str | None = None
-    user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
-    timeout: int = 120
-    remote_runtime_init_timeout: int = 180
-    enable_auto_lint: bool = (
-        False  # once enabled, OpenHands would lint files after editing
+    remote_runtime_api_url: str = Field(default='http://localhost:8000')
+    local_runtime_url: str = Field(default='http://localhost')
+    keep_runtime_alive: bool = Field(default=True)
+    rm_all_containers: bool = Field(default=False)
+    api_key: str | None = Field(default=None)
+    base_container_image: str = Field(
+        default='nikolaik/python-nodejs:python3.12-nodejs22'
     )
-    use_host_network: bool = False
-    runtime_extra_build_args: list[str] | None = None
-    initialize_plugins: bool = True
-    force_rebuild_runtime: bool = False
-    runtime_extra_deps: str | None = None
-    runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
-    browsergym_eval_env: str | None = None
-    platform: str | None = None
-    close_delay: int = 900
-    remote_runtime_resource_factor: int = 1
-    enable_gpu: bool = False
-    docker_runtime_kwargs: str | None = None
+    runtime_container_image: str | None = Field(default=None)
+    user_id: int = Field(default=os.getuid() if hasattr(os, 'getuid') else 1000)
+    timeout: int = Field(default=120)
+    remote_runtime_init_timeout: int = Field(default=180)
+    enable_auto_lint: bool = Field(
+        default=False  # once enabled, OpenHands would lint files after editing
+    )
+    use_host_network: bool = Field(default=False)
+    runtime_extra_build_args: list[str] | None = Field(default=None)
+    initialize_plugins: bool = Field(default=True)
+    force_rebuild_runtime: bool = Field(default=False)
+    runtime_extra_deps: str | None = Field(default=None)
+    runtime_startup_env_vars: dict[str, str] = Field(default_factory=dict)
+    browsergym_eval_env: str | None = Field(default=None)
+    platform: str | None = Field(default=None)
+    close_delay: int = Field(default=900)
+    remote_runtime_resource_factor: int = Field(default=1)
+    enable_gpu: bool = Field(default=False)
+    docker_runtime_kwargs: str | None = Field(default=None)
 
-    def defaults_to_dict(self) -> dict:
-        """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
-        dict = {}
-        for f in fields(self):
-            dict[f.name] = get_field_info(f)
-        return dict
-
-    def __str__(self):
-        attr_str = []
-        for f in fields(self):
-            attr_name = f.name
-            attr_value = getattr(self, f.name)
-
-            attr_str.append(f'{attr_name}={repr(attr_value)}')
-
-        return f"SandboxConfig({', '.join(attr_str)})"
-
-    def __repr__(self):
-        return self.__str__()
+    model_config = {'extra': 'forbid'}
