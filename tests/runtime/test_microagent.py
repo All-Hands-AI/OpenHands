@@ -84,11 +84,10 @@ def test_load_microagents_with_trailing_slashes(
     temp_dir, runtime_cls, run_as_openhands
 ):
     """Test loading microagents when directory paths have trailing slashes."""
+    # Create test files
+    _create_test_microagents(temp_dir)
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        # Create test files
-        _create_test_microagents(temp_dir)
-
         # Load microagents
         loaded_agents = runtime.get_microagents_from_selected_repo(None)
 
@@ -123,13 +122,13 @@ def test_load_microagents_with_trailing_slashes(
 
 def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openhands):
     """Test loading microagents from a selected repository."""
+    # Create test files in a repository-like structure
+    repo_dir = Path(temp_dir) / 'OpenHands'
+    repo_dir.mkdir(parents=True)
+    _create_test_microagents(str(repo_dir))
+
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        # Create test files in a repository-like structure
-        repo_dir = Path(temp_dir) / 'OpenHands'
-        repo_dir.mkdir(parents=True)
-        _create_test_microagents(str(repo_dir))
-
         # Load microagents with selected repository
         loaded_agents = runtime.get_microagents_from_selected_repo(
             'All-Hands-AI/OpenHands'
@@ -166,13 +165,11 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
 
 def test_load_microagents_with_missing_files(temp_dir, runtime_cls, run_as_openhands):
     """Test loading microagents when some files are missing."""
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    try:
-        # Create only repo.md, no other files
-        microagents_dir = Path(temp_dir) / '.openhands' / 'microagents'
-        microagents_dir.mkdir(parents=True, exist_ok=True)
+    # Create only repo.md, no other files
+    microagents_dir = Path(temp_dir) / '.openhands' / 'microagents'
+    microagents_dir.mkdir(parents=True, exist_ok=True)
 
-        repo_agent = """---
+    repo_agent = """---
 name: test_repo_agent
 type: repo
 version: 1.0.0
@@ -183,8 +180,10 @@ agent: CodeActAgent
 
 Repository-specific test instructions.
 """
-        (microagents_dir / 'repo.md').write_text(repo_agent)
+    (microagents_dir / 'repo.md').write_text(repo_agent)
 
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
         # Load microagents
         loaded_agents = runtime.get_microagents_from_selected_repo(None)
 
