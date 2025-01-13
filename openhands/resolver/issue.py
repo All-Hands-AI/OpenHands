@@ -6,7 +6,7 @@ class ReviewThread(BaseModel):
     files: list[str]
 
 
-class GithubIssue(BaseModel):
+class Issue(BaseModel):
     owner: str
     repo: str
     number: int

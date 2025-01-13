@@ -1,8 +1,9 @@
 from unittest.mock import MagicMock, patch
 
 from openhands.core.config import LLMConfig
-from openhands.resolver.github_issue import ReviewThread
-from openhands.resolver.issue_definitions import IssueHandler, PRHandler
+from openhands.resolver.github import GithubIssueHandler, GithubPRHandler
+from openhands.resolver.issue import ReviewThread
+from openhands.resolver.issue_definitions import ServiceContext, ServiceContextPR
 
 
 def test_get_converted_issues_initializes_review_comments():
@@ -27,7 +28,9 @@ def test_get_converted_issues_initializes_review_comments():
 
         # Create an instance of IssueHandler
         llm_config = LLMConfig(model='test', api_key='test')
-        handler = IssueHandler('test-owner', 'test-repo', 'test-token', llm_config)
+        handler = ServiceContext(
+            GithubIssueHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        )
 
         # Get converted issues
         issues = handler.get_converted_issues(issue_numbers=[1])
@@ -57,7 +60,6 @@ def test_get_converted_issues_handles_empty_body():
         # Mock the response for comments
         mock_comments_response = MagicMock()
         mock_comments_response.json.return_value = []
-
         # Set up the mock to return different responses
         mock_get.side_effect = [
             mock_issues_response,
@@ -67,7 +69,9 @@ def test_get_converted_issues_handles_empty_body():
 
         # Create an instance of IssueHandler
         llm_config = LLMConfig(model='test', api_key='test')
-        handler = IssueHandler('test-owner', 'test-repo', 'test-token', llm_config)
+        handler = ServiceContext(
+            GithubIssueHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        )
 
         # Get converted issues
         issues = handler.get_converted_issues(issue_numbers=[1])
@@ -148,7 +152,9 @@ def test_pr_handler_get_converted_issues_with_comments():
 
             # Create an instance of PRHandler
             llm_config = LLMConfig(model='test', api_key='test')
-            handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+            handler = ServiceContextPR(
+                GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+            )
 
             # Get converted issues
             prs = handler.get_converted_issues(issue_numbers=[1])
@@ -185,10 +191,12 @@ def test_get_issue_comments_with_specific_comment_id():
 
         # Create an instance of IssueHandler
         llm_config = LLMConfig(model='test', api_key='test')
-        handler = IssueHandler('test-owner', 'test-repo', 'test-token', llm_config)
+        handler = ServiceContext(
+            GithubIssueHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        )
 
         # Get comments with a specific comment_id
-        specific_comment = handler._get_issue_comments(issue_number=1, comment_id=123)
+        specific_comment = handler.get_issue_comments(issue_number=1, comment_id=123)
 
         # Verify only the specific comment is returned
         assert specific_comment == ['First comment']
@@ -273,7 +281,9 @@ def test_pr_handler_get_converted_issues_with_specific_thread_comment():
 
             # Create an instance of PRHandler
             llm_config = LLMConfig(model='test', api_key='test')
-            handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+            handler = ServiceContextPR(
+                GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+            )
 
             # Get converted issues
             prs = handler.get_converted_issues(
@@ -376,7 +386,9 @@ def test_pr_handler_get_converted_issues_with_specific_review_thread_comment():
 
             # Create an instance of PRHandler
             llm_config = LLMConfig(model='test', api_key='test')
-            handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+            handler = ServiceContextPR(
+                GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+            )
 
             # Get converted issues
             prs = handler.get_converted_issues(
@@ -499,7 +511,9 @@ def test_pr_handler_get_converted_issues_with_specific_comment_and_issue_refs():
 
             # Create an instance of PRHandler
             llm_config = LLMConfig(model='test', api_key='test')
-            handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+            handler = ServiceContextPR(
+                GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+            )
 
             # Get converted issues
             prs = handler.get_converted_issues(
@@ -599,7 +613,9 @@ def test_pr_handler_get_converted_issues_with_duplicate_issue_refs():
 
             # Create an instance of PRHandler
             llm_config = LLMConfig(model='test', api_key='test')
-            handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+            handler = ServiceContextPR(
+                GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+            )
 
             # Get converted issues
             prs = handler.get_converted_issues(issue_numbers=[1])
