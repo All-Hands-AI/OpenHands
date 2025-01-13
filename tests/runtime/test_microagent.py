@@ -1,18 +1,12 @@
 """Tests for microagent loading in runtime."""
 
-import os
 from pathlib import Path
 
-import pytest
 from conftest import (
     _close_test_runtime,
-    _get_sandbox_folder,
     _load_runtime,
 )
 
-from openhands.core.logger import openhands_logger as logger
-from openhands.events.action import FileReadAction
-from openhands.events.observation import FileReadObservation
 from openhands.microagent import KnowledgeMicroAgent, RepoMicroAgent, TaskMicroAgent
 
 
@@ -78,7 +72,9 @@ These are legacy repository instructions.
     (Path(test_dir) / '.openhands_instructions').write_text(legacy_instructions)
 
 
-def test_load_microagents_with_trailing_slashes(temp_dir, runtime_cls, run_as_openhands):
+def test_load_microagents_with_trailing_slashes(
+    temp_dir, runtime_cls, run_as_openhands
+):
     """Test loading microagents when directory paths have trailing slashes."""
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -89,7 +85,9 @@ def test_load_microagents_with_trailing_slashes(temp_dir, runtime_cls, run_as_op
         loaded_agents = runtime.get_microagents_from_selected_repo(None)
 
         # Verify all agents are loaded
-        knowledge_agents = [a for a in loaded_agents if isinstance(a, KnowledgeMicroAgent)]
+        knowledge_agents = [
+            a for a in loaded_agents if isinstance(a, KnowledgeMicroAgent)
+        ]
         repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroAgent)]
         task_agents = [a for a in loaded_agents if isinstance(a, TaskMicroAgent)]
 
@@ -125,10 +123,14 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
         _create_test_microagents(str(repo_dir))
 
         # Load microagents with selected repository
-        loaded_agents = runtime.get_microagents_from_selected_repo('All-Hands-AI/OpenHands')
+        loaded_agents = runtime.get_microagents_from_selected_repo(
+            'All-Hands-AI/OpenHands'
+        )
 
         # Verify all agents are loaded
-        knowledge_agents = [a for a in loaded_agents if isinstance(a, KnowledgeMicroAgent)]
+        knowledge_agents = [
+            a for a in loaded_agents if isinstance(a, KnowledgeMicroAgent)
+        ]
         repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroAgent)]
         task_agents = [a for a in loaded_agents if isinstance(a, TaskMicroAgent)]
 
@@ -179,7 +181,9 @@ Repository-specific test instructions.
         loaded_agents = runtime.get_microagents_from_selected_repo(None)
 
         # Verify only repo agent is loaded
-        knowledge_agents = [a for a in loaded_agents if isinstance(a, KnowledgeMicroAgent)]
+        knowledge_agents = [
+            a for a in loaded_agents if isinstance(a, KnowledgeMicroAgent)
+        ]
         repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroAgent)]
         task_agents = [a for a in loaded_agents if isinstance(a, TaskMicroAgent)]
 
