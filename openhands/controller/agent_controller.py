@@ -163,6 +163,9 @@ class AgentController:
                 filter_hidden=True,
             )
         )
+
+        # unsubscribe from the event stream
+        self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER, self.id)
         self._closed = True
 
     def log(self, level: str, message: str, extra: dict | None = None) -> None:
