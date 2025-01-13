@@ -71,6 +71,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-5-haiku-20241022',
     'gpt-4o-mini',
     'gpt-4o',
+    'o1',
 ]
 
 
@@ -140,6 +141,7 @@ class LLM(RetryMixin, DebugMixin):
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
+            reasoning_effort=self.config.reasoning_effort,
             drop_params=self.config.drop_params,
         )
 
