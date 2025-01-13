@@ -42,7 +42,8 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     logger.info('Initializing new conversation')
 
     logger.info('Loading settings')
-    settings_store = await SettingsStoreImpl.get_instance(config, get_user_id(request))
+    user_id = get_user_id(request)
+    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
     logger.info('Settings loaded')
 
@@ -55,9 +56,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     session_init_args['selected_repository'] = data.selected_repository
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request)
-    )
+    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     logger.info('Conversation store loaded')
 
     conversation_id = uuid.uuid4().hex
@@ -76,19 +75,19 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         ConversationMetadata(
             conversation_id=conversation_id,
             title=conversation_title,
-            github_user_id=get_user_id(request),
+            github_user_id=user_id,
             selected_repository=data.selected_repository,
         )
     )
 
     logger.info(f'Starting agent loop for conversation {conversation_id}')
     event_stream = await session_manager.maybe_start_agent_loop(
-        conversation_id, conversation_init_data
+        conversation_id, conversation_init_data, user_id
     )
     try:
         event_stream.subscribe(
             EventStreamSubscriber.SERVER,
-            _create_conversation_update_callback(get_user_id(request), conversation_id),
+            _create_conversation_update_callback(user_id, conversation_id),
             UPDATED_AT_CALLBACK_ID,
         )
     except ValueError:
@@ -113,7 +112,7 @@ async def search_conversations(
         if hasattr(conversation, 'created_at')
     )
     running_conversations = await session_manager.get_agent_loop_running(
-        set(conversation_ids)
+        get_user_id(request), set(conversation_ids)
     )
     result = ConversationInfoResultSet(
         results=await wait_all(

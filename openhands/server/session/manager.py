@@ -209,13 +209,15 @@ class SessionManager:
             self._active_conversations[sid] = (c, 1)
             return c
 
-    async def join_conversation(self, sid: str, connection_id: str, settings: Settings):
+    async def join_conversation(
+        self, sid: str, connection_id: str, settings: Settings, user_id: int | None
+    ):
         logger.info(f'join_conversation:{sid}:{connection_id}')
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self.local_connection_id_to_session_id[connection_id] = sid
         event_stream = await self._get_event_stream(sid)
         if not event_stream:
-            return await self.maybe_start_agent_loop(sid, settings)
+            return await self.maybe_start_agent_loop(sid, settings, user_id)
         return event_stream
 
     async def detach_from_conversation(self, conversation: Conversation):
@@ -265,7 +267,7 @@ class SessionManager:
                 logger.warning('error_cleaning_detached_conversations', exc_info=True)
                 await asyncio.sleep(_CLEANUP_EXCEPTION_WAIT_TIME)
 
-    async def get_agent_loop_running(self, sids: set[str]) -> set[str]:
+    async def get_agent_loop_running(self, user_id, sids: set[str]) -> set[str]:
         running_sids = set(sid for sid in sids if sid in self._local_agent_loops_by_sid)
         check_cluster_sids = [sid for sid in sids if sid not in running_sids]
         running_cluster_sids = await self.get_agent_loop_running_in_cluster(
@@ -346,7 +348,9 @@ class SessionManager:
         finally:
             self._has_remote_connections_flags.pop(sid, None)
 
-    async def maybe_start_agent_loop(self, sid: str, settings: Settings) -> EventStream:
+    async def maybe_start_agent_loop(
+        self, sid: str, settings: Settings, user_id: int | None
+    ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}')
         session: Session | None = None
         if not await self.is_agent_loop_running(sid):
