@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
-import { SettingsUpToDateProvider } from "#/context/settings-up-to-date-context";
 
 function OAuthGitHubCallback() {
   const navigate = useNavigate();
