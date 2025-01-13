@@ -72,7 +72,7 @@ class Session:
                 to=ROOM_KEY.format(sid=self.sid),
             )
         self.is_alive = False
-        asyncio.create_task(self.agent_session.close())
+        await self.agent_session.close()
 
     async def initialize_agent(
         self,
