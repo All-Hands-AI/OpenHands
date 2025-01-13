@@ -82,7 +82,7 @@ voyageai = "*"
 llama-index-embeddings-voyageai = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.9.0"
+ruff = "0.9.1"
 mypy = "1.14.1"
 pre-commit = "4.0.1"
 build = "*"
