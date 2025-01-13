@@ -18,10 +18,12 @@ from openhands.utils.shutdown_listener import (
 class RemoteRuntimeBuilder(RuntimeBuilder):
     """This class interacts with the remote Runtime API for building and managing container images."""
 
-    def __init__(self, api_url: str, api_key: str):
+    def __init__(
+        self, api_url: str, api_key: str, session: requests.Session | None = None
+    ):
         self.api_url = api_url
         self.api_key = api_key
-        self.session = requests.Session()
+        self.session = session or requests.Session()
         self.session.headers.update({'X-API-Key': self.api_key})
 
     def build(
