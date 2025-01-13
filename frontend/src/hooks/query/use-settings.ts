@@ -4,6 +4,8 @@ import posthog from "posthog-js";
 import { AxiosError } from "axios";
 import { DEFAULT_SETTINGS, getLocalStorageSettings } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
+import { useAuth } from "#/context/auth-context";
+import { useIsAuthed } from "./use-is-authed";
 
 const getSettingsQueryFn = async () => {
   try {
@@ -36,9 +38,12 @@ const getSettingsQueryFn = async () => {
 };
 
 export const useSettings = () => {
+  const { data: isAuthed } = useIsAuthed();
+
   const query = useQuery({
     queryKey: ["settings"],
     queryFn: getSettingsQueryFn,
+    enabled: !!isAuthed,
   });
 
   React.useEffect(() => {
