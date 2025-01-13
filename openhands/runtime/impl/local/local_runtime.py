@@ -202,6 +202,7 @@ class LocalRuntime(ActionExecutionClient):
         code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
         env['PYTHONPATH'] = f'{code_repo_path}:$PYTHONPATH'
         env['OPENHANDS_REPO_PATH'] = code_repo_path
+        env['LOCAL_RUNTIME_MODE'] = '1'
         # run poetry show -v | head -n 1 | awk '{print $2}'
         poetry_venvs_path = (
             subprocess.check_output(
