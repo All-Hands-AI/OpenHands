@@ -49,3 +49,40 @@ jobs:
         uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  # Run python unit tests on Linux
+  test-on-linux-local-runtime:
+    name: Local Runtime Tests on Linux
+    runs-on: ubuntu-latest
+    env:
+      INSTALL_DOCKER: '0' # Set to '0' to skip Docker installation
+    strategy:
+      matrix:
+        python-version: ['3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Install tmux
+        run: sudo apt-get update && sudo apt-get install -y tmux
+      - name: Install poetry via pipx
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+      - name: Install Python dependencies using Poetry
+        run: poetry install --without evaluation,llama-index
+      - name: Build Environment
+        run: make build
+      - name: Run Local Runtime Tests
+        run: |
+          TEST_RUNTIME=local \
+          TEST_IN_CI=true \
+          RUN_AS_OPENHANDS=false \
+          poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
