@@ -12,8 +12,9 @@ from openhands.events.observation import (
     NullObservation,
 )
 from openhands.llm.llm import LLM
-from openhands.resolver.github_issue import GithubIssue, ReviewThread
-from openhands.resolver.issue_definitions import IssueHandler, PRHandler
+from openhands.resolver.github import GithubIssueHandler, GithubPRHandler
+from openhands.resolver.issue import Issue, ReviewThread
+from openhands.resolver.issue_definitions import ServiceContext, ServiceContextPR
 from openhands.resolver.resolve_issue import (
     complete_runtime,
     initialize_runtime,
@@ -120,9 +121,9 @@ async def test_resolve_issue_no_issues_found():
         assert 'correct permissions' in str(exc_info.value)
 
 
-def test_download_issues_from_github():
+def test_download_issues():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = IssueHandler('owner', 'repo', 'token', llm_config)
+    handler = ServiceContext(GithubIssueHandler('owner', 'repo', 'token'), llm_config)
 
     mock_issues_response = MagicMock()
     mock_issues_response.json.side_effect = [
@@ -154,7 +155,7 @@ def test_download_issues_from_github():
 
     assert len(issues) == 2
     assert handler.issue_type == 'issue'
-    assert all(isinstance(issue, GithubIssue) for issue in issues)
+    assert all(isinstance(issue, Issue) for issue in issues)
     assert [issue.number for issue in issues] == [1, 3]
     assert [issue.title for issue in issues] == ['Issue 1', 'Issue 2']
     assert [issue.review_comments for issue in issues] == [None, None]
@@ -162,9 +163,9 @@ def test_download_issues_from_github():
     assert [issue.thread_ids for issue in issues] == [None, None]
 
 
-def test_download_pr_from_github():
+def test_download_pr():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = PRHandler('owner', 'repo', 'token', llm_config)
+    handler = ServiceContextPR(GithubPRHandler('owner', 'repo', 'token'), llm_config)
     mock_pr_response = MagicMock()
     mock_pr_response.json.side_effect = [
         [
@@ -268,7 +269,7 @@ def test_download_pr_from_github():
 
     assert len(issues) == 3
     assert handler.issue_type == 'pr'
-    assert all(isinstance(issue, GithubIssue) for issue in issues)
+    assert all(isinstance(issue, Issue) for issue in issues)
     assert [issue.number for issue in issues] == [1, 2, 3]
     assert [issue.title for issue in issues] == ['PR 1', 'My PR', 'PR 3']
     assert [issue.head_branch for issue in issues] == ['b1', 'b2', 'b3']
@@ -323,7 +324,7 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
     handler_instance = MagicMock()
 
     # Set up test data
-    issue = GithubIssue(
+    issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=1,
@@ -470,7 +471,7 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
 
 
 def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
-    issue = GithubIssue(
+    issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=123,
@@ -478,7 +479,9 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
         body='This is a test issue refer to image ![First Image](https://sampleimage.com/image1.png)',
     )
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContext(
+        GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
     instruction, images_urls = issue_handler.get_instruction(
         issue, mock_prompt_template, None
     )
@@ -488,7 +491,7 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
     assert issue_handler.issue_type == 'issue'
     assert instruction == expected_instruction
 
-    issue = GithubIssue(
+    issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=123,
@@ -506,7 +509,9 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
         ],
     )
 
-    pr_handler = PRHandler('owner', 'repo', 'token', mock_llm_config)
+    pr_handler = ServiceContextPR(
+        GithubPRHandler('owner', 'repo', 'token'), mock_llm_config
+    )
     instruction, images_urls = pr_handler.get_instruction(
         issue, mock_followup_prompt_template, None
     )
@@ -518,7 +523,7 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
 
 
 def test_file_instruction():
-    issue = GithubIssue(
+    issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=123,
@@ -530,7 +535,9 @@ def test_file_instruction():
         prompt = f.read()
     # Test without thread comments
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContext(
+        GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
     instruction, images_urls = issue_handler.get_instruction(issue, prompt, None)
     expected_instruction = """Please fix the following issue for the repository in /workspace.
 An environment has been set up for you to start working. You may assume all necessary tools are installed.
@@ -550,7 +557,7 @@ When you think you have fixed the issue through code changes, please finish the 
 
 
 def test_file_instruction_with_repo_instruction():
-    issue = GithubIssue(
+    issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=123,
@@ -568,7 +575,9 @@ def test_file_instruction_with_repo_instruction():
         repo_instruction = f.read()
 
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContext(
+        GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
     instruction, image_urls = issue_handler.get_instruction(
         issue, prompt, repo_instruction
     )
@@ -597,7 +606,7 @@ When you think you have fixed the issue through code changes, please finish the 
 
 
 def test_guess_success():
-    mock_issue = GithubIssue(
+    mock_issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=1,
@@ -615,7 +624,9 @@ def test_guess_success():
             )
         )
     ]
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContext(
+        GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
 
     with patch.object(
         LLM, 'completion', MagicMock(return_value=mock_completion_response)
@@ -630,7 +641,7 @@ def test_guess_success():
 
 
 def test_guess_success_with_thread_comments():
-    mock_issue = GithubIssue(
+    mock_issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=1,
@@ -653,7 +664,9 @@ def test_guess_success_with_thread_comments():
             )
         )
     ]
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContext(
+        GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
 
     with patch.object(
         LLM, 'completion', MagicMock(return_value=mock_completion_response)
@@ -669,7 +682,7 @@ def test_guess_success_with_thread_comments():
 
 def test_instruction_with_thread_comments():
     # Create an issue with thread comments
-    issue = GithubIssue(
+    issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=123,
@@ -687,7 +700,9 @@ def test_instruction_with_thread_comments():
         prompt = f.read()
 
     llm_config = LLMConfig(model='test', api_key='test')
-    issue_handler = IssueHandler('owner', 'repo', 'token', llm_config)
+    issue_handler = ServiceContext(
+        GithubIssueHandler('owner', 'repo', 'token'), llm_config
+    )
     instruction, images_urls = issue_handler.get_instruction(issue, prompt, None)
 
     # Verify that thread comments are included in the instruction
@@ -699,7 +714,7 @@ def test_instruction_with_thread_comments():
 
 
 def test_guess_success_failure():
-    mock_issue = GithubIssue(
+    mock_issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=1,
@@ -722,7 +737,9 @@ def test_guess_success_failure():
             )
         )
     ]
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContext(
+        GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
 
     with patch.object(
         LLM, 'completion', MagicMock(return_value=mock_completion_response)
@@ -737,7 +754,7 @@ def test_guess_success_failure():
 
 
 def test_guess_success_negative_case():
-    mock_issue = GithubIssue(
+    mock_issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=1,
@@ -755,7 +772,9 @@ def test_guess_success_negative_case():
             )
         )
     ]
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContext(
+        GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
 
     with patch.object(
         LLM, 'completion', MagicMock(return_value=mock_completion_response)
@@ -770,7 +789,7 @@ def test_guess_success_negative_case():
 
 
 def test_guess_success_invalid_output():
-    mock_issue = GithubIssue(
+    mock_issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=1,
@@ -784,7 +803,9 @@ def test_guess_success_invalid_output():
     mock_completion_response.choices = [
         MagicMock(message=MagicMock(content='This is not a valid output'))
     ]
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContext(
+        GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
 
     with patch.object(
         LLM, 'completion', MagicMock(return_value=mock_completion_response)
@@ -803,7 +824,7 @@ def test_guess_success_invalid_output():
 
 def test_download_pr_with_review_comments():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = PRHandler('owner', 'repo', 'token', llm_config)
+    handler = ServiceContextPR(GithubPRHandler('owner', 'repo', 'token'), llm_config)
     mock_pr_response = MagicMock()
     mock_pr_response.json.side_effect = [
         [
@@ -854,7 +875,7 @@ def test_download_pr_with_review_comments():
 
     assert len(issues) == 1
     assert handler.issue_type == 'pr'
-    assert isinstance(issues[0], GithubIssue)
+    assert isinstance(issues[0], Issue)
     assert issues[0].number == 1
     assert issues[0].title == 'PR 1'
     assert issues[0].head_branch == 'b1'
@@ -870,7 +891,7 @@ def test_download_pr_with_review_comments():
 
 def test_download_issue_with_specific_comment():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = IssueHandler('owner', 'repo', 'token', llm_config)
+    handler = ServiceContext(GithubIssueHandler('owner', 'repo', 'token'), llm_config)
 
     # Define the specific comment_id to filter
     specific_comment_id = 101
