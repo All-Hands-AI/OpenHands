@@ -13,6 +13,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
@@ -131,6 +132,8 @@ def get_runtime_classes() -> list[type[Runtime]]:
     runtime = TEST_RUNTIME
     if runtime.lower() == 'docker' or runtime.lower() == 'eventstream':
         return [DockerRuntime]
+    elif runtime.lower() == 'local':
+        return [LocalRuntime]
     elif runtime.lower() == 'remote':
         return [RemoteRuntime]
     elif runtime.lower() == 'runloop':
