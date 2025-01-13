@@ -167,6 +167,7 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
 
         return response
 
+
 class GitHubTokenMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.url.path.startswith('/api/github'):
