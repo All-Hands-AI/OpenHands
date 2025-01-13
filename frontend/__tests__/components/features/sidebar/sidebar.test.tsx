@@ -141,5 +141,30 @@ describe("Sidebar", () => {
         llm_api_key: undefined, // null or undefined
       });
     });
+
+    it("should not send the api key if its SET", async () => {
+      const user = userEvent.setup();
+      renderSidebar();
+
+      const settingsButton = screen.getByTestId("settings-button");
+      await user.click(settingsButton);
+
+      const settingsModal = screen.getByTestId("ai-config-modal");
+
+      const apiKeyInput = within(settingsModal).getByLabelText(/api key/i);
+      await user.type(apiKeyInput, "SET");
+
+      const saveButton = within(settingsModal).getByTestId(
+        "save-settings-button",
+      );
+      await user.click(saveButton);
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith({
+        ...MOCK_USER_PREFERENCES.settings,
+        llm_api_key: undefined,
+        llm_base_url: undefined,
+        security_analyzer: undefined,
+      });
+    });
   });
 });
