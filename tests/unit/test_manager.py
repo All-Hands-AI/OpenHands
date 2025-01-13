@@ -114,7 +114,7 @@ async def test_init_new_local_session():
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
             await session_manager.maybe_start_agent_loop(
-                'new-session-id', ConversationInitData()
+                'new-session-id', ConversationInitData(), 1
             )
             await session_manager.join_conversation(
                 'new-session-id', 'new-session-id', ConversationInitData(), 1
@@ -148,13 +148,13 @@ async def test_join_local_session():
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
             await session_manager.maybe_start_agent_loop(
-                'new-session-id', ConversationInitData()
+                'new-session-id', ConversationInitData(), None
             )
             await session_manager.join_conversation(
                 'new-session-id', 'new-session-id', ConversationInitData(), None
             )
             await session_manager.join_conversation(
-                'new-session-id', 'new-session-id', ConversationInitData(), 0
+                'new-session-id', 'new-session-id', ConversationInitData(), None
             )
     assert session_instance.initialize_agent.call_count == 1
     assert sio.enter_room.await_count == 2
@@ -216,7 +216,7 @@ async def test_add_to_local_event_stream():
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
             await session_manager.maybe_start_agent_loop(
-                'new-session-id', ConversationInitData()
+                'new-session-id', ConversationInitData(), 1
             )
             await session_manager.join_conversation(
                 'new-session-id', 'connection-id', ConversationInitData(), 1

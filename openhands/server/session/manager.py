@@ -417,7 +417,7 @@ class SessionManager:
             self._connection_queries.pop(query_id, None)
 
     async def maybe_start_agent_loop(
-        self, sid: str, settings: Settings, user_id: int | None = None
+        self, sid: str, settings: Settings, user_id: int | None
     ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}')
         session: Session | None = None
