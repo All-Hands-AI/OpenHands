@@ -58,7 +58,7 @@ Here are some examples of CLI commands and their expected outputs:
 ### Example 1: Simple Task
 
 ```bash
-How can I help? >> Write a Python script that prints "Hello, World!"
+>> Write a Python script that prints "Hello, World!"
 ```
 
 Expected Output:
@@ -72,7 +72,7 @@ Expected Output:
 ### Example 2: Bash Command
 
 ```bash
-How can I help? >> Create a directory named "test_dir"
+>> Create a directory named "test_dir"
 ```
 
 Expected Output:
@@ -86,7 +86,7 @@ Expected Output:
 ### Example 3: Error Handling
 
 ```bash
-How can I help? >> Delete a non-existent file
+>> Delete a non-existent file
 ```
 
 Expected Output:

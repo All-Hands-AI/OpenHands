@@ -1,31 +1,21 @@
-# Public Micro-Agents
-
-OpenHands uses specialized micro-agents to handle specific tasks and contexts efficiently. These micro-agents are small,
-focused components that provide specialized behavior and knowledge for particular scenarios.
+# Public Microagents
 
 ## Overview
 
-Public micro-agents are defined in markdown files under the
+Public microagents are specialized guidelines triggered by keywords for all OpenHands users.
+They are defined in markdown files under the
 [`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge) directory.
-Each micro-agent is configured with:
 
-- A unique name.
-- The agent type (typically CodeActAgent).
-- Trigger keywords that activate the agent.
-- Specific instructions and capabilities.
-
-### Integration
-
-Public micro-agents are automatically integrated into OpenHands' workflow. They:
+Public microagents:
 - Monitor incoming commands for their trigger words.
 - Activate when relevant triggers are detected.
 - Apply their specialized knowledge and capabilities.
 - Follow their specific guidelines and restrictions.
 
-## Available Public Micro-Agents
+## Current Public Microagents
 
-For more information about specific micro-agents, refer to their individual documentation files in
-the [`micro-agents`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents) directory.
+For more information about specific microagents, refer to their individual documentation files in
+the [`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/) directory.
 
 ### GitHub Agent
 **File**: `github.md`
@@ -66,105 +56,54 @@ Usage Example:
 yes | npm install package-name
 ```
 
-### Custom Public Micro-Agents
+## Contributing a Public Microagent
 
-You can create your own public micro-agents by adding new markdown files to the `microagents/knowledge/` directory.
-Each file should follow this structure:
+You can create your own public microagents by adding new markdown files to the
+[`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/) directory.
 
-```markdown
----
-name: agent_name
-agent: CodeActAgent
-triggers:
-- trigger_word1
-- trigger_word2
----
+### Public Microagents Best Practices
 
-Instructions and capabilities for the micro-agent...
-```
-
-## Working With Public Micro-Agents
-
-When working with public micro-agents:
-- **Use Appropriate Triggers**: Ensure your commands include the relevant trigger words to activate the correct micro-agent.
-- **Follow Agent Guidelines**: Each agent has specific instructions and limitations. Respect these for optimal results.
-- **API-First Approach**: When available, use API endpoints rather than web interfaces.
-- **Automation Friendly**: Design commands that work well in non-interactive environments.
-
-## Contributing a Public Micro-Agent
-
-Best practices for creating public micro-agents:
-
-- **Clear Scope**: Keep the micro-agent focused on a specific domain or task.
+- **Clear Scope**: Keep the microagent focused on a specific domain or task.
 - **Explicit Instructions**: Provide clear, unambiguous guidelines.
 - **Useful Examples**: Include practical examples of common use cases.
 - **Safety First**: Include necessary warnings and constraints.
-- **Integration Awareness**: Consider how the micro-agent interacts with other components.
+- **Integration Awareness**: Consider how the microagent interacts with other components.
 
-To contribute a new micro-agent to OpenHands:
+### Steps to Contribute a Public Microagent
 
-### 1. Plan the Public Micro-Agent
+#### 1. Plan the Public Microagent
 
-Before creating a public micro-agent, consider:
+Before creating a public microagent, consider:
 - What specific problem or use case will it address?
 - What unique capabilities or knowledge should it have?
 - What trigger words make sense for activating it?
 - What constraints or guidelines should it follow?
 
-### 2. File Structure
+#### 2. Create File
 
-Create a new markdown file in `microagents/knowledge/` with a descriptive name (e.g., `docker.md` for a Docker-focused agent).
+Create a new markdown file in [`microagents/knowledge/`](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge/)
+with a descriptive name (e.g., `docker.md` for a Docker-focused agent).
 
-### 3. Required Components
+Update the file with the required frontmatter [according to the required format](./microagents-overview#microagent-format)
+and the required specialized guidelines while following the [best practices above](#public-microagents-best-practices).
 
-The micro-agent file must include:
+#### 3. Testing the Public Microagent
 
-- **Front Matter**: YAML metadata at the start of the file:
-```markdown
----
-name: your_agent_name
-agent: CodeActAgent
-triggers:
-- trigger_word1
-- trigger_word2
----
-```
-
-- **Instructions**: Clear, specific guidelines for the agent's behavior:
-```markdown
-You are responsible for [specific task/domain].
-
-Key responsibilities:
-1. [Responsibility 1]
-2. [Responsibility 2]
-
-Guidelines:
-- [Guideline 1]
-- [Guideline 2]
-
-Examples of usage:
-[Example 1]
-[Example 2]
-```
-
-### 4. Testing the Public Micro-Agent
-
-Before submitting:
 - Test the agent with various prompts.
 - Verify trigger words activate the agent correctly.
 - Ensure instructions are clear and comprehensive.
 - Check for potential conflicts with existing agents.
 
-### 5. Submission Process
+#### 4. Submission Process
 
 Submit a pull request with:
-- The new micro-agent file.
+- The new microagent file.
 - Updated documentation if needed.
 - Description of the agent's purpose and capabilities.
 
-### Example Public Micro-Agent Implementation
+### Example Public Microagent Implementation
 
-Here's a template for a new micro-agent:
+Here's a template for a new microagent:
 
 ```markdown
 ---
@@ -210,5 +149,5 @@ Remember to:
 - Optimize for build time and image size
 ```
 
-Remember that micro-agents are a powerful way to extend OpenHands' capabilities in specific domains. Well-designed
-agents can significantly improve the system's ability to handle specialized tasks.
+See the [current public micro-agents](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/knowledge) for
+more examples.
