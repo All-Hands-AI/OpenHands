@@ -24,6 +24,8 @@ class FileReadSource(str, Enum):
 
 @dataclass
 class Event:
+    INVALID_ID = -1
+
     @property
     def message(self) -> str | None:
         if hasattr(self, '_message'):
@@ -34,7 +36,7 @@ class Event:
     def id(self) -> int:
         if hasattr(self, '_id'):
             return self._id  # type: ignore[attr-defined]
-        return -1
+        return Event.INVALID_ID
 
     @property
     def timestamp(self):
