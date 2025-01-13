@@ -24,6 +24,12 @@ interface FilesContextType {
   setFileContent: (path: string, content: string) => void;
   selectedPath: string | null;
   setSelectedPath: (path: string | null) => void;
+  /**
+   * Select a file and set it as the selected path
+   * @param path The path of the file to select
+   * @returns void
+   */
+  selectFile: (path: string) => void;
 }
 
 const FilesContext = React.createContext<FilesContextType | undefined>(
@@ -43,6 +49,10 @@ function FilesProvider({ children }: FilesProviderProps) {
     setFiles((prev) => ({ ...prev, [path]: content }));
   }, []);
 
+  const selectFile = React.useCallback((path: string) => {
+    setSelectedPath(path);
+  }, [setSelectedPath]);
+
   const value = React.useMemo(
     () => ({
       paths,
@@ -51,11 +61,12 @@ function FilesProvider({ children }: FilesProviderProps) {
       setFileContent,
       selectedPath,
       setSelectedPath,
+      selectFile,
     }),
-    [paths, setPaths, files, setFileContent, selectedPath, setSelectedPath],
+    [paths, setPaths, files, setFileContent, selectedPath, setSelectedPath, selectFile],
   );
 
-  return <FilesContext value={value}>{children}</FilesContext>;
+  return <FilesContext.Provider value={value}>{children}</FilesContext.Provider>;
 }
 
 function useFiles() {

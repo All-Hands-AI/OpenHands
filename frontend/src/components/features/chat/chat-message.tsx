@@ -5,16 +5,22 @@ import { code } from "../markdown/code";
 import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
 import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
+import { JumpToFileButton } from "#/components/shared/buttons/jump-to-file-button";
 import { anchor } from "../markdown/anchor";
+
 
 interface ChatMessageProps {
   type: "user" | "assistant";
   message: string;
+  filePath?: string;
+  onFileClick?: (path: string) => void;
 }
 
 export function ChatMessage({
   type,
   message,
+  filePath,
+  onFileClick,
   children,
 }: React.PropsWithChildren<ChatMessageProps>) {
   const [isHovering, setIsHovering] = React.useState(false);
@@ -57,6 +63,13 @@ export function ChatMessage({
         onClick={handleCopyToClipboard}
         mode={isCopy ? "copied" : "copy"}
       />
+      {filePath && (
+        <JumpToFileButton
+          filePath={filePath}
+          onClick={() => onFileClick?.(filePath)}
+          isDisabled={!filePath || !onFileClick}
+        />
+      )}
       <Markdown
         className="text-sm overflow-auto"
         components={{

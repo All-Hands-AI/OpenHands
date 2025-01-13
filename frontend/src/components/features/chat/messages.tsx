@@ -3,6 +3,7 @@ import { ChatMessage } from "#/components/features/chat/chat-message";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { ImageCarousel } from "../images/image-carousel";
 import { ExpandableMessage } from "./expandable-message";
+import { useFiles } from "#/context/files";
 
 interface MessagesProps {
   messages: Message[];
@@ -10,8 +11,10 @@ interface MessagesProps {
 }
 
 export const Messages: React.FC<MessagesProps> = React.memo(
-  ({ messages, isAwaitingUserConfirmation }) =>
-    messages.map((message, index) => {
+  ({ messages, isAwaitingUserConfirmation }) => {
+    const { setSelectedPath } = useFiles();
+
+    return messages.map((message, index) => {
       if (message.type === "error" || message.type === "action") {
         return (
           <ExpandableMessage
@@ -29,6 +32,8 @@ export const Messages: React.FC<MessagesProps> = React.memo(
           key={index}
           type={message.sender}
           message={message.content}
+          filePath={message.filePath}
+          onFileClick={setSelectedPath}
         >
           {message.imageUrls && message.imageUrls.length > 0 && (
             <ImageCarousel size="small" images={message.imageUrls} />
@@ -38,7 +43,8 @@ export const Messages: React.FC<MessagesProps> = React.memo(
             isAwaitingUserConfirmation && <ConfirmationButtons />}
         </ChatMessage>
       );
-    }),
+    });
+  }
 );
 
 Messages.displayName = "Messages";
