@@ -1,17 +1,22 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { sendNotification } from '../../src/services/notification';
 
+type MockNotification = {
+  (title: string, options?: NotificationOptions): void;
+  permission: NotificationPermission;
+};
+
 describe('sendNotification', () => {
   beforeEach(() => {
     // Mock localStorage
-    Storage.prototype.getItem = vi.fn();
-    Storage.prototype.setItem = vi.fn();
+    Storage.prototype.getItem = vi.fn() as jest.Mock;
+    Storage.prototype.setItem = vi.fn() as jest.Mock;
 
     // Mock Notification API
     const mockNotification = vi.fn((title, options) => ({
       title,
       ...options,
-    }));
+    })) as unknown as MockNotification;
     mockNotification.permission = 'granted';
     Object.defineProperty(window, 'Notification', {
       value: mockNotification,
