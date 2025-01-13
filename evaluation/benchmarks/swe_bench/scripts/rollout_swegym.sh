@@ -96,7 +96,7 @@ for run_idx in $(seq 1 $N_RUNS); do
     while true; do
         echo "### Evaluating on $OUTPUT_FILE ... ###"
         COMMAND="poetry run python evaluation/benchmarks/swe_bench/eval_infer.py \
-        --eval-num-workers $((N_WORKERS * 2)) \
+        --eval-num-workers $((N_WORKERS * 4)) \
         --input-file $OUTPUT_FILE \
         --dataset $DATASET \
         --split $SPLIT"
