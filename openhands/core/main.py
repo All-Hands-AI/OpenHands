@@ -1,7 +1,6 @@
 import asyncio
 import json
 import os
-import sys
 from typing import Callable, Protocol
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
@@ -21,6 +20,7 @@ from openhands.core.setup import (
     create_runtime,
     generate_sid,
 )
+from openhands.core.utils.io import read_input, read_task
 from openhands.events import EventSource, EventStreamSubscriber
 from openhands.events.action import MessageAction
 from openhands.events.action.action import Action
@@ -37,32 +37,6 @@ class FakeUserResponseFunc(Protocol):
         encapsulate_solution: bool = False,
         try_parse: Callable[[Action | None], str] | None = None,
     ) -> str: ...
-
-
-def read_task_from_file(file_path: str) -> str:
-    """Read task from the specified file."""
-    with open(file_path, 'r', encoding='utf-8') as file:
-        return file.read()
-
-
-def read_task_from_stdin() -> str:
-    """Read task from stdin."""
-    return sys.stdin.read()
-
-
-def read_input(config: AppConfig) -> str:
-    """Read input from user based on config settings."""
-    if config.cli_multiline_input:
-        print('Enter your message (enter "/exit" on a new line to finish):')
-        lines = []
-        while True:
-            line = input('>> ').rstrip()
-            if line == '/exit':  # finish input
-                break
-            lines.append(line)
-        return '\n'.join(lines)
-    else:
-        return input('>> ').rstrip()
 
 
 async def run_controller(
@@ -134,7 +108,7 @@ async def run_controller(
                 if exit_on_message:
                     message = '/exit'
                 elif fake_user_response_fn is None:
-                    message = read_input(config)
+                    message = read_input(config.cli_multiline_input)
                 else:
                     message = fake_user_response_fn(controller.get_state())
                 action = MessageAction(content=message)
@@ -197,18 +171,16 @@ def auto_continue_response(
 if __name__ == '__main__':
     args = parse_arguments()
 
-    # Determine the task
-    if args.file:
-        task_str = read_task_from_file(args.file)
-    elif args.task:
-        task_str = args.task
-    elif not sys.stdin.isatty():
-        task_str = read_task_from_stdin()
-    else:
-        raise ValueError('No task provided. Please specify a task through -t, -f.')
-    initial_user_action: MessageAction = MessageAction(content=task_str)
+    config: AppConfig = setup_config_from_args(args)
 
-    config = setup_config_from_args(args)
+    # Read task from file, CLI args, or stdin
+    task_str = read_task(args, config.cli_multiline_input)
+
+    if not task_str:
+        raise ValueError('No task provided. Please specify a task through -t, -f.')
+
+    # Create initial user action
+    initial_user_action: MessageAction = MessageAction(content=task_str)
 
     # Set session name
     session_name = args.name
