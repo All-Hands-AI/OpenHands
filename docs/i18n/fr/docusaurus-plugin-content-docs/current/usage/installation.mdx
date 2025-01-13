@@ -13,16 +13,16 @@
 La façon la plus simple d'exécuter OpenHands est avec Docker.
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.19-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.20-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.19-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.20-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.19
+    docker.all-hands.dev/all-hands-ai/openhands:0.20
 ```
 
 Vous pouvez également exécuter OpenHands en mode [headless scriptable](https://docs.all-hands.dev/modules/usage/how-to/headless-mode), en tant que [CLI interactive](https://docs.all-hands.dev/modules/usage/how-to/cli-mode), ou en utilisant l'[Action GitHub OpenHands](https://docs.all-hands.dev/modules/usage/how-to/github-action).
