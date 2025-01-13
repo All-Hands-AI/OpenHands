@@ -1,4 +1,6 @@
-const KEY_1 = "Build an app to view pull requests";
+import { I18nKey } from "#/i18n/declaration";
+
+const KEY_1 = I18nKey.LANDING$BUILD_APP_BUTTON;
 const VALUE_1 = `I want to create a React app to view all of the open pull
 requests that exist on all of my team's github repos. Here
 are some details:
@@ -15,7 +17,7 @@ are some details:
 When things are working, initialize a github repo, create
 a .gitignore file, and commit the changes.`;
 
-const KEY_2 = "Build a todo list application";
+const KEY_2 = I18nKey.SUGGESTIONS$TODO_APP;
 const VALUE_2 = `I want to create a VueJS app that allows me to:
 * See all the items on my todo list
 * add a new item to the list
@@ -28,7 +30,7 @@ This should be a client-only app with no backend. The list should persist in loc
 
 Please add tests for all of the above and make sure they pass`;
 
-const KEY_3 = "Write a bash script that shows the top story on Hacker News";
+const KEY_3 = I18nKey.SUGGESTIONS$HACKER_NEWS;
 const VALUE_3 = `Please write a bash script which displays the top story on Hacker News. It should show the title, the link, and the number of points.
 
 The script should only use tools that are widely available on unix systems, like curl and grep.`;

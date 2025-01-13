@@ -128,7 +128,7 @@ describe("Sidebar", () => {
       await user.click(norskOption);
 
       const tokenInput =
-        within(accountSettingsModal).getByLabelText(/github token/i);
+        within(accountSettingsModal).getByLabelText(/GITHUB\$TOKEN_OPTIONAL/i);
       await user.type(tokenInput, "new-token");
 
       const saveButton =

@@ -1,13 +1,17 @@
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
+
 interface StopButtonProps {
   isDisabled?: boolean;
   onClick?: () => void;
 }
 
 export function StopButton({ isDisabled, onClick }: StopButtonProps) {
+  const { t } = useTranslation();
   return (
     <button
       data-testid="stop-button"
-      aria-label="Stop"
+      aria-label={t(I18nKey.BUTTON$STOP)}
       disabled={isDisabled}
       onClick={onClick}
       type="button"

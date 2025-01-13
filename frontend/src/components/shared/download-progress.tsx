@@ -1,3 +1,6 @@
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
+
 export interface DownloadProgressState {
   filesTotal: number;
   filesDownloaded: number;
@@ -16,6 +19,7 @@ export function DownloadProgress({
   progress,
   onCancel,
 }: DownloadProgressProps) {
+  const { t } = useTranslation();
   const formatBytes = (bytes: number) => {
     const units = ["B", "KB", "MB", "GB"];
     let size = bytes;
@@ -33,12 +37,12 @@ export function DownloadProgress({
         <div className="mb-4">
           <h3 className="text-lg font-semibold mb-2 text-white">
             {progress.isDiscoveringFiles
-              ? "Preparing Download..."
-              : "Downloading Files"}
+              ? t(I18nKey.DOWNLOAD$PREPARING)
+              : t(I18nKey.DOWNLOAD$DOWNLOADING)}
           </h3>
           <p className="text-sm text-gray-400 truncate">
             {progress.isDiscoveringFiles
-              ? `Found ${progress.filesTotal} files...`
+              ? t(I18nKey.DOWNLOAD$FOUND_FILES, { count: progress.filesTotal })
               : progress.currentFile}
           </p>
         </div>
@@ -64,8 +68,11 @@ export function DownloadProgress({
         <div className="flex justify-between text-sm text-gray-400">
           <span>
             {progress.isDiscoveringFiles
-              ? `Scanning workspace...`
-              : `${progress.filesDownloaded} of ${progress.filesTotal} files`}
+              ? t(I18nKey.DOWNLOAD$SCANNING)
+              : t(I18nKey.DOWNLOAD$FILES_PROGRESS, {
+                  downloaded: progress.filesDownloaded,
+                  total: progress.filesTotal,
+                })}
           </span>
           {!progress.isDiscoveringFiles && (
             <span>{formatBytes(progress.bytesDownloadedPerSecond)}/s</span>
@@ -78,7 +85,7 @@ export function DownloadProgress({
             onClick={onCancel}
             className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
           >
-            Cancel
+            {t(I18nKey.DOWNLOAD$CANCEL)}
           </button>
         </div>
       </div>

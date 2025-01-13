@@ -1,7 +1,23 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
+import { I18nKey } from "#/i18n/declaration";
+
+// Mock react-i18next
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: { [key: string]: string } = {
+        LLM$PROVIDER: "LLM Provider",
+        LLM$MODEL: "LLM Model",
+        LLM$SELECT_PROVIDER_PLACEHOLDER: "Select a provider",
+        LLM$SELECT_MODEL_PLACEHOLDER: "Select a model",
+      };
+      return translations[key] || key;
+    },
+  }),
+}));
 
 describe("ModelSelector", () => {
   const models = {
