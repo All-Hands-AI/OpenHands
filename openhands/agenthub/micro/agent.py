@@ -50,6 +50,12 @@ class MicroAgent(Agent):
         # history is in reverse order, let's fix it
         processed_history.reverse()
 
+        # everything starts with a message
+        # the first message is already in the prompt as the task
+        # so we don't need to include it in the history
+        if event_count < max_events:
+            processed_history.pop(0)
+
         return json.dumps(processed_history, **kwargs)
 
     def __init__(self, llm: LLM, config: AgentConfig):
@@ -62,6 +68,7 @@ class MicroAgent(Agent):
 
     def step(self, state: State) -> Action:
         last_user_message, last_image_urls = state.get_current_user_intent()
+        print(f'MICROAGENT:step: {last_user_message}')
         prompt = self.prompt_template.render(
             state=state,
             instructions=instructions,
