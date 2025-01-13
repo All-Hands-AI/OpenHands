@@ -160,10 +160,10 @@ def process_instance(
     if runtime_failure_count > 0:
         config.sandbox.remote_runtime_resource_factor = min(
             config.sandbox.remote_runtime_resource_factor * (2**runtime_failure_count),
-            4,  # hardcode maximum resource factor to 4
+            8,
         )
         logger.warning(
-            f'This is the second attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
+            f'This is the {runtime_failure_count + 1}th attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
         )
 
     try:
