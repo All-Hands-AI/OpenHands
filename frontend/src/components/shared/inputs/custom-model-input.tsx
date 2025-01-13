@@ -22,7 +22,9 @@ export function CustomModelInput({
         {t(I18nKey.SETTINGS_FORM$CUSTOM_MODEL_LABEL)}
       </label>
       <Input
+        data-testid="custom-model-input"
         isDisabled={isDisabled}
+        isRequired
         id="custom-model"
         name="custom-model"
         defaultValue={defaultValue}

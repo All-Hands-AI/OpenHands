@@ -62,10 +62,10 @@ export default function MainApp() {
   });
 
   React.useEffect(() => {
-    if (settings.LANGUAGE) {
+    if (settings?.LANGUAGE) {
       i18n.changeLanguage(settings.LANGUAGE);
     }
-  }, [settings.LANGUAGE]);
+  }, [settings?.LANGUAGE]);
 
   const isInWaitlist =
     !isFetchingAuth && !isAuthed && config.data?.APP_MODE === "saas";
@@ -77,7 +77,10 @@ export default function MainApp() {
     >
       <Sidebar />
 
-      <div className="h-[calc(100%-50px)] md:h-full w-full relative">
+      <div
+        id="root-outlet"
+        className="h-[calc(100%-50px)] md:h-full w-full relative"
+      >
         <Outlet />
       </div>
 

@@ -1,8 +1,12 @@
 import { delay, http, HttpResponse } from "msw";
-import { GetConfigResponse, Conversation } from "#/api/open-hands.types";
+import {
+  GetConfigResponse,
+  Conversation,
+  ResultSet,
+} from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 
-const userPreferences = {
+export const MOCK_USER_PREFERENCES = {
   settings: {
     llm_model: DEFAULT_SETTINGS.LLM_MODEL,
     llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
@@ -20,6 +24,7 @@ const conversations: Conversation[] = [
     title: "My New Project",
     selected_repository: null,
     last_updated_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
     status: "RUNNING",
   },
   {
@@ -30,6 +35,7 @@ const conversations: Conversation[] = [
     last_updated_at: new Date(
       Date.now() - 2 * 24 * 60 * 60 * 1000,
     ).toISOString(),
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     status: "STOPPED",
   },
   {
@@ -40,6 +46,7 @@ const conversations: Conversation[] = [
     last_updated_at: new Date(
       Date.now() - 5 * 24 * 60 * 60 * 1000,
     ).toISOString(),
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     status: "STOPPED",
   },
 ];
@@ -162,14 +169,14 @@ export const handlers = [
     return HttpResponse.json(config);
   }),
   http.get("/api/settings", async () =>
-    HttpResponse.json(userPreferences.settings),
+    HttpResponse.json(MOCK_USER_PREFERENCES.settings),
   ),
   http.post("/api/settings", async ({ request }) => {
     const body = await request.json();
 
     if (body) {
-      userPreferences.settings = {
-        ...userPreferences.settings,
+      MOCK_USER_PREFERENCES.settings = {
+        ...MOCK_USER_PREFERENCES.settings,
         // @ts-expect-error - We know this is a settings object
         ...body,
       };
@@ -186,12 +193,15 @@ export const handlers = [
 
   http.get("/api/options/config", () => HttpResponse.json({ APP_MODE: "oss" })),
 
-  http.get("/api/conversations?limit=9", async () =>
-    HttpResponse.json({
-      results: Array.from(CONVERSATIONS.values()),
+  http.get("/api/conversations", async () => {
+    const values = Array.from(CONVERSATIONS.values());
+    const results: ResultSet<Conversation> = {
+      results: values,
       next_page_id: null,
-    }),
-  ),
+    };
+
+    return HttpResponse.json(results, { status: 200 });
+  }),
 
   http.delete("/api/conversations/:conversationId", async ({ params }) => {
     const { conversationId } = params;
@@ -234,6 +244,7 @@ export const handlers = [
       title: "New Conversation",
       selected_repository: null,
       last_updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
       status: "RUNNING",
     };
 

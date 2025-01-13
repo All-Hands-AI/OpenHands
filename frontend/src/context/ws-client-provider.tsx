@@ -2,7 +2,10 @@ import posthog from "posthog-js";
 import React from "react";
 import { io, Socket } from "socket.io-client";
 import EventLogger from "#/utils/event-logger";
-import { handleAssistantMessage } from "#/services/actions";
+import {
+  handleAssistantMessage,
+  handleStatusMessage,
+} from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
 import { OpenHandsParsedEvent } from "#/types/core";
 import {
@@ -64,6 +67,38 @@ interface WsClientProviderProps {
   conversationId: string;
 }
 
+interface ErrorArg {
+  message?: string;
+  data?: ErrorArgData | unknown;
+}
+
+interface ErrorArgData {
+  msg_id: string;
+}
+
+export function updateStatusWhenErrorMessagePresent(data: ErrorArg | unknown) {
+  const isObject = (val: unknown): val is object =>
+    !!val && typeof val === "object";
+  const isString = (val: unknown): val is string => typeof val === "string";
+  if (isObject(data) && "message" in data && isString(data.message)) {
+    let msgId: string | undefined;
+    if (
+      "data" in data &&
+      isObject(data.data) &&
+      "msg_id" in data.data &&
+      isString(data.data.msg_id)
+    ) {
+      msgId = data.data.msg_id;
+    }
+    handleStatusMessage({
+      type: "error",
+      message: data.message,
+      id: msgId,
+      status_update: true,
+    });
+  }
+}
+
 export function WsClientProvider({
   conversationId,
   children,
@@ -101,7 +136,7 @@ export function WsClientProvider({
     handleAssistantMessage(event);
   }
 
-  function handleDisconnect() {
+  function handleDisconnect(data: unknown) {
     setStatus(WsClientProviderStatus.DISCONNECTED);
     const sio = sioRef.current;
     if (!sio) {
@@ -109,11 +144,13 @@ export function WsClientProvider({
     }
     sio.io.opts.query = sio.io.opts.query || {};
     sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
+    updateStatusWhenErrorMessagePresent(data);
   }
 
-  function handleError() {
-    posthog.capture("socket_error");
+  function handleError(data: unknown) {
     setStatus(WsClientProviderStatus.DISCONNECTED);
+    updateStatusWhenErrorMessagePresent(data);
+    posthog.capture("socket_error");
   }
 
   React.useEffect(() => {
