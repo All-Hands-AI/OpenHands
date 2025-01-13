@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { GitHubRepositorySelector } from "#/components/features/github/github-repo-selector";
 import OpenHands from "#/api/open-hands";
-import * as GitHubAPI from "#/api/github";
 
 describe("GitHubRepositorySelector", () => {
   const onInputChangeMock = vi.fn();
@@ -60,8 +59,8 @@ describe("GitHubRepositorySelector", () => {
     ];
 
     const searchPublicRepositoriesSpy = vi.spyOn(
-      GitHubAPI,
-      "searchPublicRepositories",
+      OpenHands,
+      "searchGitHubRepositories",
     );
     searchPublicRepositoriesSpy.mockResolvedValue(mockSearchedRepos);
 
