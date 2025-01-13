@@ -16,11 +16,6 @@ async def get_github_repositories(
     sort: str = 'pushed',
     installation_id: int | None = None,
 ):
-    # Extract the GitHub token from the headers
-    github_token = request.headers.get('X-GitHub-Token')
-    if not github_token:
-        raise HTTPException(status_code=400, detail='Missing X-GitHub-Token header')
-
     openhands_config.verify_github_repo_list(installation_id)
 
     # Add query parameters
@@ -38,10 +33,7 @@ async def get_github_repositories(
         params['sort'] = sort
 
     # Set the authorization header with the GitHub token
-    headers = {
-        'Authorization': f'Bearer {github_token}',
-        'Accept': 'application/vnd.github.v3+json',
-    }
+    headers = generate_github_headers(request.state.github_token)
 
     # Fetch repositories from GitHub
     try:
@@ -68,15 +60,7 @@ async def get_github_repositories(
 
 @app.get('/user')
 async def get_github_user(request: Request):
-    github_token = request.headers.get('X-GitHub-Token')
-    if not github_token:
-        raise HTTPException(status_code=400, detail='Missing X-GitHub-Token header')
-
-    headers = {
-        'Authorization': f'Bearer {github_token}',
-        'Accept': 'application/vnd.github.v3+json',
-    }
-
+    headers = generate_github_headers(request.state.github_token)
     try:
         response = await call_sync_from_async(
             requests.get, 'https://api.github.com/user', headers=headers
@@ -96,15 +80,7 @@ async def get_github_user(request: Request):
 
 @app.get('/installations')
 async def get_github_installation_ids(request: Request):
-    github_token = request.headers.get('X-GitHub-Token')
-    if not github_token:
-        raise HTTPException(status_code=400, detail='Missing X-GitHub-Token header')
-
-    headers = {
-        'Authorization': f'Bearer {github_token}',
-        'Accept': 'application/vnd.github.v3+json',
-    }
-
+    headers = generate_github_headers(request.state.github_token)
     try:
         response = await call_sync_from_async(
             requests.get, 'https://api.github.com/user/installations', headers=headers
@@ -132,15 +108,7 @@ async def search_github_repositories(
     sort: str = 'stars',
     order: str = 'desc',
 ):
-    github_token = request.headers.get('X-GitHub-Token')
-    if not github_token:
-        raise HTTPException(status_code=400, detail='Missing X-GitHub-Token header')
-
-    headers = {
-        'Authorization': f'Bearer {github_token}',
-        'Accept': 'application/vnd.github.v3+json',
-    }
-
+    headers = generate_github_headers(request.state.github_token)
     params = {
         'q': query,
         'per_page': per_page,
@@ -166,3 +134,10 @@ async def search_github_repositories(
     response.close()
 
     return json_response
+
+
+def generate_github_headers(token: str) -> dict[str, str]:
+    return {
+        'Authorization': f'Bearer {token}',
+        'Accept': 'application/vnd.github.v3+json',
+    }
