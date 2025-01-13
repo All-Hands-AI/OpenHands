@@ -244,13 +244,20 @@ class AgentController:
         if not self.replay_logs:
             # not in replay mode
             return False
-        while self.replay_index < len(self.replay_logs) and not isinstance(
-            self.replay_logs[self.replay_index], Action
+
+        def replayable(index: int) -> bool:
+            return (
+                self.replay_logs is not None
+                and index < len(self.replay_logs)
+                and isinstance(self.replay_logs[index], Action)
+                and self.replay_logs[index].source != EventSource.USER
+            )
+
+        while self.replay_index < len(self.replay_logs) and not replayable(
+            self.replay_index
         ):
             self.replay_index += 1
-        return self.replay_index < len(self.replay_logs) and isinstance(
-            self.replay_logs[self.replay_index], Action
-        )
+        return replayable(self.replay_index)
 
     def should_step(self, event: Event) -> bool:
         """
@@ -591,6 +598,7 @@ class AgentController:
             event = self.replay_logs[self.replay_index]
             assert isinstance(event, Action)
             action = event
+            self.replay_index += 1
         else:
             try:
                 action = self.agent.step(self.state)

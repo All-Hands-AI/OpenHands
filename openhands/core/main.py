@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import sys
+from pathlib import Path
 from typing import Callable, Protocol
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
@@ -22,10 +23,11 @@ from openhands.core.setup import (
     generate_sid,
 )
 from openhands.events import EventSource, EventStreamSubscriber
-from openhands.events.action import MessageAction
+from openhands.events.action import MessageAction, NullAction
 from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
+from openhands.events.serialization import event_from_dict
 from openhands.events.serialization.event import event_to_trajectory
 from openhands.runtime.base import Runtime
 
@@ -101,7 +103,17 @@ async def run_controller(
     if agent is None:
         agent = create_agent(runtime, config)
 
-    controller, initial_state = create_controller(agent, runtime, config)
+    replay_logs: list[Event] | None = None
+    if config.replay_trajectory_path:
+        logger.info('Trajectory replay is enabled')
+        assert isinstance(initial_user_action, NullAction)
+        replay_logs, initial_user_action = load_replay_log(
+            config.replay_trajectory_path
+        )
+
+    controller, initial_state = create_controller(
+        agent, runtime, config, replay_logs=replay_logs
+    )
 
     assert isinstance(
         initial_user_action, Action
@@ -194,21 +206,64 @@ def auto_continue_response(
     return message
 
 
+def load_replay_log(trajectory_path: str) -> tuple[list[Event] | None, Action]:
+    """
+    Load trajectory from given path, serialize it to a list of events, and return
+    two things:
+    1) A list of events except the first action
+    2) First action (user message, a.k.a. initial task)
+    """
+    try:
+        path = Path(trajectory_path).resolve()
+
+        if not path.exists():
+            raise ValueError(f'Trajectory file not found: {path}')
+
+        if not path.is_file():
+            raise ValueError(f'Trajectory path is a directory, not a file: {path}')
+
+        with open(path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+            if not isinstance(data, list):
+                raise ValueError(
+                    f'Expected a list in {path}, got {type(data).__name__}'
+                )
+            events = []
+            for item in data:
+                event = event_from_dict(item)
+                # cannot add an event with _id to event stream
+                event._id = None  # type: ignore[attr-defined]
+                events.append(event)
+            assert isinstance(events[0], MessageAction)
+            return events[1:], events[0]
+    except json.JSONDecodeError as e:
+        raise ValueError(f'Invalid JSON format in {trajectory_path}: {e}')
+
+
 if __name__ == '__main__':
     args = parse_arguments()
 
+    config = setup_config_from_args(args)
+
     # Determine the task
+    task_str = ''
     if args.file:
         task_str = read_task_from_file(args.file)
     elif args.task:
         task_str = args.task
     elif not sys.stdin.isatty():
         task_str = read_task_from_stdin()
+
+    initial_user_action: Action = NullAction()
+    if config.replay_trajectory_path:
+        if task_str:
+            raise ValueError(
+                'User-specified task is not supported under trajectory replay mode'
+            )
+    elif task_str:
+        initial_user_action = MessageAction(content=task_str)
     else:
         raise ValueError('No task provided. Please specify a task through -t, -f.')
-    initial_user_action: MessageAction = MessageAction(content=task_str)
-
-    config = setup_config_from_args(args)
 
     # Set session name
     session_name = args.name
