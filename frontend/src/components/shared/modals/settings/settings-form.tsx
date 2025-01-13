@@ -15,6 +15,7 @@ import { AgentInput } from "../../inputs/agent-input";
 import { APIKeyInput } from "../../inputs/api-key-input";
 import { BaseUrlInput } from "../../inputs/base-url-input";
 import { ConfirmationModeSwitch } from "../../inputs/confirmation-mode-switch";
+import { NotificationSettings } from "#/components/features/notifications/notification-settings";
 import { CustomModelInput } from "../../inputs/custom-model-input";
 import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
 import { ModalBackdrop } from "../modal-backdrop";
@@ -199,6 +200,8 @@ export function SettingsForm({
                 isDisabled={!!disabled}
                 defaultSelected={settings.CONFIRMATION_MODE}
               />
+
+              <NotificationSettings />
             </>
           )}
         </div>

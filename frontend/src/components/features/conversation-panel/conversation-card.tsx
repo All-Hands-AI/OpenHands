@@ -8,6 +8,7 @@ import {
 import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { cn } from "#/utils/utils";
+import { useAgentStatusNotification } from "#/hooks/use-agent-status-notification";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -37,6 +38,8 @@ export function ConversationCard({
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  useAgentStatusNotification(status);
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
