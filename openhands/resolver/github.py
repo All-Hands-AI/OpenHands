@@ -64,7 +64,11 @@ class IssueHandlerInterface(ABC):
         pass
 
     @abstractmethod
-    def create_pull_request(self, data=dict) -> str:
+    def create_pull_request(self, data=dict) -> dict:
+        pass
+
+    @abstractmethod
+    def request_reviewers(self, reviewer: str, pr_number: int):
         pass
 
 
@@ -224,7 +228,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         response.raise_for_status()
         return response.json()['default_branch']
 
-    def create_pull_request(self, data=dict) -> str:
+    def create_pull_request(self, data=dict) -> dict:
         response = requests.post(
             f'{self.base_url}/pulls', headers=self.headers, json=data
         )
@@ -235,7 +239,19 @@ class GithubIssueHandler(IssueHandlerInterface):
             )
         response.raise_for_status()
         pr_data = response.json()
-        return pr_data['html_url']
+        return pr_data
+
+    def request_reviewers(self, reviewer: str, pr_number: int):
+        review_data = {'reviewers': [reviewer]}
+        review_response = requests.post(
+            f'{self.base_url}/pulls/{pr_number}/requested_reviewers',
+            headers=self.headers,
+            json=review_data,
+        )
+        if review_response.status_code != 201:
+            print(
+                f'Warning: Failed to request review from {reviewer}: {review_response.text}'
+            )
 
 
 class GithubPRHandler(GithubIssueHandler):

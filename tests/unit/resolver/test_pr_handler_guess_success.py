@@ -14,7 +14,10 @@ from openhands.resolver.issue_definitions import ServiceContextPR
 @pytest.fixture
 def pr_handler():
     llm_config = LLMConfig(model='test-model')
-    return GithubPRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+    )
+    return handler
 
 
 @pytest.fixture
@@ -262,7 +265,9 @@ def test_check_review_thread_with_git_patch():
     """Test that git patch from complete_runtime is included in the prompt."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = GithubPRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+    )
 
     # Create test data
     review_thread = ReviewThread(
@@ -376,7 +381,9 @@ def test_check_thread_comments_with_git_patch():
     """Test that git patch from complete_runtime is included in the prompt."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = GithubPRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+    )
 
     # Create test data
     thread_comments = [
@@ -486,7 +493,9 @@ def test_check_review_comments_with_git_patch():
     """Test that git patch from complete_runtime is included in the prompt."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = GithubPRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+    )
 
     # Create test data
     review_comments = [

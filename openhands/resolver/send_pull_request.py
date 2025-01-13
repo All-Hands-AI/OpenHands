@@ -232,9 +232,9 @@ def send_pull_request(
     """Send a pull request to a GitHub repository.
 
     Args:
-        github_issue: The issue to send the pull request for
-        github_token: The GitHub token to use for authentication
-        github_username: The GitHub username, if provided
+        issue: The issue to send the pull request for
+        oken: The GitHub token to use for authentication
+        username: The GitHub username, if provided
         patch_dir: The directory containing the patches to apply
         pr_type: The type: branch (no PR created), draft or ready (regular PR created)
         fork_owner: The owner of the fork to push changes to (if different from the original repo owner)
@@ -513,6 +513,7 @@ def process_single_issue(
             patch_dir=patched_repo_dir,
             llm_config=llm_config,
             pr_type=pr_type,
+            llm_config=llm_config,
             fork_owner=fork_owner,
             additional_message=resolver_output.result_explanation,
             target_branch=target_branch,
