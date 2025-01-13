@@ -40,7 +40,7 @@ def default_config():
 def test_llm_init_with_default_config(default_config):
     llm = LLM(default_config)
     assert llm.config.model == 'gpt-4o'
-    assert llm.config.api_key.get_secret_value() == 'test_key'
+    assert llm.config.api_key == 'test_key'
     assert isinstance(llm.metrics, Metrics)
     assert llm.metrics.model_name == 'gpt-4o'
 
@@ -77,7 +77,7 @@ def test_llm_init_with_custom_config():
     )
     llm = LLM(custom_config)
     assert llm.config.model == 'custom-model'
-    assert llm.config.api_key.get_secret_value() == 'custom_key'
+    assert llm.config.api_key == 'custom_key'
     assert llm.config.max_input_tokens == 5000
     assert llm.config.max_output_tokens == 1500
     assert llm.config.temperature == 0.8
