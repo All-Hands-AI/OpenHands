@@ -191,6 +191,7 @@ class AgentController:
         self,
         e: Exception,
     ):
+        """React to an exception by setting the agent state to error and sending a status message."""
         await self.set_agent_state_to(AgentState.ERROR)
         if self.status_callback is not None:
             err_id = ''
@@ -208,10 +209,15 @@ class AgentController:
         try:
             await self._step()
         except Exception as e:
-            traceback.print_exc()
-            self.log('error', f'Error while running the agent: {e}')
+            self.log(
+                'error',
+                f'Error while running the agent (session ID: {self.id}): {e}. '
+                f'Traceback: {traceback.format_exc()}',
+            )
             reported = RuntimeError(
-                'There was an unexpected error while running the agent.'
+                'There was an unexpected error while running the agent. Please '
+                f'report this error to the developers. Your session ID is {self.id}. '
+                f'Error type: {e.__class__.__name__}'
             )
             if isinstance(e, litellm.AuthenticationError) or isinstance(
                 e, litellm.BadRequestError
@@ -348,7 +354,6 @@ class AgentController:
 
     def _reset(self) -> None:
         """Resets the agent controller"""
-
         # make sure there is an Observation with the tool call metadata to be recognized by the agent
         # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
         if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata'):
@@ -389,6 +394,9 @@ class AgentController:
             return
 
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
+            # sync existing metrics BEFORE resetting the agent
+            await self.update_state_after_step()
+            self.state.metrics.merge(self.state.local_metrics)
             self._reset()
         elif (
             new_state == AgentState.RUNNING
@@ -985,10 +993,12 @@ class AgentController:
 
     def __repr__(self):
         return (
-            f'AgentController(id={self.id}, agent={self.agent!r}, '
-            f'event_stream={self.event_stream!r}, '
-            f'state={self.state!r}, '
-            f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
+            f'AgentController(id={getattr(self, "id", "<uninitialized>")}, '
+            f'agent={getattr(self, "agent", "<uninitialized>")!r}, '
+            f'event_stream={getattr(self, "event_stream", "<uninitialized>")!r}, '
+            f'state={getattr(self, "state", "<uninitialized>")!r}, '
+            f'delegate={getattr(self, "delegate", "<uninitialized>")!r}, '
+            f'_pending_action={getattr(self, "_pending_action", "<uninitialized>")!r})'
         )
 
     def _is_awaiting_observation(self):

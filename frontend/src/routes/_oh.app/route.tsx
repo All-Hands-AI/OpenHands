@@ -2,6 +2,7 @@ import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
+import { FaServer } from "react-icons/fa";
 import toast from "react-hot-toast";
 import {
   ConversationProvider,
@@ -20,7 +21,6 @@ import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "../../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "./event-handler";
-import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 import { useAuth } from "#/context/auth-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
@@ -30,37 +30,26 @@ import {
 } from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
-import { useUserConversation } from "#/hooks/query/get-conversation-permissions";
+import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { CountBadge } from "#/components/layout/count-badge";
+import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
-import { MULTI_CONVO_UI_IS_ENABLED } from "#/utils/constants";
+import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 
 function AppContent() {
+  useConversationConfig();
   const { gitHubToken } = useAuth();
   const { data: settings } = useSettings();
-
-  const endSession = useEndSession();
-  const [width, setWidth] = React.useState(window.innerWidth);
-
   const { conversationId } = useConversation();
-
-  const dispatch = useDispatch();
-
-  useConversationConfig();
   const { data: conversation, isFetched } = useUserConversation(
     conversationId || null,
   );
+  const dispatch = useDispatch();
+  const endSession = useEndSession();
 
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
-
+  const [width, setWidth] = React.useState(window.innerWidth);
   const { updateCount } = useSelector((state: RootState) => state.browser);
-
-  const { data: latestGitHubCommit } = useLatestRepoCommit({
-    repository: selectedRepository,
-  });
 
   const secrets = React.useMemo(
     () => [gitHubToken].filter((secret) => secret !== null),
@@ -73,7 +62,7 @@ function AppContent() {
   );
 
   React.useEffect(() => {
-    if (MULTI_CONVO_UI_IS_ENABLED && isFetched && !conversation) {
+    if (MULTI_CONVERSATION_UI && isFetched && !conversation) {
       toast.error(
         "This conversation does not exist, or you do not have permission to access it.",
       );
@@ -140,6 +129,11 @@ function AppContent() {
                   { label: "Workspace", to: "", icon: <CodeIcon /> },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
                   {
+                    label: <ServedAppLabel />,
+                    to: "served",
+                    icon: <FaServer />,
+                  },
+                  {
                     label: (
                       <div className="flex items-center gap-1">
                         Browser
@@ -175,23 +169,22 @@ function AppContent() {
   }
 
   return (
-    <WsClientProvider ghToken={gitHubToken} conversationId={conversationId}>
+    <WsClientProvider conversationId={conversationId}>
       <EventHandler>
         <div data-testid="app-route" className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto">{renderMain()}</div>
 
-          <div className="h-[60px]">
-            <Controls
-              setSecurityOpen={onSecurityModalOpen}
-              showSecurityLock={!!settings.SECURITY_ANALYZER}
-              lastCommitData={latestGitHubCommit || null}
-            />
-          </div>
-          <Security
-            isOpen={securityModalIsOpen}
-            onOpenChange={onSecurityModalOpenChange}
-            securityAnalyzer={settings.SECURITY_ANALYZER}
+          <Controls
+            setSecurityOpen={onSecurityModalOpen}
+            showSecurityLock={!!settings?.SECURITY_ANALYZER}
           />
+          {settings && (
+            <Security
+              isOpen={securityModalIsOpen}
+              onOpenChange={onSecurityModalOpenChange}
+              securityAnalyzer={settings.SECURITY_ANALYZER}
+            />
+          )}
         </div>
       </EventHandler>
     </WsClientProvider>

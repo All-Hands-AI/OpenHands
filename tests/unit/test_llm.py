@@ -141,9 +141,9 @@ def test_llm_reset():
     initial_metrics.add_cost(1.0)
     initial_metrics.add_response_latency(0.5, 'test-id')
     llm.reset()
-    assert llm.metrics._accumulated_cost != initial_metrics._accumulated_cost
-    assert llm.metrics._costs != initial_metrics._costs
-    assert llm.metrics._response_latencies != initial_metrics._response_latencies
+    assert llm.metrics.accumulated_cost != initial_metrics.accumulated_cost
+    assert llm.metrics.costs != initial_metrics.costs
+    assert llm.metrics.response_latencies != initial_metrics.response_latencies
     assert isinstance(llm.metrics, Metrics)
 
 

@@ -73,7 +73,7 @@ export const chatSlice = createSlice({
       state.messages.push(message);
     },
 
-    addAssistantMessage(state, action: PayloadAction<string>) {
+    addAssistantMessage(state: SliceState, action: PayloadAction<string>) {
       const message: Message = {
         type: "thought",
         sender: "assistant",
@@ -85,7 +85,10 @@ export const chatSlice = createSlice({
       state.messages.push(message);
     },
 
-    addAssistantAction(state, action: PayloadAction<OpenHandsAction>) {
+    addAssistantAction(
+      state: SliceState,
+      action: PayloadAction<OpenHandsAction>,
+    ) {
       const actionID = action.payload.action;
       if (!HANDLED_ACTIONS.includes(actionID)) {
         return;
@@ -125,7 +128,7 @@ export const chatSlice = createSlice({
     },
 
     addAssistantObservation(
-      state,
+      state: SliceState,
       observation: PayloadAction<OpenHandsObservation>,
     ) {
       const observationID = observation.payload.observation;
@@ -179,7 +182,7 @@ export const chatSlice = createSlice({
     },
 
     addErrorMessage(
-      state,
+      state: SliceState,
       action: PayloadAction<{ id?: string; message: string }>,
     ) {
       const { id, message } = action.payload;
@@ -192,7 +195,7 @@ export const chatSlice = createSlice({
       });
     },
 
-    clearMessages(state) {
+    clearMessages(state: SliceState) {
       state.messages = [];
     },
   },
