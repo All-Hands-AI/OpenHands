@@ -233,26 +233,27 @@ class Runtime(FileEditRuntimeMixin):
         self, selected_repository: str | None
     ) -> list[BaseMicroAgent]:
         loaded_microagents: list[BaseMicroAgent] = []
-        dir_name = Path('.openhands') / 'microagents'
+        workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
+        microagents_dir = workspace_root / '.openhands' / 'microagents'
         repo_root = None
         if selected_repository:
-            repo_root = (
-                Path(self.config.workspace_mount_path_in_sandbox)
-                / selected_repository.split('/')[1]
-            )
-            dir_name = repo_root / dir_name
+            repo_root = workspace_root / selected_repository.split('/')[1]
+            microagents_dir = repo_root / microagents_dir
         self.log(
             'info',
-            f'Selected repo: {selected_repository}, loading microagents from {dir_name} (inside runtime)',
+            f'Selected repo: {selected_repository}, loading microagents from {microagents_dir} (inside runtime)',
         )
 
         # Legacy Repo Instructions
         # Check for legacy .openhands_instructions file
-        obs = self.read(FileReadAction(path='.openhands_instructions'))
+        obs = self.read(
+            FileReadAction(path=str(workspace_root / '.openhands_instructions'))
+        )
         if isinstance(obs, ErrorObservation) and repo_root is not None:
+            # If the instructions file is not found in the workspace root, try to load it from the repo root
             self.log(
                 'debug',
-                f'.openhands_instructions not present, trying to load from {dir_name}',
+                f'.openhands_instructions not present, trying to load from repository {microagents_dir=}',
             )
             obs = self.read(
                 FileReadAction(path=str(repo_root / '.openhands_instructions'))
@@ -267,10 +268,10 @@ class Runtime(FileEditRuntimeMixin):
             )
 
         # Load microagents from directory
-        files = self.list_files(str(dir_name))
+        files = self.list_files(str(microagents_dir))
         if files:
             self.log('info', f'Found {len(files)} files in microagents directory.')
-            zip_path = self.copy_from(str(dir_name))
+            zip_path = self.copy_from(str(microagents_dir))
             microagent_folder = tempfile.mkdtemp()
 
             # Properly handle the zip file
