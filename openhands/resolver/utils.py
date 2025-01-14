@@ -3,15 +3,58 @@ import logging
 import multiprocessing as mp
 import os
 import re
+from enum import Enum
 from typing import Callable
 
 import pandas as pd
+import requests
 
 from openhands.controller.state.state import State
 from openhands.core.logger import get_console_handler
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action
 from openhands.events.action.message import MessageAction
+
+
+class Platform(Enum):
+    INVALID = 0
+    GITHUB = 1
+    GITLAB = 2
+
+
+def identify_token(token: str) -> Platform:
+    """
+    Identifies whether a token belongs to GitHub or GitLab.
+
+    Parameters:
+        token (str): The personal access token to check.
+
+    Returns:
+        Platform: "GitHub" if the token is valid for GitHub,
+             "GitLab" if the token is valid for GitLab,
+             "Invalid" if the token is not recognized by either.
+    """
+    github_url = 'https://api.github.com/user'
+    github_headers = {'Authorization': f'token {token}'}
+
+    try:
+        github_response = requests.get(github_url, headers=github_headers, timeout=5)
+        if github_response.status_code == 200:
+            return Platform.GITHUB
+    except requests.RequestException as e:
+        print(f'Error connecting to GitHub API: {e}')
+
+    gitlab_url = 'https://gitlab.com/api/v4/user'
+    gitlab_headers = {'Authorization': f'Bearer {token}'}
+
+    try:
+        gitlab_response = requests.get(gitlab_url, headers=gitlab_headers, timeout=5)
+        if gitlab_response.status_code == 200:
+            return Platform.GITLAB
+    except requests.RequestException as e:
+        print(f'Error connecting to GitLab API: {e}')
+
+    return Platform.INVALID
 
 
 def codeact_user_response(
