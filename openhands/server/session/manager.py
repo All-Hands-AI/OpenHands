@@ -219,7 +219,7 @@ class SessionManager:
             return c
 
     async def join_conversation(
-        self, sid: str, connection_id: str, settings: Settings, user_id: int | None
+        self, sid: str, connection_id: str, settings: Settings, user_id: str | None
     ):
         logger.info(f'join_conversation:{sid}:{connection_id}')
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
@@ -437,7 +437,7 @@ class SessionManager:
             self._connection_queries.pop(query_id, None)
 
     async def maybe_start_agent_loop(
-        self, sid: str, settings: Settings, user_id: int | None
+        self, sid: str, settings: Settings, user_id: str | None
     ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}')
         session: Session | None = None

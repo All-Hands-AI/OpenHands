@@ -222,7 +222,7 @@ async def _get_conversation_info(
 
 
 def _create_conversation_update_callback(
-    user_id: int, conversation_id: str
+    user_id: str | None, conversation_id: str
 ) -> Callable:
     def callback(*args, **kwargs):
         call_async_from_sync(
@@ -235,7 +235,7 @@ def _create_conversation_update_callback(
     return callback
 
 
-async def _update_timestamp_for_conversation(user_id: int, conversation_id: str):
+async def _update_timestamp_for_conversation(user_id: str, conversation_id: str):
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     conversation = await conversation_store.get_metadata(conversation_id)
     conversation.last_updated_at = datetime.now(timezone.utc)
