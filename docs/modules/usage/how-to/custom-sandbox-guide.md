@@ -58,3 +58,27 @@ sandbox_base_container_image="custom-image"
 ### Run
 
 Run OpenHands by running ```make run``` in the top level directory.
+
+## Using Docker
+
+If you're running OpenHands via Docker, you can specify your custom sandbox image using the `SANDBOX_BASE_CONTAINER_IMAGE` environment variable when running the container:
+
+```bash
+docker run -it --pull=always \
+    -e SANDBOX_BASE_CONTAINER_IMAGE=custom-image \
+    -e LOG_ALL_EVENTS=true \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v ~/.openhands-state:/.openhands-state \
+    -p 3000:3000 \
+    --add-host host.docker.internal:host-gateway \
+    --name openhands-app \
+    docker.all-hands.dev/all-hands-ai/openhands:0.20
+```
+
+Make sure to:
+1. Replace `custom-image` with the name of your custom Docker image
+2. Mount the Docker socket (`/var/run/docker.sock`) to allow OpenHands to create sandbox containers
+3. Mount the state directory (`~/.openhands-state`) to persist OpenHands state between runs
+4. Add the host gateway to allow container-to-host communication
+
+> Note: If you're using macOS, ensure Docker Desktop has the necessary permissions and settings enabled for socket mounting.
