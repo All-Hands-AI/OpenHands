@@ -305,11 +305,11 @@ class AgentSession:
                 logger.debug('No events found, no state to restore')
         return restored_state
 
-    def get_state(self) -> AgentState:
+    def get_state(self) -> AgentState | None:
         controller = self.controller
         if controller:
             return controller.state.agent_state
-        # If a controller has not been set, then the init process is running - we give it a grace period
-        if time.time() < self._started_at + WAIT_TIME_BEFORE_CLOSE:
-            return AgentState.RUNNING
-        return AgentState.FINISHED
+        if time.time() > self._started_at + WAIT_TIME_BEFORE_CLOSE:
+            # If 5 minutes have elapsed and we still don't have a controller, something has gone wrong
+            return AgentState.ERROR
+        return None

@@ -271,10 +271,10 @@ class SessionManager:
                 sid_to_close: list[str] = []
                 for sid, session in running_loops:
                     state = session.agent_session.get_state()
-                    if (
-                        session.last_active_ts < close_threshold
-                        and state != AgentState.RUNNING
-                    ):
+                    if session.last_active_ts < close_threshold and state not in [
+                        AgentState.RUNNING,
+                        None,
+                    ]:
                         sid_to_close.append(sid)
 
                 connections = self._get_connections_locally(
