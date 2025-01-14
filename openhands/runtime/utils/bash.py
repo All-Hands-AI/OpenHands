@@ -486,18 +486,6 @@ class BashSession:
         last_change_time = start_time
         last_pane_output = self._get_pane_content()
 
-        _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
-        assert len(_ps1_matches) >= 1, (
-            'Expected at least one PS1 metadata block BEFORE the execution of a command, '
-            f'but got {len(_ps1_matches)} PS1 metadata blocks:\n---\n{last_pane_output!r}\n---'
-        )
-        if len(_ps1_matches) > 1:
-            logger.warning(
-                'Found multiple PS1 metadata blocks BEFORE the execution of a command. '
-                'Only the last one will be used.'
-            )
-            _ps1_matches = [_ps1_matches[-1]]
-
         if command != '':
             # convert command to raw string
             command = escape_bash_special_chars(command)
