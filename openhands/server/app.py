@@ -1,3 +1,4 @@
+import openhands.utils.fd_tracker  # noqa F401 (we import this to track FDs in debug mode)
 import warnings
 from contextlib import asynccontextmanager
 
