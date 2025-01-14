@@ -391,7 +391,7 @@ class CodeActAgent(Agent):
         messages_dict = self.llm.format_messages_for_llm(messages)
         params['messages'] = messages_dict
 
-        formatted_trajectory = format_trajectory(messages_dict)
+        formatted_trajectory = format_trajectory(messages)
 
         # check if model routing is needed
         if self.plan_router and self.plan_router.should_route_to_custom_model(
