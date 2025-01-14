@@ -1,5 +1,4 @@
-import { describe, it, expect, afterEach, vi, beforeAll } from "vitest";
-import * as router from "react-router";
+import { describe, it, expect, afterEach, vi } from "vitest";
 
 // Mock useParams before importing components
 vi.mock("react-router", async () => {
@@ -27,18 +26,8 @@ vi.mock("react-i18next", async () => {
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "../../test-utils";
 import { BrowserPanel } from "#/components/features/browser/browser";
-import OpenHands from "#/api/open-hands";
 
 describe("Browser", () => {
-  beforeAll(() => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "oss",
-      GITHUB_CLIENT_ID: "test-id",
-      POSTHOG_CLIENT_KEY: "test-key",
-    });
-  });
-
   afterEach(() => {
     vi.clearAllMocks();
   });

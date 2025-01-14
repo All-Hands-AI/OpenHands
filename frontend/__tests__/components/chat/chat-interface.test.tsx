@@ -7,7 +7,6 @@ import { SUGGESTIONS } from "#/utils/suggestions";
 import * as ChatSlice from "#/state/chat-slice";
 import { WsClientProviderStatus } from "#/context/ws-client-provider";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
-import OpenHands from "#/api/open-hands";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const renderChatInterface = (messages: Message[]) =>
@@ -36,13 +35,6 @@ describe("Empty state", () => {
       ...(await importActual<typeof import("#/context/ws-client-provider")>()),
       useWsClient: useWsClientMock,
     }));
-
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "oss",
-      GITHUB_CLIENT_ID: "test-id",
-      POSTHOG_CLIENT_KEY: "test-key",
-    });
   });
 
   afterEach(() => {

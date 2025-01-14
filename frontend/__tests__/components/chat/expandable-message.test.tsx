@@ -1,9 +1,8 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import { ExpandableMessage } from "#/components/features/chat/expandable-message";
 import { vi } from "vitest";
-import OpenHands from "#/api/open-hands";
 
 vi.mock("react-i18next", async () => {
   const actual = await vi.importActual("react-i18next");
@@ -21,15 +20,6 @@ vi.mock("react-i18next", async () => {
 });
 
 describe("ExpandableMessage", () => {
-  beforeAll(() => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "oss",
-      GITHUB_CLIENT_ID: "test-id",
-      POSTHOG_CLIENT_KEY: "test-key",
-    });
-  });
-
   it("should render with neutral border for non-action messages", () => {
     renderWithProviders(<ExpandableMessage message="Hello" type="thought" />);
     const element = screen.getByText("Hello");

@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Mock useParams before importing components
 vi.mock("react-router", async () => {
@@ -13,21 +13,11 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import { FeedbackForm } from "#/components/features/feedback/feedback-form";
-import OpenHands from "#/api/open-hands";
 import { I18nKey } from "#/i18n/declaration";
 
 describe("FeedbackForm", () => {
   const user = userEvent.setup();
   const onCloseMock = vi.fn();
-
-  beforeAll(() => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "oss",
-      GITHUB_CLIENT_ID: "test-id",
-      POSTHOG_CLIENT_KEY: "test-key",
-    });
-  });
 
   afterEach(() => {
     vi.clearAllMocks();
@@ -69,7 +59,9 @@ describe("FeedbackForm", () => {
     renderWithProviders(
       <FeedbackForm polarity="positive" onClose={onCloseMock} />,
     );
-    await user.click(screen.getByRole("button", { name: I18nKey.FEEDBACK$CANCEL_LABEL }));
+    await user.click(
+      screen.getByRole("button", { name: I18nKey.FEEDBACK$CANCEL_LABEL }),
+    );
 
     expect(onCloseMock).toHaveBeenCalled();
   });
