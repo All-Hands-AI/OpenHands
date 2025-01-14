@@ -147,16 +147,6 @@ def load_microagents_from_dir(
     knowledge_agents = {}
     task_agents = {}
 
-    # Check for legacy repo instructions
-    legacy_file = microagent_dir / '.openhands_instructions'
-    if legacy_file.exists():
-        try:
-            agent = BaseMicroAgent.load(legacy_file)
-            if isinstance(agent, RepoMicroAgent):
-                repo_agents[agent.name] = agent
-        except Exception as e:
-            raise ValueError(f'Error loading legacy agent: {e}')
-
     # Load all agents from .openhands/microagents directory
     microagents_path = microagent_dir / '.openhands' / 'microagents'
     if microagents_path.exists():
