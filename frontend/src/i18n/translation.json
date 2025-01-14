@@ -2129,20 +2129,20 @@
         "no": "Les dette",
         "tr": "Başlangıç kılavuzu"
     },
-    "LANDING$BUILD_APP_BUTTON": {
-        "en": "Build an app to view pull requests",
-        "ja": "プルリクエストを表示するアプリを開発する",
-        "zh-CN": "构建一个查看拉取请求的应用",
-        "zh-TW": "構建一個查看拉取請求的應用",
-        "ko-KR": "풀 리퀘스트를 보기 위한 앱 만들기",
-        "fr": "Construire une application pour voir les pull requests",
-        "es": "Construir una aplicación para ver pull requests",
-        "de": "Eine App zum Anzeigen von Pull Requests erstellen",
-        "it": "Costruisci un'app per visualizzare le pull request",
-        "pt": "Construir um aplicativo para visualizar pull requests",
-        "ar": "بناء تطبيق لعرض طلبات السحب",
-        "no": "Bygg en app for å se pull requests",
-        "tr": "Uygulama oluştur"
+    "SUGGESTIONS$HELLO_WORLD": {
+        "en": "Create a Hello World app",
+        "ja": "Hello World アプリを作成",
+        "zh-CN": "创建一个 Hello World 应用",
+        "zh-TW": "創建一個 Hello World 應用",
+        "ko-KR": "Hello World 앱 만들기",
+        "fr": "Créer une application Hello World",
+        "es": "Crear una aplicación Hello World",
+        "de": "Erstelle eine Hello World-App",
+        "it": "Crea un'app Hello World",
+        "pt": "Criar um aplicativo Hello World",
+        "ar": "إنشاء تطبيق Hello World",
+        "no": "Lag en Hello World-app",
+        "tr": "Bir Hello World uygulaması oluştur"
     },
     "SUGGESTIONS$TODO_APP": {
         "en": "Build a todo list application",
