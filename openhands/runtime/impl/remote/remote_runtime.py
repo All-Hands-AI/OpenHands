@@ -66,7 +66,9 @@ class RemoteRuntime(ActionExecutionClient):
             )
 
         self.runtime_builder = RemoteRuntimeBuilder(
-            self.config.sandbox.remote_runtime_api_url, self.config.sandbox.api_key
+            self.config.sandbox.remote_runtime_api_url,
+            self.config.sandbox.api_key,
+            self.session,
         )
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None

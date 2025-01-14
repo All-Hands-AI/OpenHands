@@ -33,6 +33,11 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       ...userSettings,
       ...newSettings,
     };
+
+    if (updatedSettings.LLM_API_KEY === "SET") {
+      delete updatedSettings.LLM_API_KEY;
+    }
+
     await saveSettings(updatedSettings, {
       onSuccess: () => {
         if (!isUpToDate) {
