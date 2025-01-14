@@ -62,7 +62,7 @@ export function GitHubRepositoriesSuggestionBox({
             <GitHubRepositorySelector
               onInputChange={setSearchQuery}
               onSelect={handleSubmit}
-              publicRepositories={searchedRepos}
+              publicRepositories={searchedRepos || []}
               userRepositories={repositories}
             />
           ) : (
