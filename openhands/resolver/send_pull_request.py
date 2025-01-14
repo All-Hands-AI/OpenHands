@@ -11,6 +11,7 @@ from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import LLM
 from openhands.resolver.github import GithubIssueHandler
+from openhands.resolver.gitlab import GitlabIssueHandler
 from openhands.resolver.io_utils import (
     load_all_resolver_outputs,
     load_single_resolver_output,
@@ -19,6 +20,10 @@ from openhands.resolver.issue import Issue
 from openhands.resolver.issue_definitions import ServiceContext
 from openhands.resolver.patching import apply_diff, parse_patch
 from openhands.resolver.resolver_output import ResolverOutput
+from openhands.resolver.utils import (
+    Platform,
+    identify_token,
+)
 
 
 def apply_patch(repo_dir: str, patch: str) -> None:
@@ -220,6 +225,7 @@ def send_pull_request(
     issue: Issue,
     token: str,
     username: str | None,
+    platform: Platform,
     patch_dir: str,
     llm_config: LLMConfig,
     pr_type: str,
@@ -235,6 +241,7 @@ def send_pull_request(
         issue: The issue to send the pull request for
         oken: The GitHub token to use for authentication
         username: The GitHub username, if provided
+        platform: The platform of the repository.
         patch_dir: The directory containing the patches to apply
         pr_type: The type: branch (no PR created), draft or ready (regular PR created)
         fork_owner: The owner of the fork to push changes to (if different from the original repo owner)
@@ -246,9 +253,15 @@ def send_pull_request(
     if pr_type not in ['branch', 'draft', 'ready']:
         raise ValueError(f'Invalid pr_type: {pr_type}')
 
-    handler = ServiceContext(
-        GithubIssueHandler(issue.owner, issue.repo, token, username), llm_config
-    )
+    handler = None
+    if platform == Platform.GITHUB:
+        handler = ServiceContext(
+            GithubIssueHandler(issue.owner, issue.repo, token, username), llm_config
+        )
+    else:  # platform == Platform.GITLAB
+        handler = ServiceContext(
+            GitlabIssueHandler(issue.owner, issue.repo, token, username), llm_config
+        )
 
     # Create a new branch with a unique name
     base_branch_name = f'openhands-fix-issue-{issue.number}'
@@ -313,18 +326,18 @@ def send_pull_request(
         # Prepare the PR for the GitHub API
         data = {
             'title': final_pr_title,  # No need to escape title for GitHub API
-            'body': pr_body,
-            'head': branch_name,
-            'base': base_branch,
+            'description': pr_body,
+            'source_branch': branch_name,
+            'target_branch': base_branch,
             'draft': pr_type == 'draft',
         }
 
         pr_data = handler.create_pull_request(data)
-        url = pr_data['html_url']
+        url = pr_data['html_url'] if platform == Platform.GITHUB else pr_data['web_url']
 
         # Request review if a reviewer was specified
         if reviewer and pr_type != 'branch':
-            handler.request_reviewers(reviewer, pr_data['number'])
+            handler.request_reviewers(reviewer, pr_data['iid'])
 
     print(
         f'{pr_type} created: {url}\n\n--- Title: {final_pr_title}\n\n--- Body:\n{pr_body}'
@@ -349,7 +362,7 @@ def send_comment_msg(base_url: str, issue_number: int, token: str, msg: str):
     }
 
     # Post a comment on the PR
-    comment_url = f'{base_url}/issues/{issue_number}/comments'
+    comment_url = f'{base_url}/issues/{issue_number}/notes'
     comment_data = {'body': msg}
     comment_response = requests.post(comment_url, headers=headers, json=comment_data)
     if comment_response.status_code != 201:
@@ -364,6 +377,7 @@ def update_existing_pull_request(
     issue: Issue,
     token: str,
     username: str | None,
+    platform: Platform,
     patch_dir: str,
     llm_config: LLMConfig,
     comment_message: str | None = None,
@@ -375,6 +389,7 @@ def update_existing_pull_request(
         issue: The issue to update.
         token: The  token to use for authentication.
         username: The username to use for authentication.
+        platform: The platform of the repository.
         patch_dir: The directory containing the patches to apply.
         llm_config: The LLM configuration to use for summarizing changes.
         comment_message: The main message to post as a comment on the PR.
@@ -382,9 +397,15 @@ def update_existing_pull_request(
     """
     # Set up headers and base URL for GitHub API
 
-    handler = ServiceContext(
-        GithubIssueHandler(issue.owner, issue.repo, token, username), llm_config
-    )
+    handler = None
+    if platform == Platform.GITHUB:
+        handler = ServiceContext(
+            GithubIssueHandler(issue.owner, issue.repo, token, username), llm_config
+        )
+    else:  # platform == Platform.GITLAB
+        handler = ServiceContext(
+            GitlabIssueHandler(issue.owner, issue.repo, token, username), llm_config
+        )
 
     base_url = handler.get_base_url()
     branch_name = issue.head_branch
@@ -459,6 +480,7 @@ def process_single_issue(
     resolver_output: ResolverOutput,
     token: str,
     username: str,
+    platform: Platform,
     pr_type: str,
     llm_config: LLMConfig,
     fork_owner: str | None,
@@ -467,6 +489,7 @@ def process_single_issue(
     reviewer: str | None = None,
     pr_title: str | None = None,
 ) -> None:
+    print(resolver_output.success, send_on_failure)
     if not resolver_output.success and not send_on_failure:
         print(
             f'Issue {resolver_output.issue.number} was not successfully resolved. Skipping PR creation.'
@@ -501,6 +524,7 @@ def process_single_issue(
             issue=resolver_output.issue,
             token=token,
             username=username,
+            platform=platform,
             patch_dir=patched_repo_dir,
             additional_message=resolver_output.result_explanation,
             llm_config=llm_config,
@@ -510,6 +534,7 @@ def process_single_issue(
             issue=resolver_output.issue,
             token=token,
             username=username,
+            platform=platform,
             patch_dir=patched_repo_dir,
             llm_config=llm_config,
             pr_type=pr_type,
@@ -526,6 +551,7 @@ def process_all_successful_issues(
     output_dir: str,
     token: str,
     username: str,
+    platform: Platform,
     pr_type: str,
     llm_config: LLMConfig,
     fork_owner: str | None,
@@ -539,6 +565,7 @@ def process_all_successful_issues(
                 resolver_output,
                 token,
                 username,
+                platform,
                 pr_type,
                 llm_config,
                 fork_owner,
@@ -629,12 +656,16 @@ def main():
     )
     my_args = parser.parse_args()
 
-    token = my_args.token if my_args.token else os.getenv('GITHUB_TOKEN')
+    token = my_args.token if my_args.token else os.getenv('GIT_TOKEN')
     if not token:
         raise ValueError(
-            'token is not set, set via --token or GITHUB_TOKEN environment variable.'
+            'token is not set, set via --token or GIT_TOKEN environment variable.'
         )
-    username = my_args.username if my_args.username else os.getenv('GITHUB_USERNAME')
+    username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
+
+    platform = identify_token(token)
+    if platform == Platform.INVALID:
+        raise ValueError('token is invalid.')
 
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(
@@ -653,6 +684,7 @@ def main():
             my_args.output_dir,
             token,
             username,
+            platform,
             my_args.pr_type,
             llm_config,
             my_args.fork_owner,
@@ -670,6 +702,7 @@ def main():
             resolver_output,
             token,
             username,
+            platform,
             my_args.pr_type,
             llm_config,
             my_args.fork_owner,

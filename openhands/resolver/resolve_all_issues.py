@@ -19,6 +19,10 @@ from openhands.resolver.resolve_issue import (
     process_issue,
 )
 from openhands.resolver.resolver_output import ResolverOutput
+from openhands.resolver.utils import (
+    Platform,
+    identify_token,
+)
 
 
 def cleanup():
@@ -51,6 +55,7 @@ async def resolve_issues(
     repo: str,
     token: str,
     username: str,
+    platform: Platform,
     max_iterations: int,
     limit_issues: int | None,
     num_workers: int,
@@ -80,7 +85,9 @@ async def resolve_issues(
         repo_instruction: Repository instruction to use.
         issue_numbers: List of issue numbers to resolve.
     """
-    issue_handler = issue_handler_factory(issue_type, owner, repo, token, llm_config)
+    issue_handler = issue_handler_factory(
+        issue_type, owner, repo, token, llm_config, platform
+    )
 
     # Load dataset
     issues: list[Issue] = issue_handler.get_converted_issues(
@@ -323,15 +330,20 @@ def main():
         )
 
     owner, repo = my_args.repo.split('/')
-    token = my_args.token if my_args.token else os.getenv('GITHUB_TOKEN')
-    username = my_args.username if my_args.username else os.getenv('GITHUB_USERNAME')
+    token = my_args.token if my_args.token else os.getenv('GIT_TOKEN')
+    username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
     if not username:
         raise ValueError('Github username is required.')
 
     if not token:
         raise ValueError('Github token is required.')
 
+    platform = identify_token(token)
+    if platform == Platform.INVALID:
+        raise ValueError('token is invalid.')
+
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
+
     llm_config = LLMConfig(
         model=my_args.llm_model or os.environ['LLM_MODEL'],
         api_key=str(api_key) if api_key else None,
@@ -369,6 +381,7 @@ def main():
             repo=repo,
             token=token,
             username=username,
+            platform=platform,
             runtime_container_image=runtime_container_image,
             max_iterations=my_args.max_iterations,
             limit_issues=my_args.limit_issues,
