@@ -14,9 +14,9 @@ from termcolor import colored
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
 DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
 
-# Configure litellm to suppress debug info and verbose output unless DEBUG is enabled
-litellm.suppress_debug_info = not DEBUG
-litellm.set_verbose = DEBUG
+# Always disable litellm logging
+litellm.suppress_debug_info = True
+litellm.set_verbose = False
 if DEBUG:
     LOG_LEVEL = 'DEBUG'
 
