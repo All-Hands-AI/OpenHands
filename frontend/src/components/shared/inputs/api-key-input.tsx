@@ -22,14 +22,14 @@ export function APIKeyInput({ isDisabled, isSet }: APIKeyInputProps) {
           {!isSet && (
             <FaExclamationCircle className="text-[#FF3860] inline-block" />
           )}
-          {t(I18nKey.SETTINGS_FORM$API_KEY_LABEL)}
+          {t(I18nKey.API$KEY)}
         </label>
       </Tooltip>
       <Input
         isDisabled={isDisabled}
         id="api-key"
         name="api-key"
-        aria-label="API Key"
+        aria-label={t(I18nKey.API$KEY)}
         type="password"
         defaultValue=""
         classNames={{
@@ -37,14 +37,14 @@ export function APIKeyInput({ isDisabled, isSet }: APIKeyInputProps) {
         }}
       />
       <p className="text-sm text-[#A3A3A3]">
-        {t(I18nKey.SETTINGS_FORM$DONT_KNOW_API_KEY_LABEL)}{" "}
+        {t(I18nKey.API$DONT_KNOW_KEY)}{" "}
         <a
           href="https://docs.all-hands.dev/modules/usage/llms"
           rel="noreferrer noopener"
           target="_blank"
           className="underline underline-offset-2"
         >
-          {t(I18nKey.SETTINGS_FORM$CLICK_HERE_FOR_INSTRUCTIONS_LABEL)}
+          {t(I18nKey.COMMON$CLICK_FOR_INSTRUCTIONS)}
         </a>
       </p>
     </fieldset>

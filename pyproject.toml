@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-ai"
-version = "0.19.0"
+version = "0.20.0"
 description = "OpenHands: Code Less, Make More"
 authors = ["OpenHands"]
 license = "MIT"
@@ -82,7 +82,7 @@ voyageai = "*"
 llama-index-embeddings-voyageai = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.9.0"
+ruff = "0.9.1"
 mypy = "1.14.1"
 pre-commit = "4.0.1"
 build = "*"
@@ -100,7 +100,6 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
-
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
@@ -129,7 +128,6 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
