@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Select, SelectItem } from "@nextui-org/react";
+import { I18nKey } from "#/i18n/declaration";
 
 interface RuntimeSizeSelectorProps {
   isDisabled: boolean;
@@ -18,15 +19,18 @@ export function RuntimeSizeSelector({
         htmlFor="runtime-size"
         className="font-[500] text-[#A3A3A3] text-xs"
       >
-        {t("SETTINGS_FORM$RUNTIME_SIZE_LABEL")}
+        {t(I18nKey.SETTINGS_FORM$RUNTIME_SIZE_LABEL)}
       </label>
       <Select
         data-testid="runtime-size"
         id="runtime-size"
         name="runtime-size"
         defaultSelectedKeys={[String(defaultValue || 1)]}
+        selectedKeys={[String(defaultValue || 1)]}
         isDisabled={isDisabled}
-        aria-label={t("SETTINGS_FORM$RUNTIME_SIZE_LABEL")}
+        selectionMode="single"
+        disallowEmptySelection
+        aria-label={t(I18nKey.SETTINGS_FORM$RUNTIME_SIZE_LABEL)}
         classNames={{
           trigger: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
         }}

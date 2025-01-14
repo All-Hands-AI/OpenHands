@@ -24,10 +24,6 @@ _CLEANUP_INTERVAL = 15
 _CLEANUP_EXCEPTION_WAIT_TIME = 15
 
 
-class ConversationDoesNotExistError(Exception):
-    pass
-
-
 @dataclass
 class _SessionIsRunningCheck:
     request_id: str
@@ -96,12 +92,10 @@ class SessionManager:
                     await self._process_message(message)
             except asyncio.CancelledError:
                 return
-            except Exception:
+            except Exception as e:
                 try:
                     asyncio.get_running_loop()
-                    logger.warning(
-                        'error_reading_from_redis', exc_info=True, stack_info=True
-                    )
+                    logger.error(f'error_reading_from_redis:{str(e)}')
                 except RuntimeError:
                     return  # Loop has been shut down
 
@@ -209,13 +203,15 @@ class SessionManager:
             self._active_conversations[sid] = (c, 1)
             return c
 
-    async def join_conversation(self, sid: str, connection_id: str, settings: Settings):
+    async def join_conversation(
+        self, sid: str, connection_id: str, settings: Settings, user_id: str | None
+    ):
         logger.info(f'join_conversation:{sid}:{connection_id}')
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self.local_connection_id_to_session_id[connection_id] = sid
         event_stream = await self._get_event_stream(sid)
         if not event_stream:
-            return await self.maybe_start_agent_loop(sid, settings)
+            return await self.maybe_start_agent_loop(sid, settings, user_id)
         return event_stream
 
     async def detach_from_conversation(self, conversation: Conversation):
@@ -261,11 +257,11 @@ class SessionManager:
                         await conversation.disconnect()
                     self._detached_conversations.clear()
                 return
-            except Exception:
-                logger.warning('error_cleaning_detached_conversations', exc_info=True)
+            except Exception as e:
+                logger.warning(f'error_cleaning_detached_conversations: {str(e)}')
                 await asyncio.sleep(_CLEANUP_EXCEPTION_WAIT_TIME)
 
-    async def get_agent_loop_running(self, sids: set[str]) -> set[str]:
+    async def get_agent_loop_running(self, user_id, sids: set[str]) -> set[str]:
         running_sids = set(sid for sid in sids if sid in self._local_agent_loops_by_sid)
         check_cluster_sids = [sid for sid in sids if sid not in running_sids]
         running_cluster_sids = await self.get_agent_loop_running_in_cluster(
@@ -346,7 +342,9 @@ class SessionManager:
         finally:
             self._has_remote_connections_flags.pop(sid, None)
 
-    async def maybe_start_agent_loop(self, sid: str, settings: Settings) -> EventStream:
+    async def maybe_start_agent_loop(
+        self, sid: str, settings: Settings, user_id: str | None
+    ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}')
         session: Session | None = None
         if not await self.is_agent_loop_running(sid):

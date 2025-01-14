@@ -1,5 +1,7 @@
 import React from "react";
 import TextareaAutosize from "react-textarea-autosize";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { SubmitButton } from "#/components/shared/buttons/submit-button";
 import { StopButton } from "#/components/shared/buttons/stop-button";
@@ -8,7 +10,6 @@ interface ChatInputProps {
   name?: string;
   button?: "submit" | "stop";
   disabled?: boolean;
-  placeholder?: string;
   showButton?: boolean;
   value?: string;
   maxRows?: number;
@@ -26,7 +27,6 @@ export function ChatInput({
   name,
   button = "submit",
   disabled,
-  placeholder,
   showButton = true,
   value,
   maxRows = 4,
@@ -39,6 +39,7 @@ export function ChatInput({
   className,
   buttonClassName,
 }: ChatInputProps) {
+  const { t } = useTranslation();
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const [isDraggingOver, setIsDraggingOver] = React.useState(false);
 
@@ -117,7 +118,7 @@ export function ChatInput({
       <TextareaAutosize
         ref={textareaRef}
         name={name}
-        placeholder={placeholder}
+        placeholder={t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD)}
         onKeyDown={handleKeyPress}
         onChange={handleChange}
         onFocus={onFocus}
