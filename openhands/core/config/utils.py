@@ -150,13 +150,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     for k, v in value.items():
                         if not isinstance(v, dict) or k == 'draft_editor':
                             generic_llm_fields[k] = v
-                    logger.openhands_logger.debug(
-                        f'Generic LLM fields: {generic_llm_fields}'
-                    )
                     generic_llm_config = LLMConfig.from_dict(generic_llm_fields)
-                    logger.openhands_logger.debug(
-                        f'Generic LLM config dict: {generic_llm_config.__dict__}'
-                    )
                     cfg.set_llm_config(generic_llm_config, 'llm')
 
                     # Process custom named LLM configs
@@ -164,9 +158,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                         if isinstance(nested_value, dict):
                             logger.openhands_logger.debug(
                                 f'Processing custom LLM config "{nested_key}":'
-                            )
-                            logger.openhands_logger.debug(
-                                f'  Nested value: {nested_value}'
                             )
                             # Apply generic LLM config with custom LLM overrides, e.g.
                             # [llm]
