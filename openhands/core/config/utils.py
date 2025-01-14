@@ -109,7 +109,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     except toml.TomlDecodeError as e:
         logger.openhands_logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
-            exc_info=False,
         )
         return
 
@@ -198,7 +197,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
             except (TypeError, KeyError) as e:
                 logger.openhands_logger.warning(
                     f'Cannot parse [{key}] config from toml, values have not been applied.\nError: {e}',
-                    exc_info=False,
                 )
         else:
             logger.openhands_logger.warning(f'Unknown section [{key}] in {toml_file}')
@@ -235,7 +233,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     except (TypeError, KeyError) as e:
         logger.openhands_logger.warning(
             f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}',
-            exc_info=False,
         )
 
 

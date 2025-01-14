@@ -24,10 +24,6 @@ _CLEANUP_INTERVAL = 15
 _CLEANUP_EXCEPTION_WAIT_TIME = 15
 
 
-class ConversationDoesNotExistError(Exception):
-    pass
-
-
 @dataclass
 class _SessionIsRunningCheck:
     request_id: str
@@ -96,12 +92,10 @@ class SessionManager:
                     await self._process_message(message)
             except asyncio.CancelledError:
                 return
-            except Exception:
+            except Exception as e:
                 try:
                     asyncio.get_running_loop()
-                    logger.warning(
-                        'error_reading_from_redis', exc_info=True, stack_info=True
-                    )
+                    logger.error(f'error_reading_from_redis:{str(e)}')
                 except RuntimeError:
                     return  # Loop has been shut down
 
@@ -156,15 +150,18 @@ class SessionManager:
             flag = self._has_remote_connections_flags.get(sid)
             if flag:
                 flag.set()
+        elif message_type == 'close_session':
+            sid = data['sid']
+            if sid in self._local_agent_loops_by_sid:
+                await self._on_close_session(sid)
         elif message_type == 'session_closing':
             # Session closing event - We only get this in the event of graceful shutdown,
             # which can't be guaranteed - nodes can simply vanish unexpectedly!
             sid = data['sid']
             logger.debug(f'session_closing:{sid}')
-            for (
-                connection_id,
-                local_sid,
-            ) in self.local_connection_id_to_session_id.items():
+            # Create a list of items to process to avoid modifying dict during iteration
+            items = list(self.local_connection_id_to_session_id.items())
+            for connection_id, local_sid in items:
                 if sid == local_sid:
                     logger.warning(
                         'local_connection_to_closing_session:{connection_id}:{sid}'
@@ -197,6 +194,7 @@ class SessionManager:
                 await c.connect()
             except AgentRuntimeUnavailableError as e:
                 logger.error(f'Error connecting to conversation {c.sid}: {e}')
+                await c.disconnect()
                 return None
             end_time = time.time()
             logger.info(
@@ -205,13 +203,15 @@ class SessionManager:
             self._active_conversations[sid] = (c, 1)
             return c
 
-    async def join_conversation(self, sid: str, connection_id: str, settings: Settings):
+    async def join_conversation(
+        self, sid: str, connection_id: str, settings: Settings, user_id: str | None
+    ):
         logger.info(f'join_conversation:{sid}:{connection_id}')
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self.local_connection_id_to_session_id[connection_id] = sid
         event_stream = await self._get_event_stream(sid)
         if not event_stream:
-            return await self.maybe_start_agent_loop(sid, settings)
+            return await self.maybe_start_agent_loop(sid, settings, user_id)
         return event_stream
 
     async def detach_from_conversation(self, conversation: Conversation):
@@ -257,11 +257,11 @@ class SessionManager:
                         await conversation.disconnect()
                     self._detached_conversations.clear()
                 return
-            except Exception:
-                logger.warning('error_cleaning_detached_conversations', exc_info=True)
+            except Exception as e:
+                logger.warning(f'error_cleaning_detached_conversations: {str(e)}')
                 await asyncio.sleep(_CLEANUP_EXCEPTION_WAIT_TIME)
 
-    async def get_agent_loop_running(self, sids: set[str]) -> set[str]:
+    async def get_agent_loop_running(self, user_id, sids: set[str]) -> set[str]:
         running_sids = set(sid for sid in sids if sid in self._local_agent_loops_by_sid)
         check_cluster_sids = [sid for sid in sids if sid not in running_sids]
         running_cluster_sids = await self.get_agent_loop_running_in_cluster(
@@ -342,7 +342,9 @@ class SessionManager:
         finally:
             self._has_remote_connections_flags.pop(sid, None)
 
-    async def maybe_start_agent_loop(self, sid: str, settings: Settings) -> EventStream:
+    async def maybe_start_agent_loop(
+        self, sid: str, settings: Settings, user_id: str | None
+    ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}')
         session: Session | None = None
         if not await self.is_agent_loop_running(sid):
@@ -419,7 +421,7 @@ class SessionManager:
         if should_continue():
             asyncio.create_task(self._cleanup_session_later(sid))
         else:
-            await self._close_session(sid)
+            await self._on_close_session(sid)
 
     async def _cleanup_session_later(self, sid: str):
         # Once there have been no connections to a session for a reasonable period, we close it
@@ -451,10 +453,22 @@ class SessionManager:
                 json.dumps({'sid': sid, 'message_type': 'session_closing'}),
             )
 
-        await self._close_session(sid)
+        await self._on_close_session(sid)
         return True
 
-    async def _close_session(self, sid: str):
+    async def close_session(self, sid: str):
+        session = self._local_agent_loops_by_sid.get(sid)
+        if session:
+            await self._on_close_session(sid)
+
+        redis_client = self._get_redis_client()
+        if redis_client:
+            await redis_client.publish(
+                'oh_event',
+                json.dumps({'sid': sid, 'message_type': 'close_session'}),
+            )
+
+    async def _on_close_session(self, sid: str):
         logger.info(f'_close_session:{sid}')
 
         # Clear up local variables

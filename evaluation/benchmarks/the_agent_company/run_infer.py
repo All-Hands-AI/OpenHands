@@ -39,7 +39,7 @@ def get_config(
         run_as_openhands=False,
         max_budget_per_task=4,
         max_iterations=100,
-        trajectories_path=os.path.join(
+        save_trajectory_path=os.path.join(
             mount_path_on_host, f'traj_{task_short_name}.json'
         ),
         sandbox=SandboxConfig(

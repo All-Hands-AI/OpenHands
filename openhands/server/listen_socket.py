@@ -1,6 +1,6 @@
 from urllib.parse import parse_qs
 
-from github import Github
+import jwt
 from socketio.exceptions import ConnectionRefusedError
 
 from openhands.core.logger import openhands_logger as logger
@@ -15,10 +15,8 @@ from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
-from openhands.server.session.manager import ConversationDoesNotExistError
 from openhands.server.shared import config, openhands_config, session_manager, sio
 from openhands.server.types import AppMode
-from openhands.utils.async_utils import call_sync_from_async
 
 
 @sio.event
@@ -31,20 +29,20 @@ async def connect(connection_id: str, environ, auth):
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
 
-    github_token = ''
+    user_id = None
     if openhands_config.app_mode != AppMode.OSS:
-        user_id = ''
-        if auth and 'github_token' in auth:
-            github_token = auth['github_token']
-            with Github(github_token) as g:
-                gh_user = await call_sync_from_async(g.get_user)
-                user_id = gh_user.id
+        cookies_str = environ.get('HTTP_COOKIE', '')
+        cookies = dict(cookie.split('=', 1) for cookie in cookies_str.split('; '))
+        signed_token = cookies.get('github_auth', '')
+        if not signed_token:
+            logger.error('No github_auth cookie')
+            raise ConnectionRefusedError('No github_auth cookie')
+        decoded = jwt.decode(signed_token, config.jwt_secret, algorithms=['HS256'])
+        user_id = decoded['github_user_id']
 
         logger.info(f'User {user_id} is connecting to conversation {conversation_id}')
 
-        conversation_store = await ConversationStoreImpl.get_instance(
-            config, github_token
-        )
+        conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
         metadata = await conversation_store.get_metadata(conversation_id)
         if metadata.github_user_id != user_id:
             logger.error(
@@ -54,19 +52,17 @@ async def connect(connection_id: str, environ, auth):
                 f'User {user_id} is not allowed to join conversation {conversation_id}'
             )
 
-    settings_store = await SettingsStoreImpl.get_instance(config, github_token)
+    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
 
     if not settings:
-        raise ConnectionRefusedError('Settings not found')
-
-    try:
-        event_stream = await session_manager.join_conversation(
-            conversation_id, connection_id, settings
+        raise ConnectionRefusedError(
+            'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
         )
-    except ConversationDoesNotExistError:
-        logger.error(f'Conversation {conversation_id} does not exist')
-        raise ConnectionRefusedError(f'Conversation {conversation_id} does not exist')
+
+    event_stream = await session_manager.join_conversation(
+        conversation_id, connection_id, settings, user_id
+    )
 
     agent_state_changed = None
     async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
