@@ -238,7 +238,7 @@ class Runtime(FileEditRuntimeMixin):
         repo_root = None
         if selected_repository:
             repo_root = workspace_root / selected_repository.split('/')[1]
-            microagents_dir = repo_root / microagents_dir
+            microagents_dir = repo_root / '.openhands' / 'microagents'
         self.log(
             'info',
             f'Selected repo: {selected_repository}, loading microagents from {microagents_dir} (inside runtime)',
