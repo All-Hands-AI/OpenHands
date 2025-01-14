@@ -6,7 +6,11 @@ from litellm import acompletion as litellm_acompletion
 
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
-from openhands.llm.llm import LLM, LLM_RETRY_EXCEPTIONS
+from openhands.llm.llm import (
+    LLM,
+    LLM_RETRY_EXCEPTIONS,
+    REASONING_EFFORT_SUPPORTED_MODELS,
+)
 from openhands.utils.shutdown_listener import should_continue
 
 
@@ -27,7 +31,6 @@ class AsyncLLM(LLM):
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
-            reasoning_effort=self.config.reasoning_effort,
             drop_params=self.config.drop_params,
         )
 
@@ -55,6 +58,10 @@ class AsyncLLM(LLM):
                 args = args[2:]
             elif 'messages' in kwargs:
                 messages = kwargs['messages']
+
+            # Set reasoning effort for models that support it
+            if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS:
+                kwargs['reasoning_effort'] = self.config.reasoning_effort
 
             # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]

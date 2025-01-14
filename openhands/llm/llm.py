@@ -74,6 +74,10 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'o1',
 ]
 
+REASONING_EFFORT_SUPPORTED_MODELS = [
+    'o1',
+]
+
 
 class LLM(RetryMixin, DebugMixin):
     """The LLM class represents a Language Model instance.
@@ -141,7 +145,6 @@ class LLM(RetryMixin, DebugMixin):
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,
-            reasoning_effort=self.config.reasoning_effort,
             drop_params=self.config.drop_params,
         )
 
@@ -206,6 +209,10 @@ class LLM(RetryMixin, DebugMixin):
                     kwargs['extra_headers'] = {
                         'anthropic-beta': 'prompt-caching-2024-07-31',
                     }
+
+            # Set reasoning effort for models that support it
+            if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS:
+                kwargs['reasoning_effort'] = self.config.reasoning_effort
 
             # set litellm modify_params to the configured value
             # True by default to allow litellm to do transformations like adding a default message, when a message is empty
