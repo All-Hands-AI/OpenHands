@@ -23,7 +23,6 @@ _REDIS_POLL_TIMEOUT = 1.5
 _CHECK_ALIVE_INTERVAL = 15
 
 _CLEANUP_INTERVAL = 15
-_CLEANUP_EXCEPTION_WAIT_TIME = 15
 MAX_RUNNING_CONVERSATIONS = 3
 T = TypeVar('T')
 
@@ -271,13 +270,7 @@ class SessionManager:
                 running_loops.sort(key=lambda item: item[1].last_active_ts)
                 sid_to_close: list[str] = []
                 for sid, session in running_loops:
-                    controller = session.agent_session.controller
-                    # If a controller has not been set, then the init process is running
-                    state = (
-                        controller.state.agent_state
-                        if controller
-                        else AgentState.RUNNING
-                    )
+                    state = session.agent_session.get_state()
                     if (
                         session.last_active_ts < close_threshold
                         and state != AgentState.RUNNING
@@ -314,7 +307,7 @@ class SessionManager:
                 return
             except Exception as e:
                 logger.warning(f'error_cleaning_stale: {str(e)}')
-                await asyncio.sleep(_CLEANUP_EXCEPTION_WAIT_TIME)
+                await asyncio.sleep(_CLEANUP_INTERVAL)
 
     async def is_agent_loop_running(self, sid: str) -> bool:
         sids = await self.get_running_agent_loops(filter_to_sids={sid})
