@@ -166,16 +166,3 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
             await self._detach_session(request)
 
         return response
-
-
-class GitHubTokenMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        if request.url.path.startswith('/api/github'):
-            github_token = request.headers.get('X-GitHub-Token')
-            if not github_token:
-                return JSONResponse(
-                    status_code=400,
-                    content={'error': 'Missing X-GitHub-Token header'},
-                )
-            request.state.github_token = github_token
-        return await call_next(request)
