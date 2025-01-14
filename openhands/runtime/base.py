@@ -234,12 +234,11 @@ class Runtime(FileEditRuntimeMixin):
     ) -> list[BaseMicroAgent]:
         loaded_microagents: list[BaseMicroAgent] = []
         workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
+        microagents_dir = workspace_root / '.openhands' / 'microagents'
         repo_root = None
         if selected_repository:
             repo_root = workspace_root / selected_repository.split('/')[1]
-            microagents_dir = repo_root / '.openhands' / 'microagents'
-        else:
-            microagents_dir = workspace_root / '.openhands' / 'microagents'
+            microagents_dir = repo_root / microagents_dir
         self.log(
             'info',
             f'Selected repo: {selected_repository}, loading microagents from {microagents_dir} (inside runtime)',
