@@ -23,7 +23,7 @@ workspace_base = "./workspace"
 # Cache directory path
 #cache_dir = "/tmp/cache"
 
-# Reasoning effort for o1 models
+# Reasoning effort for o1 models (low, medium, high, or not set)
 #reasoning_effort = "medium"
 
 # Debugging enabled
