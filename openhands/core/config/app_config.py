@@ -27,7 +27,7 @@ class AppConfig:
         runtime: Runtime environment identifier.
         file_store: Type of file store to use.
         file_store_path: Path to the file store.
-        trajectories_path: Folder path to store trajectories.
+        save_trajectory_path: Either a folder path to store trajectories with auto-generated filenames, or a designated trajectory file path.
         workspace_base: Base path for the workspace. Defaults to `./workspace` as absolute path.
         workspace_mount_path: Path to mount the workspace. Defaults to `workspace_base`.
         workspace_mount_path_in_sandbox: Path to mount the workspace in sandbox. Defaults to `/workspace`.
@@ -42,6 +42,8 @@ class AppConfig:
         file_uploads_max_file_size_mb: Maximum file upload size in MB. `0` means unlimited.
         file_uploads_restrict_file_types: Whether to restrict upload file types.
         file_uploads_allowed_extensions: Allowed file extensions. `['.*']` allows all.
+        cli_multiline_input: Whether to enable multiline input in CLI. When disabled,
+            input is read line by line. When enabled, input continues until /exit command.
     """
 
     llms: dict[str, LLMConfig] = field(default_factory=dict)
@@ -49,10 +51,10 @@ class AppConfig:
     default_agent: str = OH_DEFAULT_AGENT
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
-    runtime: str = 'eventstream'
-    file_store: str = 'memory'
-    file_store_path: str = '/tmp/file_store'
-    trajectories_path: str | None = None
+    runtime: str = 'docker'
+    file_store: str = 'local'
+    file_store_path: str = '/tmp/openhands_file_store'
+    save_trajectory_path: str | None = None
     workspace_base: str | None = None
     workspace_mount_path: str | None = None
     workspace_mount_path_in_sandbox: str = '/workspace'
@@ -71,6 +73,7 @@ class AppConfig:
     file_uploads_restrict_file_types: bool = False
     file_uploads_allowed_extensions: list[str] = field(default_factory=lambda: ['.*'])
     runloop_api_key: str | None = None
+    cli_multiline_input: bool = False
 
     defaults_dict: ClassVar[dict] = {}
 

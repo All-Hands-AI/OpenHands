@@ -17,6 +17,10 @@ from tqdm import tqdm
 
 from openhands.controller.state.state import State
 from openhands.core.config import LLMConfig
+from openhands.core.config.condenser_config import (
+    CondenserConfig,
+    NoOpCondenserConfig,
+)
 from openhands.core.exceptions import (
     AgentRuntimeBuildError,
     AgentRuntimeDisconnectedError,
@@ -33,6 +37,7 @@ from openhands.events.action.message import MessageAction
 from openhands.events.event import Event
 from openhands.events.serialization.event import event_to_dict
 from openhands.events.utils import get_pairs_from_events
+from openhands.memory.condenser import get_condensation_metadata
 
 
 class EvalMetadata(BaseModel):
@@ -45,11 +50,17 @@ class EvalMetadata(BaseModel):
     dataset: str | None = None
     data_split: str | None = None
     details: dict[str, Any] | None = None
+    condenser_config: CondenserConfig | None = None
 
     def model_dump(self, *args, **kwargs):
         dumped_dict = super().model_dump(*args, **kwargs)
         # avoid leaking sensitive information
         dumped_dict['llm_config'] = self.llm_config.to_safe_dict()
+        if hasattr(self.condenser_config, 'llm_config'):
+            dumped_dict['condenser_config']['llm_config'] = (
+                self.condenser_config.llm_config.to_safe_dict()
+            )
+
         return dumped_dict
 
     def model_dump_json(self, *args, **kwargs):
@@ -57,6 +68,11 @@ class EvalMetadata(BaseModel):
         dumped_dict = json.loads(dumped)
         # avoid leaking sensitive information
         dumped_dict['llm_config'] = self.llm_config.to_safe_dict()
+        if hasattr(self.condenser_config, 'llm_config'):
+            dumped_dict['condenser_config']['llm_config'] = (
+                self.condenser_config.llm_config.to_safe_dict()
+            )
+
         logger.debug(f'Dumped metadata: {dumped_dict}')
         return json.dumps(dumped_dict)
 
@@ -192,6 +208,7 @@ def make_metadata(
     eval_output_dir: str,
     data_split: str | None = None,
     details: dict[str, Any] | None = None,
+    condenser_config: CondenserConfig | None = None,
 ) -> EvalMetadata:
     model_name = llm_config.model.split('/')[-1]
     model_path = model_name.replace(':', '_').replace('@', '-')
@@ -222,6 +239,9 @@ def make_metadata(
         dataset=dataset_name,
         data_split=data_split,
         details=details,
+        condenser_config=condenser_config
+        if condenser_config
+        else NoOpCondenserConfig(),
     )
     metadata_json = metadata.model_dump_json()
     logger.info(f'Metadata: {metadata_json}')
@@ -376,7 +396,12 @@ def _process_instance_wrapper(
                 + '\n'
             )
             if isinstance(
-                e, (AgentRuntimeDisconnectedError, AgentRuntimeUnavailableError)
+                e,
+                (
+                    AgentRuntimeDisconnectedError,
+                    AgentRuntimeUnavailableError,
+                    AgentRuntimeNotFoundError,
+                ),
             ):
                 runtime_failure_count += 1
                 msg += f'Runtime disconnected error detected for instance {instance.instance_id}, runtime failure count: {runtime_failure_count}'
@@ -546,3 +571,10 @@ def is_fatal_evaluation_error(error: str | None) -> bool:
         return True
 
     return False
+
+
+def get_metrics(state: State) -> dict[str, Any]:
+    """Extract metrics from the state."""
+    metrics = state.metrics.get() if state.metrics else {}
+    metrics['condenser'] = get_condensation_metadata(state)
+    return metrics

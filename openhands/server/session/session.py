@@ -1,5 +1,4 @@
 import asyncio
-import json
 import time
 from copy import deepcopy
 
@@ -23,9 +22,8 @@ from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
-from openhands.storage.locations import get_conversation_init_data_filename
-from openhands.utils.async_utils import call_sync_from_async
 
 ROOM_KEY = 'room:{sid}'
 
@@ -39,6 +37,7 @@ class Session:
     loop: asyncio.AbstractEventLoop
     config: AppConfig
     file_store: FileStore
+    user_id: int | None
 
     def __init__(
         self,
@@ -46,6 +45,7 @@ class Session:
         config: AppConfig,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
+        user_id: int | None = None,
     ):
         self.sid = sid
         self.sio = sio
@@ -60,74 +60,48 @@ class Session:
         # Copying this means that when we update variables they are not applied to the shared global configuration!
         self.config = deepcopy(config)
         self.loop = asyncio.get_event_loop()
+        self.user_id = user_id
 
     def close(self):
         self.is_alive = False
         self.agent_session.close()
 
-    async def _restore_init_data(self, sid: str) -> ConversationInitData:
-        # FIXME: we should not store/restore this data once we have server-side
-        # LLM configs. Should be done by 1/1/2025
-        json_str = await call_sync_from_async(
-            self.file_store.read, get_conversation_init_data_filename(sid)
-        )
-        data = json.loads(json_str)
-        return ConversationInitData(**data)
-
-    async def _save_init_data(self, sid: str, init_data: ConversationInitData):
-        # FIXME: we should not store/restore this data once we have server-side
-        # LLM configs. Should be done by 1/1/2025
-        json_str = json.dumps(init_data.__dict__)
-        await call_sync_from_async(
-            self.file_store.write, get_conversation_init_data_filename(sid), json_str
-        )
-
     async def initialize_agent(
-        self, conversation_init_data: ConversationInitData | None = None
+        self,
+        settings: Settings,
     ):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
         )
-        if conversation_init_data is None:
-            try:
-                conversation_init_data = await self._restore_init_data(self.sid)
-            except FileNotFoundError:
-                logger.error(f'User settings not found for session {self.sid}')
-                raise RuntimeError('User settings not found')
 
-        agent_cls = conversation_init_data.agent or self.config.default_agent
+        agent_cls = settings.agent or self.config.default_agent
         self.config.security.confirmation_mode = (
             self.config.security.confirmation_mode
-            if conversation_init_data.confirmation_mode is None
-            else conversation_init_data.confirmation_mode
+            if settings.confirmation_mode is None
+            else settings.confirmation_mode
         )
         self.config.security.security_analyzer = (
-            conversation_init_data.security_analyzer
-            or self.config.security.security_analyzer
+            settings.security_analyzer or self.config.security.security_analyzer
         )
-        max_iterations = (
-            conversation_init_data.max_iterations or self.config.max_iterations
-        )
-        # override default LLM config
+        max_iterations = settings.max_iterations or self.config.max_iterations
 
         default_llm_config = self.config.get_llm_config()
-        default_llm_config.model = (
-            conversation_init_data.llm_model or default_llm_config.model
-        )
-        default_llm_config.api_key = (
-            conversation_init_data.llm_api_key or default_llm_config.api_key
-        )
-        default_llm_config.base_url = (
-            conversation_init_data.llm_base_url or default_llm_config.base_url
-        )
-        await self._save_init_data(self.sid, conversation_init_data)
+        default_llm_config.model = settings.llm_model or ''
+        default_llm_config.api_key = settings.llm_api_key
+        default_llm_config.base_url = settings.llm_base_url
 
         # TODO: override other LLM config & agent config groups (#2075)
 
         llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
         agent_config = self.config.get_agent_config(agent_cls)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
+
+        github_token = None
+        selected_repository = None
+        if isinstance(settings, ConversationInitData):
+            github_token = settings.github_token
+            selected_repository = settings.selected_repository
 
         try:
             await self.agent_session.start(
@@ -138,17 +112,20 @@ class Session:
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
-                github_token=conversation_init_data.github_token,
-                selected_repository=conversation_init_data.selected_repository,
+                github_token=github_token,
+                selected_repository=selected_repository,
             )
         except Exception as e:
-            logger.exception(f'Error creating controller: {e}')
+            logger.exception(f'Error creating agent_session: {e}')
             await self.send_error(
-                f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
+                f'Error creating agent_session. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
             return
 
-    async def on_event(self, event: Event):
+    def on_event(self, event: Event):
+        asyncio.get_event_loop().run_until_complete(self._on_event(event))
+
+    async def _on_event(self, event: Event):
         """Callback function for events that mainly come from the agent.
         Event is the base class for any agent action and observation.
 
@@ -210,8 +187,8 @@ class Session:
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
-        except RuntimeError:
-            logger.error('Error sending', stack_info=True, exc_info=True)
+        except RuntimeError as e:
+            logger.error(f'Error sending data to websocket: {str(e)}')
             self.is_alive = False
             return False
 

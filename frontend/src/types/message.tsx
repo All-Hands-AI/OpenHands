@@ -27,8 +27,11 @@ export interface ObservationMessage {
   // The observed data
   content: string;
 
-  // Additional structured data
-  extras: Record<string, string>;
+  extras: {
+    metadata: Record<string, unknown>;
+    error_id: string;
+    [key: string]: string | Record<string, unknown>;
+  };
 
   // A friendly message that can be put in the chat log
   message: string;
@@ -40,6 +43,6 @@ export interface ObservationMessage {
 export interface StatusMessage {
   status_update: true;
   type: string;
-  id: string;
+  id?: string;
   message: string;
 }

@@ -8,6 +8,7 @@ type UploadFilesArgs = {
 
 export const useUploadFiles = () => {
   const { conversationId } = useConversation();
+
   return useMutation({
     mutationFn: ({ files }: UploadFilesArgs) =>
       OpenHands.uploadFiles(conversationId, files),

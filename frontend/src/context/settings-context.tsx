@@ -1,72 +1,75 @@
 import React from "react";
-import posthog from "posthog-js";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  getSettings,
+  LATEST_SETTINGS_VERSION,
   Settings,
-  saveSettings as updateAndSaveSettingsToLocalStorage,
-  settingsAreUpToDate as checkIfSettingsAreUpToDate,
-  DEFAULT_SETTINGS,
+  settingsAreUpToDate,
 } from "#/services/settings";
+import { useSettings } from "#/hooks/query/use-settings";
+import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
 interface SettingsContextType {
-  settings: Settings;
-  settingsAreUpToDate: boolean;
-  saveSettings: (settings: Partial<Settings>) => void;
+  isUpToDate: boolean;
+  setIsUpToDate: (value: boolean) => void;
+  saveUserSettings: (newSettings: Partial<Settings>) => Promise<void>;
+  settings: Settings | undefined;
 }
 
 const SettingsContext = React.createContext<SettingsContextType | undefined>(
   undefined,
 );
 
-const SETTINGS_QUERY_KEY = ["settings"];
+interface SettingsProviderProps {
+  children: React.ReactNode;
+}
 
-function SettingsProvider({ children }: React.PropsWithChildren) {
-  const { data: settings } = useQuery({
-    queryKey: SETTINGS_QUERY_KEY,
-    queryFn: getSettings,
-    initialData: DEFAULT_SETTINGS,
-  });
+export function SettingsProvider({ children }: SettingsProviderProps) {
+  const { data: userSettings } = useSettings();
+  const { mutateAsync: saveSettings } = useSaveSettings();
 
-  const [settingsAreUpToDate, setSettingsAreUpToDate] = React.useState(
-    checkIfSettingsAreUpToDate(),
-  );
-  const queryClient = useQueryClient();
+  const [isUpToDate, setIsUpToDate] = React.useState(settingsAreUpToDate());
 
-  const saveSettings = (newSettings: Partial<Settings>) => {
-    updateAndSaveSettingsToLocalStorage(newSettings);
-    queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY });
-    setSettingsAreUpToDate(checkIfSettingsAreUpToDate());
-  };
+  const saveUserSettings = async (newSettings: Partial<Settings>) => {
+    const updatedSettings: Partial<Settings> = {
+      ...userSettings,
+      ...newSettings,
+    };
 
-  React.useEffect(() => {
-    if (settings?.LLM_API_KEY) {
-      posthog.capture("user_activated");
+    if (updatedSettings.LLM_API_KEY === "SET") {
+      delete updatedSettings.LLM_API_KEY;
     }
-  }, [settings?.LLM_API_KEY]);
+
+    await saveSettings(updatedSettings, {
+      onSuccess: () => {
+        if (!isUpToDate) {
+          localStorage.setItem(
+            "SETTINGS_VERSION",
+            LATEST_SETTINGS_VERSION.toString(),
+          );
+          setIsUpToDate(true);
+        }
+      },
+    });
+  };
 
   const value = React.useMemo(
     () => ({
-      settings,
-      settingsAreUpToDate,
-      saveSettings,
+      isUpToDate,
+      setIsUpToDate,
+      saveUserSettings,
+      settings: userSettings,
     }),
-    [settings, settingsAreUpToDate],
+    [isUpToDate, setIsUpToDate, saveUserSettings, userSettings],
   );
 
-  return (
-    <SettingsContext.Provider value={value}>
-      {children}
-    </SettingsContext.Provider>
-  );
+  return <SettingsContext value={value}>{children}</SettingsContext>;
 }
 
-function useSettings() {
+export function useCurrentSettings() {
   const context = React.useContext(SettingsContext);
   if (context === undefined) {
-    throw new Error("useSettings must be used within a SettingsProvider");
+    throw new Error(
+      "useCurrentSettings must be used within a SettingsProvider",
+    );
   }
   return context;
 }
-
-export { SettingsProvider, useSettings };

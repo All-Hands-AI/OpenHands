@@ -14,6 +14,7 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import { FeedbackForm } from "#/components/features/feedback/feedback-form";
 import OpenHands from "#/api/open-hands";
+import { I18nKey } from "#/i18n/declaration";
 
 describe("FeedbackForm", () => {
   const user = userEvent.setup();
@@ -37,20 +38,20 @@ describe("FeedbackForm", () => {
       <FeedbackForm polarity="positive" onClose={onCloseMock} />,
     );
 
-    screen.getByLabelText("Email");
-    screen.getByLabelText("Private");
-    screen.getByLabelText("Public");
+    screen.getByLabelText(I18nKey.FEEDBACK$EMAIL_LABEL);
+    screen.getByLabelText(I18nKey.FEEDBACK$PRIVATE_LABEL);
+    screen.getByLabelText(I18nKey.FEEDBACK$PUBLIC_LABEL);
 
-    screen.getByRole("button", { name: "Submit" });
-    screen.getByRole("button", { name: "Cancel" });
+    screen.getByRole("button", { name: I18nKey.FEEDBACK$CONTRIBUTE_LABEL });
+    screen.getByRole("button", { name: I18nKey.FEEDBACK$CANCEL_LABEL });
   });
 
   it("should switch between private and public permissions", async () => {
     renderWithProviders(
       <FeedbackForm polarity="positive" onClose={onCloseMock} />,
     );
-    const privateRadio = screen.getByLabelText("Private");
-    const publicRadio = screen.getByLabelText("Public");
+    const privateRadio = screen.getByLabelText(I18nKey.FEEDBACK$PRIVATE_LABEL);
+    const publicRadio = screen.getByLabelText(I18nKey.FEEDBACK$PUBLIC_LABEL);
 
     expect(privateRadio).toBeChecked(); // private is the default value
     expect(publicRadio).not.toBeChecked();
@@ -68,7 +69,7 @@ describe("FeedbackForm", () => {
     renderWithProviders(
       <FeedbackForm polarity="positive" onClose={onCloseMock} />,
     );
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(screen.getByRole("button", { name: I18nKey.FEEDBACK$CANCEL_LABEL }));
 
     expect(onCloseMock).toHaveBeenCalled();
   });

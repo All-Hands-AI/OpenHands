@@ -16,6 +16,7 @@ import {
   StatusMessage,
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
+import { appendInput } from "#/state/command-slice";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -62,6 +63,10 @@ export function handleActionMessage(message: ActionMessage) {
     return;
   }
 
+  if (message.action === ActionType.RUN) {
+    store.dispatch(appendInput(message.args.command));
+  }
+
   if ("args" in message && "security_risk" in message.args) {
     store.dispatch(appendSecurityAnalyzerInput(message));
   }
@@ -70,6 +75,7 @@ export function handleActionMessage(message: ActionMessage) {
     if (message.args && message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
+    // Need to convert ActionMessage to RejectAction
     // @ts-expect-error TODO: fix
     store.dispatch(addAssistantAction(message));
   }
