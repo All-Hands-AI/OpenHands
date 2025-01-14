@@ -1,0 +1,505 @@
+from abc import ABC, abstractmethod
+from typing import Any
+from urllib.parse import quote
+
+import requests
+
+from openhands.core.logger import openhands_logger as logger
+from openhands.resolver.issue import ReviewThread
+from openhands.resolver.utils import extract_issue_references
+
+
+class IssueHandlerInterface(ABC):
+    @abstractmethod
+    def download_issues(self) -> list[Any]:
+        pass
+
+    @abstractmethod
+    def get_issue_comments(
+        self, issue_number: int, comment_id: int | None = None
+    ) -> list[str] | None:
+        pass
+
+    @abstractmethod
+    def get_base_url(self):
+        pass
+
+    @abstractmethod
+    def get_branch_url(self, branch_name):
+        pass
+
+    @abstractmethod
+    def get_download_url(self):
+        pass
+
+    @abstractmethod
+    def get_clone_url(self):
+        pass
+
+    @abstractmethod
+    def get_graphql_url(self):
+        pass
+
+    @abstractmethod
+    def get_headers(self):
+        pass
+
+    @abstractmethod
+    def get_compare_url(self, branch_name):
+        pass
+
+    @abstractmethod
+    def get_branch_name(self, base_branch_name: str):
+        pass
+
+    @abstractmethod
+    def branch_exists(self, branch_name: str) -> bool:
+        pass
+
+    @abstractmethod
+    def reply_to_comment(self, token: str, comment_id: str, reply: str):
+        pass
+
+    @abstractmethod
+    def get_authorize_url(self):
+        pass
+
+    @abstractmethod
+    def create_pull_request(self, data=dict) -> dict:
+        pass
+
+    @abstractmethod
+    def request_reviewers(self, reviewer: str, pr_number: int):
+        pass
+
+
+class GitlabIssueHandler(IssueHandlerInterface):
+    def __init__(self, owner: str, repo: str, token: str, username: str | None = None):
+        self.owner = owner
+        self.repo = repo
+        self.token = token
+        self.username = username
+        self.base_url = self.get_base_url()
+        self.download_url = self.get_download_url()
+        self.clone_url = self.get_clone_url()
+        self.headers = self.get_headers()
+
+    def get_headers(self):
+        return {
+            'Authorization': f'Bearer {self.token}',
+            'Accept': 'application/json',
+        }
+
+    def get_base_url(self):
+        return f'https://gitlab.com/api/v4/projects/{quote(f'{self.owner}/{self.repo}', safe="")}'
+
+    def get_authorize_url(self):
+        return f'https://{self.username}:{self.token}@gitlab.com/'
+
+    def get_branch_url(self, branch_name: str):
+        return self.get_base_url() + f'/repository/branches/{branch_name}'
+
+    def get_download_url(self):
+        return f'{self.base_url}/issues'
+
+    def get_clone_url(self):
+        username_and_token = (
+            f'{self.username}:{self.token}' if self.username else f'{self.token}'
+        )
+        return f'https://{username_and_token}@gitlab.com/{self.owner}/{self.repo}.git'
+
+    def get_graphql_url(self):
+        return 'https://gitlab.com/api/graphql'
+
+    def get_compare_url(self, branch_name: str):
+        return f'https://gitlab.com/{self.owner}/{self.repo}/-/compare/{self.get_default_branch_name()}...{branch_name}'
+
+    def download_issues(self) -> list[Any]:
+        params: dict[str, int | str] = {'state': 'opened', 'per_page': 100, 'page': 1}
+        all_issues = []
+
+        while True:
+            response = requests.get(
+                self.download_url, headers=self.headers, params=params
+            )
+            response.raise_for_status()
+            issues = response.json()
+
+            if not issues:
+                break
+
+            if not isinstance(issues, list) or any(
+                [not isinstance(issue, dict) for issue in issues]
+            ):
+                raise ValueError(
+                    'Expected list of dictionaries from Service Gitlab API.'
+                )
+
+            all_issues.extend(issues)
+            assert isinstance(params['page'], int)
+            params['page'] += 1
+
+        return all_issues
+
+    def get_issue_comments(
+        self, issue_number: int, comment_id: int | None = None
+    ) -> list[str] | None:
+        """Download comments for a specific issue from Gitlab."""
+        url = f'{self.download_url}/{issue_number}/notes'
+        params = {'per_page': 100, 'page': 1}
+        all_comments = []
+
+        while True:
+            response = requests.get(url, headers=self.headers, params=params)
+            response.raise_for_status()
+            comments = response.json()
+
+            if not comments:
+                break
+
+            if comment_id:
+                matching_comment = next(
+                    (
+                        comment['body']
+                        for comment in comments
+                        if comment['id'] == comment_id
+                    ),
+                    None,
+                )
+                if matching_comment:
+                    return [matching_comment]
+            else:
+                all_comments.extend([comment['body'] for comment in comments])
+
+            params['page'] += 1
+
+        return all_comments if all_comments else None
+
+    def branch_exists(self, branch_name: str) -> bool:
+        print(f'Checking if branch {branch_name} exists...')
+        response = requests.get(
+            f'{self.base_url}/repository/branches/{branch_name}', headers=self.headers
+        )
+        exists = response.status_code == 200
+        print(f'Branch {branch_name} exists: {exists}')
+        return exists
+
+    def get_branch_name(self, base_branch_name: str):
+        branch_name = base_branch_name
+        attempt = 1
+        while self.branch_exists(branch_name):
+            attempt += 1
+            branch_name = f'{base_branch_name}-try{attempt}'
+        return branch_name
+
+    def reply_to_comment(self, token: str, comment_id: str, reply: str):
+        # Opting for graphql as REST API doesn't allow reply to replies in comment threads
+        query = """
+                mutation($body: String!, $pullRequestReviewThreadId: ID!) {
+                    addPullRequestReviewThreadReply(input: { body: $body, pullRequestReviewThreadId: $pullRequestReviewThreadId }) {
+                        comment {
+                            id
+                            body
+                            createdAt
+                        }
+                    }
+                }
+                """
+
+        comment_reply = f'Openhands fix success summary\n\n\n{reply}'
+        variables = {'body': comment_reply, 'pullRequestReviewThreadId': comment_id}
+        url = self.get_base_url()
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json',
+        }
+
+        response = requests.post(
+            url, json={'query': query, 'variables': variables}, headers=headers
+        )
+        response.raise_for_status()
+
+    def get_pull_url(self, pr_number: int):
+        return (
+            f'https://gitlab.com/{self.owner}/{self.repo}/-/merge_requests/{pr_number}'
+        )
+
+    def get_default_branch_name(self) -> str:
+        response = requests.get(f'{self.base_url}', headers=self.headers)
+        response.raise_for_status()
+        return response.json()['default_branch']
+
+    def create_pull_request(self, data=dict) -> dict:
+        response = requests.post(
+            f'{self.base_url}/merge_requests', headers=self.headers, json=data
+        )
+        if response.status_code == 403:
+            raise RuntimeError(
+                'Failed to create pull request due to missing permissions. '
+                'Make sure that the provided token has push permissions for the repository.'
+            )
+        response.raise_for_status()
+        pr_data = response.json()
+        return pr_data
+
+    def request_reviewers(self, reviewer: str, pr_number: int):
+        response = requests.get(
+            f'https://gitlab.com/api/v4/users?username={reviewer}',
+            headers=self.headers,
+        )
+        response.raise_for_status()
+        user_data = response.json()
+        if len(user_data) > 0:
+            review_data = {'reviewer_ids': [user_data[0]['id']]}
+            review_response = requests.put(
+                f'{self.base_url}/merge_requests/{pr_number}',
+                headers=self.headers,
+                json=review_data,
+            )
+            if review_response.status_code != 200:
+                print(
+                    f'Warning: Failed to request review from {reviewer}: {review_response.text}'
+                )
+
+
+class GitlabPRHandler(GitlabIssueHandler):
+    def __init__(self, owner: str, repo: str, token: str):
+        super().__init__(owner, repo, token)
+        self.download_url = 'https://api.gitlab.com/repos/{}/{}/pulls'
+
+    def download_pr_metadata(
+        self, pull_number: int, comment_id: int | None = None
+    ) -> tuple[list[str], list[int], list[str], list[ReviewThread], list[str]]:
+        """Run a GraphQL query against the Gitlab API for information.
+
+        Retrieves information about:
+            1. unresolved review comments
+            2. referenced issues the pull request would close
+
+        Args:
+            pull_number: The number of the pull request to query.
+            comment_id: Optional ID of a specific comment to focus on.
+            query: The GraphQL query as a string.
+            variables: A dictionary of variables for the query.
+            token: Your Gitlab personal access token.
+
+        Returns:
+            The JSON response from the Gitlab API.
+        """
+        # Using graphql as REST API doesn't indicate resolved status for review comments
+        # TODO: grabbing the first 10 issues, 100 review threads, and 100 coments; add pagination to retrieve all
+        query = """
+                query($owner: String!, $repo: String!, $pr: Int!) {
+                    repository(owner: $owner, name: $repo) {
+                        pullRequest(number: $pr) {
+                            closingIssuesReferences(first: 10) {
+                                edges {
+                                    node {
+                                        body
+                                        number
+                                    }
+                                }
+                            }
+                            url
+                            reviews(first: 100) {
+                                nodes {
+                                    body
+                                    state
+                                    fullDatabaseId
+                                }
+                            }
+                            reviewThreads(first: 100) {
+                                edges{
+                                    node{
+                                        id
+                                        isResolved
+                                        comments(first: 100) {
+                                            totalCount
+                                            nodes {
+                                                body
+                                                path
+                                                fullDatabaseId
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            """
+
+        variables = {'owner': self.owner, 'repo': self.repo, 'pr': pull_number}
+
+        url = 'https://api.gitlab.com/graphql'
+        headers = {
+            'Authorization': f'Bearer {self.token}',
+            'Content-Type': 'application/json',
+        }
+
+        response = requests.post(
+            url, json={'query': query, 'variables': variables}, headers=headers
+        )
+        response.raise_for_status()
+        response_json = response.json()
+
+        # Parse the response to get closing issue references and unresolved review comments
+        pr_data = (
+            response_json.get('data', {}).get('repository', {}).get('pullRequest', {})
+        )
+
+        # Get closing issues
+        closing_issues = pr_data.get('closingIssuesReferences', {}).get('edges', [])
+        closing_issues_bodies = [issue['node']['body'] for issue in closing_issues]
+        closing_issue_numbers = [
+            issue['node']['number'] for issue in closing_issues
+        ]  # Extract issue numbers
+
+        # Get review comments
+        reviews = pr_data.get('reviews', {}).get('nodes', [])
+        if comment_id is not None:
+            reviews = [
+                review
+                for review in reviews
+                if int(review['fullDatabaseId']) == comment_id
+            ]
+        review_bodies = [review['body'] for review in reviews]
+
+        # Get unresolved review threads
+        review_threads = []
+        thread_ids = []  # Store thread IDs; agent replies to the thread
+        raw_review_threads = pr_data.get('reviewThreads', {}).get('edges', [])
+        for thread in raw_review_threads:
+            node = thread.get('node', {})
+            if not node.get(
+                'isResolved', True
+            ):  # Check if the review thread is unresolved
+                id = node.get('id')
+                thread_contains_comment_id = False
+                my_review_threads = node.get('comments', {}).get('nodes', [])
+                message = ''
+                files = []
+                for i, review_thread in enumerate(my_review_threads):
+                    if (
+                        comment_id is not None
+                        and int(review_thread['fullDatabaseId']) == comment_id
+                    ):
+                        thread_contains_comment_id = True
+
+                    if (
+                        i == len(my_review_threads) - 1
+                    ):  # Check if it's the last thread in the thread
+                        if len(my_review_threads) > 1:
+                            message += '---\n'  # Add "---" before the last message if there's more than one thread
+                        message += 'latest feedback:\n' + review_thread['body'] + '\n'
+                    else:
+                        message += (
+                            review_thread['body'] + '\n'
+                        )  # Add each thread in a new line
+
+                    file = review_thread.get('path')
+                    if file and file not in files:
+                        files.append(file)
+
+                if comment_id is None or thread_contains_comment_id:
+                    unresolved_thread = ReviewThread(comment=message, files=files)
+                    review_threads.append(unresolved_thread)
+                    thread_ids.append(id)
+
+        return (
+            closing_issues_bodies,
+            closing_issue_numbers,
+            review_bodies,
+            review_threads,
+            thread_ids,
+        )
+
+    # Override processing of downloaded issues
+    def get_pr_comments(
+        self, pr_number: int, comment_id: int | None = None
+    ) -> list[str] | None:
+        """Download comments for a specific pull request from Gitlab."""
+        url = f'https://api.gitlab.com/repos/{self.owner}/{self.repo}/issues/{pr_number}/comments'
+        headers = {
+            'Authorization': f'token {self.token}',
+            'Accept': 'application/json',
+        }
+        params = {'per_page': 100, 'page': 1}
+        all_comments = []
+
+        while True:
+            response = requests.get(url, headers=headers, params=params)
+            response.raise_for_status()
+            comments = response.json()
+
+            if not comments:
+                break
+
+            if comment_id is not None:
+                matching_comment = next(
+                    (
+                        comment['body']
+                        for comment in comments
+                        if comment['id'] == comment_id
+                    ),
+                    None,
+                )
+                if matching_comment:
+                    return [matching_comment]
+            else:
+                all_comments.extend([comment['body'] for comment in comments])
+
+            params['page'] += 1
+
+        return all_comments if all_comments else None
+
+    def get_context_from_external_issues_references(
+        self,
+        closing_issues: list[str],
+        closing_issue_numbers: list[int],
+        issue_body: str,
+        review_comments: list[str],
+        review_threads: list[ReviewThread],
+        thread_comments: list[str] | None,
+    ):
+        new_issue_references = []
+
+        if issue_body:
+            new_issue_references.extend(extract_issue_references(issue_body))
+
+        if review_comments:
+            for comment in review_comments:
+                new_issue_references.extend(extract_issue_references(comment))
+
+        if review_threads:
+            for review_thread in review_threads:
+                new_issue_references.extend(
+                    extract_issue_references(review_thread.comment)
+                )
+
+        if thread_comments:
+            for thread_comment in thread_comments:
+                new_issue_references.extend(extract_issue_references(thread_comment))
+
+        non_duplicate_references = set(new_issue_references)
+        unique_issue_references = non_duplicate_references.difference(
+            closing_issue_numbers
+        )
+
+        for issue_number in unique_issue_references:
+            try:
+                url = f'https://api.gitlab.com/repos/{self.owner}/{self.repo}/issues/{issue_number}'
+                headers = {
+                    'Authorization': f'Bearer {self.token}',
+                    'Accept': 'application/json',
+                }
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
+                issue_data = response.json()
+                issue_body = issue_data.get('body', '')
+                if issue_body:
+                    closing_issues.append(issue_body)
+            except requests.exceptions.RequestException as e:
+                logger.warning(f'Failed to fetch issue {issue_number}: {str(e)}')
+
+        return closing_issues

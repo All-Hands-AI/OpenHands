@@ -16,6 +16,7 @@ from openhands.resolver.utils import extract_image_urls
 # Strategy context interface
 class ServiceContextPR:
     issue_type: ClassVar[str] = 'pr'
+    default_git_patch: ClassVar[str] = 'No changes made yet'
 
     def __init__(self, strategy, llm_config: LLMConfig):
         self._strategy = strategy
@@ -331,6 +332,7 @@ class ServiceContextPR:
 
 class ServiceContext:
     issue_type: ClassVar[str] = 'issue'
+    default_git_patch: ClassVar[str] = 'No changes made yet'
 
     def __init__(self, strategy, llm_config: LLMConfig):
         self._strategy = strategy
@@ -448,7 +450,11 @@ class ServiceContext:
             'r',
         ) as f:
             template = jinja2.Template(f.read())
-        prompt = template.render(issue_context=issue_context, last_message=last_message)
+        prompt = template.render(
+            issue_context=issue_context,
+            last_message=last_message,
+            git_patch=git_patch or self.default_git_patch,
+        )
 
         response = self.llm.completion(messages=[{'role': 'user', 'content': prompt}])
 
@@ -477,7 +483,8 @@ class ServiceContext:
         all_issues = [
             issue
             for issue in all_issues
-            if issue['number'] in issue_numbers and 'pull_request' not in issue
+            # if issue['iid'] in issue_numbers and issue['merge_requests_count'] == 0
+            if issue['iid'] in issue_numbers  # TODO for testing
         ]
 
         if len(issue_numbers) == 1 and not all_issues:
@@ -485,27 +492,25 @@ class ServiceContext:
 
         converted_issues = []
         for issue in all_issues:
-            if any([issue.get(key) is None for key in ['number', 'title']]):
-                logger.warning(
-                    f'Skipping issue {issue} as it is missing number or title.'
-                )
+            if any([issue.get(key) is None for key in ['iid', 'title']]):
+                logger.warning(f'Skipping issue {issue} as it is missing iid or title.')
                 continue
 
             # Handle empty body by using empty string
-            if issue.get('body') is None:
-                issue['body'] = ''
+            if issue.get('description') is None:
+                issue['description'] = ''
 
             # Get issue thread comments
             thread_comments = self.get_issue_comments(
-                issue['number'], comment_id=comment_id
+                issue['iid'], comment_id=comment_id
             )
             # Convert empty lists to None for optional fields
             issue_details = Issue(
                 owner=self._strategy.owner,
                 repo=self._strategy.repo,
-                number=issue['number'],
+                number=issue['iid'],
                 title=issue['title'],
-                body=issue['body'],
+                body=issue['description'],
                 thread_comments=thread_comments,
                 review_comments=None,  # Initialize review comments as None for regular issues
             )

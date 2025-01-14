@@ -25,6 +25,7 @@ from openhands.events.observation import (
 )
 from openhands.events.stream import EventStreamSubscriber
 from openhands.resolver.github import GithubIssueHandler, GithubPRHandler
+from openhands.resolver.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.issue import Issue
 from openhands.resolver.issue_definitions import (
     ServiceContext,
@@ -32,7 +33,9 @@ from openhands.resolver.issue_definitions import (
 )
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import (
+    Platform,
     codeact_user_response,
+    identify_token,
     reset_logger_for_multiprocessing,
 )
 from openhands.runtime.base import Runtime
@@ -187,7 +190,7 @@ async def process_issue(
         # do not mount workspace
         workspace_base=workspace_base,
         workspace_mount_path=workspace_base,
-        agents={'CodeActAgent': AgentConfig(disabled_microagents=['github'])},
+        agents={'CodeActAgent': AgentConfig(disabled_microagents=['gitlab'])},
     )
     config.set_llm_config(llm_config)
 
@@ -288,14 +291,23 @@ def issue_handler_factory(
     repo: str,
     token: str,
     llm_config: LLMConfig,
+    platform: Platform,
     username: str | None = None,
 ) -> ServiceContext | ServiceContextPR:
     if issue_type == 'issue':
-        return ServiceContext(
-            GithubIssueHandler(owner, repo, token, username), llm_config
-        )
+        if platform == Platform.GITHUB:
+            return ServiceContext(
+                GithubIssueHandler(owner, repo, token, username), llm_config
+            )
+        else:  # platform == Platform.GITLAB
+            return ServiceContext(
+                GitlabIssueHandler(owner, repo, token, username), llm_config
+            )
     elif issue_type == 'pr':
-        return ServiceContextPR(GithubPRHandler(owner, repo, token), llm_config)
+        if platform == Platform.GITHUB:
+            return ServiceContextPR(GithubPRHandler(owner, repo, token), llm_config)
+        else:  # platform == Platform.GITLAB
+            return ServiceContextPR(GitlabPRHandler(owner, repo, token), llm_config)
     else:
         raise ValueError(f'Invalid issue type: {issue_type}')
 
@@ -305,6 +317,7 @@ async def resolve_issue(
     repo: str,
     token: str,
     username: str,
+    platform: Platform,
     max_iterations: int,
     output_dir: str,
     llm_config: LLMConfig,
@@ -323,6 +336,7 @@ async def resolve_issue(
         repo: repository to resolve issues in form of `owner/repo`.
         token: token to access the repository.
         username: username to access the repository.
+        platform: platform of the repository.
         max_iterations: Maximum number of iterations to run.
         output_dir: Output directory to write the results.
         llm_config: Configuration for the language model.
@@ -336,7 +350,7 @@ async def resolve_issue(
         reset_logger: Whether to reset the logger for multiprocessing.
     """
     issue_handler = issue_handler_factory(
-        issue_type, owner, repo, token, llm_config, username
+        issue_type, owner, repo, token, llm_config, platform, username
     )
 
     # Load dataset
@@ -591,13 +605,17 @@ def main():
         )
 
     owner, repo = my_args.repo.split('/')
-    token = my_args.token if my_args.token else os.getenv('GITHUB_TOKEN')
-    username = my_args.username if my_args.username else os.getenv('GITHUB_USERNAME')
+    token = my_args.token if my_args.token else os.getenv('GIT_TOKEN')
+    username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
     if not username:
         raise ValueError('username is required.')
 
     if not token:
         raise ValueError('token is required.')
+
+    platform = identify_token(token)
+    if platform == Platform.INVALID:
+        raise ValueError('token is invalid.')
 
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(
@@ -633,6 +651,7 @@ def main():
             repo=repo,
             token=token,
             username=username,
+            platform=platform,
             runtime_container_image=runtime_container_image,
             max_iterations=my_args.max_iterations,
             output_dir=my_args.output_dir,
