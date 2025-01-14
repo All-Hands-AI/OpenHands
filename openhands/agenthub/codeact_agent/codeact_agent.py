@@ -38,12 +38,14 @@ from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
+from openhands.router.plan import LLMBasedPlanRouter
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
     PluginRequirement,
 )
 from openhands.utils.prompt import PromptManager
+from openhands.utils.trajectory import format_trajectory
 
 
 class CodeActAgent(Agent):
@@ -119,6 +121,10 @@ class CodeActAgent(Agent):
 
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {self.condenser}')
+
+        self.plan_router = (
+            LLMBasedPlanRouter(self.llm.config) if config.enable_plan_routing else None
+        )
 
     def get_action_message(
         self,
@@ -378,11 +384,21 @@ class CodeActAgent(Agent):
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
+        params: dict = {}
+
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
-        params: dict = {
-            'messages': self.llm.format_messages_for_llm(messages),
-        }
+        messages_dict = self.llm.format_messages_for_llm(messages)
+        params['messages'] = messages_dict
+
+        formatted_trajectory = format_trajectory(messages_dict)
+
+        # check if model routing is needed
+        if self.plan_router and self.plan_router.should_route_to_custom_model(
+            formatted_trajectory
+        ):
+            params['use_reasoning_model'] = True
+
         params['tools'] = self.tools
         if self.mock_function_calling:
             params['mock_function_calling'] = True

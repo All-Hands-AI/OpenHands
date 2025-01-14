@@ -20,6 +20,7 @@ class AgentConfig:
         use_microagents: Whether to use microagents at all. Default is True.
         disabled_microagents: A list of microagents to disable. Default is None.
         condenser: Configuration for the memory condenser. Default is NoOpCondenserConfig.
+        enable_plan_routing: Whether to enable plan routing to reasoning models. Default is False.
     """
 
     codeact_enable_browsing: bool = True
@@ -32,6 +33,7 @@ class AgentConfig:
     use_microagents: bool = True
     disabled_microagents: list[str] | None = None
     condenser: CondenserConfig = field(default_factory=NoOpCondenserConfig)  # type: ignore
+    enable_plan_routing: bool = False
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
