@@ -15,7 +15,6 @@ def require_github_token(request: Request):
             status_code=400,
             detail='Missing X-GitHub-Token header',
         )
-    # You can return the token if needed
     return github_token
 
 
