@@ -1,5 +1,5 @@
 import requests
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from openhands.server.shared import openhands_config
@@ -8,13 +8,24 @@ from openhands.utils.async_utils import call_sync_from_async
 app = APIRouter(prefix='/api/github')
 
 
+def require_github_token(request: Request):
+    github_token = request.headers.get('X-GitHub-Token')
+    if not github_token:
+        raise HTTPException(
+            status_code=400,
+            detail='Missing X-GitHub-Token header',
+        )
+    # You can return the token if needed
+    return github_token
+
+
 @app.get('/repositories')
 async def get_github_repositories(
-    request: Request,
     page: int = 1,
     per_page: int = 10,
     sort: str = 'pushed',
     installation_id: int | None = None,
+    github_token: str = Depends(require_github_token),
 ):
     openhands_config.verify_github_repo_list(installation_id)
 
@@ -33,7 +44,7 @@ async def get_github_repositories(
         params['sort'] = sort
 
     # Set the authorization header with the GitHub token
-    headers = generate_github_headers(request.state.github_token)
+    headers = generate_github_headers(github_token)
 
     # Fetch repositories from GitHub
     try:
@@ -59,8 +70,8 @@ async def get_github_repositories(
 
 
 @app.get('/user')
-async def get_github_user(request: Request):
-    headers = generate_github_headers(request.state.github_token)
+async def get_github_user(github_token: str = Depends(require_github_token)):
+    headers = generate_github_headers(github_token)
     try:
         response = await call_sync_from_async(
             requests.get, 'https://api.github.com/user', headers=headers
@@ -79,8 +90,10 @@ async def get_github_user(request: Request):
 
 
 @app.get('/installations')
-async def get_github_installation_ids(request: Request):
-    headers = generate_github_headers(request.state.github_token)
+async def get_github_installation_ids(
+    github_token: str = Depends(require_github_token),
+):
+    headers = generate_github_headers(github_token)
     try:
         response = await call_sync_from_async(
             requests.get, 'https://api.github.com/user/installations', headers=headers
@@ -102,13 +115,13 @@ async def get_github_installation_ids(request: Request):
 
 @app.get('/search/repositories')
 async def search_github_repositories(
-    request: Request,
     query: str,
     per_page: int = 5,
     sort: str = 'stars',
     order: str = 'desc',
+    github_token: str = Depends(require_github_token),
 ):
-    headers = generate_github_headers(request.state.github_token)
+    headers = generate_github_headers(github_token)
     params = {
         'q': query,
         'per_page': per_page,
