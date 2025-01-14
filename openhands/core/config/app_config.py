@@ -27,7 +27,7 @@ class AppConfig(BaseModel):
         runtime: Runtime environment identifier.
         file_store: Type of file store to use.
         file_store_path: Path to the file store.
-        save_trajectory_path: Either a folder path to store trajectories with auto-generated filenames, or a desinated trajectory file path.
+        save_trajectory_path: Either a folder path to store trajectories with auto-generated filenames, or a designated trajectory file path.
         workspace_base: Base path for the workspace. Defaults to `./workspace` as absolute path.
         workspace_mount_path: Path to mount the workspace. Defaults to `workspace_base`.
         workspace_mount_path_in_sandbox: Path to mount the workspace in sandbox. Defaults to `/workspace`.
