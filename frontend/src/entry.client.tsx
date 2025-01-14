@@ -20,7 +20,7 @@ import toast from "react-hot-toast";
 import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
-import { SettingsUpToDateProvider } from "./context/settings-up-to-date-context";
+import { SettingsProvider } from "./context/settings-context";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -50,13 +50,20 @@ async function prepareApp() {
   }
 }
 
+const QUERY_KEYS_TO_IGNORE = ["authenticated", "hosts"];
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
-      if (!query.queryKey.includes("authenticated")) toast.error(error.message);
+      if (!QUERY_KEYS_TO_IGNORE.some((key) => query.queryKey.includes(key))) {
+        toast.error(error.message);
+      }
     },
   }),
   defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 15, // 15 minutes
+    },
     mutations: {
       onError: (error) => {
         toast.error(error.message);
@@ -72,12 +79,12 @@ prepareApp().then(() =>
       <StrictMode>
         <Provider store={store}>
           <AuthProvider>
-            <SettingsUpToDateProvider>
-              <QueryClientProvider client={queryClient}>
+            <QueryClientProvider client={queryClient}>
+              <SettingsProvider>
                 <HydratedRouter />
                 <PosthogInit />
-              </QueryClientProvider>
-            </SettingsUpToDateProvider>
+              </SettingsProvider>
+            </QueryClientProvider>
           </AuthProvider>
         </Provider>
       </StrictMode>,

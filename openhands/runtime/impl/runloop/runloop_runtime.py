@@ -13,7 +13,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.utils.command import get_remote_startup_command
+from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
@@ -78,28 +78,10 @@ class RunloopRuntime(ActionExecutionClient):
 
     def _create_new_devbox(self) -> DevboxView:
         # Note: Runloop connect
-        sandbox_workspace_dir = self.config.workspace_mount_path_in_sandbox
-        plugin_args = []
-        if self.plugins is not None and len(self.plugins) > 0:
-            plugin_args.append('--plugins')
-            plugin_args.extend([plugin.name for plugin in self.plugins])
-
-        browsergym_args = []
-        if self.config.sandbox.browsergym_eval_env is not None:
-            browsergym_args = [
-                '-browsergym-eval-env',
-                self.config.sandbox.browsergym_eval_env,
-            ]
-
-        # Copied from EventstreamRuntime
-        start_command = get_remote_startup_command(
-            self._sandbox_port,
-            sandbox_workspace_dir,
-            'openhands' if self.config.run_as_openhands else 'root',
-            self.config.sandbox.user_id,
-            plugin_args,
-            browsergym_args,
-            is_root=not self.config.run_as_openhands,  # is_root=True when running as root
+        start_command = get_action_execution_server_startup_command(
+            server_port=self._sandbox_port,
+            plugins=self.plugins,
+            app_config=self.config,
         )
 
         # Add some additional commands based on our image
@@ -115,13 +97,15 @@ class RunloopRuntime(ActionExecutionClient):
 
         devbox = self.runloop_api_client.devboxes.create(
             entrypoint=entrypoint,
-            setup_commands=[f'mkdir -p {self.config.workspace_mount_path_in_sandbox}'],
             name=self.sid,
             environment_variables={'DEBUG': 'true'} if self.config.debug else {},
             prebuilt='openhands',
             launch_parameters=LaunchParameters(
                 available_ports=[self._sandbox_port, self._vscode_port],
                 resource_size_request='LARGE',
+                launch_commands=[
+                    f'mkdir -p {self.config.workspace_mount_path_in_sandbox}'
+                ],
             ),
             metadata={'container-name': self.container_name},
         )

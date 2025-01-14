@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Callable
 
 from fastapi import APIRouter, Body, Request
@@ -30,9 +30,7 @@ UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 class InitSessionRequest(BaseModel):
     github_token: str | None = None
-    latest_event_id: int = -1
     selected_repository: str | None = None
-    args: dict | None = None
 
 
 @app.post('/conversations')
@@ -44,22 +42,40 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     logger.info('Initializing new conversation')
 
     logger.info('Loading settings')
-    settings_store = await SettingsStoreImpl.get_instance(config, get_user_id(request))
+    user_id = get_user_id(request)
+    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
     logger.info('Settings loaded')
 
     session_init_args: dict = {}
     if settings:
         session_init_args = {**settings.__dict__, **session_init_args}
-
+        # We could use litellm.check_valid_key for a more accurate check,
+        # but that would run a tiny inference.
+        if not settings.llm_api_key or settings.llm_api_key.isspace():
+            logger.warn(f'Missing api key for model {settings.llm_model}')
+            return JSONResponse(
+                content={
+                    'status': 'error',
+                    'message': 'Error authenticating with the LLM provider. Please check your API key',
+                    'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
+                }
+            )
+    else:
+        logger.warn('Settings not present, not starting conversation')
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': 'Settings not found',
+                'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND',
+            }
+        )
     github_token = getattr(request.state, 'github_token', '')
-    session_init_args['github_token'] = github_token
+    session_init_args['github_token'] = github_token or data.github_token or ''
     session_init_args['selected_repository'] = data.selected_repository
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request)
-    )
+    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     logger.info('Conversation store loaded')
 
     conversation_id = uuid.uuid4().hex
@@ -68,23 +84,29 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         conversation_id = uuid.uuid4().hex
     logger.info(f'New conversation ID: {conversation_id}')
 
+    repository_title = (
+        data.selected_repository.split('/')[-1] if data.selected_repository else None
+    )
+    conversation_title = f'{repository_title or "Conversation"} {conversation_id[:5]}'
+
     logger.info(f'Saving metadata for conversation {conversation_id}')
     await conversation_store.save_metadata(
         ConversationMetadata(
             conversation_id=conversation_id,
-            github_user_id=get_user_id(request),
+            title=conversation_title,
+            github_user_id=user_id,
             selected_repository=data.selected_repository,
         )
     )
 
     logger.info(f'Starting agent loop for conversation {conversation_id}')
     event_stream = await session_manager.maybe_start_agent_loop(
-        conversation_id, conversation_init_data
+        conversation_id, conversation_init_data, user_id
     )
     try:
         event_stream.subscribe(
             EventStreamSubscriber.SERVER,
-            _create_conversation_update_callback(get_user_id(request), conversation_id),
+            _create_conversation_update_callback(user_id, conversation_id),
             UPDATED_AT_CALLBACK_ID,
         )
     except ValueError:
@@ -106,9 +128,10 @@ async def search_conversations(
     conversation_ids = set(
         conversation.conversation_id
         for conversation in conversation_metadata_result_set.results
+        if hasattr(conversation, 'created_at')
     )
     running_conversations = await session_manager.get_agent_loop_running(
-        set(conversation_ids)
+        get_user_id(request), set(conversation_ids)
     )
     result = ConversationInfoResultSet(
         results=await wait_all(
@@ -217,5 +240,5 @@ def _create_conversation_update_callback(
 async def _update_timestamp_for_conversation(user_id: int, conversation_id: str):
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     conversation = await conversation_store.get_metadata(conversation_id)
-    conversation.last_updated_at = datetime.now()
+    conversation.last_updated_at = datetime.now(timezone.utc)
     await conversation_store.save_metadata(conversation)
