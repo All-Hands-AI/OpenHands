@@ -278,7 +278,12 @@ class SessionManager:
                 sid_to_close: list[str] = []
                 for sid, session in running_loops:
                     controller = session.agent_session.controller
-                    state = controller.state if controller else AgentState.STOPPED
+                    # If a controller has not been set, then the init process is running
+                    state = (
+                        controller.state.agent_state
+                        if controller
+                        else AgentState.RUNNING
+                    )
                     if (
                         session.last_active_ts < close_threshold
                         and state != AgentState.RUNNING
