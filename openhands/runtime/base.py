@@ -232,6 +232,12 @@ class Runtime(FileEditRuntimeMixin):
     def get_microagents_from_selected_repo(
         self, selected_repository: str | None
     ) -> list[BaseMicroAgent]:
+        """Load microagents from the selected repository.
+        If selected_repository is None, load microagents from the current workspace.
+
+        This is the main entry point for loading microagents.
+        """
+
         loaded_microagents: list[BaseMicroAgent] = []
         workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
         microagents_dir = workspace_root / '.openhands' / 'microagents'
