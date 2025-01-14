@@ -172,6 +172,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                                     custom_fields[k] = v
                             merged_llm_dict = generic_llm_config.__dict__.copy()
                             merged_llm_dict.update(custom_fields)
+                            # TODO clean up draft_editor
                             # Handle draft_editor with fallback values:
                             # - If draft_editor is "null", use None
                             # - If draft_editor is in custom fields, use that value
