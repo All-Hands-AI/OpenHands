@@ -13,7 +13,6 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { AccountSettingsModal } from "#/components/shared/modals/account-settings/account-settings-modal";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { useCurrentSettings } from "#/context/settings-context";
-import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 import { useEndSession } from "#/hooks/use-end-session";
@@ -28,13 +27,7 @@ export function Sidebar() {
   const user = useGitHubUser();
   const { data: isAuthed } = useIsAuthed();
   const { logout } = useAuth();
-  const {
-    data: settings,
-    isError: settingsIsError,
-    isSuccess: settingsSuccessfulyFetched,
-  } = useSettings();
-
-  const { isUpToDate: settingsAreUpToDate } = useCurrentSettings();
+  const { isUpToDate: settingsAreUpToDate, settings } = useCurrentSettings();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
@@ -110,13 +103,12 @@ export function Sidebar() {
       {accountSettingsModalOpen && (
         <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
       )}
-      {settingsIsError ||
-        (showSettingsModal && settingsSuccessfulyFetched && (
-          <SettingsModal
-            settings={settings}
-            onClose={() => setSettingsModalIsOpen(false)}
-          />
-        ))}
+      {showSettingsModal && settings && (
+        <SettingsModal
+          settings={settings}
+          onClose={() => setSettingsModalIsOpen(false)}
+        />
+      )}
     </>
   );
 }
