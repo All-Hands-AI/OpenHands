@@ -4,11 +4,13 @@ import copy
 import json
 import os
 import random
+import shutil
 import string
 import tempfile
 from abc import abstractmethod
 from pathlib import Path
 from typing import Callable
+from zipfile import ZipFile
 
 from requests.exceptions import ConnectionError
 
@@ -232,19 +234,28 @@ class Runtime(FileEditRuntimeMixin):
     ) -> list[BaseMicroAgent]:
         loaded_microagents: list[BaseMicroAgent] = []
         dir_name = Path('.openhands') / 'microagents'
+        repo_root = None
         if selected_repository:
-            dir_name = Path('/workspace') / selected_repository.split('/')[1] / dir_name
+            repo_root = (
+                Path(self.config.workspace_mount_path_in_sandbox)
+                / selected_repository.split('/')[1]
+            )
+            dir_name = repo_root / dir_name
+        self.log(
+            'info',
+            f'Selected repo: {selected_repository}, loading microagents from {dir_name} (inside runtime)',
+        )
 
         # Legacy Repo Instructions
         # Check for legacy .openhands_instructions file
         obs = self.read(FileReadAction(path='.openhands_instructions'))
-        if isinstance(obs, ErrorObservation):
+        if isinstance(obs, ErrorObservation) and repo_root is not None:
             self.log(
                 'debug',
-                f'openhands_instructions not present, trying to load from {dir_name}',
+                f'.openhands_instructions not present, trying to load from {dir_name}',
             )
             obs = self.read(
-                FileReadAction(path=str(dir_name / '.openhands_instructions'))
+                FileReadAction(path=str(repo_root / '.openhands_instructions'))
             )
 
         if isinstance(obs, FileReadObservation):
@@ -259,31 +270,35 @@ class Runtime(FileEditRuntimeMixin):
         files = self.list_files(str(dir_name))
         if files:
             self.log('info', f'Found {len(files)} files in microagents directory.')
-            # Create a temporary directory to store files for loading
-            with tempfile.TemporaryDirectory() as temp_dir:
-                temp_path = Path(temp_dir)
+            zip_path = self.copy_from(str(dir_name))
+            microagent_folder = tempfile.mkdtemp()
+
+            # Properly handle the zip file
+            with ZipFile(zip_path, 'r') as zip_file:
+                zip_file.extractall(microagent_folder)
+
+            # Add debug print of directory structure
+            self.log('debug', 'Microagent folder structure:')
+            for root, _, files in os.walk(microagent_folder):
+                relative_path = os.path.relpath(root, microagent_folder)
+                self.log('debug', f'Directory: {relative_path}/')
                 for file in files:
-                    # Remove any trailing slashes and get the relative path
-                    file_path = Path(file.rstrip('/'))
-                    if file_path.suffix != '.md':
-                        continue
+                    self.log('debug', f'  File: {os.path.join(relative_path, file)}')
 
-                    # Create necessary parent directories
-                    target_path = temp_path / file_path
-                    target_path.parent.mkdir(parents=True, exist_ok=True)
-
-                    # Read and write the file content
-                    obs = self.read(FileReadAction(path=str(dir_name / file_path)))
-                    if isinstance(obs, FileReadObservation):
-                        target_path.write_text(obs.content)
-
-                # Load all microagents using the existing function
-                repo_agents, knowledge_agents, task_agents = load_microagents_from_dir(
-                    temp_path
-                )
-                loaded_microagents.extend(repo_agents.values())
-                loaded_microagents.extend(knowledge_agents.values())
-                loaded_microagents.extend(task_agents.values())
+            # Clean up the temporary zip file
+            zip_path.unlink()
+            # Load all microagents using the existing function
+            repo_agents, knowledge_agents, task_agents = load_microagents_from_dir(
+                microagent_folder
+            )
+            self.log(
+                'info',
+                f'Loaded {len(repo_agents)} repo agents, {len(knowledge_agents)} knowledge agents, and {len(task_agents)} task agents',
+            )
+            loaded_microagents.extend(repo_agents.values())
+            loaded_microagents.extend(knowledge_agents.values())
+            loaded_microagents.extend(task_agents.values())
+            shutil.rmtree(microagent_folder)
 
         return loaded_microagents
 
