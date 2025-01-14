@@ -107,6 +107,10 @@ export const chatSlice = createSlice({
         text = `${action.payload.args.path}\n${content}`;
       } else if (actionID === "browse") {
         text = `Browsing ${action.payload.args.url}`;
+      } else if (actionID === "read") {
+        text = `Reading file ${action.payload.args.path}`;
+      } else if (actionID === "edit") {
+        text = `Editing file ${action.payload.args.path}`;
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -154,6 +158,10 @@ export const chatSlice = createSlice({
         causeMessage.success = !ipythonObs.content
           .toLowerCase()
           .includes("error:");
+      } else if (observationID === "read" || observationID === "edit") {
+        // For read/edit operations, we consider it successful if there's content and no error
+        causeMessage.success = observation.payload.content.length > 0 &&
+          !observation.payload.content.toLowerCase().includes("error:");
       }
 
       if (observationID === "run" || observationID === "run_ipython") {
