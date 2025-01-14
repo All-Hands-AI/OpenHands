@@ -388,16 +388,15 @@ class CodeActAgent(Agent):
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
-        messages_dict = self.llm.format_messages_for_llm(messages)
-        params['messages'] = messages_dict
-
-        formatted_trajectory = format_trajectory(messages)
+        params['messages'] = self.llm.format_messages_for_llm(messages)
 
         # check if model routing is needed
-        if self.plan_router and self.plan_router.should_route_to_custom_model(
-            formatted_trajectory
-        ):
-            params['use_reasoning_model'] = True
+        if self.plan_router:
+            formatted_trajectory = format_trajectory(messages)
+
+            if self.plan_router.should_route_to_custom_model(formatted_trajectory):
+                logger.info('🧭 Routing to custom model...')
+                params['use_reasoning_model'] = True
 
         params['tools'] = self.tools
         if self.mock_function_calling:
