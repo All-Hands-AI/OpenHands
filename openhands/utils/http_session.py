@@ -14,7 +14,7 @@ class HttpSession:
     session: requests.Session | None = field(default_factory=requests.Session)
 
     def __getattr__(self, name):
-        if self.session is not None:
+        if self.session is None:
             raise ValueError('session_was_closed')
         return object.__getattribute__(self.session, name)
 
