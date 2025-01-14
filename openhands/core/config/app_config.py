@@ -8,6 +8,7 @@ from openhands.core.config.config_utils import (
     OH_MAX_ITERATIONS,
     get_field_info,
 )
+from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
@@ -51,6 +52,7 @@ class AppConfig:
     default_agent: str = OH_DEFAULT_AGENT
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
+    extended: ExtendedConfig = field(default_factory=ExtendedConfig)
     runtime: str = 'docker'
     file_store: str = 'local'
     file_store_path: str = '/tmp/openhands_file_store'
