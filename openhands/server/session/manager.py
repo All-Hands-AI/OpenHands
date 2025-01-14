@@ -314,7 +314,7 @@ class SessionManager:
         return bool(sids)
 
     async def get_running_agent_loops(
-        self, user_id: int | None = None, filter_to_sids: set[str] | None = None
+        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> set[str]:
         """Get the running session ids. If a user is supplied, then the results are limited to session ids for that user. If a set of filter_to_sids is supplied, then results are limited to these ids of interest."""
         sids = self._get_running_agent_loops_locally(user_id, filter_to_sids)
@@ -324,7 +324,7 @@ class SessionManager:
         return sids.union(remote_sids)
 
     def _get_running_agent_loops_locally(
-        self, user_id: int | None = None, filter_to_sids: set[str] | None = None
+        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> set[str]:
         items: Iterable[tuple[str, Session]] = self._local_agent_loops_by_sid.items()
         if filter_to_sids is not None:
@@ -336,7 +336,7 @@ class SessionManager:
 
     async def _get_running_agent_loops_remotely(
         self,
-        user_id: int | None = None,
+        user_id: str | None = None,
         filter_to_sids: set[str] | None = None,
     ) -> set[str]:
         """As the rest of the cluster if a session is running. Wait a for a short timeout for a reply"""
@@ -374,7 +374,7 @@ class SessionManager:
             self._running_sid_queries.pop(query_id, None)
 
     async def get_connections(
-        self, user_id: int | None = None, filter_to_sids: set[str] | None = None
+        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> dict[str, str]:
         connection_ids = self._get_connections_locally(user_id, filter_to_sids)
         remote_connection_ids = await self._get_connections_remotely(
@@ -384,7 +384,7 @@ class SessionManager:
         return connection_ids
 
     def _get_connections_locally(
-        self, user_id: int | None = None, filter_to_sids: set[str] | None = None
+        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> dict[str, str]:
         connections = dict(**self._local_connection_id_to_session_id)
         if filter_to_sids is not None:
@@ -401,7 +401,7 @@ class SessionManager:
         return connections
 
     async def _get_connections_remotely(
-        self, user_id: int | None = None, filter_to_sids: set[str] | None = None
+        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> dict[str, str]:
         redis_client = self._get_redis_client()
         if not redis_client:
