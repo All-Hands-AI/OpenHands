@@ -51,8 +51,8 @@ async def get_litellm_models() -> list[str]:
     ):
         bedrock_model_list = bedrock.list_foundation_models(
             llm_config.aws_region_name,
-            llm_config.aws_access_key_id.get_secret_value(),
-            llm_config.aws_secret_access_key.get_secret_value(),
+            llm_config.aws_access_key_id,
+            llm_config.aws_secret_access_key,
         )
     model_list = litellm_model_list_without_bedrock + bedrock_model_list
     for llm_config in config.llms.values():
@@ -70,7 +70,7 @@ async def get_litellm_models() -> list[str]:
                     model_list.append('ollama/' + model['name'])
                 break
             except requests.exceptions.RequestException as e:
-                logger.error(f'Error getting OLLAMA models: {e}', exc_info=True)
+                logger.error(f'Error getting OLLAMA models: {e}')
 
     return list(sorted(set(model_list)))
 

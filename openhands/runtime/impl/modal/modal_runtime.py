@@ -59,8 +59,7 @@ class ModalRuntime(ActionExecutionClient):
         self.sandbox = None
 
         self.modal_client = modal.Client.from_credentials(
-            config.modal_api_token_id.get_secret_value(),
-            config.modal_api_token_secret.get_secret_value(),
+            config.modal_api_token_id, config.modal_api_token_secret
         )
         self.app = modal.App.lookup(
             'openhands', create_if_missing=True, client=self.modal_client

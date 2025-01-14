@@ -305,8 +305,6 @@ class EventStream:
             except Exception as e:
                 logger.error(
                     f'Error in event callback {callback_id} for subscriber {subscriber_id}: {str(e)}',
-                    exc_info=True,
-                    stack_info=True,
                 )
                 # Re-raise in the main thread so the error is not swallowed
                 raise e

@@ -128,7 +128,7 @@ describe("Sidebar", () => {
       await user.click(norskOption);
 
       const tokenInput =
-        within(accountSettingsModal).getByLabelText(/github token/i);
+        within(accountSettingsModal).getByLabelText(/GITHUB\$TOKEN_LABEL/i);
       await user.type(tokenInput, "new-token");
 
       const saveButton =
@@ -139,6 +139,35 @@ describe("Sidebar", () => {
         ...MOCK_USER_PREFERENCES.settings,
         language: "no",
         llm_api_key: undefined, // null or undefined
+      });
+    });
+
+    it("should not send the api key if its SET", async () => {
+      const user = userEvent.setup();
+      renderSidebar();
+
+      const settingsButton = screen.getByTestId("settings-button");
+      await user.click(settingsButton);
+
+      const settingsModal = screen.getByTestId("ai-config-modal");
+
+      // Click the advanced options switch to show the API key input
+      const advancedOptionsSwitch = within(settingsModal).getByTestId("advanced-option-switch");
+      await user.click(advancedOptionsSwitch);
+
+      const apiKeyInput = within(settingsModal).getByLabelText(/API\$KEY/i);
+      await user.type(apiKeyInput, "SET");
+
+      const saveButton = within(settingsModal).getByTestId(
+        "save-settings-button",
+      );
+      await user.click(saveButton);
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith({
+        ...MOCK_USER_PREFERENCES.settings,
+        llm_api_key: undefined,
+        llm_base_url: "",
+        security_analyzer: undefined,
       });
     });
   });

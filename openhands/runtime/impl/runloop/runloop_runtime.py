@@ -40,7 +40,7 @@ class RunloopRuntime(ActionExecutionClient):
         self.devbox: DevboxView | None = None
         self.config = config
         self.runloop_api_client = Runloop(
-            bearer_token=config.runloop_api_key.get_secret_value(),
+            bearer_token=config.runloop_api_key,
         )
         self.container_name = CONTAINER_NAME_PREFIX + sid
         super().__init__(
