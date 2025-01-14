@@ -28,10 +28,6 @@ MAX_RUNNING_CONVERSATIONS = 3
 T = TypeVar('T')
 
 
-class ConversationDoesNotExistError(Exception):
-    pass
-
-
 @dataclass
 class _ClusterQuery(Generic[T]):
     query_id: str
@@ -100,12 +96,10 @@ class SessionManager:
                     await self._process_message(message)
             except asyncio.CancelledError:
                 return
-            except Exception:
+            except Exception as e:
                 try:
                     asyncio.get_running_loop()
-                    logger.warning(
-                        'error_reading_from_redis', exc_info=True, stack_info=True
-                    )
+                    logger.error(f'error_reading_from_redis:{str(e)}')
                 except RuntimeError:
                     return  # Loop has been shut down
 
@@ -318,8 +312,8 @@ class SessionManager:
                     self._close_session(sid) for sid in self._local_agent_loops_by_sid
                 )
                 return
-            except Exception:
-                logger.warning('error_cleaning_stale', exc_info=True)
+            except Exception as e:
+                logger.warning(f'error_cleaning_stale: {str(e)}')
                 await asyncio.sleep(_CLEANUP_EXCEPTION_WAIT_TIME)
 
     async def is_agent_loop_running(self, sid: str) -> bool:

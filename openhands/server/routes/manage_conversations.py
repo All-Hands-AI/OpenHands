@@ -50,7 +50,26 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     session_init_args: dict = {}
     if settings:
         session_init_args = {**settings.__dict__, **session_init_args}
-
+        # We could use litellm.check_valid_key for a more accurate check,
+        # but that would run a tiny inference.
+        if not settings.llm_api_key or settings.llm_api_key.isspace():
+            logger.warn(f'Missing api key for model {settings.llm_model}')
+            return JSONResponse(
+                content={
+                    'status': 'error',
+                    'message': 'Error authenticating with the LLM provider. Please check your API key',
+                    'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
+                }
+            )
+    else:
+        logger.warn('Settings not present, not starting conversation')
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': 'Settings not found',
+                'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND',
+            }
+        )
     github_token = getattr(request.state, 'github_token', '')
     session_init_args['github_token'] = github_token or data.github_token or ''
     session_init_args['selected_repository'] = data.selected_repository
@@ -195,11 +214,9 @@ async def _get_conversation_info(
             if is_running
             else ConversationStatus.STOPPED,
         )
-    except Exception:  # type: ignore
-        logger.warning(
-            f'Error loading conversation: {conversation.conversation_id[:5]}',
-            exc_info=True,
-            stack_info=True,
+    except Exception as e:
+        logger.error(
+            f'Error loading conversation {conversation.conversation_id}: {str(e)}',
         )
         return None
 
