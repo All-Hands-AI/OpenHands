@@ -144,6 +144,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     logger.openhands_logger.debug(
                         'Attempt to load default LLM config from config toml'
                     )
+                    # TODO clean up draft_editor
                     # Extract generic LLM fields, keeping draft_editor
                     generic_llm_fields = {}
                     for k, v in value.items():
