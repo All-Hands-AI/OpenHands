@@ -34,7 +34,7 @@ workspace_base = "./workspace"
 
 # Path to store trajectories, can be a folder or a file
 # If it's a folder, the session id will be used as the file name
-#trajectories_path="./trajectories"
+#save_trajectory_path="./trajectories"
 
 # File store path
 #file_store_path = "/tmp/file_store"
