@@ -139,26 +139,40 @@ def load_microagents_from_dir(
         Tuple of (repo_agents, knowledge_agents, task_agents) dictionaries
     """
     if isinstance(microagent_dir, str):
-        microagent_dir = Path(microagent_dir)
+        microagent_dir = Path(microagent_dir).resolve()
+    else:
+        microagent_dir = microagent_dir.resolve()
 
     repo_agents = {}
     knowledge_agents = {}
     task_agents = {}
 
-    # Load all agents
-    for file in microagent_dir.rglob('*.md'):
-        # skip README.md
-        if file.name == 'README.md':
-            continue
+    # Check for legacy repo instructions
+    legacy_file = microagent_dir / '.openhands_instructions'
+    if legacy_file.exists():
         try:
-            agent = BaseMicroAgent.load(file)
+            agent = BaseMicroAgent.load(legacy_file)
             if isinstance(agent, RepoMicroAgent):
                 repo_agents[agent.name] = agent
-            elif isinstance(agent, KnowledgeMicroAgent):
-                knowledge_agents[agent.name] = agent
-            elif isinstance(agent, TaskMicroAgent):
-                task_agents[agent.name] = agent
         except Exception as e:
-            raise ValueError(f'Error loading agent from {file}: {e}')
+            raise ValueError(f'Error loading legacy agent: {e}')
+
+    # Load all agents from .openhands/microagents directory
+    microagents_path = microagent_dir / '.openhands' / 'microagents'
+    if microagents_path.exists():
+        for file in microagents_path.rglob('*.md'):
+            # skip README.md
+            if file.name == 'README.md':
+                continue
+            try:
+                agent = BaseMicroAgent.load(file)
+                if isinstance(agent, RepoMicroAgent):
+                    repo_agents[agent.name] = agent
+                elif isinstance(agent, KnowledgeMicroAgent):
+                    knowledge_agents[agent.name] = agent
+                elif isinstance(agent, TaskMicroAgent):
+                    task_agents[agent.name] = agent
+            except Exception as e:
+                raise ValueError(f'Error loading agent from {file}: {e}')
 
     return repo_agents, knowledge_agents, task_agents
