@@ -1,11 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as router from "react-router";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Mock useParams before importing components
 vi.mock("react-router", async () => {
   const actual = await vi.importActual("react-router");
   return {
-    ...actual as object,
+    ...(actual as object),
     useParams: () => ({ conversationId: "test-conversation-id" }),
   };
 });
@@ -60,7 +59,9 @@ describe("FeedbackForm", () => {
     renderWithProviders(
       <FeedbackForm polarity="positive" onClose={onCloseMock} />,
     );
-    await user.click(screen.getByRole("button", { name: I18nKey.FEEDBACK$CANCEL_LABEL }));
+    await user.click(
+      screen.getByRole("button", { name: I18nKey.FEEDBACK$CANCEL_LABEL }),
+    );
 
     expect(onCloseMock).toHaveBeenCalled();
   });
