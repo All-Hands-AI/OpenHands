@@ -22,6 +22,7 @@ def test_litellm_settings_debug_disabled(reset_litellm):
     """Test that litellm settings are properly configured when DEBUG is disabled."""
     with mock.patch.dict(os.environ, {'DEBUG': 'false'}):
         import openhands.core.logger  # noqa: F401
+
         importlib.reload(openhands.core.logger)
 
         assert litellm.suppress_debug_info is True
@@ -32,6 +33,7 @@ def test_litellm_settings_debug_enabled(reset_litellm):
     """Test that litellm settings are properly configured when DEBUG is enabled."""
     with mock.patch.dict(os.environ, {'DEBUG': 'true'}):
         import openhands.core.logger  # noqa: F401
+
         importlib.reload(openhands.core.logger)
 
         assert litellm.suppress_debug_info is False
