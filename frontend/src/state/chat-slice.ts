@@ -160,7 +160,8 @@ export const chatSlice = createSlice({
           .includes("error:");
       } else if (observationID === "read" || observationID === "edit") {
         // For read/edit operations, we consider it successful if there's content and no error
-        causeMessage.success = observation.payload.content.length > 0 &&
+        causeMessage.success =
+          observation.payload.content.length > 0 &&
           !observation.payload.content.toLowerCase().includes("error:");
       }
 
