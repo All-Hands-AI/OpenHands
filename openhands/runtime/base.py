@@ -125,7 +125,7 @@ class Runtime(FileEditRuntimeMixin):
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
             return
-        logger.debug(f'Adding env vars: {self.initial_env_vars}')
+        logger.debug(f'Adding env vars: {self.initial_env_vars.keys()}')
         self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
@@ -172,7 +172,7 @@ class Runtime(FileEditRuntimeMixin):
         obs = self.run(CmdRunAction(cmd))
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(
-                f'Failed to add env vars [{env_vars}] to environment: {obs.content}'
+                f'Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}'
             )
 
     def on_event(self, event: Event) -> None:
@@ -206,7 +206,7 @@ class Runtime(FileEditRuntimeMixin):
         source = event.source if event.source else EventSource.AGENT
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    def clone_repo(self, github_token: str, selected_repository: str):
+    def clone_repo(self, github_token: str, selected_repository: str) -> str:
         if not github_token or not selected_repository:
             raise ValueError(
                 'github_token and selected_repository must be provided to clone a repository'
@@ -223,6 +223,7 @@ class Runtime(FileEditRuntimeMixin):
         )
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
+        return dir_name
 
     def get_microagents_from_selected_repo(
         self, selected_repository: str | None
