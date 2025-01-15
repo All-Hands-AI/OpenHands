@@ -33,30 +33,15 @@ export const useWSStatusChange = () => {
     send(createChatMessage(query, base64Files, timestamp));
   };
 
-  const dispatchInitialQuery = (query: string, additionalInfo: string) => {
-    if (additionalInfo) {
-      sendInitialQuery(`${query}\n\n[${additionalInfo}]`, files);
-    } else {
-      sendInitialQuery(query, files);
-    }
-
+  const dispatchInitialQuery = (query: string) => {
+    sendInitialQuery(query, files);
     dispatch(clearFiles()); // reset selected files
     dispatch(clearInitialQuery()); // reset initial query
   };
 
   const handleAgentInit = () => {
-    let additionalInfo = "";
-
-    if (gitHubToken && selectedRepository) {
-      additionalInfo = `Repository ${selectedRepository} has been cloned to /workspace. Please check the /workspace for files.`;
-    } else if (importedProjectZip) {
-      // if there's an uploaded project zip, add it to the chat
-      additionalInfo =
-        "Files have been uploaded. Please check the /workspace for files.";
-    }
-
     if (initialQuery) {
-      dispatchInitialQuery(initialQuery, additionalInfo);
+      dispatchInitialQuery(initialQuery);
     }
   };
   React.useEffect(() => {
