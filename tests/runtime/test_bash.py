@@ -787,14 +787,34 @@ def test_python_interactive_input(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_stress_long_output(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = _load_runtime(
+        temp_dir,
+        runtime_cls,
+        run_as_openhands,
+        docker_runtime_kwargs={
+            'cpu_period': 100000,  # 100ms
+            'cpu_quota': 100000,  # Can use 100ms out of each 100ms period (1 CPU)
+            'mem_limit': '4G',  # 4 GB of memory
+        },
+    )
     try:
         # Run a command that generates long output multiple times
         for i in range(1000):
             start_time = time.time()
 
+            # Check tmux memory usage (in KB)
+            mem_action = CmdRunAction(
+                'ps aux | awk \'{printf "%8.1f KB  %s\\n", $6, $0}\' | sort -nr | grep "/usr/bin/tmux" | grep -v grep | awk \'{print $1}\''
+            )
+            mem_obs = runtime.run_action(mem_action)
+            if mem_obs.exit_code == 0:  # grep returns 1 if no matches found
+                logger.info(
+                    f'Tmux memory usage (iteration {i}): {mem_obs.content.strip()} KB'
+                )
+
+            # Generate long output with 1000 asterisks per line
             action = CmdRunAction(
-                f'export i={i}; for j in $(seq 1 10000); do echo "Line $j - Iteration $i"; done'
+                f'export i={i}; for j in $(seq 1 10000); do echo "Line $j - Iteration $i - $(printf \'%100s\' | tr " " "*")"; done'
             )
             action.timeout = 30
             obs = runtime.run_action(action)
