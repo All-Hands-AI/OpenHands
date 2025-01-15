@@ -52,9 +52,7 @@ class MicroAgent(Agent):
 
         # everything starts with a message
         # the first message is already in the prompt as the task
-        # so we don't need to include it in the history
-        if event_count < max_events:
-            processed_history.pop(0)
+        # TODO: so we don't need to include it in the history
 
         return json.dumps(processed_history, **kwargs)
 
