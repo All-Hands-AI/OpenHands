@@ -1,4 +1,3 @@
-import copy
 import os
 import re
 import tempfile
@@ -107,23 +106,18 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        llm_config = self.config.get_llm_config()
-
-        if llm_config.draft_editor is None:
-            llm_config.draft_editor = copy.deepcopy(llm_config)
+        draft_editor_config = self.config.get_llm_config('draft_editor')
 
         # manually set the model name for the draft editor LLM to distinguish token costs
-        llm_metrics = Metrics(
-            model_name='draft_editor:' + llm_config.draft_editor.model
-        )
-        if llm_config.draft_editor.caching_prompt:
+        llm_metrics = Metrics(model_name='draft_editor:' + draft_editor_config.model)
+        if draft_editor_config.caching_prompt:
             logger.debug(
                 'It is not recommended to cache draft editor LLM prompts as it may incur high costs for the same prompt. '
                 'Automatically setting caching_prompt=false.'
             )
-            llm_config.draft_editor.caching_prompt = False
+            draft_editor_config.caching_prompt = False
 
-        self.draft_editor_llm = LLM(llm_config.draft_editor, metrics=llm_metrics)
+        self.draft_editor_llm = LLM(draft_editor_config, metrics=llm_metrics)
         logger.debug(
             f'[Draft edit functionality] enabled with LLM: {self.draft_editor_llm}'
         )

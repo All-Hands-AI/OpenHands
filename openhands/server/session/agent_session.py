@@ -265,11 +265,7 @@ class AgentSession:
             f'LLM: {agent.llm.config.model}\n'
             f'Base URL: {agent.llm.config.base_url}\n'
         )
-        if agent.llm.config.draft_editor:
-            msg += (
-                f'Draft editor LLM (for file editing): {agent.llm.config.draft_editor.model}\n'
-                f'Draft editor LLM (for file editing) Base URL: {agent.llm.config.draft_editor.base_url}\n'
-            )
+
         msg += (
             f'Agent: {agent.name}\n'
             f'Runtime: {self.runtime.__class__.__name__}\n'
