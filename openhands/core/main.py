@@ -129,7 +129,6 @@ async def run_controller(
         event_stream.add_event(initial_user_action, EventSource.USER)
 
     def on_event(event: Event):
-        print(f'MAIN:on_event: {event.__class__.__name__}({event.id})')
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
                 if exit_on_message:

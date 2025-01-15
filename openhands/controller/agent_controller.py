@@ -264,7 +264,6 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
-        print(f'CONTROLLER {self.id}:on_event: {event.__class__.__name__}({event.id})')
 
         # If we have a delegate that is not finished or errored, forward events to it
         if self.delegate is not None:
@@ -288,7 +287,6 @@ class AgentController:
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
 
     async def _on_event(self, event: Event) -> None:
-        print(f'CONTROLLER {self.id}:_on_event: {event.__class__.__name__}({event.id})')
         if hasattr(event, 'hidden') and event.hidden:
             return
 
@@ -486,7 +484,6 @@ class AgentController:
             self._pending_action._id = None  # type: ignore[attr-defined]
             self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
-        print(f'CONTROLLER {self.id}:set_agent_state_to: {new_state}')
         self.state.agent_state = new_state
         self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state),
@@ -560,7 +557,6 @@ class AgentController:
         """Ends the currently active delegate (e.g., if it is finished or errored)
         so that this controller can resume normal operation.
         """
-        print(f'CONTROLLER {self.id}:end_delegate')
         if self.delegate is None:
             return
 
@@ -610,7 +606,6 @@ class AgentController:
 
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
-        print(f'CONTROLLER {self.id}:_step')
         if self.get_agent_state() != AgentState.RUNNING:
             return
 

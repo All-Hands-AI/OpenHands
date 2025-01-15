@@ -68,7 +68,6 @@ class MicroAgent(Agent):
 
     def step(self, state: State) -> Action:
         last_user_message, last_image_urls = state.get_current_user_intent()
-        print(f'MICROAGENT:step: {last_user_message}')
         prompt = self.prompt_template.render(
             state=state,
             instructions=instructions,

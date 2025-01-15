@@ -269,7 +269,6 @@ class EventStream:
         data = event_to_dict(event)
         if event.id is not None:
             self.file_store.write(self._get_filename_for_id(event.id), json.dumps(data))
-        print(f'EVENTSTREAM:add_event: {event.__class__.__name__}({event.id})')
         self._queue.put(event)
 
     def _run_queue_loop(self):
