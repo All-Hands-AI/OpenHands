@@ -67,5 +67,7 @@ def test_normal_operation(mock_container, mock_log_fn):
 def test_del_without_thread(mock_container, mock_log_fn):
     """Test that __del__ works even if stdout_thread was not initialized."""
     streamer = LogStreamer(mock_container, mock_log_fn)
-    delattr(streamer, 'stdout_thread')  # Simulate case where the thread was never created
+    delattr(
+        streamer, 'stdout_thread'
+    )  # Simulate case where the thread was never created
     streamer.__del__()  # Should not raise any exceptions
