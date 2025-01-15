@@ -783,3 +783,24 @@ def test_python_interactive_input(temp_dir, runtime_cls, run_as_openhands):
         assert '[The command completed with exit code 0.]' in obs.metadata.suffix
     finally:
         _close_test_runtime(runtime)
+
+
+def test_stress_long_output(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Run a command that generates long output multiple times
+        for i in range(100):
+            action = CmdRunAction(
+                'for j in $(seq 1 1000); do echo "Line $j - Iteration $i"; done'
+            )
+            action.timeout = 30
+            obs = runtime.run_action(action)
+            logger.info(f'Completed iteration {i}', extra={'msg_type': 'DEBUG'})
+
+            # Verify the output
+            assert obs.exit_code == 0
+            assert f'Line 1 - Iteration {i}' in obs.content
+            assert f'Line 1000 - Iteration {i}' in obs.content
+            assert '[The command completed with exit code 0.]' in obs.metadata.suffix
+    finally:
+        _close_test_runtime(runtime)
