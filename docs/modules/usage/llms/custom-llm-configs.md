@@ -56,7 +56,7 @@ Each named LLM configuration supports all the same options as the default LLM co
 - Token limits (`max_input_tokens`, `max_output_tokens`)
 - And all other LLM configuration options
 
-For a complete list of available options, see the [LLM Configuration](../configuration-options.md#llm-configuration) section in the Configuration Options documentation.
+For a complete list of available options, see the LLM Configuration section in the [Configuration Options](../configuration-options.md) documentation.
 
 ## Use Cases
 
