@@ -210,7 +210,7 @@ done && echo "success"
 def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        obs = _run_cmd_action(runtime, 'ls -l /openhands/workspace')
+        obs = _run_cmd_action(runtime, 'ls -l /workspace')
         assert obs.exit_code == 0
 
         obs = _run_cmd_action(runtime, 'ls -l')
@@ -377,7 +377,7 @@ def test_copy_to_non_existent_directory(temp_dir, runtime_cls):
 def test_overwrite_existing_file(temp_dir, runtime_cls):
     runtime = _load_runtime(temp_dir, runtime_cls)
     try:
-        sandbox_dir = '/openhands/workspace'
+        sandbox_dir = '/workspace'
 
         obs = _run_cmd_action(runtime, f'ls -alh {sandbox_dir}')
         assert obs.exit_code == 0
