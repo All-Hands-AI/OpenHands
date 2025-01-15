@@ -51,7 +51,7 @@ When starting a web server, use the corresponding ports. You should also
 set any options to allow iframes and CORS requests.
 </RUNTIME_INFORMATION>
 {% endif %}
-""".strip()
+"""
 )
 
 
