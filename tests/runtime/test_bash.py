@@ -814,7 +814,7 @@ def test_stress_long_output(temp_dir, runtime_cls, run_as_openhands):
 
             # Generate long output with 1000 asterisks per line
             action = CmdRunAction(
-                f'export i={i}; for j in $(seq 1 10000); do echo "Line $j - Iteration $i - $(printf \'%100s\' | tr " " "*")"; done'
+                f'export i={i}; for j in $(seq 1 1000); do echo "Line $j - Iteration $i - $(printf \'%1000s\' | tr " " "*")"; done'
             )
             action.timeout = 30
             obs = runtime.run_action(action)
