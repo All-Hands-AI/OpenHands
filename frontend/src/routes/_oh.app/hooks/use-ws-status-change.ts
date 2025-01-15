@@ -14,17 +14,12 @@ import { AgentState } from "#/types/agent-state";
 
 export const useWSStatusChange = () => {
   const { send, status } = useWsClient();
-  const { gitHubToken } = useAuth();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
 
   const statusRef = React.useRef<WsClientProviderStatus | null>(null);
 
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
-
-  const { files, importedProjectZip, initialQuery } = useSelector(
+  const { files, initialQuery } = useSelector(
     (state: RootState) => state.initialQuery,
   );
 
