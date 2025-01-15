@@ -49,6 +49,8 @@ def get_action_execution_server_startup_command(
         '--user-id',
         str(sandbox_config.user_id),
         *browsergym_args,
+        '--executor-class',
+        app_config.runtime_executor,
     ]
 
     if is_root and use_nice_for_root:

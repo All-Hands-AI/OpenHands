@@ -69,6 +69,9 @@ workspace_base = "./workspace"
 # Runtime environment
 #runtime = "eventstream"
 
+# Runtime executor
+#runtime_executor = "openhands.runtime.executor:ActionExecutor"
+
 # Name of the default agent
 #default_agent = "CodeActAgent"
 

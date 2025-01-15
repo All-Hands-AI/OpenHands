@@ -52,6 +52,7 @@ class AppConfig:
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
     runtime: str = 'docker'
+    runtime_executor: str = 'openhands.runtime.executor:ActionExecutor'
     file_store: str = 'local'
     file_store_path: str = '/tmp/openhands_file_store'
     save_trajectory_path: str | None = None
