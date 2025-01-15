@@ -5,12 +5,10 @@ import { useDispatch, useSelector } from "react-redux";
 import OpenHands from "#/api/open-hands";
 import { setInitialQuery } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
-import { useAuth } from "#/context/auth-context";
 
 export const useCreateConversation = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { gitHubToken } = useAuth();
   const queryClient = useQueryClient();
 
   const { selectedRepository, files, importedProjectZip } = useSelector(
@@ -29,10 +27,7 @@ export const useCreateConversation = () => {
       }
 
       if (variables.q) dispatch(setInitialQuery(variables.q));
-      return OpenHands.createConversation(
-        gitHubToken || undefined,
-        selectedRepository || undefined,
-      );
+      return OpenHands.createConversation(selectedRepository || undefined);
     },
     onSuccess: async ({ conversation_id: conversationId }, { q }) => {
       posthog.capture("initial_query_submitted", {

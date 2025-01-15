@@ -8,15 +8,15 @@ import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
-import { useAuth } from "#/context/auth-context";
 import { ImportProjectSuggestionBox } from "../../components/features/suggestions/import-project-suggestion-box";
 import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
+import { useSettings } from "#/hooks/query/use-settings";
 
 function Home() {
   const { t } = useTranslation();
-  const { gitHubToken } = useAuth();
+  const { data: settings } = useSettings();
   const dispatch = useDispatch();
   const formRef = React.useRef<HTMLFormElement>(null);
 
@@ -24,7 +24,7 @@ function Home() {
   const { data: user } = useGitHubUser();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
-    gitHubToken,
+    gitHubTokenIsSet: !!settings?.GITHUB_TOKEN_IS_SET,
     appMode: config?.APP_MODE || null,
     gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   });

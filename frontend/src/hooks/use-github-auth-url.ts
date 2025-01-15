@@ -3,18 +3,18 @@ import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { GetConfigResponse } from "#/api/open-hands.types";
 
 interface UseGitHubAuthUrlConfig {
-  gitHubToken: string | null;
+  gitHubTokenIsSet: boolean;
   appMode: GetConfigResponse["APP_MODE"] | null;
   gitHubClientId: GetConfigResponse["GITHUB_CLIENT_ID"] | null;
 }
 
 export const useGitHubAuthUrl = (config: UseGitHubAuthUrlConfig) =>
   React.useMemo(() => {
-    if (config.appMode === "saas" && !config.gitHubToken)
+    if (config.appMode === "saas" && !config.gitHubTokenIsSet)
       return generateGitHubAuthUrl(
         config.gitHubClientId || "",
         new URL(window.location.href),
       );
 
     return null;
-  }, [config.gitHubToken, config.appMode, config.gitHubClientId]);
+  }, [config.gitHubTokenIsSet, config.appMode, config.gitHubClientId]);
