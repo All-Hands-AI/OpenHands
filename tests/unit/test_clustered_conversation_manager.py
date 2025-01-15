@@ -7,8 +7,10 @@ from uuid import uuid4
 import pytest
 
 from openhands.core.config.app_config import AppConfig
+from openhands.server.conversation_manager.clustered_conversation_manager import (
+    ClusteredConversationManager,
+)
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.session.manager import SessionManager
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -38,10 +40,16 @@ async def test_session_not_running_in_cluster():
     sio = get_mock_sio()
     id = uuid4()
     with (
-        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01),
-        patch('openhands.server.session.manager.uuid4', MagicMock(return_value=id)),
+        patch(
+            'openhands.server.conversation_manager.clustered_conversation_manager._REDIS_POLL_TIMEOUT',
+            0.01,
+        ),
+        patch(
+            'openhands.server.conversation_manager.clustered_conversation_manager.uuid4',
+            MagicMock(return_value=id),
+        ),
     ):
-        async with SessionManager(
+        async with ClusteredConversationManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as conversation_manager:
             result = await conversation_manager._get_running_agent_loops_remotely(
@@ -70,10 +78,16 @@ async def test_get_running_agent_loops_remotely():
         )
     )
     with (
-        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.1),
-        patch('openhands.server.session.manager.uuid4', MagicMock(return_value=id)),
+        patch(
+            'openhands.server.conversation_manager.clustered_conversation_manager._REDIS_POLL_TIMEOUT',
+            0.1,
+        ),
+        patch(
+            'openhands.server.conversation_manager.clustered_conversation_manager.uuid4',
+            MagicMock(return_value=id),
+        ),
     ):
-        async with SessionManager(
+        async with ClusteredConversationManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as conversation_manager:
             result = await conversation_manager._get_running_agent_loops_remotely(
@@ -99,18 +113,24 @@ async def test_init_new_local_session():
     get_running_agent_loops_mock = AsyncMock()
     get_running_agent_loops_mock.return_value = set()
     with (
-        patch('openhands.server.session.manager.Session', mock_session),
-        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.1),
         patch(
-            'openhands.server.session.manager.SessionManager._redis_subscribe',
+            'openhands.server.conversation_manager.clustered_conversation_manager.Session',
+            mock_session,
+        ),
+        patch(
+            'openhands.server.conversation_manager.clustered_conversation_manager._REDIS_POLL_TIMEOUT',
+            0.1,
+        ),
+        patch(
+            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._redis_subscribe',
             AsyncMock(),
         ),
         patch(
-            'openhands.server.session.manager.SessionManager.get_running_agent_loops',
+            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager.get_running_agent_loops',
             get_running_agent_loops_mock,
         ),
     ):
-        async with SessionManager(
+        async with ClusteredConversationManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as conversation_manager:
             await conversation_manager.maybe_start_agent_loop(
@@ -133,18 +153,24 @@ async def test_join_local_session():
     get_running_agent_loops_mock = AsyncMock()
     get_running_agent_loops_mock.return_value = set()
     with (
-        patch('openhands.server.session.manager.Session', mock_session),
-        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01),
         patch(
-            'openhands.server.session.manager.SessionManager._redis_subscribe',
+            'openhands.server.conversation_manager.clustered_conversation_manager.Session',
+            mock_session,
+        ),
+        patch(
+            'openhands.server.conversation_manager.clustered_conversation_manager._REDIS_POLL_TIMEOUT',
+            0.01,
+        ),
+        patch(
+            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._redis_subscribe',
             AsyncMock(),
         ),
         patch(
-            'openhands.server.session.manager.SessionManager.get_running_agent_loops',
+            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager.get_running_agent_loops',
             get_running_agent_loops_mock,
         ),
     ):
-        async with SessionManager(
+        async with ClusteredConversationManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as conversation_manager:
             await conversation_manager.maybe_start_agent_loop(
@@ -170,18 +196,24 @@ async def test_join_cluster_session():
     get_running_agent_loops_mock = AsyncMock()
     get_running_agent_loops_mock.return_value = {'new-session-id'}
     with (
-        patch('openhands.server.session.manager.Session', mock_session),
-        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01),
         patch(
-            'openhands.server.session.manager.SessionManager._redis_subscribe',
+            'openhands.server.conversation_manager.clustered_conversation_manager.Session',
+            mock_session,
+        ),
+        patch(
+            'openhands.server.conversation_manager.clustered_conversation_manager._REDIS_POLL_TIMEOUT',
+            0.01,
+        ),
+        patch(
+            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._redis_subscribe',
             AsyncMock(),
         ),
         patch(
-            'openhands.server.session.manager.SessionManager._get_running_agent_loops_remotely',
+            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._get_running_agent_loops_remotely',
             get_running_agent_loops_mock,
         ),
     ):
-        async with SessionManager(
+        async with ClusteredConversationManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as conversation_manager:
             await conversation_manager.join_conversation(
@@ -201,18 +233,24 @@ async def test_add_to_local_event_stream():
     get_running_agent_loops_mock = AsyncMock()
     get_running_agent_loops_mock.return_value = set()
     with (
-        patch('openhands.server.session.manager.Session', mock_session),
-        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01),
         patch(
-            'openhands.server.session.manager.SessionManager._redis_subscribe',
+            'openhands.server.conversation_manager.clustered_conversation_manager.Session',
+            mock_session,
+        ),
+        patch(
+            'openhands.server.conversation_manager.clustered_conversation_manager._REDIS_POLL_TIMEOUT',
+            0.01,
+        ),
+        patch(
+            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._redis_subscribe',
             AsyncMock(),
         ),
         patch(
-            'openhands.server.session.manager.SessionManager.get_running_agent_loops',
+            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager.get_running_agent_loops',
             get_running_agent_loops_mock,
         ),
     ):
-        async with SessionManager(
+        async with ClusteredConversationManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as conversation_manager:
             await conversation_manager.maybe_start_agent_loop(
@@ -237,18 +275,24 @@ async def test_add_to_cluster_event_stream():
     get_running_agent_loops_mock = AsyncMock()
     get_running_agent_loops_mock.return_value = {'new-session-id'}
     with (
-        patch('openhands.server.session.manager.Session', mock_session),
-        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01),
         patch(
-            'openhands.server.session.manager.SessionManager._redis_subscribe',
+            'openhands.server.conversation_manager.clustered_conversation_manager.Session',
+            mock_session,
+        ),
+        patch(
+            'openhands.server.conversation_manager.clustered_conversation_manager._REDIS_POLL_TIMEOUT',
+            0.01,
+        ),
+        patch(
+            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._redis_subscribe',
             AsyncMock(),
         ),
         patch(
-            'openhands.server.session.manager.SessionManager._get_running_agent_loops_remotely',
+            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._get_running_agent_loops_remotely',
             get_running_agent_loops_mock,
         ),
     ):
-        async with SessionManager(
+        async with ClusteredConversationManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as conversation_manager:
             await conversation_manager.join_conversation(
@@ -268,13 +312,16 @@ async def test_add_to_cluster_event_stream():
 async def test_cleanup_session_connections():
     sio = get_mock_sio()
     with (
-        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01),
         patch(
-            'openhands.server.session.manager.SessionManager._redis_subscribe',
+            'openhands.server.conversation_manager.clustered_conversation_manager._REDIS_POLL_TIMEOUT',
+            0.01,
+        ),
+        patch(
+            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._redis_subscribe',
             AsyncMock(),
         ),
     ):
-        async with SessionManager(
+        async with ClusteredConversationManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as conversation_manager:
             conversation_manager._local_connection_id_to_session_id.update(
