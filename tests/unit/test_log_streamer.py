@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from openhands.runtime.utils.log_streamer import LogStreamer
 
@@ -58,9 +59,7 @@ def test_normal_operation(mock_container, mock_log_fn):
         ('debug', '[inside container] test log 1'),
         ('debug', '[inside container] test log 2'),
     ]
-    actual_calls = [
-        (args[0], args[1]) for args, _ in mock_log_fn.call_args_list
-    ]
+    actual_calls = [(args[0], args[1]) for args, _ in mock_log_fn.call_args_list]
     for expected in expected_calls:
         assert expected in actual_calls
 
