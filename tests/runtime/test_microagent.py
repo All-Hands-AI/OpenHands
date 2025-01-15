@@ -1,9 +1,7 @@
 """Tests for microagent loading in runtime."""
 
-import os
 from pathlib import Path
 
-import pytest
 from conftest import (
     _close_test_runtime,
     _load_runtime,
