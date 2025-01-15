@@ -30,7 +30,6 @@ class RepositoryInfo:
 
 ADDITIONAL_INFO_TEMPLATE = Template(
     """
-Additional information about the environment:
 {% if repository_info %}
 <REPOSITORY_INFO>
 At the user's request, repository {{ repository_info.repo_name }} has been cloned to directory {{ repository_info.repo_directory }}.
