@@ -4,10 +4,13 @@ import copy
 import json
 import os
 import random
+import shutil
 import string
+import tempfile
 from abc import abstractmethod
 from pathlib import Path
 from typing import Callable
+from zipfile import ZipFile
 
 from requests.exceptions import ConnectionError
 
@@ -37,9 +40,7 @@ from openhands.events.observation import (
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.microagent import (
     BaseMicroAgent,
-    KnowledgeMicroAgent,
-    RepoMicroAgent,
-    TaskMicroAgent,
+    load_microagents_from_dir,
 )
 from openhands.runtime.plugins import (
     JupyterRequirement,
@@ -228,21 +229,37 @@ class Runtime(FileEditRuntimeMixin):
     def get_microagents_from_selected_repo(
         self, selected_repository: str | None
     ) -> list[BaseMicroAgent]:
+        """Load microagents from the selected repository.
+        If selected_repository is None, load microagents from the current workspace.
+
+        This is the main entry point for loading microagents.
+        """
+
         loaded_microagents: list[BaseMicroAgent] = []
-        dir_name = Path('.openhands') / 'microagents'
+        workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
+        microagents_dir = workspace_root / '.openhands' / 'microagents'
+        repo_root = None
         if selected_repository:
-            dir_name = Path('/workspace') / selected_repository.split('/')[1] / dir_name
+            repo_root = workspace_root / selected_repository.split('/')[1]
+            microagents_dir = repo_root / '.openhands' / 'microagents'
+        self.log(
+            'info',
+            f'Selected repo: {selected_repository}, loading microagents from {microagents_dir} (inside runtime)',
+        )
 
         # Legacy Repo Instructions
         # Check for legacy .openhands_instructions file
-        obs = self.read(FileReadAction(path='.openhands_instructions'))
-        if isinstance(obs, ErrorObservation):
+        obs = self.read(
+            FileReadAction(path=str(workspace_root / '.openhands_instructions'))
+        )
+        if isinstance(obs, ErrorObservation) and repo_root is not None:
+            # If the instructions file is not found in the workspace root, try to load it from the repo root
             self.log(
                 'debug',
-                f'openhands_instructions not present, trying to load from {dir_name}',
+                f'.openhands_instructions not present, trying to load from repository {microagents_dir=}',
             )
             obs = self.read(
-                FileReadAction(path=str(dir_name / '.openhands_instructions'))
+                FileReadAction(path=str(repo_root / '.openhands_instructions'))
             )
 
         if isinstance(obs, FileReadObservation):
@@ -253,44 +270,40 @@ class Runtime(FileEditRuntimeMixin):
                 )
             )
 
-        # Check for local repository microagents
-        files = self.list_files(str(dir_name))
-        self.log('info', f'Found {len(files)} local microagents.')
-        if 'repo.md' in files:
-            obs = self.read(FileReadAction(path=str(dir_name / 'repo.md')))
-            if isinstance(obs, FileReadObservation):
-                self.log('info', 'repo.md microagent loaded.')
-                loaded_microagents.append(
-                    RepoMicroAgent.load(
-                        path=str(dir_name / 'repo.md'), file_content=obs.content
-                    )
-                )
+        # Load microagents from directory
+        files = self.list_files(str(microagents_dir))
+        if files:
+            self.log('info', f'Found {len(files)} files in microagents directory.')
+            zip_path = self.copy_from(str(microagents_dir))
+            microagent_folder = tempfile.mkdtemp()
 
-        if 'knowledge' in files:
-            knowledge_dir = dir_name / 'knowledge'
-            _knowledge_microagents_files = self.list_files(str(knowledge_dir))
-            for fname in _knowledge_microagents_files:
-                obs = self.read(FileReadAction(path=str(knowledge_dir / fname)))
-                if isinstance(obs, FileReadObservation):
-                    self.log('info', f'knowledge/{fname} microagent loaded.')
-                    loaded_microagents.append(
-                        KnowledgeMicroAgent.load(
-                            path=str(knowledge_dir / fname), file_content=obs.content
-                        )
-                    )
+            # Properly handle the zip file
+            with ZipFile(zip_path, 'r') as zip_file:
+                zip_file.extractall(microagent_folder)
 
-        if 'tasks' in files:
-            tasks_dir = dir_name / 'tasks'
-            _tasks_microagents_files = self.list_files(str(tasks_dir))
-            for fname in _tasks_microagents_files:
-                obs = self.read(FileReadAction(path=str(tasks_dir / fname)))
-                if isinstance(obs, FileReadObservation):
-                    self.log('info', f'tasks/{fname} microagent loaded.')
-                    loaded_microagents.append(
-                        TaskMicroAgent.load(
-                            path=str(tasks_dir / fname), file_content=obs.content
-                        )
-                    )
+            # Add debug print of directory structure
+            self.log('debug', 'Microagent folder structure:')
+            for root, _, files in os.walk(microagent_folder):
+                relative_path = os.path.relpath(root, microagent_folder)
+                self.log('debug', f'Directory: {relative_path}/')
+                for file in files:
+                    self.log('debug', f'  File: {os.path.join(relative_path, file)}')
+
+            # Clean up the temporary zip file
+            zip_path.unlink()
+            # Load all microagents using the existing function
+            repo_agents, knowledge_agents, task_agents = load_microagents_from_dir(
+                microagent_folder
+            )
+            self.log(
+                'info',
+                f'Loaded {len(repo_agents)} repo agents, {len(knowledge_agents)} knowledge agents, and {len(task_agents)} task agents',
+            )
+            loaded_microagents.extend(repo_agents.values())
+            loaded_microagents.extend(knowledge_agents.values())
+            loaded_microagents.extend(task_agents.values())
+            shutil.rmtree(microagent_folder)
+
         return loaded_microagents
 
     def run_action(self, action: Action) -> Observation:
