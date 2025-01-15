@@ -26,13 +26,13 @@ from openhands.server.routes.manage_conversations import (
 from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.routes.settings import app as settings_router
-from openhands.server.shared import openhands_config, session_manager
+from openhands.server.shared import conversation_manager, openhands_config
 from openhands.utils.import_utils import get_impl
 
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
-    async with session_manager:
+    async with conversation_manager:
         yield
 
 

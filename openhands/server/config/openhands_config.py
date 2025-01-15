@@ -21,6 +21,7 @@ class OpenhandsConfig(OpenhandsConfigInterface):
     conversation_store_class: str = (
         'openhands.storage.conversation.file_conversation_store.FileConversationStore'
     )
+    conversation_manager_class: str = 'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
 
     def verify_config(self):
         if self.config_cls:

@@ -43,8 +43,8 @@ async def test_session_not_running_in_cluster():
     ):
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
-        ) as session_manager:
-            result = await session_manager._get_running_agent_loops_remotely(
+        ) as conversation_manager:
+            result = await conversation_manager._get_running_agent_loops_remotely(
                 filter_to_sids={'non-existant-session'}
             )
             assert result == set()
@@ -75,8 +75,8 @@ async def test_get_running_agent_loops_remotely():
     ):
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
-        ) as session_manager:
-            result = await session_manager._get_running_agent_loops_remotely(
+        ) as conversation_manager:
+            result = await conversation_manager._get_running_agent_loops_remotely(
                 1, {'existing-session'}
             )
             assert result == {'existing-session'}
@@ -112,11 +112,11 @@ async def test_init_new_local_session():
     ):
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
-        ) as session_manager:
-            await session_manager.maybe_start_agent_loop(
+        ) as conversation_manager:
+            await conversation_manager.maybe_start_agent_loop(
                 'new-session-id', ConversationInitData(), 1
             )
-            await session_manager.join_conversation(
+            await conversation_manager.join_conversation(
                 'new-session-id', 'new-session-id', ConversationInitData(), 1
             )
     assert session_instance.initialize_agent.call_count == 1
@@ -146,14 +146,14 @@ async def test_join_local_session():
     ):
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
-        ) as session_manager:
-            await session_manager.maybe_start_agent_loop(
+        ) as conversation_manager:
+            await conversation_manager.maybe_start_agent_loop(
                 'new-session-id', ConversationInitData(), None
             )
-            await session_manager.join_conversation(
+            await conversation_manager.join_conversation(
                 'new-session-id', 'new-session-id', ConversationInitData(), None
             )
-            await session_manager.join_conversation(
+            await conversation_manager.join_conversation(
                 'new-session-id', 'new-session-id', ConversationInitData(), None
             )
     assert session_instance.initialize_agent.call_count == 1
@@ -183,8 +183,8 @@ async def test_join_cluster_session():
     ):
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
-        ) as session_manager:
-            await session_manager.join_conversation(
+        ) as conversation_manager:
+            await conversation_manager.join_conversation(
                 'new-session-id', 'new-session-id', ConversationInitData(), 1
             )
     assert session_instance.initialize_agent.call_count == 0
@@ -214,14 +214,14 @@ async def test_add_to_local_event_stream():
     ):
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
-        ) as session_manager:
-            await session_manager.maybe_start_agent_loop(
+        ) as conversation_manager:
+            await conversation_manager.maybe_start_agent_loop(
                 'new-session-id', ConversationInitData(), 1
             )
-            await session_manager.join_conversation(
+            await conversation_manager.join_conversation(
                 'new-session-id', 'connection-id', ConversationInitData(), 1
             )
-            await session_manager.send_to_event_stream(
+            await conversation_manager.send_to_event_stream(
                 'connection-id', {'event_type': 'some_event'}
             )
     session_instance.dispatch.assert_called_once_with({'event_type': 'some_event'})
@@ -250,11 +250,11 @@ async def test_add_to_cluster_event_stream():
     ):
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
-        ) as session_manager:
-            await session_manager.join_conversation(
+        ) as conversation_manager:
+            await conversation_manager.join_conversation(
                 'new-session-id', 'connection-id', ConversationInitData(), 1
             )
-            await session_manager.send_to_event_stream(
+            await conversation_manager.send_to_event_stream(
                 'connection-id', {'event_type': 'some_event'}
             )
     assert sio.manager.redis.publish.await_count == 1
@@ -276,8 +276,8 @@ async def test_cleanup_session_connections():
     ):
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
-        ) as session_manager:
-            session_manager._local_connection_id_to_session_id.update(
+        ) as conversation_manager:
+            conversation_manager._local_connection_id_to_session_id.update(
                 {
                     'conn1': 'session1',
                     'conn2': 'session1',
@@ -286,9 +286,11 @@ async def test_cleanup_session_connections():
                 }
             )
 
-            await session_manager._close_session('session1')
+            await conversation_manager._close_session('session1')
 
-            remaining_connections = session_manager._local_connection_id_to_session_id
+            remaining_connections = (
+                conversation_manager._local_connection_id_to_session_id
+            )
             assert 'conn1' not in remaining_connections
             assert 'conn2' not in remaining_connections
             assert 'conn3' in remaining_connections

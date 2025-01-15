@@ -265,3 +265,12 @@ class StandaloneConversationManager(ConversationManager):
         logger.info(f'closing_session:{session.sid}')
         await session.close()
         logger.info(f'closed_session:{session.sid}')
+
+    @classmethod
+    def get_instance(
+        cls,
+        sio: socketio.AsyncServer,
+        config: AppConfig,
+        file_store: FileStore,
+    ) -> ConversationManager:
+        return StandaloneConversationManager(sio, config, file_store)

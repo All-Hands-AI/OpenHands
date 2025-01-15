@@ -5,11 +5,18 @@ from dataclasses import dataclass, field
 from typing import Generic, TypeVar
 from uuid import uuid4
 
+import socketio
+
+from openhands.core.config.app_config import AppConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
-from openhands.server.session.conversation_manager.standalone_conversation_manager import (
+from openhands.server.conversation_manager.conversation_manager import (
+    ConversationManager,
+)
+from openhands.server.conversation_manager.standalone_conversation_manager import (
     StandaloneConversationManager,
 )
+from openhands.storage.files import FileStore
 from openhands.utils.async_utils import wait_all
 from openhands.utils.shutdown_listener import should_continue
 
@@ -355,3 +362,12 @@ class ClusteredConversationManager(StandaloneConversationManager):
             for connection_id, local_sid in items:
                 if sid == local_sid:
                     await self.sio.disconnect(connection_id)
+
+    @classmethod
+    def get_instance(
+        cls,
+        sio: socketio.AsyncServer,
+        config: AppConfig,
+        file_store: FileStore,
+    ) -> ConversationManager:
+        return ClusteredConversationManager(sio, config, file_store)
