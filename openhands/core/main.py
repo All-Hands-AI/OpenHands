@@ -103,16 +103,16 @@ async def run_controller(
     if agent is None:
         agent = create_agent(runtime, config)
 
-    replay_logs: list[Event] | None = None
+    replay_events: list[Event] | None = None
     if config.replay_trajectory_path:
         logger.info('Trajectory replay is enabled')
         assert isinstance(initial_user_action, NullAction)
-        replay_logs, initial_user_action = load_replay_log(
+        replay_events, initial_user_action = load_replay_log(
             config.replay_trajectory_path
         )
 
     controller, initial_state = create_controller(
-        agent, runtime, config, replay_logs=replay_logs
+        agent, runtime, config, replay_events=replay_events
     )
 
     assert isinstance(

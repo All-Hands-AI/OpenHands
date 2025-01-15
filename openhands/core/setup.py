@@ -83,7 +83,7 @@ def create_controller(
     runtime: Runtime,
     config: AppConfig,
     headless_mode: bool = True,
-    replay_logs: list[Event] | None = None,
+    replay_events: list[Event] | None = None,
 ) -> Tuple[AgentController, State | None]:
     event_stream = runtime.event_stream
     initial_state = None
@@ -106,7 +106,7 @@ def create_controller(
         initial_state=initial_state,
         headless_mode=headless_mode,
         confirmation_mode=config.security.confirmation_mode,
-        replay_logs=replay_logs,
+        replay_events=replay_events,
     )
     return (controller, initial_state)
 

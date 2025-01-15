@@ -12,6 +12,7 @@ from litellm.exceptions import (
 )
 
 from openhands.controller.agent import Agent
+from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
@@ -90,7 +91,7 @@ class AgentController:
         is_delegate: bool = False,
         headless_mode: bool = True,
         status_callback: Callable | None = None,
-        replay_logs: list[Event] | None = None,
+        replay_events: list[Event] | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -109,7 +110,7 @@ class AgentController:
             is_delegate: Whether this controller is a delegate.
             headless_mode: Whether the agent is run in headless mode.
             status_callback: Optional callback function to handle status updates.
-            replay_logs: A list of logs to replay.
+            replay_events: A list of logs to replay.
         """
         self.id = sid
         self.agent = agent
@@ -138,10 +139,7 @@ class AgentController:
         self.status_callback = status_callback
 
         # replay-related
-        self.replay_logs = replay_logs
-        self.replay_index = 0
-        if self.replay_logs:
-            logger.info(f'Replay logs loaded, events length = {len(self.replay_logs)}')
+        self._replay_manager = ReplayManager(replay_events)
 
     async def close(self) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -232,32 +230,6 @@ class AgentController:
             ):
                 reported = e
             await self._react_to_exception(reported)
-
-    def should_replay(self) -> bool:
-        """
-        Whether the controller is in trajectory replay mode, and the replay
-        hasn't finished. Note: after the replay is finished, the user and
-        the agent could continue to message/act.
-
-        This method also moves "replay_index" to the next action, if applicable.
-        """
-        if not self.replay_logs:
-            # not in replay mode
-            return False
-
-        def replayable(index: int) -> bool:
-            return (
-                self.replay_logs is not None
-                and index < len(self.replay_logs)
-                and isinstance(self.replay_logs[index], Action)
-                and self.replay_logs[index].source != EventSource.USER
-            )
-
-        while self.replay_index < len(self.replay_logs) and not replayable(
-            self.replay_index
-        ):
-            self.replay_index += 1
-        return replayable(self.replay_index)
 
     def should_step(self, event: Event) -> bool:
         """
@@ -591,14 +563,10 @@ class AgentController:
         self.update_state_before_step()
         action: Action = NullAction()
 
-        if self.should_replay():
+        if self._replay_manager.should_replay():
             # in replay mode, we don't let the agent to proceed
             # instead, we replay the action from the replay trajectory
-            assert self.replay_logs is not None
-            event = self.replay_logs[self.replay_index]
-            assert isinstance(event, Action)
-            action = event
-            self.replay_index += 1
+            action = self._replay_manager.step()
         else:
             try:
                 action = self.agent.step(self.state)
