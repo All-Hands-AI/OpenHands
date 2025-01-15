@@ -183,7 +183,7 @@ Les options de configuration LLM (Large Language Model) sont définies dans la s
 Pour les utiliser avec la commande docker, passez `-e LLM_<option>`. Exemple : `-e LLM_NUM_RETRIES`.
 
 :::note
-Pour les configurations de développement, vous pouvez également définir des configurations LLM personnalisées. Voir [Configurations LLM personnalisées](https://docs.all-hands.dev/modules/usage/llms/custom-llm-configs) pour plus de détails.
+Pour les configurations de développement, vous pouvez également définir des configurations LLM personnalisées. Voir [Configurations LLM personnalisées](../llms/custom-llm-configs) pour plus de détails.
 :::
 
 **Informations d'identification AWS**
