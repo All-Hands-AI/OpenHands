@@ -20,7 +20,7 @@ from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
 
-WAIT_TIME_BEFORE_CLOSE = 300
+WAIT_TIME_BEFORE_CLOSE = 90
 WAIT_TIME_BEFORE_CLOSE_INTERVAL = 5
 
 
