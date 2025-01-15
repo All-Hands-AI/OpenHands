@@ -11,7 +11,6 @@ from fastapi import (
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.server.middleware import (
     AttachConversationMiddleware,
-    GitHubTokenMiddleware,
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
     NoCacheMiddleware,
@@ -45,7 +44,6 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-app.add_middleware(GitHubTokenMiddleware)
 app.add_middleware(NoCacheMiddleware)
 app.add_middleware(
     RateLimitMiddleware, rate_limiter=InMemoryRateLimiter(requests=10, seconds=1)

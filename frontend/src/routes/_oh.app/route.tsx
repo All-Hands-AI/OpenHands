@@ -4,6 +4,8 @@ import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FaServer } from "react-icons/fa";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import {
   ConversationProvider,
   useConversation,
@@ -39,6 +41,7 @@ import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 
 function AppContent() {
   useConversationConfig();
+  const { t } = useTranslation();
   const { gitHubToken } = useAuth();
   const { data: settings } = useSettings();
   const { conversationId } = useConversation();
@@ -126,7 +129,11 @@ function AppContent() {
               <Container
                 className="h-full"
                 labels={[
-                  { label: "Workspace", to: "", icon: <CodeIcon /> },
+                  {
+                    label: t(I18nKey.WORKSPACE$TITLE),
+                    to: "",
+                    icon: <CodeIcon />,
+                  },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
                   {
                     label: <ServedAppLabel />,
@@ -136,7 +143,7 @@ function AppContent() {
                   {
                     label: (
                       <div className="flex items-center gap-1">
-                        Browser
+                        {t(I18nKey.BROWSER$TITLE)}
                         {updateCount > 0 && <CountBadge count={updateCount} />}
                       </div>
                     ),

@@ -52,6 +52,14 @@ LOG_COLORS: Mapping[str, ColorType] = {
 }
 
 
+class StackInfoFilter(logging.Filter):
+    def filter(self, record):
+        if record.levelno >= logging.ERROR:
+            record.stack_info = True
+            record.exc_info = True
+        return True
+
+
 class NoColorFormatter(logging.Formatter):
     """Formatter for non-colored logging in files."""
 
@@ -259,6 +267,9 @@ current_log_level = logging.INFO
 if LOG_LEVEL in logging.getLevelNamesMapping():
     current_log_level = logging.getLevelNamesMapping()[LOG_LEVEL]
 openhands_logger.setLevel(current_log_level)
+
+if DEBUG:
+    openhands_logger.addFilter(StackInfoFilter())
 
 if current_log_level == logging.DEBUG:
     LOG_TO_FILE = True
