@@ -20,7 +20,7 @@ from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
 
-WAIT_TIME_BEFORE_CLOSE = 300
+WAIT_TIME_BEFORE_CLOSE = 90
 WAIT_TIME_BEFORE_CLOSE_INTERVAL = 5
 
 
@@ -210,8 +210,9 @@ class AgentSession:
                 )
             return
 
+        repo_directory = None
         if selected_repository:
-            await call_sync_from_async(
+            repo_directory = await call_sync_from_async(
                 self.runtime.clone_repo, github_token, selected_repository
             )
 
@@ -221,6 +222,10 @@ class AgentSession:
                 self.runtime.get_microagents_from_selected_repo, selected_repository
             )
             agent.prompt_manager.load_microagents(microagents)
+            if selected_repository and repo_directory:
+                agent.prompt_manager.set_repository_info(
+                    selected_repository, repo_directory
+                )
 
         logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
