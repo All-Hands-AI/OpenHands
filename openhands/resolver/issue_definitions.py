@@ -6,7 +6,6 @@ from typing import Any, ClassVar
 import jinja2
 
 from openhands.core.config import LLMConfig
-from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.resolver.issue import Issue, ReviewThread
@@ -99,62 +98,7 @@ class ServiceContextPR:
     def get_converted_issues(
         self, issue_numbers: list[int] | None = None, comment_id: int | None = None
     ) -> list[Issue]:
-        if not issue_numbers:
-            raise ValueError('Unspecified issue numbers')
-
-        all_issues = self.download_issues()
-        logger.info(f'Limiting resolving to issues {issue_numbers}.')
-        all_issues = [issue for issue in all_issues if issue['number'] in issue_numbers]
-
-        converted_issues = []
-        for issue in all_issues:
-            # For PRs, body can be None
-            if any([issue.get(key) is None for key in ['number', 'title']]):
-                logger.warning(f'Skipping #{issue} as it is missing number or title.')
-                continue
-
-            # Handle None body for PRs
-            body = issue.get('body') if issue.get('body') is not None else ''
-            (
-                closing_issues,
-                closing_issues_numbers,
-                review_comments,
-                review_threads,
-                thread_ids,
-            ) = self.__download_pr_metadata(issue['number'], comment_id=comment_id)
-            head_branch = issue['head']['ref']
-
-            # Get PR thread comments
-            thread_comments = self._get_pr_comments(
-                issue['number'], comment_id=comment_id
-            )
-
-            closing_issues = self.__get_context_from_external_issues_references(
-                closing_issues,
-                closing_issues_numbers,
-                body,
-                review_comments,
-                review_threads,
-                thread_comments,
-            )
-
-            issue_details = Issue(
-                owner=self._strategy.owner,
-                repo=self._strategy.repo,
-                number=issue['number'],
-                title=issue['title'],
-                body=body,
-                closing_issues=closing_issues,
-                review_comments=review_comments,
-                review_threads=review_threads,
-                thread_ids=thread_ids,
-                head_branch=head_branch,
-                thread_comments=thread_comments,
-            )
-
-            converted_issues.append(issue_details)
-
-        return converted_issues
+        return self._strategy.get_converted_issues(issue_numbers, comment_id)
 
     def get_instruction(
         self,
@@ -389,8 +333,11 @@ class ServiceContext:
     def request_reviewers(self, reviewer: str, pr_number: int):
         return self._strategy.request_reviewers(reviewer, pr_number)
 
-    def reply_to_comment(self, token, comment_id, reply):
-        return self._strategy.reply_to_comment(token, comment_id, reply)
+    def reply_to_comment(self, pr_number, comment_id, reply):
+        return self._strategy.reply_to_comment(pr_number, comment_id, reply)
+
+    def send_comment_msg(self, issue_number: int, msg: str):
+        return self._strategy.send_comment_msg(issue_number, msg)
 
     def get_issue_comments(
         self, issue_number: int, comment_id: int | None = None
@@ -469,52 +416,4 @@ class ServiceContext:
     def get_converted_issues(
         self, issue_numbers: list[int] | None = None, comment_id: int | None = None
     ) -> list[Issue]:
-        """Download issues
-
-        Returns:
-            List issues.
-        """
-
-        if not issue_numbers:
-            raise ValueError('Unspecified issue number')
-
-        all_issues = self.download_issues()
-        logger.info(f'Limiting resolving to issues {issue_numbers}.')
-        all_issues = [
-            issue
-            for issue in all_issues
-            # if issue['iid'] in issue_numbers and issue['merge_requests_count'] == 0
-            if issue['iid'] in issue_numbers  # TODO for testing
-        ]
-
-        if len(issue_numbers) == 1 and not all_issues:
-            raise ValueError(f'Issue {issue_numbers[0]} not found')
-
-        converted_issues = []
-        for issue in all_issues:
-            if any([issue.get(key) is None for key in ['iid', 'title']]):
-                logger.warning(f'Skipping issue {issue} as it is missing iid or title.')
-                continue
-
-            # Handle empty body by using empty string
-            if issue.get('description') is None:
-                issue['description'] = ''
-
-            # Get issue thread comments
-            thread_comments = self.get_issue_comments(
-                issue['iid'], comment_id=comment_id
-            )
-            # Convert empty lists to None for optional fields
-            issue_details = Issue(
-                owner=self._strategy.owner,
-                repo=self._strategy.repo,
-                number=issue['iid'],
-                title=issue['title'],
-                body=issue['description'],
-                thread_comments=thread_comments,
-                review_comments=None,  # Initialize review comments as None for regular issues
-            )
-
-            converted_issues.append(issue_details)
-
-        return converted_issues
+        return self._strategy.get_converted_issues(issue_numbers, comment_id)

@@ -5,7 +5,6 @@ import shutil
 import subprocess
 
 import jinja2
-import requests
 
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -324,53 +323,36 @@ def send_pull_request(
         url = handler.get_compare_url(branch_name)
     else:
         # Prepare the PR for the GitHub API
-        data = {
-            'title': final_pr_title,  # No need to escape title for GitHub API
-            'description': pr_body,
-            'source_branch': branch_name,
-            'target_branch': base_branch,
-            'draft': pr_type == 'draft',
-        }
+        if platform == Platform.GITHUB:
+            data = {
+                'title': final_pr_title,  # No need to escape title for GitHub API
+                'body': pr_body,
+                'head': branch_name,
+                'base': base_branch,
+                'draft': pr_type == 'draft',
+            }
+        elif platform == Platform.GITLAB:
+            data = {
+                'title': final_pr_title,
+                'description': pr_body,
+                'source_branch': branch_name,
+                'target_branch': base_branch,
+                'draft': pr_type == 'draft',
+            }
 
         pr_data = handler.create_pull_request(data)
         url = pr_data['html_url'] if platform == Platform.GITHUB else pr_data['web_url']
+        number = pr_data['number'] if platform == Platform.GITHUB else pr_data['iid']
 
         # Request review if a reviewer was specified
         if reviewer and pr_type != 'branch':
-            handler.request_reviewers(reviewer, pr_data['iid'])
+            handler.request_reviewers(reviewer, number)
 
     print(
         f'{pr_type} created: {url}\n\n--- Title: {final_pr_title}\n\n--- Body:\n{pr_body}'
     )
 
     return url
-
-
-def send_comment_msg(base_url: str, issue_number: int, token: str, msg: str):
-    """Send a comment message to a GitHub issue or pull request.
-
-    Args:
-        base_url: The base URL of the GitHub repository API
-        issue_number: The issue or pull request number
-        token: The GitHub token to use for authentication
-        msg: The message content to post as a comment
-    """
-    # Set up headers for GitHub API
-    headers = {
-        'Authorization': f'token {token}',
-        'Accept': 'application/vnd.github.v3+json',
-    }
-
-    # Post a comment on the PR
-    comment_url = f'{base_url}/issues/{issue_number}/notes'
-    comment_data = {'body': msg}
-    comment_response = requests.post(comment_url, headers=headers, json=comment_data)
-    if comment_response.status_code != 201:
-        print(
-            f'Failed to post comment: {comment_response.status_code} {comment_response.text}'
-        )
-    else:
-        print(f'Comment added to the PR: {msg}')
 
 
 def update_existing_pull_request(
@@ -407,7 +389,6 @@ def update_existing_pull_request(
             GitlabIssueHandler(issue.owner, issue.repo, token, username), llm_config
         )
 
-    base_url = handler.get_base_url()
     branch_name = issue.head_branch
 
     # Prepare the push command
@@ -459,7 +440,7 @@ def update_existing_pull_request(
 
     # Post a comment on the PR
     if comment_message:
-        send_comment_msg(base_url, issue.number, token, comment_message)
+        handler.send_comment_msg(issue.number, comment_message)
 
     # Reply to each unresolved comment thread
     if additional_message and issue.thread_ids:
@@ -467,10 +448,10 @@ def update_existing_pull_request(
             explanations = json.loads(additional_message)
             for count, reply_comment in enumerate(explanations):
                 comment_id = issue.thread_ids[count]
-                handler.reply_to_comment(token, comment_id, reply_comment)
+                handler.reply_to_comment(issue.number, comment_id, reply_comment)
         except (json.JSONDecodeError, TypeError):
             msg = f'Error occured when replying to threads; success explanations {additional_message}'
-            send_comment_msg(base_url, issue.number, token, msg)
+            handler.send_comment_msg(issue.number, msg)
 
     return pr_url
 
@@ -489,7 +470,6 @@ def process_single_issue(
     reviewer: str | None = None,
     pr_title: str | None = None,
 ) -> None:
-    print(resolver_output.success, send_on_failure)
     if not resolver_output.success and not send_on_failure:
         print(
             f'Issue {resolver_output.issue.number} was not successfully resolved. Skipping PR creation.'
