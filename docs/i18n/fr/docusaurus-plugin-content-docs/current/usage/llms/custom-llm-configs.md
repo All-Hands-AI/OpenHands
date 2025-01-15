@@ -56,7 +56,7 @@ Chaque configuration LLM nommée prend en charge toutes les mêmes options que l
 - Limites de jetons (`max_input_tokens`, `max_output_tokens`)
 - Et toutes les autres options de configuration LLM
 
-Pour une liste complète des options disponibles, consultez la section Configuration LLM dans la documentation des [Options de configuration](../configuration-options.md).
+Pour une liste complète des options disponibles, consultez la section Configuration LLM dans la documentation des [Options de configuration](../configuration-options).
 
 ## Cas d'utilisation
 
