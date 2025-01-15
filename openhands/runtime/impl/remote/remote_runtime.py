@@ -229,6 +229,13 @@ class RemoteRuntime(ActionExecutionClient):
             raise AgentRuntimeUnavailableError() from e
 
     def _resume_runtime(self):
+        """
+        1. Show status update that runtime is being started.
+        2. Send the runtime API a /resume request
+        3. Poll for the runtime to be ready
+        4. Update env vars
+        """
+        self.send_status_message('STATUS$STARTING_RUNTIME')
         with self._send_runtime_api_request(
             'POST',
             f'{self.config.sandbox.remote_runtime_api_url}/resume',
