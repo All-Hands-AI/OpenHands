@@ -180,9 +180,7 @@ jobs:
         run: |
           TIMESTAMP=$(date +'%y-%m-%d-%H-%M')
           cd evaluation/evaluation_outputs/outputs  # Change to the outputs directory
-          # uncomment me
-          #tar -czvf ../../../integration_tests_${TIMESTAMP}.tar.gz integration_tests/CodeActAgent/* integration_tests/DelegatorAgent/*  # Only include the actual result directories
-          tar -czvf ../../../integration_tests_${TIMESTAMP}.tar.gz integration_tests/DelegatorAgent/*
+          tar -czvf ../../../integration_tests_${TIMESTAMP}.tar.gz integration_tests/CodeActAgent/* integration_tests/DelegatorAgent/*  # Only include the actual result directories
 
       - name: Upload evaluation results as artifact
         uses: actions/upload-artifact@v4
