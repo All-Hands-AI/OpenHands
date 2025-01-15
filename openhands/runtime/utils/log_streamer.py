@@ -47,7 +47,7 @@ class LogStreamer:
             self.log('error', f'Error streaming docker logs to stdout: {e}')
 
     def __del__(self):
-        if self.stdout_thread and self.stdout_thread.is_alive():
+        if hasattr(self, 'stdout_thread') and self.stdout_thread and self.stdout_thread.is_alive():
             self.close(timeout=5)
 
     def close(self, timeout: float = 5.0):
