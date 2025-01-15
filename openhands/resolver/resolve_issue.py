@@ -305,9 +305,13 @@ def issue_handler_factory(
             )
     elif issue_type == 'pr':
         if platform == Platform.GITHUB:
-            return ServiceContextPR(GithubPRHandler(owner, repo, token), llm_config)
+            return ServiceContextPR(
+                GithubPRHandler(owner, repo, token, username), llm_config
+            )
         else:  # platform == Platform.GITLAB
-            return ServiceContextPR(GitlabPRHandler(owner, repo, token), llm_config)
+            return ServiceContextPR(
+                GitlabPRHandler(owner, repo, token, username), llm_config
+            )
     else:
         raise ValueError(f'Invalid issue type: {issue_type}')
 

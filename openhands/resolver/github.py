@@ -1,75 +1,10 @@
-from abc import ABC, abstractmethod
 from typing import Any
 
 import requests
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.resolver.issue import ReviewThread
+from openhands.resolver.issue import Issue, IssueHandlerInterface, ReviewThread
 from openhands.resolver.utils import extract_issue_references
-
-
-class IssueHandlerInterface(ABC):
-    @abstractmethod
-    def download_issues(self) -> list[Any]:
-        pass
-
-    @abstractmethod
-    def get_issue_comments(
-        self, issue_number: int, comment_id: int | None = None
-    ) -> list[str] | None:
-        pass
-
-    @abstractmethod
-    def get_base_url(self):
-        pass
-
-    @abstractmethod
-    def get_branch_url(self, branch_name):
-        pass
-
-    @abstractmethod
-    def get_download_url(self):
-        pass
-
-    @abstractmethod
-    def get_clone_url(self):
-        pass
-
-    @abstractmethod
-    def get_graphql_url(self):
-        pass
-
-    @abstractmethod
-    def get_headers(self):
-        pass
-
-    @abstractmethod
-    def get_compare_url(self, branch_name):
-        pass
-
-    @abstractmethod
-    def get_branch_name(self, base_branch_name: str):
-        pass
-
-    @abstractmethod
-    def branch_exists(self, branch_name: str) -> bool:
-        pass
-
-    @abstractmethod
-    def reply_to_comment(self, token: str, comment_id: str, reply: str):
-        pass
-
-    @abstractmethod
-    def get_authorize_url(self):
-        pass
-
-    @abstractmethod
-    def create_pull_request(self, data=dict) -> dict:
-        pass
-
-    @abstractmethod
-    def request_reviewers(self, reviewer: str, pr_number: int):
-        pass
 
 
 class GithubIssueHandler(IssueHandlerInterface):
@@ -114,6 +49,65 @@ class GithubIssueHandler(IssueHandlerInterface):
 
     def get_compare_url(self, branch_name: str):
         return f'https://github.com/{self.owner}/{self.repo}/compare/{branch_name}?expand=1'
+
+    def get_converted_issues(
+        self, issue_numbers: list[int] | None = None, comment_id: int | None = None
+    ) -> list[Issue]:
+        """Download issues from Github.
+
+        Args:
+            issue_numbers: The numbers of the issues to download
+            comment_id: The ID of a single comment, if provided, otherwise all comments
+
+        Returns:
+            List of Github issues.
+        """
+
+        if not issue_numbers:
+            raise ValueError('Unspecified issue number')
+
+        all_issues = self.download_issues()
+        logger.info(f'Limiting resolving to issues {issue_numbers}.')
+        all_issues = [
+            issue
+            for issue in all_issues
+            if issue['number'] in issue_numbers and 'pull_request' not in issue
+        ]
+
+        if len(issue_numbers) == 1 and not all_issues:
+            raise ValueError(f'Issue {issue_numbers[0]} not found')
+
+        converted_issues = []
+        for issue in all_issues:
+            # Check for required fields (number and title)
+            if any([issue.get(key) is None for key in ['number', 'title']]):
+                logger.warning(
+                    f'Skipping issue {issue} as it is missing number or title.'
+                )
+                continue
+
+            # Handle empty body by using empty string
+            if issue.get('body') is None:
+                issue['body'] = ''
+
+            # Get issue thread comments
+            thread_comments = self.get_issue_comments(
+                issue['number'], comment_id=comment_id
+            )
+            # Convert empty lists to None for optional fields
+            issue_details = Issue(
+                owner=self.owner,
+                repo=self.repo,
+                number=issue['number'],
+                title=issue['title'],
+                body=issue['body'],
+                thread_comments=thread_comments,
+                review_comments=None,  # Initialize review comments as None for regular issues
+            )
+
+            converted_issues.append(issue_details)
+
+        return converted_issues
 
     def download_issues(self) -> list[Any]:
         params: dict[str, int | str] = {'state': 'open', 'per_page': 100, 'page': 1}
@@ -193,7 +187,7 @@ class GithubIssueHandler(IssueHandlerInterface):
             branch_name = f'{base_branch_name}-try{attempt}'
         return branch_name
 
-    def reply_to_comment(self, token: str, comment_id: str, reply: str):
+    def reply_to_comment(self, pr_number: int, comment_id: str, reply: str):
         # Opting for graphql as REST API doesn't allow reply to replies in comment threads
         query = """
                 mutation($body: String!, $pullRequestReviewThreadId: ID!) {
@@ -209,9 +203,9 @@ class GithubIssueHandler(IssueHandlerInterface):
 
         comment_reply = f'Openhands fix success summary\n\n\n{reply}'
         variables = {'body': comment_reply, 'pullRequestReviewThreadId': comment_id}
-        url = self.get_base_url()
+        url = self.get_graphql_url()
         headers = {
-            'Authorization': f'Bearer {token}',
+            'Authorization': f'Bearer {self.token}',
             'Content-Type': 'application/json',
         }
 
@@ -253,11 +247,33 @@ class GithubIssueHandler(IssueHandlerInterface):
                 f'Warning: Failed to request review from {reviewer}: {review_response.text}'
             )
 
+    def send_comment_msg(self, issue_number: int, msg: str):
+        """Send a comment message to a GitHub issue or pull request.
+
+        Args:
+            issue_number: The issue or pull request number
+            msg: The message content to post as a comment
+        """
+        # Post a comment on the PR
+        comment_url = f'{self.base_url}/issues/{issue_number}/comments'
+        comment_data = {'body': msg}
+        comment_response = requests.post(
+            comment_url, headers=self.headers, json=comment_data
+        )
+        if comment_response.status_code != 201:
+            print(
+                f'Failed to post comment: {comment_response.status_code} {comment_response.text}'
+            )
+        else:
+            print(f'Comment added to the PR: {msg}')
+
 
 class GithubPRHandler(GithubIssueHandler):
-    def __init__(self, owner: str, repo: str, token: str):
-        super().__init__(owner, repo, token)
-        self.download_url = 'https://api.github.com/repos/{}/{}/pulls'
+    def __init__(self, owner: str, repo: str, token: str, username: str | None = None):
+        super().__init__(owner, repo, token, username)
+        self.download_url = (
+            f'https://api.github.com/repos/{self.owner}/{self.repo}/pulls'
+        )
 
     def download_pr_metadata(
         self, pull_number: int, comment_id: int | None = None
@@ -495,3 +511,63 @@ class GithubPRHandler(GithubIssueHandler):
                 logger.warning(f'Failed to fetch issue {issue_number}: {str(e)}')
 
         return closing_issues
+
+    def get_converted_issues(
+        self, issue_numbers: list[int] | None = None, comment_id: int | None = None
+    ) -> list[Issue]:
+        if not issue_numbers:
+            raise ValueError('Unspecified issue numbers')
+
+        all_issues = self.download_issues()
+        logger.info(f'Limiting resolving to issues {issue_numbers}.')
+        all_issues = [issue for issue in all_issues if issue['number'] in issue_numbers]
+
+        converted_issues = []
+        for issue in all_issues:
+            # For PRs, body can be None
+            if any([issue.get(key) is None for key in ['number', 'title']]):
+                logger.warning(f'Skipping #{issue} as it is missing number or title.')
+                continue
+
+            # Handle None body for PRs
+            body = issue.get('body') if issue.get('body') is not None else ''
+            (
+                closing_issues,
+                closing_issues_numbers,
+                review_comments,
+                review_threads,
+                thread_ids,
+            ) = self.download_pr_metadata(issue['number'], comment_id=comment_id)
+            head_branch = issue['head']['ref']
+
+            # Get PR thread comments
+            thread_comments = self.get_pr_comments(
+                issue['number'], comment_id=comment_id
+            )
+
+            closing_issues = self.get_context_from_external_issues_references(
+                closing_issues,
+                closing_issues_numbers,
+                body,
+                review_comments,
+                review_threads,
+                thread_comments,
+            )
+
+            issue_details = Issue(
+                owner=self.owner,
+                repo=self.repo,
+                number=issue['number'],
+                title=issue['title'],
+                body=body,
+                closing_issues=closing_issues,
+                review_comments=review_comments,
+                review_threads=review_threads,
+                thread_ids=thread_ids,
+                head_branch=head_branch,
+                thread_comments=thread_comments,
+            )
+
+            converted_issues.append(issue_details)
+
+        return converted_issues

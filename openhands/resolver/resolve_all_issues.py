@@ -114,7 +114,7 @@ async def resolve_issues(
             [
                 'git',
                 'clone',
-                f'https://{username}:{token}@github.com/{owner}/{repo}',
+                issue_handler.get_clone_url(),
                 f'{output_dir}/repo',
             ]
         ).decode('utf-8')
