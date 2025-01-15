@@ -51,66 +51,65 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: poetry install --without evaluation,llama-index
 
-      # Commenting out CodeActAgent Haiku tests
-      # - name: Configure config.toml for testing with Haiku
-      #   env:
-      #     LLM_MODEL: "litellm_proxy/claude-3-5-haiku-20241022"
-      #     LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-      #     LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-      #     MAX_ITERATIONS: 10
-      #   run: |
-      #     echo "[llm.eval]" > config.toml
-      #     echo "model = \"$LLM_MODEL\"" >> config.toml
-      #     echo "api_key = \"$LLM_API_KEY\"" >> config.toml
-      #     echo "base_url = \"$LLM_BASE_URL\"" >> config.toml
-      #     echo "temperature = 0.0" >> config.toml
+      - name: Configure config.toml for testing with Haiku
+        env:
+          LLM_MODEL: "litellm_proxy/claude-3-5-haiku-20241022"
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          MAX_ITERATIONS: 10
+        run: |
+          echo "[llm.eval]" > config.toml
+          echo "model = \"$LLM_MODEL\"" >> config.toml
+          echo "api_key = \"$LLM_API_KEY\"" >> config.toml
+          echo "base_url = \"$LLM_BASE_URL\"" >> config.toml
+          echo "temperature = 0.0" >> config.toml
 
-      #- name: Build environment
-      #  run: make build
-      # - name: Run integration test evaluation for Haiku
-      #   env:
-      #     SANDBOX_FORCE_REBUILD_RUNTIME: True
-      #   run: |
-      #     poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES '' 'haiku_run'
+      - name: Build environment
+        run: make build
 
-      #     # get integration tests report
-      #     REPORT_FILE_HAIKU=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/*haiku*_maxiter_10_N* -name "report.md" -type f | head -n 1)
-      #     echo "REPORT_FILE: $REPORT_FILE_HAIKU"
-      #     echo "INTEGRATION_TEST_REPORT_HAIKU<<EOF" >> $GITHUB_ENV
-      #     cat $REPORT_FILE_HAIKU >> $GITHUB_ENV
-      #     echo >> $GITHUB_ENV
-      #     echo "EOF" >> $GITHUB_ENV
+      - name: Run integration test evaluation for Haiku
+        env:
+          SANDBOX_FORCE_REBUILD_RUNTIME: True
+        run: |
+          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES '' 'haiku_run'
 
-      # - name: Wait a little bit
-      #   run: sleep 10
+          # get integration tests report
+          REPORT_FILE_HAIKU=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/*haiku*_maxiter_10_N* -name "report.md" -type f | head -n 1)
+          echo "REPORT_FILE: $REPORT_FILE_HAIKU"
+          echo "INTEGRATION_TEST_REPORT_HAIKU<<EOF" >> $GITHUB_ENV
+          cat $REPORT_FILE_HAIKU >> $GITHUB_ENV
+          echo >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
-      # Commenting out CodeActAgent DeepSeek tests
-      # - name: Configure config.toml for testing with DeepSeek
-      #   env:
-      #     LLM_MODEL: "litellm_proxy/deepseek-chat"
-      #     LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-      #     LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-      #     MAX_ITERATIONS: 10
-      #   run: |
-      #     echo "[llm.eval]" > config.toml
-      #     echo "model = \"$LLM_MODEL\"" >> config.toml
-      #     echo "api_key = \"$LLM_API_KEY\"" >> config.toml
-      #     echo "base_url = \"$LLM_BASE_URL\"" >> config.toml
-      #     echo "temperature = 0.0" >> config.toml
+      - name: Wait a little bit
+        run: sleep 10
 
-      # - name: Run integration test evaluation for DeepSeek
-      #   env:
-      #     SANDBOX_FORCE_REBUILD_RUNTIME: True
-      #   run: |
-      #     poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES '' 'deepseek_run'
+      - name: Configure config.toml for testing with DeepSeek
+        env:
+          LLM_MODEL: "litellm_proxy/deepseek-chat"
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          MAX_ITERATIONS: 10
+        run: |
+          echo "[llm.eval]" > config.toml
+          echo "model = \"$LLM_MODEL\"" >> config.toml
+          echo "api_key = \"$LLM_API_KEY\"" >> config.toml
+          echo "base_url = \"$LLM_BASE_URL\"" >> config.toml
+          echo "temperature = 0.0" >> config.toml
 
-      #     # get integration tests report
-      #     REPORT_FILE_DEEPSEEK=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/deepseek*_maxiter_10_N* -name "report.md" -type f | head -n 1)
-      #     echo "REPORT_FILE: $REPORT_FILE_DEEPSEEK"
-      #     echo "INTEGRATION_TEST_REPORT_DEEPSEEK<<EOF" >> $GITHUB_ENV
-      #     cat $REPORT_FILE_DEEPSEEK >> $GITHUB_ENV
-      #     echo >> $GITHUB_ENV
-      #     echo "EOF" >> $GITHUB_ENV
+      - name: Run integration test evaluation for DeepSeek
+        env:
+          SANDBOX_FORCE_REBUILD_RUNTIME: True
+        run: |
+          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES '' 'deepseek_run'
+
+          # get integration tests report
+          REPORT_FILE_DEEPSEEK=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/deepseek*_maxiter_10_N* -name "report.md" -type f | head -n 1)
+          echo "REPORT_FILE: $REPORT_FILE_DEEPSEEK"
+          echo "INTEGRATION_TEST_REPORT_DEEPSEEK<<EOF" >> $GITHUB_ENV
+          cat $REPORT_FILE_DEEPSEEK >> $GITHUB_ENV
+          echo >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       # -------------------------------------------------------------
       # Run DelegatorAgent tests for Haiku, limited to t01 and t02
@@ -216,13 +215,11 @@ jobs:
               Commit: ${{ github.sha }}
               **Integration Tests Report (Haiku)**
               Haiku LLM Test Results:
-              # uncomment me
-              #${{ env.INTEGRATION_TEST_REPORT_HAIKU }}
+              ${{ env.INTEGRATION_TEST_REPORT_HAIKU }}
               ---
               **Integration Tests Report (DeepSeek)**
               DeepSeek LLM Test Results:
-              # uncomment me
-              #${{ env.INTEGRATION_TEST_REPORT_DEEPSEEK }}
+              ${{ env.INTEGRATION_TEST_REPORT_DEEPSEEK }}
               ---
                 **Integration Tests Report Delegator (Haiku)**
               ${{ env.INTEGRATION_TEST_REPORT_DELEGATOR_HAIKU }}
