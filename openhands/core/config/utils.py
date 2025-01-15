@@ -491,7 +491,11 @@ def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
 
     # Override with command line arguments if provided
     if args.llm_config:
-        llm_config = get_llm_config_arg(args.llm_config)
+        # if we didn't already load it, get it from the toml file
+        if args.llm_config not in config.llms:
+            llm_config = get_llm_config_arg(args.llm_config)
+        else:
+            llm_config = config.llms[args.llm_config]
         if llm_config is None:
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
         config.set_llm_config(llm_config)
