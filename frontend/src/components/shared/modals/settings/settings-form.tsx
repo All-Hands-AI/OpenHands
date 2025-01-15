@@ -171,7 +171,8 @@ export function SettingsForm({
 
           <APIKeyInput
             isDisabled={!!disabled}
-            isSet={settings.LLM_API_KEY === "SET"}
+            isSet={settings.LLM_API_KEY_IS_SET}
+            onUnset={() => saveUserSettings({ llm_api_key: "" })}
           />
 
           {showAdvancedOptions && (

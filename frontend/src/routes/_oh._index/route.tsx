@@ -45,6 +45,7 @@ function Home() {
             gitHubAuthUrl={gitHubAuthUrl}
             user={user || null}
           />
+
           <ImportProjectSuggestionBox
             onChange={async (event) => {
               if (event.target.files) {

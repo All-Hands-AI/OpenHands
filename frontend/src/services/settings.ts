@@ -10,6 +10,7 @@ export type Settings = {
   SECURITY_ANALYZER: string;
   REMOTE_RUNTIME_RESOURCE_FACTOR: number;
   GITHUB_TOKEN_IS_SET: boolean;
+  LLM_API_KEY_IS_SET: boolean;
 };
 
 export type ApiSettings = {
@@ -22,10 +23,15 @@ export type ApiSettings = {
   security_analyzer: string;
   remote_runtime_resource_factor: number;
   github_token_is_set: boolean;
+  llm_api_key_is_set: boolean;
 };
 
-export type PostApiSettings = Omit<ApiSettings, "github_token_is_set"> & {
+export type PostApiSettings = Omit<
+  ApiSettings,
+  "github_token_is_set" | "llm_api_key_is_set"
+> & {
   github_token: string;
+  llm_api_key: string;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -38,6 +44,7 @@ export const DEFAULT_SETTINGS: Settings = {
   SECURITY_ANALYZER: "",
   REMOTE_RUNTIME_RESOURCE_FACTOR: 1,
   GITHUB_TOKEN_IS_SET: false,
+  LLM_API_KEY_IS_SET: false,
 };
 
 export const getCurrentSettingsVersion = () => {
@@ -78,6 +85,8 @@ export const getLocalStorageSettings = (): Settings => {
     SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
     REMOTE_RUNTIME_RESOURCE_FACTOR:
       DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+    GITHUB_TOKEN_IS_SET: false,
+    LLM_API_KEY_IS_SET: false,
   };
 };
 

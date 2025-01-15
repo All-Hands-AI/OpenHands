@@ -1,4 +1,4 @@
-import { screen, fireEvent } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { createRoutesStub } from "react-router";

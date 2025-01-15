@@ -1,7 +1,7 @@
-import { cn, Tooltip } from "@nextui-org/react";
 import { useTranslation } from "react-i18next";
-import { FaCircleXmark } from "react-icons/fa6";
 import { I18nKey } from "#/i18n/declaration";
+import { SetBadge } from "#/components/features/set-status/set-badge";
+import { UnsetButton } from "#/components/features/set-status/unset-button";
 
 interface GitHubTokenInputProps {
   isSet: boolean;
@@ -18,16 +18,7 @@ export function GitHubTokenInput({ isSet, onUnset }: GitHubTokenInputProps) {
       className="flex flex-col gap-2"
     >
       <div className="flex items-center gap-1">
-        <span
-          className={cn(
-            "text-[11px] leading-4 font-bold uppercase border px-1 rounded",
-            !isSet
-              ? "border-red-800 bg-red-500"
-              : "border-green-800 bg-green-500",
-          )}
-        >
-          {isSet ? "set" : "unset"}
-        </span>
+        <SetBadge isSet={isSet} />
         <span className="text-[11px] leading-4 tracking-[0.5px] font-[500] text-[#A3A3A3]">
           {t(I18nKey.GITHUB$TOKEN_LABEL)}
           <span className="text-[#A3A3A3]">
@@ -36,17 +27,7 @@ export function GitHubTokenInput({ isSet, onUnset }: GitHubTokenInputProps) {
           </span>
         </span>
         {isSet && (
-          <Tooltip content="Unset GitHub token">
-            <button
-              data-testid="unset-github-token-button"
-              type="button"
-              aria-label="Unset GitHub token"
-              onClick={onUnset}
-              className="text-[#A3A3A3] hover:text-[#FF4D4F]"
-            >
-              <FaCircleXmark size={16} />
-            </button>
-          </Tooltip>
+          <UnsetButton testId="unset-github-token-button" onUnset={onUnset} />
         )}
       </div>
       {!isSet && (

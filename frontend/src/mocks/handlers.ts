@@ -18,6 +18,7 @@ export const MOCK_USER_PREFERENCES: { settings: ApiSettings } = {
     remote_runtime_resource_factor:
       DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
     github_token_is_set: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
+    llm_api_key_is_set: DEFAULT_SETTINGS.LLM_API_KEY_IS_SET,
   },
 };
 
@@ -178,12 +179,20 @@ export const handlers = [
     const body = await request.json();
 
     if (body) {
+      const githubTokenIsSet =
+        // @ts-expect-error - We know this is a settings object
+        body.github_token !== "" && body.github_token !== undefined;
+
+      const llmApiKeyIsSet =
+        // @ts-expect-error - We know this is a settings object
+        body.llm_api_key !== "";
+
       MOCK_USER_PREFERENCES.settings = {
         ...MOCK_USER_PREFERENCES.settings,
         // @ts-expect-error - We know this is a settings object
         ...body,
-        // @ts-expect-error - We know this is a settings object
-        github_token_is_set: body.github_token !== "",
+        github_token_is_set: githubTokenIsSet,
+        llm_api_key_is_set: llmApiKeyIsSet,
       };
 
       return HttpResponse.json(null, { status: 200 });
