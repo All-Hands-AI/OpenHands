@@ -64,7 +64,7 @@ class Event:
             return self._timeout  # type: ignore[attr-defined]
         return None
 
-    def set_hard_timeout(self, value: int | None) -> None:
+    def set_hard_timeout(self, value: int | None, blocking: bool = True) -> None:
         """Set the timeout for the event.
 
         NOTE, this is a hard timeout, meaning that the event will be blocked
@@ -82,14 +82,7 @@ class Event:
         # Check if .blocking is an attribute of the event
         if hasattr(self, 'blocking'):
             # .blocking needs to be set to True if .timeout is set
-            self.blocking = True
-
-    def set_default_timeout(self, value: int) -> None:
-        """Set the default timeout for the event if it is not already set.
-
-        Setting this will NOT block the event (e.g., the soft timeout from CmdRunAction will still apply).
-        """
-        self._timeout = value
+            self.blocking = blocking
 
     # optional metadata, LLM call cost of the edit
     @property
