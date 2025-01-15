@@ -791,7 +791,7 @@ def test_stress_long_output(temp_dir, runtime_cls, run_as_openhands):
         # Run a command that generates long output multiple times
         for i in range(100):
             action = CmdRunAction(
-                'for j in $(seq 1 1000); do echo "Line $j - Iteration $i"; done'
+                f'export i={i}; for j in $(seq 1 1000); do echo "Line $j - Iteration $i"; done'
             )
             action.timeout = 30
             obs = runtime.run_action(action)
