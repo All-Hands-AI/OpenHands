@@ -17,6 +17,7 @@ class LogStreamer:
         logFn: Callable,
     ):
         self.log = logFn
+        # Initialize all attributes before starting the thread on this instance
         self.stdout_thread = None
         self.log_generator = None
         self._stop_event = threading.Event()
