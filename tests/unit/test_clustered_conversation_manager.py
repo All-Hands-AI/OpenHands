@@ -114,7 +114,7 @@ async def test_init_new_local_session():
     get_running_agent_loops_mock.return_value = set()
     with (
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.Session',
+            'openhands.server.conversation_manager.standalone_conversation_manager.Session',
             mock_session,
         ),
         patch(
@@ -122,11 +122,11 @@ async def test_init_new_local_session():
             0.1,
         ),
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._redis_subscribe',
+            'openhands.server.conversation_manager.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
             AsyncMock(),
         ),
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager.get_running_agent_loops',
+            'openhands.server.conversation_manager.clustered_conversation_manager.ClusteredConversationManager.get_running_agent_loops',
             get_running_agent_loops_mock,
         ),
     ):
@@ -154,7 +154,7 @@ async def test_join_local_session():
     get_running_agent_loops_mock.return_value = set()
     with (
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.Session',
+            'openhands.server.conversation_manager.standalone_conversation_manager.Session',
             mock_session,
         ),
         patch(
@@ -162,11 +162,11 @@ async def test_join_local_session():
             0.01,
         ),
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._redis_subscribe',
+            'openhands.server.conversation_manager.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
             AsyncMock(),
         ),
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager.get_running_agent_loops',
+            'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager.get_running_agent_loops',
             get_running_agent_loops_mock,
         ),
     ):
@@ -197,7 +197,7 @@ async def test_join_cluster_session():
     get_running_agent_loops_mock.return_value = {'new-session-id'}
     with (
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.Session',
+            'openhands.server.conversation_manager.standalone_conversation_manager.Session',
             mock_session,
         ),
         patch(
@@ -205,11 +205,11 @@ async def test_join_cluster_session():
             0.01,
         ),
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._redis_subscribe',
+            'openhands.server.conversation_manager.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
             AsyncMock(),
         ),
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._get_running_agent_loops_remotely',
+            'openhands.server.conversation_manager.clustered_conversation_manager.ClusteredConversationManager._get_running_agent_loops_remotely',
             get_running_agent_loops_mock,
         ),
     ):
@@ -234,7 +234,7 @@ async def test_add_to_local_event_stream():
     get_running_agent_loops_mock.return_value = set()
     with (
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.Session',
+            'openhands.server.conversation_manager.standalone_conversation_manager.Session',
             mock_session,
         ),
         patch(
@@ -242,11 +242,11 @@ async def test_add_to_local_event_stream():
             0.01,
         ),
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._redis_subscribe',
+            'openhands.server.conversation_manager.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
             AsyncMock(),
         ),
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager.get_running_agent_loops',
+            'openhands.server.conversation_manager.clustered_conversation_manager.ClusteredConversationManager.get_running_agent_loops',
             get_running_agent_loops_mock,
         ),
     ):
@@ -276,7 +276,7 @@ async def test_add_to_cluster_event_stream():
     get_running_agent_loops_mock.return_value = {'new-session-id'}
     with (
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.Session',
+            'openhands.server.conversation_manager.standalone_conversation_manager.Session',
             mock_session,
         ),
         patch(
@@ -284,11 +284,11 @@ async def test_add_to_cluster_event_stream():
             0.01,
         ),
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._redis_subscribe',
+            'openhands.server.conversation_manager.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
             AsyncMock(),
         ),
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._get_running_agent_loops_remotely',
+            'openhands.server.conversation_manager.clustered_conversation_manager.ClusteredConversationManager._get_running_agent_loops_remotely',
             get_running_agent_loops_mock,
         ),
     ):
@@ -304,7 +304,7 @@ async def test_add_to_cluster_event_stream():
     assert sio.manager.redis.publish.await_count == 1
     sio.manager.redis.publish.assert_called_once_with(
         'session_msg',
-        '{"sid": "new-session-id", "message_type": "event", "data": {"event_type": "some_event"}}',
+        '{"message_type": "event", "sid": "new-session-id", "data": {"event_type": "some_event"}}',
     )
 
 
@@ -317,7 +317,7 @@ async def test_cleanup_session_connections():
             0.01,
         ),
         patch(
-            'openhands.server.conversation_manager.clustered_conversation_manager.SessionManager._redis_subscribe',
+            'openhands.server.conversation_manager.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
             AsyncMock(),
         ),
     ):

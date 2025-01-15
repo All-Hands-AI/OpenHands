@@ -10,6 +10,7 @@ import socketio
 from openhands.core.config.app_config import AppConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
+from openhands.events.stream import EventStream
 from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
 )
@@ -166,6 +167,17 @@ class ClusteredConversationManager(StandaloneConversationManager):
                         'local_connection_to_closing_session:{connection_id}:{sid}'
                     )
                     await self.sio.disconnect(connection_id)
+
+    async def _get_event_stream(self, sid) -> EventStream | None:
+        event_stream = await super()._get_event_stream(sid)
+        if event_stream:
+            return event_stream
+
+        if await self._get_running_agent_loops_remotely(filter_to_sids={sid}):
+            logger.info(f'found_remote_agent_loop:{sid}')
+            return EventStream(sid, self.file_store)
+
+        return None
 
     async def get_running_agent_loops(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
@@ -324,13 +336,24 @@ class ClusteredConversationManager(StandaloneConversationManager):
                     ]:
                         sid_to_close.append(sid)
 
-                connections = await self.get_connections(
+                # First we filter out any conversation that has local connections
+                connections = await super().get_connections(
                     filter_to_sids=set(sid_to_close)
                 )
                 connected_sids = {sid for _, sid in connections.items()}
                 sid_to_close = [
                     sid for sid in sid_to_close if sid not in connected_sids
                 ]
+
+                # Next we filter out any conversation that has remote connections
+                if sid_to_close:
+                    connections = await self._get_connections_remotely(
+                        filter_to_sids=set(sid_to_close)
+                    )
+                    connected_sids = {sid for _, sid in connections.items()}
+                    sid_to_close = [
+                        sid for sid in sid_to_close if sid not in connected_sids
+                    ]
 
                 await wait_all(self._close_session(sid) for sid in sid_to_close)
                 await asyncio.sleep(_CLEANUP_INTERVAL)
@@ -348,20 +371,39 @@ class ClusteredConversationManager(StandaloneConversationManager):
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
     async def _close_session(self, sid: str):
+        logger.info(f'_close_session:{sid}')
+
+        # Clear up local variables
+        connection_ids_to_remove = list(
+            connection_id
+            for connection_id, conn_sid in self._local_connection_id_to_session_id.items()
+            if sid == conn_sid
+        )
+        logger.info(f'removing connections: {connection_ids_to_remove}')
+        for connnnection_id in connection_ids_to_remove:
+            self._local_connection_id_to_session_id.pop(connnnection_id, None)
+
         session = self._local_agent_loops_by_sid.pop(sid, None)
-        if session:
-            await session.close()
+        if not session:
+            logger.warning(f'no_session_to_close:{sid}')
+            return
+
+        logger.info(f'closing_session:{session.sid}')
+        # We alert the cluster in case they are interested
+        try:
             redis_client = self._get_redis_client()
             if redis_client:
                 await redis_client.publish(
                     'session_msg',
-                    json.dumps({'message_type': 'session_closing', 'sid': sid}),
+                    json.dumps({'sid': session.sid, 'message_type': 'session_closing'}),
                 )
-            # Create a list of items to process to avoid modifying dict during iteration
-            items = list(self._local_connection_id_to_session_id.items())
-            for connection_id, local_sid in items:
-                if sid == local_sid:
-                    await self.sio.disconnect(connection_id)
+        except Exception:
+            logger.info(
+                'error_publishing_close_session_event', exc_info=True, stack_info=True
+            )
+
+        await session.close()
+        logger.info(f'closed_session:{session.sid}')
 
     @classmethod
     def get_instance(
