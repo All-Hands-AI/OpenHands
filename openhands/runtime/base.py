@@ -181,7 +181,7 @@ class Runtime(FileEditRuntimeMixin):
 
     async def _handle_action(self, event: Action) -> None:
         if event.timeout is None:
-            event.timeout = self.config.sandbox.timeout
+            event.set_default_timeout(self.config.sandbox.timeout)
         assert event.timeout is not None
         try:
             observation: Observation = await call_sync_from_async(

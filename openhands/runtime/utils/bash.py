@@ -174,7 +174,7 @@ class BashSession:
         self,
         work_dir: str,
         username: str | None = None,
-        no_change_timeout_seconds: float = 30.0,
+        no_change_timeout_seconds: int = 30,
     ):
         self.NO_CHANGE_TIMEOUT_SECONDS = no_change_timeout_seconds
         self.work_dir = work_dir
@@ -460,6 +460,8 @@ class BashSession:
         logger.debug(f'RECEIVED ACTION: {action}')
         command = action.command.strip()
 
+        # Handle when prev command is hard timeout
+
         if command == '' and self.prev_status not in {
             BashCommandStatus.CONTINUE,
             BashCommandStatus.NO_CHANGE_TIMEOUT,
@@ -525,7 +527,7 @@ class BashSession:
             # We ignore this if the command is *blocking
             time_since_last_change = time.time() - last_change_time
             logger.debug(
-                f'CHECKING NO CHANGE TIMEOUT ({self.NO_CHANGE_TIMEOUT_SECONDS}s): elapsed {time_since_last_change}'
+                f'CHECKING NO CHANGE TIMEOUT ({self.NO_CHANGE_TIMEOUT_SECONDS}s): elapsed {time_since_last_change}. Action blocking: {action.blocking}'
             )
             if (
                 not action.blocking

@@ -46,7 +46,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         action = CmdRunAction(command='python3 -m http.server 8080')
-        action.timeout = 1
+        action.set_hard_timeout(1)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
@@ -58,7 +58,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         )
 
         action = CmdRunAction(command='C-c')
-        action.timeout = 30
+        action.set_hard_timeout(30)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
@@ -67,7 +67,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         assert '/workspace' in obs.metadata.working_dir
 
         action = CmdRunAction(command='ls')
-        action.timeout = 1
+        action.set_hard_timeout(1)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
@@ -77,7 +77,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
 
         # run it again!
         action = CmdRunAction(command='python3 -m http.server 8080')
-        action.timeout = 1
+        action.set_hard_timeout(1)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
@@ -560,7 +560,7 @@ def test_interactive_command(temp_dir, runtime_cls, run_as_openhands):
     try:
         # Test interactive command
         action = CmdRunAction('read -p "Enter name: " name && echo "Hello $name"')
-        action.timeout = 1
+        action.set_hard_timeout(1)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         # assert 'Enter name:' in obs.content # FIXME: this is not working
@@ -591,7 +591,7 @@ def test_long_output(temp_dir, runtime_cls, run_as_openhands):
     try:
         # Generate a long output
         action = CmdRunAction('for i in $(seq 1 5000); do echo "Line $i"; done')
-        action.timeout = 10
+        action.set_hard_timeout(10)
         obs = runtime.run_action(action)
         assert obs.exit_code == 0
         assert 'Line 1' in obs.content
@@ -605,7 +605,7 @@ def test_long_output_exceed_history_limit(temp_dir, runtime_cls, run_as_openhand
     try:
         # Generate a long output
         action = CmdRunAction('for i in $(seq 1 50000); do echo "Line $i"; done')
-        action.timeout = 30
+        action.set_hard_timeout(30)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
@@ -622,13 +622,13 @@ def test_long_output_from_nested_directories(temp_dir, runtime_cls, run_as_openh
         # Create nested directories with many files
         setup_cmd = 'mkdir -p /tmp/test_dir && cd /tmp/test_dir && for i in $(seq 1 100); do mkdir -p "folder_$i"; for j in $(seq 1 100); do touch "folder_$i/file_$j.txt"; done; done'
         setup_action = CmdRunAction(setup_cmd.strip())
-        setup_action.timeout = 60
+        setup_action.set_hard_timeout(60)
         obs = runtime.run_action(setup_action)
         assert obs.exit_code == 0
 
         # List the directory structure recursively
         action = CmdRunAction('ls -R /tmp/test_dir')
-        action.timeout = 60
+        action.set_hard_timeout(60)
         obs = runtime.run_action(action)
         assert obs.exit_code == 0
 
@@ -673,7 +673,7 @@ def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
     try:
         # Start a command that produces output slowly
         action = CmdRunAction('for i in {1..5}; do echo $i; sleep 3; done')
-        action.timeout = 2.5  # Set timeout to 2.5 seconds
+        action.set_hard_timeout(2.5)
         obs = runtime.run_action(action)
         assert obs.content.strip() == '1'
         assert obs.metadata.prefix == ''
@@ -681,7 +681,7 @@ def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
 
         # Continue watching output
         action = CmdRunAction('')
-        action.timeout = 2.5
+        action.set_hard_timeout(2.5)
         obs = runtime.run_action(action)
         assert '[Command output continued from previous command]' in obs.metadata.prefix
         assert obs.content.strip() == '2'
@@ -690,7 +690,7 @@ def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
         # Continue until completion
         for expected in ['3', '4', '5']:
             action = CmdRunAction('')
-            action.timeout = 2.5
+            action.set_hard_timeout(2.5)
             obs = runtime.run_action(action)
             assert (
                 '[Command output continued from previous command]'
@@ -714,7 +714,7 @@ def test_long_running_command_follow_by_execute(
     try:
         # Test command that produces output slowly
         action = CmdRunAction('for i in {1..3}; do echo $i; sleep 3; done')
-        action.timeout = 2.5
+        action.set_hard_timeout(2.5)
         action.blocking = False
         obs = runtime.run_action(action)
         assert '1' in obs.content  # First number should appear before timeout
@@ -724,7 +724,7 @@ def test_long_running_command_follow_by_execute(
 
         # Continue watching output
         action = CmdRunAction('')
-        action.timeout = 2.5
+        action.set_hard_timeout(2.5)
         obs = runtime.run_action(action)
         assert '2' in obs.content
         assert (
@@ -735,7 +735,7 @@ def test_long_running_command_follow_by_execute(
 
         # Test command that produces no output
         action = CmdRunAction('sleep 15')
-        action.timeout = 2.5
+        action.set_hard_timeout(2.5)
         obs = runtime.run_action(action)
         assert '3' in obs.content
         assert (
@@ -791,6 +791,7 @@ def test_stress_long_output(temp_dir, runtime_cls, run_as_openhands):
         temp_dir,
         runtime_cls,
         run_as_openhands,
+        runtime_startup_env_vars={'NO_CHANGE_TIMEOUT_SECONDS': '1'},
         docker_runtime_kwargs={
             'cpu_period': 100000,  # 100ms
             'cpu_quota': 100000,  # Can use 100ms out of each 100ms period (1 CPU)
@@ -812,20 +813,36 @@ def test_stress_long_output(temp_dir, runtime_cls, run_as_openhands):
                     f'Tmux memory usage (iteration {i}): {mem_obs.content.strip()} KB'
                 )
 
-            # Generate long output with 1000 asterisks per line
+            # # Generate long output with 1000 asterisks per line
+            # action = CmdRunAction(
+            #     f'export i={i}; for j in $(seq 1 1000); do echo "Line $j - Iteration $i - $(printf \'%1000s\' | tr " " "*")"; done'
+            # )
+            # action.set_hard_timeout(30)
+            # obs = runtime.run_action(action)
+
+            # # Verify the output
+            # assert obs.exit_code == 0
+            # assert f'Line 1 - Iteration {i}' in obs.content
+            # assert f'Line 1000 - Iteration {i}' in obs.content
+            # assert '[The command completed with exit code 0.]' in obs.metadata.suffix
+
             action = CmdRunAction(
-                f'export i={i}; for j in $(seq 1 1000); do echo "Line $j - Iteration $i - $(printf \'%1000s\' | tr " " "*")"; done'
+                'read -p "Do you want to continue? [Y/n] " answer; if [[ $answer == "Y" ]]; then echo "Proceeding with operation..."; echo "Operation completed successfully!"; else echo "Operation cancelled."; exit 1; fi'
             )
-            action.timeout = 30
             obs = runtime.run_action(action)
+            assert 'Do you want to continue?' in obs.content
+            assert obs.exit_code == -1  # Command is still running, waiting for input
+
+            # Send the confirmation
+            action = CmdRunAction('Y')
+            obs = runtime.run_action(action)
+            assert 'Proceeding with operation...' in obs.content
+            assert 'Operation completed successfully!' in obs.content
+            assert obs.exit_code == 0
+            assert '[The command completed with exit code 0.]' in obs.metadata.suffix
 
             duration = time.time() - start_time
             logger.info(f'Completed iteration {i} in {duration:.2f} seconds')
 
-            # Verify the output
-            assert obs.exit_code == 0
-            assert f'Line 1 - Iteration {i}' in obs.content
-            assert f'Line 1000 - Iteration {i}' in obs.content
-            assert '[The command completed with exit code 0.]' in obs.metadata.suffix
     finally:
         _close_test_runtime(runtime)

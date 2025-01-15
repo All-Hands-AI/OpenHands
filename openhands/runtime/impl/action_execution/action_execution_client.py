@@ -216,7 +216,7 @@ class ActionExecutionClient(Runtime):
 
         # set timeout to default if not set
         if action.timeout is None:
-            action.timeout = self.config.sandbox.timeout
+            action.set_default_timeout(self.config.sandbox.timeout)
 
         with self.action_semaphore:
             if not action.runnable:
