@@ -164,7 +164,20 @@ export const chatSlice = createSlice({
         content = `${
           causeMessage.content
         }\n\nOutput:\n\`\`\`\n${content.trim() || "[Command finished execution with no output]"}\n\`\`\``;
-        causeMessage.content = content; // Observation content includes the action
+
+        // Only add metadata for 'run' observations
+        if (observationID === "run") {
+          const metadata = (observation.payload as CommandObservation).extras.metadata;
+          const metadataTable = Object.entries(metadata)
+            .map(([key, value]) => `- **${key}:** ${value}`)
+            .join("\n");
+          causeMessage.content = content;
+          causeMessage.content +=
+            "\n\nMetadata:\n\n" +
+            `${metadataTable}\n\n`;
+        } else {
+          causeMessage.content = content;
+        }
       } else if (observationID === "read" || observationID === "edit") {
         const { content } = observation.payload;
         causeMessage.content = `\`\`\`${observationID === "edit" ? "diff" : "python"}\n${content}\n\`\`\``; // Content is already truncated by the ACI
