@@ -122,7 +122,10 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     github_token = getattr(request.state, 'github_token', '') or data.github_token
     selected_repository = data.selected_repository
 
-    await _create_new_conversation(user_id, github_token, selected_repository)
+    response = await _create_new_conversation(
+        user_id, github_token, selected_repository
+    )
+    return response
 
 
 @app.get('/conversations')
