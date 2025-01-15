@@ -12,8 +12,9 @@ import { ModalButton } from "../../buttons/modal-button";
 import { FormFieldset } from "../../form-fieldset";
 import { useConfig } from "#/hooks/query/use-config";
 import { useCurrentSettings } from "#/context/settings-context";
-import { ApiSettings } from "#/services/settings";
 import { GitHubTokenInput } from "./github-token-input";
+
+type GetArgsType<T> = T extends (args: infer A) => unknown ? A : never;
 
 interface AccountSettingsFormProps {
   onClose: () => void;
@@ -40,8 +41,10 @@ export function AccountSettingsForm({
     const language = formData.get("language")?.toString();
     const analytics = formData.get("analytics")?.toString() === "on";
 
-    const newSettings: Pick<ApiSettings, "github_token" | "language"> = {};
-
+    const newSettings: Pick<
+      GetArgsType<typeof saveUserSettings>,
+      "github_token" | "language"
+    > = {};
     if (ghToken?.trim()) newSettings.github_token = ghToken.trim();
 
     // The form returns the language label, so we need to find the corresponding

@@ -24,6 +24,10 @@ export type ApiSettings = {
   github_token_is_set: boolean;
 };
 
+export type PostApiSettings = Omit<ApiSettings, "github_token_is_set"> & {
+  github_token: string;
+};
+
 export const DEFAULT_SETTINGS: Settings = {
   LLM_MODEL: "anthropic/claude-3-5-sonnet-20241022",
   LLM_BASE_URL: "",

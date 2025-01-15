@@ -182,8 +182,8 @@ export const handlers = [
         ...MOCK_USER_PREFERENCES.settings,
         // @ts-expect-error - We know this is a settings object
         ...body,
-        github_token_is_set:
-          body.github_token !== undefined && body.github_token !== "",
+        // @ts-expect-error - We know this is a settings object
+        github_token_is_set: body.github_token !== "",
       };
 
       return HttpResponse.json(null, { status: 200 });

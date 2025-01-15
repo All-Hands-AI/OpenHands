@@ -55,6 +55,7 @@ export function GitHubTokenInput({ isSet, onUnset }: GitHubTokenInputProps) {
           id="ghToken"
           name="ghToken"
           type="password"
+          placeholder="Enter your GitHub token here"
           className="bg-[#27272A] text-xs py-[10px] px-3 rounded"
         />
       )}
