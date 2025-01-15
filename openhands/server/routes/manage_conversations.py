@@ -18,6 +18,7 @@ from openhands.storage.data_models.conversation_info_result_set import (
 )
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
+from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import (
     GENERAL_TIMEOUT,
     call_async_from_sync,
@@ -33,17 +34,12 @@ class InitSessionRequest(BaseModel):
     selected_repository: str | None = None
 
 
-@app.post('/conversations')
-async def new_conversation(request: Request, data: InitSessionRequest):
-    """Initialize a new session or join an existing one.
-    After successful initialization, the client should connect to the WebSocket
-    using the returned conversation ID
-    """
-    logger.info('Initializing new conversation')
-
-    logger.info('Loading settings')
-    user_id = get_user_id(request)
-    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
+async def _create_new_conversation(
+    settings_store: SettingsStore,
+    user_id: str | None,
+    token: str | None,
+    selected_repository: str | None,
+):
     settings = await settings_store.load()
     logger.info('Settings loaded')
 
@@ -70,9 +66,9 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND',
             }
         )
-    github_token = getattr(request.state, 'github_token', '')
-    session_init_args['github_token'] = github_token or data.github_token or ''
-    session_init_args['selected_repository'] = data.selected_repository
+
+    session_init_args['github_token'] = token or ''
+    session_init_args['selected_repository'] = selected_repository
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
@@ -85,7 +81,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     logger.info(f'New conversation ID: {conversation_id}')
 
     repository_title = (
-        data.selected_repository.split('/')[-1] if data.selected_repository else None
+        selected_repository.split('/')[-1] if selected_repository else None
     )
     conversation_title = f'{repository_title or "Conversation"} {conversation_id[:5]}'
 
@@ -95,7 +91,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             conversation_id=conversation_id,
             title=conversation_title,
             github_user_id=user_id,
-            selected_repository=data.selected_repository,
+            selected_repository=selected_repository,
         )
     )
 
@@ -113,6 +109,25 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         pass  # Already subscribed - take no action
     logger.info(f'Finished initializing conversation {conversation_id}')
     return JSONResponse(content={'status': 'ok', 'conversation_id': conversation_id})
+
+
+@app.post('/conversations')
+async def new_conversation(request: Request, data: InitSessionRequest):
+    """Initialize a new session or join an existing one.
+    After successful initialization, the client should connect to the WebSocket
+    using the returned conversation ID
+    """
+    logger.info('Initializing new conversation')
+
+    logger.info('Loading settings')
+    user_id = get_user_id(request)
+    github_token = getattr(request.state, 'github_token', '') or data.github_token
+    selected_repository = data.selected_repository
+
+    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
+    await _create_new_conversation(
+        settings_store, user_id, github_token, selected_repository
+    )
 
 
 @app.get('/conversations')
