@@ -38,6 +38,7 @@ async def _create_new_conversation(
     token: str | None,
     selected_repository: str | None,
 ):
+    logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
     logger.info('Settings loaded')
@@ -117,8 +118,6 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     using the returned conversation ID
     """
     logger.info('Initializing new conversation')
-
-    logger.info('Loading settings')
     user_id = get_user_id(request)
     github_token = getattr(request.state, 'github_token', '') or data.github_token
     selected_repository = data.selected_repository
