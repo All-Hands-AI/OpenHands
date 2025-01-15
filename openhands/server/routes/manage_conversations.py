@@ -18,7 +18,6 @@ from openhands.storage.data_models.conversation_info_result_set import (
 )
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
-from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import (
     GENERAL_TIMEOUT,
     call_async_from_sync,
@@ -35,11 +34,11 @@ class InitSessionRequest(BaseModel):
 
 
 async def _create_new_conversation(
-    settings_store: SettingsStore,
     user_id: str | None,
     token: str | None,
     selected_repository: str | None,
 ):
+    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
     logger.info('Settings loaded')
 
@@ -124,10 +123,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     github_token = getattr(request.state, 'github_token', '') or data.github_token
     selected_repository = data.selected_repository
 
-    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-    await _create_new_conversation(
-        settings_store, user_id, github_token, selected_repository
-    )
+    await _create_new_conversation(user_id, github_token, selected_repository)
 
 
 @app.get('/conversations')
