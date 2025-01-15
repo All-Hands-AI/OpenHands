@@ -1,6 +1,7 @@
 """Bash-related tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import os
+import time
 from pathlib import Path
 
 import pytest
@@ -789,13 +790,17 @@ def test_stress_long_output(temp_dir, runtime_cls, run_as_openhands):
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Run a command that generates long output multiple times
-        for i in range(100):
+        for i in range(1000):
+            start_time = time.time()
+
             action = CmdRunAction(
-                f'export i={i}; for j in $(seq 1 1000); do echo "Line $j - Iteration $i"; done'
+                f'export i={i}; for j in $(seq 1 10000); do echo "Line $j - Iteration $i"; done'
             )
             action.timeout = 30
             obs = runtime.run_action(action)
-            logger.info(f'Completed iteration {i}', extra={'msg_type': 'DEBUG'})
+
+            duration = time.time() - start_time
+            logger.info(f'Completed iteration {i} in {duration:.2f} seconds')
 
             # Verify the output
             assert obs.exit_code == 0
