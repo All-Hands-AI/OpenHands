@@ -17,16 +17,25 @@ class LogStreamer:
         logFn: Callable,
     ):
         self.log = logFn
-        self.log_generator = container.logs(stream=True, follow=True)
+        self.stdout_thread = None
+        self.log_generator = None
         self._stop_event = threading.Event()
 
-        # Start the stdout streaming thread
-        self.stdout_thread = threading.Thread(target=self._stream_logs)
-        self.stdout_thread.daemon = True
-        self.stdout_thread.start()
+        try:
+            self.log_generator = container.logs(stream=True, follow=True)
+            # Start the stdout streaming thread
+            self.stdout_thread = threading.Thread(target=self._stream_logs)
+            self.stdout_thread.daemon = True
+            self.stdout_thread.start()
+        except Exception as e:
+            self.log('error', f'Failed to initialize log streaming: {e}')
 
     def _stream_logs(self):
         """Stream logs from the Docker container to stdout."""
+        if not self.log_generator:
+            self.log('error', 'Log generator not initialized')
+            return
+
         try:
             for log_line in self.log_generator:
                 if self._stop_event.is_set():
