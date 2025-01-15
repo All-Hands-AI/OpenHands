@@ -9,6 +9,7 @@ export type Settings = {
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
   REMOTE_RUNTIME_RESOURCE_FACTOR: number;
+  GITHUB_TOKEN_IS_SET: boolean;
 };
 
 export type ApiSettings = {
@@ -20,6 +21,7 @@ export type ApiSettings = {
   confirmation_mode: boolean;
   security_analyzer: string;
   remote_runtime_resource_factor: number;
+  github_token_is_set: boolean;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -31,6 +33,7 @@ export const DEFAULT_SETTINGS: Settings = {
   CONFIRMATION_MODE: false,
   SECURITY_ANALYZER: "",
   REMOTE_RUNTIME_RESOURCE_FACTOR: 1,
+  GITHUB_TOKEN_IS_SET: false,
 };
 
 export const getCurrentSettingsVersion = () => {

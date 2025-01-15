@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 
 interface CustomInputProps {
+  testId?: string;
   name: string;
   label: string;
   required?: boolean;
@@ -10,6 +11,7 @@ interface CustomInputProps {
 }
 
 export function CustomInput({
+  testId,
   name,
   label,
   required,
@@ -19,7 +21,8 @@ export function CustomInput({
   const { t } = useTranslation();
 
   return (
-    <label htmlFor={name} className="flex flex-col gap-2">
+    <label data-testid={testId} htmlFor={name} className="flex flex-col gap-2">
+      <span>unset</span>
       <span className="text-[11px] leading-4 tracking-[0.5px] font-[500] text-[#A3A3A3]">
         {label}
         {required && <span className="text-[#FF4D4F]">*</span>}
@@ -31,6 +34,7 @@ export function CustomInput({
         )}
       </span>
       <input
+        data-testid={`${testId}-input`}
         id={name}
         name={name}
         required={required}

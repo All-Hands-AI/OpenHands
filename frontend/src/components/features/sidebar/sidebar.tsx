@@ -33,6 +33,7 @@ export function Sidebar() {
     isError: settingsIsError,
     isSuccess: settingsSuccessfulyFetched,
   } = useSettings();
+  const { saveUserSettings } = useCurrentSettings();
 
   const { isUpToDate: settingsAreUpToDate } = useCurrentSettings();
 
@@ -92,7 +93,7 @@ export function Sidebar() {
               user={
                 user.data ? { avatar_url: user.data.avatar_url } : undefined
               }
-              onLogout={logout}
+              onLogout={() => saveUserSettings({ github_token: "" })}
               onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
             />
           )}

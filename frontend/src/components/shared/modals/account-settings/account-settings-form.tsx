@@ -7,13 +7,13 @@ import {
 import { ModalBody } from "../modal-body";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
-import { useAuth } from "#/context/auth-context";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { ModalButton } from "../../buttons/modal-button";
-import { CustomInput } from "../../custom-input";
 import { FormFieldset } from "../../form-fieldset";
 import { useConfig } from "#/hooks/query/use-config";
 import { useCurrentSettings } from "#/context/settings-context";
+import { ApiSettings } from "#/services/settings";
+import { GitHubTokenInput } from "./github-token-input";
 
 interface AccountSettingsFormProps {
   onClose: () => void;
@@ -28,10 +28,9 @@ export function AccountSettingsForm({
   gitHubError,
   analyticsConsent,
 }: AccountSettingsFormProps) {
-  const { gitHubToken, setGitHubToken, logout } = useAuth();
-  const { data: config } = useConfig();
-  const { saveUserSettings } = useCurrentSettings();
   const { t } = useTranslation();
+  const { data: config } = useConfig();
+  const { saveUserSettings, settings } = useCurrentSettings();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -41,7 +40,9 @@ export function AccountSettingsForm({
     const language = formData.get("language")?.toString();
     const analytics = formData.get("analytics")?.toString() === "on";
 
-    if (ghToken) setGitHubToken(ghToken);
+    const newSettings: Pick<ApiSettings, "github_token" | "language"> = {};
+
+    if (ghToken?.trim()) newSettings.github_token = ghToken.trim();
 
     // The form returns the language label, so we need to find the corresponding
     // language key to save it in the settings
@@ -50,14 +51,22 @@ export function AccountSettingsForm({
         ({ label }) => label === language,
       )?.value;
 
-      if (languageKey) await saveUserSettings({ LANGUAGE: languageKey });
+      if (languageKey && languageKey !== selectedLanguage)
+        newSettings.language = languageKey;
     }
+
+    if (Object.keys(newSettings).length > 0)
+      await saveUserSettings(newSettings);
 
     handleCaptureConsent(analytics);
     const ANALYTICS = analytics.toString();
     localStorage.setItem("analytics-consent", ANALYTICS);
 
     onClose();
+  };
+
+  const handleUnsetGitHubToken = async () => {
+    await saveUserSettings({ github_token: "" });
   };
 
   return (
@@ -76,6 +85,29 @@ export function AccountSettingsForm({
               {t(I18nKey.GITHUB$CONFIGURE_REPOS)}
             </a>
           )}
+
+          {config?.APP_MODE !== "saas" && (
+            <>
+              <GitHubTokenInput
+                isSet={!!settings?.GITHUB_TOKEN_IS_SET}
+                onUnset={handleUnsetGitHubToken}
+              />
+              {!settings?.GITHUB_TOKEN_IS_SET && (
+                <BaseModalDescription>
+                  {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
+                  <a
+                    href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-[#791B80] underline"
+                  >
+                    {t(I18nKey.COMMON$HERE)}
+                  </a>
+                </BaseModalDescription>
+              )}
+            </>
+          )}
+
           <FormFieldset
             id="language"
             label={t(I18nKey.LANGUAGE$LABEL)}
@@ -87,42 +119,10 @@ export function AccountSettingsForm({
             }))}
           />
 
-          {config?.APP_MODE !== "saas" && (
-            <>
-              <CustomInput
-                name="ghToken"
-                label={t(I18nKey.GITHUB$TOKEN_LABEL)}
-                type="password"
-                defaultValue={gitHubToken ?? ""}
-              />
-              <BaseModalDescription>
-                {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
-                <a
-                  href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="text-[#791B80] underline"
-                >
-                  {t(I18nKey.COMMON$HERE)}
-                </a>
-              </BaseModalDescription>
-            </>
-          )}
           {gitHubError && (
             <p className="text-danger text-xs">
               {t(I18nKey.GITHUB$TOKEN_INVALID)}
             </p>
-          )}
-          {gitHubToken && !gitHubError && (
-            <ModalButton
-              variant="text-like"
-              text={t(I18nKey.BUTTON$DISCONNECT)}
-              onClick={() => {
-                logout();
-                onClose();
-              }}
-              className="text-danger self-start"
-            />
           )}
         </div>
 
