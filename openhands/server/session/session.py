@@ -62,17 +62,9 @@ class Session:
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
 
-    async def close(self):
-        if self.sio:
-            await self.sio.emit(
-                'oh_event',
-                event_to_dict(
-                    AgentStateChangedObservation('', AgentState.STOPPED.value)
-                ),
-                to=ROOM_KEY.format(sid=self.sid),
-            )
+    def close(self):
         self.is_alive = False
-        await self.agent_session.close()
+        self.agent_session.close()
 
     async def initialize_agent(
         self,
