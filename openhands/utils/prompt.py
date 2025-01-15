@@ -59,6 +59,9 @@ class PromptManager:
         self.repo_microagents: dict[str, RepoMicroAgent] = {}
 
         if microagent_dir:
+            # This loads micro-agents from the microagent_dir
+            # which is typically the OpenHands/microagents (i.e., the PUBLIC microagents)
+
             # Only load KnowledgeMicroAgents
             repo_microagents, knowledge_microagents, _ = load_microagents_from_dir(
                 microagent_dir
@@ -79,6 +82,10 @@ class PromptManager:
                     self.repo_microagents[name] = microagent
 
     def load_microagents(self, microagents: list[BaseMicroAgent]):
+        """Load microagents from a list of BaseMicroAgents.
+
+        This is typically used when loading microagents from inside a repo.
+        """
         # Only keep KnowledgeMicroAgents and RepoMicroAgents
         for microagent in microagents:
             if microagent.name in self.disabled_microagents:
