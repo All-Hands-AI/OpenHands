@@ -57,5 +57,5 @@ class LogStreamer:
         if self.stdout_thread and self.stdout_thread.is_alive():
             self.stdout_thread.join(timeout)
         # Close the log generator to release the file descriptor
-        if hasattr(self.log_generator, 'close'):
+        if self.log_generator is not None and hasattr(self.log_generator, 'close'):
             self.log_generator.close()
