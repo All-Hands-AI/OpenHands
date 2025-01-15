@@ -264,7 +264,6 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
-
         print(f'CONTROLLER {self.id}:on_event: {event.__class__.__name__}({event.id})')
 
         # If we have a delegate that is not finished or errored, forward events to it
@@ -281,16 +280,20 @@ class AgentController:
                 )
                 return
             else:
-                # delegate is done
+                # delegate is done or errored, so end it
                 self.end_delegate()
                 return
 
+        # continue parent processing only if there's no active delegate
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
 
     async def _on_event(self, event: Event) -> None:
         print(f'CONTROLLER {self.id}:_on_event: {event.__class__.__name__}({event.id})')
         if hasattr(event, 'hidden') and event.hidden:
             return
+
+        # Give others a little chance
+        await asyncio.sleep(0.01)
 
         # if the event is not filtered out, add it to the history
         if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
@@ -554,17 +557,19 @@ class AgentController:
         )
 
     def end_delegate(self) -> None:
+        """Ends the currently active delegate (e.g., if it is finished or errored)
+        so that this controller can resume normal operation.
+        """
         print(f'CONTROLLER {self.id}:end_delegate')
         if self.delegate is None:
             return
 
         delegate_state = self.delegate.get_agent_state()
 
-        # update iteration that shall be shared across agents
+        # update iteration that is shared across agents
         self.state.iteration = self.delegate.state.iteration
 
         # close the delegate controller before adding new events
-        # then add the delegate observation
         asyncio.get_event_loop().run_until_complete(self.delegate.close())
 
         if delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
