@@ -52,7 +52,7 @@ jobs:
   # Run python unit tests on Linux
   test-on-linux-local-runtime:
     name: Local Runtime Tests on Linux
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     env:
       INSTALL_DOCKER: '0' # Set to '0' to skip Docker installation
     strategy:
