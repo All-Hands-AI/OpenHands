@@ -41,7 +41,7 @@ class SandboxConfig:
 
     remote_runtime_api_url: str = 'http://localhost:8000'
     local_runtime_url: str = 'http://localhost'
-    keep_runtime_alive: bool = False
+    keep_runtime_alive: bool = True
     rm_all_containers: bool = False
     api_key: str | None = None
     base_container_image: str = 'nikolaik/python-nodejs:python3.12-nodejs22'  # default to nikolaik/python-nodejs:python3.12-nodejs22 for eventstream runtime
@@ -60,7 +60,7 @@ class SandboxConfig:
     runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
     browsergym_eval_env: str | None = None
     platform: str | None = None
-    close_delay: int = 15
+    close_delay: int = 900
     remote_runtime_resource_factor: int = 1
     enable_gpu: bool = False
     docker_runtime_kwargs: str | None = None
