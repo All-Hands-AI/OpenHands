@@ -1259,6 +1259,10 @@
         "no": "Kunne ikke hente modeller og agenter",
         "ja": "モデルとエージェントの取得に失敗しました"
     },
+    "CONFIGURATION$SETTINGS_NOT_FOUND": {
+        "en": "Settings not found. Please check your API key",
+        "es": "Configuraciones no encontradas. Por favor revisa tu API key"
+    },
     "SESSION$SESSION_HANDLING_ERROR_MESSAGE": {
         "en": "Error handling message",
         "zh-CN": "处理会话时出错",
