@@ -107,12 +107,7 @@ class CodeActAgent(Agent):
             f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2, ensure_ascii=False).replace("\\n", "\n")}'
         )
         self.prompt_manager = PromptManager(
-            microagent_dir=os.path.join(
-                os.path.dirname(os.path.dirname(openhands.__file__)),
-                'microagents',
-            )
-            if self.config.use_microagents
-            else None,
+            microagent_dir=None,  # Will be set in step() when we have access to the runtime
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
             disabled_microagents=self.config.disabled_microagents,
         )
@@ -369,6 +364,14 @@ class CodeActAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
+        # Initialize the prompt_manager with microagents from the runtime
+        if self.config.use_microagents and 'runtime' in state.inputs:
+            # Load microagents from the runtime
+            runtime = state.inputs['runtime']
+            microagents = runtime.get_microagents_from_selected_repo(None)  # None means current workspace
+            
+            # Load the microagents into the prompt manager
+            self.prompt_manager.load_microagents(microagents)
         # Continue with pending actions if any
         if self.pending_actions:
             return self.pending_actions.popleft()
