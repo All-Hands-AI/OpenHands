@@ -70,7 +70,15 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3.5-haiku',
     'claude-3-5-haiku-20241022',
     'gpt-4o-mini',
-    'gpt-4o',
+    'o1-2024-12-17',
+]
+
+REASONING_EFFORT_SUPPORTED_MODELS = [
+    'o1-2024-12-17',
+]
+
+MODELS_WITHOUT_STOP_WORDS = [
+    'o1-mini',
 ]
 
 
@@ -186,7 +194,8 @@ class LLM(RetryMixin, DebugMixin):
                     messages, kwargs['tools']
                 )
                 kwargs['messages'] = messages
-                kwargs['stop'] = STOP_WORDS
+                if self.config.model not in MODELS_WITHOUT_STOP_WORDS:
+                    kwargs['stop'] = STOP_WORDS
                 mock_fncall_tools = kwargs.pop('tools')
 
             # if we have no messages, something went very wrong
@@ -205,6 +214,10 @@ class LLM(RetryMixin, DebugMixin):
                         'anthropic-beta': 'prompt-caching-2024-07-31',
                     }
 
+            # Set reasoning effort for models that support it
+            if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS:
+                kwargs['reasoning_effort'] = self.config.reasoning_effort
+
             # set litellm modify_params to the configured value
             # True by default to allow litellm to do transformations like adding a default message, when a message is empty
             # NOTE: this setting is global; unlike drop_params, it cannot be overridden in the litellm completion partial
@@ -213,7 +226,6 @@ class LLM(RetryMixin, DebugMixin):
             try:
                 # Record start time for latency measurement
                 start_time = time.time()
-
                 # we don't support streaming here, thus we get a ModelResponse
                 resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
