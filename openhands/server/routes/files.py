@@ -317,8 +317,7 @@ async def zip_current_workspace(
         runtime: Runtime = request.state.conversation.runtime
         path = runtime.config.workspace_mount_path_in_sandbox
         try:
-            zip_file = runtime.copy_from(path)
-            # zip_file = await call_sync_from_async(runtime.copy_from, path)
+            zip_file = await call_sync_from_async(runtime.copy_from, path)
         except AgentRuntimeUnavailableError as e:
             logger.error(f'Error zipping workspace: {e}')
             return JSONResponse(
