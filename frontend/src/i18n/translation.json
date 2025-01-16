@@ -1263,6 +1263,24 @@
         "en": "Settings not found. Please check your API key",
         "es": "Configuraciones no encontradas. Por favor revisa tu API key"
     },
+    "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$TERMS_OF_SERVICE": {
+        "en": "terms of service",
+        "es": "términos de servicio"
+    },
+    "SESSION$SERVER_CONNECTED_MESSAGE": {
+        "en": "Connected to server",
+        "zh-CN": "已连接到服务器",
+        "de": "Verbindung zum Server hergestellt",
+        "zh-TW": "已連接到伺服器",
+        "es": "Conectado al servidor",
+        "fr": "Connecté au serveur",
+        "it": "Connesso al server",
+        "pt": "Conectado ao servidor",
+        "ko-KR": "서버에 연결됨",
+        "ar": "تم الاتصال بالخادم",
+        "tr": "Sunucuya bağlandı",
+        "no": "Koblet til server"
+    },
     "SESSION$SESSION_HANDLING_ERROR_MESSAGE": {
         "en": "Error handling message",
         "zh-CN": "处理会话时出错",
