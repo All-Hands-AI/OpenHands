@@ -12,6 +12,7 @@ from openhands.server.auth import get_user_id
 from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import config, session_manager
+from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_info import ConversationInfo
 from openhands.storage.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
@@ -50,22 +51,13 @@ async def _create_new_conversation(
         # but that would run a tiny inference.
         if not settings.llm_api_key or settings.llm_api_key.isspace():
             logger.warn(f'Missing api key for model {settings.llm_model}')
-            return JSONResponse(
-                content={
-                    'status': 'error',
-                    'message': 'Error authenticating with the LLM provider. Please check your API key',
-                    'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
-                }
+            raise LLMAuthenticationError(
+                'Error authenticating with the LLM provider. Please check your API key'
             )
+
     else:
         logger.warn('Settings not present, not starting conversation')
-        return JSONResponse(
-            content={
-                'status': 'error',
-                'message': 'Settings not found',
-                'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND',
-            }
-        )
+        raise MissingSettingsError('Settings not found')
 
     session_init_args['github_token'] = token or ''
     session_init_args['selected_repository'] = selected_repository
@@ -108,13 +100,8 @@ async def _create_new_conversation(
     except ValueError:
         pass  # Already subscribed - take no action
     logger.info(f'Finished initializing conversation {conversation_id}')
-    return JSONResponse(
-        content={
-            'status': 'ok',
-            'conversation_id': conversation_id,
-            'sid': event_stream.sid,
-        }
-    )
+
+    return conversation_id
 
 
 @app.post('/conversations')
@@ -128,10 +115,32 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     github_token = getattr(request.state, 'github_token', '') or data.github_token
     selected_repository = data.selected_repository
 
-    response = await _create_new_conversation(
-        user_id, github_token, selected_repository
-    )
-    return response
+    try:
+        conversation_id = await _create_new_conversation(
+            user_id, github_token, selected_repository
+        )
+
+        return JSONResponse(
+            content={'status': 'ok', 'conversation_id': conversation_id}
+        )
+    except MissingSettingsError as e:
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': str(e),
+                'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND',
+            },
+            status_code=400,
+        )
+
+    except LLMAuthenticationError as e:
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': str(e),
+                'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
+            },
+        )
 
 
 @app.get('/conversations')
