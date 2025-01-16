@@ -25,6 +25,7 @@ const extractAdvancedFormData = (formData: FormData) => {
   let LLM_BASE_URL: string | undefined;
   let CONFIRMATION_MODE = false;
   let SECURITY_ANALYZER: string | undefined;
+  let ENABLE_DEFAULT_CONDENSER = false;
 
   if (isUsingAdvancedOptions) {
     CUSTOM_LLM_MODEL = formData.get("custom-model")?.toString();
@@ -34,6 +35,7 @@ const extractAdvancedFormData = (formData: FormData) => {
       // only set securityAnalyzer if confirmationMode is enabled
       SECURITY_ANALYZER = formData.get("security-analyzer")?.toString();
     }
+    ENABLE_DEFAULT_CONDENSER = keys.includes("enable-default-condenser");
   }
 
   return {
@@ -41,6 +43,7 @@ const extractAdvancedFormData = (formData: FormData) => {
     LLM_BASE_URL,
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
+    ENABLE_DEFAULT_CONDENSER
   };
 };
 
@@ -53,6 +56,7 @@ const extractSettings = (formData: FormData): Partial<Settings> => {
     LLM_BASE_URL,
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
+    ENABLE_DEFAULT_CONDENSER
   } = extractAdvancedFormData(formData);
 
   return {
@@ -63,6 +67,7 @@ const extractSettings = (formData: FormData): Partial<Settings> => {
     LLM_BASE_URL,
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
+    ENABLE_DEFAULT_CONDENSER
   };
 };
 

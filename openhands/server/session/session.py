@@ -101,7 +101,7 @@ class Session:
             default_condenser_config = AmortizedForgettingCondenserConfig(
                 keep_first=3, max_size=20
             )
-            logger.info('Enabling default condenser: {default_condenser_config}')
+            logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
 
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
