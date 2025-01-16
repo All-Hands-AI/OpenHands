@@ -48,6 +48,8 @@ def send_request(
             _json = response.json()
         except (requests.exceptions.JSONDecodeError, json.decoder.JSONDecodeError):
             _json = None
+        finally:
+            response.close()
         raise RequestHTTPError(
             e,
             response=e.response,

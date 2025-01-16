@@ -18,10 +18,12 @@ from openhands.utils.shutdown_listener import (
 class RemoteRuntimeBuilder(RuntimeBuilder):
     """This class interacts with the remote Runtime API for building and managing container images."""
 
-    def __init__(self, api_url: str, api_key: str):
+    def __init__(
+        self, api_url: str, api_key: str, session: requests.Session | None = None
+    ):
         self.api_url = api_url
         self.api_key = api_key
-        self.session = requests.Session()
+        self.session = session or requests.Session()
         self.session.headers.update({'X-API-Key': self.api_key})
 
     def build(
@@ -116,9 +118,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
             # Wait before polling again
             sleep_if_should_continue(30)
 
-        raise AgentRuntimeBuildError(
-            'Build interrupted (likely received SIGTERM or SIGINT).'
-        )
+        raise AgentRuntimeBuildError('Build interrupted')
 
     def image_exists(self, image_name: str, pull_from_repo: bool = True) -> bool:
         """Checks if an image exists in the remote registry using the /image_exists endpoint."""
