@@ -4,6 +4,7 @@ import posthog from "posthog-js";
 import { AxiosError } from "axios";
 import { DEFAULT_SETTINGS, getLocalStorageSettings } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
+import { useAuth } from "#/context/auth-context";
 
 const getSettingsQueryFn = async () => {
   try {
@@ -37,6 +38,8 @@ const getSettingsQueryFn = async () => {
 };
 
 export const useSettings = () => {
+  const { setGitHubTokenIsSet } = useAuth();
+
   const query = useQuery({
     queryKey: ["settings"],
     queryFn: getSettingsQueryFn,
@@ -47,6 +50,10 @@ export const useSettings = () => {
       posthog.capture("user_activated");
     }
   }, [query.data?.LLM_API_KEY]);
+
+  React.useEffect(() => {
+    setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
+  }, [query.data?.GITHUB_TOKEN_IS_SET]);
 
   return query;
 };

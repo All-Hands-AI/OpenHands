@@ -12,11 +12,9 @@ import { ImportProjectSuggestionBox } from "../../components/features/suggestion
 import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
-import { useSettings } from "#/hooks/query/use-settings";
 
 function Home() {
   const { t } = useTranslation();
-  const { data: settings } = useSettings();
   const dispatch = useDispatch();
   const formRef = React.useRef<HTMLFormElement>(null);
 
@@ -24,7 +22,6 @@ function Home() {
   const { data: user } = useGitHubUser();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
-    gitHubTokenIsSet: !!settings?.GITHUB_TOKEN_IS_SET,
     appMode: config?.APP_MODE || null,
     gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   });

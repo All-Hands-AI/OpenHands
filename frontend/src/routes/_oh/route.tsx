@@ -9,6 +9,7 @@ import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useMaybeMigrateSettings } from "#/hooks/use-maybe-migrate-settings";
+import { useAuth } from "#/context/auth-context";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -45,6 +46,7 @@ export function ErrorBoundary() {
 export default function MainApp() {
   useMaybeMigrateSettings();
 
+  const { githubTokenIsSet } = useAuth();
   const { data: settings } = useSettings();
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
@@ -55,7 +57,6 @@ export default function MainApp() {
   const { data: isAuthed, isFetching: isFetchingAuth } = useIsAuthed();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
-    gitHubTokenIsSet: !!settings?.GITHUB_TOKEN_IS_SET,
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
@@ -85,7 +86,7 @@ export default function MainApp() {
 
       {isInWaitlist && (
         <WaitlistModal
-          ghTokenIsSet={!!settings?.GITHUB_TOKEN_IS_SET}
+          ghTokenIsSet={githubTokenIsSet}
           githubAuthUrl={gitHubAuthUrl}
         />
       )}

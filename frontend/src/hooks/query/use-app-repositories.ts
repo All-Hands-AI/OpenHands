@@ -3,15 +3,15 @@ import React from "react";
 import { retrieveGitHubAppRepositories } from "#/api/github";
 import { useAppInstallations } from "./use-app-installations";
 import { useConfig } from "./use-config";
-import { useSettings } from "./use-settings";
+import { useAuth } from "#/context/auth-context";
 
 export const useAppRepositories = () => {
-  const { data: settings } = useSettings();
+  const { githubTokenIsSet } = useAuth();
   const { data: config } = useConfig();
   const { data: installations } = useAppInstallations();
 
   const repos = useInfiniteQuery({
-    queryKey: ["repositories", settings?.GITHUB_TOKEN_IS_SET, installations],
+    queryKey: ["repositories", githubTokenIsSet, installations],
     queryFn: async ({
       pageParam,
     }: {
@@ -46,7 +46,7 @@ export const useAppRepositories = () => {
       return null;
     },
     enabled:
-      !!settings?.GITHUB_TOKEN_IS_SET &&
+      githubTokenIsSet &&
       Array.isArray(installations) &&
       installations.length > 0 &&
       config?.APP_MODE === "saas",

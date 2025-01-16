@@ -2,19 +2,19 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import React from "react";
 import { retrieveGitHubUserRepositories } from "#/api/github";
 import { useConfig } from "./use-config";
-import { useSettings } from "./use-settings";
+import { useAuth } from "#/context/auth-context";
 
 export const useUserRepositories = () => {
-  const { data: settings } = useSettings();
+  const { githubTokenIsSet } = useAuth();
   const { data: config } = useConfig();
 
   const repos = useInfiniteQuery({
-    queryKey: ["repositories", settings?.GITHUB_TOKEN_IS_SET],
+    queryKey: ["repositories", githubTokenIsSet],
     queryFn: async ({ pageParam }) =>
       retrieveGitHubUserRepositories(pageParam, 100),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    enabled: !!settings?.GITHUB_TOKEN_IS_SET && config?.APP_MODE === "oss",
+    enabled: githubTokenIsSet && config?.APP_MODE === "oss",
   });
 
   // TODO: Once we create our custom dropdown component, we should fetch data onEndReached

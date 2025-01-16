@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
 import { DownloadModal } from "#/components/shared/download-modal";
 import type { RootState } from "#/store";
-import { useSettings } from "#/hooks/query/use-settings";
+import { useAuth } from "#/context/auth-context";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -13,7 +13,7 @@ interface ActionSuggestionsProps {
 export function ActionSuggestions({
   onSuggestionsClick,
 }: ActionSuggestionsProps) {
-  const { data: settings } = useSettings();
+  const { githubTokenIsSet } = useAuth();
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initialQuery,
   );
@@ -32,7 +32,7 @@ export function ActionSuggestions({
         onClose={handleDownloadClose}
         isOpen={isDownloading}
       />
-      {!!settings?.GITHUB_TOKEN_IS_SET && selectedRepository ? (
+      {githubTokenIsSet && selectedRepository ? (
         <div className="flex flex-row gap-2 justify-center w-full">
           {!hasPullRequest ? (
             <>
