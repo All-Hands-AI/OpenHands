@@ -12,12 +12,8 @@ import {
 } from "#/api/github-axios-instance";
 
 interface AuthContextType {
-  gitHubToken: string | null;
   setUserId: (userId: string) => void;
-  setGitHubToken: (token: string | null) => void;
-  clearGitHubToken: () => void;
   refreshToken: () => Promise<boolean>;
-  logout: () => void;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -97,12 +93,8 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
   const value = React.useMemo(
     () => ({
-      gitHubToken: gitHubTokenState,
-      setGitHubToken,
       setUserId,
-      clearGitHubToken,
       refreshToken,
-      logout,
     }),
     [gitHubTokenState],
   );

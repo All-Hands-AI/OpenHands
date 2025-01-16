@@ -1,17 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "#/context/auth-context";
 import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
+import { useSettings } from "./use-settings";
 
 export const useAppInstallations = () => {
   const { data: config } = useConfig();
-  const { gitHubToken } = useAuth();
+  const { data: settings } = useSettings();
 
   return useQuery({
-    queryKey: ["installations", gitHubToken, config?.GITHUB_CLIENT_ID],
+    queryKey: [
+      "installations",
+      settings?.GITHUB_TOKEN_IS_SET,
+      config?.GITHUB_CLIENT_ID,
+    ],
     queryFn: OpenHands.getGitHubUserInstallationIds,
     enabled:
-      !!gitHubToken &&
+      !!settings?.GITHUB_TOKEN_IS_SET &&
       !!config?.GITHUB_CLIENT_ID &&
       config?.APP_MODE === "saas",
   });

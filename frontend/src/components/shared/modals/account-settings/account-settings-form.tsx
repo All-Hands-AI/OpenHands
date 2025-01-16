@@ -7,7 +7,6 @@ import {
 import { ModalBody } from "../modal-body";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
-import { useAuth } from "#/context/auth-context";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { ModalButton } from "../../buttons/modal-button";
 import { FormFieldset } from "../../form-fieldset";
@@ -29,7 +28,6 @@ export function AccountSettingsForm({
   gitHubError,
   analyticsConsent,
 }: AccountSettingsFormProps) {
-  const { logout } = useAuth();
   const { data: config } = useConfig();
   const { saveUserSettings, settings } = useCurrentSettings();
   const { t } = useTranslation();
@@ -69,7 +67,6 @@ export function AccountSettingsForm({
 
   const onDisconnect = async () => {
     await saveUserSettings({ unset_github_token: true });
-    logout();
     onClose();
   };
 

@@ -1,7 +1,6 @@
 import React from "react";
 import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
-import { useAuth } from "#/context/auth-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { UserActions } from "./user-actions";
@@ -27,14 +26,14 @@ export function Sidebar() {
   const endSession = useEndSession();
   const user = useGitHubUser();
   const { data: isAuthed } = useIsAuthed();
-  const { logout } = useAuth();
   const {
     data: settings,
     isError: settingsIsError,
     isSuccess: settingsSuccessfulyFetched,
   } = useSettings();
 
-  const { isUpToDate: settingsAreUpToDate } = useCurrentSettings();
+  const { saveUserSettings, isUpToDate: settingsAreUpToDate } =
+    useCurrentSettings();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
@@ -56,10 +55,6 @@ export function Sidebar() {
   };
 
   const handleAccountSettingsModalClose = () => {
-    // If the user closes the modal without connecting to GitHub,
-    // we need to log them out to clear the invalid token from the
-    // local storage
-    if (user.isError) logout();
     setAccountSettingsModalOpen(false);
   };
 
@@ -92,7 +87,7 @@ export function Sidebar() {
               user={
                 user.data ? { avatar_url: user.data.avatar_url } : undefined
               }
-              onLogout={logout}
+              onLogout={() => saveUserSettings({ unset_github_token: true })}
               onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
             />
           )}

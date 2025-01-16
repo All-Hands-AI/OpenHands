@@ -4,15 +4,17 @@ import posthog from "posthog-js";
 import { useAuth } from "#/context/auth-context";
 import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
+import { useSettings } from "./use-settings";
 
 export const useGitHubUser = () => {
-  const { gitHubToken, setUserId } = useAuth();
+  const { setUserId } = useAuth();
+  const { data: settings } = useSettings();
   const { data: config } = useConfig();
 
   const user = useQuery({
-    queryKey: ["user", gitHubToken],
+    queryKey: ["user", settings?.GITHUB_TOKEN_IS_SET],
     queryFn: OpenHands.getGitHubUser,
-    enabled: !!gitHubToken && !!config?.APP_MODE,
+    enabled: !!settings?.GITHUB_TOKEN_IS_SET && !!config?.APP_MODE,
     retry: false,
   });
 
