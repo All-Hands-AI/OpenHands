@@ -4,9 +4,9 @@ import {
   Conversation,
   ResultSet,
 } from "#/api/open-hands.types";
-import { DEFAULT_SETTINGS } from "#/services/settings";
+import { ApiSettings, DEFAULT_SETTINGS } from "#/services/settings";
 
-export const MOCK_USER_PREFERENCES = {
+export const MOCK_USER_PREFERENCES: { settings: ApiSettings } = {
   settings: {
     llm_model: DEFAULT_SETTINGS.LLM_MODEL,
     llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
@@ -15,6 +15,9 @@ export const MOCK_USER_PREFERENCES = {
     language: DEFAULT_SETTINGS.LANGUAGE,
     confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,
     security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
+    remote_runtime_resource_factor:
+      DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+    github_token_is_set: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
   },
 };
 
@@ -141,7 +144,7 @@ export const handlers = [
       { id: 2, full_name: "octocat/earth" },
     ]),
   ),
-  http.get("https://api.github.com/user", () => {
+  http.get("/api/github/user", () => {
     const user: GitHubUser = {
       id: 1,
       login: "octocat",
@@ -168,17 +171,31 @@ export const handlers = [
 
     return HttpResponse.json(config);
   }),
-  http.get("/api/settings", async () =>
-    HttpResponse.json(MOCK_USER_PREFERENCES.settings),
-  ),
+  http.get("/api/settings", async () => {
+    const settings = {
+      ...MOCK_USER_PREFERENCES.settings,
+    };
+    if (settings.github_token) settings.github_token_is_set = true;
+
+    return HttpResponse.json(settings);
+  }),
   http.post("/api/settings", async ({ request }) => {
     const body = await request.json();
 
     if (body) {
+      let newSettings: Partial<ApiSettings> = {};
+      if (typeof body === "object") {
+        newSettings = { ...body };
+        if (newSettings.unset_github_token) {
+          newSettings.github_token = null;
+          newSettings.github_token_is_set = false;
+          delete newSettings.unset_github_token;
+        }
+      }
+
       MOCK_USER_PREFERENCES.settings = {
         ...MOCK_USER_PREFERENCES.settings,
-        // @ts-expect-error - We know this is a settings object
-        ...body,
+        ...newSettings,
       };
 
       return HttpResponse.json(null, { status: 200 });

@@ -20,6 +20,7 @@ const getSettingsQueryFn = async () => {
         LLM_API_KEY: apiSettings.llm_api_key,
         REMOTE_RUNTIME_RESOURCE_FACTOR:
           apiSettings.remote_runtime_resource_factor,
+        GITHUB_TOKEN_IS_SET: apiSettings.github_token_is_set,
       };
     }
 
