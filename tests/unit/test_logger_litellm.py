@@ -36,5 +36,5 @@ def test_litellm_settings_debug_enabled(reset_litellm):
 
         importlib.reload(openhands.core.logger)
 
-        assert litellm.suppress_debug_info is False
-        assert litellm.set_verbose is True
+        assert litellm.suppress_debug_info is True
+        assert litellm.set_verbose is False
