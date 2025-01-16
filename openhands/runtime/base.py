@@ -120,7 +120,9 @@ class Runtime(FileEditRuntimeMixin):
         )
 
         # Load mixins
-        FileEditRuntimeMixin.__init__(self)
+        FileEditRuntimeMixin.__init__(
+            self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
+        )
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:

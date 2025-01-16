@@ -103,8 +103,12 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
     # This restricts the number of lines we can edit to avoid exceeding the token limit.
     MAX_LINES_TO_EDIT = 300
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, enable_llm_editor: bool, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.enable_llm_editor = enable_llm_editor
+
+        if not self.enable_llm_editor:
+            return
 
         draft_editor_config = self.config.get_llm_config('draft_editor')
 
