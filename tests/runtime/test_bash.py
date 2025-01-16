@@ -683,7 +683,7 @@ def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
         action = CmdRunAction('')
         action.set_hard_timeout(2.5)
         obs = runtime.run_action(action)
-        assert '[Command output continued from previous command]' in obs.metadata.prefix
+        assert '[Below is the output of the previous command.]' in obs.metadata.prefix
         assert obs.content.strip() == '2'
         assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
 
@@ -693,8 +693,7 @@ def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
             action.set_hard_timeout(2.5)
             obs = runtime.run_action(action)
             assert (
-                '[Command output continued from previous command]'
-                in obs.metadata.prefix
+                '[Below is the output of the previous command.]' in obs.metadata.prefix
             )
             assert obs.content.strip() == expected
             assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
@@ -727,9 +726,7 @@ def test_long_running_command_follow_by_execute(
         action.set_hard_timeout(2.5)
         obs = runtime.run_action(action)
         assert '2' in obs.content
-        assert (
-            obs.metadata.prefix == '[Command output continued from previous command]\n'
-        )
+        assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
         assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
         assert obs.metadata.exit_code == -1  # -1 indicates command is still running
 
@@ -738,9 +735,7 @@ def test_long_running_command_follow_by_execute(
         action.set_hard_timeout(2.5)
         obs = runtime.run_action(action)
         assert '3' in obs.content
-        assert (
-            obs.metadata.prefix == '[Command output continued from previous command]\n'
-        )
+        assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
         assert '[The command timed out after 2.5 seconds.' in obs.metadata.suffix
         assert obs.metadata.exit_code == -1  # -1 indicates command is still running
     finally:

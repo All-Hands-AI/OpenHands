@@ -369,7 +369,7 @@ class BashSession:
             command,
             raw_command_output,
             metadata,
-            continue_prefix='[Command output continued from previous command]\n',
+            continue_prefix='[Below is the output of the previous command.]\n',
         )
         return CmdOutputObservation(
             content=command_output,
@@ -404,7 +404,7 @@ class BashSession:
             command,
             raw_command_output,
             metadata,
-            continue_prefix='[Command output continued from previous command]\n',
+            continue_prefix='[Below is the output of the previous command.]\n',
         )
 
         return CmdOutputObservation(
