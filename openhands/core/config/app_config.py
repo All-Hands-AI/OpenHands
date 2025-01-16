@@ -54,7 +54,7 @@ class AppConfig(BaseModel):
     runtime: str = Field(default='docker')
     file_store: str = Field(default='local')
     file_store_path: str = Field(default='/tmp/openhands_file_store')
-    trajectories_path: str | None = Field(default=None)
+    save_trajectory_path: str | None = Field(default=None)
     workspace_base: str | None = Field(default=None)
     workspace_mount_path: str | None = Field(default=None)
     workspace_mount_path_in_sandbox: str = Field(default='/workspace')
