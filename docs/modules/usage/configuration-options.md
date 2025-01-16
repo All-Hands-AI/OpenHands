@@ -336,7 +336,7 @@ The agent configuration options are defined in the `[agent]` and `[agent.<agent_
   - Description: Whether Jupyter is enabled in the action space
 
 ### Microagent Usage
-- `use_microagents`
+- `enable_prompt_extensions`
   - Type: `bool`
   - Default: `true`
   - Description: Whether to use microagents at all

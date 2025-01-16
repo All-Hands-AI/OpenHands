@@ -28,7 +28,7 @@ def test_stress_docker_runtime(temp_dir, runtime_cls, repeat=1):
     for _ in range(repeat):
         # run stress-ng stress tests for 1 minute
         action = CmdRunAction(command='stress-ng --all 1 -t 1m')
-        action.timeout = 120
+        action.set_hard_timeout(120)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})

@@ -94,7 +94,7 @@ def test_long_running_command_follow_by_execute():
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '2' in obs.content
-    assert obs.metadata.prefix == '[Command output continued from previous command]\n'
+    assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
     assert obs.metadata.suffix == (
         '\n[The command has no new output after 2 seconds. '
         "You may wait longer to see additional output by sending empty command '', "
@@ -108,7 +108,7 @@ def test_long_running_command_follow_by_execute():
     obs = session.execute(CmdRunAction('sleep 15'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '3' in obs.content
-    assert obs.metadata.prefix == '[Command output continued from previous command]\n'
+    assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
     assert obs.metadata.suffix == (
         '\n[The command has no new output after 2 seconds. '
         "You may wait longer to see additional output by sending empty command '', "
@@ -175,7 +175,7 @@ def test_interactive_command():
         'send other commands to interact with the current process, '
         'or send keys to interrupt/kill the command.]'
     )
-    assert obs.metadata.prefix == '[Command output continued from previous command]\n'
+    assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
 
     obs = session.execute(CmdRunAction('line 2'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -187,7 +187,7 @@ def test_interactive_command():
         'send other commands to interact with the current process, '
         'or send keys to interrupt/kill the command.]'
     )
-    assert obs.metadata.prefix == '[Command output continued from previous command]\n'
+    assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
 
     obs = session.execute(CmdRunAction('EOF'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -266,14 +266,14 @@ def test_command_output_continuation():
 
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert '[Command output continued from previous command]' in obs.metadata.prefix
+    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
     assert obs.content.strip() == '2'
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert '[Command output continued from previous command]' in obs.metadata.prefix
+    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
     assert obs.content.strip() == '3'
 
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
@@ -281,14 +281,14 @@ def test_command_output_continuation():
 
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert '[Command output continued from previous command]' in obs.metadata.prefix
+    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
     assert obs.content.strip() == '4'
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert '[Command output continued from previous command]' in obs.metadata.prefix
+    assert '[Below is the output of the previous command.]' in obs.metadata.prefix
     assert obs.content.strip() == '5'
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
