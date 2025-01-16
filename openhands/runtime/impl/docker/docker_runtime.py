@@ -391,7 +391,7 @@ class DockerRuntime(ActionExecutionClient):
         if not token:
             return None
 
-        vscode_url = f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        vscode_url = f'http://openhands-code-{self._vscode_port}.dev-linux.canopyhub.io/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return vscode_url
 
     @property
