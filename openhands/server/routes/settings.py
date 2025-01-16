@@ -33,6 +33,9 @@ async def load_settings(request: Request) -> Settings | None:
 
         # For security reasons we don't ever send the api key to the client
         settings.llm_api_key = 'SET' if settings.llm_api_key else None
+        settings.github_token_is_set = True if settings.github_token else False
+        settings.github_token = None
+
         return settings
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
@@ -57,6 +60,9 @@ async def store_settings(
             # LLM key isn't on the frontend, so we need to keep it if unset
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
+
+            if settings.unset_github_token:
+                settings.github_token = None
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
