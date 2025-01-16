@@ -268,7 +268,7 @@ class LLMSummarizingCondenser(Condenser):
             return [summary_event]
 
         except Exception as e:
-            logger.error('Error condensing events: %s', str(e), exc_info=False)
+            logger.error(f'Error condensing events: {str(e)}')
             raise e
 
 

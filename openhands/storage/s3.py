@@ -41,6 +41,10 @@ class S3FileStore(FileStore):
 
     def delete(self, path: str) -> None:
         try:
-            self.client.remove_object(self.bucket, path)
+            client = self.client
+            bucket = self.bucket
+            objects_to_delete = client.list_objects(bucket, prefix=path, recursive=True)
+            for obj in objects_to_delete:
+                client.remove_object(bucket, obj.object_name)
         except Exception as e:
             raise FileNotFoundError(f'Failed to delete S3 object at path {path}: {e}')

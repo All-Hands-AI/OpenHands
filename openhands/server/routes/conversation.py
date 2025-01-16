@@ -42,7 +42,7 @@ async def get_vscode_url(request: Request):
         logger.debug(f'Runtime VSCode URL: {runtime.vscode_url}')
         return JSONResponse(status_code=200, content={'vscode_url': runtime.vscode_url})
     except Exception as e:
-        logger.error(f'Error getting VSCode URL: {e}', exc_info=True)
+        logger.error(f'Error getting VSCode URL: {e}')
         return JSONResponse(
             status_code=500,
             content={
@@ -81,7 +81,7 @@ async def get_hosts(request: Request):
         logger.debug(f'Runtime hosts: {runtime.web_hosts}')
         return JSONResponse(status_code=200, content={'hosts': runtime.web_hosts})
     except Exception as e:
-        logger.error(f'Error getting runtime hosts: {e}', exc_info=True)
+        logger.error(f'Error getting runtime hosts: {e}')
         return JSONResponse(
             status_code=500,
             content={
