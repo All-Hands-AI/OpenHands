@@ -362,12 +362,13 @@ if __name__ == '__main__':
     # Load predictions
     assert args.input_file.endswith('.jsonl'), 'Input file must be a jsonl file.'
     required_fields = ['instance_id', 'model_patch', 'test_result']
-    predictions = pd.DataFrame.from_records(
-        [
-            {k: v for k, v in json.loads(line).items() if k in required_fields}
-            for line in tqdm(open(args.input_file), desc='Loading predictions')
-        ]
-    )
+    with open(args.input_file) as f:
+        predictions = pd.DataFrame.from_records(
+            [
+                {k: v for k, v in json.loads(line).items() if k in required_fields}
+                for line in tqdm(f, desc='Loading predictions')
+            ]
+        )
     assert (
         'instance_id' in predictions.columns
     ), 'Input file must contain instance_id column.'
