@@ -87,7 +87,7 @@ def get_config(
     )
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
-    agent_config.use_prompt_extension = False
+    agent_config.enable_prompt_extensions = False
     return config
 
 

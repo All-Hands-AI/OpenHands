@@ -373,7 +373,7 @@ Agent 配置选项在 `config.toml` 文件的 `[agent]` 和 `[agent.<agent_name>
   - 描述: 是否在 action space 中启用 Jupyter
 
 **Microagent 使用**
-- `use_prompt_extension`
+- `enable_prompt_extensions`
   - 类型: `bool`
   - 默认值: `true`
   - 描述: 是否使用 microagents

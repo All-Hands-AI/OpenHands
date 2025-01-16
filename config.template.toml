@@ -221,7 +221,7 @@ codeact_enable_jupyter = true
 #llm_config = 'your-llm-config-group'
 
 # Whether to use prompt extension (e.g., microagent, repo/runtime info) at all
-#use_prompt_extension = true
+#enable_prompt_extensions = true
 
 # List of microagents to disable
 #disabled_microagents = []

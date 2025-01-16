@@ -111,7 +111,7 @@ class CodeActAgent(Agent):
                 os.path.dirname(os.path.dirname(openhands.__file__)),
                 'microagents',
             )
-            if self.config.use_prompt_extension
+            if self.config.enable_prompt_extensions
             else None,
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
             disabled_microagents=self.config.disabled_microagents,
@@ -450,7 +450,7 @@ class CodeActAgent(Agent):
 
         # Repository and runtime info
         additional_info = self.prompt_manager.get_additional_info()
-        if self.config.use_prompt_extension and additional_info:
+        if self.config.enable_prompt_extensions and additional_info:
             # only add these if prompt extension is enabled
             messages.append(
                 Message(
