@@ -99,7 +99,7 @@ class ClusteredConversationManager(StandaloneConversationManager):
         elif message_type == 'running_agent_loops_query':
             # Another node in the cluster is asking if the current node is running the session given.
             query_id = data['query_id']
-            sids = await self.get_running_agent_loops(
+            sids = await super().get_running_agent_loops(
                 data.get('user_id'), data.get('filter_to_sids')
             )
             if sids:
