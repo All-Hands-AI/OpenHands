@@ -11,8 +11,10 @@ from openhands.events.action.action import (
 
 @dataclass
 class CmdRunAction(Action):
-    command: str
-    # When `command` is empty, it will be used to print the current tmux window
+    command: (
+        str  # When `command` is empty, it will be used to print the current tmux window
+    )
+    is_input: bool = False  # if True, the command is an input to the running process
     thought: str = ''
     blocking: bool = False
     # If blocking is True, the command will be run in a blocking manner.
