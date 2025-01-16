@@ -9,6 +9,7 @@ from openhands.core.exceptions import AgentRuntimeBuildError
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import RuntimeBuilder
 from openhands.runtime.utils.request import send_request
+from openhands.utils.http_session import HttpSession
 from openhands.utils.shutdown_listener import (
     should_continue,
     sleep_if_should_continue,
@@ -18,12 +19,10 @@ from openhands.utils.shutdown_listener import (
 class RemoteRuntimeBuilder(RuntimeBuilder):
     """This class interacts with the remote Runtime API for building and managing container images."""
 
-    def __init__(
-        self, api_url: str, api_key: str, session: requests.Session | None = None
-    ):
+    def __init__(self, api_url: str, api_key: str, session: HttpSession | None = None):
         self.api_url = api_url
         self.api_key = api_key
-        self.session = session or requests.Session()
+        self.session = session or HttpSession()
         self.session.headers.update({'X-API-Key': self.api_key})
 
     def build(
