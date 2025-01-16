@@ -907,7 +907,7 @@ def test_stress_long_output_with_soft_and_hard_timeout(
             # where it will not accept any new commands.
             obs = runtime.run_action(CmdRunAction('ls'))
             assert obs.exit_code == -1
-            assert 'The previous command is still running.' in obs.metadata.suffix
+            assert 'The previous command is still running' in obs.metadata.suffix
 
             # We need to send a Ctrl+C to reset the terminal.
             obs = runtime.run_action(CmdRunAction('C-c', is_input=True))
