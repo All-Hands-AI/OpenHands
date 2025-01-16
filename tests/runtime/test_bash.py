@@ -742,7 +742,7 @@ def test_long_running_command_follow_by_execute(
         assert '3' not in obs.content
         assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
         assert (
-            'The previous command is still running still running.'
+            'The previous command is still running.'
             in obs.metadata.suffix
         )
         assert obs.metadata.exit_code == -1  # -1 indicates command is still running
@@ -870,7 +870,7 @@ def test_stress_long_output_with_soft_and_hard_timeout(
             obs = runtime.run_action(CmdRunAction('ls'))
             assert obs.exit_code == -1
             assert (
-                'The previous command is still running still running.'
+                'The previous command is still running.'
                 in obs.metadata.suffix
             )
 
