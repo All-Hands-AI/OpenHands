@@ -780,13 +780,13 @@ def test_python_interactive_input(temp_dir, runtime_cls, run_as_openhands):
         assert obs.metadata.exit_code == -1  # -1 indicates command is still running
 
         # Send first input (name)
-        obs = runtime.run_action(CmdRunAction('Alice'))
+        obs = runtime.run_action(CmdRunAction('Alice', is_input=True))
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'Enter your age:' in obs.content
         assert obs.metadata.exit_code == -1
 
         # Send second input (age)
-        obs = runtime.run_action(CmdRunAction('25'))
+        obs = runtime.run_action(CmdRunAction('25', is_input=True))
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'Hello Alice, you are 25 years old' in obs.content
         assert obs.metadata.exit_code == 0
