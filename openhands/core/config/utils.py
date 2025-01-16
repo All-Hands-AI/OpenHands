@@ -2,6 +2,7 @@ import argparse
 import os
 import pathlib
 import platform
+import sys
 from dataclasses import is_dataclass
 from types import UnionType
 from typing import Any, MutableMapping, get_args, get_origin
@@ -94,6 +95,10 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     Args:
         cfg: The AppConfig object to update attributes of.
         toml_file: The path to the toml file. Defaults to 'config.toml'.
+
+    See Also:
+    - `config.template.toml` for the full list of config options.
+    - `SandboxConfig` for the sandbox-specific config options.
     """
     # try to read the config.toml file into the config object
     try:
@@ -104,7 +109,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     except toml.TomlDecodeError as e:
         logger.openhands_logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
-            exc_info=False,
         )
         return
 
@@ -140,15 +144,48 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     logger.openhands_logger.debug(
                         'Attempt to load default LLM config from config toml'
                     )
-                    llm_config = LLMConfig.from_dict(value)
-                    cfg.set_llm_config(llm_config, 'llm')
+                    # TODO clean up draft_editor
+                    # Extract generic LLM fields, keeping draft_editor
+                    generic_llm_fields = {}
+                    for k, v in value.items():
+                        if not isinstance(v, dict) or k == 'draft_editor':
+                            generic_llm_fields[k] = v
+                    generic_llm_config = LLMConfig.from_dict(generic_llm_fields)
+                    cfg.set_llm_config(generic_llm_config, 'llm')
+
+                    # Process custom named LLM configs
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
                             logger.openhands_logger.debug(
-                                f'Attempt to load group {nested_key} from config toml as llm config'
+                                f'Processing custom LLM config "{nested_key}":'
                             )
-                            llm_config = LLMConfig.from_dict(nested_value)
-                            cfg.set_llm_config(llm_config, nested_key)
+                            # Apply generic LLM config with custom LLM overrides, e.g.
+                            # [llm]
+                            # model="..."
+                            # num_retries = 5
+                            # [llm.claude]
+                            # model="claude-3-5-sonnet"
+                            # results in num_retries APPLIED to claude-3-5-sonnet
+                            custom_fields = {}
+                            for k, v in nested_value.items():
+                                if not isinstance(v, dict) or k == 'draft_editor':
+                                    custom_fields[k] = v
+                            merged_llm_dict = generic_llm_config.__dict__.copy()
+                            merged_llm_dict.update(custom_fields)
+                            # TODO clean up draft_editor
+                            # Handle draft_editor with fallback values:
+                            # - If draft_editor is "null", use None
+                            # - If draft_editor is in custom fields, use that value
+                            # - If draft_editor is not specified, fall back to generic config value
+                            if 'draft_editor' in custom_fields:
+                                if custom_fields['draft_editor'] == 'null':
+                                    merged_llm_dict['draft_editor'] = None
+                            else:
+                                merged_llm_dict['draft_editor'] = (
+                                    generic_llm_config.draft_editor
+                                )
+                            custom_llm_config = LLMConfig.from_dict(merged_llm_dict)
+                            cfg.set_llm_config(custom_llm_config, nested_key)
                 elif key is not None and key.lower() == 'security':
                     logger.openhands_logger.debug(
                         'Attempt to load security config from config toml'
@@ -161,11 +198,10 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     )
             except (TypeError, KeyError) as e:
                 logger.openhands_logger.warning(
-                    f'Cannot parse config from toml, toml values have not been applied.\n Error: {e}',
-                    exc_info=False,
+                    f'Cannot parse [{key}] config from toml, values have not been applied.\nError: {e}',
                 )
         else:
-            logger.openhands_logger.warning(f'Unknown key in {toml_file}: "{key}')
+            logger.openhands_logger.warning(f'Unknown section [{key}] in {toml_file}')
 
     try:
         # set sandbox config from the toml file
@@ -179,7 +215,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                 # read the key in sandbox and remove it from core
                 setattr(sandbox_config, new_key, core_config.pop(key))
             else:
-                logger.openhands_logger.warning(f'Unknown sandbox config: {key}')
+                logger.openhands_logger.warning(
+                    f'Unknown config key "{key}" in [sandbox] section'
+                )
 
         # the new style values override the old style values
         if 'sandbox' in toml_config:
@@ -191,11 +229,12 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
             if hasattr(cfg, key):
                 setattr(cfg, key, value)
             else:
-                logger.openhands_logger.warning(f'Unknown core config key: {key}')
+                logger.openhands_logger.warning(
+                    f'Unknown config key "{key}" in [core] section'
+                )
     except (TypeError, KeyError) as e:
         logger.openhands_logger.warning(
-            f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
-            exc_info=False,
+            f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}',
         )
 
 
@@ -303,8 +342,14 @@ def get_llm_config_arg(
 
 # Command line arguments
 def get_parser() -> argparse.ArgumentParser:
-    """Get the parser for the command line arguments."""
-    parser = argparse.ArgumentParser(description='Run an agent with a specific task')
+    """Get the argument parser."""
+    parser = argparse.ArgumentParser(description='Run the agent via CLI')
+
+    # Add version argument
+    parser.add_argument(
+        '-v', '--version', action='store_true', help='Show version information'
+    )
+
     parser.add_argument(
         '--config-file',
         type=str,
@@ -398,16 +443,23 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '--no-auto-continue',
         action='store_true',
-        help='Disable automatic "continue" responses. Will read from stdin instead.',
+        help='Disable automatic "continue" responses in headless mode. Will read from stdin instead.',
     )
     return parser
 
 
 def parse_arguments() -> argparse.Namespace:
-    """Parse the command line arguments."""
+    """Parse command line arguments."""
     parser = get_parser()
-    parsed_args, _ = parser.parse_known_args()
-    return parsed_args
+    args = parser.parse_args()
+
+    if args.version:
+        from openhands import __version__
+
+        print(f'OpenHands version: {__version__}')
+        sys.exit(0)
+
+    return args
 
 
 def load_app_config(
@@ -426,4 +478,36 @@ def load_app_config(
     if set_logging_levels:
         logger.DEBUG = config.debug
         logger.DISABLE_COLOR_PRINTING = config.disable_color
+    return config
+
+
+def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
+    """Load config from toml and override with command line arguments.
+
+    Common setup used by both CLI and main.py entry points.
+    """
+    # Load base config from toml and env vars
+    config = load_app_config(config_file=args.config_file)
+
+    # Override with command line arguments if provided
+    if args.llm_config:
+        # if we didn't already load it, get it from the toml file
+        if args.llm_config not in config.llms:
+            llm_config = get_llm_config_arg(args.llm_config)
+        else:
+            llm_config = config.llms[args.llm_config]
+        if llm_config is None:
+            raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
+        config.set_llm_config(llm_config)
+
+    # Override default agent if provided
+    if args.agent_cls:
+        config.default_agent = args.agent_cls
+
+    # Set max iterations and max budget per task if provided, otherwise fall back to config values
+    if args.max_iterations is not None:
+        config.max_iterations = args.max_iterations
+    if args.max_budget_per_task is not None:
+        config.max_budget_per_task = args.max_budget_per_task
+
     return config

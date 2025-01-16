@@ -45,6 +45,7 @@ class LLMConfig:
         log_completions_folder: The folder to log LLM completions to. Required if log_completions is True.
         draft_editor: A more efficient LLM to use for file editing. Introduced in [PR 3985](https://github.com/All-Hands-AI/OpenHands/pull/3985).
         custom_tokenizer: A custom tokenizer to use for token counting.
+        native_tool_calling: Whether to use native tool calling if supported by the model. Can be True, False, or not set.
     """
 
     model: str = 'claude-3-5-sonnet-20241022'
@@ -83,6 +84,7 @@ class LLMConfig:
     log_completions_folder: str = os.path.join(LOG_DIR, 'completions')
     draft_editor: Optional['LLMConfig'] = None
     custom_tokenizer: str | None = None
+    native_tool_calling: bool | None = None
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
@@ -136,8 +138,19 @@ class LLMConfig:
         This function is used to create an LLMConfig object from a dictionary,
         with the exception of the 'draft_editor' key, which is a nested LLMConfig object.
         """
-        args = {k: v for k, v in llm_config_dict.items() if not isinstance(v, dict)}
-        if 'draft_editor' in llm_config_dict:
-            draft_editor_config = LLMConfig(**llm_config_dict['draft_editor'])
-            args['draft_editor'] = draft_editor_config
+        # Keep None values to preserve defaults, filter out other dicts
+        args = {
+            k: v
+            for k, v in llm_config_dict.items()
+            if not isinstance(v, dict) or v is None
+        }
+        if (
+            'draft_editor' in llm_config_dict
+            and llm_config_dict['draft_editor'] is not None
+        ):
+            if isinstance(llm_config_dict['draft_editor'], LLMConfig):
+                args['draft_editor'] = llm_config_dict['draft_editor']
+            else:
+                draft_editor_config = LLMConfig(**llm_config_dict['draft_editor'])
+                args['draft_editor'] = draft_editor_config
         return cls(**args)

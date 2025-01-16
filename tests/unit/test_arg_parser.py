@@ -26,6 +26,7 @@ def test_parser_custom_values():
     parser = get_parser()
     args = parser.parse_args(
         [
+            '-v',
             '-d',
             '/path/to/dir',
             '-t',
@@ -67,6 +68,7 @@ def test_parser_custom_values():
     assert args.llm_config == 'gpt4'
     assert args.name == 'test_session'
     assert args.no_auto_continue
+    assert args.version
 
 
 def test_parser_file_overrides_task():
@@ -110,8 +112,9 @@ def test_help_message(capsys):
     print(help_output)
     expected_elements = [
         'usage:',
-        'Run an agent with a specific task',
+        'Run the agent via CLI',
         'options:',
+        '-v, --version',
         '-h, --help',
         '-d DIRECTORY, --directory DIRECTORY',
         '-t TASK, --task TASK',
@@ -134,4 +137,4 @@ def test_help_message(capsys):
         assert element in help_output, f"Expected '{element}' to be in the help message"
 
     option_count = help_output.count('  -')
-    assert option_count == 16, f'Expected 16 options, found {option_count}'
+    assert option_count == 17, f'Expected 17 options, found {option_count}'

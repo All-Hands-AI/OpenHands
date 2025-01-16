@@ -73,6 +73,8 @@ def get_config(
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
+    agent_config = config.get_agent_config(metadata.agent_class)
+    agent_config.use_microagents = False
     return config
 
 
@@ -197,7 +199,7 @@ def complete_runtime(
     if obs.exit_code == 0:
         test_result['metadata']['1_copy_change_success'] = True
 
-        action = CmdRunAction(command=f'cat {generated_path}', keep_prompt=False)
+        action = CmdRunAction(command=f'cat {generated_path}')
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         assert obs.exit_code == 0
@@ -221,9 +223,7 @@ def complete_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    action = CmdRunAction(
-        command='cat /testing_files/results_biocoder.json', keep_prompt=False
-    )
+    action = CmdRunAction(command='cat /testing_files/results_biocoder.json')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     if obs.exit_code == 0:
