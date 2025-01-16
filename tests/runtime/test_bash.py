@@ -741,7 +741,7 @@ def test_long_running_command_follow_by_execute(
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert '3' not in obs.content
         assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
-        assert 'The previous command is still running.' in obs.metadata.suffix
+        assert 'The previous command is still running' in obs.metadata.suffix
         assert obs.metadata.exit_code == -1  # -1 indicates command is still running
 
         # Finally continue again
@@ -760,7 +760,9 @@ def test_empty_command_errors(temp_dir, runtime_cls, run_as_openhands):
         # Test empty command without previous command
         obs = runtime.run_action(CmdRunAction(''))
         assert isinstance(obs, CmdOutputObservation)
-        assert 'ERROR: No previous command to continue from' in obs.content
+        assert (
+            'ERROR: No previous running command to retrieve logs from.' in obs.content
+        )
     finally:
         _close_test_runtime(runtime)
 
@@ -841,7 +843,7 @@ def test_stress_long_output_with_soft_and_hard_timeout(
             assert obs.exit_code == -1  # Command is still running, waiting for input
 
             # Send the confirmation
-            action = CmdRunAction('Y')
+            action = CmdRunAction('Y', is_input=True)
             obs = runtime.run_action(action)
             assert 'Proceeding with operation...' in obs.content
             assert 'Operation completed successfully!' in obs.content
@@ -869,7 +871,7 @@ def test_stress_long_output_with_soft_and_hard_timeout(
             assert 'The previous command is still running.' in obs.metadata.suffix
 
             # We need to send a Ctrl+C to reset the terminal.
-            obs = runtime.run_action(CmdRunAction('C-c'))
+            obs = runtime.run_action(CmdRunAction('C-c', is_input=True))
             assert obs.exit_code == 130
 
             # Now make sure the terminal is in a good state
