@@ -56,7 +56,7 @@ Each named LLM configuration supports all the same options as the default LLM co
 - Token limits (`max_input_tokens`, `max_output_tokens`)
 - And all other LLM configuration options
 
-For a complete list of available options, see the LLM Configuration section in the [Configuration Options](../configuration-options.md) documentation.
+For a complete list of available options, see the LLM Configuration section in the [Configuration Options](../configuration-options) documentation.
 
 ## Use Cases
 
@@ -100,6 +100,35 @@ In this example:
 - Repository exploration uses a cheaper model since it mainly involves understanding and navigating code
 - Code generation uses GPT-4 with a higher token limit for generating larger code blocks
 - The default configuration remains available for other tasks
+
+# Predefined Custom Configurations
+
+OpenHands comes with several predefined custom LLM configurations that are optimized for specific use cases. These configurations can be used directly or serve as templates for your own custom configurations.
+
+## Draft Editor Configuration
+
+The `draft_editor` configuration is optimized for tasks that involve editing and refining code or text. It uses parameters that balance between creativity and precision, making it ideal for tasks like code review suggestions, documentation improvements, and text refinement.
+
+```toml
+[llm.draft_editor]
+model = "gpt-4"
+temperature = 0.2
+top_p = 0.95
+presence_penalty = 0.0
+frequency_penalty = 0.0
+```
+
+This configuration:
+- Uses GPT-4 for high-quality edits and suggestions
+- Sets a low temperature (0.2) to maintain consistency while allowing some flexibility
+- Uses a high top_p value (0.95) to consider a wide range of token options
+- Disables presence and frequency penalties to maintain focus on the specific edits needed
+
+Use this configuration when you need an agent to:
+- Review and suggest code improvements
+- Edit documentation or text content
+- Refine existing content while maintaining its core meaning
+- Make precise, focused changes to code or text
 
 :::note
 Custom LLM configurations are only available when using OpenHands in development mode, via `main.py` or `cli.py`. When running via `docker run`, please use the standard configuration options.
