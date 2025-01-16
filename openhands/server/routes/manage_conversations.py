@@ -108,7 +108,13 @@ async def _create_new_conversation(
     except ValueError:
         pass  # Already subscribed - take no action
     logger.info(f'Finished initializing conversation {conversation_id}')
-    return JSONResponse(content={'status': 'ok', 'conversation_id': conversation_id})
+    return JSONResponse(
+        content={
+            'status': 'ok',
+            'conversation_id': conversation_id,
+            'sid': event_stream.sid,
+        }
+    )
 
 
 @app.post('/conversations')
