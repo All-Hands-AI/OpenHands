@@ -741,10 +741,7 @@ def test_long_running_command_follow_by_execute(
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert '3' not in obs.content
         assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
-        assert (
-            'The previous command is still running.'
-            in obs.metadata.suffix
-        )
+        assert 'The previous command is still running.' in obs.metadata.suffix
         assert obs.metadata.exit_code == -1  # -1 indicates command is still running
 
         # Finally continue again
@@ -869,10 +866,7 @@ def test_stress_long_output_with_soft_and_hard_timeout(
             # where it will not accept any new commands.
             obs = runtime.run_action(CmdRunAction('ls'))
             assert obs.exit_code == -1
-            assert (
-                'The previous command is still running.'
-                in obs.metadata.suffix
-            )
+            assert 'The previous command is still running.' in obs.metadata.suffix
 
             # We need to send a Ctrl+C to reset the terminal.
             obs = runtime.run_action(CmdRunAction('C-c'))
