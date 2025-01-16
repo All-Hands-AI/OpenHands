@@ -40,6 +40,7 @@ class LLMConfig:
         drop_params: Drop any unmapped (unsupported) params without causing an exception.
         modify_params: Modify params allows litellm to do transformations like adding a default message, when a message is empty.
         disable_vision: If model is vision capable, this option allows to disable image processing (useful for cost reduction).
+        reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Exclusive for o1 models.
         caching_prompt: Use the prompt caching feature if provided by the LLM and supported by the provider.
         log_completions: Whether to log LLM completions to the state.
         log_completions_folder: The folder to log LLM completions to. Required if log_completions is True.
@@ -79,6 +80,7 @@ class LLMConfig:
     # Note: this setting is actually global, unlike drop_params
     modify_params: bool = True
     disable_vision: bool | None = None
+    reasoning_effort: str | None = None
     caching_prompt: bool = True
     log_completions: bool = False
     log_completions_folder: str = os.path.join(LOG_DIR, 'completions')
@@ -138,8 +140,19 @@ class LLMConfig:
         This function is used to create an LLMConfig object from a dictionary,
         with the exception of the 'draft_editor' key, which is a nested LLMConfig object.
         """
-        args = {k: v for k, v in llm_config_dict.items() if not isinstance(v, dict)}
-        if 'draft_editor' in llm_config_dict:
-            draft_editor_config = LLMConfig(**llm_config_dict['draft_editor'])
-            args['draft_editor'] = draft_editor_config
+        # Keep None values to preserve defaults, filter out other dicts
+        args = {
+            k: v
+            for k, v in llm_config_dict.items()
+            if not isinstance(v, dict) or v is None
+        }
+        if (
+            'draft_editor' in llm_config_dict
+            and llm_config_dict['draft_editor'] is not None
+        ):
+            if isinstance(llm_config_dict['draft_editor'], LLMConfig):
+                args['draft_editor'] = llm_config_dict['draft_editor']
+            else:
+                draft_editor_config = LLMConfig(**llm_config_dict['draft_editor'])
+                args['draft_editor'] = draft_editor_config
         return cls(**args)
