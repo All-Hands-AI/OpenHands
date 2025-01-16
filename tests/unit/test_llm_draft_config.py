@@ -56,21 +56,21 @@ def test_draft_editor_fallback(draft_llm_toml):
     generic_llm = config.get_llm_config('llm')
     assert generic_llm.draft_editor is not None
     assert generic_llm.draft_editor.model == 'draft-model'
-    assert generic_llm.draft_editor.api_key == 'draft-api-key'
+    assert generic_llm.draft_editor.api_key.get_secret_value() == 'draft-api-key'
 
     # Verify custom1 uses draft_editor from generic as fallback
     custom1 = config.get_llm_config('custom1')
     assert custom1.model == 'custom-model-1'
     assert custom1.draft_editor is not None
     assert custom1.draft_editor.model == 'draft-model'
-    assert custom1.draft_editor.api_key == 'draft-api-key'
+    assert custom1.draft_editor.api_key.get_secret_value() == 'draft-api-key'
 
     # Verify custom2 overrides draft_editor
     custom2 = config.get_llm_config('custom2')
     assert custom2.model == 'custom-model-2'
     assert custom2.draft_editor is not None
     assert custom2.draft_editor.model == 'custom-draft'
-    assert custom2.draft_editor.api_key == 'custom-draft-key'
+    assert custom2.draft_editor.api_key.get_secret_value() == 'custom-draft-key'
 
     # Verify custom3 has draft_editor explicitly set to None
     custom3 = config.get_llm_config('custom3')

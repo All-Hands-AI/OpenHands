@@ -170,7 +170,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     for k, v in value.items():
                         if not isinstance(v, dict) or k == 'draft_editor':
                             generic_llm_fields[k] = v
-                    generic_llm_config = LLMConfig.from_dict(generic_llm_fields)
+                    generic_llm_config = LLMConfig(**generic_llm_fields)
                     cfg.set_llm_config(generic_llm_config, 'llm')
 
                     # Process custom named LLM configs
@@ -190,7 +190,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             for k, v in nested_value.items():
                                 if not isinstance(v, dict) or k == 'draft_editor':
                                     custom_fields[k] = v
-                            merged_llm_dict = generic_llm_config.__dict__.copy()
+                            merged_llm_dict = generic_llm_fields.copy()
                             merged_llm_dict.update(custom_fields)
                             # TODO clean up draft_editor
                             # Handle draft_editor with fallback values:
@@ -204,7 +204,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                                 merged_llm_dict['draft_editor'] = (
                                     generic_llm_config.draft_editor
                                 )
-                            custom_llm_config = LLMConfig.from_dict(merged_llm_dict)
+                            custom_llm_config = LLMConfig(**merged_llm_dict)
                             cfg.set_llm_config(custom_llm_config, nested_key)
 
                 elif key is not None and key.lower() == 'security':
