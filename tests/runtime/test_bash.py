@@ -556,15 +556,20 @@ def test_basic_command(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_interactive_command(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = _load_runtime(
+        temp_dir,
+        runtime_cls,
+        run_as_openhands,
+        runtime_startup_env_vars={'NO_CHANGE_TIMEOUT_SECONDS': '1'},
+    )
     try:
         # Test interactive command
         action = CmdRunAction('read -p "Enter name: " name && echo "Hello $name"')
-        action.set_hard_timeout(1)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        # assert 'Enter name:' in obs.content # FIXME: this is not working
-        assert '[The command timed out after 1 seconds.' in obs.metadata.suffix
+        # This should trigger SOFT timeout, so no need to set hard timeout
+        assert 'Enter name:' in obs.content
+        assert '[The command has no new output after 1 seconds.' in obs.metadata.suffix
 
         action = CmdRunAction('John')
         obs = runtime.run_action(action)
