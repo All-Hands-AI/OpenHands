@@ -143,3 +143,65 @@ Invalid agent content
 
     with pytest.raises(MicroAgentValidationError):
         BaseMicroAgent.load(temp_microagents_dir / 'invalid.md')
+
+
+def test_load_microagents_with_nested_dirs(temp_microagents_dir):
+    """Test loading microagents from nested directories."""
+    # Create nested knowledge agent
+    nested_dir = temp_microagents_dir / 'nested' / 'dir'
+    nested_dir.mkdir(parents=True)
+    nested_agent = """---
+name: nested_knowledge_agent
+type: knowledge
+version: 1.0.0
+agent: CodeActAgent
+triggers:
+  - nested
+---
+
+# Nested Test Guidelines
+
+Testing nested directory loading.
+"""
+    (nested_dir / 'nested.md').write_text(nested_agent)
+
+    repo_agents, knowledge_agents, task_agents = load_microagents_from_dir(
+        temp_microagents_dir
+    )
+
+    # Check that we can find the nested agent
+    assert len(knowledge_agents) == 2  # Original + nested
+    agent = knowledge_agents['nested_knowledge_agent']
+    assert isinstance(agent, KnowledgeMicroAgent)
+    assert 'nested' in agent.triggers
+
+
+def test_load_microagents_with_trailing_slashes(temp_microagents_dir):
+    """Test loading microagents when directory paths have trailing slashes."""
+    # Create a directory with trailing slash
+    knowledge_dir = temp_microagents_dir / 'knowledge/'
+    knowledge_dir.mkdir(exist_ok=True)
+    knowledge_agent = """---
+name: trailing_knowledge_agent
+type: knowledge
+version: 1.0.0
+agent: CodeActAgent
+triggers:
+  - trailing
+---
+
+# Trailing Slash Test
+
+Testing loading with trailing slashes.
+"""
+    (knowledge_dir / 'trailing.md').write_text(knowledge_agent)
+
+    repo_agents, knowledge_agents, task_agents = load_microagents_from_dir(
+        str(temp_microagents_dir) + '/'  # Add trailing slash to test
+    )
+
+    # Check that we can find the agent despite trailing slashes
+    assert len(knowledge_agents) == 2  # Original + trailing
+    agent = knowledge_agents['trailing_knowledge_agent']
+    assert isinstance(agent, KnowledgeMicroAgent)
+    assert 'trailing' in agent.triggers
