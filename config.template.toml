@@ -37,7 +37,7 @@ workspace_base = "./workspace"
 #save_trajectory_path="./trajectories"
 
 # File store path
-#file_store_path = "/tmp/file_store"
+#file_store_location = "/tmp/file_store"
 
 # File store type
 #file_store = "memory"

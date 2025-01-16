@@ -37,7 +37,7 @@ def create_runtime(
     session_id = sid or generate_sid(config)
 
     # set up the event stream
-    file_store = get_file_store(config.file_store, config.file_store_path)
+    file_store = get_file_store(config.file_store, config.file_store_location)
     event_stream = EventStream(session_id, file_store)
 
     # agent class

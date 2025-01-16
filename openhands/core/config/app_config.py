@@ -26,7 +26,7 @@ class AppConfig:
         sandbox: Sandbox configuration settings.
         runtime: Runtime environment identifier.
         file_store: Type of file store to use.
-        file_store_path: Path to the file store.
+        file_store_location: Path to the file store.
         save_trajectory_path: Either a folder path to store trajectories with auto-generated filenames, or a designated trajectory file path.
         workspace_base: Base path for the workspace. Defaults to `./workspace` as absolute path.
         workspace_mount_path: Path to mount the workspace. Defaults to `workspace_base`.
@@ -53,7 +53,7 @@ class AppConfig:
     security: SecurityConfig = field(default_factory=SecurityConfig)
     runtime: str = 'docker'
     file_store: str = 'local'
-    file_store_path: str = '/tmp/openhands_file_store'
+    file_store_location: str = '/tmp/openhands_file_store'
     save_trajectory_path: str | None = None
     workspace_base: str | None = None
     workspace_mount_path: str | None = None
