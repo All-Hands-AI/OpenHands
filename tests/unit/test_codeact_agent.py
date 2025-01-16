@@ -462,7 +462,7 @@ def test_mock_function_calling():
     llm = Mock()
     llm.is_function_calling_active = lambda: False
     config = AgentConfig()
-    config.use_microagents = False
+    config.enable_prompt_extensions = False
     agent = CodeActAgent(llm=llm, config=config)
     assert agent.mock_function_calling is True
 
@@ -500,7 +500,7 @@ def test_step_with_no_pending_actions(mock_state: State):
 
     # Create agent with mocked LLM
     config = AgentConfig()
-    config.use_microagents = False
+    config.enable_prompt_extensions = False
     agent = CodeActAgent(llm=llm, config=config)
 
     # Test step with no pending actions

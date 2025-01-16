@@ -50,7 +50,7 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Description: Disable color in terminal output
 
 ### Trajectories
-- `trajectories_path`
+- `save_trajectory_path`
   - Type: `str`
   - Default: `"./trajectories"`
   - Description: Path to store trajectories (can be a folder or a file). If it's a folder, the trajectories will be saved in a file named with the session id name and .json extension, in that folder.
@@ -140,7 +140,11 @@ The LLM (Large Language Model) configuration options are defined in the `[llm]` 
 
 To use these with the docker command, pass in `-e LLM_<option>`. Example: `-e LLM_NUM_RETRIES`.
 
-### AWS Credentials
+:::note
+For development setups, you can also define custom named LLM configurations. See [Custom LLM Configurations](./llms/custom-llm-configs) for details.
+:::
+
+**AWS Credentials**
 - `aws_access_key_id`
   - Type: `str`
   - Default: `""`
@@ -332,7 +336,7 @@ The agent configuration options are defined in the `[agent]` and `[agent.<agent_
   - Description: Whether Jupyter is enabled in the action space
 
 ### Microagent Usage
-- `use_microagents`
+- `enable_prompt_extensions`
   - Type: `bool`
   - Default: `true`
   - Description: Whether to use microagents at all

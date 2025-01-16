@@ -39,6 +39,7 @@ class LLMConfig(BaseModel):
         drop_params: Drop any unmapped (unsupported) params without causing an exception.
         modify_params: Modify params allows litellm to do transformations like adding a default message, when a message is empty.
         disable_vision: If model is vision capable, this option allows to disable image processing (useful for cost reduction).
+        reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Exclusive for o1 models.
         caching_prompt: Use the prompt caching feature if provided by the LLM and supported by the provider.
         log_completions: Whether to log LLM completions to the state.
         log_completions_folder: The folder to log LLM completions to. Required if log_completions is True.

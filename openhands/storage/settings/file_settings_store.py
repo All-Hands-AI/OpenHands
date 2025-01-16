@@ -30,6 +30,8 @@ class FileSettingsStore(SettingsStore):
         await call_sync_from_async(self.file_store.write, self.path, json_str)
 
     @classmethod
-    async def get_instance(cls, config: AppConfig, user_id: int) -> FileSettingsStore:
+    async def get_instance(
+        cls, config: AppConfig, user_id: str | None
+    ) -> FileSettingsStore:
         file_store = get_file_store(config.file_store, config.file_store_path)
         return FileSettingsStore(file_store)

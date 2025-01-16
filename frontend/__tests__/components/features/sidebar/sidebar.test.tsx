@@ -128,7 +128,7 @@ describe("Sidebar", () => {
       await user.click(norskOption);
 
       const tokenInput =
-        within(accountSettingsModal).getByLabelText(/github token/i);
+        within(accountSettingsModal).getByLabelText(/GITHUB\$TOKEN_LABEL/i);
       await user.type(tokenInput, "new-token");
 
       const saveButton =
@@ -151,7 +151,11 @@ describe("Sidebar", () => {
 
       const settingsModal = screen.getByTestId("ai-config-modal");
 
-      const apiKeyInput = within(settingsModal).getByLabelText(/api key/i);
+      // Click the advanced options switch to show the API key input
+      const advancedOptionsSwitch = within(settingsModal).getByTestId("advanced-option-switch");
+      await user.click(advancedOptionsSwitch);
+
+      const apiKeyInput = within(settingsModal).getByLabelText(/API\$KEY/i);
       await user.type(apiKeyInput, "SET");
 
       const saveButton = within(settingsModal).getByTestId(
@@ -162,7 +166,7 @@ describe("Sidebar", () => {
       expect(saveSettingsSpy).toHaveBeenCalledWith({
         ...MOCK_USER_PREFERENCES.settings,
         llm_api_key: undefined,
-        llm_base_url: undefined,
+        llm_base_url: "",
         security_analyzer: undefined,
       });
     });
