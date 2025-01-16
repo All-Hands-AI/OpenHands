@@ -287,10 +287,12 @@ class EventStream:
             except queue.Empty:
                 continue
 
+            print('Got event', event)
             # pass each event to each callback in order
             for key in sorted(self._subscribers.keys()):
                 callbacks = self._subscribers[key]
                 for callback_id in callbacks:
+                    print('Processing for', callbacks, callback_id, event)
                     callback = callbacks[callback_id]
                     pool = self._thread_pools[key][callback_id]
                     future = pool.submit(callback, event)
