@@ -44,6 +44,12 @@ async def connect(connection_id: str, environ, auth):
 
         conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
         metadata = await conversation_store.get_metadata(conversation_id)
+
+        logger.info(
+            f'metadata user id {metadata.github_user_id}, {type(metadata.github_user_id)}'
+        )
+        logger.info(f'user id {user_id}, {type(user_id)}')
+
         if metadata.github_user_id != user_id:
             logger.error(
                 f'User {user_id} is not allowed to join conversation {conversation_id}'
