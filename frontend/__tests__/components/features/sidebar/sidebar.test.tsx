@@ -5,7 +5,6 @@ import { renderWithProviders } from "test-utils";
 import { createRoutesStub } from "react-router";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import OpenHands from "#/api/open-hands";
-import { MOCK_USER_PREFERENCES } from "#/mocks/handlers";
 
 const renderSidebar = () => {
   const RouterStub = createRoutesStub([
@@ -46,11 +45,11 @@ describe("Sidebar", () => {
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith({
-        ...MOCK_USER_PREFERENCES.settings,
-        // the actual values are falsey (null or "") but we're checking for undefined
-        llm_api_key: undefined,
-        llm_base_url: undefined,
-        security_analyzer: undefined,
+        agent: "CodeActAgent",
+        confirmation_mode: false,
+        language: "en",
+        llm_model: "anthropic/claude-3-5-sonnet-20241022",
+        remote_runtime_resource_factor: 1,
       });
     });
 
@@ -85,9 +84,14 @@ describe("Sidebar", () => {
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith({
-        ...MOCK_USER_PREFERENCES.settings,
+        agent: "CodeActAgent",
+        confirmation_mode: false,
+        github_token: "new-token",
         language: "no",
-        llm_api_key: undefined, // null or undefined
+        llm_base_url: "",
+        llm_model: "anthropic/claude-3-5-sonnet-20241022",
+        remote_runtime_resource_factor: 1,
+        security_analyzer: "",
       });
     });
 
@@ -115,10 +119,12 @@ describe("Sidebar", () => {
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith({
-        ...MOCK_USER_PREFERENCES.settings,
-        llm_api_key: undefined,
+        agent: "CodeActAgent",
+        confirmation_mode: false,
+        language: "en",
         llm_base_url: "",
-        security_analyzer: undefined,
+        llm_model: "anthropic/claude-3-5-sonnet-20241022",
+        remote_runtime_resource_factor: 1,
       });
     });
   });
