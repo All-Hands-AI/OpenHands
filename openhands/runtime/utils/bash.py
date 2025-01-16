@@ -491,11 +491,12 @@ class BashSession:
         last_change_time = start_time
         last_pane_output = self._get_pane_content()
 
+        # Do not check hard timeout if the command is a special key
         if command != '' and is_special_key:
             logger.debug(f'SENDING SPECIAL KEY: {command!r}')
             self.pane.send_keys(command, enter=False)
-        # Do not check hard timeout if the command is a special key
-        elif self.prev_status == BashCommandStatus.HARD_TIMEOUT:
+        # When prev command is hard timeout, and we are trying to execute new command
+        elif self.prev_status == BashCommandStatus.HARD_TIMEOUT and command != '':
             if not last_pane_output.endswith(CMD_OUTPUT_PS1_END):
                 _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
                 raw_command_output = self._combine_outputs_between_matches(
