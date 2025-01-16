@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.stream import EventStreamSubscriber
-from openhands.server.auth import get_user_id
+from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import config, session_manager
@@ -29,7 +29,6 @@ UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 
 class InitSessionRequest(BaseModel):
-    github_token: str | None = None
     selected_repository: str | None = None
 
 
@@ -70,8 +69,8 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND',
             }
         )
-    github_token = getattr(request.state, 'github_token', '')
-    session_init_args['github_token'] = github_token or data.github_token or ''
+    github_token = get_github_token(request)
+    session_init_args['github_token'] = github_token if github_token else ''
     session_init_args['selected_repository'] = data.selected_repository
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
