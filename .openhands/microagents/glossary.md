@@ -1,17 +1,5 @@
 # OpenHands Glossary
 
-### Action
-A specific operation or command that an agent executes through available tools, such as running a command or editing a file.
-
-#### Action Execution Client
-A component that handles the execution of actions in the runtime environment, managing the communication between the agent and the runtime.
-
-#### Action Parser
-A component that interprets and validates agent actions before they are executed in the runtime environment.
-
-#### Action Serialization
-The process of converting agent actions into a format that can be transmitted and executed in the runtime environment.
-
 ### Agent
 The core AI entity in OpenHands that can perform software development tasks by interacting with tools, browsing the web, and modifying code.
 
@@ -114,11 +102,26 @@ A storage system for maintaining conversation history and related data.
 ### Event
 A discrete occurrence in the system, such as an action being taken or an observation being made.
 
+#### Action
+A specific operation or command that an agent executes through available tools, such as running a command or editing a file.
+
+##### Action Parser
+A component that interprets and validates agent actions before they are executed in the runtime environment.
+
+##### Action Serialization
+The process of converting agent actions into a format that can be transmitted and executed in the runtime environment.
+
 #### Event Serialization
 The process of converting events into a format that can be stored and transmitted.
 
 #### Event Stream
 A continuous flow of events that represents the ongoing activities and interactions in the system.
+
+#### Observation
+The response or result returned by a tool after an agent's action, providing feedback about the action's outcome.
+
+##### Observation Serialization
+The process of converting tool observations into a format that can be stored and processed.
 
 ### File
 File system operations and management.
@@ -186,11 +189,7 @@ A general-purpose microagent available to all OpenHands users, triggered by spec
 #### Repository Microagent
 A type of microagent that provides repository-specific context and guidelines, stored in the `.openhands/microagents/` directory.
 
-### Observation
-The response or result returned by a tool after an agent's action, providing feedback about the action's outcome.
 
-#### Observation Serialization
-The process of converting tool observations into a format that can be stored and processed.
 
 ### Prompt
 Components for managing and processing prompts.
@@ -206,6 +205,9 @@ The process of interpreting and structuring responses from language models and t
 
 ### Runtime
 The execution environment where agents perform their tasks, which can be local, remote, or containerized.
+
+#### Action Execution Client
+A component that handles the execution of actions in the runtime environment, managing the communication between the agent and the runtime.
 
 #### Docker Runtime
 A containerized runtime environment that provides isolation and reproducibility for agent operations.
