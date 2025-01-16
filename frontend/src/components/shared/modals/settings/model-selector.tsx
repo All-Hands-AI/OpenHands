@@ -4,8 +4,6 @@ import {
   AutocompleteSection,
 } from "@nextui-org/react";
 import React from "react";
-import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
 import { mapProvider } from "#/utils/map-provider";
 import { VERIFIED_MODELS, VERIFIED_PROVIDERS } from "#/utils/verified-models";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
@@ -62,14 +60,12 @@ export function ModelSelector({
     setLitellmId(null);
   };
 
-  const { t } = useTranslation();
-
   return (
     <div data-testid="model-selector" className="flex flex-col gap-2">
       <div className="flex flex-row gap-3">
         <fieldset className="flex flex-col gap-2">
           <label htmlFor="agent" className="font-[500] text-[#A3A3A3] text-xs">
-            {t(I18nKey.LLM$PROVIDER)}
+            LLM Provider
           </label>
           <Autocomplete
             data-testid="llm-provider"
@@ -77,8 +73,8 @@ export function ModelSelector({
             isVirtualized={false}
             name="llm-provider"
             isDisabled={isDisabled}
-            aria-label={t(I18nKey.LLM$PROVIDER)}
-            placeholder={t(I18nKey.LLM$SELECT_PROVIDER_PLACEHOLDER)}
+            aria-label="LLM Provider"
+            placeholder="Select a provider"
             isClearable={false}
             onSelectionChange={(e) => {
               if (e?.toString()) handleChangeProvider(e.toString());
@@ -119,15 +115,15 @@ export function ModelSelector({
 
         <fieldset className="flex flex-col gap-2">
           <label htmlFor="agent" className="font-[500] text-[#A3A3A3] text-xs">
-            {t(I18nKey.LLM$MODEL)}
+            LLM Model
           </label>
           <Autocomplete
             data-testid="llm-model"
             isRequired
             isVirtualized={false}
             name="llm-model"
-            aria-label={t(I18nKey.LLM$MODEL)}
-            placeholder={t(I18nKey.LLM$SELECT_MODEL_PLACEHOLDER)}
+            aria-label="LLM Model"
+            placeholder="Select a model"
             isClearable={false}
             onSelectionChange={(e) => {
               if (e?.toString()) handleChangeModel(e.toString());

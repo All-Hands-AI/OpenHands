@@ -13,8 +13,9 @@ export interface CommandObservation extends OpenHandsObservationEvent<"run"> {
   source: "agent";
   extras: {
     command: string;
+    command_id: number;
+    exit_code: number;
     hidden?: boolean;
-    metadata: Record<string, unknown>;
   };
 }
 

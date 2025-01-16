@@ -1,12 +1,9 @@
 import { useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
 import { cn } from "#/utils/utils";
 import { AgentState } from "#/types/agent-state";
 import { RootState } from "#/store";
-import { I18nKey } from "#/i18n/declaration";
 
 export function TerminalStatusLabel() {
-  const { t } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   return (
@@ -20,7 +17,7 @@ export function TerminalStatusLabel() {
             : "bg-green-500",
         )}
       />
-      {t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL)}
+      Terminal
     </div>
   );
 }

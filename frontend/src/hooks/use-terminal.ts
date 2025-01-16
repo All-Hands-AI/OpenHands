@@ -131,9 +131,7 @@ export const useTerminal = ({
           content = content.replaceAll(secret, "*".repeat(10));
         });
 
-        terminal.current?.writeln(
-          parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
-        );
+        terminal.current?.writeln(parseTerminalOutput(content));
 
         if (type === "output") {
           terminal.current.write(`\n$ `);

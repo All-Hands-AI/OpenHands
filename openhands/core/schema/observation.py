@@ -44,8 +44,5 @@ class ObservationTypeSchema(BaseModel):
 
     USER_REJECTED: str = Field(default='user_rejected')
 
-    CONDENSE: str = Field(default='condense')
-    """Result of a condensation operation."""
-
 
 ObservationType = ObservationTypeSchema()

@@ -27,10 +27,7 @@ export function AccountSettingsContextMenu({
       ref={ref}
       className="absolute left-full -top-1 z-10"
     >
-      <ContextMenuListItem
-        testId="account-settings-button"
-        onClick={onClickAccountSettings}
-      >
+      <ContextMenuListItem onClick={onClickAccountSettings}>
         {t(I18nKey.ACCOUNT_SETTINGS$SETTINGS)}
       </ContextMenuListItem>
       <ContextMenuSeparator />

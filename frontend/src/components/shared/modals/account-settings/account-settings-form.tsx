@@ -13,7 +13,7 @@ import { ModalButton } from "../../buttons/modal-button";
 import { CustomInput } from "../../custom-input";
 import { FormFieldset } from "../../form-fieldset";
 import { useConfig } from "#/hooks/query/use-config";
-import { useCurrentSettings } from "#/context/settings-context";
+import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
 interface AccountSettingsFormProps {
   onClose: () => void;
@@ -30,10 +30,10 @@ export function AccountSettingsForm({
 }: AccountSettingsFormProps) {
   const { gitHubToken, setGitHubToken, logout } = useAuth();
   const { data: config } = useConfig();
-  const { saveUserSettings } = useCurrentSettings();
+  const { mutate: saveSettings } = useSaveSettings();
   const { t } = useTranslation();
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
@@ -50,7 +50,7 @@ export function AccountSettingsForm({
         ({ label }) => label === language,
       )?.value;
 
-      if (languageKey) await saveUserSettings({ LANGUAGE: languageKey });
+      if (languageKey) saveSettings({ LANGUAGE: languageKey });
     }
 
     handleCaptureConsent(analytics);
@@ -61,10 +61,10 @@ export function AccountSettingsForm({
   };
 
   return (
-    <ModalBody testID="account-settings-form">
+    <ModalBody>
       <form className="flex flex-col w-full gap-6" onSubmit={handleSubmit}>
         <div className="w-full flex flex-col gap-2">
-          <BaseModalTitle title={t(I18nKey.ACCOUNT_SETTINGS$TITLE)} />
+          <BaseModalTitle title="Account Settings" />
 
           {config?.APP_MODE === "saas" && config?.APP_SLUG && (
             <a
@@ -73,12 +73,12 @@ export function AccountSettingsForm({
               rel="noreferrer noopener"
               className="underline"
             >
-              {t(I18nKey.GITHUB$CONFIGURE_REPOS)}
+              Configure Github Repositories
             </a>
           )}
           <FormFieldset
             id="language"
-            label={t(I18nKey.LANGUAGE$LABEL)}
+            label="Language"
             defaultSelectedKey={selectedLanguage}
             isClearable={false}
             items={AvailableLanguages.map(({ label, value: key }) => ({
@@ -91,32 +91,32 @@ export function AccountSettingsForm({
             <>
               <CustomInput
                 name="ghToken"
-                label={t(I18nKey.GITHUB$TOKEN_LABEL)}
+                label="GitHub Token"
                 type="password"
                 defaultValue={gitHubToken ?? ""}
               />
               <BaseModalDescription>
-                {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
+                {t(I18nKey.CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN)}{" "}
                 <a
                   href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
                   target="_blank"
                   rel="noreferrer noopener"
                   className="text-[#791B80] underline"
                 >
-                  {t(I18nKey.COMMON$HERE)}
+                  {t(I18nKey.CONNECT_TO_GITHUB_MODAL$HERE)}
                 </a>
               </BaseModalDescription>
             </>
           )}
           {gitHubError && (
             <p className="text-danger text-xs">
-              {t(I18nKey.GITHUB$TOKEN_INVALID)}
+              {t(I18nKey.ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID)}
             </p>
           )}
           {gitHubToken && !gitHubError && (
             <ModalButton
               variant="text-like"
-              text={t(I18nKey.BUTTON$DISCONNECT)}
+              text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$DISCONNECT)}
               onClick={() => {
                 logout();
                 onClose();
@@ -132,19 +132,18 @@ export function AccountSettingsForm({
             type="checkbox"
             defaultChecked={analyticsConsent === "true"}
           />
-          {t(I18nKey.ANALYTICS$ENABLE)}
+          Enable analytics
         </label>
 
         <div className="flex flex-col gap-2 w-full">
           <ModalButton
-            testId="save-settings"
             type="submit"
             intent="account"
-            text={t(I18nKey.BUTTON$SAVE)}
+            text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$SAVE)}
             className="bg-[#4465DB]"
           />
           <ModalButton
-            text={t(I18nKey.BUTTON$CLOSE)}
+            text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$CLOSE)}
             onClick={onClose}
             className="bg-[#737373]"
           />

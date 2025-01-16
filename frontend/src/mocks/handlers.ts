@@ -1,12 +1,8 @@
 import { delay, http, HttpResponse } from "msw";
-import {
-  GetConfigResponse,
-  Conversation,
-  ResultSet,
-} from "#/api/open-hands.types";
+import { GetConfigResponse, Conversation } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 
-export const MOCK_USER_PREFERENCES = {
+const userPreferences = {
   settings: {
     llm_model: DEFAULT_SETTINGS.LLM_MODEL,
     llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
@@ -21,33 +17,26 @@ export const MOCK_USER_PREFERENCES = {
 const conversations: Conversation[] = [
   {
     conversation_id: "1",
-    title: "My New Project",
-    selected_repository: null,
-    last_updated_at: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-    status: "RUNNING",
+    name: "My New Project",
+    repo: null,
+    lastUpdated: new Date().toISOString(),
+    state: "running",
   },
   {
     conversation_id: "2",
-    title: "Repo Testing",
-    selected_repository: "octocat/hello-world",
+    name: "Repo Testing",
+    repo: "octocat/hello-world",
     // 2 days ago
-    last_updated_at: new Date(
-      Date.now() - 2 * 24 * 60 * 60 * 1000,
-    ).toISOString(),
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    status: "STOPPED",
+    lastUpdated: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    state: "cold",
   },
   {
     conversation_id: "3",
-    title: "Another Project",
-    selected_repository: "octocat/earth",
+    name: "Another Project",
+    repo: "octocat/earth",
     // 5 days ago
-    last_updated_at: new Date(
-      Date.now() - 5 * 24 * 60 * 60 * 1000,
-    ).toISOString(),
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    status: "STOPPED",
+    lastUpdated: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    state: "finished",
   },
 ];
 
@@ -169,14 +158,14 @@ export const handlers = [
     return HttpResponse.json(config);
   }),
   http.get("/api/settings", async () =>
-    HttpResponse.json(MOCK_USER_PREFERENCES.settings),
+    HttpResponse.json(userPreferences.settings),
   ),
   http.post("/api/settings", async ({ request }) => {
     const body = await request.json();
 
     if (body) {
-      MOCK_USER_PREFERENCES.settings = {
-        ...MOCK_USER_PREFERENCES.settings,
+      userPreferences.settings = {
+        ...userPreferences.settings,
         // @ts-expect-error - We know this is a settings object
         ...body,
       };
@@ -193,15 +182,9 @@ export const handlers = [
 
   http.get("/api/options/config", () => HttpResponse.json({ APP_MODE: "oss" })),
 
-  http.get("/api/conversations", async () => {
-    const values = Array.from(CONVERSATIONS.values());
-    const results: ResultSet<Conversation> = {
-      results: values,
-      next_page_id: null,
-    };
-
-    return HttpResponse.json(results, { status: 200 });
-  }),
+  http.get("/api/conversations", async () =>
+    HttpResponse.json(Array.from(CONVERSATIONS.values())),
+  ),
 
   http.delete("/api/conversations/:conversationId", async ({ params }) => {
     const { conversationId } = params;
@@ -214,7 +197,7 @@ export const handlers = [
     return HttpResponse.json(null, { status: 404 });
   }),
 
-  http.patch(
+  http.put(
     "/api/conversations/:conversationId",
     async ({ params, request }) => {
       const { conversationId } = params;
@@ -224,10 +207,10 @@ export const handlers = [
 
         if (conversation) {
           const body = await request.json();
-          if (typeof body === "object" && body?.title) {
+          if (typeof body === "object" && body?.name) {
             CONVERSATIONS.set(conversationId, {
               ...conversation,
-              title: body.title,
+              name: body.name,
             });
             return HttpResponse.json(null, { status: 200 });
           }
@@ -241,11 +224,10 @@ export const handlers = [
   http.post("/api/conversations", () => {
     const conversation: Conversation = {
       conversation_id: (Math.random() * 100).toString(),
-      title: "New Conversation",
-      selected_repository: null,
-      last_updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      status: "RUNNING",
+      name: "New Conversation",
+      repo: null,
+      lastUpdated: new Date().toISOString(),
+      state: "warm",
     };
 
     CONVERSATIONS.set(conversation.conversation_id, conversation);

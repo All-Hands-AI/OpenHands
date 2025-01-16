@@ -1,21 +1,24 @@
 import asyncio
 import logging
 import sys
+from typing import Type
 from uuid import uuid4
 
 from termcolor import colored
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
+from openhands import __version__
+from openhands.controller import AgentController
+from openhands.controller.agent import Agent
 from openhands.core.config import (
     AppConfig,
-    parse_arguments,
-    setup_config_from_args,
+    get_parser,
+    load_app_config,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
-from openhands.core.setup import create_agent, create_controller, create_runtime
-from openhands.events import EventSource, EventStreamSubscriber
+from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
@@ -31,6 +34,11 @@ from openhands.events.observation import (
     FileEditObservation,
     NullObservation,
 )
+from openhands.llm.llm import LLM
+from openhands.runtime import get_runtime_cls
+from openhands.runtime.base import Runtime
+from openhands.security import SecurityAnalyzer, options
+from openhands.storage import get_file_store
 
 
 def display_message(message: str):
@@ -83,42 +91,68 @@ def display_event(event: Event, config: AppConfig):
         display_confirmation(event.confirmation_state)
 
 
-def read_input(config: AppConfig) -> str:
-    """Read input from user based on config settings."""
-    if config.cli_multiline_input:
-        print('Enter your message (enter "/exit" on a new line to finish):')
-        lines = []
-        while True:
-            line = input('>> ').rstrip()
-            if line == '/exit':  # finish input
-                break
-            lines.append(line)
-        return '\n'.join(lines)
-    else:
-        return input('>> ').rstrip()
-
-
-async def main(loop: asyncio.AbstractEventLoop):
+async def main(loop):
     """Runs the agent in CLI mode"""
 
-    args = parse_arguments()
+    parser = get_parser()
+    # Add the version argument
+    parser.add_argument(
+        '-v',
+        '--version',
+        action='version',
+        version=f'{__version__}',
+        help='Show the version number and exit',
+        default=None,
+    )
+    args = parser.parse_args()
+
+    if args.version:
+        print(f'OpenHands version: {__version__}')
+        return
 
     logger.setLevel(logging.WARNING)
-
-    config = setup_config_from_args(args)
-
+    config = load_app_config(config_file=args.config_file)
     sid = str(uuid4())
 
-    runtime = create_runtime(config, sid=sid, headless_mode=True)
-    await runtime.connect()
-    agent = create_agent(runtime, config)
-    controller, _ = create_controller(agent, runtime, config)
+    agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
+    agent_config = config.get_agent_config(config.default_agent)
+    llm_config = config.get_llm_config_from_agent(config.default_agent)
+    agent = agent_cls(
+        llm=LLM(config=llm_config),
+        config=agent_config,
+    )
 
-    event_stream = runtime.event_stream
+    file_store = get_file_store(config.file_store, config.file_store_location)
+    event_stream = EventStream(sid, file_store)
+
+    runtime_cls = get_runtime_cls(config.runtime)
+    runtime: Runtime = runtime_cls(  # noqa: F841
+        config=config,
+        event_stream=event_stream,
+        sid=sid,
+        plugins=agent_cls.sandbox_plugins,
+        headless_mode=True,
+    )
+
+    if config.security.security_analyzer:
+        options.SecurityAnalyzers.get(
+            config.security.security_analyzer, SecurityAnalyzer
+        )(event_stream)
+
+    controller = AgentController(
+        agent=agent,
+        max_iterations=config.max_iterations,
+        max_budget_per_task=config.max_budget_per_task,
+        agent_to_llm_config=config.get_agent_to_llm_config_map(),
+        event_stream=event_stream,
+        confirmation_mode=config.security.confirmation_mode,
+    )
 
     async def prompt_for_next_task():
         # Run input() in a thread pool to avoid blocking the event loop
-        next_message = await loop.run_in_executor(None, read_input, config)
+        next_message = await loop.run_in_executor(
+            None, lambda: input('How can I help? >> ')
+        )
         if not next_message.strip():
             await prompt_for_next_task()
         if next_message == 'exit':

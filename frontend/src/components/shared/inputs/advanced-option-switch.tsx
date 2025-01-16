@@ -18,10 +18,9 @@ export function AdvancedOptionSwitch({
 
   return (
     <Switch
-      data-testid="advanced-option-switch"
       isDisabled={isDisabled}
       name="use-advanced-options"
-      defaultSelected={showAdvancedOptions}
+      isSelected={showAdvancedOptions}
       onValueChange={setShowAdvancedOptions}
       classNames={{
         thumb: cn(

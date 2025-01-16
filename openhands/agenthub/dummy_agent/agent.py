@@ -18,7 +18,6 @@ from openhands.events.action import (
 from openhands.events.observation import (
     AgentStateChangedObservation,
     BrowserOutputObservation,
-    CmdOutputMetadata,
     CmdOutputObservation,
     FileReadObservation,
     FileWriteObservation,
@@ -55,7 +54,11 @@ class DummyAgent(Agent):
             },
             {
                 'action': CmdRunAction(command='echo "foo"'),
-                'observations': [CmdOutputObservation('foo', command='echo "foo"')],
+                'observations': [
+                    CmdOutputObservation(
+                        'foo', command_id=-1, command='echo "foo"', exit_code=0
+                    )
+                ],
             },
             {
                 'action': FileWriteAction(
@@ -78,8 +81,9 @@ class DummyAgent(Agent):
                 'observations': [
                     CmdOutputObservation(
                         'bash: hello.sh: No such file or directory',
+                        command_id=-1,
                         command='bash workspace/hello.sh',
-                        metadata=CmdOutputMetadata(exit_code=127),
+                        exit_code=127,
                     )
                 ],
             },
@@ -148,6 +152,8 @@ class DummyAgent(Agent):
                         obs.pop('timestamp', None)
                         obs.pop('cause', None)
                         obs.pop('source', None)
+                        if 'extras' in obs:
+                            obs['extras'].pop('command_id', None)
 
                     if hist_obs != expected_obs:
                         print(

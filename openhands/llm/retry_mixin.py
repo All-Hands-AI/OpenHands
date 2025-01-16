@@ -46,4 +46,5 @@ class RetryMixin:
         exception = retry_state.outcome.exception()
         logger.error(
             f'{exception}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.',
+            exc_info=False,
         )

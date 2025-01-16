@@ -16,7 +16,6 @@ from openhands.core.config.utils import (
     load_from_env,
     load_from_toml,
     parse_arguments,
-    setup_config_from_args,
 )
 
 __all__ = [
@@ -35,5 +34,4 @@ __all__ = [
     'get_field_info',
     'get_parser',
     'parse_arguments',
-    'setup_config_from_args',
 ]

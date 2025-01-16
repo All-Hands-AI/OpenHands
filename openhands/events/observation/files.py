@@ -18,9 +18,6 @@ class FileReadObservation(Observation):
     def message(self) -> str:
         return f'I read the file {self.path}.'
 
-    def __str__(self) -> str:
-        return f'[Read from {self.path} is successful.]\n' f'{self.content}'
-
 
 @dataclass
 class FileWriteObservation(Observation):
@@ -32,9 +29,6 @@ class FileWriteObservation(Observation):
     @property
     def message(self) -> str:
         return f'I wrote to the file {self.path}.'
-
-    def __str__(self) -> str:
-        return f'[Write to {self.path} is successful.]\n' f'{self.content}'
 
 
 @dataclass

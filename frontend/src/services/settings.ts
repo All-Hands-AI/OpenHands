@@ -8,7 +8,6 @@ export type Settings = {
   LLM_API_KEY: string | null;
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
-  REMOTE_RUNTIME_RESOURCE_FACTOR: number;
 };
 
 export type ApiSettings = {
@@ -19,7 +18,6 @@ export type ApiSettings = {
   llm_api_key: string | null;
   confirmation_mode: boolean;
   security_analyzer: string;
-  remote_runtime_resource_factor: number;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -30,7 +28,6 @@ export const DEFAULT_SETTINGS: Settings = {
   LLM_API_KEY: null,
   CONFIRMATION_MODE: false,
   SECURITY_ANALYZER: "",
-  REMOTE_RUNTIME_RESOURCE_FACTOR: 1,
 };
 
 export const getCurrentSettingsVersion = () => {
@@ -69,8 +66,6 @@ export const getLocalStorageSettings = (): Settings => {
     LLM_API_KEY: llmApiKey || DEFAULT_SETTINGS.LLM_API_KEY,
     CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
     SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
-    REMOTE_RUNTIME_RESOURCE_FACTOR:
-      DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
   };
 };
 
@@ -78,8 +73,3 @@ export const getLocalStorageSettings = (): Settings => {
  * Get the default settings
  */
 export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
-
-/**
- * Get the current settings, either from local storage or defaults
- */
-export const getSettings = (): Settings => getLocalStorageSettings();

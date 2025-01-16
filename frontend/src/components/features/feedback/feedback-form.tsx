@@ -1,7 +1,5 @@
 import React from "react";
 import hotToast from "react-hot-toast";
-import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
 import { Feedback } from "#/api/open-hands.types";
 import { useSubmitFeedback } from "#/hooks/mutation/use-submit-feedback";
 import { ModalButton } from "#/components/shared/buttons/modal-button";
@@ -15,9 +13,8 @@ interface FeedbackFormProps {
 }
 
 export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
-  const { t } = useTranslation();
   const copiedToClipboardToast = () => {
-    hotToast(t(I18nKey.FEEDBACK$PASSWORD_COPIED_MESSAGE), {
+    hotToast("Password copied to clipboard", {
       icon: "📋",
       position: "bottom-right",
     });
@@ -44,13 +41,10 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
           target="_blank"
           rel="noreferrer"
         >
-          {t(I18nKey.FEEDBACK$GO_TO_FEEDBACK)}
+          Go to shared feedback
         </a>
         <span onClick={() => onPressToast(password)} className="cursor-pointer">
-          {t(I18nKey.FEEDBACK$PASSWORD)}: {password}{" "}
-          <span className="text-gray-500">
-            ({t(I18nKey.FEEDBACK$COPY_LABEL)})
-          </span>
+          Password: {password} <span className="text-gray-500">(copy)</span>
         </span>
       </div>,
       { duration: 10000 },
@@ -92,14 +86,12 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
       <label className="flex flex-col gap-2">
-        <span className="text-xs text-neutral-400">
-          {t(I18nKey.FEEDBACK$EMAIL_LABEL)}
-        </span>
+        <span className="text-xs text-neutral-400">Email</span>
         <input
           required
           name="email"
           type="email"
-          placeholder={t(I18nKey.FEEDBACK$EMAIL_PLACEHOLDER)}
+          placeholder="Please enter your email"
           className="bg-[#27272A] px-3 py-[10px] rounded"
         />
       </label>
@@ -112,11 +104,11 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
             type="radio"
             defaultChecked
           />
-          {t(I18nKey.FEEDBACK$PRIVATE_LABEL)}
+          Private
         </label>
         <label className="flex gap-2 cursor-pointer">
           <input name="permissions" value="public" type="radio" />
-          {t(I18nKey.FEEDBACK$PUBLIC_LABEL)}
+          Public
         </label>
       </div>
 
@@ -124,12 +116,12 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
         <ModalButton
           disabled={isPending}
           type="submit"
-          text={t(I18nKey.FEEDBACK$CONTRIBUTE_LABEL)}
+          text="Submit"
           className="bg-[#4465DB] grow"
         />
         <ModalButton
           disabled={isPending}
-          text={t(I18nKey.FEEDBACK$CANCEL_LABEL)}
+          text="Cancel"
           onClick={onClose}
           className="bg-[#737373] grow"
         />

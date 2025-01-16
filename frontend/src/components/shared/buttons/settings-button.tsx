@@ -1,22 +1,19 @@
-import { FaCog } from "react-icons/fa";
-import { useTranslation } from "react-i18next";
+import CogTooth from "#/assets/cog-tooth";
 import { TooltipButton } from "./tooltip-button";
-import { I18nKey } from "#/i18n/declaration";
 
 interface SettingsButtonProps {
   onClick: () => void;
 }
 
 export function SettingsButton({ onClick }: SettingsButtonProps) {
-  const { t } = useTranslation();
   return (
     <TooltipButton
       testId="settings-button"
-      tooltip={t(I18nKey.SETTINGS$TITLE)}
-      ariaLabel={t(I18nKey.SETTINGS$TITLE)}
+      tooltip="Settings"
+      ariaLabel="Settings"
       onClick={onClick}
     >
-      <FaCog size={24} />
+      <CogTooth />
     </TooltipButton>
   );
 }

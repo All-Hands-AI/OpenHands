@@ -23,13 +23,14 @@ export function TaskForm({ ref }: TaskFormProps) {
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
-  const { files } = useSelector((state: RootState) => state.initialQuery);
+  const { selectedRepository, files } = useSelector(
+    (state: RootState) => state.initialQuery,
+  );
 
   const [text, setText] = React.useState("");
-  const [suggestion, setSuggestion] = React.useState(() => {
-    const key = getRandomKey(SUGGESTIONS["non-repo"]);
-    return { key, value: SUGGESTIONS["non-repo"][key] };
-  });
+  const [suggestion, setSuggestion] = React.useState(
+    getRandomKey(SUGGESTIONS["non-repo"]),
+  );
   const [inputIsFocused, setInputIsFocused] = React.useState(false);
   const { mutate: createConversation, isPending } = useCreateConversation();
 
@@ -37,15 +38,25 @@ export function TaskForm({ ref }: TaskFormProps) {
     const suggestions = SUGGESTIONS["non-repo"];
     // remove current suggestion to avoid refreshing to the same suggestion
     const suggestionCopy = { ...suggestions };
-    delete suggestionCopy[suggestion.key];
+    delete suggestionCopy[suggestion];
 
     const key = getRandomKey(suggestionCopy);
-    setSuggestion({ key, value: suggestions[key] });
+    setSuggestion(key);
   };
 
   const onClickSuggestion = () => {
-    setText(suggestion.value);
+    const suggestions = SUGGESTIONS["non-repo"];
+    const value = suggestions[suggestion];
+    setText(value);
   };
+
+  const placeholder = React.useMemo(() => {
+    if (selectedRepository) {
+      return `What would you like to change in ${selectedRepository}?`;
+    }
+
+    return "What do you want to build?";
+  }, [selectedRepository]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -94,6 +105,7 @@ export function TaskForm({ ref }: TaskFormProps) {
                   dispatch(addFile(base64));
                 });
               }}
+              placeholder={placeholder}
               value={text}
               maxRows={15}
               showButton={!!text}

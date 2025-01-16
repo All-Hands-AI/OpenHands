@@ -21,8 +21,7 @@ class GoogleCloudFileStore(FileStore):
 
     def write(self, path: str, contents: str | bytes) -> None:
         blob = self.bucket.blob(path)
-        mode = 'wb' if isinstance(contents, bytes) else 'w'
-        with blob.open(mode) as f:
+        with blob.open('w') as f:
             f.write(contents)
 
     def read(self, path: str) -> str:

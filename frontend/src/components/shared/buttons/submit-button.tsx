@@ -1,6 +1,4 @@
-import { useTranslation } from "react-i18next";
 import ArrowSendIcon from "#/icons/arrow-send.svg?react";
-import { I18nKey } from "#/i18n/declaration";
 
 interface SubmitButtonProps {
   isDisabled?: boolean;
@@ -8,10 +6,9 @@ interface SubmitButtonProps {
 }
 
 export function SubmitButton({ isDisabled, onClick }: SubmitButtonProps) {
-  const { t } = useTranslation();
   return (
     <button
-      aria-label={t(I18nKey.BUTTON$SEND)}
+      aria-label="Send"
       disabled={isDisabled}
       onClick={onClick}
       type="submit"

@@ -1,3 +1,5 @@
+
+
 # Options de configuration
 
 Ce guide détaille toutes les options de configuration disponibles pour OpenHands, vous aidant à personnaliser son comportement et à l'intégrer avec d'autres services.
@@ -92,7 +94,7 @@ Les options de configuration de base sont définies dans la section `[core]` du 
   - Description : Désactiver la couleur dans la sortie du terminal
 
 **Trajectoires**
-- `save_trajectory_path`
+- `trajectories_path`
   - Type : `str`
   - Valeur par défaut : `"./trajectories"`
   - Description : Chemin pour stocker les trajectoires (peut être un dossier ou un fichier). Si c'est un dossier, les trajectoires seront enregistrées dans un fichier nommé avec l'ID de session et l'extension .json, dans ce dossier.
@@ -181,10 +183,6 @@ Les options de configuration de base sont définies dans la section `[core]` du 
 Les options de configuration LLM (Large Language Model) sont définies dans la section `[llm]` du fichier `config.toml`.
 
 Pour les utiliser avec la commande docker, passez `-e LLM_<option>`. Exemple : `-e LLM_NUM_RETRIES`.
-
-:::note
-Pour les configurations de développement, vous pouvez également définir des configurations LLM personnalisées. Voir [Configurations LLM personnalisées](./llms/custom-llm-configs) pour plus de détails.
-:::
 
 **Informations d'identification AWS**
 - `aws_access_key_id`
@@ -370,26 +368,4 @@ Les options de configuration de l'agent sont définies dans les sections `[agent
 - `codeact_enable_llm_editor`
   - Type : `bool`
   - Valeur par défaut : `false`
-  - Description : Si l'éditeur LLM est activé dans l'espace d'action (fonctionne uniquement avec l'appel de fonction)
-
-**Utilisation du micro-agent**
-- `use_microagents`
-  - Type : `bool`
-  - Valeur par défaut : `true`
-  - Description : Indique si l'utilisation des micro-agents est activée ou non
-
-- `disabled_microagents`
-  - Type : `list of str`
-  - Valeur par défaut : `None`
-  - Description : Liste des micro-agents à désactiver
-
-### Exécution
-- `timeout`
-  - Type : `int`
-  - Valeur par défaut : `120`
-  - Description : Délai d'expiration du bac à sable, en secondes
-
-- `user_id`
-  - Type : `int`
-  - Valeur par défaut : `1000`
-  - Description : ID de l'utilisateur du bac à sable
+  - Description : Si l'éditeur LLM est activé dans l'espace d'action (foncti

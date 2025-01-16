@@ -92,8 +92,6 @@ def get_config(
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
-    agent_config = config.get_agent_config(metadata.agent_class)
-    agent_config.use_microagents = False
     return config
 
 
@@ -163,7 +161,7 @@ def complete_runtime(
     eval_script = os.path.join(task_path, 'run.sh')
     logger.info(f'Running evaluation script: {eval_script}')
 
-    action = CmdRunAction(command=f'cat {eval_script}')
+    action = CmdRunAction(command=f'cat {eval_script}', keep_prompt=False)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     if obs.exit_code == 0:

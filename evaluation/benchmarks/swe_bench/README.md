@@ -204,7 +204,7 @@ Then, in a separate Python environment with `streamlit` library, you can run the
 ```bash
 # Make sure you are inside the cloned `evaluation` repo
 conda activate streamlit # if you follow the optional conda env setup above
-streamlit run app.py --server.port 8501 --server.address 0.0.0.0
+streamlit app.py --server.port 8501 --server.address 0.0.0.0
 ```
 
 Then you can access the SWE-Bench trajectory visualizer at `localhost:8501`.

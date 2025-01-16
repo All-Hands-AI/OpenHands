@@ -49,7 +49,3 @@ class AgentState(str, Enum):
     USER_REJECTED = 'user_rejected'
     """The user rejected the agent's action.
     """
-
-    RATE_LIMITED = 'rate_limited'
-    """The agent is rate limited.
-    """

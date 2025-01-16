@@ -10,29 +10,31 @@ class Test(BaseIntegrationTest):
 
     @classmethod
     def initialize_runtime(cls, runtime: Runtime) -> None:
-        action = CmdRunAction(command='mkdir -p /workspace')
+        action = CmdRunAction(command='mkdir -p /workspace', keep_prompt=False)
         obs = runtime.run_action(action)
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
         # git init
-        action = CmdRunAction(command='git init')
+        action = CmdRunAction(command='git init', keep_prompt=False)
         obs = runtime.run_action(action)
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
         # create README.md
-        action = CmdRunAction(command='echo \'print("hello world")\' > hello.py')
+        action = CmdRunAction(
+            command='echo \'print("hello world")\' > hello.py', keep_prompt=False
+        )
         obs = runtime.run_action(action)
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
         # git add README.md
-        action = CmdRunAction(command='git add hello.py')
+        action = CmdRunAction(command='git add hello.py', keep_prompt=False)
         obs = runtime.run_action(action)
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
     @classmethod
     def verify_result(cls, runtime: Runtime, histories: list[Event]) -> TestResult:
         # check if the file /workspace/hello.py exists
-        action = CmdRunAction(command='cat /workspace/hello.py')
+        action = CmdRunAction(command='cat /workspace/hello.py', keep_prompt=False)
         obs = runtime.run_action(action)
         if obs.exit_code != 0:
             return TestResult(
@@ -41,7 +43,7 @@ class Test(BaseIntegrationTest):
             )
 
         # check if the staging area is empty
-        action = CmdRunAction(command='git status')
+        action = CmdRunAction(command='git status', keep_prompt=False)
         obs = runtime.run_action(action)
         if obs.exit_code != 0:
             return TestResult(

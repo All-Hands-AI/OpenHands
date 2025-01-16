@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import * as router from "react-router";
 import { createRoutesStub } from "react-router";
 import { screen, waitFor, within } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";

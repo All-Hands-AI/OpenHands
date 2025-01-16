@@ -83,11 +83,11 @@ class Test(BaseIntegrationTest):
 
     @classmethod
     def initialize_runtime(cls, runtime: Runtime) -> None:
-        action = CmdRunAction(command='mkdir -p /workspace')
+        action = CmdRunAction(command='mkdir -p /workspace', keep_prompt=False)
         obs = runtime.run_action(action)
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
-        action = CmdRunAction(command='mkdir -p /tmp/server')
+        action = CmdRunAction(command='mkdir -p /tmp/server', keep_prompt=False)
         obs = runtime.run_action(action)
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
@@ -101,7 +101,8 @@ class Test(BaseIntegrationTest):
 
         # create README.md
         action = CmdRunAction(
-            command='cd /tmp/server && nohup python3 -m http.server 8000 &'
+            command='cd /tmp/server && nohup python3 -m http.server 8000 &',
+            keep_prompt=False,
         )
         obs = runtime.run_action(action)
 

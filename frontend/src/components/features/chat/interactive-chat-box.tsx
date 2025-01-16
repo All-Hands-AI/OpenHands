@@ -68,6 +68,7 @@ export function InteractiveChatBox({
         <ChatInput
           disabled={isDisabled}
           button={mode}
+          placeholder="What do you want to build?"
           onChange={onChange}
           onSubmit={handleSubmit}
           onStop={onStop}

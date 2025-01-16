@@ -154,8 +154,7 @@ export function ChatInterface() {
           onStop={handleStop}
           isDisabled={
             curAgentState === AgentState.LOADING ||
-            curAgentState === AgentState.AWAITING_USER_CONFIRMATION ||
-            curAgentState === AgentState.RATE_LIMITED
+            curAgentState === AgentState.AWAITING_USER_CONFIRMATION
           }
           mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
           value={messageToSend ?? undefined}

@@ -1,26 +1,25 @@
 import React from "react";
-import { NavLink, useParams } from "react-router";
-import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { ConversationCard } from "./conversation-card";
 import { useUserConversations } from "#/hooks/query/use-user-conversations";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
+import { NewConversationButton } from "./new-conversation-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
 import { useEndSession } from "#/hooks/use-end-session";
 import { ExitConversationModal } from "./exit-conversation-modal";
-import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 
 interface ConversationPanelProps {
   onClose: () => void;
 }
 
 export function ConversationPanel({ onClose }: ConversationPanelProps) {
-  const { t } = useTranslation();
   const { conversationId: cid } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const endSession = useEndSession();
-  const ref = useClickOutsideElement<HTMLDivElement>(onClose);
 
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
     React.useState(false);
@@ -61,17 +60,26 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     if (oldTitle !== newTitle)
       updateConversation({
         id: conversationId,
-        conversation: { title: newTitle },
+        conversation: { name: newTitle },
       });
+  };
+
+  const handleClickCard = (conversationId: string) => {
+    navigate(`/conversations/${conversationId}`);
+    onClose();
   };
 
   return (
     <div
-      ref={ref}
       data-testid="conversation-panel"
-      className="w-[350px] h-full border border-neutral-700 bg-neutral-800 rounded-xl overflow-y-auto"
+      className="w-[350px] h-full border border-neutral-700 bg-neutral-800 rounded-xl"
     >
       <div className="pt-4 px-4 flex items-center justify-between">
+        {location.pathname.startsWith("/conversation") && (
+          <NewConversationButton
+            onClick={() => setConfirmExitConversationModalVisible(true)}
+          />
+        )}
         {isFetching && <LoadingSpinner size="small" />}
       </div>
       {error && (
@@ -81,31 +89,22 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       )}
       {conversations?.length === 0 && (
         <div className="flex flex-col items-center justify-center h-full">
-          <p className="text-neutral-400">
-            {t(I18nKey.CONVERSATION$NO_CONVERSATIONS)}
-          </p>
+          <p className="text-neutral-400">No conversations found</p>
         </div>
       )}
       {conversations?.map((project) => (
-        <NavLink
+        <ConversationCard
           key={project.conversation_id}
-          to={`/conversations/${project.conversation_id}`}
-          onClick={onClose}
-        >
-          {({ isActive }) => (
-            <ConversationCard
-              isActive={isActive}
-              onDelete={() => handleDeleteProject(project.conversation_id)}
-              onChangeTitle={(title) =>
-                handleChangeTitle(project.conversation_id, project.title, title)
-              }
-              title={project.title}
-              selectedRepository={project.selected_repository}
-              lastUpdatedAt={project.last_updated_at}
-              status={project.status}
-            />
-          )}
-        </NavLink>
+          onClick={() => handleClickCard(project.conversation_id)}
+          onDelete={() => handleDeleteProject(project.conversation_id)}
+          onChangeTitle={(title) =>
+            handleChangeTitle(project.conversation_id, project.name, title)
+          }
+          name={project.name}
+          repo={project.repo}
+          lastUpdated={project.lastUpdated}
+          state={project.state}
+        />
       ))}
 
       {confirmDeleteModalVisible && (

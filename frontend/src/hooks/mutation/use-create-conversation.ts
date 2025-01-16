@@ -13,18 +13,13 @@ export const useCreateConversation = () => {
   const { gitHubToken } = useAuth();
   const queryClient = useQueryClient();
 
-  const { selectedRepository, files, importedProjectZip } = useSelector(
+  const { selectedRepository, files } = useSelector(
     (state: RootState) => state.initialQuery,
   );
 
   return useMutation({
     mutationFn: (variables: { q?: string }) => {
-      if (
-        !variables.q?.trim() &&
-        !selectedRepository &&
-        files.length === 0 &&
-        !importedProjectZip
-      ) {
+      if (!variables.q?.trim() && !selectedRepository && files.length === 0) {
         throw new Error("No query provided");
       }
 

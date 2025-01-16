@@ -59,8 +59,6 @@ def get_config(
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
-    agent_config = config.get_agent_config(metadata.agent_class)
-    agent_config.use_microagents = False
     return config
 
 
@@ -137,6 +135,7 @@ def complete_runtime(
 
         action = CmdRunAction(
             command=f'chmod +x ./{script_name} && ./{script_name}',
+            keep_prompt=False,
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
@@ -163,7 +162,8 @@ def complete_runtime(
             logger.info(f'Running get ground truth cmd: {script_name}')
 
             action = CmdRunAction(
-                command=f'chmod +x ./{script_name} && ./{script_name}'
+                command=f'chmod +x ./{script_name} && ./{script_name}',
+                keep_prompt=False,
             )
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)

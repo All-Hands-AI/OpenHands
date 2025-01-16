@@ -14,12 +14,9 @@ class S3FileStore(FileStore):
         self.bucket = bucket_name
         self.client = boto3.client('s3')
 
-    def write(self, path: str, contents: str | bytes) -> None:
+    def write(self, path: str, contents: str) -> None:
         try:
-            as_bytes = (
-                contents.encode('utf-8') if isinstance(contents, str) else contents
-            )
-            self.client.put_object(Bucket=self.bucket, Key=path, Body=as_bytes)
+            self.client.put_object(Bucket=self.bucket, Key=path, Body=contents)
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] == 'AccessDenied':
                 raise FileNotFoundError(

@@ -1,5 +1,4 @@
 import asyncio
-import time
 from typing import Callable, Optional
 
 from openhands.controller import AgentController
@@ -12,15 +11,14 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
-from openhands.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.async_utils import call_async_from_sync, call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
 
-WAIT_TIME_BEFORE_CLOSE = 90
+WAIT_TIME_BEFORE_CLOSE = 300
 WAIT_TIME_BEFORE_CLOSE_INTERVAL = 5
 
 
@@ -37,8 +35,7 @@ class AgentSession:
     controller: AgentController | None = None
     runtime: Runtime | None = None
     security_analyzer: SecurityAnalyzer | None = None
-    _starting: bool = False
-    _started_at: float = 0
+    _initializing: bool = False
     _closed: bool = False
     loop: asyncio.AbstractEventLoop | None = None
 
@@ -90,8 +87,7 @@ class AgentSession:
         if self._closed:
             logger.warning('Session closed before starting')
             return
-        self._starting = True
-        self._started_at = time.time()
+        self._initializing = True
         self._create_security_analyzer(config.security.security_analyzer)
         await self._create_runtime(
             runtime_name=runtime_name,
@@ -112,25 +108,28 @@ class AgentSession:
         self.event_stream.add_event(
             ChangeAgentStateAction(AgentState.INIT), EventSource.ENVIRONMENT
         )
-        self._starting = False
+        self._initializing = False
 
-    async def close(self):
+    def close(self):
         """Closes the Agent session"""
         if self._closed:
             return
         self._closed = True
-        while self._starting and should_continue():
+        call_async_from_sync(self._close)
+
+    async def _close(self):
+        seconds_waited = 0
+        while self._initializing and should_continue():
             logger.debug(
                 f'Waiting for initialization to finish before closing session {self.sid}'
             )
             await asyncio.sleep(WAIT_TIME_BEFORE_CLOSE_INTERVAL)
-            if time.time() <= self._started_at + WAIT_TIME_BEFORE_CLOSE:
+            seconds_waited += WAIT_TIME_BEFORE_CLOSE_INTERVAL
+            if seconds_waited > WAIT_TIME_BEFORE_CLOSE:
                 logger.error(
                     f'Waited too long for initialization to finish before closing session {self.sid}'
                 )
                 break
-        if self.event_stream is not None:
-            self.event_stream.close()
         if self.controller is not None:
             end_state = self.controller.get_state()
             end_state.save_to_session(self.sid, self.file_store)
@@ -178,13 +177,6 @@ class AgentSession:
 
         logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
-        env_vars = (
-            {
-                'GITHUB_TOKEN': github_token,
-            }
-            if github_token
-            else None
-        )
         self.runtime = runtime_cls(
             config=config,
             event_stream=self.event_stream,
@@ -192,7 +184,6 @@ class AgentSession:
             plugins=agent.sandbox_plugins,
             status_callback=self._status_callback,
             headless_mode=False,
-            env_vars=env_vars,
         )
 
         # FIXME: this sleep is a terrible hack.
@@ -203,29 +194,19 @@ class AgentSession:
         try:
             await self.runtime.connect()
         except AgentRuntimeUnavailableError as e:
-            logger.error(f'Runtime initialization failed: {e}')
+            logger.error(f'Runtime initialization failed: {e}', exc_info=True)
             if self._status_callback:
                 self._status_callback(
                     'error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e)
                 )
             return
 
-        repo_directory = None
-        if selected_repository:
-            repo_directory = await call_sync_from_async(
-                self.runtime.clone_repo, github_token, selected_repository
-            )
-
+        self.runtime.clone_repo(github_token, selected_repository)
         if agent.prompt_manager:
-            agent.prompt_manager.set_runtime_info(self.runtime)
-            microagents: list[BaseMicroAgent] = await call_sync_from_async(
-                self.runtime.get_microagents_from_selected_repo, selected_repository
+            microagents = await call_sync_from_async(
+                self.runtime.get_custom_microagents, selected_repository
             )
-            agent.prompt_manager.load_microagents(microagents)
-            if selected_repository and repo_directory:
-                agent.prompt_manager.set_repository_info(
-                    selected_repository, repo_directory
-                )
+            agent.prompt_manager.load_microagent_files(microagents)
 
         logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
@@ -287,34 +268,27 @@ class AgentSession:
             confirmation_mode=confirmation_mode,
             headless_mode=False,
             status_callback=self._status_callback,
-            initial_state=self._maybe_restore_state(),
         )
 
-        return controller
+        # Note: We now attempt to restore the state from session here,
+        # but if it fails, we fall back to None and still initialize the controller
+        # with a fresh state. That way, the controller will always load events from the event stream
+        # even if the state file was corrupt.
 
-    def _maybe_restore_state(self) -> State | None:
-        """Helper method to handle state restore logic."""
         restored_state = None
-
-        # Attempt to restore the state from session.
-        # Use a heuristic to figure out if we should have a state:
-        # if we have events in the stream.
         try:
             restored_state = State.restore_from_session(self.sid, self.file_store)
-            logger.debug(f'Restored state from session, sid: {self.sid}')
         except Exception as e:
             if self.event_stream.get_latest_event_id() > 0:
                 # if we have events, we should have a state
                 logger.warning(f'State could not be restored: {e}')
-            else:
-                logger.debug('No events found, no state to restore')
-        return restored_state
 
-    def get_state(self) -> AgentState | None:
-        controller = self.controller
-        if controller:
-            return controller.state.agent_state
-        if time.time() > self._started_at + WAIT_TIME_BEFORE_CLOSE:
-            # If 5 minutes have elapsed and we still don't have a controller, something has gone wrong
-            return AgentState.ERROR
-        return None
+        # Set the initial state through the controller.
+        controller.set_initial_state(restored_state, max_iterations, confirmation_mode)
+        if restored_state:
+            logger.debug(f'Restored agent state from session, sid: {self.sid}')
+        else:
+            logger.debug('New session state created.')
+
+        logger.debug('Agent controller initialized.')
+        return controller

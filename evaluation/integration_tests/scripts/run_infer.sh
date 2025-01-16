@@ -7,9 +7,8 @@ MODEL_CONFIG=$1
 COMMIT_HASH=$2
 AGENT=$3
 EVAL_LIMIT=$4
-MAX_ITERATIONS=$5
-NUM_WORKERS=$6
-EVAL_IDS=$7
+NUM_WORKERS=$5
+EVAL_IDS=$6
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -44,7 +43,7 @@ fi
 COMMAND="poetry run python evaluation/integration_tests/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
-  --max-iterations ${MAX_ITERATIONS:-10} \
+  --max-iterations 10 \
   --eval-num-workers $NUM_WORKERS \
   --eval-note $EVAL_NOTE"
 

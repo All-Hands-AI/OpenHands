@@ -4,7 +4,6 @@ from collections import deque
 
 from litellm import ModelResponse
 
-import openhands
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -24,7 +23,6 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.observation import (
-    AgentCondensationObservation,
     AgentDelegateObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
@@ -37,7 +35,6 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
-from openhands.memory.condenser import Condenser
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -107,18 +104,12 @@ class CodeActAgent(Agent):
             f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2, ensure_ascii=False).replace("\\n", "\n")}'
         )
         self.prompt_manager = PromptManager(
-            microagent_dir=os.path.join(
-                os.path.dirname(os.path.dirname(openhands.__file__)),
-                'microagents',
-            )
+            microagent_dir=os.path.join(os.path.dirname(__file__), 'micro')
             if self.config.use_microagents
             else None,
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
             disabled_microagents=self.config.disabled_microagents,
         )
-
-        self.condenser = Condenser.from_config(self.config.condenser)
-        logger.debug(f'Using condenser: {self.condenser}')
 
     def get_action_message(
         self,
@@ -282,9 +273,7 @@ class CodeActAgent(Agent):
                 )
             else:
                 text = truncate_content(
-                    obs.content
-                    + f'\n[Python Interpreter: {obs.metadata.py_interpreter_path}]',
-                    max_message_chars,
+                    obs.content + obs.interpreter_details, max_message_chars
                 )
             text += f'\n[Command finished with exit code {obs.exit_code}]'
             message = Message(role='user', content=[TextContent(text=text)])
@@ -326,9 +315,6 @@ class CodeActAgent(Agent):
         elif isinstance(obs, UserRejectObservation):
             text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
             text += '\n[Last action has been rejected by the user]'
-            message = Message(role='user', content=[TextContent(text=text)])
-        elif isinstance(obs, AgentCondensationObservation):
-            text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         else:
             # If an observation message is not returned, it will cause an error
@@ -450,10 +436,7 @@ class CodeActAgent(Agent):
 
         pending_tool_call_action_messages: dict[str, Message] = {}
         tool_call_id_to_message: dict[str, Message] = {}
-
-        # Condense the events from the state.
-        events = self.condenser.condensed_history(state)
-
+        events = list(state.history)
         for event in events:
             # create a regular message from an event
             if isinstance(event, Action):

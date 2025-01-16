@@ -41,7 +41,6 @@ export const isGitHubErrorReponse = <T extends object | Array<unknown>>(
 
 // Axios interceptor to handle token refresh
 const setupAxiosInterceptors = (
-  appMode: string,
   refreshToken: () => Promise<boolean>,
   logout: () => void,
 ) => {
@@ -75,21 +74,18 @@ const setupAxiosInterceptors = (
         !originalRequest._retry // Prevent infinite retry loops
       ) {
         originalRequest._retry = true;
-
-        if (appMode === "saas") {
-          try {
-            const refreshed = await refreshToken();
-            if (refreshed) {
-              return await github(originalRequest);
-            }
-
-            logout();
-            return await Promise.reject(new Error("Failed to refresh token"));
-          } catch (refreshError) {
-            // If token refresh fails, evict the user
-            logout();
-            return Promise.reject(refreshError);
+        try {
+          const refreshed = await refreshToken();
+          if (refreshed) {
+            return await github(originalRequest);
           }
+
+          logout();
+          return await Promise.reject(new Error("Failed to refresh token"));
+        } catch (refreshError) {
+          // If token refresh fails, evict the user
+          logout();
+          return Promise.reject(refreshError);
         }
       }
 

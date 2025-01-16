@@ -1,4 +1,4 @@
-import { ProjectStatus } from "#/components/features/conversation-panel/conversation-state-indicator";
+import { ProjectState } from "#/components/features/conversation-panel/conversation-state-indicator";
 
 export interface ErrorResponse {
   error: string;
@@ -62,14 +62,8 @@ export interface AuthenticateResponse {
 
 export interface Conversation {
   conversation_id: string;
-  title: string;
-  selected_repository: string | null;
-  last_updated_at: string;
-  created_at: string;
-  status: ProjectStatus;
-}
-
-export interface ResultSet<T> {
-  results: T[];
-  next_page_id: string | null;
+  name: string;
+  repo: string | null;
+  lastUpdated: string;
+  state: ProjectState;
 }

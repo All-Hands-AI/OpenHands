@@ -15,4 +15,3 @@ class Settings:
     llm_model: str | None = None
     llm_api_key: str | None = None
     llm_base_url: str | None = None
-    remote_runtime_resource_factor: int | None = None

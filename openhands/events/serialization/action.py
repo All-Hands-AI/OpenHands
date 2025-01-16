@@ -67,10 +67,6 @@ def action_from_dict(action: dict) -> Action:
     if 'images_urls' in args:
         args['image_urls'] = args.pop('images_urls')
 
-    # keep_prompt has been deprecated in https://github.com/All-Hands-AI/OpenHands/pull/4881
-    if 'keep_prompt' in args:
-        args.pop('keep_prompt')
-
     try:
         decoded_action = action_class(**args)
         if 'timeout' in action:

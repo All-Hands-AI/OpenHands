@@ -23,26 +23,15 @@ const sidebars: SidebarsConfig = {
           id: 'usage/prompting/prompting-best-practices',
         },
         {
-          type: 'category',
+          type: 'doc',
+          label: 'Customization',
+          id: 'usage/prompting/customization',
+        },
+        {
+          type: 'doc',
           label: 'Microagents',
-          items: [
-            {
-              type: 'doc',
-              label: 'Overview',
-              id: 'usage/prompting/microagents-overview',
-            },
-            {
-              type: 'doc',
-              label: 'Repository',
-              id: 'usage/prompting/microagents-repo',
-            },
-            {
-              type: 'doc',
-              label: 'Public',
-              id: 'usage/prompting/microagents-public',
-            },
-          ],
-        }
+          id: 'usage/prompting/microagents',
+        },
       ],
     },
     {
@@ -136,6 +125,11 @@ const sidebars: SidebarsConfig = {
           type: 'doc',
           label: 'Custom Sandbox',
           id: 'usage/how-to/custom-sandbox-guide',
+        },
+        {
+          type: 'doc',
+          label: 'Persist Session Data',
+          id: 'usage/how-to/persist-session-data',
         },
       ],
     },

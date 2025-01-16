@@ -1,10 +1,6 @@
-from openhands.events.observation.agent import (
-    AgentCondensationObservation,
-    AgentStateChangedObservation,
-)
+from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
-    CmdOutputMetadata,
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
@@ -24,7 +20,6 @@ __all__ = [
     'Observation',
     'NullObservation',
     'CmdOutputObservation',
-    'CmdOutputMetadata',
     'IPythonRunCellObservation',
     'BrowserOutputObservation',
     'FileReadObservation',
@@ -35,5 +30,4 @@ __all__ = [
     'AgentDelegateObservation',
     'SuccessObservation',
     'UserRejectObservation',
-    'AgentCondensationObservation',
 ]

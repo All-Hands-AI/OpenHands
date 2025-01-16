@@ -9,7 +9,6 @@ import {
   GetVSCodeUrlResponse,
   AuthenticateResponse,
   Conversation,
-  ResultSet,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings } from "#/services/settings";
@@ -223,10 +222,8 @@ class OpenHands {
   }
 
   static async getUserConversations(): Promise<Conversation[]> {
-    const { data } = await openHands.get<ResultSet<Conversation>>(
-      "/api/conversations?limit=9",
-    );
-    return data.results;
+    const { data } = await openHands.get<Conversation[]>("/api/conversations");
+    return data;
   }
 
   static async deleteUserConversation(conversationId: string): Promise<void> {
@@ -235,9 +232,9 @@ class OpenHands {
 
   static async updateUserConversation(
     conversationId: string,
-    conversation: Partial<Omit<Conversation, "conversation_id">>,
+    conversation: Partial<Omit<Conversation, "id">>,
   ): Promise<void> {
-    await openHands.patch(`/api/conversations/${conversationId}`, conversation);
+    await openHands.put(`/api/conversations/${conversationId}`, conversation);
   }
 
   static async createConversation(
@@ -314,45 +311,6 @@ class OpenHands {
   static async saveSettings(settings: Partial<ApiSettings>): Promise<boolean> {
     const data = await openHands.post("/api/settings", settings);
     return data.status === 200;
-  }
-
-  static async getGitHubUser(): Promise<GitHubUser> {
-    const response = await openHands.get<GitHubUser>("/api/github/user");
-
-    const { data } = response;
-
-    const user: GitHubUser = {
-      id: data.id,
-      login: data.login,
-      avatar_url: data.avatar_url,
-      company: data.company,
-      name: data.name,
-      email: data.email,
-    };
-
-    return user;
-  }
-
-  static async getGitHubUserInstallationIds(): Promise<number[]> {
-    const response = await openHands.get<number[]>("/api/github/installations");
-    return response.data;
-  }
-
-  static async searchGitHubRepositories(
-    query: string,
-    per_page = 5,
-  ): Promise<GitHubRepository[]> {
-    const response = await openHands.get<{ items: GitHubRepository[] }>(
-      "/api/github/search/repositories",
-      {
-        params: {
-          query,
-          per_page,
-        },
-      },
-    );
-
-    return response.data.items;
   }
 }
 

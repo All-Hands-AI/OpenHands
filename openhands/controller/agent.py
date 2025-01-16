@@ -11,9 +11,7 @@ from openhands.core.exceptions import (
 )
 from openhands.llm.llm import LLM
 from openhands.runtime.plugins import PluginRequirement
-
-if TYPE_CHECKING:
-    from openhands.utils.prompt import PromptManager
+from openhands.utils.prompt import PromptManager
 
 
 class Agent(ABC):
@@ -36,7 +34,7 @@ class Agent(ABC):
         self.llm = llm
         self.config = config
         self._complete = False
-        self.prompt_manager: 'PromptManager' | None = None
+        self.prompt_manager: PromptManager | None = None
 
     @property
     def complete(self) -> bool:

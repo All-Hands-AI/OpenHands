@@ -1,6 +1,5 @@
 import { Tooltip } from "@nextui-org/react";
-import React, { ReactNode } from "react";
-import { cn } from "#/utils/utils";
+import { ReactNode } from "react";
 
 interface TooltipButtonProps {
   children: ReactNode;
@@ -9,7 +8,6 @@ interface TooltipButtonProps {
   href?: string;
   ariaLabel: string;
   testId?: string;
-  className?: React.HTMLAttributes<HTMLButtonElement>["className"];
 }
 
 export function TooltipButton({
@@ -19,7 +17,6 @@ export function TooltipButton({
   href,
   ariaLabel,
   testId,
-  className,
 }: TooltipButtonProps) {
   const buttonContent = (
     <button
@@ -27,7 +24,7 @@ export function TooltipButton({
       aria-label={ariaLabel}
       data-testid={testId}
       onClick={onClick}
-      className={cn("hover:opacity-80", className)}
+      className="w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center"
     >
       {children}
     </button>
@@ -38,7 +35,7 @@ export function TooltipButton({
       href={href}
       target="_blank"
       rel="noreferrer noopener"
-      className={cn("hover:opacity-80", className)}
+      className="w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center"
       aria-label={ariaLabel}
     >
       {children}
@@ -48,7 +45,7 @@ export function TooltipButton({
   );
 
   return (
-    <Tooltip content={tooltip} closeDelay={100} placement="right">
+    <Tooltip content={tooltip} closeDelay={100}>
       {content}
     </Tooltip>
   );

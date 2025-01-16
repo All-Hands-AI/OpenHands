@@ -26,16 +26,16 @@ To run OpenHands in CLI mode with Docker:
 
 1. Set the following environmental variables in your terminal:
 
-- `WORKSPACE_BASE` to the directory you want OpenHands to edit (Ex: `export WORKSPACE_BASE=$(pwd)/workspace`).
-- `LLM_MODEL` to the model to use (Ex: `export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"`).
-- `LLM_API_KEY` to the API key (Ex: `export LLM_API_KEY="sk_test_12345"`).
+* `WORKSPACE_BASE` to the directory you want OpenHands to edit (Ex: `export WORKSPACE_BASE=$(pwd)/workspace`).
+* `LLM_MODEL` to the model to use (Ex: `export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"`).
+* `LLM_API_KEY` to the API key (Ex: `export LLM_API_KEY="sk_test_12345"`).
 
 2. Run the following Docker command:
 
 ```bash
 docker run -it \
     --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.20-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.18-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -e LLM_API_KEY=$LLM_API_KEY \
@@ -45,7 +45,7 @@ docker run -it \
     -v ~/.openhands-state:/.openhands-state \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    docker.all-hands.dev/all-hands-ai/openhands:0.20 \
+    docker.all-hands.dev/all-hands-ai/openhands:0.18 \
     python -m openhands.core.cli
 ```
 
@@ -58,7 +58,7 @@ Here are some examples of CLI commands and their expected outputs:
 ### Example 1: Simple Task
 
 ```bash
->> Write a Python script that prints "Hello, World!"
+How can I help? >> Write a Python script that prints "Hello, World!"
 ```
 
 Expected Output:
@@ -72,7 +72,7 @@ Expected Output:
 ### Example 2: Bash Command
 
 ```bash
->> Create a directory named "test_dir"
+How can I help? >> Create a directory named "test_dir"
 ```
 
 Expected Output:
@@ -86,7 +86,7 @@ Expected Output:
 ### Example 3: Error Handling
 
 ```bash
->> Delete a non-existent file
+How can I help? >> Delete a non-existent file
 ```
 
 Expected Output:
