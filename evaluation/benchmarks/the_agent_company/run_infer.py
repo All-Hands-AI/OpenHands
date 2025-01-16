@@ -39,7 +39,7 @@ def get_config(
         run_as_openhands=False,
         max_budget_per_task=4,
         max_iterations=100,
-        trajectories_path=os.path.join(
+        save_trajectory_path=os.path.join(
             mount_path_on_host, f'traj_{task_short_name}.json'
         ),
         sandbox=SandboxConfig(
@@ -86,7 +86,7 @@ def init_task_env(runtime: Runtime, hostname: str, env_llm_config: LLMConfig):
         'bash /utils/init.sh'
     )
     action = CmdRunAction(command=command)
-    action.timeout = 900
+    action.set_hard_timeout(900)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -172,7 +172,7 @@ def run_evaluator(
         f'python_default /utils/eval.py --trajectory_path {trajectory_path} --result_path {result_path}'
     )
     action = CmdRunAction(command=command)
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})

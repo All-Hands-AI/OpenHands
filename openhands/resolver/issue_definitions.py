@@ -45,6 +45,7 @@ class IssueHandlerInterface(ABC):
 
 class IssueHandler(IssueHandlerInterface):
     issue_type: ClassVar[str] = 'issue'
+    default_git_patch: ClassVar[str] = 'No changes made yet'
 
     def __init__(self, owner: str, repo: str, token: str, llm_config: LLMConfig):
         self.download_url = 'https://api.github.com/repos/{}/{}/issues'
@@ -276,7 +277,11 @@ class IssueHandler(IssueHandlerInterface):
             'r',
         ) as f:
             template = jinja2.Template(f.read())
-        prompt = template.render(issue_context=issue_context, last_message=last_message)
+        prompt = template.render(
+            issue_context=issue_context,
+            last_message=last_message,
+            git_patch=git_patch or self.default_git_patch,
+        )
 
         # Get the LLM response and check for 'success' and 'explanation' in the answer
         response = self.llm.completion(messages=[{'role': 'user', 'content': prompt}])
@@ -685,7 +690,7 @@ class PRHandler(IssueHandler):
             feedback=review_thread.comment,
             files_context=files_context,
             last_message=last_message,
-            git_patch=git_patch or 'No changes made yet',
+            git_patch=git_patch or self.default_git_patch,
         )
 
         return self._check_feedback_with_llm(prompt)
@@ -712,7 +717,7 @@ class PRHandler(IssueHandler):
             issue_context=issues_context,
             thread_context=thread_context,
             last_message=last_message,
-            git_patch=git_patch or 'No changes made yet',
+            git_patch=git_patch or self.default_git_patch,
         )
 
         return self._check_feedback_with_llm(prompt)
@@ -739,7 +744,7 @@ class PRHandler(IssueHandler):
             issue_context=issues_context,
             review_context=review_context,
             last_message=last_message,
-            git_patch=git_patch or 'No changes made yet',
+            git_patch=git_patch or self.default_git_patch,
         )
 
         return self._check_feedback_with_llm(prompt)

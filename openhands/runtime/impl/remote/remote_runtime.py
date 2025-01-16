@@ -19,7 +19,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.utils.command import get_remote_startup_command
+from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
@@ -66,7 +66,9 @@ class RemoteRuntime(ActionExecutionClient):
             )
 
         self.runtime_builder = RemoteRuntimeBuilder(
-            self.config.sandbox.remote_runtime_api_url, self.config.sandbox.api_key
+            self.config.sandbox.remote_runtime_api_url,
+            self.config.sandbox.api_key,
+            self.session,
         )
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
@@ -194,22 +196,10 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _start_runtime(self):
         # Prepare the request body for the /start endpoint
-        plugin_args = []
-        if self.plugins is not None and len(self.plugins) > 0:
-            plugin_args = ['--plugins'] + [plugin.name for plugin in self.plugins]
-        browsergym_args = []
-        if self.config.sandbox.browsergym_eval_env is not None:
-            browsergym_args = [
-                '--browsergym-eval-env'
-            ] + self.config.sandbox.browsergym_eval_env.split(' ')
-        command = get_remote_startup_command(
-            self.port,
-            self.config.workspace_mount_path_in_sandbox,
-            'openhands' if self.config.run_as_openhands else 'root',
-            self.config.sandbox.user_id,
-            plugin_args,
-            browsergym_args,
-            is_root=not self.config.run_as_openhands,  # is_root=True when running as root
+        command = get_action_execution_server_startup_command(
+            server_port=self.port,
+            plugins=self.plugins,
+            app_config=self.config,
         )
         start_request = {
             'image': self.container_image,
@@ -239,6 +229,13 @@ class RemoteRuntime(ActionExecutionClient):
             raise AgentRuntimeUnavailableError() from e
 
     def _resume_runtime(self):
+        """
+        1. Show status update that runtime is being started.
+        2. Send the runtime API a /resume request
+        3. Poll for the runtime to be ready
+        4. Update env vars
+        """
+        self.send_status_message('STATUS$STARTING_RUNTIME')
         with self._send_runtime_api_request(
             'POST',
             f'{self.config.sandbox.remote_runtime_api_url}/resume',

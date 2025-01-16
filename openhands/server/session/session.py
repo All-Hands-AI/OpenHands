@@ -37,6 +37,7 @@ class Session:
     loop: asyncio.AbstractEventLoop
     config: AppConfig
     file_store: FileStore
+    user_id: str | None
 
     def __init__(
         self,
@@ -44,6 +45,7 @@ class Session:
         config: AppConfig,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
+        user_id: str | None = None,
     ):
         self.sid = sid
         self.sio = sio
@@ -58,6 +60,7 @@ class Session:
         # Copying this means that when we update variables they are not applied to the shared global configuration!
         self.config = deepcopy(config)
         self.loop = asyncio.get_event_loop()
+        self.user_id = user_id
 
     def close(self):
         self.is_alive = False
@@ -113,9 +116,9 @@ class Session:
                 selected_repository=selected_repository,
             )
         except Exception as e:
-            logger.exception(f'Error creating controller: {e}')
+            logger.exception(f'Error creating agent_session: {e}')
             await self.send_error(
-                f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
+                f'Error creating agent_session. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
             return
 
@@ -184,8 +187,8 @@ class Session:
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
-        except RuntimeError:
-            logger.error('Error sending', stack_info=True, exc_info=True)
+        except RuntimeError as e:
+            logger.error(f'Error sending data to websocket: {str(e)}')
             self.is_alive = False
             return False
 
