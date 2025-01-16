@@ -610,17 +610,16 @@ class LLM(RetryMixin, DebugMixin):
             logger.debug(f'Using custom cost per token: {cost_per_token}')
             extra_kwargs['custom_cost_per_token'] = cost_per_token
 
-        try:
-            # try directly get response_cost from response
-            _hidden_params = getattr(response, '_hidden_params', {})
-            cost = _hidden_params.get('response_cost', None)
-            if cost is None:
-                cost = float(
-                    _hidden_params.get('additional_headers', {}).get(
-                        'llm_provider-x-litellm-response-cost', 0.0
-                    )
-                )
+        # try directly get response_cost from response
+        _hidden_params = getattr(response, '_hidden_params', {})
+        cost = _hidden_params.get('additional_headers', {}).get(
+            'llm_provider-x-litellm-response-cost', None
+        )
+        if cost is not None:
+            cost = float(cost)
+            logger.debug(f'Got response_cost from response: {cost}')
 
+        try:
             if cost is None:
                 try:
                     cost = litellm_completion_cost(
