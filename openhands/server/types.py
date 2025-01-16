@@ -35,3 +35,15 @@ class OpenhandsConfigInterface(ABC):
     async def get_config(self) -> dict[str, str]:
         """Configure attributes for frontend"""
         raise NotImplementedError
+
+
+class MissingSettingsError(ValueError):
+    """Raised when settings are missing or not found."""
+
+    pass
+
+
+class LLMAuthenticationError(ValueError):
+    """Raised when there is an issue with LLM authentication."""
+
+    pass
