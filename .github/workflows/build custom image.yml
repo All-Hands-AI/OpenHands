@@ -138,7 +138,7 @@ jobs:
       shell: bash
 
     - name: Upload saved image as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: custom-image
         path: |
