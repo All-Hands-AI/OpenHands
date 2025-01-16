@@ -10,8 +10,12 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from openhands.server.shared import session_manager
+from openhands.server.auth import get_user_id
+from openhands.server.shared import config, openhands_config, session_manager
 from openhands.server.types import SessionMiddlewareInterface
+from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.settings.settings_store import SettingsStore
+from openhands.utils.import_utils import get_impl
 
 
 class LocalhostCORSMiddleware(CORSMiddleware):
@@ -166,3 +170,23 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
             await self._detach_session(request)
 
         return response
+
+
+SettingsStoreImpl = get_impl(SettingsStore, openhands_config.settings_store_class)  # type: ignore
+ConversationStoreImpl = get_impl(
+    ConversationStore,  # type: ignore
+    openhands_config.conversation_store_class,
+)
+
+
+class GitHubTokenMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: Callable):
+        settings_store = await SettingsStoreImpl.get_instance(
+            config, get_user_id(request)
+        )
+        settings = await settings_store.load()
+
+        if settings and settings.github_token:
+            request.state.github_token = settings.github_token
+
+        return await call_next(request)
