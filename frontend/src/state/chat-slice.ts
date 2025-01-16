@@ -168,13 +168,15 @@ export const chatSlice = createSlice({
         // Only add metadata for 'run' observations
         if (observationID === "run") {
           const metadata = (observation.payload as CommandObservation).extras.metadata;
-          const metadataTable = Object.entries(metadata)
-            .map(([key, value]) => `- **${key}:** ${value}`)
-            .join("\n");
+          // if metadata.prefix exists, add it to the content
+          if (metadata.prefix) {
+            content = `Additional prefix the agent received:\n\`\`\`${metadata.prefix}\n\`\`\`\n\n${content}`;
+          }
+          // if metadata.suffix exists, add it to the content
+          if (metadata.suffix) {
+            content += `\n\nAdditional suffix the agent received:\n\`\`\`${metadata.suffix}\n\`\`\``;
+          }
           causeMessage.content = content;
-          causeMessage.content +=
-            "\n\nMetadata:\n\n" +
-            `${metadataTable}\n\n`;
         } else {
           causeMessage.content = content;
         }
