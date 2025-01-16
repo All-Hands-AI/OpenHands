@@ -66,10 +66,7 @@ class Session:
         self.is_alive = False
         self.agent_session.close()
 
-    async def initialize_agent(
-        self,
-        settings: Settings,
-    ):
+    async def initialize_agent(self, settings: Settings, initial_user_msg: str | None):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
@@ -114,6 +111,7 @@ class Session:
                 agent_configs=self.config.get_agent_configs(),
                 github_token=github_token,
                 selected_repository=selected_repository,
+                initial_user_msg=initial_user_msg,
             )
         except Exception as e:
             logger.exception(f'Error creating agent_session: {e}')
