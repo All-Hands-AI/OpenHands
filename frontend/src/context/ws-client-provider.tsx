@@ -81,6 +81,9 @@ export function updateStatusWhenErrorMessagePresent(data: ErrorArg | unknown) {
     !!val && typeof val === "object";
   const isString = (val: unknown): val is string => typeof val === "string";
   if (isObject(data) && "message" in data && isString(data.message)) {
+    if (data.message === 'websocket error') {
+      return;
+    }
     let msgId: string | undefined;
     if (
       "data" in data &&
