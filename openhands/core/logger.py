@@ -18,15 +18,15 @@ DEBUG_LLM = os.getenv('DEBUG_LLM', 'False').lower() in ['true', '1', 'yes']
 # Configure litellm logging based on DEBUG_LLM
 if DEBUG_LLM:
     confirmation = input(
-        "\n⚠️ WARNING: You are enabling DEBUG_LLM which may expose sensitive information like API keys.\n"
-        "This should NEVER be enabled in production.\n"
+        '\n⚠️ WARNING: You are enabling DEBUG_LLM which may expose sensitive information like API keys.\n'
+        'This should NEVER be enabled in production.\n'
         "Type 'y' to confirm you understand the risks: "
     )
     if confirmation.lower() == 'y':
         litellm.suppress_debug_info = False
         litellm.set_verbose = True
     else:
-        print("DEBUG_LLM disabled due to lack of confirmation")
+        print('DEBUG_LLM disabled due to lack of confirmation')
         litellm.suppress_debug_info = True
         litellm.set_verbose = False
 else:
