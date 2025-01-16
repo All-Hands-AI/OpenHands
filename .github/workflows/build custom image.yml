@@ -1,0 +1,145 @@
+name: "Build custom image from devsentient repo"
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'Devsentient Repo to build from'
+        default: 'monorepo'
+      ref:
+        description: 'branch to build'
+        default: 'dev'
+      context:
+        description: "Docker context (folder containing code)"
+        required: true
+        default: './custom_images/X/'
+      dockerfilepath:
+        description: "Path to Dockerfile"
+        required: true
+        default: './custom_images/X/Dockerfile'
+      fullimagename:
+        description: "GCR image folder override (goes to gcr.io/devsentient-infra/IMAGENAME:TAG)"
+        required: true
+        default: "IMAGENAME"
+      imagetag:
+        description: "GCR image tag override (goes to gcr.io/devsentient-infra/IMAGENAME:TAG)"
+        required: true
+        default: "TAG"
+      additional_build_args:
+        description: "Additional build arguments (optional, format: ARG_NAME_1=value1,ARG_NAME_2=value2)"
+        required: false
+        default: ""
+
+env:
+  PROJECT_ID: ${{ secrets.GKE_PROJECT }}
+  YQ_VERSION: v4.2.1
+  YQ_BINARY: yq_linux_amd64
+  RISKTHINKING_GITLAB_TOKEN: ${{ secrets.RISKTHINKING_GITLAB_TOKEN }}
+  
+
+jobs:
+  build-custom-image:
+    name: Build a custom image
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Echo parameters
+      shell: bash
+      run: echo "Build with \n Context ${{ github.event.inputs.context }} \n Dockerfile ${{ github.event.inputs.dockerfilepath }} \n Additional Build Args ${{ github.event.inputs.additional_build_args }} \n Push to gcr.io/${{ env.PROJECT_ID }}/${{ github.event.inputs.ref }}/${{ github.event.inputs.fullimagename }}:${{ github.sha }} and gcr.io/${{ env.PROJECT_ID }}/${{ github.event.inputs.fullimagename }}:${{ github.event.inputs.imagetag }}"
+      
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.PULUMI_GITHUB_TOKEN }}
+
+    - name: Clone the ${{ github.event.inputs.repo }} ${{ github.event.inputs.ref }} branch
+      uses: actions/checkout@v2
+      with:
+        repository: devsentient/${{ github.event.inputs.repo }}
+        ref: ${{ github.event.inputs.ref }}
+        path: ${{ github.event.inputs.repo }}
+        token: ${{ secrets.PULUMI_GITHUB_TOKEN }}
+        fetch-depth: 1
+
+    # Setup gcloud CLI
+    - uses: google-github-actions/setup-gcloud@v0.2.0
+      with:
+        service_account_key: ${{ secrets.GKE_SA_KEY }}
+        project_id: ${{ secrets.GKE_PROJECT }}
+
+    # Configure Docker to use the gcloud command-line tool as a credential
+    # helper for authentication
+    - run: |-
+        gcloud --quiet auth configure-docker
+    
+    - name: Extract branch name
+      shell: bash
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
+
+    - name: Download yq
+      shell: bash
+      run: |- 
+        wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_BINARY}.tar.gz -O - | tar xz && mv ${YQ_BINARY} ./yq
+    
+    - uses: docker/setup-buildx-action@v3
+      id: buildx
+      with:
+        install: true
+
+      # Configure login to private docker registry
+    # - name: Login to Private registry
+    #   uses: docker/login-action@v1
+    #   with:
+    #     registry: rgst.ds.hyperplane.dev
+    #     username: ${{ secrets.DOCKER_USERNAME }}
+    #     password: ${{ secrets.DOCKER_PASSWORD }}    
+    
+    - name: Free Disk Space (Ubuntu)
+      uses: jlumbroso/free-disk-space@main
+      with:
+        # this might remove tools that are actually needed,
+        # when set to "true" but frees about 6 GB
+        tool-cache: false
+        
+        # all of these default to true, but feel free to set to
+        # "false" if necessary for your workflow
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        swap-storage: true
+
+    - name: Build image
+      uses: docker/build-push-action@v5
+      with:
+        provenance: false
+        context: ${{ github.event.inputs.context }}
+        file: ${{ github.event.inputs.dockerfilepath }}
+        push: true
+        tags: |
+          gcr.io/${{ env.PROJECT_ID }}/${{ github.event.inputs.ref }}/${{ github.event.inputs.fullimagename }}:${{ github.sha }}
+          gcr.io/${{ env.PROJECT_ID }}/custom/${{ github.event.inputs.fullimagename }}:${{ github.event.inputs.imagetag }}
+        build-args: |
+          GITHUB_SHA=${{ github.sha }}
+          GITHUB_REF=${{ github.ref }}
+          BUILDKIT_INLINE_CACHE=1
+          RISKTHINKING_GITLAB_TOKEN=${{ env.RISKTHINKING_GITLAB_TOKEN }}
+          ${{ github.event.inputs.additional_build_args }}
+      env:
+        PROJECT_ID: ${{ env.PROJECT_ID }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_REF: ${{ github.ref }}
+        RISKTHINKING_GITLAB_TOKEN: ${{ env.RISKTHINKING_GITLAB_TOKEN }}
+    
+    - name: Save image to local tarball
+      run: |
+        docker save gcr.io/${{ env.PROJECT_ID }}/${{ github.event.inputs.ref }}/${{ github.event.inputs.fullimagename }}:${{ github.sha }} -o ./custom_image_${{ github.event.inputs.fullimagename }}_${{ github.sha }}.tar
+      shell: bash
+
+    - name: Upload saved image as artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: custom-image
+        path: |
+          ./custom_image_${{ github.event.inputs.fullimagename }}_${{ github.sha }}.tar
