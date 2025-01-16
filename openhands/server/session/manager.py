@@ -12,6 +12,7 @@ from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.stream import EventStream, session_exists
+from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.server.settings import Settings
@@ -302,11 +303,15 @@ class SessionManager:
                         await conversation.disconnect()
                     self._detached_conversations.clear()
                 await wait_all(
-                    self._close_session(sid) for sid in self._local_agent_loops_by_sid
+                    (
+                        self._close_session(sid)
+                        for sid in self._local_agent_loops_by_sid
+                    ),
+                    timeout=WAIT_TIME_BEFORE_CLOSE,
                 )
                 return
-            except Exception as e:
-                logger.warning(f'error_cleaning_stale: {str(e)}')
+            except Exception:
+                logger.warning('error_cleaning_stale', exc_info=True, stack_info=True)
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
     async def is_agent_loop_running(self, sid: str) -> bool:

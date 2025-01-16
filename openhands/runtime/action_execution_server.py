@@ -587,7 +587,7 @@ if __name__ == '__main__':
 
     @app.get('/download_files')
     async def download_file(path: str):
-        logger.debug('Downloading files')
+        logger.info('Downloading files')
         try:
             if not os.path.isabs(path):
                 raise HTTPException(
@@ -598,10 +598,12 @@ if __name__ == '__main__':
                 raise HTTPException(status_code=404, detail='File not found')
 
             with tempfile.TemporaryFile() as temp_zip:
+                logger.info('TRACE:download_file:{temp_zip}')
                 with ZipFile(temp_zip, 'w') as zipf:
                     for root, _, files in os.walk(path):
                         for file in files:
                             file_path = os.path.join(root, file)
+                            logger.info('TRACE:download_file:file:{file_path}')
                             zipf.write(
                                 file_path, arcname=os.path.relpath(file_path, path)
                             )
