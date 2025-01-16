@@ -11,6 +11,7 @@ const saveSettingsMutationFn = async (settings: Partial<Settings>) => {
     confirmation_mode: settings.CONFIRMATION_MODE,
     security_analyzer: settings.SECURITY_ANALYZER,
     llm_api_key: settings.LLM_API_KEY?.trim() || undefined,
+    enable_default_condenser: settings.ENABLE_DEFAULT_CONDENSER,
   };
 
   await OpenHands.saveSettings(apiSettings);

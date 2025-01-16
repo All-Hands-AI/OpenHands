@@ -23,6 +23,7 @@ import { ModelSelector } from "./model-selector";
 import { RuntimeSizeSelector } from "./runtime-size-selector";
 import { useConfig } from "#/hooks/query/use-config";
 import { useCurrentSettings } from "#/context/settings-context";
+import { EnableDefaultCondenserSwitch } from "../../inputs/enable-default-condenser-switch";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -64,12 +65,14 @@ export function SettingsForm({
       const isUsingConfirmationMode = !!settings.CONFIRMATION_MODE;
       const isUsingBaseUrl = !!settings.LLM_BASE_URL;
       const isUsingCustomModel = !!settings.LLM_MODEL && !isKnownModel;
+      const isUsingDefaultCondenser = !!settings.ENABLE_DEFAULT_CONDENSER;
 
       return (
         isUsingSecurityAnalyzer ||
         isUsingConfirmationMode ||
         isUsingBaseUrl ||
-        isUsingCustomModel
+        isUsingCustomModel ||
+        isUsingDefaultCondenser
       );
     }
 
@@ -199,6 +202,12 @@ export function SettingsForm({
                 isDisabled={!!disabled}
                 defaultSelected={settings.CONFIRMATION_MODE}
               />
+
+              <EnableDefaultCondenserSwitch
+                isDisabled={!!disabled}
+                defaultSelected={settings.ENABLE_DEFAULT_CONDENSER}
+              />
+
             </>
           )}
         </div>
