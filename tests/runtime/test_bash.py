@@ -57,7 +57,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
             in obs.metadata.suffix
         )
 
-        action = CmdRunAction(command='C-c')
+        action = CmdRunAction(command='C-c', is_input=True)
         action.set_hard_timeout(30)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -571,7 +571,7 @@ def test_interactive_command(temp_dir, runtime_cls, run_as_openhands):
         assert 'Enter name:' in obs.content
         assert '[The command has no new output after 1 seconds.' in obs.metadata.suffix
 
-        action = CmdRunAction('John')
+        action = CmdRunAction('John', is_input=True)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'Hello John' in obs.content
