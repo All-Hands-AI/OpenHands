@@ -6,6 +6,7 @@ from openhands.core.config.config_utils import (
     get_field_info,
 )
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.model_routing_config import ModelRoutingConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 from openhands.core.config.utils import (
@@ -27,6 +28,7 @@ __all__ = [
     'LLMConfig',
     'SandboxConfig',
     'SecurityConfig',
+    'ModelRoutingConfig',
     'load_app_config',
     'load_from_env',
     'load_from_toml',
