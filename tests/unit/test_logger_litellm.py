@@ -18,9 +18,9 @@ def reset_litellm():
         del sys.modules['openhands.core.logger']
 
 
-def test_litellm_settings_debug_disabled(reset_litellm):
-    """Test that litellm settings are properly configured when DEBUG is disabled."""
-    with mock.patch.dict(os.environ, {'DEBUG': 'false'}):
+def test_litellm_settings_debug_llm_disabled(reset_litellm):
+    """Test that litellm settings are properly configured when DEBUG_LLM is disabled."""
+    with mock.patch.dict(os.environ, {'DEBUG_LLM': 'false'}):
         import openhands.core.logger  # noqa: F401
 
         importlib.reload(openhands.core.logger)
@@ -29,12 +29,12 @@ def test_litellm_settings_debug_disabled(reset_litellm):
         assert litellm.set_verbose is False
 
 
-def test_litellm_settings_debug_enabled(reset_litellm):
-    """Test that litellm settings are properly configured when DEBUG is enabled."""
-    with mock.patch.dict(os.environ, {'DEBUG': 'true'}):
+def test_litellm_settings_debug_llm_enabled(reset_litellm):
+    """Test that litellm settings are properly configured when DEBUG_LLM is enabled."""
+    with mock.patch.dict(os.environ, {'DEBUG_LLM': 'true'}):
         import openhands.core.logger  # noqa: F401
 
         importlib.reload(openhands.core.logger)
 
-        assert litellm.suppress_debug_info is True
-        assert litellm.set_verbose is False
+        assert litellm.suppress_debug_info is False
+        assert litellm.set_verbose is True
