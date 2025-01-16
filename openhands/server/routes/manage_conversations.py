@@ -130,7 +130,7 @@ async def search_conversations(
         for conversation in conversation_metadata_result_set.results
         if hasattr(conversation, 'created_at')
     )
-    running_conversations = await session_manager.get_running_agent_loops(
+    running_conversations = await session_manager.get_agent_loop_running(
         get_user_id(request), set(conversation_ids)
     )
     result = ConversationInfoResultSet(
