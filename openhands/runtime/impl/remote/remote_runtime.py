@@ -13,6 +13,7 @@ from openhands.core.exceptions import (
     AgentRuntimeNotReadyError,
     AgentRuntimeUnavailableError,
 )
+from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
@@ -74,6 +75,10 @@ class RemoteRuntime(ActionExecutionClient):
         self.runtime_url: str | None = None
         self.available_hosts: dict[str, int] = {}
         self._runtime_initialized: bool = False
+
+    def log(self, level: str, message: str) -> None:
+        message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
+        getattr(logger, level)(message, stacklevel=2)
 
     def _get_action_execution_server_host(self):
         return self.runtime_url
