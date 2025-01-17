@@ -9,6 +9,7 @@ describe("ConversationCard", () => {
   const onClick = vi.fn();
   const onDelete = vi.fn();
   const onChangeTitle = vi.fn();
+  const onDownloadWorkspace = vi.fn();
 
   afterEach(() => {
     vi.clearAllMocks();
@@ -231,6 +232,120 @@ describe("ConversationCard", () => {
     await user.click(deleteButton);
 
     expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it("should call onDownloadWorkspace when the download button is clicked", async () => {
+    const user = userEvent.setup();
+    render(
+      <ConversationCard
+        onClick={onClick}
+        onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
+        onDownloadWorkspace={onDownloadWorkspace}
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    const ellipsisButton = screen.getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    const menu = screen.getByTestId("context-menu");
+    const downloadButton = within(menu).getByTestId("download-button");
+
+    await user.click(downloadButton);
+
+    expect(onDownloadWorkspace).toHaveBeenCalled();
+  });
+
+  it("should not display the edit or delete options if the handler is not provided", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <ConversationCard
+        onClick={onClick}
+        onChangeTitle={onChangeTitle}
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    const ellipsisButton = screen.getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    expect(screen.queryByTestId("edit-button")).toBeInTheDocument();
+    expect(screen.queryByTestId("delete-button")).not.toBeInTheDocument();
+
+    // toggle to hide the context menu
+    await user.click(ellipsisButton);
+
+    rerender(
+      <ConversationCard
+        onClick={onClick}
+        onDelete={onDelete}
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    await user.click(ellipsisButton);
+
+    expect(screen.queryByTestId("edit-button")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("delete-button")).toBeInTheDocument();
+  });
+
+  it("should not render the ellipsis button if there are no actions", () => {
+    const { rerender } = render(
+      <ConversationCard
+        onClick={onClick}
+        onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
+        onDownloadWorkspace={onDownloadWorkspace}
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    expect(screen.getByTestId("ellipsis-button")).toBeInTheDocument();
+
+    rerender(
+      <ConversationCard
+        onClick={onClick}
+        onDelete={onDelete}
+        onDownloadWorkspace={onDownloadWorkspace}
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    expect(screen.getByTestId("ellipsis-button")).toBeInTheDocument();
+
+    rerender(
+      <ConversationCard
+        onClick={onClick}
+        onDownloadWorkspace={onDownloadWorkspace}
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    expect(screen.queryByTestId("ellipsis-button")).toBeInTheDocument();
+
+    rerender(
+      <ConversationCard
+        onClick={onClick}
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    expect(screen.queryByTestId("ellipsis-button")).not.toBeInTheDocument();
   });
 
   describe("state indicator", () => {
