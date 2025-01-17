@@ -371,7 +371,6 @@ def _process_instance_wrapper(
             error = str(e)
             stacktrace = traceback.format_exc()
             if attempt == max_retries:
-                logger.exception(e)
                 msg = (
                     '-' * 10
                     + '\n'
@@ -395,19 +394,13 @@ def _process_instance_wrapper(
                 + '-' * 10
                 + '\n'
             )
-            if isinstance(
-                e,
-                (
-                    AgentRuntimeDisconnectedError,
-                    AgentRuntimeUnavailableError,
-                    AgentRuntimeNotFoundError,
-                ),
-            ):
+            # e is likely an EvalException, so we can't directly infer it from type
+            # but rather check if it's a fatal error
+            if is_fatal_runtime_error(str(e)):
                 runtime_failure_count += 1
                 msg += f'Runtime disconnected error detected for instance {instance.instance_id}, runtime failure count: {runtime_failure_count}'
+                msg += '\n' + '-' * 10 + '\n'
             logger.error(msg)
-            if use_mp:
-                print(msg)  # use print to directly print to console
             time.sleep(5)
 
 
@@ -564,10 +557,28 @@ def is_fatal_evaluation_error(error: str | None) -> bool:
         AgentRuntimeNotReadyError,
         AgentRuntimeDisconnectedError,
         AgentRuntimeNotFoundError,
+        ConnectionError,
     ]
 
     if any(exception.__name__ in error for exception in FATAL_EXCEPTIONS):
         logger.error(f'Fatal evaluation error detected: {error}')
+        return True
+
+    return False
+
+
+def is_fatal_runtime_error(error: str | None) -> bool:
+    if not error:
+        return False
+
+    FATAL_RUNTIME_ERRORS = [
+        AgentRuntimeUnavailableError,
+        AgentRuntimeDisconnectedError,
+        AgentRuntimeNotFoundError,
+    ]
+
+    if any(exception.__name__ in error for exception in FATAL_RUNTIME_ERRORS):
+        logger.error(f'Fatal runtime error detected: {error}')
         return True
 
     return False
