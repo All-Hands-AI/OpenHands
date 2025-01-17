@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing 
 
 from pydantic import BaseModel, Field, SecretStr
 
@@ -43,7 +43,6 @@ class LLMConfig(BaseModel):
         caching_prompt: Use the prompt caching feature if provided by the LLM and supported by the provider.
         log_completions: Whether to log LLM completions to the state.
         log_completions_folder: The folder to log LLM completions to. Required if log_completions is True.
-        draft_editor: A more efficient LLM to use for file editing. Introduced in [PR 3985](https://github.com/All-Hands-AI/OpenHands/pull/3985).
         custom_tokenizer: A custom tokenizer to use for token counting.
         native_tool_calling: Whether to use native tool calling if supported by the model. Can be True, False, or not set.
     """
@@ -84,10 +83,9 @@ class LLMConfig(BaseModel):
     caching_prompt: bool = Field(default=True)
     log_completions: bool = Field(default=False)
     log_completions_folder: str = Field(default=os.path.join(LOG_DIR, 'completions'))
-    draft_editor: LLMConfig | None = Field(default=None)
     custom_tokenizer: str | None = Field(default=None)
     native_tool_calling: bool | None = Field(default=None)
-
+    
     model_config = {'extra': 'forbid'}
 
     def model_post_init(self, __context: Any):
