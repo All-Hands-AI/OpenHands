@@ -31,7 +31,7 @@ class FileSettingsStore(SettingsStore):
 
     async def get_default_settings(self) -> Settings | None:
         """Get a set of default settings. Classes which override this may provide reasonable defaults, and even persist settings"""
-        return Settings.get_default()
+        return Settings.from_config()
 
     @classmethod
     async def get_instance(
