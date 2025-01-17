@@ -16,14 +16,18 @@ def indent_text(text, indent_level):
 
 def extract_preamble_classes_and_functions(code):
     class_pattern = re.compile(
-        r'(^(\s*@[\w\.\(\)\', ]+\s*)*^\s*class ([\w]+)\([^)]+\):)', re.MULTILINE
+        r'(?P<decorators>(?:^@[^\r\n]*(?:\r?\n(?:[ \t]+[^\r\n]*|^\)[^\r\n]*)*)*\r?\n)*?)'
+        r'^class\s+([\w]+)(?:\([^)]*\))?:',  # the class line
+        re.MULTILINE,
     )
     # Capture methods with or without decorators
     method_pattern = re.compile(r'(^(\s*@.*\s*)*^\s*def\s+[\w_]+\(.*\):)', re.MULTILINE)
 
     # Capture functions with or without decorators
     function_pattern = re.compile(
-        r'(^(\s*@.*\s*)*^\s*def\s+[\w_]+\(.*\):)', re.MULTILINE
+        r'(?P<decorators>(?:^@[^\r\n]*(?:\r?\n(?:[ \t]+[^\r\n]*|^\)[^\r\n]*)*)*\r?\n)*?)'
+        r'^def\s+([\w_]+)\(.*\):',  # the function line
+        re.MULTILINE,
     )
 
     preamble = ''
