@@ -64,7 +64,7 @@ export function AccountSettingsForm({
     <ModalBody testID="account-settings-form">
       <form className="flex flex-col w-full gap-6" onSubmit={handleSubmit}>
         <div className="w-full flex flex-col gap-2">
-          <BaseModalTitle title="Account Settings" />
+          <BaseModalTitle title={t(I18nKey.ACCOUNT_SETTINGS$TITLE)} />
 
           {config?.APP_MODE === "saas" && config?.APP_SLUG && (
             <a
@@ -73,12 +73,12 @@ export function AccountSettingsForm({
               rel="noreferrer noopener"
               className="underline"
             >
-              Configure Github Repositories
+              {t(I18nKey.GITHUB$CONFIGURE_REPOS)}
             </a>
           )}
           <FormFieldset
             id="language"
-            label="Language"
+            label={t(I18nKey.LANGUAGE$LABEL)}
             defaultSelectedKey={selectedLanguage}
             isClearable={false}
             items={AvailableLanguages.map(({ label, value: key }) => ({
@@ -91,32 +91,32 @@ export function AccountSettingsForm({
             <>
               <CustomInput
                 name="ghToken"
-                label="GitHub Token"
+                label={t(I18nKey.GITHUB$TOKEN_LABEL)}
                 type="password"
                 defaultValue={gitHubToken ?? ""}
               />
               <BaseModalDescription>
-                {t(I18nKey.CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN)}{" "}
+                {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
                 <a
                   href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
                   target="_blank"
                   rel="noreferrer noopener"
                   className="text-[#791B80] underline"
                 >
-                  {t(I18nKey.CONNECT_TO_GITHUB_MODAL$HERE)}
+                  {t(I18nKey.COMMON$HERE)}
                 </a>
               </BaseModalDescription>
             </>
           )}
           {gitHubError && (
             <p className="text-danger text-xs">
-              {t(I18nKey.ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID)}
+              {t(I18nKey.GITHUB$TOKEN_INVALID)}
             </p>
           )}
           {gitHubToken && !gitHubError && (
             <ModalButton
               variant="text-like"
-              text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$DISCONNECT)}
+              text={t(I18nKey.BUTTON$DISCONNECT)}
               onClick={() => {
                 logout();
                 onClose();
@@ -132,7 +132,7 @@ export function AccountSettingsForm({
             type="checkbox"
             defaultChecked={analyticsConsent === "true"}
           />
-          Enable analytics
+          {t(I18nKey.ANALYTICS$ENABLE)}
         </label>
 
         <div className="flex flex-col gap-2 w-full">
@@ -140,11 +140,11 @@ export function AccountSettingsForm({
             testId="save-settings"
             type="submit"
             intent="account"
-            text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$SAVE)}
+            text={t(I18nKey.BUTTON$SAVE)}
             className="bg-[#4465DB]"
           />
           <ModalButton
-            text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$CLOSE)}
+            text={t(I18nKey.BUTTON$CLOSE)}
             onClick={onClose}
             className="bg-[#737373]"
           />

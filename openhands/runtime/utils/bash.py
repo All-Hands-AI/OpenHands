@@ -174,7 +174,7 @@ class BashSession:
         self,
         work_dir: str,
         username: str | None = None,
-        no_change_timeout_seconds: float = 30.0,
+        no_change_timeout_seconds: int = 30,
     ):
         self.NO_CHANGE_TIMEOUT_SECONDS = no_change_timeout_seconds
         self.work_dir = work_dir
@@ -369,7 +369,7 @@ class BashSession:
             command,
             raw_command_output,
             metadata,
-            continue_prefix='[Command output continued from previous command]\n',
+            continue_prefix='[Below is the output of the previous command.]\n',
         )
         return CmdOutputObservation(
             content=command_output,
@@ -404,7 +404,7 @@ class BashSession:
             command,
             raw_command_output,
             metadata,
-            continue_prefix='[Command output continued from previous command]\n',
+            continue_prefix='[Below is the output of the previous command.]\n',
         )
 
         return CmdOutputObservation(
@@ -441,6 +441,8 @@ class BashSession:
             else:
                 # The command output is the content after the last PS1 prompt
                 return pane_content[ps1_matches[0].end() + 1 :]
+        elif len(ps1_matches) == 0:
+            return pane_content
         combined_output = ''
         for i in range(len(ps1_matches) - 1):
             # Extract content between current and next PS1 prompt
@@ -459,6 +461,9 @@ class BashSession:
         # Strip the command of any leading/trailing whitespace
         logger.debug(f'RECEIVED ACTION: {action}')
         command = action.command.strip()
+        is_special_key = self._is_special_key(command)
+
+        # Handle when prev command is hard timeout
 
         if command == '' and self.prev_status not in {
             BashCommandStatus.CONTINUE,
@@ -486,13 +491,45 @@ class BashSession:
         last_change_time = start_time
         last_pane_output = self._get_pane_content()
 
-        if command != '':
+        # Do not check hard timeout if the command is a special key
+        if command != '' and is_special_key:
+            logger.debug(f'SENDING SPECIAL KEY: {command!r}')
+            self.pane.send_keys(command, enter=False)
+        # When prev command is hard timeout, and we are trying to execute new command
+        elif self.prev_status == BashCommandStatus.HARD_TIMEOUT and command != '':
+            if not last_pane_output.endswith(CMD_OUTPUT_PS1_END):
+                _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
+                raw_command_output = self._combine_outputs_between_matches(
+                    last_pane_output, _ps1_matches
+                )
+                metadata = CmdOutputMetadata()  # No metadata available
+                metadata.suffix = (
+                    f'\n[Your command "{command}" is NOT executed. '
+                    f'The previous command was timed out but still running. Above is the output of the previous command. '
+                    "You may wait longer to see additional output of the previous command by sending empty command '', "
+                    'send other commands to interact with the current process, '
+                    'or send keys ("C-c", "C-z", "C-d") to interrupt/kill the previous command before sending your new command.]'
+                )
+                command_output = self._get_command_output(
+                    command,
+                    raw_command_output,
+                    metadata,
+                    continue_prefix='[Below is the output of the previous command.]\n',
+                )
+                return CmdOutputObservation(
+                    command=command,
+                    content=command_output,
+                    metadata=metadata,
+                )
+        # Only send the command to the pane if it's not a special key and it's not empty
+        # AND previous hard timeout command is resolved
+        elif command != '' and not is_special_key:
             # convert command to raw string
             command = escape_bash_special_chars(command)
             logger.debug(f'SENDING COMMAND: {command!r}')
             self.pane.send_keys(
                 command,
-                enter=not self._is_special_key(command),
+                enter=True,
             )
 
         # Loop until the command completes or times out
@@ -525,7 +562,7 @@ class BashSession:
             # We ignore this if the command is *blocking
             time_since_last_change = time.time() - last_change_time
             logger.debug(
-                f'CHECKING NO CHANGE TIMEOUT ({self.NO_CHANGE_TIMEOUT_SECONDS}s): elapsed {time_since_last_change}'
+                f'CHECKING NO CHANGE TIMEOUT ({self.NO_CHANGE_TIMEOUT_SECONDS}s): elapsed {time_since_last_change}. Action blocking: {action.blocking}'
             )
             if (
                 not action.blocking

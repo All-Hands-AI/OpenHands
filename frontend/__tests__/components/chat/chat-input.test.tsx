@@ -84,12 +84,10 @@ describe("ChatInput", () => {
     expect(onSubmitMock).not.toHaveBeenCalled();
   });
 
-  it("should render a placeholder", () => {
-    render(
-      <ChatInput placeholder="Enter your message" onSubmit={onSubmitMock} />,
-    );
+  it("should render a placeholder with translation key", () => {
+    render(<ChatInput onSubmit={onSubmitMock} />);
 
-    const textarea = screen.getByPlaceholderText("Enter your message");
+    const textarea = screen.getByPlaceholderText("SUGGESTIONS$WHAT_TO_BUILD");
     expect(textarea).toBeInTheDocument();
   });
 
