@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from pytest import TempPathFactory
 
-from openhands.core.config import load_app_config
+from openhands.core.config import AppConfig, load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
@@ -219,7 +219,7 @@ def _load_runtime(
     force_rebuild_runtime: bool = False,
     runtime_startup_env_vars: dict[str, str] | None = None,
     docker_runtime_kwargs: dict[str, str] | None = None,
-) -> Runtime:
+) -> tuple[Runtime, AppConfig]:
     sid = 'rt_' + str(random.randint(100000, 999999))
 
     # AgentSkills need to be initialized **before** Jupyter
@@ -272,7 +272,7 @@ def _load_runtime(
     )
     call_async_from_sync(runtime.connect)
     time.sleep(2)
-    return runtime
+    return runtime, config
 
 
 # Export necessary function

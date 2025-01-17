@@ -21,7 +21,7 @@ PY3_FOR_TESTING = '/openhands/micromamba/bin/micromamba run -n openhands python3
 
 
 def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     # Test browse
     action_cmd = CmdRunAction(

@@ -7,7 +7,7 @@ from openhands.events.action import CmdRunAction
 
 
 def test_stress_docker_runtime(temp_dir, runtime_cls, repeat=1):
-    runtime = _load_runtime(
+    runtime, config = _load_runtime(
         temp_dir,
         runtime_cls,
         docker_runtime_kwargs={

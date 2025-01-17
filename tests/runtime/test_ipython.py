@@ -30,7 +30,7 @@ from openhands.events.observation import (
 
 
 def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     # Test run command
     action_cmd = CmdRunAction(command='ls -l')
@@ -102,7 +102,7 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
     reason='This test is not working in WSL (file ownership)',
 )
 def test_ipython_multi_user(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     # Test run ipython
     # get username
@@ -174,7 +174,7 @@ def test_ipython_multi_user(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_ipython_simple(temp_dir, runtime_cls):
-    runtime = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
 
     # Test run ipython
     # get username
@@ -198,7 +198,7 @@ def test_ipython_simple(temp_dir, runtime_cls):
 
 def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
     """Make sure that cd in bash also update the current working directory in ipython."""
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     # It should error out since pymsgbox is not installed
     action = IPythonRunCellAction(code='import pymsgbox')
@@ -233,7 +233,7 @@ def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
 
 def test_ipython_file_editor_permissions_as_openhands(temp_dir, runtime_cls):
     """Test file editor permission behavior when running as different users."""
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands=True)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands=True)
 
     # Create a file owned by root with restricted permissions
     action = CmdRunAction(
@@ -313,7 +313,7 @@ print(file_editor(command='undo_edit', path='/workspace/test.txt'))
 
 
 def test_file_read_and_edit_via_oh_aci(runtime_cls, run_as_openhands):
-    runtime = _load_runtime(None, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(None, runtime_cls, run_as_openhands)
     sandbox_dir = '/workspace'
 
     actions = [
