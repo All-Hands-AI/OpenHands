@@ -493,6 +493,9 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     f'Failed to parse tool call arguments: {tool_call.function.arguments}'
                 ) from e
             if tool_call.function.name == 'execute_bash':
+                # this is an LLM error: add empty command to avoid breaking the tool call
+                if 'command' not in arguments:
+                    arguments['command'] = ''
                 # convert is_input to boolean
                 if 'is_input' in arguments:
                     arguments['is_input'] = arguments['is_input'] == 'true'
