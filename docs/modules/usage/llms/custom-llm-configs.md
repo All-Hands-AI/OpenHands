@@ -128,7 +128,6 @@ This configuration:
 
 Use this configuration when you want to let an LLM draft edits before making them. In general, it may be useful to:
 - Review and suggest code improvements
-- Edit documentation or text content
 - Refine existing content while maintaining its core meaning
 - Make precise, focused changes to code or text
 
