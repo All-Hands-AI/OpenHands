@@ -23,7 +23,7 @@ import { ModelSelector } from "./model-selector";
 import { RuntimeSizeSelector } from "./runtime-size-selector";
 import { useConfig } from "#/hooks/query/use-config";
 import { useCurrentSettings } from "#/context/settings-context";
-import { EnableDefaultCondenserSwitch } from "../../inputs/enable-default-condenser-switch";
+import { MEMORY_CONDENSER } from "#/utils/feature-flags";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -96,6 +96,9 @@ export function SettingsForm({
     const keys = Array.from(formData.keys());
     const isUsingAdvancedOptions = keys.includes("use-advanced-options");
     const newSettings = extractSettings(formData);
+
+    // Inject the condenser config from the current feature flag value
+    newSettings.ENABLE_DEFAULT_CONDENSER = MEMORY_CONDENSER;
 
     saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
     await saveUserSettings(newSettings);
@@ -201,11 +204,6 @@ export function SettingsForm({
               <ConfirmationModeSwitch
                 isDisabled={!!disabled}
                 defaultSelected={settings.CONFIRMATION_MODE}
-              />
-
-              <EnableDefaultCondenserSwitch
-                isDisabled={!!disabled}
-                defaultSelected={settings.ENABLE_DEFAULT_CONDENSER}
               />
 
             </>
