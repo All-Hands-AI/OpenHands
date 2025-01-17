@@ -121,7 +121,9 @@ class Runtime(FileEditRuntimeMixin):
         )
 
         # Load mixins
-        FileEditRuntimeMixin.__init__(self)
+        FileEditRuntimeMixin.__init__(
+            self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
+        )
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -182,7 +184,8 @@ class Runtime(FileEditRuntimeMixin):
 
     async def _handle_action(self, event: Action) -> None:
         if event.timeout is None:
-            event.timeout = self.config.sandbox.timeout
+            # We don't block the command if this is a default timeout action
+            event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
         assert event.timeout is not None
         try:
             observation: Observation = await call_sync_from_async(
@@ -194,9 +197,10 @@ class Runtime(FileEditRuntimeMixin):
                 e, AgentRuntimeDisconnectedError
             ):
                 err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
-            self.log('error', f'Unexpected error while running action: {str(e)}')
+            error_message = f'{type(e).__name__}: {str(e)}'
+            self.log('error', f'Unexpected error while running action: {error_message}')
             self.log('error', f'Problematic action: {str(event)}')
-            self.send_error_message(err_id, str(e))
+            self.send_error_message(err_id, error_message)
             self.close()
             return
 
