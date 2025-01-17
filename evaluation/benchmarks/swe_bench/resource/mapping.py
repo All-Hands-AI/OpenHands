@@ -18,7 +18,9 @@ DEFAULT_RUNTIME_RESOURCE_FACTOR = int(
 _global_resource_mapping: dict[str, dict[str, float]] = {}
 
 
-def get_resource_mapping(dataset_name: str) -> dict[str, float]:
+def get_resource_mapping(dataset_name: str | None) -> dict[str, float] | None:
+    if dataset_name is None:
+        return None
     if dataset_name not in _global_resource_mapping:
         file_path = os.path.join(CUR_DIR, f'{dataset_name}.json')
         if not os.path.exists(file_path):
@@ -31,7 +33,7 @@ def get_resource_mapping(dataset_name: str) -> dict[str, float]:
     return _global_resource_mapping[dataset_name]
 
 
-def get_instance_resource_factor(dataset_name: str, instance_id: str) -> int:
+def get_instance_resource_factor(dataset_name: str | None, instance_id: str) -> int:
     resource_mapping = get_resource_mapping(dataset_name)
     if resource_mapping is None:
         return DEFAULT_RUNTIME_RESOURCE_FACTOR

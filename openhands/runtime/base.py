@@ -133,7 +133,7 @@ class Runtime(FileEditRuntimeMixin):
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
 
-    def close(self) -> None:
+    async def close(self) -> None:
         pass
 
     def log(self, level: str, message: str) -> None:
@@ -211,7 +211,7 @@ class Runtime(FileEditRuntimeMixin):
         source = event.source if event.source else EventSource.AGENT
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    def clone_repo(self, github_token: str, selected_repository: str) -> str:
+    async def clone_repo(self, github_token: str, selected_repository: str) -> str:
         if not github_token or not selected_repository:
             raise ValueError(
                 'github_token and selected_repository must be provided to clone a repository'
@@ -227,7 +227,7 @@ class Runtime(FileEditRuntimeMixin):
             command=f'git clone {url} {dir_name} ; cd {dir_name} ; git checkout -b {branch_name}',
         )
         self.log('info', f'Cloning repo: {selected_repository}')
-        self.run_action(action)
+        await self.run_action(action)
         return dir_name
 
     def get_microagents_from_selected_repo(
@@ -310,7 +310,7 @@ class Runtime(FileEditRuntimeMixin):
 
         return loaded_microagents
 
-    def run_action(self, action: Action) -> Observation:
+    async def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.
         If the action is not runnable in any runtime, a NullObservation is returned.
         If the action is not supported by the current runtime, an ErrorObservation is returned.
@@ -347,8 +347,8 @@ class Runtime(FileEditRuntimeMixin):
     def __enter__(self) -> 'Runtime':
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
-        self.close()
+    async def __exit__(self, exc_type, exc_value, traceback) -> None:
+        await self.close()
 
     @abstractmethod
     async def connect(self) -> None:
@@ -359,27 +359,27 @@ class Runtime(FileEditRuntimeMixin):
     # ====================================================================
 
     @abstractmethod
-    def run(self, action: CmdRunAction) -> Observation:
+    async def run(self, action: CmdRunAction) -> Observation:
         pass
 
     @abstractmethod
-    def run_ipython(self, action: IPythonRunCellAction) -> Observation:
+    async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         pass
 
     @abstractmethod
-    def read(self, action: FileReadAction) -> Observation:
+    async def read(self, action: FileReadAction) -> Observation:
         pass
 
     @abstractmethod
-    def write(self, action: FileWriteAction) -> Observation:
+    async def write(self, action: FileWriteAction) -> Observation:
         pass
 
     @abstractmethod
-    def browse(self, action: BrowseURLAction) -> Observation:
+    async def browse(self, action: BrowseURLAction) -> Observation:
         pass
 
     @abstractmethod
-    def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+    async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         pass
 
     # ====================================================================
@@ -387,11 +387,11 @@ class Runtime(FileEditRuntimeMixin):
     # ====================================================================
 
     @abstractmethod
-    def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+    async def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         raise NotImplementedError('This method is not implemented in the base class.')
 
     @abstractmethod
-    def list_files(self, path: str | None = None) -> list[str]:
+    async def list_files(self, path: str | None = None) -> list[str]:
         """List files in the sandbox.
 
         If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
@@ -399,7 +399,7 @@ class Runtime(FileEditRuntimeMixin):
         raise NotImplementedError('This method is not implemented in the base class.')
 
     @abstractmethod
-    def copy_from(self, path: str) -> Path:
+    async def copy_from(self, path: str) -> Path:
         """Zip all files in the sandbox and return a path in the local filesystem."""
         raise NotImplementedError('This method is not implemented in the base class.')
 
