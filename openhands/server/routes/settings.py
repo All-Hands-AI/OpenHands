@@ -3,10 +3,12 @@ from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth import get_user_id
+from openhands.server.services.github_service import GitHubService
 from openhands.server.settings import Settings
 from openhands.server.shared import config, openhands_config
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.settings.settings_store import SettingsStore
+from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.import_utils import get_impl
 
 app = APIRouter(prefix='/api')
@@ -50,6 +52,17 @@ async def store_settings(
     request: Request,
     settings: Settings,
 ) -> JSONResponse:
+    if settings.github_token:
+        try:
+            github = GitHubService(settings.github_token)
+            await call_sync_from_async(github.get_user)
+        except Exception as e:
+            logger.warning(f'Invalid GitHub token: {e}')
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={'error': 'Invalid GitHub token'},
+            )
+
     try:
         settings_store = await SettingsStoreImpl.get_instance(
             config, get_user_id(request)
@@ -64,8 +77,8 @@ async def store_settings(
             if settings.github_token is None:
                 settings.github_token = existing_settings.github_token
 
-            if settings.unset_github_token is True:
-                settings.github_token = None
+        if settings.unset_github_token:
+            settings.github_token = None
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
