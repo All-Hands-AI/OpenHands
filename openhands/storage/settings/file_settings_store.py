@@ -25,17 +25,19 @@ class FileSettingsStore(SettingsStore):
             settings = Settings(**kwargs)
             return settings
         except FileNotFoundError:
-            settings = await self.create_default_settings()
-            return settings
+            return await self.create_default_settings()
 
     async def store(self, settings: Settings):
         json_str = json.dumps(settings.__dict__)
         await call_sync_from_async(self.file_store.write, self.path, json_str)
 
-    async def create_default_settings(self):
+    async def create_default_settings(self) -> Settings | None:
         """Create a set of default settings. Classes which override this may provide reasonable defaults, and even persist settings"""
         app_config = load_app_config()
         llm_config: LLMConfig = app_config.get_llm_config()
+        if llm_config.api_key is None:
+            # If no api key has been set, we take this to mean that there is no reasonable default
+            return None
         security = app_config.security
         settings = Settings(
             language='en',
