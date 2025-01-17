@@ -406,8 +406,6 @@ def _process_instance_wrapper(
                 runtime_failure_count += 1
                 msg += f'Runtime disconnected error detected for instance {instance.instance_id}, runtime failure count: {runtime_failure_count}'
             logger.error(msg)
-            if use_mp:
-                print(msg)  # use print to directly print to console
             time.sleep(5)
 
 
