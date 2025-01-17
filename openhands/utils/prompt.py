@@ -28,6 +28,33 @@ class RepositoryInfo:
     repo_directory: str | None = None
 
 
+ADDITIONAL_INFO_TEMPLATE = Template(
+    """
+{% if repository_info %}
+<REPOSITORY_INFO>
+At the user's request, repository {{ repository_info.repo_name }} has been cloned to directory {{ repository_info.repo_directory }}.
+</REPOSITORY_INFO>
+{% endif %}
+{% if repository_instructions -%}
+<REPOSITORY_INSTRUCTIONS>
+{{ repository_instructions }}
+</REPOSITORY_INSTRUCTIONS>
+{% endif %}
+{% if runtime_info and runtime_info.available_hosts -%}
+<RUNTIME_INFORMATION>
+The user has access to the following hosts for accessing a web application,
+each of which has a corresponding port:
+{% for host, port in runtime_info.available_hosts.items() -%}
+* {{ host }} (port {{ port }})
+{% endfor %}
+When starting a web server, use the corresponding ports. You should also
+set any options to allow iframes and CORS requests.
+</RUNTIME_INFORMATION>
+{% endif %}
+"""
+)
+
+
 class PromptManager:
     """
     Manages prompt templates and micro-agents for AI interactions.
@@ -59,6 +86,9 @@ class PromptManager:
         self.repo_microagents: dict[str, RepoMicroAgent] = {}
 
         if microagent_dir:
+            # This loads micro-agents from the microagent_dir
+            # which is typically the OpenHands/microagents (i.e., the PUBLIC microagents)
+
             # Only load KnowledgeMicroAgents
             repo_microagents, knowledge_microagents, _ = load_microagents_from_dir(
                 microagent_dir
@@ -79,6 +109,10 @@ class PromptManager:
                     self.repo_microagents[name] = microagent
 
     def load_microagents(self, microagents: list[BaseMicroAgent]):
+        """Load microagents from a list of BaseMicroAgents.
+
+        This is typically used when loading microagents from inside a repo.
+        """
         # Only keep KnowledgeMicroAgents and RepoMicroAgents
         for microagent in microagents:
             if microagent.name in self.disabled_microagents:
@@ -98,6 +132,13 @@ class PromptManager:
             return Template(file.read())
 
     def get_system_message(self) -> str:
+        return self.system_template.render().strip()
+
+    def get_additional_info(self) -> str:
+        """Gets information about the repository and runtime.
+
+        This is used to inject information about the repository and runtime into the initial user message.
+        """
         repo_instructions = ''
         assert (
             len(self.repo_microagents) <= 1
@@ -108,7 +149,7 @@ class PromptManager:
                 repo_instructions += '\n\n'
             repo_instructions += microagent.content
 
-        return self.system_template.render(
+        return ADDITIONAL_INFO_TEMPLATE.render(
             repository_instructions=repo_instructions,
             repository_info=self.repository_info,
             runtime_info=self.runtime_info,
