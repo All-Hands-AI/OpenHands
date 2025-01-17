@@ -61,7 +61,10 @@ async def store_settings(
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
 
-            if settings.unset_github_token:
+            if settings.github_token is None:
+                settings.github_token = existing_settings.github_token
+
+            if settings.unset_github_token is True:
                 settings.github_token = None
 
         # Update sandbox config with new settings
