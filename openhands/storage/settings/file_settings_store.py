@@ -4,6 +4,8 @@ import json
 from dataclasses import dataclass
 
 from openhands.core.config.app_config import AppConfig
+from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.utils import load_app_config
 from openhands.server.settings import Settings
 from openhands.storage import get_file_store
 from openhands.storage.files import FileStore
@@ -32,7 +34,21 @@ class FileSettingsStore(SettingsStore):
 
     async def create_default_settings(self):
         """Create a set of default settings. Classes which override this may provide reasonable defaults, and even persist settings"""
-        return None
+        app_config = load_app_config()
+        llm_config: LLMConfig = app_config.get_llm_config()
+        security = app_config.security
+        settings = Settings(
+            language='en',
+            agent=llm_config.model,
+            max_iterations=app_config.max_iterations,
+            security_analyzer=security.security_analyzer,
+            confirmation_mode=security.confirmation_mode,
+            llm_model=llm_config.model,
+            llm_api_key=llm_config.api_key,
+            llm_base_url=llm_config.base_url,
+            remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
+        )
+        return settings
 
     @classmethod
     async def get_instance(
