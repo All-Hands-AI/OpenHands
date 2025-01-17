@@ -37,6 +37,12 @@ def mock_settings_store():
         yield store_instance
 
 
+@pytest.fixture
+def mock_github_service():
+    with patch('openhands.server.routes.settings.GitHubService') as mock:
+        yield mock
+
+
 @pytest.mark.asyncio
 async def test_settings_api_runtime_factor(test_client, mock_settings_store):
     # Mock the settings store to return None initially (no existing settings)
@@ -86,10 +92,9 @@ async def test_settings_api_runtime_factor(test_client, mock_settings_store):
 
 
 @pytest.mark.asyncio
-async def test_settings_api_set_github_token(test_client, mock_settings_store):
-    # Mock the settings store to return None initially (no existing settings)
-    mock_settings_store.load.return_value = None
-
+async def test_settings_api_set_github_token(
+    mock_github_service, test_client, mock_settings_store
+):
     # Test data with unset_github_token set to True
     settings_data = {
         'language': 'en',
@@ -122,10 +127,9 @@ async def test_settings_api_set_github_token(test_client, mock_settings_store):
 
 
 @pytest.mark.asyncio
-async def test_settings_unset_github_token(test_client, mock_settings_store):
-    # Mock the settings store to return None initially (no existing settings)
-    mock_settings_store.load.return_value = None
-
+async def test_settings_unset_github_token(
+    mock_github_service, test_client, mock_settings_store
+):
     # Test data with unset_github_token set to True
     settings_data = {
         'language': 'en',
