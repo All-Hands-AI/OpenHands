@@ -109,6 +109,8 @@ OpenHands can use custom LLM configurations named with reserved names, for speci
 
 The `draft_editor` configuration is a group of settings you can provide, to specify the model to use for preliminary drafting of code edits, for any tasks that involve editing and refining code. You need to provide it under the section `[llm.draft_editor]`.
 
+For example, you can define in `config.toml` a draft editor like this:
+
 ```toml
 [llm.draft_editor]
 model = "gpt-4"
