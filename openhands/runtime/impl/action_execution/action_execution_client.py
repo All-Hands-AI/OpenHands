@@ -35,6 +35,7 @@ from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
+from openhands.utils.http_session import HttpSession
 
 
 class ActionExecutionClient(Runtime):
@@ -55,9 +56,10 @@ class ActionExecutionClient(Runtime):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
     ):
-        self.session = requests.Session()
+        self.session = HttpSession()
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
         self._runtime_initialized: bool = False
+        self._runtime_closed: bool = False
         self._vscode_token: str | None = None  # initial dummy value
         super().__init__(
             config,
@@ -216,7 +218,8 @@ class ActionExecutionClient(Runtime):
 
         # set timeout to default if not set
         if action.timeout is None:
-            action.timeout = self.config.sandbox.timeout
+            # We don't block the command if this is a default timeout action
+            action.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
 
         with self.action_semaphore:
             if not action.runnable:
@@ -282,4 +285,9 @@ class ActionExecutionClient(Runtime):
         return self.send_action_for_execution(action)
 
     def close(self) -> None:
+        # Make sure we don't close the session multiple times
+        # Can happen in evaluation
+        if self._runtime_closed:
+            return
+        self._runtime_closed = True
         self.session.close()
