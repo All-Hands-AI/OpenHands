@@ -9,6 +9,9 @@ import toml
 from datasets import load_dataset
 
 import openhands.agenthub
+from evaluation.benchmarks.swe_bench.resource.mapping import (
+    get_instance_resource_factor,
+)
 from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
@@ -46,6 +49,7 @@ RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'tru
 DEFAULT_RUNTIME_RESOURCE_FACTOR = int(
     os.environ.get('DEFAULT_RUNTIME_RESOURCE_FACTOR', 1)
 )
+
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -138,7 +142,10 @@ def get_config(
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             keep_runtime_alive=False,
             remote_runtime_init_timeout=3600,
-            remote_runtime_resource_factor=int(DEFAULT_RUNTIME_RESOURCE_FACTOR),
+            remote_runtime_resource_factor=get_instance_resource_factor(
+                dataset_name=metadata.dataset,
+                instance_id=instance['instance_id'],
+            ),
         ),
         # do not mount workspace
         workspace_base=None,
@@ -243,7 +250,7 @@ def initialize_runtime(
         assert_and_raise(obs.exit_code == 0, f'Failed to source ~/.bashrc: {str(obs)}')
 
         action = CmdRunAction(command='source /swe_util/instance_swe_entry.sh')
-        action.set_hard_timeout(3600)
+        action.set_hard_timeout(600)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -483,6 +490,10 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
                 subset = dataset[dataset[filter_column].isin(selected_ids)]
                 logger.info(f'Retained {subset.shape[0]} tasks after filtering')
                 return subset
+    skip_ids = os.environ.get('SKIP_IDS', '').split(',')
+    if len(skip_ids) > 0:
+        logger.info(f'Filtering {len(skip_ids)} tasks from "SKIP_IDS"...')
+        return dataset[~dataset[filter_column].isin(skip_ids)]
     return dataset
 
 
