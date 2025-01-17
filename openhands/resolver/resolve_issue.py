@@ -608,7 +608,13 @@ def main():
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
 
-    owner, repo = my_args.repo.split('/')
+    parts = my_args.repo.split('/')
+    if len(parts) > 2:
+        owner = '/'.join(parts[:-1])
+        repo = parts[-1]
+    else:
+        owner, repo = parts
+
     token = my_args.token if my_args.token else os.getenv('GIT_TOKEN')
     username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
     if not username:
