@@ -81,4 +81,33 @@ describe("AccountSettingsModal", () => {
       unset_github_token: true,
     });
   });
+
+  it("should not unset the github token when changing the language", async () => {
+    const user = userEvent.setup();
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_USER_PREFERENCES.settings,
+      github_token_is_set: true,
+    });
+    renderWithProviders(<AccountSettingsModal onClose={() => {}} />);
+
+    const languageInput = screen.getByLabelText(/language/i);
+    await user.click(languageInput);
+
+    const norskOption = screen.getByText(/norsk/i);
+    await user.click(norskOption);
+
+    const saveButton = screen.getByTestId("save-settings");
+    await user.click(saveButton);
+
+    expect(saveSettingsSpy).toHaveBeenCalledWith({
+      agent: "CodeActAgent",
+      confirmation_mode: false,
+      language: "no",
+      llm_base_url: "",
+      llm_model: "anthropic/claude-3-5-sonnet-20241022",
+      remote_runtime_resource_factor: 1,
+      security_analyzer: "",
+    });
+  });
 });
