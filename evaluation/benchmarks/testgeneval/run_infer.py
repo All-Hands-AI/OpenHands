@@ -81,6 +81,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         instruction = CODEACT_SWE_TESTGEN_PROMPT.format(
             workspace_dir_name=workspace_dir_name,
             test_file=instance.test_file,
+            code_file=instance.code_file,
             coverage_command=coverage_command,
         )
     else:

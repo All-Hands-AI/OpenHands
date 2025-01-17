@@ -11,7 +11,8 @@ IMPORTANT TIPS:
 1. First look at other tests to get an idea of how tests are formatted.
 
 2. Next start by trying to generate a high quality test suite at {test_file} that tests {code_file}.
-    When you think you've successfully generated a test suite, run it on for the current project using {coverage_command}.
+    When you think you've successfully generated a test suite, run it on for the current project using {coverage_command}. Focus on maximizing coverage,
+    fix tests that failed on each run and add more tests to improve coverage. IMPORT ERRORS are very important, fix those first.
     Then run coverage report -m --include {code_file} to see how well your test suite covers the code.
     Try to maximize coverage of your generated test suite.
 
@@ -25,26 +26,42 @@ IMPORTANT TIPS:
 
 7. When editing files, it is easy to accidentally specify a wrong line number or to write code with incorrect indentation. Always check the code after you issue an edit to make sure that it reflects what you wanted to accomplish. If it didn't, issue another command to fix it.
 
+8. DO NOT install new packages, use the existing packages only.
+
+9. Focus on first ensuring the tests pass and then maximizing coverage (ideally generate 20+ passing tests.)
+
 [Current directory: /workspace/{workspace_dir_name}]
 
 When you think you have a fully adequate test suite, please run the following command: <execute_bash> exit </execute_bash>.
 """
 
-CODEACT_TESTGEN_PROMPT = """Your goal is to generate a high-quality test suite for the code file: {code_file}. Output the test suite at {test_file}\n'
+CODEACT_TESTGEN_PROMPT = """Your goal is to generate a high-quality test suite (at least 20+ passing tests) for the code file: {code_file}. Output the test suite at {test_file}\n'
 
 IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP
 
-First look at other tests to get an idea of how tests are formatted.
+Look at other tests to get an idea of how tests are formatted.
+
+Then write a script to invoke the {code_file} to understand input and output behavior of various functions.
+
+Finally proceed to writing a test suite at {test_file} that tests {code_file}.
 
 You should NOT modify any existing test case files. You SHOULD add new test in a NEW file to reproduce the issue.
 
-You should verify that the issue is resolved and any new tests you create pass successfully.
-
 You should NEVER use web browsing or any other web-based tools.
 
-Check your solutions with {coverage_command}.
+You should NEVER install new packages, use existing packages only.
 
 You should ALWAYS use the default Python interpreter available in the <execute_bash> environment to run code related to the provided issue and/or repository.
+
+When you think you've successfully generated a test suite, run it on for the current project using {coverage_command}.
+
+Then run coverage report -m --include {code_file} to see how well your test suite covers the code.
+
+Focus on generating passing tests first, then on improving coverage. REMOVE failing tests.
+
+When you are trying to improve coverage pick a part of the code that is not covered (indicated by lines on coverage report), examine the code and then
+try to generate a test for it. Feel free to use a code interpreter to understand the input output behavior. ONLY add tests
+not remove them.
 
 When you think you have a fully adequate test suite, please run the following command: <execute_bash> exit </execute_bash>.
 """

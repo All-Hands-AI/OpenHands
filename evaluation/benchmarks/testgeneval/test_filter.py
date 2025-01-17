@@ -216,10 +216,12 @@ def filter_passing_tests(
     filtered_functions = []
     for func_body, start_idx in functions:
         func_name = func_body.split('def ')[1].split('(')[0].strip()
-        if any(func_name in passing_test for passing_test in passing_tests) or any(
-            passing_test in func_name for passing_test in passing_tests
+        if any(func_name in failing_test for failing_test in failing_tests) or any(
+            failing_test in func_name for failing_test in failing_tests
         ):
-            filtered_functions.append((func_body, start_idx))
+            continue
+
+        filtered_functions.append((func_body, start_idx))
 
     # Reconstruct test content with only passing tests
     content_parts = [preamble]
