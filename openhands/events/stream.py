@@ -65,6 +65,7 @@ class EventStream:
     _queue: queue.Queue[Event]
     _queue_thread: threading.Thread
     _queue_loop: asyncio.AbstractEventLoop | None
+    _thread_pools: dict[str, dict[str, ThreadPoolExecutor]]
     _thread_loops: dict[str, dict[str, asyncio.AbstractEventLoop]]
 
     def __init__(self, sid: str, file_store: FileStore):
@@ -72,8 +73,8 @@ class EventStream:
         self.file_store = file_store
         self._stop_flag = threading.Event()
         self._queue: queue.Queue[Event] = queue.Queue()
-        self._thread_pools: dict[str, dict[str, ThreadPoolExecutor]] = {}
-        self._thread_loops: dict[str, dict[str, asyncio.AbstractEventLoop]] = {}
+        self._thread_pools = {}
+        self._thread_loops = {}
         self._queue_loop = None
         self._queue_thread = threading.Thread(target=self._run_queue_loop)
         self._queue_thread.daemon = True
@@ -257,7 +258,7 @@ class EventStream:
     def add_event(self, event: Event, source: EventSource):
         if hasattr(event, '_id') and event.id is not None:
             raise ValueError(
-                'Event already has an ID. It was probably added back to the EventStream from inside a handler, trigging a loop.'
+                f'Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop.'
             )
         with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
@@ -285,6 +286,8 @@ class EventStream:
                 event = self._queue.get(timeout=0.1)
             except queue.Empty:
                 continue
+
+            # pass each event to each callback in order
             for key in sorted(self._subscribers.keys()):
                 callbacks = self._subscribers[key]
                 for callback_id in callbacks:
@@ -301,8 +304,6 @@ class EventStream:
             except Exception as e:
                 logger.error(
                     f'Error in event callback {callback_id} for subscriber {subscriber_id}: {str(e)}',
-                    exc_info=True,
-                    stack_info=True,
                 )
                 # Re-raise in the main thread so the error is not swallowed
                 raise e
