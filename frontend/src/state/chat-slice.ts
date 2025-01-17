@@ -166,8 +166,9 @@ export const chatSlice = createSlice({
         }\n\nOutput:\n\`\`\`\n${content.trim() || "[Command finished execution with no output]"}\n\`\`\``;
         causeMessage.content = content; // Observation content includes the action
       } else if (observationID === "read" || observationID === "edit") {
-        const { content } = observation.payload;
+        const { content, extras } = observation.payload;
         causeMessage.content = `\`\`\`${observationID === "edit" ? "diff" : "python"}\n${content}\n\`\`\``; // Content is already truncated by the ACI
+        causeMessage.filePath = extras.path;
       } else if (observationID === "browse") {
         let content = `**URL:** ${observation.payload.extras.url}\n`;
         if (observation.payload.extras.error) {

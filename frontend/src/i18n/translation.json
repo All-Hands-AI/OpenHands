@@ -4492,7 +4492,21 @@
         "tr": "İstemcinin hazır olması bekleniyor...",
         "ja": "クライアントの準備を待機中"
     },
-    "SUGGESTIONS$WHAT_TO_BUILD": {
+    "CHAT$JUMP_TO_FILE_TOOLTIP": {
+    "en": "Jump to file: {{path}}",
+    "zh-CN": "跳转到文件：{{path}}",
+    "de": "Zur Datei springen: {{path}}",
+    "ko-KR": "파일로 이동: {{path}}",
+    "no": "Hopp til fil: {{path}}",
+    "zh-TW": "跳轉到文件：{{path}}",
+    "it": "Vai al file: {{path}}",
+    "pt": "Ir para o arquivo: {{path}}",
+    "es": "Ir al archivo: {{path}}",
+    "ar": "انتقل إلى الملف: {{path}}",
+    "fr": "Aller au fichier: {{path}}",
+    "tr": "Dosyaya git: {{path}}"
+  },
+  "SUGGESTIONS$WHAT_TO_BUILD": {
         "en": "What do you want to build?",
         "ja": "何を開発しますか？",
         "zh-CN": "你想要构建什么？",
