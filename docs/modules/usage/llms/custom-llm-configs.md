@@ -103,7 +103,7 @@ In this example:
 
 # Custom Configurations with Reserved Names
 
-OpenHands can use predefined custom named LLM configurations for specific use cases. If you specify the model and other settings under the predefined names, then OpenHands will load and them for a specific purpose. As of now, one such configuration is implemented: draft editor.
+OpenHands can use custom LLM configurations named with reserved names, for specific use cases. If you specify the model and other settings under the reserved names, then OpenHands will load and them for a specific purpose. As of now, one such configuration is implemented: draft editor.
 
 ## Draft Editor Configuration
 
