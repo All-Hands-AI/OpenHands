@@ -486,10 +486,6 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
     return dataset
 
 
-SWEGYM_EXCLUDE_IDS = [
-    'dask__dask-10422',
-]
-
 if __name__ == '__main__':
     parser = get_parser()
     parser.add_argument(
@@ -513,13 +509,6 @@ if __name__ == '__main__':
     logger.info(
         f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks'
     )
-    if 'SWE-Gym' in args.dataset:
-        swe_bench_tests = swe_bench_tests[
-            ~swe_bench_tests['instance_id'].isin(SWEGYM_EXCLUDE_IDS)
-        ]
-        logger.info(
-            f'{len(swe_bench_tests)} tasks left after excluding SWE-Gym excluded tasks'
-        )
 
     llm_config = None
     if args.llm_config:
