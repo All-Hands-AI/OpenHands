@@ -1,32 +1,42 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
 import { sendNotification } from '../../src/services/notification';
 
-type MockNotification = {
-  (title: string, options?: NotificationOptions): void;
-  permission: NotificationPermission;
-};
+interface NotificationConstructor {
+  new (title: string, options?: NotificationOptions): Notification;
+  readonly permission: NotificationPermission;
+  readonly maxActions: number;
+  requestPermission(): Promise<NotificationPermission>;
+}
 
 describe('sendNotification', () => {
+  let mockNotification: Mock;
+
   beforeEach(() => {
     // Mock localStorage
-    Storage.prototype.getItem = vi.fn() as jest.Mock;
-    Storage.prototype.setItem = vi.fn() as jest.Mock;
+    Storage.prototype.getItem = vi.fn();
+    Storage.prototype.setItem = vi.fn();
 
     // Mock Notification API
-    const mockNotification = vi.fn((title, options) => ({
+    mockNotification = vi.fn((title: string, options?: NotificationOptions) => ({
       title,
       ...options,
-    })) as unknown as MockNotification;
-    mockNotification.permission = 'granted';
+    }));
+    Object.defineProperty(mockNotification, 'permission', {
+      get: () => 'granted',
+      configurable: true
+    });
+
+    // Set up the window.Notification mock
+    const NotificationMock = mockNotification as unknown as NotificationConstructor;
     Object.defineProperty(window, 'Notification', {
-      value: mockNotification,
+      value: NotificationMock,
       writable: true,
     });
   });
 
   it('should send notification when notifications are enabled', () => {
     // Mock notifications being enabled
-    Storage.prototype.getItem.mockReturnValue('true');
+    vi.mocked(Storage.prototype.getItem).mockReturnValue('true');
 
     const title = 'Test Title';
     const options = {
@@ -36,29 +46,26 @@ describe('sendNotification', () => {
 
     sendNotification(title, options);
 
-    expect(window.Notification).toHaveBeenCalledWith(title, options);
+    expect(mockNotification).toHaveBeenCalledWith(title, options);
   });
 
   it('should not send notification when notifications are disabled', () => {
     // Mock notifications being disabled
-    Storage.prototype.getItem.mockReturnValue('false');
+    vi.mocked(Storage.prototype.getItem).mockReturnValue('false');
 
     sendNotification('Test Title', { body: 'Test Body' });
 
-    expect(window.Notification).not.toHaveBeenCalled();
+    expect(mockNotification).not.toHaveBeenCalled();
   });
 
   it('should not send notification when permission is not granted', () => {
     // Mock notifications being enabled but permission not granted
-    Storage.prototype.getItem.mockReturnValue('true');
-    const mockNotification = vi.fn((title, options) => ({
-      title,
-      ...options,
-    }));
-    mockNotification.permission = 'denied';
-    Object.defineProperty(window, 'Notification', {
-      value: mockNotification,
-      writable: true,
+    vi.mocked(Storage.prototype.getItem).mockReturnValue('true');
+
+    // Change permission to denied
+    Object.defineProperty(mockNotification, 'permission', {
+      get: () => 'denied',
+      configurable: true
     });
 
     sendNotification('Test Title', { body: 'Test Body' });
