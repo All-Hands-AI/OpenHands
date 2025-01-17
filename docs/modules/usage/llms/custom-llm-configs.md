@@ -124,7 +124,7 @@ This configuration:
 - Uses a high top_p value (0.95) to consider a wide range of token options
 - Disables presence and frequency penalties to maintain focus on the specific edits needed
 
-Use this configuration when you need an agent to:
+Use this configuration when you want to let an LLM draft edits before making them. In general, it may be useful to:
 - Review and suggest code improvements
 - Edit documentation or text content
 - Refine existing content while maintaining its core meaning
