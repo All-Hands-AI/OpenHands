@@ -1,6 +1,7 @@
 import React from "react";
 import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
+import posthog from "posthog-js";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { UserActions } from "./user-actions";
@@ -58,6 +59,11 @@ export function Sidebar() {
     setAccountSettingsModalOpen(false);
   };
 
+  const handleLogout = async () => {
+    await saveUserSettings({ unset_github_token: true });
+    posthog.reset();
+  };
+
   const showSettingsModal =
     isAuthed && (!settingsAreUpToDate || settingsModalIsOpen);
 
@@ -87,7 +93,7 @@ export function Sidebar() {
               user={
                 user.data ? { avatar_url: user.data.avatar_url } : undefined
               }
-              onLogout={() => saveUserSettings({ unset_github_token: true })}
+              onLogout={handleLogout}
               onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
             />
           )}

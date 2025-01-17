@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import posthog from "posthog-js";
 import {
   BaseModalDescription,
   BaseModalTitle,
@@ -67,6 +68,7 @@ export function AccountSettingsForm({
 
   const onDisconnect = async () => {
     await saveUserSettings({ unset_github_token: true });
+    posthog.reset();
     onClose();
   };
 
