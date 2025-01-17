@@ -46,9 +46,6 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'true').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
-DEFAULT_RUNTIME_RESOURCE_FACTOR = int(
-    os.environ.get('DEFAULT_RUNTIME_RESOURCE_FACTOR', 1)
-)
 
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
