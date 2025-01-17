@@ -1,6 +1,5 @@
 import os
 from dataclasses import dataclass, fields
-from typing import Optional
 
 from openhands.core.config.config_utils import get_field_info
 from openhands.core.logger import LOG_DIR
@@ -44,7 +43,6 @@ class LLMConfig:
         caching_prompt: Use the prompt caching feature if provided by the LLM and supported by the provider.
         log_completions: Whether to log LLM completions to the state.
         log_completions_folder: The folder to log LLM completions to. Required if log_completions is True.
-        draft_editor: A more efficient LLM to use for file editing. Introduced in [PR 3985](https://github.com/All-Hands-AI/OpenHands/pull/3985).
         custom_tokenizer: A custom tokenizer to use for token counting.
         native_tool_calling: Whether to use native tool calling if supported by the model. Can be True, False, or not set.
     """
@@ -84,7 +82,6 @@ class LLMConfig:
     caching_prompt: bool = True
     log_completions: bool = False
     log_completions_folder: str = os.path.join(LOG_DIR, 'completions')
-    draft_editor: Optional['LLMConfig'] = None
     custom_tokenizer: str | None = None
     native_tool_calling: bool | None = None
 
@@ -137,8 +134,7 @@ class LLMConfig:
     def from_dict(cls, llm_config_dict: dict) -> 'LLMConfig':
         """Create an LLMConfig object from a dictionary.
 
-        This function is used to create an LLMConfig object from a dictionary,
-        with the exception of the 'draft_editor' key, which is a nested LLMConfig object.
+        This function is used to create an LLMConfig object from a dictionary.
         """
         # Keep None values to preserve defaults, filter out other dicts
         args = {
@@ -146,13 +142,4 @@ class LLMConfig:
             for k, v in llm_config_dict.items()
             if not isinstance(v, dict) or v is None
         }
-        if (
-            'draft_editor' in llm_config_dict
-            and llm_config_dict['draft_editor'] is not None
-        ):
-            if isinstance(llm_config_dict['draft_editor'], LLMConfig):
-                args['draft_editor'] = llm_config_dict['draft_editor']
-            else:
-                draft_editor_config = LLMConfig(**llm_config_dict['draft_editor'])
-                args['draft_editor'] = draft_editor_config
         return cls(**args)
