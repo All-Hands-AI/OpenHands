@@ -1,4 +1,3 @@
-import json
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -47,7 +46,7 @@ async def test_store_and_load_data(file_settings_store):
     await file_settings_store.store(init_data)
 
     # Verify store called with correct JSON
-    expected_json = json.dumps(init_data.__dict__)
+    expected_json = init_data.model_dump_json(context={'expose_secrets': True})
     file_settings_store.file_store.write.assert_called_once_with(
         'settings.json', expected_json
     )
@@ -64,7 +63,12 @@ async def test_store_and_load_data(file_settings_store):
     assert loaded_data.security_analyzer == init_data.security_analyzer
     assert loaded_data.confirmation_mode == init_data.confirmation_mode
     assert loaded_data.llm_model == init_data.llm_model
-    assert loaded_data.llm_api_key == init_data.llm_api_key
+    assert loaded_data.llm_api_key
+    assert init_data.llm_api_key
+    assert (
+        loaded_data.llm_api_key.get_secret_value()
+        == init_data.llm_api_key.get_secret_value()
+    )
     assert loaded_data.llm_base_url == init_data.llm_base_url
 
 
