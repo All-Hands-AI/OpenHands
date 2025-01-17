@@ -91,6 +91,9 @@ class Session:
         )
         max_iterations = settings.max_iterations or self.config.max_iterations
 
+        # This is a shallow copy of the default LLM config, so changes here will
+        # persist if we retrieve the default LLM config again when constructing
+        # the agent
         default_llm_config = self.config.get_llm_config()
         default_llm_config.model = settings.llm_model or ''
         default_llm_config.api_key = settings.llm_api_key

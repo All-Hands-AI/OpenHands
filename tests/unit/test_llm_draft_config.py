@@ -86,7 +86,7 @@ def test_draft_editor_as_named_llm(config_toml_with_draft_editor):
     draft_llm = config.get_llm_config('draft_editor')
     assert draft_llm is not None
     assert draft_llm.model == 'draft-model'
-    assert draft_llm.api_key == 'draft-api-key'
+    assert draft_llm.api_key.get_secret_value() == 'draft-api-key'
 
 
 def test_draft_editor_fallback(config_toml_with_draft_editor):
