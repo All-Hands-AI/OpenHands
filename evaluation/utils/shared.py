@@ -531,6 +531,7 @@ def is_fatal_runtime_error(error: str | None) -> bool:
         return False
 
     FATAL_RUNTIME_ERRORS = [
+        AgentRuntimeTimeoutError,
         AgentRuntimeUnavailableError,
         AgentRuntimeDisconnectedError,
         AgentRuntimeNotFoundError,
