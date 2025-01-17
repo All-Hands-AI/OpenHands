@@ -399,6 +399,7 @@ def _process_instance_wrapper(
             if is_fatal_runtime_error(str(e)):
                 runtime_failure_count += 1
                 msg += f'Runtime disconnected error detected for instance {instance.instance_id}, runtime failure count: {runtime_failure_count}'
+                msg += '\n' + '-' * 10 + '\n'
             logger.error(msg)
             time.sleep(5)
 
