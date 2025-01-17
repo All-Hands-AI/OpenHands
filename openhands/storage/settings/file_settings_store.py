@@ -23,15 +23,11 @@ class FileSettingsStore(SettingsStore):
             settings = Settings(**kwargs)
             return settings
         except FileNotFoundError:
-            return await self.get_default_settings()
+            return Settings.from_config()
 
     async def store(self, settings: Settings):
         json_str = json.dumps(settings.__dict__)
         await call_sync_from_async(self.file_store.write, self.path, json_str)
-
-    async def get_default_settings(self) -> Settings | None:
-        """Get a set of default settings. Classes which override this may provide reasonable defaults, and even persist settings"""
-        return Settings.from_config()
 
     @classmethod
     async def get_instance(
