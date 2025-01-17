@@ -45,6 +45,11 @@ export function handleObservationMessage(message: ObservationMessage) {
           body: "Agent is awaiting user input...",
           icon: "/favicon.ico",
         });
+      } else if (message.extras.agent_state === AgentState.FINISHED) {
+        sendNotification("OpenHands", {
+          body: "Task completed successfully!",
+          icon: "/favicon.ico",
+        });
       }
       break;
     case ObservationType.DELEGATE:

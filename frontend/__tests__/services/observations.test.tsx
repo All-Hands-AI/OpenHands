@@ -34,6 +34,24 @@ describe('handleObservationMessage', () => {
     });
   });
 
+  it('should trigger notification when agent state changes to FINISHED', () => {
+    const message = {
+      observation: 'agent_state_changed',
+      extras: {
+        agent_state: AgentState.FINISHED,
+      },
+      message: 'Agent state changed',
+      content: '',
+    };
+
+    handleObservationMessage(message);
+
+    expect(sendNotification).toHaveBeenCalledWith('OpenHands', {
+      body: 'Task completed successfully!',
+      icon: '/favicon.ico',
+    });
+  });
+
   it('should not trigger notification for other agent states', () => {
     const message = {
       observation: 'agent_state_changed',
