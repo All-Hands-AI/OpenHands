@@ -922,3 +922,25 @@ def test_stress_long_output_with_soft_and_hard_timeout(
 
     finally:
         _close_test_runtime(runtime)
+
+
+def test_bash_remove_prefix(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # create a git repo
+        action = CmdRunAction(
+            'git init && git remote add origin https://github.com/All-Hands-AI/OpenHands'
+        )
+        obs = runtime.run_action(action)
+        # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.metadata.exit_code == 0
+
+        # Start Python with the interactive script
+        obs = runtime.run_action(CmdRunAction('git remote -v'))
+        # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.metadata.exit_code == 0
+        assert 'https://github.com/All-Hands-AI/OpenHands' in obs.content
+        assert 'git remote -v' not in obs.content
+
+    finally:
+        _close_test_runtime(runtime)
