@@ -430,7 +430,6 @@ def process_instance(
         )
 
         # if fatal error, throw EvalError to trigger re-run
-        logger.info(f'Evaluation state.last_error: {state.last_error}')
         if is_fatal_evaluation_error(state.last_error):
             raise EvalException('Fatal error detected: ' + state.last_error)
 
