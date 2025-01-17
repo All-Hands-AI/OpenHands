@@ -133,6 +133,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 'message': str(e),
                 'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND',
             },
+            status_code=400,
         )
 
     except LLMAuthenticationError as e:
@@ -142,6 +143,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 'message': str(e),
                 'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
             },
+            status_code=400,
         )
 
 
