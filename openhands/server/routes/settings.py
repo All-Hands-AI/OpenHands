@@ -52,6 +52,7 @@ async def store_settings(
     request: Request,
     settings: Settings,
 ) -> JSONResponse:
+    # Check if token is valid
     if settings.github_token:
         try:
             github = GitHubService(settings.github_token)
