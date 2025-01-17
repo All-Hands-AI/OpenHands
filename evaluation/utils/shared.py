@@ -564,6 +564,7 @@ def is_fatal_evaluation_error(error: str | None) -> bool:
         AgentRuntimeNotReadyError,
         AgentRuntimeDisconnectedError,
         AgentRuntimeNotFoundError,
+        ConnectionError,
     ]
 
     if any(exception.__name__ in error for exception in FATAL_EXCEPTIONS):
