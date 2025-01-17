@@ -101,7 +101,7 @@ In this example:
 - Code generation uses GPT-4 with a higher token limit for generating larger code blocks
 - The default configuration remains available for other tasks
 
-# Predefined Custom Configurations
+# Custom Configurations with Reserved Names
 
 OpenHands can use predefined custom named LLM configurations for specific use cases. If you specify the model and other settings under the predefined names, then OpenHands will load and them for a specific purpose. As of now, one such configuration is implemented: draft editor.
 
