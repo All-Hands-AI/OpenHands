@@ -98,7 +98,7 @@ jobs:
           TEST_RUNTIME=local \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
-          poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --ignore=tests/runtime/test_stress_docker_runtime.py --ignore=tests/runtime/test_images.py
+          poetry run pytest -n 1 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --ignore=tests/runtime/test_stress_docker_runtime.py --ignore=tests/runtime/test_images.py
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         env:
