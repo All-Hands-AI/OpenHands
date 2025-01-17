@@ -56,6 +56,7 @@ jobs:
           LLM_MODEL: "litellm_proxy/claude-3-5-haiku-20241022"
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          MAX_ITERATIONS: 10
         run: |
           echo "[llm.eval]" > config.toml
           echo "model = \"$LLM_MODEL\"" >> config.toml
@@ -70,7 +71,7 @@ jobs:
         env:
           SANDBOX_FORCE_REBUILD_RUNTIME: True
         run: |
-          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES '' 'haiku_run'
+          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' 10 $N_PROCESSES '' 'haiku_run'
 
           # get integration tests report
           REPORT_FILE_HAIKU=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/*haiku*_maxiter_10_N* -name "report.md" -type f | head -n 1)
@@ -88,6 +89,7 @@ jobs:
           LLM_MODEL: "litellm_proxy/deepseek-chat"
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          MAX_ITERATIONS: 10
         run: |
           echo "[llm.eval]" > config.toml
           echo "model = \"$LLM_MODEL\"" >> config.toml
@@ -99,7 +101,7 @@ jobs:
         env:
           SANDBOX_FORCE_REBUILD_RUNTIME: True
         run: |
-          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES '' 'deepseek_run'
+          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' 10 $N_PROCESSES '' 'deepseek_run'
 
           # get integration tests report
           REPORT_FILE_DEEPSEEK=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/deepseek*_maxiter_10_N* -name "report.md" -type f | head -n 1)
@@ -109,11 +111,75 @@ jobs:
           echo >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
+      # -------------------------------------------------------------
+      # Run DelegatorAgent tests for Haiku, limited to t01 and t02
+      - name: Wait a little bit (again)
+        run: sleep 5
+
+      - name: Configure config.toml for testing DelegatorAgent (Haiku)
+        env:
+          LLM_MODEL: "litellm_proxy/claude-3-5-haiku-20241022"
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          MAX_ITERATIONS: 30
+        run: |
+          echo "[llm.eval]" > config.toml
+          echo "model = \"$LLM_MODEL\"" >> config.toml
+          echo "api_key = \"$LLM_API_KEY\"" >> config.toml
+          echo "base_url = \"$LLM_BASE_URL\"" >> config.toml
+          echo "temperature = 0.0" >> config.toml
+
+      - name: Run integration test evaluation for DelegatorAgent (Haiku)
+        env:
+          SANDBOX_FORCE_REBUILD_RUNTIME: True
+        run: |
+          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD DelegatorAgent '' 30 $N_PROCESSES "t01_fix_simple_typo,t02_add_bash_hello" 'delegator_haiku_run'
+
+          # Find and export the delegator test results
+          REPORT_FILE_DELEGATOR_HAIKU=$(find evaluation/evaluation_outputs/outputs/integration_tests/DelegatorAgent/*haiku*_maxiter_30_N* -name "report.md" -type f | head -n 1)
+          echo "REPORT_FILE_DELEGATOR_HAIKU: $REPORT_FILE_DELEGATOR_HAIKU"
+          echo "INTEGRATION_TEST_REPORT_DELEGATOR_HAIKU<<EOF" >> $GITHUB_ENV
+          cat $REPORT_FILE_DELEGATOR_HAIKU >> $GITHUB_ENV
+          echo >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      # -------------------------------------------------------------
+      # Run DelegatorAgent tests for DeepSeek, limited to t01 and t02
+      - name: Wait a little bit (again)
+        run: sleep 5
+
+      - name: Configure config.toml for testing DelegatorAgent (DeepSeek)
+        env:
+          LLM_MODEL: "litellm_proxy/deepseek-chat"
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          MAX_ITERATIONS: 30
+        run: |
+          echo "[llm.eval]" > config.toml
+          echo "model = \"$LLM_MODEL\"" >> config.toml
+          echo "api_key = \"$LLM_API_KEY\"" >> config.toml
+          echo "base_url = \"$LLM_BASE_URL\"" >> config.toml
+          echo "temperature = 0.0" >> config.toml
+
+      - name: Run integration test evaluation for DelegatorAgent (DeepSeek)
+        env:
+          SANDBOX_FORCE_REBUILD_RUNTIME: True
+        run: |
+          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD DelegatorAgent '' 30 $N_PROCESSES "t01_fix_simple_typo,t02_add_bash_hello" 'delegator_deepseek_run'
+
+          # Find and export the delegator test results
+          REPORT_FILE_DELEGATOR_DEEPSEEK=$(find evaluation/evaluation_outputs/outputs/integration_tests/DelegatorAgent/deepseek*_maxiter_30_N* -name "report.md" -type f | head -n 1)
+          echo "REPORT_FILE_DELEGATOR_DEEPSEEK: $REPORT_FILE_DELEGATOR_DEEPSEEK"
+          echo "INTEGRATION_TEST_REPORT_DELEGATOR_DEEPSEEK<<EOF" >> $GITHUB_ENV
+          cat $REPORT_FILE_DELEGATOR_DEEPSEEK >> $GITHUB_ENV
+          echo >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Create archive of evaluation outputs
         run: |
           TIMESTAMP=$(date +'%y-%m-%d-%H-%M')
           cd evaluation/evaluation_outputs/outputs  # Change to the outputs directory
-          tar -czvf ../../../integration_tests_${TIMESTAMP}.tar.gz integration_tests/CodeActAgent/*  # Only include the actual result directories
+          tar -czvf ../../../integration_tests_${TIMESTAMP}.tar.gz integration_tests/CodeActAgent/* integration_tests/DelegatorAgent/*  # Only include the actual result directories
 
       - name: Upload evaluation results as artifact
         uses: actions/upload-artifact@v4
@@ -154,5 +220,11 @@ jobs:
               **Integration Tests Report (DeepSeek)**
               DeepSeek LLM Test Results:
               ${{ env.INTEGRATION_TEST_REPORT_DEEPSEEK }}
+              ---
+                **Integration Tests Report Delegator (Haiku)**
+              ${{ env.INTEGRATION_TEST_REPORT_DELEGATOR_HAIKU }}
+              ---
+              **Integration Tests Report Delegator (DeepSeek)**
+              ${{ env.INTEGRATION_TEST_REPORT_DELEGATOR_DEEPSEEK }}
               ---
               Download testing outputs (includes both Haiku and DeepSeek results): [Download](${{ steps.upload_results_artifact.outputs.artifact-url }})

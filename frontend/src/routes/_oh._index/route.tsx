@@ -1,6 +1,8 @@
 import React from "react";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import posthog from "posthog-js";
+import { I18nKey } from "#/i18n/declaration";
 import { setImportedProjectZip } from "#/state/initial-query-slice";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
@@ -13,6 +15,7 @@ import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
 
 function Home() {
+  const { t } = useTranslation();
   const { gitHubToken } = useAuth();
   const dispatch = useDispatch();
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -59,12 +62,12 @@ function Home() {
       {latestConversation && (
         <div className="flex gap-4 w-full text-center mt-8">
           <p className="text-center w-full">
-            Or&nbsp;
+            {t(I18nKey.LANDING$OR)}&nbsp;
             <a
               className="underline"
               href={`/conversations/${latestConversation}`}
             >
-              jump back to your most recent conversation
+              {t(I18nKey.LANDING$RECENT_CONVERSATION)}
             </a>
           </p>
         </div>

@@ -1,5 +1,5 @@
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
@@ -130,7 +130,7 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
 
 
 @pytest.mark.asyncio
-async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
+async def test_run_controller_with_fatal_error():
     config = AppConfig()
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(sid='test', file_store=file_store)
@@ -237,55 +237,6 @@ async def test_run_controller_stop_with_stuck():
 
     assert state.agent_state == AgentState.ERROR
     assert state.last_error == 'AgentStuckInLoopError: Agent got stuck in a loop'
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    'delegate_state',
-    [
-        AgentState.RUNNING,
-        AgentState.FINISHED,
-        AgentState.ERROR,
-        AgentState.REJECTED,
-    ],
-)
-async def test_delegate_step_different_states(
-    mock_agent, mock_event_stream, delegate_state
-):
-    controller = AgentController(
-        agent=mock_agent,
-        event_stream=mock_event_stream,
-        max_iterations=10,
-        sid='test',
-        confirmation_mode=False,
-        headless_mode=True,
-    )
-
-    mock_delegate = AsyncMock()
-    controller.delegate = mock_delegate
-
-    mock_delegate.state.iteration = 5
-    mock_delegate.state.outputs = {'result': 'test'}
-    mock_delegate.agent.name = 'TestDelegate'
-
-    mock_delegate.get_agent_state = Mock(return_value=delegate_state)
-    mock_delegate._step = AsyncMock()
-    mock_delegate.close = AsyncMock()
-
-    await controller._delegate_step()
-
-    mock_delegate._step.assert_called_once()
-
-    if delegate_state == AgentState.RUNNING:
-        assert controller.delegate is not None
-        assert controller.state.iteration == 0
-        mock_delegate.close.assert_not_called()
-    else:
-        assert controller.delegate is None
-        assert controller.state.iteration == 5
-        mock_delegate.close.assert_called_once()
-
-    await controller.close()
 
 
 @pytest.mark.asyncio

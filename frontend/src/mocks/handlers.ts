@@ -6,7 +6,7 @@ import {
 } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 
-const userPreferences = {
+export const MOCK_USER_PREFERENCES = {
   settings: {
     llm_model: DEFAULT_SETTINGS.LLM_MODEL,
     llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
@@ -169,14 +169,14 @@ export const handlers = [
     return HttpResponse.json(config);
   }),
   http.get("/api/settings", async () =>
-    HttpResponse.json(userPreferences.settings),
+    HttpResponse.json(MOCK_USER_PREFERENCES.settings),
   ),
   http.post("/api/settings", async ({ request }) => {
     const body = await request.json();
 
     if (body) {
-      userPreferences.settings = {
-        ...userPreferences.settings,
+      MOCK_USER_PREFERENCES.settings = {
+        ...MOCK_USER_PREFERENCES.settings,
         // @ts-expect-error - We know this is a settings object
         ...body,
       };
