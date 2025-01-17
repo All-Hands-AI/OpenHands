@@ -103,7 +103,7 @@ In this example:
 
 # Predefined Custom Configurations
 
-OpenHands comes with several predefined custom LLM configurations that are optimized for specific use cases. These configurations can be used directly or serve as templates for your own custom configurations.
+OpenHands can use predefined custom named LLM configurations for specific use cases. If you specify the model and other settings under the predefined names, then OpenHands will load and them for a specific purpose. As of now, one such configuration is implemented: draft editor.
 
 ## Draft Editor Configuration
 
