@@ -372,6 +372,11 @@ class RemoteRuntime(ActionExecutionClient):
             )
             raise
 
+    @tenacity.retry(
+        retry=tenacity.retry_if_exception_type(ConnectionError),
+        stop=tenacity.stop_after_attempt(3) | stop_if_should_exit(),
+        wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
+    )
     def _send_action_server_request(self, method, url, **kwargs):
         try:
             return super()._send_action_server_request(method, url, **kwargs)
