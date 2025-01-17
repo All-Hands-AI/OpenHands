@@ -107,7 +107,7 @@ OpenHands can use predefined custom named LLM configurations for specific use ca
 
 ## Draft Editor Configuration
 
-The `draft_editor` configuration is optimized for tasks that involve editing and refining code or text. It uses parameters that balance between creativity and precision, making it ideal for tasks like code review suggestions, documentation improvements, and text refinement.
+The `draft_editor` configuration is a group of settings you can provide, to specify the model to use for preliminary drafting of code edits, for any tasks that involve editing and refining code. You need to provide it under the section `[llm.draft_editor]`.
 
 ```toml
 [llm.draft_editor]
