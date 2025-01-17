@@ -4,9 +4,15 @@ import {
   Conversation,
   ResultSet,
 } from "#/api/open-hands.types";
-import { ApiSettings, DEFAULT_SETTINGS } from "#/services/settings";
+import {
+  ApiSettings,
+  DEFAULT_SETTINGS,
+  PostApiSettings,
+} from "#/services/settings";
 
-export const MOCK_USER_PREFERENCES: { settings: ApiSettings } = {
+export const MOCK_USER_PREFERENCES: {
+  settings: ApiSettings | PostApiSettings;
+} = {
   settings: {
     llm_model: DEFAULT_SETTINGS.LLM_MODEL,
     llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
@@ -172,9 +178,10 @@ export const handlers = [
     return HttpResponse.json(config);
   }),
   http.get("/api/settings", async () => {
-    const settings = {
+    const settings: ApiSettings = {
       ...MOCK_USER_PREFERENCES.settings,
     };
+    // @ts-expect-error - mock types
     if (settings.github_token) settings.github_token_is_set = true;
 
     return HttpResponse.json(settings);
@@ -183,11 +190,11 @@ export const handlers = [
     const body = await request.json();
 
     if (body) {
-      let newSettings: Partial<ApiSettings> = {};
+      let newSettings: Partial<PostApiSettings> = {};
       if (typeof body === "object") {
         newSettings = { ...body };
         if (newSettings.unset_github_token) {
-          newSettings.github_token = null;
+          newSettings.github_token = undefined;
           newSettings.github_token_is_set = false;
           delete newSettings.unset_github_token;
         }

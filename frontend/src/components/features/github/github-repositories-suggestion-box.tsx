@@ -5,7 +5,6 @@ import { SuggestionBox } from "#/components/features/suggestions/suggestion-box"
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import { GitHubRepositorySelector } from "./github-repo-selector";
 import { ModalButton } from "#/components/shared/buttons/modal-button";
-import { isGitHubErrorReponse } from "#/api/github-axios-instance";
 import { useAppRepositories } from "#/hooks/query/use-app-repositories";
 import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
@@ -50,7 +49,7 @@ export function GitHubRepositoriesSuggestionBox({
     }
   };
 
-  const isLoggedIn = !!user && !isGitHubErrorReponse(user);
+  const isLoggedIn = !!user;
 
   return (
     <>
