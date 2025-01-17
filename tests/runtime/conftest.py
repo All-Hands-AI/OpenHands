@@ -3,7 +3,6 @@ import random
 import shutil
 import stat
 import time
-from pathlib import Path
 
 import pytest
 from pytest import TempPathFactory
@@ -37,13 +36,6 @@ def _get_runtime_sid(runtime: Runtime) -> str:
 
 def _get_host_folder(runtime: Runtime) -> str:
     return runtime.config.workspace_mount_path
-
-
-def _get_sandbox_folder(runtime: Runtime) -> Path | None:
-    sid = _get_runtime_sid(runtime)
-    if sid:
-        return Path(os.path.join(sandbox_test_folder, sid))
-    return None
 
 
 def _remove_folder(folder: str) -> bool:
@@ -279,6 +271,5 @@ def _load_runtime(
 __all__ = [
     '_load_runtime',
     '_get_host_folder',
-    '_get_sandbox_folder',
     '_remove_folder',
 ]

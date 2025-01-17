@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 from conftest import (
     _close_test_runtime,
-    _get_sandbox_folder,
     _load_runtime,
 )
 
@@ -302,7 +301,7 @@ def _create_test_file(host_temp_dir):
 def test_copy_single_file(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
-        sandbox_dir = _get_sandbox_folder(runtime)
+        sandbox_dir = config.workspace_mount_path_in_sandbox
         sandbox_file = os.path.join(sandbox_dir, 'test_file.txt')
         _create_test_file(temp_dir)
         runtime.copy_to(os.path.join(temp_dir, 'test_file.txt'), sandbox_dir)
@@ -332,7 +331,7 @@ def _create_host_test_dir_with_files(test_dir):
 def test_copy_directory_recursively(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls)
 
-    sandbox_dir = _get_sandbox_folder(runtime)
+    sandbox_dir = config.workspace_mount_path_in_sandbox
     try:
         temp_dir_copy = os.path.join(temp_dir, 'test_dir')
         # We need a separate directory, since temp_dir is mounted to /workspace
@@ -361,7 +360,7 @@ def test_copy_directory_recursively(temp_dir, runtime_cls):
 def test_copy_to_non_existent_directory(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
-        sandbox_dir = _get_sandbox_folder(runtime)
+        sandbox_dir = config.workspace_mount_path_in_sandbox
         _create_test_file(temp_dir)
         runtime.copy_to(
             os.path.join(temp_dir, 'test_file.txt'), f'{sandbox_dir}/new_dir'
@@ -405,7 +404,7 @@ def test_overwrite_existing_file(temp_dir, runtime_cls):
 def test_copy_non_existent_file(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
-        sandbox_dir = _get_sandbox_folder(runtime)
+        sandbox_dir = config.workspace_mount_path_in_sandbox
         with pytest.raises(FileNotFoundError):
             runtime.copy_to(
                 os.path.join(sandbox_dir, 'non_existent_file.txt'),
