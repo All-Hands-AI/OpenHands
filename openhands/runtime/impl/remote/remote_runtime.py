@@ -350,12 +350,13 @@ class RemoteRuntime(ActionExecutionClient):
             super().close()
             return
         try:
-            with self._send_runtime_api_request(
-                'POST',
-                f'{self.config.sandbox.remote_runtime_api_url}/stop',
-                json={'runtime_id': self.runtime_id},
-            ):
-                self.log('debug', 'Runtime stopped.')
+            if not self._runtime_closed:
+                with self._send_runtime_api_request(
+                    'POST',
+                    f'{self.config.sandbox.remote_runtime_api_url}/stop',
+                    json={'runtime_id': self.runtime_id},
+                ):
+                    self.log('debug', 'Runtime stopped.')
         except Exception as e:
             raise e
         finally:
