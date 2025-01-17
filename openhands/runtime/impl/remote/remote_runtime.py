@@ -382,12 +382,12 @@ class RemoteRuntime(ActionExecutionClient):
             raise
 
         except requests.HTTPError as e:
-            if e.response.status_code in (404, 502):
+            if e.response.status_code in (404, 502, 504):
                 if e.response.status_code == 404:
                     raise AgentRuntimeDisconnectedError(
                         'Runtime is not responding. This may be temporary, please try again.'
                     ) from e
-                else:  # 502
+                else:  # 502, 504
                     raise AgentRuntimeDisconnectedError(
                         'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again.'
                     ) from e
