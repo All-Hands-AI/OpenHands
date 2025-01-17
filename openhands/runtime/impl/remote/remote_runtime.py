@@ -386,11 +386,11 @@ class RemoteRuntime(ActionExecutionClient):
             if e.response.status_code in (404, 502, 504):
                 if e.response.status_code == 404:
                     raise AgentRuntimeDisconnectedError(
-                        'Runtime is not responding. This may be temporary, please try again.'
+                        f'Runtime is not responding. This may be temporary, please try again. Original error: {e}'
                     ) from e
                 else:  # 502, 504
                     raise AgentRuntimeDisconnectedError(
-                        'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again.'
+                        f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
                     ) from e
             elif e.response.status_code == 503:
                 self.log('warning', 'Runtime appears to be paused. Resuming...')
