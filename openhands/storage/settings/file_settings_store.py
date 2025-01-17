@@ -39,7 +39,7 @@ class FileSettingsStore(SettingsStore):
         security = app_config.security
         settings = Settings(
             language='en',
-            agent=llm_config.model,
+            agent=app_config.default_agent,
             max_iterations=app_config.max_iterations,
             security_analyzer=security.security_analyzer,
             confirmation_mode=security.confirmation_mode,
