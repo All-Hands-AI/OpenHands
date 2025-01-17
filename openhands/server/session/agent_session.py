@@ -1,5 +1,4 @@
 import asyncio
-import time
 from typing import Callable, Optional
 
 from openhands.controller import AgentController
@@ -17,10 +16,10 @@ from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.async_utils import call_async_from_sync, call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
 
-WAIT_TIME_BEFORE_CLOSE = 90
+WAIT_TIME_BEFORE_CLOSE = 300
 WAIT_TIME_BEFORE_CLOSE_INTERVAL = 5
 
 
@@ -37,8 +36,7 @@ class AgentSession:
     controller: AgentController | None = None
     runtime: Runtime | None = None
     security_analyzer: SecurityAnalyzer | None = None
-    _starting: bool = False
-    _started_at: float = 0
+    _initializing: bool = False
     _closed: bool = False
     loop: asyncio.AbstractEventLoop | None = None
 
@@ -90,8 +88,7 @@ class AgentSession:
         if self._closed:
             logger.warning('Session closed before starting')
             return
-        self._starting = True
-        self._started_at = time.time()
+        self._initializing = True
         self._create_security_analyzer(config.security.security_analyzer)
         await self._create_runtime(
             runtime_name=runtime_name,
@@ -112,19 +109,24 @@ class AgentSession:
         self.event_stream.add_event(
             ChangeAgentStateAction(AgentState.INIT), EventSource.ENVIRONMENT
         )
-        self._starting = False
+        self._initializing = False
 
-    async def close(self):
+    def close(self):
         """Closes the Agent session"""
         if self._closed:
             return
         self._closed = True
-        while self._starting and should_continue():
+        call_async_from_sync(self._close)
+
+    async def _close(self):
+        seconds_waited = 0
+        while self._initializing and should_continue():
             logger.debug(
                 f'Waiting for initialization to finish before closing session {self.sid}'
             )
             await asyncio.sleep(WAIT_TIME_BEFORE_CLOSE_INTERVAL)
-            if time.time() <= self._started_at + WAIT_TIME_BEFORE_CLOSE:
+            seconds_waited += WAIT_TIME_BEFORE_CLOSE_INTERVAL
+            if seconds_waited > WAIT_TIME_BEFORE_CLOSE:
                 logger.error(
                     f'Waited too long for initialization to finish before closing session {self.sid}'
                 )
@@ -309,12 +311,3 @@ class AgentSession:
             else:
                 logger.debug('No events found, no state to restore')
         return restored_state
-
-    def get_state(self) -> AgentState | None:
-        controller = self.controller
-        if controller:
-            return controller.state.agent_state
-        if time.time() > self._started_at + WAIT_TIME_BEFORE_CLOSE:
-            # If 5 minutes have elapsed and we still don't have a controller, something has gone wrong
-            return AgentState.ERROR
-        return None

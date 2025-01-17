@@ -19,6 +19,7 @@ from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.runtime.base import Runtime
+from openhands.storage import get_file_store
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -131,7 +132,7 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
 @pytest.mark.asyncio
 async def test_run_controller_with_fatal_error():
     config = AppConfig()
-    file_store = InMemoryFileStore({})
+    file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(sid='test', file_store=file_store)
 
     agent = MagicMock(spec=Agent)
@@ -166,12 +167,11 @@ async def test_run_controller_with_fatal_error():
         fake_user_response_fn=lambda _: 'repeat',
     )
     print(f'state: {state}')
-    events = list(event_stream.get_events())
-    print(f'event_stream: {events}')
+    print(f'event_stream: {list(event_stream.get_events())}')
     assert state.iteration == 4
     assert state.agent_state == AgentState.ERROR
     assert state.last_error == 'AgentStuckInLoopError: Agent got stuck in a loop'
-    assert len(events) == 11
+    assert len(list(event_stream.get_events())) == 11
 
 
 @pytest.mark.asyncio
