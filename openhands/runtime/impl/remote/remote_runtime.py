@@ -60,12 +60,6 @@ class RemoteRuntime(ActionExecutionClient):
             )
         self.session.headers.update({'X-API-Key': self.config.sandbox.api_key})
 
-        if self.config.workspace_base is not None:
-            self.log(
-                'debug',
-                'Setting workspace_base is not supported in the remote runtime.',
-            )
-
         self.runtime_builder = RemoteRuntimeBuilder(
             self.config.sandbox.remote_runtime_api_url,
             self.config.sandbox.api_key,
@@ -75,6 +69,12 @@ class RemoteRuntime(ActionExecutionClient):
         self.runtime_url: str | None = None
         self.available_hosts: dict[str, int] = {}
         self._runtime_initialized: bool = False
+
+        if self.config.workspace_base is not None:
+            self.log(
+                'debug',
+                'Setting workspace_base is not supported in the remote runtime.',
+            )
 
     def log(self, level: str, message: str) -> None:
         message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
