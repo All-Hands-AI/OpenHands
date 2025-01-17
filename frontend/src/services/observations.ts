@@ -10,6 +10,7 @@ import {
   addAssistantMessage,
   addAssistantObservation,
 } from "#/state/chat-slice";
+import { sendNotification } from "./notification";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
@@ -39,6 +40,12 @@ export function handleObservationMessage(message: ObservationMessage) {
       break;
     case ObservationType.AGENT_STATE_CHANGED:
       store.dispatch(setCurrentAgentState(message.extras.agent_state));
+      if (message.extras.agent_state === AgentState.AWAITING_USER_INPUT) {
+        sendNotification("OpenHands", {
+          body: "Agent is awaiting user input...",
+          icon: "/favicon.ico",
+        });
+      }
       break;
     case ObservationType.DELEGATE:
       // TODO: better UI for delegation result (#2309)
