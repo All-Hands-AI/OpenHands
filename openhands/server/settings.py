@@ -23,7 +23,7 @@ class Settings:
     remote_runtime_resource_factor: int | None = None
 
     @staticmethod
-    def get_default() -> Settings | None:
+    def from_config() -> Settings | None:
         app_config = load_app_config()
         llm_config: LLMConfig = app_config.get_llm_config()
         if llm_config.api_key is None:
