@@ -2571,6 +2571,21 @@
         "no": "+ Importer prosjekt",
         "tr": "Proje içe aktar"
     },
+    "LANDING$REPLAY": {
+        "en": "+ Replay",
+        "ja": "+ Replay",
+        "zh-CN": "+ Replay",
+        "zh-TW": "+ Replay",
+        "ko-KR": "+ Replay",
+        "fr": "+ Replay",
+        "es": "+ Replay",
+        "de": "+ Replay",
+        "it": "+ Replay",
+        "pt": "+ Replay",
+        "ar": "+ Replay",
+        "no": "+ Replay",
+        "tr": "+ Replay"
+    },
     "LANDING$UPLOAD_ZIP": {
         "en": "Upload a .zip",
         "ja": ".zipファイルをアップロード",
@@ -2585,6 +2600,20 @@
         "ar": "تحميل ملف .zip",
         "no": "Last opp en .zip",
         "tr": "ZIP yükle"
+    },
+    "LANDING$UPLOAD_TRAJECTORY": {
+        "en": "Upload a trajectory json file",
+        "zh-CN": "Upload a trajectory json file",
+        "zh-TW": "Upload a trajectory json file",
+        "ko-KR": "Upload a trajectory json file",
+        "fr": "Upload a trajectory json file",
+        "es": "Upload a trajectory json file",
+        "de": "Upload a trajectory json file",
+        "it": "Upload a trajectory json file",
+        "pt": "Upload a trajectory json file",
+        "ar": "Upload a trajectory json file",
+        "no": "Upload a trajectory json file",
+        "tr": "Upload a trajectory json file"
     },
     "LANDING$RECENT_CONVERSATION": {
         "en": "jump back to your most recent conversation",

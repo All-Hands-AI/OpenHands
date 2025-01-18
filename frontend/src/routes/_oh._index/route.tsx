@@ -3,16 +3,18 @@ import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import posthog from "posthog-js";
 import { I18nKey } from "#/i18n/declaration";
-import { setImportedProjectZip } from "#/state/initial-query-slice";
+import { setImportedProjectZip, setReplayJson } from "#/state/initial-query-slice";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
 import { useAuth } from "#/context/auth-context";
 import { ImportProjectSuggestionBox } from "../../components/features/suggestions/import-project-suggestion-box";
+import { ReplaySuggestionBox } from "../../components/features/suggestions/replay-suggestion-box";
 import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
+import { convertFileToText } from "#/utils/convert-file-to-text";
 
 function Home() {
   const { t } = useTranslation();
@@ -51,6 +53,18 @@ function Home() {
                 const zip = event.target.files[0];
                 dispatch(setImportedProjectZip(await convertZipToBase64(zip)));
                 posthog.capture("zip_file_uploaded");
+                formRef.current?.requestSubmit();
+              } else {
+                // TODO: handle error
+              }
+            }}
+          />
+          <ReplaySuggestionBox
+            onChange={async (event) => {
+              if (event.target.files) {
+                const json = event.target.files[0];
+                dispatch(setReplayJson(await convertFileToText(json)));
+                posthog.capture("json_file_uploaded");
                 formRef.current?.requestSubmit();
               } else {
                 // TODO: handle error

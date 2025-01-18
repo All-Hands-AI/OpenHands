@@ -5,6 +5,7 @@ type SliceState = {
   initialQuery: string | null;
   selectedRepository: string | null;
   importedProjectZip: string | null; // base64 encoded zip
+  replayJson: string | null;
 };
 
 const initialState: SliceState = {
@@ -12,6 +13,7 @@ const initialState: SliceState = {
   initialQuery: null,
   selectedRepository: null,
   importedProjectZip: null,
+  replayJson: null,
 };
 
 export const selectedFilesSlice = createSlice({
@@ -42,6 +44,9 @@ export const selectedFilesSlice = createSlice({
     setImportedProjectZip(state, action: PayloadAction<string | null>) {
       state.importedProjectZip = action.payload;
     },
+    setReplayJson(state, action: PayloadAction<string | null>) {
+      state.replayJson = action.payload;
+    },
   },
 });
 
@@ -54,5 +59,6 @@ export const {
   setSelectedRepository,
   clearSelectedRepository,
   setImportedProjectZip,
+  setReplayJson,
 } = selectedFilesSlice.actions;
 export default selectedFilesSlice.reducer;
