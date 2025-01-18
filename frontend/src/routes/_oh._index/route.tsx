@@ -3,7 +3,10 @@ import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import posthog from "posthog-js";
 import { I18nKey } from "#/i18n/declaration";
-import { setImportedProjectZip, setReplayJson } from "#/state/initial-query-slice";
+import {
+  setImportedProjectZip,
+  setReplayJson,
+} from "#/state/initial-query-slice";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";

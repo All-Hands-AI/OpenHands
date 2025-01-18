@@ -6,15 +6,16 @@ interface ReplaySuggestionBoxProps {
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export function ReplaySuggestionBox({
-  onChange,
-}: ReplaySuggestionBoxProps) {
+export function ReplaySuggestionBox({ onChange }: ReplaySuggestionBoxProps) {
   const { t } = useTranslation();
   return (
     <SuggestionBox
       title={t(I18nKey.LANDING$REPLAY)}
       content={
-        <label htmlFor="import-trajectory" className="w-full flex justify-center">
+        <label
+          htmlFor="import-trajectory"
+          className="w-full flex justify-center"
+        >
           <span className="border-2 border-dashed border-neutral-600 rounded px-2 py-1 cursor-pointer">
             {t(I18nKey.LANDING$UPLOAD_TRAJECTORY)}
           </span>
