@@ -55,6 +55,11 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Default: `"./trajectories"`
   - Description: Path to store trajectories (can be a folder or a file). If it's a folder, the trajectories will be saved in a file named with the session id name and .json extension, in that folder.
 
+- `replay_trajectory_path`
+  - Type: `str`
+  - Default: `""`
+  - Description: Path to load a trajectory and replay. If given, must be a path to the trajectory file in JSON format. The actions in the trajectory file would be replayed first before any user instruction is executed.
+
 ### File Store
 - `file_store_path`
   - Type: `str`
