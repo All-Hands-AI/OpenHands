@@ -3,6 +3,7 @@ import { RootState } from "#/store";
 import { BrowserSnapshot } from "./browser-snapshot";
 import { EmptyBrowserMessage } from "./empty-browser-message";
 
+import { ReadmeDisplay } from '../readme-display';
 export function BrowserPanel() {
   const { url, screenshotSrc } = useSelector(
     (state: RootState) => state.browser,
@@ -26,5 +27,8 @@ export function BrowserPanel() {
         )}
       </div>
     </div>
+      <button onClick={handleReadmeButtonClick} className="p-2 m-2 bg-blue-500 text-white rounded">
+        Show README Files
+      </button>
   );
 }
