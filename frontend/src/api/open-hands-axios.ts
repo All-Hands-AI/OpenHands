@@ -54,6 +54,8 @@ export const setupOpenhandsAxiosInterceptors = (
     // Pass successful responses through
     (response) => {
       const parsedData = response.data;
+      console.log("Openhands API call response:")
+      console.log(parsedData)
       if (isKeycloakErrorResponse(parsedData)) {
         const error = new AxiosError(
           "Failed",
