@@ -21,9 +21,7 @@ class Settings(BaseModel):
     def llm_api_key_serializer(self, llm_api_key: SecretStr, info: SerializationInfo):
         """Custom serializer for the LLM API key.
 
-        To serialize the API key instead of ********, set expose_secrets to True in the serialization context. For example:
-
-        settings.model_dump_json(context={'expose_secrets': True})
+        To serialize the API key instead of ********, set expose_secrets to True in the serialization context.
         """
         context = info.context
         if context and context.get('expose_secrets', False):
