@@ -154,7 +154,6 @@ class LocalRuntime(ActionExecutionClient):
         self._app_ports: list[int] = []
 
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._host_port}'
-        self.session = requests.Session()
         self.status_callback = status_callback
         self.server_process: Optional[subprocess.Popen[str]] = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
