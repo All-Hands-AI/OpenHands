@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -36,7 +37,13 @@ class FileConversationStore(ConversationStore):
     async def get_metadata(self, conversation_id: str) -> ConversationMetadata:
         path = self.get_conversation_metadata_filename(conversation_id)
         json_str = await call_sync_from_async(self.file_store.read, path)
-        result = conversation_metadata_type_adapter.validate_json(json_str)
+
+        # Temp: force int to str to stop pydandic being, well... pedantic
+        json_obj = json.loads(json_str)
+        if isinstance(json_obj.get('github_user_id'), int):
+            json_obj['github_user_id'] = str(json_obj.get('github_user_id'))
+
+        result = conversation_metadata_type_adapter.validate_python(json_obj)
         return result
 
     async def delete_metadata(self, conversation_id: str) -> None:
@@ -76,10 +83,8 @@ class FileConversationStore(ConversationStore):
             try:
                 conversations.append(await self.get_metadata(conversation_id))
             except Exception:
-                logger.warning(
+                logger.error(
                     f'Error loading conversation: {conversation_id}',
-                    exc_info=True,
-                    stack_info=True,
                 )
         conversations.sort(key=_sort_key, reverse=True)
         conversations = conversations[start:end]
@@ -94,7 +99,7 @@ class FileConversationStore(ConversationStore):
 
     @classmethod
     async def get_instance(
-        cls, config: AppConfig, user_id: int | None
+        cls, config: AppConfig, user_id: str | None
     ) -> FileConversationStore:
         file_store = get_file_store(config.file_store, config.file_store_path)
         return FileConversationStore(file_store)

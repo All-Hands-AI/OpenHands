@@ -195,8 +195,8 @@ class BrowserEnv:
                     self.process.join(5)  # Wait for the process to terminate
             self.agent_side.close()
             self.browser_side.close()
-        except Exception:
-            logger.error('Encountered an error when closing browser env', exc_info=True)
+        except Exception as e:
+            logger.error(f'Encountered an error when closing browser env: {e}')
 
     @staticmethod
     def image_to_png_base64_url(
