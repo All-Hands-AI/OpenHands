@@ -373,7 +373,9 @@ def test_stress_remote_runtime_long_output_with_soft_and_hard_timeout():
             assert obs.exit_code == 0
 
             # run stress-ng stress tests for 1 minute
-            action = CmdRunAction(command='stress-ng --all 1 -t 1m')
+            action = CmdRunAction(
+                command='stress-ng --cpu 4 --vm 2 --hdd 1 --fork 8 --timeout 1m --metrics'
+            )
             action.set_hard_timeout(120)
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
