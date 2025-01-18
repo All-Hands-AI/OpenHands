@@ -204,6 +204,7 @@ class OpenHands {
         },
       }
     );
+    console.log(`/api/github/callback response data: ${data}`)
     return data;
   }
 

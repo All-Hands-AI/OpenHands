@@ -38,6 +38,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   );
 
   const clearAccessTokens = () => {
+    console.log("clearAccessTokens")
     setGitHubTokenState(null);
     setKeycloakTokenState(null);
     setUserIdState("");
@@ -50,6 +51,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   };
 
   const setAccessTokens = (gitHubToken: string | null, keycloakToken: string | null) => {
+    console.log(`setAccessTokens keycloakToken: ${keycloakToken}`)
     setGitHubTokenState(gitHubToken);
     setKeycloakTokenState(keycloakToken);
 
@@ -64,6 +66,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   };
 
   const setUserId = (userId: string) => {
+    console.log(`setUserId userId: ${userId}`)
     setUserIdState(userId);
     localStorage.setItem("userId", userId);
   };

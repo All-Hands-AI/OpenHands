@@ -19,6 +19,8 @@ function OAuthGitHubCallback() {
     enabled: !!code,
   });
 
+  console.log(`data: ${data}, isSuccess: ${isSuccess}`)
+
   React.useEffect(() => {
     if (isSuccess) {
       setAccessTokens(data.providerAccessToken, data.keycloakAccessToken);
