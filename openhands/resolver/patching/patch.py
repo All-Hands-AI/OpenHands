@@ -610,10 +610,14 @@ def parse_unified_diff(text):
                 # - Start at line 1 in the old file and show 6 lines
                 # - Start at line 1 in the new file and show 6 lines
                 old = int(h.group(1))  # Starting line in old file
-                old_len = int(h.group(2)) if len(h.group(2)) > 0 else 1  # Number of lines in old file
+                old_len = (
+                    int(h.group(2)) if len(h.group(2)) > 0 else 1
+                )  # Number of lines in old file
 
                 new = int(h.group(3))  # Starting line in new file
-                new_len = int(h.group(4)) if len(h.group(4)) > 0 else 1  # Number of lines in new file
+                new_len = (
+                    int(h.group(4)) if len(h.group(4)) > 0 else 1
+                )  # Number of lines in new file
 
                 h = None
                 break
@@ -622,7 +626,9 @@ def parse_unified_diff(text):
         for n in hunk:
             # Each line in a unified diff starts with a space (context), + (addition), or - (deletion)
             # The first character is the kind, the rest is the line content
-            kind = n[0] if len(n) > 0 else ' '  # Empty lines in the hunk are treated as context lines
+            kind = (
+                n[0] if len(n) > 0 else ' '
+            )  # Empty lines in the hunk are treated as context lines
             line = n[1:] if len(n) > 1 else ''
 
             # Process the line based on its kind

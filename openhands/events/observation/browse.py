@@ -100,5 +100,4 @@ class BrowserOutputObservation(Observation):
             skip_generic=False,
             filter_visible_only=filter_visible_only,
         )
-        self._axtree_str = cur_axtree_txt
         return cur_axtree_txt

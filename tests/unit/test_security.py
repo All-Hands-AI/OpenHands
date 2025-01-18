@@ -367,6 +367,7 @@ async def test_unsafe_bash_command(temp_dir: str):
                         arguments={
                             'blocking': False,
                             'command': 'ls',
+                            'is_input': False,
                             'hidden': False,
                             'confirmation_state': ActionConfirmationStatus.CONFIRMED,
                         },

@@ -66,8 +66,12 @@ class Event:
             return self._timeout  # type: ignore[attr-defined]
         return None
 
-    @timeout.setter
-    def timeout(self, value: int | None) -> None:
+    def set_hard_timeout(self, value: int | None, blocking: bool = True) -> None:
+        """Set the timeout for the event.
+
+        NOTE, this is a hard timeout, meaning that the event will be blocked
+        until the timeout is reached.
+        """
         self._timeout = value
         if value is not None and value > 600:
             from openhands.core.logger import openhands_logger as logger
@@ -80,7 +84,7 @@ class Event:
         # Check if .blocking is an attribute of the event
         if hasattr(self, 'blocking'):
             # .blocking needs to be set to True if .timeout is set
-            self.blocking = True
+            self.blocking = blocking
 
     # optional metadata, LLM call cost of the edit
     @property
