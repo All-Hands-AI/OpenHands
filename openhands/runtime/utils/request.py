@@ -26,7 +26,7 @@ def is_retryable_error(exception):
     return (
         isinstance(exception, requests.HTTPError)
         and exception.response.status_code == 429
-    ) or isinstance(exception, requests.ConnectionError)
+    )
 
 
 @retry(
