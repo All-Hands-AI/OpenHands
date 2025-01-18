@@ -205,16 +205,17 @@ async def process_resolver(request: Request, gitlab_token: str):
             try:
                 response = await call_sync_from_async(
                     requests.get,
-                    f'https://gitlab.com/api/v4/projects/{project_id}/members/{author_id}',
+                    f'https://gitlab.com/api/v4/projects/{project_id}/members/all',
                     headers=headers,
                 )
                 response.raise_for_status()
-                author = response.json()
+                author: dict = next(
+                    (item for item in response.json() if item['id'] == author_id), {}
+                )
 
                 if (
                     openhands_macro in attributes.get('note')
                     and author.get('state') == 'active'
-                    and author.get('membership_state') == 'active'
                     and author.get('access_level', 0) >= 20
                 ):
                     print(f'Resolver Trigger: {openhands_macro}')
@@ -236,6 +237,7 @@ async def process_resolver(request: Request, gitlab_token: str):
             response.close()
         else:
             logger.error('Invalid Event')
+            return
 
         if issue_type is None or issue_number is None:
             logger.error('Invalid Event')
