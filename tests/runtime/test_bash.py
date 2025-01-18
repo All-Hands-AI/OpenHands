@@ -1,7 +1,9 @@
 """Bash-related tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
 
+import json
 import os
 import time
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -837,6 +839,7 @@ def test_python_interactive_input_without_set_input(
 def test_stress_long_output_with_soft_and_hard_timeout(
     temp_dir, runtime_cls, run_as_openhands
 ):
+    SAVE_PERF_DEBUG = os.environ.get('SAVE_PERF_DEBUG', '0') == '1'
     runtime = _load_runtime(
         temp_dir,
         runtime_cls,
@@ -848,10 +851,43 @@ def test_stress_long_output_with_soft_and_hard_timeout(
             'mem_limit': '4G',  # 4 GB of memory
         },
     )
+    _time_for_test = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     try:
         # Run a command that generates long output multiple times
         for i in range(10):
             start_time = time.time()
+            iteration_stats = {
+                'iteration': i,
+                'timestamp': time.time(),
+            }
+
+            # Check overall system memory usage
+            mem_action = CmdRunAction(
+                'free -k | grep "Mem:" | awk \'{printf "Total: %8.1f MB, Used: %8.1f MB, Free: %8.1f MB, Available: %8.1f MB\\n", $2/1024, $3/1024, $4/1024, $7/1024}\''
+            )
+            mem_obs = runtime.run_action(mem_action)
+            assert mem_obs.exit_code == 0
+            logger.info(
+                f'System memory usage (iteration {i}): {mem_obs.content.strip()}'
+            )
+            # Parse memory values from output
+            mem_parts = mem_obs.content.strip().split(',')
+            for part in mem_parts:
+                key, value = part.strip().split(':')
+                iteration_stats[f'memory_{key.lower()}'] = float(
+                    value.replace('MB', '').strip()
+                )
+
+            # Check top memory-consuming processes
+            mem_action = CmdRunAction(
+                'ps aux | awk \'{printf "%8.1f MB  %s\\n", $6/1024, $0}\' | sort -nr | head -n 5'
+            )
+            mem_obs = runtime.run_action(mem_action)
+            assert mem_obs.exit_code == 0
+            logger.info(
+                f'Top 5 memory-consuming processes (iteration {i}):\n{mem_obs.content.strip()}'
+            )
+            iteration_stats['top_processes'] = mem_obs.content.strip().split('\n')
 
             # Check tmux memory usage (in KB)
             mem_action = CmdRunAction(
@@ -862,6 +898,10 @@ def test_stress_long_output_with_soft_and_hard_timeout(
             logger.info(
                 f'Tmux memory usage (iteration {i}): {mem_obs.content.strip()} KB'
             )
+            try:
+                iteration_stats['tmux_memory_kb'] = float(mem_obs.content.strip())
+            except (ValueError, AttributeError):
+                iteration_stats['tmux_memory_kb'] = None
 
             # Check action_execution_server mem
             mem_action = CmdRunAction(
@@ -872,6 +912,12 @@ def test_stress_long_output_with_soft_and_hard_timeout(
             logger.info(
                 f'Action execution server memory usage (iteration {i}): {mem_obs.content.strip()} KB'
             )
+            try:
+                iteration_stats['action_server_memory_kb'] = float(
+                    mem_obs.content.strip()
+                )
+            except (ValueError, AttributeError):
+                iteration_stats['action_server_memory_kb'] = None
 
             # Test soft timeout
             action = CmdRunAction(
@@ -918,7 +964,16 @@ def test_stress_long_output_with_soft_and_hard_timeout(
             assert obs.exit_code == 0
 
             duration = time.time() - start_time
+            iteration_stats['duration'] = duration
             logger.info(f'Completed iteration {i} in {duration:.2f} seconds')
+
+            # Save stats to JSONL file
+            if SAVE_PERF_DEBUG:
+                with open(
+                    f'terminal_perf_analysis_result_{_time_for_test}.jsonl', 'a'
+                ) as f:
+                    json.dump(iteration_stats, f)
+                    f.write('\n')
 
     finally:
         _close_test_runtime(runtime)
