@@ -12,6 +12,7 @@ from litellm.exceptions import (
 )
 
 from openhands.controller.agent import Agent
+from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
@@ -90,6 +91,7 @@ class AgentController:
         is_delegate: bool = False,
         headless_mode: bool = True,
         status_callback: Callable | None = None,
+        replay_events: list[Event] | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -108,6 +110,7 @@ class AgentController:
             is_delegate: Whether this controller is a delegate.
             headless_mode: Whether the agent is run in headless mode.
             status_callback: Optional callback function to handle status updates.
+            replay_events: A list of logs to replay.
         """
         self.id = sid
         self.agent = agent
@@ -138,6 +141,9 @@ class AgentController:
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
         self.status_callback = status_callback
+
+        # replay-related
+        self._replay_manager = ReplayManager(replay_events)
 
     async def close(self) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -234,6 +240,11 @@ class AgentController:
             await self._react_to_exception(reported)
 
     def should_step(self, event: Event) -> bool:
+        """
+        Whether the agent should take a step based on an event. In general,
+        the agent should take a step if it receives a message from the user,
+        or observes something in the environment (after acting).
+        """
         # it might be the delegate's day in the sun
         if self.delegate is not None:
             return False
@@ -641,42 +652,50 @@ class AgentController:
 
         self.update_state_before_step()
         action: Action = NullAction()
-        try:
-            action = self.agent.step(self.state)
-            if action is None:
-                raise LLMNoActionError('No action was returned')
-        except (
-            LLMMalformedActionError,
-            LLMNoActionError,
-            LLMResponseError,
-            FunctionCallValidationError,
-            FunctionCallNotExistsError,
-        ) as e:
-            self.event_stream.add_event(
-                ErrorObservation(
-                    content=str(e),
-                ),
-                EventSource.AGENT,
-            )
-            return
-        except (ContextWindowExceededError, BadRequestError) as e:
-            # FIXME: this is a hack until a litellm fix is confirmed
-            # Check if this is a nested context window error
-            error_str = str(e).lower()
-            if (
-                'contextwindowexceedederror' in error_str
-                or 'prompt is too long' in error_str
-                or isinstance(e, ContextWindowExceededError)
-            ):
-                # When context window is exceeded, keep roughly half of agent interactions
-                self.state.history = self._apply_conversation_window(self.state.history)
 
-                # Save the ID of the first event in our truncated history for future reloading
-                if self.state.history:
-                    self.state.start_id = self.state.history[0].id
-                # Don't add error event - let the agent retry with reduced context
+        if self._replay_manager.should_replay():
+            # in replay mode, we don't let the agent to proceed
+            # instead, we replay the action from the replay trajectory
+            action = self._replay_manager.step()
+        else:
+            try:
+                action = self.agent.step(self.state)
+                if action is None:
+                    raise LLMNoActionError('No action was returned')
+            except (
+                LLMMalformedActionError,
+                LLMNoActionError,
+                LLMResponseError,
+                FunctionCallValidationError,
+                FunctionCallNotExistsError,
+            ) as e:
+                self.event_stream.add_event(
+                    ErrorObservation(
+                        content=str(e),
+                    ),
+                    EventSource.AGENT,
+                )
                 return
-            raise
+            except (ContextWindowExceededError, BadRequestError) as e:
+                # FIXME: this is a hack until a litellm fix is confirmed
+                # Check if this is a nested context window error
+                error_str = str(e).lower()
+                if (
+                    'contextwindowexceedederror' in error_str
+                    or 'prompt is too long' in error_str
+                    or isinstance(e, ContextWindowExceededError)
+                ):
+                    # When context window is exceeded, keep roughly half of agent interactions
+                    self.state.history = self._apply_conversation_window(
+                        self.state.history
+                    )
+
+                    # Save the ID of the first event in our truncated history for future reloading
+                    if self.state.history:
+                        self.state.start_id = self.state.history[0].id
+                    # Don't add error event - let the agent retry with reduced context
+                    return
+                raise
 
         if action.runnable:
             if self.state.confirmation_mode and (
