@@ -4,20 +4,24 @@ import { KeycloakErrorResponse } from "./open-hands.types";
 export const openHands = axios.create();
 
 export const setAuthTokenHeader = (token: string) => {
+  console.log(`setAuthTokenHeader to ${token}`)
   openHands.defaults.headers.common.Authorization = `Bearer ${token}`;
 };
 
 export const setGitHubTokenHeader = (token: string) => {
+  console.log(`setGitHubTokenHeader to ${token}`)
   openHands.defaults.headers.common["X-GitHub-Token"] = token;
 };
 
 export const removeAuthTokenHeader = () => {
+  console.log("removeAuthTokenHeader")
   if (openHands.defaults.headers.common.Authorization) {
     delete openHands.defaults.headers.common.Authorization;
   }
 };
 
 export const removeGitHubTokenHeader = () => {
+  console.log("removeGitHubTokenHeader")
   if (openHands.defaults.headers.common["X-GitHub-Token"]) {
     delete openHands.defaults.headers.common["X-GitHub-Token"];
   }
