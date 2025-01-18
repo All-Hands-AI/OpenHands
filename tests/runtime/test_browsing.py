@@ -1,5 +1,7 @@
 """Browsing-related tests for the DockerRuntime, which connects to the ActionExecutor running in the sandbox."""
 
+import os
+
 from conftest import _close_test_runtime, _load_runtime
 
 from openhands.core.logger import openhands_logger as logger
@@ -17,7 +19,11 @@ from openhands.events.observation import (
 # For eval environments, tests need to run with poetry install
 # ============================================================================================================================
 
-PY3_FOR_TESTING = '/openhands/micromamba/bin/micromamba run -n openhands python3'
+if os.environ.get('POETRY_VIRTUALENVS_PATH') != '':
+    # For Local Runtime
+    PY3_FOR_TESTING = 'poetry run python3'
+else:
+    PY3_FOR_TESTING = '/openhands/micromamba/bin/micromamba run -n openhands python3'
 
 
 def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
