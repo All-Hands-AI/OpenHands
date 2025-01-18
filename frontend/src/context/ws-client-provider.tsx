@@ -88,7 +88,7 @@ export function updateStatusWhenErrorMessagePresent(data: ErrorArg | unknown) {
       if ("msg_id" in data.data && isString(data.data.msg_id)) {
         msgId = data.data.msg_id;
       }
-      metadata = data.data;
+      metadata = data.data as Record<string, unknown>;
     }
 
     showChatError({

@@ -25,7 +25,9 @@ export function showErrorToast({
   metadata = {},
 }: ErrorDetails) {
   logError({ message, source, metadata });
-  toast.custom((t) => _jsx(ErrorToast, { id: t.id, error: message }));
+  toast.custom((t: { id: string }) =>
+    _jsx(ErrorToast, { id: t.id, error: message }),
+  );
 }
 
 export function showChatError({

@@ -100,6 +100,93 @@ describe("Error Handler", () => {
         context: "testing",
       });
     });
+
+    it("should log errors from different sources with appropriate metadata", () => {
+      // Test agent status error
+      showErrorToast({
+        message: "Agent error",
+        source: "agent-status",
+        metadata: { id: "error.agent" },
+      });
+
+      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
+        error_message: "Agent error",
+        error_source: "agent-status",
+        id: "error.agent",
+      });
+
+      // Test VSCode error
+      showErrorToast({
+        message: "VSCode error",
+        source: "vscode",
+        metadata: { error: "connection failed" },
+      });
+
+      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
+        error_message: "VSCode error",
+        error_source: "vscode",
+        error: "connection failed",
+      });
+
+      // Test server error
+      showErrorToast({
+        message: "Server error",
+        source: "server",
+        metadata: { error_code: 500, details: "Internal error" },
+      });
+
+      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
+        error_message: "Server error",
+        error_source: "server",
+        error_code: 500,
+        details: "Internal error",
+      });
+    });
+
+    it("should log query and mutation errors with appropriate metadata", () => {
+      // Test query error
+      showErrorToast({
+        message: "Query failed",
+        source: "query",
+        metadata: { queryKey: ["users", "123"] },
+      });
+
+      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
+        error_message: "Query failed",
+        error_source: "query",
+        queryKey: ["users", "123"],
+      });
+
+      // Test mutation error
+      const error = new Error("Mutation failed");
+      showErrorToast({
+        message: error.message,
+        source: "mutation",
+        metadata: { error },
+      });
+
+      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
+        error_message: "Mutation failed",
+        error_source: "mutation",
+        error,
+      });
+    });
+
+    it("should log feedback submission errors with conversation context", () => {
+      const error = new Error("Feedback submission failed");
+      showErrorToast({
+        message: error.message,
+        source: "feedback",
+        metadata: { conversationId: "123", error },
+      });
+
+      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
+        error_message: "Feedback submission failed",
+        error_source: "feedback",
+        conversationId: "123",
+        error,
+      });
+    });
   });
 
   describe("showChatError", () => {
@@ -132,7 +219,7 @@ describe("Error Handler", () => {
         message: "Chat error",
         source: "chat-test",
         msgId: "123",
-        metadata: { 
+        metadata: {
           context: "chat testing",
           severity: "high",
         },
