@@ -18,6 +18,7 @@ from openhands.server.shared import openhands_config
 from openhands.utils.async_utils import call_sync_from_async
 
 app = APIRouter(prefix='/api/gitlab')
+active_tasks: dict[str, asyncio.Task] = {}
 
 
 def require_gitlab_token(request: Request):
@@ -165,10 +166,56 @@ async def gitlab_webhook(
     request: Request, gitlab_token: str = Depends(require_gitlab_token)
 ):
     try:
-        asyncio.create_task(process_resolver(request, gitlab_token))
-        return {'status': 'success'}
+        payload = await request.json()
+        task_id = payload.get('object_attributes', {}).get('id', {})
+        if f'{task_id}' in active_tasks:
+            task = active_tasks[f'{task_id}']
+            if not task.done():
+                return {'status': 'running', 'task_id': task_id}
+
+        task = asyncio.create_task(process_resolver(request, gitlab_token))
+        active_tasks[f'{task_id}'] = task
+
+        task.add_done_callback(lambda t: active_tasks.pop(task_id, None))
+        logger.info(
+            f'Created new webhook task {task_id}. Active tasks: {len(active_tasks)}'
+        )
+
+        return {'status': 'success', 'task_id': task_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Error: {str(e)}')
+
+
+@app.get('/hooks/status/{task_id}')
+async def get_task_status(task_id: str):
+    if task_id in active_tasks:
+        task = active_tasks[task_id]
+        return {
+            'status': 'running' if not task.done() else 'completed',
+            'error': str(task.exception())
+            if task.done() and task.exception()
+            else None,
+        }
+    return {'status': 'not_found'}
+
+
+async def run_subprocess_async(
+    cmd: list,
+) -> tuple[asyncio.subprocess.Process, bytes, bytes]:
+    process = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        env={**os.environ},
+    )
+    stdout, stderr = await process.communicate()
+
+    if stdout:
+        logger.info(stdout.decode().strip())
+    if stderr:
+        logger.error(stderr.decode().strip())
+
+    return process, stdout, stderr
 
 
 async def process_resolver(request: Request, gitlab_token: str):
@@ -187,12 +234,17 @@ async def process_resolver(request: Request, gitlab_token: str):
         repo = payload.get('project').get('path_with_namespace')
         username = payload.get('user').get('username')
         attributes = payload.get('object_attributes', {})
+        action = attributes.get('action', '')
         comment_id = 'none'
         project_id = payload.get('project', {}).get('id')
         issue_type = None
         issue_number = None
 
-        if gitlab_event == 'Issue Hook':
+        if action == '' or action == 'close':
+            logger.error(f'{gitlab_event} is closed.')
+            return
+
+        if gitlab_event == 'Issue Hook' and attributes.get('state', '') != 'closed':
             for label in payload['labels']:
                 if label['title'] in ('fix-me', 'fix-me-experimental'):
                     print(f"Resolver Trigger: {label['title']}")
@@ -218,6 +270,10 @@ async def process_resolver(request: Request, gitlab_token: str):
                     and author.get('state') == 'active'
                     and author.get('access_level', 0) >= 20
                 ):
+                    if payload.get('merge_request', {}).get('state', '') == 'closed':
+                        logger.error('Invalid Event')
+                        return
+
                     print(f'Resolver Trigger: {openhands_macro}')
 
                     if attributes.get('noteable_type', '') == 'MergeRequest':
@@ -233,8 +289,8 @@ async def process_resolver(request: Request, gitlab_token: str):
                     status_code=response.status_code if response else 500,
                     detail=f'Error fetching user: {str(e)}',
                 )
-
-            response.close()
+            finally:
+                response.close()
         else:
             logger.error('Invalid Event')
             return
@@ -257,7 +313,7 @@ async def process_resolver(request: Request, gitlab_token: str):
             os.environ['LLM_MODEL'] = llm_model
             os.environ['LLM_API_KEY'] = llm_api_key
             os.environ['LLM_BASE_URL'] = llm_base_url
-            result = subprocess.run(
+            _, stdout, _ = await run_subprocess_async(
                 [
                     'python',
                     '-m',
@@ -278,15 +334,8 @@ async def process_resolver(request: Request, gitlab_token: str):
                     f'{comment_id}',
                     '--output-dir',
                     output_dir,
-                ],
-                capture_output=True,
-                text=True,
+                ]
             )
-
-            if result.stdout:
-                logger.info(result.stdout.strip())
-            if result.stderr:
-                logger.error(result.stderr.strip())
 
             logger.info('Check resolution result')
             output_file = os.path.join(output_dir, 'output.jsonl')
@@ -300,7 +349,7 @@ async def process_resolver(request: Request, gitlab_token: str):
             )
 
             if resolver_output.success:
-                result = subprocess.run(
+                _, stdout, _ = await run_subprocess_async(
                     [
                         'python',
                         '-m',
@@ -315,18 +364,13 @@ async def process_resolver(request: Request, gitlab_token: str):
                         'draft',
                         '--output-dir',
                         output_dir,
-                    ],
-                    capture_output=True,
-                    text=True,
+                    ]
                 )
 
-                if result.stdout:
-                    logger.info(result.stdout.strip())
-                    output = result.stdout.strip()
-                if result.stderr:
-                    logger.error(result.stderr.strip())
+                if stdout:
+                    output = stdout.decode().strip()
             else:
-                result = subprocess.run(
+                _, stdout, _ = await run_subprocess_async(
                     [
                         'python',
                         '-m',
@@ -344,16 +388,11 @@ async def process_resolver(request: Request, gitlab_token: str):
                         '--send-on-failure',
                         '--output-dir',
                         output_dir,
-                    ],
-                    capture_output=True,
-                    text=True,
+                    ]
                 )
 
-                if result.stdout:
-                    logger.info(result.stdout.strip())
-                    output = result.stdout.strip()
-                if result.stderr:
-                    logger.error(result.stderr.strip())
+                if stdout:
+                    output = stdout.decode().strip()
 
             if no_changes_message in output:
                 create_comment(
@@ -391,6 +430,11 @@ async def process_resolver(request: Request, gitlab_token: str):
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail='Invalid JSON payload')
     except Exception as e:
+        import traceback
+
+        # Alternatively, get the stack trace as a string
+        error_details = traceback.format_exc()
+        print(f'Full traceback:\n{error_details}')
         raise HTTPException(status_code=500, detail=f'{e}')
 
     return 'success'
