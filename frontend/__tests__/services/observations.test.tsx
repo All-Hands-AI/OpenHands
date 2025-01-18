@@ -18,12 +18,18 @@ describe('handleObservationMessage', () => {
 
   it('should trigger notification when agent state changes to AWAITING_USER_INPUT', () => {
     const message = {
+      id: 1,
+      source: 'agent' as const,
       observation: 'agent_state_changed',
       extras: {
         agent_state: AgentState.AWAITING_USER_INPUT,
+        metadata: {},
+        error_id: '',
       },
       message: 'Agent state changed',
       content: '',
+      cause: 0,
+      timestamp: new Date().toISOString(),
     };
 
     handleObservationMessage(message);
@@ -36,12 +42,18 @@ describe('handleObservationMessage', () => {
 
   it('should trigger notification when agent state changes to FINISHED', () => {
     const message = {
+      id: 2,
+      source: 'agent' as const,
       observation: 'agent_state_changed',
       extras: {
         agent_state: AgentState.FINISHED,
+        metadata: {},
+        error_id: '',
       },
       message: 'Agent state changed',
       content: '',
+      cause: 0,
+      timestamp: new Date().toISOString(),
     };
 
     handleObservationMessage(message);
@@ -54,12 +66,18 @@ describe('handleObservationMessage', () => {
 
   it('should not trigger notification for other agent states', () => {
     const message = {
+      id: 3,
+      source: 'agent' as const,
       observation: 'agent_state_changed',
       extras: {
         agent_state: AgentState.RUNNING,
+        metadata: {},
+        error_id: '',
       },
       message: 'Agent state changed',
       content: '',
+      cause: 0,
+      timestamp: new Date().toISOString(),
     };
 
     handleObservationMessage(message);
