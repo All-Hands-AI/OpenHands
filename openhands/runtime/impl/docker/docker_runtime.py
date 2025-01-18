@@ -1,4 +1,5 @@
 import atexit
+import os
 from functools import lru_cache
 from typing import Callable
 
@@ -228,6 +229,8 @@ class DockerRuntime(ActionExecutionClient):
         }
         if self.config.debug or DEBUG:
             environment['DEBUG'] = 'true'
+        # also update with runtime_startup_env_vars
+        environment.update(self.config.sandbox.runtime_startup_env_vars)
 
         self.log('debug', f'Workspace Base: {self.config.workspace_base}')
         if (
@@ -388,10 +391,11 @@ class DockerRuntime(ActionExecutionClient):
     @property
     def vscode_url(self) -> str | None:
         token = super().get_vscode_token()
+        domain = os.environ.get("DOMAIN")
         if not token:
             return None
 
-        vscode_url = f'http://openhands-code-{self._vscode_port}.dev-linux.canopyhub.io/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        vscode_url = f'http://openhands-code-{self._vscode_port}.{domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return vscode_url
 
     @property
