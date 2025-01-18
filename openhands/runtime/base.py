@@ -121,7 +121,9 @@ class Runtime(FileEditRuntimeMixin):
         )
 
         # Load mixins
-        FileEditRuntimeMixin.__init__(self)
+        FileEditRuntimeMixin.__init__(
+            self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
+        )
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -195,9 +197,10 @@ class Runtime(FileEditRuntimeMixin):
                 e, AgentRuntimeDisconnectedError
             ):
                 err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
-            self.log('error', f'Unexpected error while running action: {str(e)}')
+            error_message = f'{type(e).__name__}: {str(e)}'
+            self.log('error', f'Unexpected error while running action: {error_message}')
             self.log('error', f'Problematic action: {str(event)}')
-            self.send_error_message(err_id, str(e))
+            self.send_error_message(err_id, error_message)
             self.close()
             return
 

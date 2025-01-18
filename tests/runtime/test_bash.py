@@ -57,7 +57,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
             in obs.metadata.suffix
         )
 
-        action = CmdRunAction(command='C-c')
+        action = CmdRunAction(command='C-c', is_input=True)
         action.set_hard_timeout(30)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -571,7 +571,7 @@ def test_interactive_command(temp_dir, runtime_cls, run_as_openhands):
         assert 'Enter name:' in obs.content
         assert '[The command has no new output after 1 seconds.' in obs.metadata.suffix
 
-        action = CmdRunAction('John')
+        action = CmdRunAction('John', is_input=True)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'Hello John' in obs.content
@@ -741,10 +741,7 @@ def test_long_running_command_follow_by_execute(
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert '3' not in obs.content
         assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
-        assert (
-            'The previous command was timed out but still running.'
-            in obs.metadata.suffix
-        )
+        assert 'The previous command is still running' in obs.metadata.suffix
         assert obs.metadata.exit_code == -1  # -1 indicates command is still running
 
         # Finally continue again
@@ -763,7 +760,9 @@ def test_empty_command_errors(temp_dir, runtime_cls, run_as_openhands):
         # Test empty command without previous command
         obs = runtime.run_action(CmdRunAction(''))
         assert isinstance(obs, CmdOutputObservation)
-        assert 'ERROR: No previous command to continue from' in obs.content
+        assert (
+            'ERROR: No previous running command to retrieve logs from.' in obs.content
+        )
     finally:
         _close_test_runtime(runtime)
 
@@ -781,13 +780,52 @@ def test_python_interactive_input(temp_dir, runtime_cls, run_as_openhands):
         assert obs.metadata.exit_code == -1  # -1 indicates command is still running
 
         # Send first input (name)
-        obs = runtime.run_action(CmdRunAction('Alice'))
+        obs = runtime.run_action(CmdRunAction('Alice', is_input=True))
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'Enter your age:' in obs.content
         assert obs.metadata.exit_code == -1
 
         # Send second input (age)
-        obs = runtime.run_action(CmdRunAction('25'))
+        obs = runtime.run_action(CmdRunAction('25', is_input=True))
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert 'Hello Alice, you are 25 years old' in obs.content
+        assert obs.metadata.exit_code == 0
+        assert '[The command completed with exit code 0.]' in obs.metadata.suffix
+    finally:
+        _close_test_runtime(runtime)
+
+
+def test_python_interactive_input_without_set_input(
+    temp_dir, runtime_cls, run_as_openhands
+):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Test Python program that asks for input - properly escaped for bash
+        python_script = """name = input('Enter your name: '); age = input('Enter your age: '); print(f'Hello {name}, you are {age} years old')"""
+
+        # Start Python with the interactive script
+        obs = runtime.run_action(CmdRunAction(f'python3 -c "{python_script}"'))
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert 'Enter your name:' in obs.content
+        assert obs.metadata.exit_code == -1  # -1 indicates command is still running
+
+        # Send first input (name)
+        obs = runtime.run_action(CmdRunAction('Alice', is_input=False))
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert 'Enter your age:' not in obs.content
+        assert (
+            'Your command "Alice" is NOT executed. The previous command is still running'
+            in obs.metadata.suffix
+        )
+        assert obs.metadata.exit_code == -1
+
+        # Try again now with input
+        obs = runtime.run_action(CmdRunAction('Alice', is_input=True))
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert 'Enter your age:' in obs.content
+        assert obs.metadata.exit_code == -1
+
+        obs = runtime.run_action(CmdRunAction('25', is_input=True))
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'Hello Alice, you are 25 years old' in obs.content
         assert obs.metadata.exit_code == 0
@@ -844,7 +882,7 @@ def test_stress_long_output_with_soft_and_hard_timeout(
             assert obs.exit_code == -1  # Command is still running, waiting for input
 
             # Send the confirmation
-            action = CmdRunAction('Y')
+            action = CmdRunAction('Y', is_input=True)
             obs = runtime.run_action(action)
             assert 'Proceeding with operation...' in obs.content
             assert 'Operation completed successfully!' in obs.content
@@ -869,13 +907,10 @@ def test_stress_long_output_with_soft_and_hard_timeout(
             # where it will not accept any new commands.
             obs = runtime.run_action(CmdRunAction('ls'))
             assert obs.exit_code == -1
-            assert (
-                'The previous command was timed out but still running.'
-                in obs.metadata.suffix
-            )
+            assert 'The previous command is still running' in obs.metadata.suffix
 
             # We need to send a Ctrl+C to reset the terminal.
-            obs = runtime.run_action(CmdRunAction('C-c'))
+            obs = runtime.run_action(CmdRunAction('C-c', is_input=True))
             assert obs.exit_code == 130
 
             # Now make sure the terminal is in a good state
@@ -884,6 +919,28 @@ def test_stress_long_output_with_soft_and_hard_timeout(
 
             duration = time.time() - start_time
             logger.info(f'Completed iteration {i} in {duration:.2f} seconds')
+
+    finally:
+        _close_test_runtime(runtime)
+
+
+def test_bash_remove_prefix(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # create a git repo
+        action = CmdRunAction(
+            'git init && git remote add origin https://github.com/All-Hands-AI/OpenHands'
+        )
+        obs = runtime.run_action(action)
+        # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.metadata.exit_code == 0
+
+        # Start Python with the interactive script
+        obs = runtime.run_action(CmdRunAction('git remote -v'))
+        # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.metadata.exit_code == 0
+        assert 'https://github.com/All-Hands-AI/OpenHands' in obs.content
+        assert 'git remote -v' not in obs.content
 
     finally:
         _close_test_runtime(runtime)

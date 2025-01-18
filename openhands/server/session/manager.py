@@ -442,7 +442,11 @@ class SessionManager:
             self._connection_queries.pop(query_id, None)
 
     async def maybe_start_agent_loop(
-        self, sid: str, settings: Settings, user_id: str | None
+        self,
+        sid: str,
+        settings: Settings,
+        user_id: str | None,
+        initial_user_msg: str | None = None,
     ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}')
         session: Session | None = None
@@ -462,7 +466,7 @@ class SessionManager:
                 user_id=user_id,
             )
             self._local_agent_loops_by_sid[sid] = session
-            asyncio.create_task(session.initialize_agent(settings))
+            asyncio.create_task(session.initialize_agent(settings, initial_user_msg))
 
         event_stream = await self._get_event_stream(sid)
         if not event_stream:
