@@ -3,13 +3,13 @@ import os
 import pathlib
 import platform
 import sys
-from dataclasses import is_dataclass
 from types import UnionType
 from typing import Any, MutableMapping, get_args, get_origin
 from uuid import uuid4
 
 import toml
 from dotenv import load_dotenv
+from pydantic import BaseModel, ValidationError
 
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
@@ -43,17 +43,19 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
         return next((t for t in types if t is not type(None)), None)
 
     # helper function to set attributes based on env vars
-    def set_attr_from_env(sub_config: Any, prefix=''):
-        """Set attributes of a config dataclass based on environment variables."""
-        for field_name, field_type in sub_config.__annotations__.items():
+    def set_attr_from_env(sub_config: BaseModel, prefix=''):
+        """Set attributes of a config model based on environment variables."""
+        for field_name, field_info in sub_config.model_fields.items():
+            field_value = getattr(sub_config, field_name)
+            field_type = field_info.annotation
+
             # compute the expected env var name from the prefix and field name
             # e.g. LLM_BASE_URL
             env_var_name = (prefix + field_name).upper()
 
-            if is_dataclass(field_type):
-                # nested dataclass
-                nested_sub_config = getattr(sub_config, field_name)
-                set_attr_from_env(nested_sub_config, prefix=field_name + '_')
+            if isinstance(field_value, BaseModel):
+                set_attr_from_env(field_value, prefix=field_name + '_')
+
             elif env_var_name in env_or_toml_dict:
                 # convert the env var to the correct type and set it
                 value = env_or_toml_dict[env_var_name]
@@ -125,45 +127,86 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         if isinstance(value, dict):
             try:
                 if key is not None and key.lower() == 'agent':
+                    # Every entry here is either a field for the default `agent` config group, or itself a group
+                    # The best way to tell the difference is to try to parse it as an AgentConfig object
+                    agent_group_ids: set[str] = set()
+                    for nested_key, nested_value in value.items():
+                        if isinstance(nested_value, dict):
+                            try:
+                                agent_config = AgentConfig(**nested_value)
+                            except ValidationError:
+                                continue
+                            agent_group_ids.add(nested_key)
+                            cfg.set_agent_config(agent_config, nested_key)
+
                     logger.openhands_logger.debug(
                         'Attempt to load default agent config from config toml'
                     )
-                    non_dict_fields = {
-                        k: v for k, v in value.items() if not isinstance(v, dict)
+                    value_without_groups = {
+                        k: v for k, v in value.items() if k not in agent_group_ids
                     }
-                    agent_config = AgentConfig(**non_dict_fields)
+                    agent_config = AgentConfig(**value_without_groups)
                     cfg.set_agent_config(agent_config, 'agent')
+
+                elif key is not None and key.lower() == 'llm':
+                    # Every entry here is either a field for the default `llm` config group, or itself a group
+                    # The best way to tell the difference is to try to parse it as an LLMConfig object
+                    llm_group_ids: set[str] = set()
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
-                            logger.openhands_logger.debug(
-                                f'Attempt to load group {nested_key} from config toml as agent config'
-                            )
-                            agent_config = AgentConfig(**nested_value)
-                            cfg.set_agent_config(agent_config, nested_key)
-                elif key is not None and key.lower() == 'llm':
+                            try:
+                                llm_config = LLMConfig(**nested_value)
+                            except ValidationError:
+                                continue
+                            llm_group_ids.add(nested_key)
+                            cfg.set_llm_config(llm_config, nested_key)
+
                     logger.openhands_logger.debug(
                         'Attempt to load default LLM config from config toml'
                     )
-                    llm_config = LLMConfig.from_dict(value)
-                    cfg.set_llm_config(llm_config, 'llm')
+
+                    # Extract generic LLM fields, which are not nested LLM configs
+                    generic_llm_fields = {}
+                    for k, v in value.items():
+                        if not isinstance(v, dict):
+                            generic_llm_fields[k] = v
+                    generic_llm_config = LLMConfig(**generic_llm_fields)
+                    cfg.set_llm_config(generic_llm_config, 'llm')
+
+                    # Process custom named LLM configs
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
                             logger.openhands_logger.debug(
-                                f'Attempt to load group {nested_key} from config toml as llm config'
+                                f'Processing custom LLM config "{nested_key}":'
                             )
-                            llm_config = LLMConfig.from_dict(nested_value)
-                            cfg.set_llm_config(llm_config, nested_key)
+                            # Apply generic LLM config with custom LLM overrides, e.g.
+                            # [llm]
+                            # model="..."
+                            # num_retries = 5
+                            # [llm.claude]
+                            # model="claude-3-5-sonnet"
+                            # results in num_retries APPLIED to claude-3-5-sonnet
+                            custom_fields = {}
+                            for k, v in nested_value.items():
+                                if not isinstance(v, dict):
+                                    custom_fields[k] = v
+                            merged_llm_dict = generic_llm_fields.copy()
+                            merged_llm_dict.update(custom_fields)
+                            
+                            custom_llm_config = LLMConfig(**merged_llm_dict)
+                            cfg.set_llm_config(custom_llm_config, nested_key)
+
                 elif key is not None and key.lower() == 'security':
                     logger.openhands_logger.debug(
                         'Attempt to load security config from config toml'
                     )
-                    security_config = SecurityConfig.from_dict(value)
+                    security_config = SecurityConfig(**value)
                     cfg.security = security_config
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.openhands_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'
                     )
-            except (TypeError, KeyError) as e:
+            except (TypeError, KeyError, ValidationError) as e:
                 logger.openhands_logger.warning(
                     f'Cannot parse [{key}] config from toml, values have not been applied.\nError: {e}',
                 )
@@ -199,7 +242,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                 logger.openhands_logger.warning(
                     f'Unknown config key "{key}" in [core] section'
                 )
-    except (TypeError, KeyError) as e:
+    except (TypeError, KeyError, ValidationError) as e:
         logger.openhands_logger.warning(
             f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}',
         )
@@ -302,7 +345,7 @@ def get_llm_config_arg(
 
     # update the llm config with the specified section
     if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
-        return LLMConfig.from_dict(toml_config['llm'][llm_config_arg])
+        return LLMConfig(**toml_config['llm'][llm_config_arg])
     logger.openhands_logger.debug(f'Loading from toml failed for {llm_config_arg}')
     return None
 
@@ -458,7 +501,11 @@ def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
 
     # Override with command line arguments if provided
     if args.llm_config:
-        llm_config = get_llm_config_arg(args.llm_config)
+        # if we didn't already load it, get it from the toml file
+        if args.llm_config not in config.llms:
+            llm_config = get_llm_config_arg(args.llm_config)
+        else:
+            llm_config = config.llms[args.llm_config]
         if llm_config is None:
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
         config.set_llm_config(llm_config)

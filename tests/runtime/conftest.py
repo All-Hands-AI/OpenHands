@@ -26,7 +26,7 @@ test_mount_path = ''
 project_dir = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
-sandbox_test_folder = '/openhands/workspace'
+sandbox_test_folder = '/workspace'
 
 
 def _get_runtime_sid(runtime: Runtime) -> str:
@@ -233,9 +233,10 @@ def _load_runtime(
     if use_workspace:
         test_mount_path = os.path.join(config.workspace_base, 'rt')
     elif temp_dir is not None:
-        test_mount_path = os.path.join(temp_dir, sid)
+        test_mount_path = temp_dir
     else:
         test_mount_path = None
+    config.workspace_base = test_mount_path
     config.workspace_mount_path = test_mount_path
 
     # Mounting folder specific for this test inside the sandbox
