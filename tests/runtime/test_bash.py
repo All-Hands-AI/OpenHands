@@ -796,7 +796,7 @@ def test_python_interactive_input(temp_dir, runtime_cls, run_as_openhands):
 def test_python_interactive_input_without_set_input(
     temp_dir, runtime_cls, run_as_openhands
 ):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Test Python program that asks for input - properly escaped for bash
         python_script = """name = input('Enter your name: '); age = input('Enter your age: '); print(f'Hello {name}, you are {age} years old')"""
@@ -923,7 +923,7 @@ def test_stress_long_output_with_soft_and_hard_timeout(
 
 
 def test_bash_remove_prefix(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # create a git repo
         action = CmdRunAction(
