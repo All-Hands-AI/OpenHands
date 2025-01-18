@@ -26,7 +26,6 @@ def mock_agent():
     # Configure the LLM config
     llm_config.model = 'test-model'
     llm_config.base_url = 'http://test'
-    llm_config.draft_editor = None
     llm_config.max_message_chars = 1000
 
     # Set up the chain of mocks
