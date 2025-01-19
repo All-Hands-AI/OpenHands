@@ -190,7 +190,7 @@ class SensitiveDataFilter(logging.Filter):
         sensitive_patterns.extend(env_vars)
 
         # and some special cases
-        sensitive_patterns.append('JWT_SECRET')
+        sensitive_patterns.append('JWT_SECRET_KEY')
         sensitive_patterns.append('LLM_API_KEY')
         sensitive_patterns.append('GITHUB_TOKEN')
         sensitive_patterns.append('SANDBOX_ENV_GITHUB_TOKEN')
