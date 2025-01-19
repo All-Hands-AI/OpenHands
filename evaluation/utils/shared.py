@@ -355,7 +355,9 @@ def _process_instance_wrapper(
             )
             # e is likely an EvalException, so we can't directly infer it from type
             # but rather check if it's a fatal error
-            if is_fatal_runtime_error(str(e)):
+            # But it can also be AgentRuntime**Error (e.g., swe_bench/eval_infer.py)
+            _error_str = type(e).__name__ + ': ' + str(e)
+            if is_fatal_runtime_error(_error_str):
                 runtime_failure_count += 1
                 msg += f'Runtime disconnected error detected for instance {instance.instance_id}, runtime failure count: {runtime_failure_count}'
                 msg += '\n' + '-' * 10 + '\n'
@@ -531,6 +533,7 @@ def is_fatal_runtime_error(error: str | None) -> bool:
         return False
 
     FATAL_RUNTIME_ERRORS = [
+        AgentRuntimeTimeoutError,
         AgentRuntimeUnavailableError,
         AgentRuntimeDisconnectedError,
         AgentRuntimeNotFoundError,
