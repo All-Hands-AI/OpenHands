@@ -51,7 +51,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   };
 
   const setAccessTokens = (gitHubToken: string | null, keycloakToken: string | null) => {
-    console.log(`setAccessTokens keycloakToken: ${keycloakToken}`)
+    console.log(`setAccessTokens keycloakToken: ${keycloakToken}, githubToken: ${gitHubToken}`)
     setGitHubTokenState(gitHubToken);
     setKeycloakTokenState(keycloakToken);
 
@@ -102,8 +102,13 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
     setAccessTokens(storedGitHubToken, storedKeycloakToken);
     setUserId(userId);
-    setupGithubAxiosInterceptors(refreshToken, logout);
-    setupOpenhandsAxiosInterceptors(refreshToken, logout)
+    const setupIntercepter = async () => {
+      const config = await OpenHands.getConfig();
+      setupOpenhandsAxiosInterceptors(config.APP_MODE, refreshToken, logout)
+      // setupGithubAxiosInterceptors(config.APP_MODE, refreshToken, logout);
+    };
+
+    setupIntercepter();
   }, []);
 
   const value = React.useMemo(

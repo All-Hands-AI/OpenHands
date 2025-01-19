@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import posthog from "posthog-js";
-import { retrieveGitHubUser } from "#/api/github";
 import { useAuth } from "#/context/auth-context";
 import { useConfig } from "./use-config";
+import OpenHands from "#/api/open-hands";
 
 export const useGitHubUser = () => {
   const { gitHubToken, setUserId } = useAuth();
@@ -11,7 +11,7 @@ export const useGitHubUser = () => {
 
   const user = useQuery({
     queryKey: ["user", gitHubToken],
-    queryFn: retrieveGitHubUser,
+    queryFn: OpenHands.getGitHubUser,
     enabled: !!gitHubToken && !!config?.APP_MODE,
     retry: false,
   });

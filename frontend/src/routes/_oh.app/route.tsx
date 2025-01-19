@@ -1,15 +1,16 @@
 import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet } from "react-router";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { FaServer } from "react-icons/fa";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import {
   ConversationProvider,
   useConversation,
 } from "#/context/conversation-context";
 import { Controls } from "#/components/features/controls/controls";
-import { RootState } from "#/store";
 import { clearMessages } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
@@ -31,7 +32,6 @@ import {
 import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
-import { CountBadge } from "#/components/layout/count-badge";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -39,6 +39,7 @@ import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 
 function AppContent() {
   useConversationConfig();
+  const { t } = useTranslation();
   const { gitHubToken } = useAuth();
   const { data: settings } = useSettings();
   const { conversationId } = useConversation();
@@ -49,7 +50,6 @@ function AppContent() {
   const endSession = useEndSession();
 
   const [width, setWidth] = React.useState(window.innerWidth);
-  const { updateCount } = useSelector((state: RootState) => state.browser);
 
   const secrets = React.useMemo(
     () => [gitHubToken].filter((secret) => secret !== null),
@@ -126,7 +126,11 @@ function AppContent() {
               <Container
                 className="h-full"
                 labels={[
-                  { label: "Workspace", to: "", icon: <CodeIcon /> },
+                  {
+                    label: t(I18nKey.WORKSPACE$TITLE),
+                    to: "",
+                    icon: <CodeIcon />,
+                  },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
                   {
                     label: <ServedAppLabel />,
@@ -136,8 +140,7 @@ function AppContent() {
                   {
                     label: (
                       <div className="flex items-center gap-1">
-                        Browser
-                        {updateCount > 0 && <CountBadge count={updateCount} />}
+                        {t(I18nKey.BROWSER$TITLE)}
                       </div>
                     ),
                     to: "browser",

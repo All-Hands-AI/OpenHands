@@ -27,7 +27,8 @@ class AppConfig(BaseModel):
         runtime: Runtime environment identifier.
         file_store: Type of file store to use.
         file_store_path: Path to the file store.
-        trajectories_path: Folder path to store trajectories.
+        save_trajectory_path: Either a folder path to store trajectories with auto-generated filenames, or a designated trajectory file path.
+        replay_trajectory_path: Path to load trajectory and replay. If provided, trajectory would be replayed first before user's instruction.
         workspace_base: Base path for the workspace. Defaults to `./workspace` as absolute path.
         workspace_mount_path: Path to mount the workspace. Defaults to `workspace_base`.
         workspace_mount_path_in_sandbox: Path to mount the workspace in sandbox. Defaults to `/workspace`.
@@ -54,7 +55,8 @@ class AppConfig(BaseModel):
     runtime: str = Field(default='docker')
     file_store: str = Field(default='local')
     file_store_path: str = Field(default='/tmp/openhands_file_store')
-    trajectories_path: str | None = Field(default=None)
+    save_trajectory_path: str | None = Field(default=None)
+    replay_trajectory_path: str | None = Field(default=None)
     workspace_base: str | None = Field(default=None)
     workspace_mount_path: str | None = Field(default=None)
     workspace_mount_path_in_sandbox: str = Field(default='/workspace')

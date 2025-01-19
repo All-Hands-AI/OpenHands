@@ -47,10 +47,11 @@ const canRefresh = (error: unknown): boolean =>
 export const isKeycloakErrorResponse = <T extends object | Array<unknown>>(
   data: T | KeycloakErrorResponse | null,
 ): data is KeycloakErrorResponse =>
-  !!data && "keycloak_error" in data;
+  !!data && typeof data === 'object' && "keycloak_error" in data;
 
 // Axios interceptor to handle token refresh
 export const setupOpenhandsAxiosInterceptors = (
+  appMode: string,
   refreshToken: () => Promise<boolean>,
   logout: () => void,
 ) => {

@@ -111,7 +111,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     except toml.TomlDecodeError as e:
         logger.openhands_logger.warning(
             f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
-            exc_info=False,
         )
         return
 
@@ -165,11 +164,37 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     logger.openhands_logger.debug(
                         'Attempt to load default LLM config from config toml'
                     )
-                    value_without_groups = {
-                        k: v for k, v in value.items() if k not in llm_group_ids
-                    }
-                    llm_config = LLMConfig(**value_without_groups)
-                    cfg.set_llm_config(llm_config, 'llm')
+
+                    # Extract generic LLM fields, which are not nested LLM configs
+                    generic_llm_fields = {}
+                    for k, v in value.items():
+                        if not isinstance(v, dict):
+                            generic_llm_fields[k] = v
+                    generic_llm_config = LLMConfig(**generic_llm_fields)
+                    cfg.set_llm_config(generic_llm_config, 'llm')
+
+                    # Process custom named LLM configs
+                    for nested_key, nested_value in value.items():
+                        if isinstance(nested_value, dict):
+                            logger.openhands_logger.debug(
+                                f'Processing custom LLM config "{nested_key}":'
+                            )
+                            # Apply generic LLM config with custom LLM overrides, e.g.
+                            # [llm]
+                            # model="..."
+                            # num_retries = 5
+                            # [llm.claude]
+                            # model="claude-3-5-sonnet"
+                            # results in num_retries APPLIED to claude-3-5-sonnet
+                            custom_fields = {}
+                            for k, v in nested_value.items():
+                                if not isinstance(v, dict):
+                                    custom_fields[k] = v
+                            merged_llm_dict = generic_llm_fields.copy()
+                            merged_llm_dict.update(custom_fields)
+                            
+                            custom_llm_config = LLMConfig(**merged_llm_dict)
+                            cfg.set_llm_config(custom_llm_config, nested_key)
 
                 elif key is not None and key.lower() == 'security':
                     logger.openhands_logger.debug(
@@ -184,7 +209,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
             except (TypeError, KeyError, ValidationError) as e:
                 logger.openhands_logger.warning(
                     f'Cannot parse [{key}] config from toml, values have not been applied.\nError: {e}',
-                    exc_info=False,
                 )
         else:
             logger.openhands_logger.warning(f'Unknown section [{key}] in {toml_file}')
@@ -221,7 +245,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     except (TypeError, KeyError, ValidationError) as e:
         logger.openhands_logger.warning(
             f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}',
-            exc_info=False,
         )
 
 
@@ -478,7 +501,11 @@ def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
 
     # Override with command line arguments if provided
     if args.llm_config:
-        llm_config = get_llm_config_arg(args.llm_config)
+        # if we didn't already load it, get it from the toml file
+        if args.llm_config not in config.llms:
+            llm_config = get_llm_config_arg(args.llm_config)
+        else:
+            llm_config = config.llms[args.llm_config]
         if llm_config is None:
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
         config.set_llm_config(llm_config)
