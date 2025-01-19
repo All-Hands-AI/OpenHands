@@ -23,7 +23,7 @@ class FileSettingsStore(SettingsStore):
             settings = Settings(**kwargs)
             return settings
         except FileNotFoundError:
-            return None
+            return Settings.from_config()
 
     async def store(self, settings: Settings):
         json_str = settings.model_dump_json(context={'expose_secrets': True})
