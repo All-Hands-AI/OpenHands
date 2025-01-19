@@ -303,12 +303,17 @@ def truncate_hash(hash: str) -> str:
 
 def get_hash_for_lock_files(base_image: str):
     openhands_source_dir = Path(openhands.__file__).parent
+    project_root = openhands_source_dir.parent
     md5 = hashlib.md5()
     md5.update(base_image.encode())
     for file in ['pyproject.toml', 'poetry.lock']:
-        src = Path(openhands_source_dir, file)
+        # First try project root
+        src = Path(project_root, file)
         if not src.exists():
-            src = Path(openhands_source_dir.parent, file)
+            # Then try source dir
+            src = Path(openhands_source_dir, file)
+            if not src.exists():
+                raise FileNotFoundError(f"Could not find {file} in either {project_root} or {openhands_source_dir}")
         with open(src, 'rb') as f:
             for chunk in iter(lambda: f.read(4096), b''):
                 md5.update(chunk)

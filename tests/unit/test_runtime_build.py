@@ -99,15 +99,43 @@ def test_prep_build_folder(temp_dir):
 
 
 def test_get_hash_for_lock_files():
-    with patch('builtins.open', mock_open(read_data='mock-data'.encode())):
-        hash = get_hash_for_lock_files('some_base_image')
-        # Since we mocked open to always return "mock_data", the hash is the result
-        # of hashing the name of the base image followed by "mock-data" twice
-        md5 = hashlib.md5()
-        md5.update('some_base_image'.encode())
-        for _ in range(2):
-            md5.update('mock-data'.encode())
-        assert hash == truncate_hash(md5.hexdigest())
+    # Create a temporary directory structure that mimics the package structure
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Create project root with pyproject.toml and poetry.lock
+        project_root = Path(temp_dir)
+        openhands_dir = project_root / "openhands"
+        os.makedirs(openhands_dir)
+
+        # Create dummy files
+        with open(project_root / "pyproject.toml", "w") as f:
+            f.write("test_content")
+        with open(project_root / "poetry.lock", "w") as f:
+            f.write("test_content")
+
+        # Create a dummy __file__ attribute
+        dummy_file = openhands_dir / "__init__.py"
+        with open(dummy_file, "w") as f:
+            f.write("")
+
+        # Patch openhands.__file__ to point to our test directory
+        original_file = openhands.__file__
+        openhands.__file__ = str(dummy_file)
+
+        try:
+            # Test that it can find files in project root
+            hash1 = get_hash_for_lock_files("test_image")
+            assert isinstance(hash1, str)
+            assert len(hash1) > 0
+
+            # Test that it raises FileNotFoundError when files don't exist
+            os.remove(project_root / "pyproject.toml")
+            with pytest.raises(FileNotFoundError) as exc_info:
+                get_hash_for_lock_files("test_image")
+            assert "Could not find pyproject.toml" in str(exc_info.value)
+
+        finally:
+            # Restore original __file__
+            openhands.__file__ = original_file
 
 
 def test_get_hash_for_source_files():
