@@ -189,10 +189,10 @@ async def process_issue(
         shutil.rmtree(workspace_base)
     shutil.copytree(os.path.join(output_dir, 'repo'), workspace_base)
 
-    if platform == Platform.GITHUB:
-        local_runtime_url = 'http://localhost'
-    else:
-        local_runtime_url = 'http://docker'
+    local_runtime_url = os.getenv('LOCAL_RUNTIME_URL', 'http://localhost')
+    user_id = os.getuid() if hasattr(os, 'getuid') else 1000
+    if user_id == 0:
+        user_id = get_unique_uid()
 
     config = AppConfig(
         default_agent='CodeActAgent',
@@ -203,7 +203,7 @@ async def process_issue(
             runtime_container_image=runtime_container_image,
             enable_auto_lint=False,
             use_host_network=False,
-            user_id=get_unique_uid(),
+            user_id=user_id,
             local_runtime_url=local_runtime_url,
             # large enough timeout, since some testcases take very long to run
             timeout=300,

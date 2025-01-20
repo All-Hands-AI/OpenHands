@@ -226,7 +226,6 @@ def send_pull_request(
     username: str | None,
     platform: Platform,
     patch_dir: str,
-    llm_config: LLMConfig,
     pr_type: str,
     fork_owner: str | None = None,
     additional_message: str | None = None,
@@ -255,11 +254,11 @@ def send_pull_request(
     handler = None
     if platform == Platform.GITHUB:
         handler = ServiceContext(
-            GithubIssueHandler(issue.owner, issue.repo, token, username), llm_config
+            GithubIssueHandler(issue.owner, issue.repo, token, username), None
         )
     else:  # platform == Platform.GITLAB
         handler = ServiceContext(
-            GitlabIssueHandler(issue.owner, issue.repo, token, username), llm_config
+            GitlabIssueHandler(issue.owner, issue.repo, token, username), None
         )
 
     # Create a new branch with a unique name
@@ -342,10 +341,12 @@ def send_pull_request(
 
         pr_data = handler.create_pull_request(data)
         url = pr_data['html_url'] if platform == Platform.GITHUB else pr_data['web_url']
-        number = pr_data['number'] if platform == Platform.GITHUB else pr_data['iid']
 
         # Request review if a reviewer was specified
         if reviewer and pr_type != 'branch':
+            number = (
+                pr_data['number'] if platform == Platform.GITHUB else pr_data['iid']
+            )
             handler.request_reviewers(reviewer, number)
 
     print(
@@ -518,7 +519,6 @@ def process_single_issue(
             patch_dir=patched_repo_dir,
             llm_config=llm_config,
             pr_type=pr_type,
-            llm_config=llm_config,
             fork_owner=fork_owner,
             additional_message=resolver_output.result_explanation,
             target_branch=target_branch,

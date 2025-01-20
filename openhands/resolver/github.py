@@ -45,7 +45,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         return f'https://{username_and_token}@github.com/{self.owner}/{self.repo}.git'
 
     def get_graphql_url(self):
-        return self.get_base_url() + '/graphql'
+        return 'https://api.github.com/graphql'
 
     def get_compare_url(self, branch_name: str):
         return f'https://github.com/{self.owner}/{self.repo}/compare/{branch_name}?expand=1'
@@ -190,16 +190,16 @@ class GithubIssueHandler(IssueHandlerInterface):
     def reply_to_comment(self, pr_number: int, comment_id: str, reply: str):
         # Opting for graphql as REST API doesn't allow reply to replies in comment threads
         query = """
-                mutation($body: String!, $pullRequestReviewThreadId: ID!) {
-                    addPullRequestReviewThreadReply(input: { body: $body, pullRequestReviewThreadId: $pullRequestReviewThreadId }) {
-                        comment {
-                            id
-                            body
-                            createdAt
-                        }
+            mutation($body: String!, $pullRequestReviewThreadId: ID!) {
+                addPullRequestReviewThreadReply(input: { body: $body, pullRequestReviewThreadId: $pullRequestReviewThreadId }) {
+                    comment {
+                        id
+                        body
+                        createdAt
                     }
                 }
-                """
+            }
+            """
 
         comment_reply = f'Openhands fix success summary\n\n\n{reply}'
         variables = {'body': comment_reply, 'pullRequestReviewThreadId': comment_id}
