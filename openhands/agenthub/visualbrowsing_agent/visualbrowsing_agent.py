@@ -119,7 +119,7 @@ def get_history_prompt(prev_actions: list[BrowseInteractiveAction]) -> str:
 class VisualBrowsingAgent(Agent):
     VERSION = '1.0'
     """
-    Re-implementing VisualWebArena Agent to integrate it into OpenHands repository
+    VisualBrowsing Agent that can uses webpage screenshots during browsing.
     """
 
     sandbox_plugins: list[PluginRequirement] = []
@@ -130,7 +130,7 @@ class VisualBrowsingAgent(Agent):
         llm: LLM,
         config: AgentConfig,
     ) -> None:
-        """Initializes a new instance of the VWABrowsingAgent class.
+        """Initializes a new instance of the VisualBrowsingAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
@@ -144,11 +144,11 @@ class VisualBrowsingAgent(Agent):
             'nav',
             'tab',
             'infeas',
-        ]  # VWA Agent uses all 5 of these action types
+        ]
         self.action_space = HighLevelActionSet(
             subsets=action_subsets,
             strict=False,  # less strict on the parsing of the actions
-            multiaction=False,  # VWA Agent does not allow multi-action setting
+            multiaction=False,
         )
         self.action_prompt = get_action_prompt(self.action_space)
         self.abstract_example = f"""
@@ -174,13 +174,13 @@ Note:
         self.reset()
 
     def reset(self) -> None:
-        """Resets the VWABrowsing Agent."""
+        """Resets the VisualBrowsingAgent."""
         super().reset()
         self.cost_accumulator = 0
         self.error_accumulator = 0
 
     def step(self, state: State) -> Action:
-        """Performs one step using the VWABrowsing Agent.
+        """Performs one step using the VisualBrowsingAgent.
 
         This includes gathering information on previous steps and prompting the model to make a browsing command to execute.
 
@@ -275,12 +275,10 @@ Note:
         )
         human_prompt = [TextContent(type='text', text=goal_txt)]
         if len(goal_images) > 0:
-            human_prompt.append(ImageContent(type='image_url', image_urls=goal_images))
+            human_prompt.append(ImageContent(image_urls=goal_images))
         human_prompt.append(TextContent(type='text', text=observation_txt))
         if som_screenshot is not None:
-            human_prompt.append(
-                ImageContent(type='image_url', image_urls=[som_screenshot])
-            )
+            human_prompt.append(ImageContent(image_urls=[som_screenshot]))
         remaining_content = f"""
 {history_prompt}\
 {self.action_prompt}\

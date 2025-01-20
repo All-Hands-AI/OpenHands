@@ -40,7 +40,6 @@ async def browse(
             ),  # base64-encoded Set-of-Marks annotated screenshot, png,
             goal_image_urls=obs.get('image_content', []),
             open_pages_urls=obs.get('open_pages_urls', []),  # list of open pages
-            # open_pages_titles=obs.get('open_pages_titles',[]), # titles of all the open pages
             active_page_index=obs.get(
                 'active_page_index', -1
             ),  # index of the active page

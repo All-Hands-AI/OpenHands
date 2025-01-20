@@ -4,4 +4,4 @@ This folder implements the AgentLab [generic agent](https://github.com/ServiceNo
 
 ## Test run
 
-Note that for browsing tasks, GPT-4/Claude is usually a requirement to get reasonable results, due to the complexity of the web page structures. This agent has been evaluated on the VisualWebArena benchmark and the CodeAct agent still uses BrowsingAgent for delegation.
+Note that for browsing tasks, GPT-4/Claude is usually a requirement to get reasonable results, due to the complexity of the web page structures. This agent has been evaluated on the VisualWebArena benchmark and the CodeAct agent does not call this VisualBrowsingAgent. CodeAct agent uses has in-built support for browsing (e.g., via browse_url and browser tool).
