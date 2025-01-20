@@ -195,6 +195,7 @@ async def resolve_issues(
             task = update_progress(
                 process_issue(
                     issue,
+                    platform,
                     base_commit,
                     max_iterations,
                     llm_config,
