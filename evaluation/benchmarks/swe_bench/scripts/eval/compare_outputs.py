@@ -86,7 +86,7 @@ repo_diffs = []
 for repo in all_repos:
     x_count = len(x_only_by_repo.get(repo, []))
     y_count = len(y_only_by_repo.get(repo, []))
-    diff = abs(x_count - y_count)
+    diff = y_count - x_count
     repo_diffs.append((repo, diff))
 
 # Sort by diff (descending) and then by repo name
@@ -106,7 +106,13 @@ for repo, diff in repo_diffs:
     repo_color = 'red' if is_significant else 'yellow'
 
     print(f"\n{colored(repo, repo_color, attrs=['bold'])}:")
-    print(colored(f'Difference: {diff} instances!', repo_color, attrs=['bold']))
+    print(
+        colored(
+            f'Difference: {diff} instances! (Larger diff = Y better)',
+            repo_color,
+            attrs=['bold'],
+        )
+    )
     print(colored(f'X resolved but Y failed: ({len(x_instances)} instances)', 'green'))
     if x_instances:
         print('  ' + str(x_instances))
