@@ -1,8 +1,7 @@
 import os
 import tempfile
-import threading
 from pathlib import Path
-from typing import Callable, Generator
+from typing import Callable
 
 import modal
 import requests
@@ -10,49 +9,23 @@ import tenacity
 
 from openhands.core.config import AppConfig
 from openhands.events import EventStream
-from openhands.runtime.impl.eventstream.eventstream_runtime import (
-    EventStreamRuntime,
-    LogBuffer,
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
 )
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.utils.command import get_remote_startup_command
+from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.runtime.utils.runtime_build import (
     BuildFromImageType,
     prep_build_folder,
 )
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.tenacity_stop import stop_if_should_exit
 
 # FIXME: this will not work in HA mode. We need a better way to track IDs
 MODAL_RUNTIME_IDS: dict[str, str] = {}
 
 
-# Modal's log generator returns strings, but the upstream LogBuffer expects bytes.
-def bytes_shim(string_generator) -> Generator[bytes, None, None]:
-    for line in string_generator:
-        yield line.encode('utf-8')
-
-
-class ModalLogBuffer(LogBuffer):
-    """Synchronous buffer for Modal sandbox logs.
-
-    This class provides a thread-safe way to collect, store, and retrieve logs
-    from a Modal sandbox. It uses a list to store log lines and provides methods
-    for appending, retrieving, and clearing logs.
-    """
-
-    def __init__(self, sandbox: modal.Sandbox):
-        self.init_msg = 'Runtime client initialized.'
-
-        self.buffer: list[str] = []
-        self.lock = threading.Lock()
-        self._stop_event = threading.Event()
-        self.log_generator = bytes_shim(sandbox.stderr)
-        self.log_stream_thread = threading.Thread(target=self.stream_logs)
-        self.log_stream_thread.daemon = True
-        self.log_stream_thread.start()
-
-
-class ModalRuntime(EventStreamRuntime):
+class ModalRuntime(ActionExecutionClient):
     """This runtime will subscribe the event stream.
 
     When receive an event, it will send the event to runtime-client which run inside the Modal sandbox environment.
@@ -86,7 +59,8 @@ class ModalRuntime(EventStreamRuntime):
         self.sandbox = None
 
         self.modal_client = modal.Client.from_credentials(
-            config.modal_api_token_id, config.modal_api_token_secret
+            config.modal_api_token_id.get_secret_value(),
+            config.modal_api_token_secret.get_secret_value(),
         )
         self.app = modal.App.lookup(
             'openhands', create_if_missing=True, client=self.modal_client
@@ -102,14 +76,9 @@ class ModalRuntime(EventStreamRuntime):
         # This value is arbitrary as it's private to the container
         self.container_port = 3000
 
-        self.session = requests.Session()
         self.status_callback = status_callback
         self.base_container_image_id = self.config.sandbox.base_container_image
         self.runtime_container_image_id = self.config.sandbox.runtime_container_image
-        self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
-
-        # Buffer for container logs
-        self.log_buffer: LogBuffer | None = None
 
         if self.config.sandbox.runtime_extra_deps:
             self.log(
@@ -117,7 +86,7 @@ class ModalRuntime(EventStreamRuntime):
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
             )
 
-        self.init_base_runtime(
+        super().__init__(
             config,
             event_stream,
             sid,
@@ -156,7 +125,6 @@ class ModalRuntime(EventStreamRuntime):
 
             self.send_status_message('STATUS$CONTAINER_STARTED')
 
-        self.log_buffer = ModalLogBuffer(self.sandbox)
         if self.sandbox is None:
             raise Exception('Sandbox not initialized')
         tunnel = self.sandbox.tunnels()[self.container_port]
@@ -172,6 +140,20 @@ class ModalRuntime(EventStreamRuntime):
 
         if not self.attach_to_existing:
             self.send_status_message(' ')
+
+    def _get_action_execution_server_host(self):
+        return self.api_url
+
+    @tenacity.retry(
+        stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
+        retry=tenacity.retry_if_exception_type(
+            (ConnectionError, requests.exceptions.ConnectionError)
+        ),
+        reraise=True,
+        wait=tenacity.wait_fixed(2),
+    )
+    def _wait_until_alive(self):
+        self.check_if_alive()
 
     def _get_image_definition(
         self,
@@ -222,11 +204,6 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
     ):
         try:
             self.log('debug', 'Preparing to start container...')
-            plugin_args = []
-            if plugins is not None and len(plugins) > 0:
-                plugin_args.append('--plugins')
-                plugin_args.extend([plugin.name for plugin in plugins])
-
             # Combine environment variables
             environment: dict[str, str | None] = {
                 'port': str(self.container_port),
@@ -235,24 +212,13 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
             if self.config.debug:
                 environment['DEBUG'] = 'true'
 
-            browsergym_args = []
-            if self.config.sandbox.browsergym_eval_env is not None:
-                browsergym_args = [
-                    '-browsergym-eval-env',
-                    self.config.sandbox.browsergym_eval_env,
-                ]
-
             env_secret = modal.Secret.from_dict(environment)
 
             self.log('debug', f'Sandbox workspace: {sandbox_workspace_dir}')
-            sandbox_start_cmd = get_remote_startup_command(
-                self.container_port,
-                sandbox_workspace_dir,
-                'openhands' if self.config.run_as_openhands else 'root',
-                self.config.sandbox.user_id,
-                plugin_args,
-                browsergym_args,
-                is_root=not self.config.run_as_openhands,  # is_root=True when running as root
+            sandbox_start_cmd = get_action_execution_server_startup_command(
+                server_port=self.container_port,
+                plugins=self.plugins,
+                app_config=self.config,
             )
             self.log('debug', f'Starting container with command: {sandbox_start_cmd}')
             self.sandbox = modal.Sandbox.create(
@@ -278,14 +244,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
 
     def close(self):
         """Closes the ModalRuntime and associated objects."""
-        # if self.temp_dir_handler:
-        # self.temp_dir_handler.__exit__(None, None, None)
-
-        if self.log_buffer:
-            self.log_buffer.close()
-
-        if self.session:
-            self.session.close()
+        super().close()
 
         if not self.attach_to_existing and self.sandbox:
             self.sandbox.terminate()

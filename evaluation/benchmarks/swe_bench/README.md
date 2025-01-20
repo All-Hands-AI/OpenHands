@@ -80,7 +80,7 @@ ALLHANDS_API_KEY="YOUR-API-KEY" RUNTIME=remote SANDBOX_REMOTE_RUNTIME_API_URL="h
 To clean-up all existing runtime you've already started, run:
 
 ```bash
-ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
+ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/utils/scripts/cleanup_remote_runtime.sh
 ```
 
 ### Specify a subset of tasks to run infer
@@ -178,7 +178,7 @@ evaluation/benchmarks/swe_bench/scripts/eval_infer_remote.sh evaluation/evaluati
 To clean-up all existing runtimes that you've already started, run:
 
 ```bash
-ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
+ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/utils/scripts/cleanup_remote_runtime.sh
 ```
 
 ## Visualize Results
@@ -204,7 +204,7 @@ Then, in a separate Python environment with `streamlit` library, you can run the
 ```bash
 # Make sure you are inside the cloned `evaluation` repo
 conda activate streamlit # if you follow the optional conda env setup above
-streamlit app.py --server.port 8501 --server.address 0.0.0.0
+streamlit run app.py --server.port 8501 --server.address 0.0.0.0
 ```
 
 Then you can access the SWE-Bench trajectory visualizer at `localhost:8501`.

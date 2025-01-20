@@ -38,6 +38,9 @@ export function InteractiveChatBox({
   const handleSubmit = (message: string) => {
     onSubmit(message, images);
     setImages([]);
+    if (message) {
+      onChange?.("");
+    }
   };
 
   return (
@@ -65,7 +68,6 @@ export function InteractiveChatBox({
         <ChatInput
           disabled={isDisabled}
           button={mode}
-          placeholder="What do you want to build?"
           onChange={onChange}
           onSubmit={handleSubmit}
           onStop={onStop}
