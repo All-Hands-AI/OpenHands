@@ -35,6 +35,7 @@ from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import (
     Platform,
     codeact_user_response,
+    get_unique_uid,
     identify_token,
     reset_logger_for_multiprocessing,
 )
@@ -63,6 +64,11 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
+
+    action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     action = CmdRunAction(command='git config --global core.pager ""')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -110,7 +116,7 @@ async def complete_runtime(
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
-    action = CmdRunAction(command='git add -A')
+    action = CmdRunAction(command='sudo git add -A')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -184,13 +190,15 @@ async def process_issue(
             runtime_container_image=runtime_container_image,
             enable_auto_lint=False,
             use_host_network=False,
+            user_id=get_unique_uid(),
+            local_runtime_url='http://docker',
             # large enough timeout, since some testcases take very long to run
             timeout=300,
         ),
         # do not mount workspace
         workspace_base=workspace_base,
         workspace_mount_path=workspace_base,
-        agents={'CodeActAgent': AgentConfig(disabled_microagents=['gitlab'])},
+        agents={'CodeActAgent': AgentConfig(disabled_microagents=['github'])},
     )
     config.set_llm_config(llm_config)
 
