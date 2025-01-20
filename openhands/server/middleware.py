@@ -8,6 +8,7 @@ from fastapi import Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request as StarletteRequest
 from starlette.types import ASGIApp
 
 from openhands.server.shared import session_manager
@@ -95,7 +96,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.rate_limiter = rate_limiter
 
-    async def dispatch(self, request, call_next):
+    async def dispatch(self, request: StarletteRequest, call_next):
+        if not self.is_rate_limited_request(request):
+            return await call_next(request)
         ok = await self.rate_limiter(request)
         if not ok:
             return JSONResponse(
@@ -104,6 +107,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 headers={'Retry-After': '1'},
             )
         return await call_next(request)
+
+    def is_rate_limited_request(self, request: StarletteRequest):
+        if request.url.path.startswith('/assets'):
+            return False
+        # Put Other non rate limited checks here
+        return True
 
 
 class AttachConversationMiddleware(SessionMiddlewareInterface):
