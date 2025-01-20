@@ -45,7 +45,7 @@ class CacheControlMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         response = await call_next(request)
         if request.url.path.startswith('/assets'):
-            # The content of the assets directory has finger printed file names so we cache agressively
+            # The content of the assets directory has fingerprinted file names so we cache aggressively
             response.headers['Cache-Control'] = 'public, max-age=2592000, immutable'
         else:
             response.headers['Cache-Control'] = (
