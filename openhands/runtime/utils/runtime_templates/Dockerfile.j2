@@ -21,7 +21,11 @@ RUN apt-get update && \
         {%- else %}
         libgl1-mesa-glx \
         {% endif -%}
-        libasound2-plugins libatomic1 && \
+        libasound2-plugins libatomic1 \
+        fonts-arphic-ukai fonts-arphic-uming fonts-dejavu-core \
+        fonts-droid-fallback fonts-liberation fonts-noto-cjk \
+        fonts-noto-color-emoji fonts-noto-core fonts-noto-mono \
+        fonts-opensymbol fonts-urw-base35 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
