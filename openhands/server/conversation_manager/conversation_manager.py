@@ -64,7 +64,11 @@ class ConversationManager(ABC):
 
     @abstractmethod
     async def maybe_start_agent_loop(
-        self, sid: str, settings: Settings, user_id: str | None
+        self,
+        sid: str,
+        settings: Settings,
+        user_id: str | None,
+        initial_user_msg: str | None = None,
     ) -> EventStream:
         """Start an event loop if one is not already running"""
 

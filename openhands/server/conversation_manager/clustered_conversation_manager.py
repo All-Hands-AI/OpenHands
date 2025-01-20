@@ -17,6 +17,7 @@ from openhands.server.conversation_manager.conversation_manager import (
 from openhands.server.conversation_manager.standalone_conversation_manager import (
     StandaloneConversationManager,
 )
+from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import wait_all
 from openhands.utils.shutdown_listener import should_continue
@@ -363,11 +364,15 @@ class ClusteredConversationManager(StandaloneConversationManager):
                         await conversation.disconnect()
                     self._detached_conversations.clear()
                 await wait_all(
-                    self._close_session(sid) for sid in self._local_agent_loops_by_sid
+                    (
+                        self._close_session(sid)
+                        for sid in self._local_agent_loops_by_sid
+                    ),
+                    timeout=WAIT_TIME_BEFORE_CLOSE,
                 )
                 return
-            except Exception as e:
-                logger.warning(f'error_cleaning_stale: {str(e)}')
+            except Exception:
+                logger.warning('error_cleaning_stale', exc_info=True, stack_info=True)
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
     async def _close_session(self, sid: str):
