@@ -1,5 +1,6 @@
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
+from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, EventSource
 
 
@@ -14,7 +15,19 @@ class ReplayManager:
 
     def __init__(self, replay_events: list[Event] | None):
         if replay_events:
-            logger.info(f'Replay logs loaded, events length = {len(replay_events)}')
+            logger.info(f'Replay events loaded, events length = {len(replay_events)}')
+            for index in range(len(replay_events) - 1):
+                event = replay_events[index]
+                if isinstance(event, MessageAction) and event.wait_for_response:
+                    # For any message waiting for response that is not the last
+                    # event, we override wait_for_response to True, as a response
+                    # would have been included in the next event, and we don't
+                    # want the user to interfere with the replay process
+                    logger.info(
+                        'Replay events contains wait_for_response message action, ignoring wait_for_response'
+                    )
+                    event.wait_for_response = False
+
         self.replay_events = replay_events
         self.replay_mode = bool(replay_events)
         self.replay_index = 0
