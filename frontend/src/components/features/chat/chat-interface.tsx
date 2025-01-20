@@ -23,9 +23,11 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 function getEntryPoint(
   hasRepository: boolean | null,
   hasImportedProjectZip: boolean | null,
+  hasReplayJson: boolean | null,
 ): string {
   if (hasRepository) return "github";
   if (hasImportedProjectZip) return "zip";
+  if (hasReplayJson) return "replay";
   return "direct";
 }
 
@@ -44,7 +46,7 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
-  const { selectedRepository, importedProjectZip } = useSelector(
+  const { selectedRepository, importedProjectZip, replayJson } = useSelector(
     (state: RootState) => state.initialQuery,
   );
 
@@ -54,9 +56,11 @@ export function ChatInterface() {
         entry_point: getEntryPoint(
           selectedRepository !== null,
           importedProjectZip !== null,
+          replayJson !== null,
         ),
         query_character_length: content.length,
         uploaded_zip_size: importedProjectZip?.length,
+        replay_json_size: replayJson?.length,
       });
     } else {
       posthog.capture("user_message_sent", {

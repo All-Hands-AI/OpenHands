@@ -33,6 +33,7 @@ class InitSessionRequest(BaseModel):
     github_token: str | None = None
     selected_repository: str | None = None
     initial_user_msg: str | None = None
+    replay_json: str | None = None
 
 
 async def _create_new_conversation(
@@ -40,6 +41,7 @@ async def _create_new_conversation(
     token: str | None,
     selected_repository: str | None,
     initial_user_msg: str | None,
+    replay_json: str | None,
 ):
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
@@ -94,7 +96,7 @@ async def _create_new_conversation(
 
     logger.info(f'Starting agent loop for conversation {conversation_id}')
     event_stream = await session_manager.maybe_start_agent_loop(
-        conversation_id, conversation_init_data, user_id, initial_user_msg
+        conversation_id, conversation_init_data, user_id, initial_user_msg, replay_json
     )
     try:
         event_stream.subscribe(
@@ -120,10 +122,11 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     github_token = getattr(request.state, 'github_token', '') or data.github_token
     selected_repository = data.selected_repository
     initial_user_msg = data.initial_user_msg
+    replay_json = data.replay_json
 
     try:
         conversation_id = await _create_new_conversation(
-            user_id, github_token, selected_repository, initial_user_msg
+            user_id, github_token, selected_repository, initial_user_msg, replay_json
         )
 
         return JSONResponse(

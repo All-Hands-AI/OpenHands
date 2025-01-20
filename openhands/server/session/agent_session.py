@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 from typing import Callable, Optional
 
@@ -11,7 +12,8 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction
 from openhands.events.action.message import MessageAction
-from openhands.events.event import EventSource
+from openhands.events.event import Event, EventSource
+from openhands.events.serialization.event import event_from_dict
 from openhands.events.stream import EventStream
 from openhands.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
@@ -73,6 +75,7 @@ class AgentSession:
         github_token: str | None = None,
         selected_repository: str | None = None,
         initial_user_msg: str | None = None,
+        replay_json: str | None = None,
     ):
         """Starts the Agent session
         Parameters:
@@ -103,6 +106,34 @@ class AgentSession:
             selected_repository=selected_repository,
         )
 
+        replay_events = None
+        if replay_json:
+            assert initial_user_msg is None
+            data = json.loads(replay_json)
+            if not isinstance(data, list):
+                raise ValueError(
+                    f'Expected a list in {replay_json}, got {type(data).__name__}'
+                )
+            replay_events = []
+            for item in data:
+                event = event_from_dict(item)
+                # cannot add an event with _id to event stream
+                event._id = None  # type: ignore[attr-defined]
+                replay_events.append(event)
+            self.controller = self._create_controller(
+                agent,
+                config.security.confirmation_mode,
+                max_iterations,
+                max_budget_per_task=max_budget_per_task,
+                agent_to_llm_config=agent_to_llm_config,
+                agent_configs=agent_configs,
+                replay_events=replay_events[1:],
+            )
+            assert isinstance(replay_events[0], MessageAction)
+            self.event_stream.add_event(replay_events[0], EventSource.USER)
+            self._starting = True
+            return
+
         self.controller = self._create_controller(
             agent,
             config.security.confirmation_mode,
@@ -119,7 +150,7 @@ class AgentSession:
             self.event_stream.add_event(
                 MessageAction(content=initial_user_msg), EventSource.USER
             )
-            
+
         self._starting = False
 
     async def close(self):
@@ -247,6 +278,7 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
+        replay_events: list[Event] | None = None,
     ) -> AgentController:
         """Creates an AgentController instance
 
@@ -292,6 +324,7 @@ class AgentSession:
             headless_mode=False,
             status_callback=self._status_callback,
             initial_state=self._maybe_restore_state(),
+            replay_events=replay_events,
         )
 
         return controller

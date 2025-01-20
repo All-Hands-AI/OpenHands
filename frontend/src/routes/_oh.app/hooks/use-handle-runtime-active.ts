@@ -25,6 +25,7 @@ export const useHandleRuntimeActive = () => {
     const file = new File([blob], "imported-project.zip", {
       type: blob.type,
     });
+    console.log("handleUploadFiles");
     uploadFiles(
       { files: [file] },
       {

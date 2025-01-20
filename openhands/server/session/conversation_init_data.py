@@ -10,3 +10,4 @@ class ConversationInitData(Settings):
 
     github_token: str | None = Field(default=None)
     selected_repository: str | None = Field(default=None)
+    replay_json: str | None = Field(default=None)
