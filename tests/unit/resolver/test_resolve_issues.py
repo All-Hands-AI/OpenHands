@@ -21,6 +21,7 @@ from openhands.resolver.resolve_issue import (
     process_issue,
 )
 from openhands.resolver.resolver_output import ResolverOutput
+from openhands.resolver.utils import Platform
 
 
 @pytest.fixture
@@ -77,7 +78,7 @@ def test_initialize_runtime():
         ),
     ]
 
-    initialize_runtime(mock_runtime)
+    initialize_runtime(mock_runtime, Platform.GITHUB)
 
     assert mock_runtime.run_action.call_count == 2
     mock_runtime.run_action.assert_any_call(CmdRunAction(command='cd /workspace'))
@@ -104,6 +105,7 @@ async def test_resolve_issue_no_issues_found():
                 repo='test-repo',
                 token='test-token',
                 username='test-user',
+                platform=Platform.GITHUB,
                 max_iterations=5,
                 output_dir='/tmp',
                 llm_config=LLMConfig(model='test', api_key='test'),
@@ -121,7 +123,7 @@ async def test_resolve_issue_no_issues_found():
         assert 'correct permissions' in str(exc_info.value)
 
 
-def test_download_issues():
+def test_download_issues_from_github():
     llm_config = LLMConfig(model='test', api_key='test')
     handler = ServiceContext(GithubIssueHandler('owner', 'repo', 'token'), llm_config)
 
@@ -163,7 +165,7 @@ def test_download_issues():
     assert [issue.thread_ids for issue in issues] == [None, None]
 
 
-def test_download_pr():
+def test_download_pr_from_github():
     llm_config = LLMConfig(model='test', api_key='test')
     handler = ServiceContextPR(GithubPRHandler('owner', 'repo', 'token'), llm_config)
     mock_pr_response = MagicMock()
@@ -308,7 +310,7 @@ async def test_complete_runtime():
         create_cmd_output(exit_code=0, content='git diff content', command='git apply'),
     ]
 
-    result = await complete_runtime(mock_runtime, 'base_commit_hash')
+    result = await complete_runtime(mock_runtime, 'base_commit_hash', Platform.GITHUB)
 
     assert result == {'git_patch': 'git diff content'}
     assert mock_runtime.run_action.call_count == 5
@@ -435,6 +437,7 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
             # Call the function
             result = await process_issue(
                 issue,
+                Platform.GITHUB,
                 base_commit,
                 max_iterations,
                 llm_config,

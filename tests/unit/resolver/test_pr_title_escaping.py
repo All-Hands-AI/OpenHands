@@ -4,6 +4,7 @@ import tempfile
 
 from openhands.resolver.issue import Issue
 from openhands.resolver.send_pull_request import make_commit
+from openhands.resolver.utils import Platform
 
 
 def test_commit_message_with_quotes():
@@ -159,6 +160,7 @@ def test_pr_title_with_quotes(monkeypatch):
             issue=issue,
             token='dummy-token',
             username='test-user',
+            platform=Platform.GITHUB,
             patch_dir=temp_dir,
             pr_type='ready',
         )
