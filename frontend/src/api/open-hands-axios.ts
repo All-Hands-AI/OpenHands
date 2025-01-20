@@ -4,24 +4,24 @@ import { KeycloakErrorResponse } from "./open-hands.types";
 export const openHands = axios.create();
 
 export const setAuthTokenHeader = (token: string) => {
-  console.log(`setAuthTokenHeader to ${token}`)
+  console.debug(`setAuthTokenHeader to ${token}`)
   openHands.defaults.headers.common.Authorization = `Bearer ${token}`;
 };
 
 export const setGitHubTokenHeader = (token: string) => {
-  console.log(`setGitHubTokenHeader to ${token}`)
+  console.debug(`setGitHubTokenHeader to ${token}`)
   openHands.defaults.headers.common["X-GitHub-Token"] = token;
 };
 
 export const removeAuthTokenHeader = () => {
-  console.log("removeAuthTokenHeader")
+  console.debug("removeAuthTokenHeader")
   if (openHands.defaults.headers.common.Authorization) {
     delete openHands.defaults.headers.common.Authorization;
   }
 };
 
 export const removeGitHubTokenHeader = () => {
-  console.log("removeGitHubTokenHeader")
+  console.debug("removeGitHubTokenHeader")
   if (openHands.defaults.headers.common["X-GitHub-Token"]) {
     delete openHands.defaults.headers.common["X-GitHub-Token"];
   }
@@ -59,7 +59,7 @@ export const setupOpenhandsAxiosInterceptors = (
     // Pass successful responses through
     (response) => {
       const parsedData = response.data;
-      console.log(`Openhands API call response to ${response.request.responseURL}\n ${JSON.stringify(parsedData)}`)
+      console.debug(`Openhands API call response to ${response.request.responseURL}\n ${JSON.stringify(parsedData)}`)
       if (isKeycloakErrorResponse(parsedData)) {
         const error = new AxiosError(
           "Failed",
