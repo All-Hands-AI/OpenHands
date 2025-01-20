@@ -1,6 +1,6 @@
 import pytest
 
-from openhands.runtime.utils.bash import split_bash_commands
+from openhands.runtime.utils.bash import escape_bash_special_chars, split_bash_commands
 
 
 def test_split_commands_util():
@@ -257,3 +257,172 @@ def test_split_commands_with_invalid_input():
     for input_command in invalid_inputs:
         # it will fall back to return the original input
         assert split_bash_commands(input_command) == [input_command]
+
+
+def test_escape_bash_special_chars():
+    test_cases = [
+        # Basic cases - use raw strings (r'') to avoid Python escape sequence warnings
+        ('echo test \\; ls', 'echo test \\\\; ls'),
+        ('grep pattern \\| sort', 'grep pattern \\\\| sort'),
+        ('cmd1 \\&\\& cmd2', 'cmd1 \\\\&\\\\& cmd2'),
+        ('cat file \\> output.txt', 'cat file \\\\> output.txt'),
+        ('cat \\< input.txt', 'cat \\\\< input.txt'),
+        # Quoted strings should remain unchanged
+        ('echo "test \\; unchanged"', 'echo "test \\; unchanged"'),
+        ("echo 'test \\| unchanged'", "echo 'test \\| unchanged'"),
+        # Mixed quoted and unquoted
+        (
+            'echo "quoted \\;" \\; "more" \\| grep',
+            'echo "quoted \\;" \\\\; "more" \\\\| grep',
+        ),
+        # Multiple escapes in sequence
+        ('cmd1 \\;\\|\\& cmd2', 'cmd1 \\\\;\\\\|\\\\& cmd2'),
+        # Commands with other backslashes
+        ('echo test\\ntest', 'echo test\\ntest'),
+        ('echo "test\\ntest"', 'echo "test\\ntest"'),
+        # Edge cases
+        ('', ''),  # Empty string
+        ('\\\\', '\\\\'),  # Double backslash
+        ('\\"', '\\"'),  # Escaped quote
+    ]
+
+    for input_cmd, expected in test_cases:
+        result = escape_bash_special_chars(input_cmd)
+        assert (
+            result == expected
+        ), f'Failed on input "{input_cmd}"\nExpected: "{expected}"\nGot: "{result}"'
+
+
+def test_escape_bash_special_chars_with_invalid_syntax():
+    invalid_inputs = [
+        'echo "unclosed quote',
+        "echo 'unclosed quote",
+        'cat <<EOF\nunclosed heredoc',
+    ]
+    for input_cmd in invalid_inputs:
+        # Should return original input when parsing fails
+        result = escape_bash_special_chars(input_cmd)
+        assert result == input_cmd, f'Failed to handle invalid input: {input_cmd}'
+
+
+def test_escape_bash_special_chars_with_heredoc():
+    input_cmd = r"""cat <<EOF
+line1 \; not escaped
+line2 \| not escaped
+EOF"""
+    # Heredoc content should not be escaped
+    expected = input_cmd
+    result = escape_bash_special_chars(input_cmd)
+    assert (
+        result == expected
+    ), f'Failed to handle heredoc correctly\nExpected: {expected}\nGot: {result}'
+
+
+def test_escape_bash_special_chars_with_parameter_expansion():
+    test_cases = [
+        # Parameter expansion should be preserved
+        ('echo $HOME', 'echo $HOME'),
+        ('echo ${HOME}', 'echo ${HOME}'),
+        ('echo ${HOME:-default}', 'echo ${HOME:-default}'),
+        # Mixed with special chars
+        ('echo $HOME \\; ls', 'echo $HOME \\\\; ls'),
+        ('echo ${PATH} \\| grep bin', 'echo ${PATH} \\\\| grep bin'),
+        # Quoted parameter expansion
+        ('echo "$HOME"', 'echo "$HOME"'),
+        ('echo "${HOME}"', 'echo "${HOME}"'),
+        # Complex parameter expansions
+        ('echo ${var:=default} \\; ls', 'echo ${var:=default} \\\\; ls'),
+        ('echo ${!prefix*} \\| sort', 'echo ${!prefix*} \\\\| sort'),
+    ]
+
+    for input_cmd, expected in test_cases:
+        result = escape_bash_special_chars(input_cmd)
+        assert (
+            result == expected
+        ), f'Failed on input "{input_cmd}"\nExpected: "{expected}"\nGot: "{result}"'
+
+
+def test_escape_bash_special_chars_with_command_substitution():
+    test_cases = [
+        # Basic command substitution
+        ('echo $(pwd)', 'echo $(pwd)'),
+        ('echo `pwd`', 'echo `pwd`'),
+        # Mixed with special chars
+        ('echo $(pwd) \\; ls', 'echo $(pwd) \\\\; ls'),
+        ('echo `pwd` \\| grep home', 'echo `pwd` \\\\| grep home'),
+        # Nested command substitution
+        ('echo $(echo `pwd`)', 'echo $(echo `pwd`)'),
+        # Complex command substitution
+        ('echo $(find . -name "*.txt" \\; ls)', 'echo $(find . -name "*.txt" \\; ls)'),
+        # Mixed with quotes
+        ('echo "$(pwd)"', 'echo "$(pwd)"'),
+        ('echo "`pwd`"', 'echo "`pwd`"'),
+    ]
+
+    for input_cmd, expected in test_cases:
+        result = escape_bash_special_chars(input_cmd)
+        assert (
+            result == expected
+        ), f'Failed on input "{input_cmd}"\nExpected: "{expected}"\nGot: "{result}"'
+
+
+def test_escape_bash_special_chars_mixed_nodes():
+    test_cases = [
+        # Mix of parameter expansion and command substitution
+        ('echo $HOME/$(pwd)', 'echo $HOME/$(pwd)'),
+        # Mix with special chars
+        ('echo $HOME/$(pwd) \\; ls', 'echo $HOME/$(pwd) \\\\; ls'),
+        # Complex mixed cases
+        (
+            'echo "${HOME}/$(basename `pwd`) \\; next"',
+            'echo "${HOME}/$(basename `pwd`) \\; next"',
+        ),
+        (
+            'VAR=${HOME} \\; echo $(pwd)',
+            'VAR=${HOME} \\\\; echo $(pwd)',
+        ),
+        # Real-world examples
+        (
+            'find . -name "*.txt" -exec grep "${PATTERN:-default}" {} \\;',
+            'find . -name "*.txt" -exec grep "${PATTERN:-default}" {} \\\\;',
+        ),
+        (
+            'echo "Current path: ${PWD}/$(basename `pwd`)" \\| grep home',
+            'echo "Current path: ${PWD}/$(basename `pwd`)" \\\\| grep home',
+        ),
+    ]
+
+    for input_cmd, expected in test_cases:
+        result = escape_bash_special_chars(input_cmd)
+        assert (
+            result == expected
+        ), f'Failed on input "{input_cmd}"\nExpected: "{expected}"\nGot: "{result}"'
+
+
+def test_escape_bash_special_chars_with_chained_commands():
+    test_cases = [
+        # Basic chained commands
+        ('ls && pwd', 'ls && pwd'),
+        ('echo "hello" && ls', 'echo "hello" && ls'),
+        # Chained commands with special chars
+        ('ls \\; pwd && echo test', 'ls \\\\; pwd && echo test'),
+        ('echo test && grep pattern \\| sort', 'echo test && grep pattern \\\\| sort'),
+        # Complex chained cases
+        ('echo ${HOME} && ls \\; pwd', 'echo ${HOME} && ls \\\\; pwd'),
+        (
+            'echo "$(pwd)" && cat file \\> out.txt',
+            'echo "$(pwd)" && cat file \\\\> out.txt',
+        ),
+        # Multiple chains
+        ('cmd1 && cmd2 && cmd3', 'cmd1 && cmd2 && cmd3'),
+        (
+            'cmd1 \\; ls && cmd2 \\| grep && cmd3',
+            'cmd1 \\\\; ls && cmd2 \\\\| grep && cmd3',
+        ),
+    ]
+
+    for input_cmd, expected in test_cases:
+        result = escape_bash_special_chars(input_cmd)
+        assert (
+            result == expected
+        ), f'Failed on input "{input_cmd}"\nExpected: "{expected}"\nGot: "{result}"'

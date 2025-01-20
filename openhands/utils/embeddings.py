@@ -90,7 +90,9 @@ class EmbeddingsLoader:
 
             return OpenAIEmbedding(
                 model='text-embedding-ada-002',
-                api_key=llm_config.api_key,
+                api_key=llm_config.api_key.get_secret_value()
+                if llm_config.api_key
+                else None,
             )
         elif strategy == 'azureopenai':
             from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
@@ -101,6 +103,12 @@ class EmbeddingsLoader:
                 api_key=llm_config.api_key,
                 azure_endpoint=llm_config.base_url,
                 api_version=llm_config.api_version,
+            )
+        elif strategy == 'voyage':
+            from llama_index.embeddings.voyageai import VoyageEmbedding
+
+            return VoyageEmbedding(
+                model_name='voyage-code-3',
             )
         elif (strategy is not None) and (strategy.lower() == 'none'):
             # TODO: this works but is not elegant enough. The incentive is when

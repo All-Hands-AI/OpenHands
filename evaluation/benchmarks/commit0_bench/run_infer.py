@@ -124,7 +124,7 @@ def get_config(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
-        runtime=os.environ.get('RUNTIME', 'eventstream'),
+        runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox=SandboxConfig(
             base_container_image=base_container_image,
             enable_auto_lint=True,
@@ -171,7 +171,7 @@ def initialize_runtime(
     action = CmdRunAction(
         command=f'git clone -b commit0_combined https://github.com/{instance["repo"]}.git'
     )
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -181,7 +181,7 @@ def initialize_runtime(
     )
 
     action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -191,7 +191,7 @@ def initialize_runtime(
     )
 
     action = CmdRunAction(command='git checkout -b openhands')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -201,7 +201,7 @@ def initialize_runtime(
 
     # Install commit0
     action = CmdRunAction(command='/root/.cargo/bin/uv pip install commit0')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -231,7 +231,7 @@ def complete_runtime(
     workspace_dir_name = _get_commit0_workspace_dir_name(instance)
 
     action = CmdRunAction(command='git add .')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -241,7 +241,7 @@ def complete_runtime(
     )
 
     action = CmdRunAction(command='git commit -m "openhands edits"')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -258,7 +258,7 @@ def complete_runtime(
         action = CmdRunAction(
             command=f"git diff {instance['base_commit']} HEAD -- . ':(exclude)spec.pdf.bz2'"
         )
-        action.timeout = 600 + 100 * n_retries
+        action.set_hard_timeout(600 + 100 * n_retries)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -282,7 +282,7 @@ def complete_runtime(
     action = CmdRunAction(
         command=f"{instance['test']['test_cmd']} --json-report --json-report-file=report.json --continue-on-collection-errors {test_dir} > test_output.txt 2>&1"
     )
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -292,7 +292,7 @@ def complete_runtime(
     )
     # Read test output
     action = CmdRunAction(command='cat test_output.txt')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -305,7 +305,7 @@ def complete_runtime(
 
     # Save pytest exit code
     action = CmdRunAction(command='echo $?')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -318,7 +318,7 @@ def complete_runtime(
 
     # Read the test report
     action = CmdRunAction(command='cat report.json')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -330,7 +330,7 @@ def complete_runtime(
     repo_name = instance['repo'].split('/')[1]
     repo_name = repo_name.replace('.', '-')
     action = CmdRunAction(command=f'commit0 get-tests {repo_name}')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -571,6 +571,8 @@ if __name__ == '__main__':
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
+        # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
+        llm_config.modify_params = False
         llm_config.log_completions = True
 
     if llm_config is None:

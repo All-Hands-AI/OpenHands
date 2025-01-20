@@ -1,4 +1,3 @@
-import copy
 import os
 import re
 import tempfile
@@ -8,7 +7,13 @@ from openhands_aci.utils.diff import get_diff
 
 from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action import FileEditAction, FileReadAction, FileWriteAction
+from openhands.events.action import (
+    FileEditAction,
+    FileReadAction,
+    FileWriteAction,
+    IPythonRunCellAction,
+)
+from openhands.events.event import FileEditSource
 from openhands.events.observation import (
     ErrorObservation,
     FileEditObservation,
@@ -88,32 +93,35 @@ class FileEditRuntimeInterface(ABC):
     def write(self, action: FileWriteAction) -> Observation:
         pass
 
+    @abstractmethod
+    def run_ipython(self, action: IPythonRunCellAction) -> Observation:
+        pass
+
 
 class FileEditRuntimeMixin(FileEditRuntimeInterface):
     # Most LLMs have output token limit of 4k tokens.
     # This restricts the number of lines we can edit to avoid exceeding the token limit.
     MAX_LINES_TO_EDIT = 300
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, enable_llm_editor: bool, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.enable_llm_editor = enable_llm_editor
 
-        llm_config = self.config.get_llm_config()
+        if not self.enable_llm_editor:
+            return
 
-        if llm_config.draft_editor is None:
-            llm_config.draft_editor = copy.deepcopy(llm_config)
+        draft_editor_config = self.config.get_llm_config('draft_editor')
 
         # manually set the model name for the draft editor LLM to distinguish token costs
-        llm_metrics = Metrics(
-            model_name='draft_editor:' + llm_config.draft_editor.model
-        )
-        if llm_config.draft_editor.caching_prompt:
+        llm_metrics = Metrics(model_name='draft_editor:' + draft_editor_config.model)
+        if draft_editor_config.caching_prompt:
             logger.debug(
                 'It is not recommended to cache draft editor LLM prompts as it may incur high costs for the same prompt. '
                 'Automatically setting caching_prompt=false.'
             )
-            llm_config.draft_editor.caching_prompt = False
+            draft_editor_config.caching_prompt = False
 
-        self.draft_editor_llm = LLM(llm_config.draft_editor, metrics=llm_metrics)
+        self.draft_editor_llm = LLM(draft_editor_config, metrics=llm_metrics)
         logger.debug(
             f'[Draft edit functionality] enabled with LLM: {self.draft_editor_llm}'
         )
@@ -198,6 +206,15 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         return None
 
     def edit(self, action: FileEditAction) -> Observation:
+        if action.impl_source == FileEditSource.OH_ACI:
+            # Translate to ipython command to file_editor
+            return self.run_ipython(
+                IPythonRunCellAction(
+                    code=action.translated_ipython_code,
+                    include_extra=False,
+                )
+            )
+
         obs = self.read(FileReadAction(path=action.path))
         if (
             isinstance(obs, ErrorObservation)

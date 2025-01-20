@@ -24,7 +24,8 @@ def mock_llm():
 @pytest.fixture
 def codeact_agent(mock_llm):
     config = AgentConfig()
-    return CodeActAgent(mock_llm, config)
+    agent = CodeActAgent(mock_llm, config)
+    return agent
 
 
 def response_mock(content: str, tool_call_id: str):
@@ -74,7 +75,7 @@ def test_get_messages(codeact_agent: CodeActAgent):
 
     codeact_agent.reset()
     messages = codeact_agent._get_messages(
-        Mock(history=history, max_iterations=5, iteration=0)
+        Mock(history=history, max_iterations=5, iteration=0, extra_data={})
     )
 
     assert (
@@ -110,7 +111,7 @@ def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
 
     codeact_agent.reset()
     messages = codeact_agent._get_messages(
-        Mock(history=history, max_iterations=10, iteration=5)
+        Mock(history=history, max_iterations=10, iteration=5, extra_data={})
     )
 
     # Check that only the last two user messages have cache_prompt=True
@@ -143,6 +144,7 @@ def test_prompt_caching_headers(codeact_agent: CodeActAgent):
     mock_state.history = history
     mock_state.max_iterations = 5
     mock_state.iteration = 0
+    mock_state.extra_data = {}
 
     codeact_agent.reset()
 

@@ -1,7 +1,12 @@
 import jwt
+from fastapi import Request
 from jwt.exceptions import InvalidTokenError
 
 from openhands.core.logger import openhands_logger as logger
+
+
+def get_user_id(request: Request) -> str | None:
+    return getattr(request.state, 'github_user_id', None)
 
 
 def get_sid_from_token(token: str, jwt_secret: str) -> str:
@@ -30,10 +35,10 @@ def get_sid_from_token(token: str, jwt_secret: str) -> str:
     return ''
 
 
-def sign_token(payload: dict[str, object], jwt_secret: str) -> str:
+def sign_token(payload: dict[str, object], jwt_secret: str, algorithm='HS256') -> str:
     """Signs a JWT token."""
     # payload = {
     #     "sid": sid,
     #     # "exp": datetime.now(timezone.utc) + timedelta(minutes=15),
     # }
-    return jwt.encode(payload, jwt_secret, algorithm='HS256')
+    return jwt.encode(payload, jwt_secret, algorithm=algorithm)

@@ -5,6 +5,7 @@ from openhands.core.schema import ActionType
 from openhands.events.action import BrowseInteractiveAction, BrowseURLAction
 from openhands.events.observation import BrowserOutputObservation
 from openhands.runtime.browser.browser_env import BrowserEnv
+from openhands.utils.async_utils import call_sync_from_async
 
 
 async def browse(
@@ -29,7 +30,7 @@ async def browse(
 
     try:
         # obs provided by BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/env.py#L396
-        obs = browser.step(action_str)
+        obs = await call_sync_from_async(browser.step, action_str)
         return BrowserOutputObservation(
             content=obs['text_content'],  # text content of the page
             url=obs.get('url', ''),  # URL of the page

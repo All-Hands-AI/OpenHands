@@ -8,7 +8,7 @@ import {
   FaPython,
 } from "react-icons/fa";
 
-export const EXTENSION_ICON_MAP: Record<string, JSX.Element> = {
+export const EXTENSION_ICON_MAP: Record<string, React.ReactNode> = {
   js: <DiJavascript />,
   ts: <DiJavascript />,
   py: <FaPython />,

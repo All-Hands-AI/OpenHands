@@ -1,9 +1,16 @@
 import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet } from "react-router";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
+import { FaServer } from "react-icons/fa";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
+import {
+  ConversationProvider,
+  useConversation,
+} from "#/context/conversation-context";
 import { Controls } from "#/components/features/controls/controls";
-import { RootState } from "#/store";
 import { clearMessages } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
@@ -15,31 +22,38 @@ import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "../../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "./event-handler";
-import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 import { useAuth } from "#/context/auth-context";
-import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
+import {
+  Orientation,
+  ResizablePanel,
+} from "#/components/layout/resizable-panel";
 import Security from "#/components/shared/modals/security/security";
+import { useEndSession } from "#/hooks/use-end-session";
+import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { ServedAppLabel } from "#/components/layout/served-app-label";
+import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
+import { useSettings } from "#/hooks/query/use-settings";
+import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 
-function App() {
-  const { token, gitHubToken } = useAuth();
-  const { settings } = useUserPrefs();
-
-  const dispatch = useDispatch();
+function AppContent() {
   useConversationConfig();
-
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.initalQuery,
+  const { t } = useTranslation();
+  const { gitHubToken } = useAuth();
+  const { data: settings } = useSettings();
+  const { conversationId } = useConversation();
+  const { data: conversation, isFetched } = useUserConversation(
+    conversationId || null,
   );
+  const dispatch = useDispatch();
+  const endSession = useEndSession();
 
-  const { data: latestGitHubCommit } = useLatestRepoCommit({
-    repository: selectedRepository,
-  });
+  const [width, setWidth] = React.useState(window.innerWidth);
 
   const secrets = React.useMemo(
-    () => [gitHubToken, token].filter((secret) => secret !== null),
-    [gitHubToken, token],
+    () => [gitHubToken].filter((secret) => secret !== null),
+    [gitHubToken],
   );
 
   const Terminal = React.useMemo(
@@ -47,11 +61,37 @@ function App() {
     [],
   );
 
+  React.useEffect(() => {
+    if (MULTI_CONVERSATION_UI && isFetched && !conversation) {
+      toast.error(
+        "This conversation does not exist, or you do not have permission to access it.",
+      );
+      endSession();
+    }
+  }, [conversation, isFetched]);
+
+  React.useEffect(() => {
+    dispatch(clearMessages());
+    dispatch(clearTerminal());
+    dispatch(clearJupyter());
+  }, [conversationId]);
+
   useEffectOnce(() => {
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
   });
+
+  function handleResize() {
+    setWidth(window.innerWidth);
+  }
+
+  React.useEffect(() => {
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   const {
     isOpen: securityModalIsOpen,
@@ -59,31 +99,52 @@ function App() {
     onOpenChange: onSecurityModalOpenChange,
   } = useDisclosure();
 
-  return (
-    <WsClientProvider
-      enabled
-      token={token}
-      ghToken={gitHubToken}
-      settings={settings}
-    >
-      <EventHandler>
-        <div className="flex flex-col h-full gap-3">
-          <div className="flex h-full overflow-auto gap-3">
-            <Container className="w-[390px] max-h-full relative">
-              <ChatInterface />
-            </Container>
-
-            <div className="flex flex-col grow gap-3">
+  function renderMain() {
+    if (width <= 640) {
+      return (
+        <div className="rounded-xl overflow-hidden border border-neutral-600 w-full">
+          <ChatInterface />
+        </div>
+      );
+    }
+    return (
+      <ResizablePanel
+        orientation={Orientation.HORIZONTAL}
+        className="grow h-full min-h-0 min-w-0"
+        initialSize={500}
+        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-neutral-800"
+        secondClassName="flex flex-col overflow-hidden"
+        firstChild={<ChatInterface />}
+        secondChild={
+          <ResizablePanel
+            orientation={Orientation.VERTICAL}
+            className="grow h-full min-h-0 min-w-0"
+            initialSize={500}
+            firstClassName="rounded-xl overflow-hidden border border-neutral-600"
+            secondClassName="flex flex-col overflow-hidden"
+            firstChild={
               <Container
-                className="h-2/3"
+                className="h-full"
                 labels={[
-                  { label: "Workspace", to: "", icon: <CodeIcon /> },
+                  {
+                    label: t(I18nKey.WORKSPACE$TITLE),
+                    to: "",
+                    icon: <CodeIcon />,
+                  },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
                   {
-                    label: "Browser",
+                    label: <ServedAppLabel />,
+                    to: "served",
+                    icon: <FaServer />,
+                  },
+                  {
+                    label: (
+                      <div className="flex items-center gap-1">
+                        {t(I18nKey.BROWSER$TITLE)}
+                      </div>
+                    ),
                     to: "browser",
                     icon: <GlobeIcon />,
-                    isBeta: true,
                   },
                 ]}
               >
@@ -91,31 +152,53 @@ function App() {
                   <Outlet />
                 </FilesProvider>
               </Container>
-              {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-               * that it loads only in the client-side. */}
-              <Container className="h-1/3 overflow-scroll" label="Terminal">
+            }
+            secondChild={
+              <Container
+                className="h-full overflow-scroll"
+                label={<TerminalStatusLabel />}
+              >
+                {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
+                 * that it loads only in the client-side. */}
                 <React.Suspense fallback={<div className="h-full" />}>
                   <Terminal secrets={secrets} />
                 </React.Suspense>
               </Container>
-            </div>
-          </div>
-
-          <div className="h-[60px]">
-            <Controls
-              setSecurityOpen={onSecurityModalOpen}
-              showSecurityLock={!!settings.SECURITY_ANALYZER}
-              lastCommitData={latestGitHubCommit || null}
-            />
-          </div>
-          <Security
-            isOpen={securityModalIsOpen}
-            onOpenChange={onSecurityModalOpenChange}
-            securityAnalyzer={settings.SECURITY_ANALYZER}
+            }
           />
+        }
+      />
+    );
+  }
+
+  return (
+    <WsClientProvider conversationId={conversationId}>
+      <EventHandler>
+        <div data-testid="app-route" className="flex flex-col h-full gap-3">
+          <div className="flex h-full overflow-auto">{renderMain()}</div>
+
+          <Controls
+            setSecurityOpen={onSecurityModalOpen}
+            showSecurityLock={!!settings?.SECURITY_ANALYZER}
+          />
+          {settings && (
+            <Security
+              isOpen={securityModalIsOpen}
+              onOpenChange={onSecurityModalOpenChange}
+              securityAnalyzer={settings.SECURITY_ANALYZER}
+            />
+          )}
         </div>
       </EventHandler>
     </WsClientProvider>
+  );
+}
+
+function App() {
+  return (
+    <ConversationProvider>
+      <AppContent />
+    </ConversationProvider>
   );
 }
 
