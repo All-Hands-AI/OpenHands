@@ -1,4 +1,4 @@
-# WebArena Evaluation with OpenHands Browsing Agents
+# VisualWebArena Evaluation with OpenHands Browsing Agents
 
 This folder contains evaluation for [VisualWebArena](https://github.com/web-arena-x/visualwebarena) benchmark, powered by [BrowserGym](https://github.com/ServiceNow/BrowserGym) for easy evaluation of how well an agent capable of browsing can perform on realistic web browsing tasks.
 
@@ -24,9 +24,8 @@ Follow the VisualWebArena environment setup guide carefully, and make sure the U
 ```bash
 export VISUALWEBARENA_BASE_URL=<YOUR_SERVER_URL_HERE>
 export OPENAI_API_KEY="yourkey" # this OpenAI API key is required for some visualWebArena validators that utilize LLMs
-export OPENAI_MODEL="modelname" # name of OpenAI model you wish to use, like gpt-4-1106-preview
-export OPENAI_BASE_URL="https://api.openai.com/v1/" # base URL of OpenAI model, currently proxy is not supported by VisualWebArena
-bash evaluation/benchmarks/visualwebarena/scripts/run_infer.sh
+export OPENAI_BASE_URL="https://api.openai.com/v1/" # base URL for OpenAI model used for VisualWebArena evaluation
+bash evaluation/benchmarks/visualwebarena/scripts/run_infer.sh llm.claude HEAD VisualBrowsingAgent
 ```
 
 Results will be in `evaluation/evaluation_outputs/outputs/visualwebarena/`

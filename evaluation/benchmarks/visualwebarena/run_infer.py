@@ -43,7 +43,6 @@ SUPPORTED_AGENT_CLS = {'VisualBrowsingAgent'}
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'VisualBrowsingAgent': 'Continue the task. IMPORTANT: do not talk to the user until you have finished the task',
 }
-logger.setLevel('DEBUG')
 
 
 def get_config(
@@ -53,15 +52,13 @@ def get_config(
     base_url = os.environ.get('VISUALWEBARENA_BASE_URL', None)
     openai_api_key = os.environ.get('OPENAI_API_KEY', None)
     openai_base_url = os.environ.get('OPENAI_BASE_URL', None)
-    openai_model = os.environ.get('OPENAI_MODEL', None)
     assert base_url is not None, 'VISUALWEBARENA_BASE_URL must be set'
     assert openai_api_key is not None, 'OPENAI_API_KEY must be set'
     assert openai_base_url is not None, 'OPENAI_BASE_URL must be set'
-    assert openai_model is not None, 'OPENAI_MODEL must be set'
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime=os.environ.get('RUNTIME', 'eventstream'),
+        runtime='docker',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             base_container_image='python:3.12-bookworm',
@@ -72,7 +69,6 @@ def get_config(
                 'BASE_URL': base_url,
                 'OPENAI_API_KEY': openai_api_key,
                 'OPENAI_BASE_URL': openai_base_url,
-                'OPENAI_MODEL': openai_model,
                 'VWA_CLASSIFIEDS': f'{base_url}:9980',
                 'VWA_CLASSIFIEDS_RESET_TOKEN': '4b61655535e7ed388f0d40a93600254c',
                 'VWA_SHOPPING': f'{base_url}:7770',
@@ -82,20 +78,18 @@ def get_config(
                 'VWA_WIKIPEDIA': f'{base_url}:8888',
                 'VWA_HOMEPAGE': f'{base_url}:4399',
             },
-            # remote_runtime_init_timeout=1800,
-            # keep_runtime_alive=False,
-            # timeout=120,
+            timeout=300,
         ),
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
-        # debug=True,
+        attach_to_existing=True,
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(
             metadata.llm_config,
             metadata.eval_output_dir,
-            env_id,  # .split('/')[-1]
+            env_id,
         )
     )
     return config
@@ -190,11 +184,9 @@ def process_instance(
 
     # Instruction obtained from the first message from the USER
     instruction = ''
-    # image_urls = []
     for event in state.history:
         if isinstance(event, MessageAction):
             instruction = event.content
-            # image_urls = event.images_urls
             break
 
     try:
