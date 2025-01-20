@@ -82,39 +82,58 @@ def apply_diff(diff, text, reverse=False, use_patch=False):
     n_lines = len(lines)
 
     changes = _reverse(diff.changes) if reverse else diff.changes
-    # check that the source text matches the context of the diff
+    
+    # Add bounds checking for each change
     for old, new, line, hunk in changes:
-        # might have to check for line is None here for ed scripts
         if old is not None and line is not None:
-            if old > n_lines:
+            # Check if the old line number is valid
+            if old <= 0 or old > n_lines:
                 raise HunkApplyException(
-                    'context line {n}, "{line}" does not exist in source'.format(
-                        n=old, line=line
-                    ),
-                    hunk=hunk,
+                    f'Invalid line number {old} (file has {n_lines} lines)',
+                    hunk=hunk
                 )
-            if lines[old - 1] != line:
+            
+            # Safely check line content
+            try:
+                current_line = lines[old - 1]
+                if current_line != line:
+                    raise HunkApplyException(
+                        f'Context mismatch at line {old}:\n'
+                        f'Expected: "{line}"\n'
+                        f'Found: "{current_line}"',
+                        hunk=hunk
+                    )
+            except IndexError:
                 raise HunkApplyException(
-                    'context line {n}, "{line}" does not match "{sl}"'.format(
-                        n=old, line=line, sl=lines[old - 1]
-                    ),
-                    hunk=hunk,
+                    f'Failed to access line {old} (file has {n_lines} lines)',
+                    hunk=hunk
                 )
 
-    # for calculating the old line
-    r = 0
-    i = 0
+    # Apply changes with bounds checking
+    result_lines = lines.copy()  # Work on a copy to prevent partial modifications
+    offset = 0  # Track line number changes
 
     for old, new, line, hunk in changes:
-        if old is not None and new is None:
-            del lines[old - 1 - r + i]
-            r += 1
-        elif old is None and new is not None:
-            lines.insert(new - 1, line)
-            i += 1
-        elif old is not None and new is not None:
-            # Sometimes, people remove hunks from patches, making these
-            # numbers completely unreliable. Because they're jerks.
-            pass
+        try:
+            if old is not None and new is None:
+                # Delete line
+                if 0 <= (old - 1 + offset) < len(result_lines):
+                    del result_lines[old - 1 + offset]
+                    offset -= 1
+            elif old is None and new is not None:
+                # Insert line
+                insert_pos = new - 1 + offset
+                if 0 <= insert_pos <= len(result_lines):
+                    result_lines.insert(insert_pos, line)
+                    offset += 1
+            elif old is not None and new is not None:
+                # Replace line
+                if 0 <= (old - 1 + offset) < len(result_lines):
+                    result_lines[old - 1 + offset] = line
+        except IndexError as e:
+            raise HunkApplyException(
+                f'Failed to apply change at line {old or new}: {str(e)}',
+                hunk=hunk
+            )
 
-    return lines
+    return result_lines
