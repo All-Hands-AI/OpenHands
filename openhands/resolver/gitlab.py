@@ -198,7 +198,7 @@ class GitlabIssueHandler(IssueHandlerInterface):
         discussions = response.json()
         if len(discussions.get('notes', [])) > 0:
             data = {
-                'body': f'Kevin fix success summary\n\n\n{reply}',
+                'body': f'Openhands fix success summary\n\n\n{reply}',
                 'note_id': discussions.get('notes', [])[-1]['id'],
             }
             response = requests.post(
