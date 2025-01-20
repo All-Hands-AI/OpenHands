@@ -59,7 +59,7 @@ class OpenhandsConfig(OpenhandsConfigInterface):
             RateLimitMiddleware,
             rate_limiter=InMemoryRateLimiter(requests=10, seconds=1),
         )
-        api.middleware('http')(AttachConversationMiddleware)
+        api.middleware('http')(AttachConversationMiddleware(api))
 
 
 def load_openhands_config():
