@@ -19,7 +19,7 @@ function OAuthGitHubCallback() {
     enabled: !!code,
   });
 
-  console.log(`data: ${data}, isSuccess: ${isSuccess}`)
+  console.log(`data: ${JSON.stringify(data)}, isSuccess: ${isSuccess}`)
 
   React.useEffect(() => {
     if (isSuccess) {
