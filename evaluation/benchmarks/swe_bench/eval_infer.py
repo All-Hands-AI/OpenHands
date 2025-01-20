@@ -5,13 +5,12 @@ import time
 from functools import partial
 
 import pandas as pd
-from swebench.harness.constants import SWEbenchInstance
 from swebench.harness.grading import get_eval_report
 from swebench.harness.run_evaluation import (
     APPLY_PATCH_FAIL,
     APPLY_PATCH_PASS,
 )
-from swebench.harness.test_spec.test_spec import TestSpec, make_test_spec
+from swebench.harness.test_spec import SWEbenchInstance, TestSpec, make_test_spec
 from swebench.harness.utils import load_swebench_dataset
 from tqdm import tqdm
 
