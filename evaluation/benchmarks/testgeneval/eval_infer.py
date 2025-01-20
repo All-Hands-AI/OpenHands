@@ -67,7 +67,9 @@ def get_config(instance: pd.Series) -> AppConfig:
             use_host_network=False,
             timeout=1800,
             api_key=os.environ.get('ALLHANDS_API_KEY'),
-            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+            remote_runtime_api_url=os.environ.get(
+                'SANDBOX_REMOTE_RUNTIME_API_URL', 'http://localhost:8000'
+            ),
         ),
         workspace_base=None,
         workspace_mount_path=None,
@@ -104,7 +106,7 @@ def compute_lexical_metrics(pred_suite, gold_suite):
 
 def run_command(runtime, command, timeout=600):
     action = CmdRunAction(command=command)
-    action.timeout = timeout
+    action.set_hard_timeout(timeout)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -113,10 +115,8 @@ def run_command(runtime, command, timeout=600):
 
 
 def run_tests(runtime, instance, test_script, log_file='/tmp/test_output.log'):
-    action = CmdRunAction(
-        command=f'bash {test_script} > {log_file} 2>&1 & echo $!', keep_prompt=False
-    )
-    action.timeout = 60
+    action = CmdRunAction(command=f'bash {test_script} > {log_file} 2>&1 & echo $!')
+    action.set_hard_timeout(60)
     obs = runtime.run_action(action)
 
     assert isinstance(obs, CmdOutputObservation), 'Failed to start test script.'
@@ -132,9 +132,7 @@ def run_tests(runtime, instance, test_script, log_file='/tmp/test_output.log'):
             instance['test_result']['report']['test_timeout'] = True
             break
 
-        check_action = CmdRunAction(
-            command=f'ps -p {pid} > /dev/null; echo $?', keep_prompt=False
-        )
+        check_action = CmdRunAction(command=f'ps -p {pid} > /dev/null; echo $?')
         check_obs = runtime.run_action(check_action)
         if (
             isinstance(check_obs, CmdOutputObservation)
@@ -144,8 +142,8 @@ def run_tests(runtime, instance, test_script, log_file='/tmp/test_output.log'):
             break
         time.sleep(30)
 
-    test_action = CmdRunAction(command=f'cat {log_file}', keep_prompt=False)
-    test_action.timeout = 300
+    test_action = CmdRunAction(command=f'cat {log_file}')
+    test_action.set_hard_timeout(300)
     test_obs = runtime.run_action(test_action)
     assert isinstance(test_obs, CmdOutputObservation), 'Failed to retrieve test output.'
     return test_obs.exit_code, test_obs.content, elapsed_time
@@ -154,10 +152,8 @@ def run_tests(runtime, instance, test_script, log_file='/tmp/test_output.log'):
 def run_mutation_testing(
     runtime, instance, mutation_script, log_file='/tmp/mutation_output.log'
 ):
-    action = CmdRunAction(
-        command=f'bash {mutation_script} > {log_file} 2>&1 & echo $!', keep_prompt=False
-    )
-    action.timeout = 60
+    action = CmdRunAction(command=f'bash {mutation_script} > {log_file} 2>&1 & echo $!')
+    action.set_hard_timeout(60)
     obs = runtime.run_action(action)
 
     assert isinstance(obs, CmdOutputObservation), 'Failed to start test script.'
@@ -173,9 +169,7 @@ def run_mutation_testing(
             instance['test_result']['report']['mutation_timeout'] = True
             break
 
-        check_action = CmdRunAction(
-            command=f'ps -p {pid} > /dev/null; echo $?', keep_prompt=False
-        )
+        check_action = CmdRunAction(command=f'ps -p {pid} > /dev/null; echo $?')
         check_obs = runtime.run_action(check_action)
         if (
             isinstance(check_obs, CmdOutputObservation)
@@ -186,8 +180,8 @@ def run_mutation_testing(
         time.sleep(30)
 
     assert isinstance(obs, CmdOutputObservation), 'Failed to run mutation script.'
-    mutation_action = CmdRunAction(command=f'cat {log_file}', keep_prompt=False)
-    mutation_action.timeout = 300
+    mutation_action = CmdRunAction(command=f'cat {log_file}')
+    mutation_action.set_hard_timeout(300)
     mutation_obs = runtime.run_action(mutation_action)
     assert isinstance(
         mutation_obs, CmdOutputObservation
@@ -308,6 +302,7 @@ def process_instance(
     id = instance.id
     logger.info(f'Starting evaluation for instance {id}.')
 
+    instance['test_result']['id'] = id
     instance['test_result']['report'] = {
         'test_output': '',
         'coverage_output': '',

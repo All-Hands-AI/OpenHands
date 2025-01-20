@@ -12,7 +12,6 @@ from datasets import load_dataset
 import openhands.agenthub
 from evaluation.benchmarks.testgeneval.constants import MAP_REPO_VERSION_TO_SPECS
 from evaluation.benchmarks.testgeneval.prompt import (
-    CODEACT_SWE_TESTGEN_PROMPT,
     CODEACT_TESTGEN_PROMPT,
 )
 from evaluation.benchmarks.testgeneval.utils import (
@@ -24,6 +23,8 @@ from evaluation.utils.shared import (
     EvalOutput,
     assert_and_raise,
     codeact_user_response,
+    get_metrics,
+    is_fatal_evaluation_error,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -50,7 +51,6 @@ RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'tru
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
-    'CodeActSWEAgent': codeact_user_response,
 }
 
 
@@ -66,7 +66,7 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
 
 
 def get_instruction(instance: pd.Series, metadata: EvalMetadata):
-    workspace_dir_name = _get_swebench_workspace_dir_name(instance)
+    # workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     # Prepare instruction
     coverage_command = ' '.join(
         [
@@ -77,20 +77,12 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         ]
     )
 
-    if metadata.agent_class == 'CodeActSWEAgent':
-        instruction = CODEACT_SWE_TESTGEN_PROMPT.format(
-            workspace_dir_name=workspace_dir_name,
-            test_file=instance.test_file,
-            code_file=instance.code_file,
-            coverage_command=coverage_command,
-        )
-    else:
-        # Testing general agents
-        instruction = CODEACT_TESTGEN_PROMPT.format(
-            code_file=instance.code_file,
-            test_file=instance.test_file,
-            coverage_command=coverage_command,
-        )
+    # Testing general agents
+    instruction = CODEACT_TESTGEN_PROMPT.format(
+        code_file=instance.code_file,
+        test_file=instance.test_file,
+        coverage_command=coverage_command,
+    )
 
     if RUN_WITH_BROWSING:
         instruction += (
@@ -141,7 +133,9 @@ def get_config(
             # Add platform to the sandbox config to solve issue 4401
             platform='linux/amd64',
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
-            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+            remote_runtime_api_url=os.environ.get(
+                'SANDBOX_REMOTE_RUNTIME_API_URL', 'http://localhost:8000'
+            ),
             keep_runtime_alive=False,
             remote_runtime_init_timeout=3600,
         ),
@@ -158,6 +152,7 @@ def get_config(
         codeact_enable_jupyter=False,
         codeact_enable_browsing=RUN_WITH_BROWSING,
         codeact_enable_llm_editor=False,
+        condenser=metadata.condenser_config,
     )
     config.set_agent_config(agent_config)
     return config
@@ -181,7 +176,7 @@ def initialize_runtime(
     action = CmdRunAction(
         command=f"""echo 'export SWE_INSTANCE_ID={instance['instance_id']}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc"""
     )
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -190,7 +185,7 @@ def initialize_runtime(
     )
 
     action = CmdRunAction(command="""export USER=$(whoami); echo USER=${USER} """)
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -201,7 +196,7 @@ def initialize_runtime(
 
     # inject the instance info
     action = CmdRunAction(command='mkdir -p /swe_util/eval_data/instances')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -232,14 +227,14 @@ def initialize_runtime(
         '/swe_util/',
     )
     action = CmdRunAction(command='cat ~/.bashrc')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to cat ~/.bashrc: {str(obs)}')
 
     action = CmdRunAction(command='source ~/.bashrc')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -248,7 +243,7 @@ def initialize_runtime(
     assert_and_raise(obs.exit_code == 0, f'Failed to source ~/.bashrc: {str(obs)}')
 
     action = CmdRunAction(command='source /swe_util/instance_swe_entry.sh')
-    action.timeout = 3600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -258,7 +253,7 @@ def initialize_runtime(
     )
 
     action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -268,7 +263,7 @@ def initialize_runtime(
     )
 
     action = CmdRunAction(command='git reset --hard')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -277,7 +272,7 @@ def initialize_runtime(
     action = CmdRunAction(
         command='for remote_name in $(git remote); do git remote remove "${remote_name}"; done'
     )
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -305,7 +300,7 @@ def complete_runtime(
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
 
     action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -315,7 +310,7 @@ def complete_runtime(
     )
 
     action = CmdRunAction(command=f'cat {instance.test_file}')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -327,7 +322,7 @@ def complete_runtime(
     test_suite = obs.content.strip()
 
     # action = CmdRunAction(command='git add -A')
-    # action.timeout = 600
+    # action.set_hard_timeout(600)
     # logger.info(action, extra={'msg_type': 'ACTION'})
     # obs = runtime.run_action(action)
     # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -376,11 +371,7 @@ def process_instance(
         )
 
         # if fatal error, throw EvalError to trigger re-run
-        if (
-            state.last_error
-            and 'fatal error during agent execution' in state.last_error
-            and 'stuck in a loop' not in state.last_error
-        ):
+        if is_fatal_evaluation_error(state.last_error):
             raise EvalException('Fatal error detected: ' + state.last_error)
 
         # ======= THIS IS SWE-Bench specific =======
@@ -406,7 +397,7 @@ def process_instance(
         raise ValueError('State should not be None.')
 
     histories = [event_to_dict(event) for event in state.history]
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Save the output
     output = EvalOutput(
@@ -464,6 +455,8 @@ if __name__ == '__main__':
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
         llm_config.log_completions = True
+        # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
+        llm_config.modify_params = False
 
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')

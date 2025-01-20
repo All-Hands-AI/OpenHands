@@ -45,6 +45,10 @@ Then write a script to invoke the {code_file} to understand input and output beh
 
 Finally proceed to writing a test suite at {test_file} that tests {code_file}.
 
+IMPORT {code_file} in the test suite you write, DO NOT import the general library.
+
+If you are unable to run coverage report, FIX YOUR IMPORTS to use the same style as other test files.
+
 You should NOT modify any existing test case files. You SHOULD add new test in a NEW file to reproduce the issue.
 
 You should NEVER use web browsing or any other web-based tools.
@@ -57,7 +61,9 @@ When you think you've successfully generated a test suite, run it on for the cur
 
 Then run coverage report -m --include {code_file} to see how well your test suite covers the code.
 
-Focus on generating passing tests first, then on improving coverage. REMOVE failing tests.
+Focus on generating passing tests first, then on improving coverage.
+
+Try to fix failing tests 3 times, then REMOVE failing tests and add NEW tests.
 
 When you are trying to improve coverage pick a part of the code that is not covered (indicated by lines on coverage report), examine the code and then
 try to generate a test for it. Feel free to use a code interpreter to understand the input output behavior. ONLY add tests
