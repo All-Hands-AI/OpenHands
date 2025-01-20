@@ -47,6 +47,7 @@ AGENT_CLASS = 'CodeActAgent'
 
 def initialize_runtime(
     runtime: Runtime,
+    platform: Platform,
 ):
     """Initialize the runtime for the agent.
 
@@ -65,10 +66,11 @@ def initialize_runtime(
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
 
-    action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    if platform == Platform.GITLAB:
+        action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     action = CmdRunAction(command='git config --global core.pager ""')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -81,6 +83,7 @@ def initialize_runtime(
 async def complete_runtime(
     runtime: Runtime,
     base_commit: str,
+    platform: Platform,
 ) -> dict[str, Any]:
     """Complete the runtime for the agent.
 
@@ -116,7 +119,11 @@ async def complete_runtime(
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
-    action = CmdRunAction(command='sudo git add -A')
+    if platform == Platform.GITLAB:
+        action = CmdRunAction(command='sudo git add -A')
+    else:
+        action = CmdRunAction(command='git add -A')
+
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -153,6 +160,7 @@ async def complete_runtime(
 
 async def process_issue(
     issue: Issue,
+    platform: Platform,
     base_commit: str,
     max_iterations: int,
     llm_config: LLMConfig,
@@ -181,6 +189,11 @@ async def process_issue(
         shutil.rmtree(workspace_base)
     shutil.copytree(os.path.join(output_dir, 'repo'), workspace_base)
 
+    if platform == Platform.GITHUB:
+        local_runtime_url = 'http://localhost'
+    else:
+        local_runtime_url = 'http://docker'
+
     config = AppConfig(
         default_agent='CodeActAgent',
         runtime='docker',
@@ -191,7 +204,7 @@ async def process_issue(
             enable_auto_lint=False,
             use_host_network=False,
             user_id=get_unique_uid(),
-            local_runtime_url='http://docker',
+            local_runtime_url=local_runtime_url,
             # large enough timeout, since some testcases take very long to run
             timeout=300,
         ),
@@ -210,7 +223,7 @@ async def process_issue(
 
     runtime.event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
-    initialize_runtime(runtime)
+    initialize_runtime(runtime, platform)
 
     instruction, images_urls = issue_handler.get_instruction(
         issue, prompt_template, repo_instruction
@@ -233,7 +246,7 @@ async def process_issue(
         last_error: str | None = error_msg
 
     # Get git patch
-    return_val = await complete_runtime(runtime, base_commit)
+    return_val = await complete_runtime(runtime, base_commit, platform)
     git_patch = return_val['git_patch']
     logger.info(
         f'Got git diff for instance {issue.number}:\n--------\n{git_patch}\n--------'
@@ -488,6 +501,7 @@ async def resolve_issue(
 
         output = await process_issue(
             issue,
+            platform,
             base_commit,
             max_iterations,
             llm_config,
