@@ -10,21 +10,21 @@ function OAuthGitHubCallback() {
   const { setAccessTokens, setUserId } = useAuth();
 
   const code = searchParams.get("code");
-  const requesterUrl = new URL(window.location.href)
-  const redirectUrl = `${requesterUrl.origin}/oauth/github/callback`
+  const requesterUrl = new URL(window.location.href);
+  const redirectUrl = `${requesterUrl.origin}/oauth/github/callback`;
 
   const { data, isSuccess, error } = useQuery({
-    queryKey: ["access_token", code],
+    queryKey: ["access_token", code, redirectUrl],
     queryFn: () => OpenHands.getGitHubAccessToken(code!, redirectUrl),
     enabled: !!code,
   });
 
-  console.debug(`data: ${JSON.stringify(data)}, isSuccess: ${isSuccess}`)
+  console.debug(`data: ${JSON.stringify(data)}, isSuccess: ${isSuccess}`);
 
   React.useEffect(() => {
     if (isSuccess) {
       setAccessTokens(data.providerAccessToken, data.keycloakAccessToken);
-      setUserId(data.keycloakUserId)
+      setUserId(data.keycloakUserId);
       navigate("/");
     }
   }, [isSuccess]);

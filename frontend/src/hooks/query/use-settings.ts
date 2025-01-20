@@ -52,4 +52,4 @@ export const useSettings = () => {
   }, [query.data?.LLM_API_KEY]);
 
   return query;
-}
+};

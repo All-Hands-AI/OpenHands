@@ -4,29 +4,28 @@ import { KeycloakErrorResponse } from "./open-hands.types";
 export const openHands = axios.create();
 
 export const setAuthTokenHeader = (token: string) => {
-  console.debug(`setAuthTokenHeader to ${token}`)
+  console.debug(`setAuthTokenHeader to ${token}`);
   openHands.defaults.headers.common.Authorization = `Bearer ${token}`;
 };
 
 export const setGitHubTokenHeader = (token: string) => {
-  console.debug(`setGitHubTokenHeader to ${token}`)
+  console.debug(`setGitHubTokenHeader to ${token}`);
   openHands.defaults.headers.common["X-GitHub-Token"] = token;
 };
 
 export const removeAuthTokenHeader = () => {
-  console.debug("removeAuthTokenHeader")
+  console.debug("removeAuthTokenHeader");
   if (openHands.defaults.headers.common.Authorization) {
     delete openHands.defaults.headers.common.Authorization;
   }
 };
 
 export const removeGitHubTokenHeader = () => {
-  console.debug("removeGitHubTokenHeader")
+  console.debug("removeGitHubTokenHeader");
   if (openHands.defaults.headers.common["X-GitHub-Token"]) {
     delete openHands.defaults.headers.common["X-GitHub-Token"];
   }
 };
-
 
 /**
  * Checks if response has attributes to perform refresh
@@ -47,7 +46,7 @@ const canRefresh = (error: unknown): boolean =>
 export const isKeycloakErrorResponse = <T extends object | Array<unknown>>(
   data: T | KeycloakErrorResponse | null,
 ): data is KeycloakErrorResponse =>
-  !!data && typeof data === 'object' && "keycloak_error" in data;
+  !!data && typeof data === "object" && "keycloak_error" in data;
 
 // Axios interceptor to handle token refresh
 export const setupOpenhandsAxiosInterceptors = (
@@ -59,7 +58,9 @@ export const setupOpenhandsAxiosInterceptors = (
     // Pass successful responses through
     (response) => {
       const parsedData = response.data;
-      console.debug(`Openhands API call response to ${response.request.responseURL}\n ${JSON.stringify(parsedData)}`)
+      console.debug(
+        `Openhands·API·call·response·to·${response.request.responseURL}\n·${JSON.stringify(parsedData)}`,
+      );
       if (isKeycloakErrorResponse(parsedData)) {
         const error = new AxiosError(
           "Failed",
@@ -89,7 +90,8 @@ export const setupOpenhandsAxiosInterceptors = (
         try {
           const refreshed = await refreshToken();
           if (refreshed) {
-            originalRequest.headers["X-GitHub-Token"] = openHands.defaults.headers.common["X-GitHub-Token"]
+            originalRequest.headers["X-GitHub-Token"] =
+              openHands.defaults.headers.common["X-GitHub-Token"];
             return await openHands(originalRequest);
           }
 

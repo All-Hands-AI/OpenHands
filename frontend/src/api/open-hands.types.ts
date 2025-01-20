@@ -66,7 +66,6 @@ export interface KeycloakErrorResponse {
   keycloak_error: string;
 }
 
-
 export interface Conversation {
   conversation_id: string;
   title: string;

@@ -159,8 +159,17 @@ class OpenHands {
   static async refreshToken(
     appMode: GetConfigResponse["APP_MODE"],
     userId: string,
-  ): Promise<{ keycloakAccessToken: string; providerAccessToken: string; keycloakUserId: string }>  {
-    if (appMode === "oss") return { keycloakAccessToken: "", providerAccessToken: "", keycloakUserId: "" };
+  ): Promise<{
+    keycloakAccessToken: string;
+    providerAccessToken: string;
+    keycloakUserId: string;
+  }> {
+    if (appMode === "oss")
+      return {
+        keycloakAccessToken: "",
+        providerAccessToken: "",
+        keycloakUserId: "",
+      };
 
     const response = await openHands.post<GitHubAccessTokenResponse>(
       "/api/refresh-token",
@@ -173,7 +182,7 @@ class OpenHands {
       providerAccessToken: response.data.providerAccessToken,
       keycloakUserId: response.data.keycloakUserId,
     };
-    }
+  }
 
   /**
    * Get the blob of the workspace zip
@@ -200,11 +209,13 @@ class OpenHands {
       {
         params: {
           code,
-          redirectUri
+          redirectUri,
         },
-      }
+      },
     );
-    console.debug(`/api/github/callback response data: ${JSON.stringify(data)}`)
+    console.debug(
+      `/api/github/callback response data: ${JSON.stringify(data)}`,
+    );
     return data;
   }
 

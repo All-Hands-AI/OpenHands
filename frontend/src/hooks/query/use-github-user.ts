@@ -6,7 +6,7 @@ import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
 
 export const useGitHubUser = () => {
-  const { gitHubToken, setUserId } = useAuth();
+  const { gitHubToken } = useAuth();
   const { data: config } = useConfig();
 
   const user = useQuery({
