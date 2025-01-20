@@ -5,9 +5,9 @@ from fastapi import FastAPI, HTTPException
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.middleware import (
     AttachConversationMiddleware,
+    CacheControlMiddleware,
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
-    NoCacheMiddleware,
     RateLimitMiddleware,
 )
 from openhands.server.types import AppMode, OpenhandsConfigInterface
@@ -54,7 +54,7 @@ class OpenhandsConfig(OpenhandsConfigInterface):
             allow_headers=['*'],
         )
 
-        api.add_middleware(NoCacheMiddleware)
+        api.add_middleware(CacheControlMiddleware)
         api.add_middleware(
             RateLimitMiddleware,
             rate_limiter=InMemoryRateLimiter(requests=10, seconds=1),

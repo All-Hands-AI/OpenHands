@@ -39,7 +39,7 @@ Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or jump to the [
 ## ⚡ Quick Start
 
 The easiest way to run OpenHands is in Docker.
-See the [Installation](https://docs.all-hands.dev/modules/usage/installation) guide for
+See the [Running OpenHands](https://docs.all-hands.dev/modules/usage/installation) guide for
 system requirements and more information.
 
 ```bash
@@ -69,7 +69,7 @@ run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules
 interact with it via a [friendly CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode),
 or run it on tagged issues with [a github action](https://docs.all-hands.dev/modules/usage/how-to/github-action).
 
-Visit [Installation](https://docs.all-hands.dev/modules/usage/installation) for more information and setup instructions.
+Visit [Running OpenHands](https://docs.all-hands.dev/modules/usage/installation) for more information and setup instructions.
 
 > [!CAUTION]
 > OpenHands is meant to be run by a single user on their local workstation.
