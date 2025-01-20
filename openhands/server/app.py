@@ -12,9 +12,9 @@ import openhands.agenthub  # noqa F401 (we import this to get the agents registe
 from openhands import __version__
 from openhands.server.middleware import (
     AttachConversationMiddleware,
+    CacheControlMiddleware,
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
-    NoCacheMiddleware,
     RateLimitMiddleware,
 )
 from openhands.server.routes.conversation import app as conversation_api_router
@@ -50,7 +50,7 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-app.add_middleware(NoCacheMiddleware)
+app.add_middleware(CacheControlMiddleware)
 app.add_middleware(
     RateLimitMiddleware, rate_limiter=InMemoryRateLimiter(requests=10, seconds=1)
 )
