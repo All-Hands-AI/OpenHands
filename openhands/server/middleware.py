@@ -37,14 +37,17 @@ class LocalhostCORSMiddleware(CORSMiddleware):
         return super().is_allowed_origin(origin)
 
 
-class NoCacheMiddleware(BaseHTTPMiddleware):
+class CacheControlMiddleware(BaseHTTPMiddleware):
     """
     Middleware to disable caching for all routes by adding appropriate headers
     """
 
     async def dispatch(self, request, call_next):
         response = await call_next(request)
-        if not request.url.path.startswith('/assets'):
+        if request.url.path.startswith('/assets'):
+            # The content of the assets directory has finger printed file names so we cache agressively
+            response.headers['Cache-Control'] = 'public, max-age=2592000, immutable'
+        else:
             response.headers['Cache-Control'] = (
                 'no-cache, no-store, must-revalidate, max-age=0'
             )
