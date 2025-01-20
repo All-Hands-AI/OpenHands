@@ -278,9 +278,10 @@ class ServiceContext:
     issue_type: ClassVar[str] = 'issue'
     default_git_patch: ClassVar[str] = 'No changes made yet'
 
-    def __init__(self, strategy, llm_config: LLMConfig):
+    def __init__(self, strategy, llm_config: LLMConfig | None):
         self._strategy = strategy
-        self.llm = LLM(llm_config)
+        if llm_config is not None:
+            self.llm = LLM(llm_config)
 
     def set_strategy(self, strategy):
         self._strategy = strategy

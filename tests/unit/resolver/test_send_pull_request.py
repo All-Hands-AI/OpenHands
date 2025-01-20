@@ -18,6 +18,7 @@ from openhands.resolver.send_pull_request import (
     send_pull_request,
     update_existing_pull_request,
 )
+from openhands.resolver.utils import Platform
 
 
 @pytest.fixture
@@ -288,6 +289,7 @@ def test_update_existing_pull_request(
         issue,
         token,
         username,
+        Platform.GITHUB,
         patch_dir,
         llm_config,
         comment_message=None,
@@ -319,8 +321,8 @@ def test_update_existing_pull_request(
     # Assert: Check if the reply_to_comment function was called for each thread ID
     mock_reply_to_comment.assert_has_calls(
         [
-            call(token, 'comment1', 'Fixed bug in function A'),
-            call(token, 'comment2', 'Updated documentation for B'),
+            call(issue.number, 'comment1', 'Fixed bug in function A'),
+            call(issue.number, 'comment2', 'Updated documentation for B'),
         ]
     )
 
@@ -351,6 +353,7 @@ def test_send_pull_request(
     mock_post,
     mock_run,
     mock_issue,
+    mock_llm_config,
     mock_output_dir,
     pr_type,
     target_branch,
@@ -385,6 +388,7 @@ def test_send_pull_request(
         issue=mock_issue,
         token='test-token',
         username='test-user',
+        platform=Platform.GITHUB,
         patch_dir=repo_path,
         pr_type=pr_type,
         target_branch=target_branch,
@@ -440,7 +444,7 @@ def test_send_pull_request(
 @patch('requests.post')
 @patch('requests.get')
 def test_send_pull_request_with_reviewer(
-    mock_get, mock_post, mock_run, mock_github_issue, mock_output_dir
+    mock_get, mock_post, mock_run, mock_issue, mock_output_dir, mock_llm_config
 ):
     repo_path = os.path.join(mock_output_dir, 'repo')
     reviewer = 'test-reviewer'
@@ -471,9 +475,10 @@ def test_send_pull_request_with_reviewer(
 
     # Call the function with reviewer
     result = send_pull_request(
-        github_issue=mock_github_issue,
-        github_token='test-token',
-        github_username='test-user',
+        issue=mock_issue,
+        token='test-token',
+        username='test-user',
+        platform=Platform.GITHUB,
         patch_dir=repo_path,
         pr_type='ready',
         reviewer=reviewer,
@@ -605,7 +610,9 @@ def test_send_pull_request_target_branch_with_additional_message(
 
 
 @patch('requests.get')
-def test_send_pull_request_invalid_target_branch(mock_get, mock_issue, mock_output_dir):
+def test_send_pull_request_invalid_target_branch(
+    mock_get, mock_issue, mock_output_dir, mock_llm_config
+):
     """Test that an error is raised when specifying a non-existent target branch"""
     repo_path = os.path.join(mock_output_dir, 'repo')
 
@@ -623,6 +630,7 @@ def test_send_pull_request_invalid_target_branch(mock_get, mock_issue, mock_outp
             issue=mock_issue,
             token='test-token',
             username='test-user',
+            platform=Platform.GITHUB,
             patch_dir=repo_path,
             pr_type='ready',
             target_branch='nonexistent-branch',
@@ -636,7 +644,7 @@ def test_send_pull_request_invalid_target_branch(mock_get, mock_issue, mock_outp
 @patch('requests.post')
 @patch('requests.get')
 def test_send_pull_request_git_push_failure(
-    mock_get, mock_post, mock_run, mock_issue, mock_output_dir
+    mock_get, mock_post, mock_run, mock_issue, mock_output_dir, mock_llm_config
 ):
     repo_path = os.path.join(mock_output_dir, 'repo')
 
@@ -657,6 +665,7 @@ def test_send_pull_request_git_push_failure(
             issue=mock_issue,
             token='test-token',
             username='test-user',
+            platform=Platform.GITHUB,
             patch_dir=repo_path,
             pr_type='ready',
         )
@@ -694,7 +703,7 @@ def test_send_pull_request_git_push_failure(
 @patch('requests.post')
 @patch('requests.get')
 def test_send_pull_request_permission_error(
-    mock_get, mock_post, mock_run, mock_issue, mock_output_dir
+    mock_get, mock_post, mock_run, mock_issue, mock_output_dir, mock_llm_config
 ):
     repo_path = os.path.join(mock_output_dir, 'repo')
 
@@ -716,6 +725,7 @@ def test_send_pull_request_permission_error(
             issue=mock_issue,
             token='test-token',
             username='test-user',
+            platform=Platform.GITHUB,
             patch_dir=repo_path,
             pr_type='ready',
         )
@@ -726,7 +736,7 @@ def test_send_pull_request_permission_error(
 
 
 @patch('requests.post')
-def test_reply_to_comment(mock_post):
+def test_reply_to_comment(mock_post, mock_issue):
     # Arrange: set up the test data
     token = 'test_token'
     comment_id = 'test_comment_id'
@@ -755,45 +765,37 @@ def test_reply_to_comment(mock_post):
     mock_post.return_value = mock_response
 
     # Act: call the function
-    handler.reply_to_comment(token, comment_id, reply)
+    handler.reply_to_comment(mock_issue.number, comment_id, reply)
 
     # Assert: check that the POST request was made with the correct parameters
-    # Assert: check that the POST request was made with the correct parameters
-    expected_query = """
-        mutation($body: String!, $pullRequestReviewThreadId: ID!) {
-            addPullRequestReviewThreadReply(input: { body: $body, pullRequestReviewThreadId: $pullRequestReviewThreadId }) {
-                comment {
-                    id
-                    body
-                    createdAt
+    query = """
+            mutation($body: String!, $pullRequestReviewThreadId: ID!) {
+                addPullRequestReviewThreadReply(input: { body: $body, pullRequestReviewThreadId: $pullRequestReviewThreadId }) {
+                    comment {
+                        id
+                        body
+                        createdAt
+                    }
                 }
             }
-        }
-    """
+            """
 
-    # Normalize whitespace in both expected and actual queries
-    def normalize_whitespace(s):
-        return ' '.join(s.split())
-
-    # Check if the normalized actual query matches the normalized expected query
-    mock_post.assert_called_once()
-    actual_call = mock_post.call_args
-    actual_query = actual_call[1]['json']['query']
-
-    assert normalize_whitespace(actual_query) == normalize_whitespace(expected_query)
-
-    # Check the variables and headers separately
-    assert actual_call[1]['json']['variables'] == {
+    expected_variables = {
         'body': 'Openhands fix success summary\n\n\nThis is a test reply.',
         'pullRequestReviewThreadId': comment_id,
     }
 
-    assert actual_call[1]['headers'] == {
-        'Authorization': f'Bearer {token}',
-        'Content-Type': 'application/json',
-    }
+    # Check that the correct request was made to the API
+    mock_post.assert_called_once_with(
+        'https://api.github.com/graphql',
+        json={'query': query, 'variables': expected_variables},
+        headers={
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json',
+        },
+    )
 
-    # Check that the response status was checked
+    # Check that the response status was checked (via response.raise_for_status)
     mock_response.raise_for_status.assert_called_once()
 
 
@@ -813,6 +815,7 @@ def test_process_single_pr_update(
     token = 'test_token'
     username = 'test_user'
     pr_type = 'draft'
+    platform = Platform.GITHUB
 
     resolver_output = ResolverOutput(
         issue=Issue(
@@ -850,6 +853,7 @@ def test_process_single_pr_update(
         resolver_output,
         token,
         username,
+        Platform.GITHUB,
         pr_type,
         mock_llm_config,
         None,
@@ -868,6 +872,7 @@ def test_process_single_pr_update(
         issue=resolver_output.issue,
         token=token,
         username=username,
+        platform=Platform.GITHUB,
         patch_dir=f'{mock_output_dir}/patches/pr_1',
         additional_message='[Test success 1]',
         llm_config=mock_llm_config,
@@ -923,6 +928,7 @@ def test_process_single_issue(
         resolver_output,
         token,
         username,
+        platform,
         pr_type,
         mock_llm_config,
         None,
@@ -942,6 +948,7 @@ def test_process_single_issue(
         issue=resolver_output.issue,
         token=token,
         username=username,
+        platform=platform,
         patch_dir=f'{mock_output_dir}/patches/issue_1',
         pr_type=pr_type,
         fork_owner=None,
@@ -995,6 +1002,7 @@ def test_process_single_issue_unsuccessful(
         resolver_output,
         token,
         username,
+        Platform.GITHUB,
         pr_type,
         mock_llm_config,
         None,
@@ -1014,7 +1022,7 @@ def test_process_single_issue_unsuccessful(
 def test_process_all_successful_issues(
     mock_process_single_issue, mock_load_all_resolver_outputs, mock_llm_config
 ):
-    # Create ResolverOutput objects with properly initialized Issue instances
+    # Create ResolverOutput objects with properly initialized GithubIssue instances
     resolver_output_1 = ResolverOutput(
         issue=Issue(
             owner='test-owner',
@@ -1086,6 +1094,7 @@ def test_process_all_successful_issues(
         'output_dir',
         'token',
         'username',
+        Platform.GITHUB,
         'draft',
         mock_llm_config,  # llm_config
         None,  # fork_owner
@@ -1102,6 +1111,7 @@ def test_process_all_successful_issues(
                 resolver_output_1,
                 'token',
                 'username',
+                Platform.GITHUB,
                 'draft',
                 mock_llm_config,
                 None,
@@ -1113,6 +1123,7 @@ def test_process_all_successful_issues(
                 resolver_output_3,
                 'token',
                 'username',
+                Platform.GITHUB,
                 'draft',
                 mock_llm_config,
                 None,
@@ -1128,7 +1139,7 @@ def test_process_all_successful_issues(
 @patch('requests.get')
 @patch('subprocess.run')
 def test_send_pull_request_branch_naming(
-    mock_run, mock_get, mock_issue, mock_output_dir
+    mock_run, mock_get, mock_issue, mock_output_dir, mock_llm_config
 ):
     repo_path = os.path.join(mock_output_dir, 'repo')
 
@@ -1151,6 +1162,7 @@ def test_send_pull_request_branch_naming(
         issue=mock_issue,
         token='test-token',
         username='test-user',
+        platform=Platform.GITHUB,
         patch_dir=repo_path,
         pr_type='branch',
     )
@@ -1191,11 +1203,13 @@ def test_send_pull_request_branch_naming(
 @patch('openhands.resolver.send_pull_request.process_all_successful_issues')
 @patch('openhands.resolver.send_pull_request.process_single_issue')
 @patch('openhands.resolver.send_pull_request.load_single_resolver_output')
+@patch('openhands.resolver.send_pull_request.identify_token')
 @patch('os.path.exists')
 @patch('os.getenv')
 def test_main(
     mock_getenv,
     mock_path_exists,
+    mock_identify_token,
     mock_load_single_resolver_output,
     mock_process_single_issue,
     mock_process_all_successful_issues,
@@ -1222,7 +1236,7 @@ def test_main(
 
     # Setup environment variables
     mock_getenv.side_effect = (
-        lambda key, default=None: 'mock_token' if key == 'GITHUB_TOKEN' else default
+        lambda key, default=None: 'mock_token' if key == 'GIT_TOKEN' else default
     )
 
     # Setup path exists
@@ -1232,8 +1246,12 @@ def test_main(
     mock_resolver_output = MagicMock()
     mock_load_single_resolver_output.return_value = mock_resolver_output
 
+    mock_identify_token.return_value = Platform.GITHUB
+
     # Run main function
     main()
+
+    mock_identify_token.assert_called_with('mock_token')
 
     llm_config = LLMConfig(
         model=mock_args.llm_model,
@@ -1247,6 +1265,7 @@ def test_main(
         mock_resolver_output,
         'mock_token',
         'mock_username',
+        Platform.GITHUB,
         'draft',
         llm_config,
         None,
@@ -1258,7 +1277,7 @@ def test_main(
 
     # Other assertions
     mock_parser.assert_called_once()
-    mock_getenv.assert_any_call('GITHUB_TOKEN')
+    mock_getenv.assert_any_call('GIT_TOKEN')
     mock_path_exists.assert_called_with('/mock/output')
     mock_load_single_resolver_output.assert_called_with('/mock/output/output.jsonl', 42)
 
@@ -1269,6 +1288,7 @@ def test_main(
         '/mock/output',
         'mock_token',
         'mock_username',
+        Platform.GITHUB,
         'draft',
         llm_config,
         None,
@@ -1277,6 +1297,11 @@ def test_main(
     # Test for invalid issue number
     mock_args.issue_number = 'invalid'
     with pytest.raises(ValueError):
+        main()
+
+    # Test for invalid token
+    mock_identify_token.return_value = Platform.INVALID
+    with pytest.raises(ValueError, match='token is invalid.'):
         main()
 
 
