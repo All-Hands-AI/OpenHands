@@ -18,6 +18,7 @@ export function AdvancedOptionSwitch({
 
   return (
     <Switch
+      data-testid="advanced-option-switch"
       isDisabled={isDisabled}
       name="use-advanced-options"
       defaultSelected={showAdvancedOptions}

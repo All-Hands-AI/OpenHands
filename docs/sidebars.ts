@@ -5,7 +5,7 @@ const sidebars: SidebarsConfig = {
   docsSidebar: [
     {
       type: 'doc',
-      label: 'Installation',
+      label: 'Running OpenHands',
       id: 'usage/installation',
     },
     {
@@ -24,17 +24,22 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: 'category',
-          label: 'Micro-Agents',
+          label: 'Microagents',
           items: [
             {
               type: 'doc',
-              label: 'Public',
-              id: 'usage/prompting/microagents-public',
+              label: 'Overview',
+              id: 'usage/prompting/microagents-overview',
             },
             {
               type: 'doc',
               label: 'Repository',
               id: 'usage/prompting/microagents-repo',
+            },
+            {
+              type: 'doc',
+              label: 'Public',
+              id: 'usage/prompting/microagents-public',
             },
           ],
         }
@@ -131,11 +136,6 @@ const sidebars: SidebarsConfig = {
           type: 'doc',
           label: 'Custom Sandbox',
           id: 'usage/how-to/custom-sandbox-guide',
-        },
-        {
-          type: 'doc',
-          label: 'Persist Session Data',
-          id: 'usage/how-to/persist-session-data',
         },
       ],
     },

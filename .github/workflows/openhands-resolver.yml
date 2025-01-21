@@ -184,6 +184,7 @@ jobs:
             });
 
       - name: Install OpenHands
+        id: install_openhands
         uses: actions/github-script@v7
         env:
           COMMENT_BODY: ${{ github.event.comment.body || '' }}
@@ -196,7 +197,6 @@ jobs:
             const reviewBody = process.env.REVIEW_BODY.trim();
             const labelName = process.env.LABEL_NAME.trim();
             const eventName = process.env.EVENT_NAME.trim();
-
             // Check conditions
             const isExperimentalLabel = labelName === "fix-me-experimental";
             const isIssueCommentExperimental =
@@ -204,6 +204,9 @@ jobs:
               commentBody.includes("@openhands-agent-exp");
             const isReviewCommentExperimental =
               eventName === "pull_request_review" && reviewBody.includes("@openhands-agent-exp");
+
+            // Set output variable
+            core.setOutput('isExperimental', isExperimentalLabel || isIssueCommentExperimental || isReviewCommentExperimental);
 
             // Perform package installation
             if (isExperimentalLabel || isIssueCommentExperimental || isReviewCommentExperimental) {
@@ -230,7 +233,8 @@ jobs:
             --issue-number ${{ env.ISSUE_NUMBER }} \
             --issue-type ${{ env.ISSUE_TYPE }} \
             --max-iterations ${{ env.MAX_ITERATIONS }} \
-            --comment-id ${{ env.COMMENT_ID }}
+            --comment-id ${{ env.COMMENT_ID }} \
+            --is-experimental ${{ steps.install_openhands.outputs.isExperimental }}
 
       - name: Check resolution result
         id: check_result

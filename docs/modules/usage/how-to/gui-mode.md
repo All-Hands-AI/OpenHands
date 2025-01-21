@@ -76,18 +76,18 @@ When using OpenHands in online mode, the GitHub OAuth flow:
 
 Common issues and solutions:
 
-1. **Token Not Recognized**:
+- **Token Not Recognized**:
    - Ensure the token is properly saved in settings.
    - Check that the token hasn't expired.
    - Verify the token has the required scopes.
    - Try regenerating the token.
 
-2. **Organization Access Denied**:
+- **Organization Access Denied**:
    - Check if SSO is required but not enabled.
    - Verify organization membership.
    - Contact organization admin if token policies are blocking access.
 
-3. **Verifying Token Works**:
+- **Verifying Token Works**:
    - The app will show a green checkmark if the token is valid.
    - Try accessing a repository to confirm permissions.
    - Check the browser console for any error messages.
