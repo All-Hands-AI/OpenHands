@@ -190,8 +190,10 @@ class DockerRuntime(ActionExecutionClient):
         self.send_status_message('STATUS$PREPARING_CONTAINER')
 
         try:
+            print('TRACE:101')
             container = self.docker_client.containers.get(self.container_name)
             container.restart()
+            print('TRACE:103')
             self.container = container
             config = container.attrs['Config']
             for env_var in config['Env']:
@@ -210,8 +212,10 @@ class DockerRuntime(ActionExecutionClient):
                     self._app_ports.append(exposed_port)
             return
         except docker.errors.NotFound:
+            print('TRACE:104')
             pass
         except docker.errors.APIError:
+            print('TRACE:105')
             pass
 
         self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
@@ -336,6 +340,20 @@ class DockerRuntime(ActionExecutionClient):
         self.container = self.docker_client.containers.get(self.container_name)
         if self.container.status == 'exited':
             self.container.start()
+
+        config = self.container.attrs['Config']
+        for env_var in config['Env']:
+            if env_var.startswith('port='):
+                self._host_port = int(env_var.split('port=')[1])
+                self._container_port = self._host_port
+            elif env_var.startswith('VSCODE_PORT='):
+                self._vscode_port = int(env_var.split('VSCODE_PORT=')[1])
+        self._app_ports = []
+        for exposed_port in config['ExposedPorts'].keys():
+            exposed_port = int(exposed_port.split('/tcp')[0])
+            if exposed_port != self._host_port and exposed_port != self._vscode_port:
+                self._app_ports.append(exposed_port)
+        """
         for port in self.container.attrs['NetworkSettings']['Ports']:  # type: ignore
             port = int(port.split('/')[0])
             if (
@@ -350,6 +368,7 @@ class DockerRuntime(ActionExecutionClient):
             elif port >= APP_PORT_RANGE_2[0] and port <= APP_PORT_RANGE_2[1]:
                 self._app_ports.append(port)
         self._host_port = self._container_port
+        """
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(
             'debug',
