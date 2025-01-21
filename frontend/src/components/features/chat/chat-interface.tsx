@@ -3,6 +3,7 @@ import React from "react";
 import posthog from "posthog-js";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { FeedbackActions } from "../feedback/feedback-actions";
+import { ExportActions } from "../export/export-actions";
 import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
 import { addUserMessage } from "#/state/chat-slice";
@@ -90,6 +91,10 @@ export function ChatInterface() {
     setFeedbackPolarity(polarity);
   };
 
+  const onClickExportTrajectoryBUtton = () => {
+    console.log("export button clicked");
+  };
+
   const isWaitingForUserInput =
     curAgentState === AgentState.AWAITING_USER_INPUT ||
     curAgentState === AgentState.FINISHED;
@@ -137,6 +142,11 @@ export function ChatInterface() {
               onClickShareFeedbackActionButton("negative")
             }
           />
+          <ExportActions
+            onExportTrajectory={() =>
+              onClickExportTrajectoryBUtton()
+            }>
+          </ExportActions>
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
             {messages.length > 2 &&
