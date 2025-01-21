@@ -230,7 +230,7 @@ class RemoteRuntime(ActionExecutionClient):
                 f'Runtime started. URL: {self.runtime_url}',
             )
         except requests.HTTPError as e:
-            self.log('error', f'Unable to start runtime: {e}')
+            self.log('error', f'Unable to start runtime: {str(e)}')
             raise AgentRuntimeUnavailableError() from e
 
     def _resume_runtime(self):
@@ -315,10 +315,11 @@ class RemoteRuntime(ActionExecutionClient):
                 self.check_if_alive()
             except requests.HTTPError as e:
                 self.log(
-                    'warning', f"Runtime /alive failed, but pod says it's ready: {e}"
+                    'warning',
+                    f"Runtime /alive failed, but pod says it's ready: {str(e)}",
                 )
                 raise AgentRuntimeNotReadyError(
-                    f'Runtime /alive failed to respond with 200: {e}'
+                    f'Runtime /alive failed to respond with 200: {str(e)}'
                 )
             return
         elif (
@@ -363,6 +364,7 @@ class RemoteRuntime(ActionExecutionClient):
                 ):
                     self.log('debug', 'Runtime stopped.')
         except Exception as e:
+            self.log('error', f'Unable to stop runtime: {str(e)}')
             raise e
         finally:
             super().close()
@@ -403,8 +405,13 @@ class RemoteRuntime(ActionExecutionClient):
                         f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
                     ) from e
             elif e.response.status_code == 503:
-                self.log('warning', 'Runtime appears to be paused. Resuming...')
-                self._resume_runtime()
-                return super()._send_action_server_request(method, url, **kwargs)
+                if self.config.sandbox.keep_runtime_alive:
+                    self.log('warning', 'Runtime appears to be paused. Resuming...')
+                    self._resume_runtime()
+                    return super()._send_action_server_request(method, url, **kwargs)
+                else:
+                    raise AgentRuntimeDisconnectedError(
+                        f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
+                    ) from e
             else:
                 raise e

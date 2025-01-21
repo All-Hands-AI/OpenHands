@@ -27,6 +27,6 @@ class AgentConfig(BaseModel):
     memory_enabled: bool = Field(default=False)
     memory_max_threads: int = Field(default=3)
     llm_config: str | None = Field(default=None)
-    enable_prompt_extensions: bool = Field(default=False)
+    enable_prompt_extensions: bool = Field(default=True)
     disabled_microagents: list[str] | None = Field(default=None)
     condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
