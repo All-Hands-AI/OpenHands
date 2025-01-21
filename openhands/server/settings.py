@@ -49,7 +49,7 @@ class Settings(BaseModel):
             security_analyzer=security.security_analyzer,
             confirmation_mode=security.confirmation_mode,
             llm_model=llm_config.model,
-            llm_api_key=llm_config.api_key.get_secret_value(),
+            llm_api_key=llm_config.api_key,
             llm_base_url=llm_config.base_url,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
         )
