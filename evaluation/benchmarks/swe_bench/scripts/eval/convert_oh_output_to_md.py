@@ -222,13 +222,8 @@ def write_row_to_md_file(row, instance_id_to_test_result):
         raise ValueError(f'Row {row} does not have a git_patch')
 
     test_output = None
-    if row['instance_id'] in instance_id_to_test_result:
-        report = instance_id_to_test_result[row['instance_id']].get('report', {})
-        resolved = report.get('resolved', False)
-        test_output = instance_id_to_test_result[row['instance_id']].get(
-            'test_output', None
-        )
-    elif 'report' in row and row['report'] is not None:
+    # Use result from output.jsonl FIRST if available.
+    if 'report' in row and row['report'] is not None:
         if not isinstance(row['report'], dict):
             resolved = None
             print(
@@ -236,6 +231,12 @@ def write_row_to_md_file(row, instance_id_to_test_result):
             )
         else:
             resolved = row['report'].get('resolved', False)
+    elif row['instance_id'] in instance_id_to_test_result:
+        report = instance_id_to_test_result[row['instance_id']].get('report', {})
+        resolved = report.get('resolved', False)
+        test_output = instance_id_to_test_result[row['instance_id']].get(
+            'test_output', None
+        )
     else:
         resolved = None
 
