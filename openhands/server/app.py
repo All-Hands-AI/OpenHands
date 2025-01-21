@@ -6,6 +6,7 @@ with warnings.catch_warnings():
 
 from fastapi import (
     FastAPI,
+    __version__,
 )
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
@@ -28,7 +29,12 @@ async def _lifespan(app: FastAPI):
         yield
 
 
-app = FastAPI(lifespan=_lifespan)
+app = FastAPI(
+    title='OpenHands',
+    description='OpenHands: Code Less, Make More',
+    version=__version__,
+    lifespan=_lifespan,
+)
 openhands_config.attach_middleware(app)
 
 
