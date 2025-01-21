@@ -50,7 +50,10 @@ async def _create_new_conversation(
         session_init_args = {**settings.__dict__, **session_init_args}
         # We could use litellm.check_valid_key for a more accurate check,
         # but that would run a tiny inference.
-        if not settings.llm_api_key or settings.llm_api_key.isspace():
+        if (
+            not settings.llm_api_key
+            or settings.llm_api_key.get_secret_value().isspace()
+        ):
             logger.warn(f'Missing api key for model {settings.llm_model}')
             raise LLMAuthenticationError(
                 'Error authenticating with the LLM provider. Please check your API key'

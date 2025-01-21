@@ -141,7 +141,9 @@ class LLM(RetryMixin, DebugMixin):
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
-            api_key=self.config.api_key,
+            api_key=self.config.api_key.get_secret_value()
+            if self.config.api_key
+            else None,
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
@@ -150,6 +152,12 @@ class LLM(RetryMixin, DebugMixin):
             temperature=self.config.temperature,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
+            # add reasoning_effort, only if the model is supported
+            **(
+                {'reasoning_effort': self.config.reasoning_effort}
+                if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
+                else {}
+            ),
         )
 
         self._completion_unwrapped = self._completion
@@ -214,10 +222,6 @@ class LLM(RetryMixin, DebugMixin):
                     kwargs['extra_headers'] = {
                         'anthropic-beta': 'prompt-caching-2024-07-31',
                     }
-
-            # Set reasoning effort for models that support it
-            if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS:
-                kwargs['reasoning_effort'] = self.config.reasoning_effort
 
             # set litellm modify_params to the configured value
             # True by default to allow litellm to do transformations like adding a default message, when a message is empty
@@ -331,7 +335,9 @@ class LLM(RetryMixin, DebugMixin):
             # GET {base_url}/v1/model/info with litellm_model_id as path param
             response = requests.get(
                 f'{self.config.base_url}/v1/model/info',
-                headers={'Authorization': f'Bearer {self.config.api_key}'},
+                headers={
+                    'Authorization': f'Bearer {self.config.api_key.get_secret_value() if self.config.api_key else None}'
+                },
             )
             resp_json = response.json()
             if 'data' not in resp_json:

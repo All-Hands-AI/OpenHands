@@ -39,6 +39,11 @@ workspace_base = "./workspace"
 # If it's a folder, the session id will be used as the file name
 #save_trajectory_path="./trajectories"
 
+# Path to replay a trajectory, must be a file path
+# If provided, trajectory will be loaded and replayed before the
+# agent responds to any user instruction
+#replay_trajectory_path = ""
+
 # File store path
 #file_store_path = "/tmp/file_store"
 
