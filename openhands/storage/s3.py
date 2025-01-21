@@ -10,8 +10,8 @@ class S3FileStore(FileStore):
     def __init__(self, bucket_name: str | None) -> None:
         access_key = os.getenv('AWS_ACCESS_KEY_ID')
         secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-        endpoint = os.getenv('AWS_S3_ENDPOINT')
         secure = os.getenv('AWS_S3_SECURE', 'true').lower() == 'true'
+        endpoint = self._ensure_url_scheme(secure, os.getenv('AWS_S3_ENDPOINT'))
         if bucket_name is None:
             bucket_name = os.environ['AWS_S3_BUCKET']
         self.bucket = bucket_name
@@ -117,3 +117,16 @@ class S3FileStore(FileStore):
             raise FileNotFoundError(
                 f"Error: Failed to delete key '{path}' from bucket '{self.bucket}: {e}"
             )
+
+    def _ensure_url_scheme(self, secure: bool, url: str | None) -> str | None:
+        if not url:
+            return None
+        if secure:
+            # Add "https://" if secure is True and the URL doesn't already start with "https://"
+            if not url.startswith('https://'):
+                url = 'https://' + url.removeprefix('http://')
+        else:
+            # Add "http://" if secure is False and the URL doesn't already start with "http://"
+            if not url.startswith('http://'):
+                url = 'http://' + url.removeprefix('https://')
+        return url
