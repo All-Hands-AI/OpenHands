@@ -31,6 +31,9 @@ class RemoteRuntime(ActionExecutionClient):
     """This runtime will connect to a remote oh-runtime-client."""
 
     port: int = 60000  # default port for the remote runtime client
+    runtime_id: str | None = None
+    runtime_url: str | None = None
+    _runtime_initialized: bool = False
 
     def __init__(
         self,
@@ -71,10 +74,7 @@ class RemoteRuntime(ActionExecutionClient):
             self.config.sandbox.api_key,
             self.session,
         )
-        self.runtime_id: str | None = None
-        self.runtime_url: str | None = None
         self.available_hosts: dict[str, int] = {}
-        self._runtime_initialized: bool = False
 
     def log(self, level: str, message: str) -> None:
         message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
