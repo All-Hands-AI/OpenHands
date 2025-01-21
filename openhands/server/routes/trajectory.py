@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.serialization import event_to_dict
+from openhands.events.serialization import event_to_trajectory
 from openhands.events.stream import AsyncEventStreamWrapper
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
@@ -27,7 +27,7 @@ async def get_trajectory(request: Request):
         )
         trajectory = []
         async for event in async_stream:
-            trajectory.append(event_to_dict(event))
+            trajectory.append(event_to_trajectory(event))
         return JSONResponse(status_code=200, content={'trajectory': trajectory})
     except Exception as e:
         logger.error(f'Error getting trajectory: {e}', exc_info=True)
