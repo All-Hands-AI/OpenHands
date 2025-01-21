@@ -1,5 +1,7 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router";
+import { NavLink, useParams } from "react-router";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { ConversationCard } from "./conversation-card";
 import { useUserConversations } from "#/hooks/query/use-user-conversations";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
@@ -15,8 +17,8 @@ interface ConversationPanelProps {
 }
 
 export function ConversationPanel({ onClose }: ConversationPanelProps) {
+  const { t } = useTranslation();
   const { conversationId: cid } = useParams();
-  const navigate = useNavigate();
   const endSession = useEndSession();
   const ref = useClickOutsideElement<HTMLDivElement>(onClose);
 
@@ -63,11 +65,6 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       });
   };
 
-  const handleClickCard = (conversationId: string) => {
-    navigate(`/conversations/${conversationId}`);
-    onClose();
-  };
-
   return (
     <div
       ref={ref}
@@ -84,22 +81,31 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       )}
       {conversations?.length === 0 && (
         <div className="flex flex-col items-center justify-center h-full">
-          <p className="text-neutral-400">No conversations found</p>
+          <p className="text-neutral-400">
+            {t(I18nKey.CONVERSATION$NO_CONVERSATIONS)}
+          </p>
         </div>
       )}
       {conversations?.map((project) => (
-        <ConversationCard
+        <NavLink
           key={project.conversation_id}
-          onClick={() => handleClickCard(project.conversation_id)}
-          onDelete={() => handleDeleteProject(project.conversation_id)}
-          onChangeTitle={(title) =>
-            handleChangeTitle(project.conversation_id, project.title, title)
-          }
-          title={project.title}
-          selectedRepository={project.selected_repository}
-          lastUpdatedAt={project.last_updated_at}
-          status={project.status}
-        />
+          to={`/conversations/${project.conversation_id}`}
+          onClick={onClose}
+        >
+          {({ isActive }) => (
+            <ConversationCard
+              isActive={isActive}
+              onDelete={() => handleDeleteProject(project.conversation_id)}
+              onChangeTitle={(title) =>
+                handleChangeTitle(project.conversation_id, project.title, title)
+              }
+              title={project.title}
+              selectedRepository={project.selected_repository}
+              lastUpdatedAt={project.last_updated_at}
+              status={project.status}
+            />
+          )}
+        </NavLink>
       ))}
 
       {confirmDeleteModalVisible && (

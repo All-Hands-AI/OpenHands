@@ -11,7 +11,7 @@ import { vi } from "vitest";
 import { AppStore, RootState, rootReducer } from "./src/store";
 import { AuthProvider } from "#/context/auth-context";
 import { ConversationProvider } from "#/context/conversation-context";
-import { SettingsUpToDateProvider } from "#/context/settings-up-to-date-context";
+import { SettingsProvider } from "#/context/settings-context";
 
 // Mock useParams before importing components
 vi.mock("react-router", async () => {
@@ -67,19 +67,19 @@ export function renderWithProviders(
     return (
       <Provider store={store}>
         <AuthProvider>
-          <SettingsUpToDateProvider>
-            <QueryClientProvider
-              client={
-                new QueryClient({
-                  defaultOptions: { queries: { retry: false } },
-                })
-              }
-            >
+          <QueryClientProvider
+            client={
+              new QueryClient({
+                defaultOptions: { queries: { retry: false } },
+              })
+            }
+          >
+            <SettingsProvider>
               <ConversationProvider>
                 <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
               </ConversationProvider>
-            </QueryClientProvider>
-          </SettingsUpToDateProvider>
+            </SettingsProvider>
+          </QueryClientProvider>
         </AuthProvider>
       </Provider>
     );

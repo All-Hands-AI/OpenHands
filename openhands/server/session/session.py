@@ -37,6 +37,7 @@ class Session:
     loop: asyncio.AbstractEventLoop
     config: AppConfig
     file_store: FileStore
+    user_id: str | None
 
     def __init__(
         self,
@@ -44,6 +45,7 @@ class Session:
         config: AppConfig,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
+        user_id: str | None = None,
     ):
         self.sid = sid
         self.sio = sio
@@ -58,15 +60,21 @@ class Session:
         # Copying this means that when we update variables they are not applied to the shared global configuration!
         self.config = deepcopy(config)
         self.loop = asyncio.get_event_loop()
+        self.user_id = user_id
 
-    def close(self):
+    async def close(self):
+        if self.sio:
+            await self.sio.emit(
+                'oh_event',
+                event_to_dict(
+                    AgentStateChangedObservation('', AgentState.STOPPED.value)
+                ),
+                to=ROOM_KEY.format(sid=self.sid),
+            )
         self.is_alive = False
-        self.agent_session.close()
+        await self.agent_session.close()
 
-    async def initialize_agent(
-        self,
-        settings: Settings,
-    ):
+    async def initialize_agent(self, settings: Settings, initial_user_msg: str | None):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
@@ -83,6 +91,9 @@ class Session:
         )
         max_iterations = settings.max_iterations or self.config.max_iterations
 
+        # This is a shallow copy of the default LLM config, so changes here will
+        # persist if we retrieve the default LLM config again when constructing
+        # the agent
         default_llm_config = self.config.get_llm_config()
         default_llm_config.model = settings.llm_model or ''
         default_llm_config.api_key = settings.llm_api_key
@@ -114,11 +125,12 @@ class Session:
                 agent_configs=self.config.get_agent_configs(),
                 github_token=github_token,
                 selected_repository=selected_repository,
+                initial_user_msg=initial_user_msg,
             )
         except Exception as e:
-            logger.exception(f'Error creating controller: {e}')
+            logger.exception(f'Error creating agent_session: {e}')
             await self.send_error(
-                f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
+                f'Error creating agent_session. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
             return
 
@@ -187,8 +199,8 @@ class Session:
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
-        except RuntimeError:
-            logger.error('Error sending', stack_info=True, exc_info=True)
+        except RuntimeError as e:
+            logger.error(f'Error sending data to websocket: {str(e)}')
             self.is_alive = False
             return False
 

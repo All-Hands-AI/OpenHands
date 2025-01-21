@@ -30,9 +30,6 @@ async def load_settings(request: Request) -> Settings | None:
                 status_code=status.HTTP_404_NOT_FOUND,
                 content={'error': 'Settings not found'},
             )
-
-        # For security reasons we don't ever send the api key to the client
-        settings.llm_api_key = 'SET' if settings.llm_api_key else None
         return settings
     except Exception as e:
         logger.warning(f'Invalid token: {e}')

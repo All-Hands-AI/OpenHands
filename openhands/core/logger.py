@@ -8,10 +8,31 @@ from datetime import datetime
 from types import TracebackType
 from typing import Any, Literal, Mapping
 
+import litellm
 from termcolor import colored
 
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
 DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
+DEBUG_LLM = os.getenv('DEBUG_LLM', 'False').lower() in ['true', '1', 'yes']
+
+# Configure litellm logging based on DEBUG_LLM
+if DEBUG_LLM:
+    confirmation = input(
+        '\n⚠️ WARNING: You are enabling DEBUG_LLM which may expose sensitive information like API keys.\n'
+        'This should NEVER be enabled in production.\n'
+        "Type 'y' to confirm you understand the risks: "
+    )
+    if confirmation.lower() == 'y':
+        litellm.suppress_debug_info = False
+        litellm.set_verbose = True
+    else:
+        print('DEBUG_LLM disabled due to lack of confirmation')
+        litellm.suppress_debug_info = True
+        litellm.set_verbose = False
+else:
+    litellm.suppress_debug_info = True
+    litellm.set_verbose = False
+
 if DEBUG:
     LOG_LEVEL = 'DEBUG'
 
@@ -19,6 +40,9 @@ LOG_TO_FILE = os.getenv('LOG_TO_FILE', 'False').lower() in ['true', '1', 'yes']
 DISABLE_COLOR_PRINTING = False
 
 LOG_ALL_EVENTS = os.getenv('LOG_ALL_EVENTS', 'False').lower() in ['true', '1', 'yes']
+
+# Controls whether to stream Docker container logs
+DEBUG_RUNTIME = os.getenv('DEBUG_RUNTIME', 'False').lower() in ['true', '1', 'yes']
 
 ColorType = Literal[
     'red',
@@ -47,6 +71,14 @@ LOG_COLORS: Mapping[str, ColorType] = {
     'ERROR': 'red',
     'PLAN': 'light_magenta',
 }
+
+
+class StackInfoFilter(logging.Filter):
+    def filter(self, record):
+        if record.levelno >= logging.ERROR:
+            record.stack_info = True
+            record.exc_info = True
+        return True
 
 
 class NoColorFormatter(logging.Formatter):
@@ -256,6 +288,9 @@ current_log_level = logging.INFO
 if LOG_LEVEL in logging.getLevelNamesMapping():
     current_log_level = logging.getLevelNamesMapping()[LOG_LEVEL]
 openhands_logger.setLevel(current_log_level)
+
+if DEBUG:
+    openhands_logger.addFilter(StackInfoFilter())
 
 if current_log_level == logging.DEBUG:
     LOG_TO_FILE = True
