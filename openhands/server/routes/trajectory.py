@@ -21,7 +21,6 @@ async def get_trajectory(request: Request):
         JSONResponse: A JSON response containing the trajectory as a list of
         events.
     """
-    logger.info('get trajectory method called')
     try:
         async_stream = AsyncEventStreamWrapper(
             request.state.conversation.event_stream, filter_hidden=True
