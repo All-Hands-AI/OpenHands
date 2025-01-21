@@ -99,7 +99,7 @@ export function ChatInterface() {
 
   const onClickExportTrajectoryButton = () => {
     if (!params.conversationId) {
-      console.error("No conversation ID available");
+      toast.error("ConversationId unknown, cannot download trajectory");
       return;
     }
 
