@@ -12,7 +12,7 @@ export const useGitHubAuthUrl = (config: UseGitHubAuthUrlConfig) => {
   const { githubTokenIsSet } = useAuth();
 
   return React.useMemo(() => {
-    if (config.appMode === "saas" && githubTokenIsSet)
+    if (config.appMode === "saas" && !githubTokenIsSet)
       return generateGitHubAuthUrl(
         config.gitHubClientId || "",
         new URL(window.location.href),
