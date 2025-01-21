@@ -55,6 +55,8 @@ async def store_settings(
     # Check if token is valid
     if settings.github_token:
         try:
+            # We check if the token is valid by getting the user
+            # If the token is invalid, this will raise an exception
             github = GitHubService(settings.github_token)
             await call_sync_from_async(github.get_user)
         except Exception as e:

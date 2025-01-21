@@ -129,7 +129,7 @@ async def test_settings_llm_api_key(test_client, mock_settings_store):
 async def test_settings_api_set_github_token(
     mock_github_service, test_client, mock_settings_store
 ):
-    # Test data with unset_github_token set to True
+    # Test data with github_token set
     settings_data = {
         'language': 'en',
         'agent': 'test-agent',
