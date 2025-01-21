@@ -43,6 +43,11 @@ class RemoteRuntime(ActionExecutionClient):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
     ):
+        self.runtime_id: str | None = None
+        self.runtime_url: str | None = None
+        self.available_hosts: dict[str, int] = {}
+        self._runtime_initialized: bool = False
+
         super().__init__(
             config,
             event_stream,
@@ -71,10 +76,6 @@ class RemoteRuntime(ActionExecutionClient):
             self.config.sandbox.api_key,
             self.session,
         )
-        self.runtime_id: str | None = None
-        self.runtime_url: str | None = None
-        self.available_hosts: dict[str, int] = {}
-        self._runtime_initialized: bool = False
 
     def log(self, level: str, message: str) -> None:
         message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
