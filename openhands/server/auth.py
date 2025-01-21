@@ -46,3 +46,8 @@ def sign_token(payload: dict[str, object], jwt_secret: str, algorithm='HS256') -
     #     # "exp": datetime.now(timezone.utc) + timedelta(minutes=15),
     # }
     return jwt.encode(payload, jwt_secret, algorithm=algorithm)
+
+
+def decode_token(token: str, jwt_secret: str) -> dict[str, object]:
+    """Decodes a JWT token."""
+    return jwt.decode(token, jwt_secret, algorithms=['HS256'])
