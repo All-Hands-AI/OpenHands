@@ -67,7 +67,7 @@ class DockerRuntime(ActionExecutionClient):
         headless_mode: bool = True,
     ):
         global _atexit_registered
-        if not _atexit_registered:
+        if not _atexit_registered and not config.sandbox.keep_runtime_alive:
             _atexit_registered = True
             atexit.register(stop_all_runtime_containers)
 
