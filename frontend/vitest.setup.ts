@@ -3,10 +3,7 @@ import { cleanup } from "@testing-library/react";
 import { server } from "#/mocks/node";
 import "@testing-library/jest-dom/vitest";
 
-// @ts-expect-error - Mock for Terminal tests
 HTMLCanvasElement.prototype.getContext = vi.fn();
-
-// @ts-expect-error - handle TypeError: dom.scrollTo is not a function
 HTMLElement.prototype.scrollTo = vi.fn();
 
 // Mock the i18n provider

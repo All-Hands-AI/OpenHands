@@ -57,7 +57,6 @@ from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCode
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
-from openhands.runtime.utils.system import check_port_available
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
 
@@ -121,6 +120,9 @@ class ActionExecutor:
         self.bash_session = BashSession(
             work_dir=self._initial_cwd,
             username=self.username,
+            no_change_timeout_seconds=int(
+                os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
+            ),
         )
         self.bash_session.initialize()
         await wait_all(
@@ -164,7 +166,7 @@ class ActionExecutor:
         logger.debug(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
         for command in INIT_COMMANDS:
             action = CmdRunAction(command=command)
-            action.timeout = 300
+            action.set_hard_timeout(300)
             logger.debug(f'Executing init command: {command}')
             obs = await self.run(action)
             assert isinstance(obs, CmdOutputObservation)
@@ -435,8 +437,6 @@ if __name__ == '__main__':
     )
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
-    os.environ['VSCODE_PORT'] = str(int(args.port) + 1)
-    assert check_port_available(int(os.environ['VSCODE_PORT']))
 
     plugins_to_load: list[Plugin] = []
     if args.plugins:
@@ -525,9 +525,7 @@ if __name__ == '__main__':
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
-            logger.error(
-                f'Error processing command: {str(e)}', exc_info=True, stack_info=True
-            )
+            logger.error(f'Error while running /execute_action: {str(e)}')
             raise HTTPException(
                 status_code=500,
                 detail=traceback.format_exc(),
@@ -719,7 +717,7 @@ if __name__ == '__main__':
             return sorted_entries
 
         except Exception as e:
-            logger.error(f'Error listing files: {e}', exc_info=True)
+            logger.error(f'Error listing files: {e}')
             return []
 
     logger.debug(f'Starting action execution API on port {args.port}')

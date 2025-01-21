@@ -1,5 +1,3 @@
-
-
 # Options de configuration
 
 Ce guide détaille toutes les options de configuration disponibles pour OpenHands, vous aidant à personnaliser son comportement et à l'intégrer avec d'autres services.
@@ -94,7 +92,7 @@ Les options de configuration de base sont définies dans la section `[core]` du 
   - Description : Désactiver la couleur dans la sortie du terminal
 
 **Trajectoires**
-- `trajectories_path`
+- `save_trajectory_path`
   - Type : `str`
   - Valeur par défaut : `"./trajectories"`
   - Description : Chemin pour stocker les trajectoires (peut être un dossier ou un fichier). Si c'est un dossier, les trajectoires seront enregistrées dans un fichier nommé avec l'ID de session et l'extension .json, dans ce dossier.
@@ -183,6 +181,10 @@ Les options de configuration de base sont définies dans la section `[core]` du 
 Les options de configuration LLM (Large Language Model) sont définies dans la section `[llm]` du fichier `config.toml`.
 
 Pour les utiliser avec la commande docker, passez `-e LLM_<option>`. Exemple : `-e LLM_NUM_RETRIES`.
+
+:::note
+Pour les configurations de développement, vous pouvez également définir des configurations LLM personnalisées. Voir [Configurations LLM personnalisées](./llms/custom-llm-configs) pour plus de détails.
+:::
 
 **Informations d'identification AWS**
 - `aws_access_key_id`

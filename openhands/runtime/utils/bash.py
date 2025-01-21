@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import traceback
 import uuid
 from enum import Enum
 
@@ -23,11 +24,11 @@ def split_bash_commands(commands):
         return ['']
     try:
         parsed = bashlex.parse(commands)
-    except bashlex.errors.ParsingError as e:
+    except (bashlex.errors.ParsingError, NotImplementedError):
         logger.debug(
             f'Failed to parse bash commands\n'
             f'[input]: {commands}\n'
-            f'[warning]: {e}\n'
+            f'[warning]: {traceback.format_exc()}\n'
             f'The original command will be returned as is.'
         )
         # If parsing fails, return the original commands
@@ -143,9 +144,13 @@ def escape_bash_special_chars(command: str) -> str:
         remaining = command[last_pos:]
         parts.append(remaining)
         return ''.join(parts)
-    except bashlex.errors.ParsingError:
-        # Fallback if parsing fails
-        logger.warning(f'Failed to parse command: {command}')
+    except (bashlex.errors.ParsingError, NotImplementedError):
+        logger.debug(
+            f'Failed to parse bash commands for special characters escape\n'
+            f'[input]: {command}\n'
+            f'[warning]: {traceback.format_exc()}\n'
+            f'The original command will be returned as is.'
+        )
         return command
 
 
@@ -169,7 +174,7 @@ class BashSession:
         self,
         work_dir: str,
         username: str | None = None,
-        no_change_timeout_seconds: float = 30.0,
+        no_change_timeout_seconds: int = 30,
     ):
         self.NO_CHANGE_TIMEOUT_SECONDS = no_change_timeout_seconds
         self.work_dir = work_dir
@@ -364,7 +369,7 @@ class BashSession:
             command,
             raw_command_output,
             metadata,
-            continue_prefix='[Command output continued from previous command]\n',
+            continue_prefix='[Below is the output of the previous command.]\n',
         )
         return CmdOutputObservation(
             content=command_output,
@@ -399,7 +404,7 @@ class BashSession:
             command,
             raw_command_output,
             metadata,
-            continue_prefix='[Command output continued from previous command]\n',
+            continue_prefix='[Below is the output of the previous command.]\n',
         )
 
         return CmdOutputObservation(
@@ -436,6 +441,8 @@ class BashSession:
             else:
                 # The command output is the content after the last PS1 prompt
                 return pane_content[ps1_matches[0].end() + 1 :]
+        elif len(ps1_matches) == 0:
+            return pane_content
         combined_output = ''
         for i in range(len(ps1_matches) - 1):
             # Extract content between current and next PS1 prompt
@@ -454,19 +461,28 @@ class BashSession:
         # Strip the command of any leading/trailing whitespace
         logger.debug(f'RECEIVED ACTION: {action}')
         command = action.command.strip()
+        is_input: bool = action.is_input
 
-        if command == '' and self.prev_status not in {
+        # If the previous command is not completed, we need to check if the command is empty
+        if self.prev_status not in {
             BashCommandStatus.CONTINUE,
             BashCommandStatus.NO_CHANGE_TIMEOUT,
             BashCommandStatus.HARD_TIMEOUT,
         }:
-            return CmdOutputObservation(
-                content='ERROR: No previous command to continue from. '
-                + 'Previous command has to be timeout to be continued.',
-                command='',
-                metadata=CmdOutputMetadata(),
-            )
+            if command == '':
+                return CmdOutputObservation(
+                    content='ERROR: No previous running command to retrieve logs from.',
+                    command='',
+                    metadata=CmdOutputMetadata(),
+                )
+            if is_input:
+                return CmdOutputObservation(
+                    content='ERROR: No previous running command to interact with.',
+                    command='',
+                    metadata=CmdOutputMetadata(),
+                )
 
+        # Check if the command is a single command or multiple commands
         splited_commands = split_bash_commands(command)
         if len(splited_commands) > 1:
             return ErrorObservation(
@@ -481,26 +497,62 @@ class BashSession:
         last_change_time = start_time
         last_pane_output = self._get_pane_content()
 
-        _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
-        assert len(_ps1_matches) >= 1, (
-            'Expected at least one PS1 metadata block BEFORE the execution of a command, '
-            f'but got {len(_ps1_matches)} PS1 metadata blocks:\n---\n{last_pane_output!r}\n---'
-        )
-        if len(_ps1_matches) > 1:
-            logger.warning(
-                'Found multiple PS1 metadata blocks BEFORE the execution of a command. '
-                'Only the last one will be used.'
+        # When prev command is still running, and we are trying to send a new command
+        if (
+            self.prev_status
+            in {
+                BashCommandStatus.HARD_TIMEOUT,
+                BashCommandStatus.NO_CHANGE_TIMEOUT,
+            }
+            and not last_pane_output.endswith(
+                CMD_OUTPUT_PS1_END
+            )  # prev command is not completed
+            and not is_input
+            and command != ''  # not input and not empty command
+        ):
+            _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
+            raw_command_output = self._combine_outputs_between_matches(
+                last_pane_output, _ps1_matches
             )
-            _ps1_matches = [_ps1_matches[-1]]
-
-        if command != '':
-            # convert command to raw string
-            command = escape_bash_special_chars(command)
-            logger.debug(f'SENDING COMMAND: {command!r}')
-            self.pane.send_keys(
+            metadata = CmdOutputMetadata()  # No metadata available
+            metadata.suffix = (
+                f'\n[Your command "{command}" is NOT executed. '
+                f'The previous command is still running - You CANNOT send new commands until the previous command is completed. '
+                'By setting `is_input` to `true`, you can interact with the current process: '
+                "You may wait longer to see additional output of the previous command by sending empty command '', "
+                'send other commands to interact with the current process, '
+                'or send keys ("C-c", "C-z", "C-d") to interrupt/kill the previous command before sending your new command.]'
+            )
+            logger.debug(f'PREVIOUS COMMAND OUTPUT: {raw_command_output}')
+            command_output = self._get_command_output(
                 command,
-                enter=not self._is_special_key(command),
+                raw_command_output,
+                metadata,
+                continue_prefix='[Below is the output of the previous command.]\n',
             )
+            return CmdOutputObservation(
+                command=command,
+                content=command_output,
+                metadata=metadata,
+            )
+
+        # Send actual command/inputs to the pane
+        if command != '':
+            is_special_key = self._is_special_key(command)
+            if is_input:
+                logger.debug(f'SENDING INPUT TO RUNNING PROCESS: {command!r}')
+                self.pane.send_keys(
+                    command,
+                    enter=not is_special_key,
+                )
+            else:
+                # convert command to raw string
+                command = escape_bash_special_chars(command)
+                logger.debug(f'SENDING COMMAND: {command!r}')
+                self.pane.send_keys(
+                    command,
+                    enter=not is_special_key,
+                )
 
         # Loop until the command completes or times out
         while should_continue():
@@ -532,7 +584,7 @@ class BashSession:
             # We ignore this if the command is *blocking
             time_since_last_change = time.time() - last_change_time
             logger.debug(
-                f'CHECKING NO CHANGE TIMEOUT ({self.NO_CHANGE_TIMEOUT_SECONDS}s): elapsed {time_since_last_change}'
+                f'CHECKING NO CHANGE TIMEOUT ({self.NO_CHANGE_TIMEOUT_SECONDS}s): elapsed {time_since_last_change}. Action blocking: {action.blocking}'
             )
             if (
                 not action.blocking

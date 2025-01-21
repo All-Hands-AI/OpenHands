@@ -2,12 +2,18 @@ import posthog from "posthog-js";
 import React from "react";
 import { io, Socket } from "socket.io-client";
 import EventLogger from "#/utils/event-logger";
-import { handleAssistantMessage } from "#/services/actions";
+import {
+  handleAssistantMessage,
+  handleStatusMessage,
+} from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
 import { OpenHandsParsedEvent } from "#/types/core";
-import { AgentStateChangeObservation } from "#/types/core/observations";
+import {
+  AssistantMessageAction,
+  UserMessageAction,
+} from "#/types/core/actions";
 
-const isOpenHandsMessage = (event: unknown): event is OpenHandsParsedEvent =>
+const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
   event !== null &&
   "id" in event &&
@@ -15,10 +21,26 @@ const isOpenHandsMessage = (event: unknown): event is OpenHandsParsedEvent =>
   "message" in event &&
   "timestamp" in event;
 
-const isAgentStateChangeObservation = (
+const isUserMessage = (
   event: OpenHandsParsedEvent,
-): event is AgentStateChangeObservation =>
-  "observation" in event && event.observation === "agent_state_changed";
+): event is UserMessageAction =>
+  "source" in event &&
+  "type" in event &&
+  event.source === "user" &&
+  event.type === "message";
+
+const isAssistantMessage = (
+  event: OpenHandsParsedEvent,
+): event is AssistantMessageAction =>
+  "source" in event &&
+  "type" in event &&
+  event.source === "agent" &&
+  event.type === "message";
+
+const isMessageAction = (
+  event: OpenHandsParsedEvent,
+): event is UserMessageAction | AssistantMessageAction =>
+  isUserMessage(event) || isAssistantMessage(event);
 
 export enum WsClientProviderStatus {
   CONNECTED,
@@ -43,16 +65,48 @@ const WsClientContext = React.createContext<UseWsClient>({
 
 interface WsClientProviderProps {
   conversationId: string;
-  ghToken: string | null;
+}
+
+interface ErrorArg {
+  message?: string;
+  data?: ErrorArgData | unknown;
+}
+
+interface ErrorArgData {
+  msg_id: string;
+}
+
+export function updateStatusWhenErrorMessagePresent(data: ErrorArg | unknown) {
+  const isObject = (val: unknown): val is object =>
+    !!val && typeof val === "object";
+  const isString = (val: unknown): val is string => typeof val === "string";
+  if (isObject(data) && "message" in data && isString(data.message)) {
+    if (data.message === "websocket error") {
+      return;
+    }
+    let msgId: string | undefined;
+    if (
+      "data" in data &&
+      isObject(data.data) &&
+      "msg_id" in data.data &&
+      isString(data.data.msg_id)
+    ) {
+      msgId = data.data.msg_id;
+    }
+    handleStatusMessage({
+      type: "error",
+      message: data.message,
+      id: msgId,
+      status_update: true,
+    });
+  }
 }
 
 export function WsClientProvider({
-  ghToken,
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const sioRef = React.useRef<Socket | null>(null);
-  const ghTokenRef = React.useRef<string | null>(ghToken);
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
   );
@@ -74,7 +128,7 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
-    if (isOpenHandsMessage(event) && !isAgentStateChangeObservation(event)) {
+    if (isOpenHandsEvent(event) && isMessageAction(event)) {
       messageRateHandler.record(new Date().getTime());
     }
     setEvents((prevEvents) => [...prevEvents, event]);
@@ -85,7 +139,7 @@ export function WsClientProvider({
     handleAssistantMessage(event);
   }
 
-  function handleDisconnect() {
+  function handleDisconnect(data: unknown) {
     setStatus(WsClientProviderStatus.DISCONNECTED);
     const sio = sioRef.current;
     if (!sio) {
@@ -93,12 +147,18 @@ export function WsClientProvider({
     }
     sio.io.opts.query = sio.io.opts.query || {};
     sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
+    updateStatusWhenErrorMessagePresent(data);
   }
 
-  function handleError() {
-    posthog.capture("socket_error");
+  function handleError(data: unknown) {
     setStatus(WsClientProviderStatus.DISCONNECTED);
+    updateStatusWhenErrorMessagePresent(data);
+    posthog.capture("socket_error");
   }
+
+  React.useEffect(() => {
+    lastEventRef.current = null;
+  }, [conversationId]);
 
   React.useEffect(() => {
     if (!conversationId) {
@@ -118,9 +178,6 @@ export function WsClientProvider({
 
     sio = io(baseUrl, {
       transports: ["websocket"],
-      auth: {
-        github_token: ghToken || undefined,
-      },
       query,
     });
     sio.on("connect", handleConnect);
@@ -130,7 +187,6 @@ export function WsClientProvider({
     sio.on("disconnect", handleDisconnect);
 
     sioRef.current = sio;
-    ghTokenRef.current = ghToken;
 
     return () => {
       sio.off("connect", handleConnect);
@@ -139,7 +195,7 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [ghToken, conversationId]);
+  }, [conversationId]);
 
   React.useEffect(
     () => () => {
