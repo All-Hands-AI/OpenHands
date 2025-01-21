@@ -405,8 +405,13 @@ class RemoteRuntime(ActionExecutionClient):
                         f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
                     ) from e
             elif e.response.status_code == 503:
-                self.log('warning', 'Runtime appears to be paused. Resuming...')
-                self._resume_runtime()
-                return super()._send_action_server_request(method, url, **kwargs)
+                if self.config.sandbox.keep_runtime_alive:
+                    self.log('warning', 'Runtime appears to be paused. Resuming...')
+                    self._resume_runtime()
+                    return super()._send_action_server_request(method, url, **kwargs)
+                else:
+                    raise AgentRuntimeDisconnectedError(
+                        f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
+                    ) from e
             else:
                 raise e

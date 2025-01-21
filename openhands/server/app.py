@@ -9,11 +9,12 @@ from fastapi import (
 )
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
+from openhands import __version__
 from openhands.server.middleware import (
     AttachConversationMiddleware,
+    CacheControlMiddleware,
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
-    NoCacheMiddleware,
     RateLimitMiddleware,
 )
 from openhands.server.routes.conversation import app as conversation_api_router
@@ -36,7 +37,12 @@ async def _lifespan(app: FastAPI):
         yield
 
 
-app = FastAPI(lifespan=_lifespan)
+app = FastAPI(
+    title='OpenHands',
+    description='OpenHands: Code Less, Make More',
+    version=__version__,
+    lifespan=_lifespan,
+)
 app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
@@ -44,7 +50,7 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-app.add_middleware(NoCacheMiddleware)
+app.add_middleware(CacheControlMiddleware)
 app.add_middleware(
     RateLimitMiddleware, rate_limiter=InMemoryRateLimiter(requests=10, seconds=1)
 )
