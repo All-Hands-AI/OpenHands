@@ -15,11 +15,25 @@ parser.add_argument(
     action='store_true',
     help='Show visualization paths for failed instances',
 )
+parser.add_argument(
+    '--only-x-instances',
+    action='store_true',
+    help='Only show instances that are ran by X',
+)
 args = parser.parse_args()
 
 df1 = pd.read_json(args.input_file_1, orient='records', lines=True)
 df2 = pd.read_json(args.input_file_2, orient='records', lines=True)
 
+if args.only_x_instances:
+    instance_ids_1 = set(df1['instance_id'].tolist())
+    print(
+        f'Before removing instances not in X={args.input_file_1}: Y={df2.shape[0]} instances'
+    )
+    df2 = df2[df2['instance_id'].isin(instance_ids_1)]
+    print(
+        f'After removing instances not in X={args.input_file_1}: Y={df2.shape[0]} instances'
+    )
 
 # Get the intersection of the instance_ids
 df = pd.merge(df1, df2, on='instance_id', how='inner')
