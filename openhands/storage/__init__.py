@@ -6,17 +6,15 @@ from openhands.storage.minio import MinioFileStore
 from openhands.storage.s3 import S3FileStore
 
 
-def get_file_store(
-    file_store: str, file_store_location: str | None = None
-) -> FileStore:
+def get_file_store(file_store: str, file_store_path: str | None = None) -> FileStore:
     if file_store == 'local':
-        if file_store_location is None:
-            raise ValueError('file_store_location is required for local file store')
-        return LocalFileStore(file_store_location)
+        if file_store_path is None:
+            raise ValueError('file_store_path is required for local file store')
+        return LocalFileStore(file_store_path)
     elif file_store == 'minio':
         return MinioFileStore()
     elif file_store == 's3':
-        return S3FileStore(file_store_location)
+        return S3FileStore(file_store_path)
     elif file_store == 'google_cloud':
-        return GoogleCloudFileStore(file_store_location)
+        return GoogleCloudFileStore(file_store_path)
     return InMemoryFileStore()

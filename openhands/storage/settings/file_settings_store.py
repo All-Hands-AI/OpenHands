@@ -33,5 +33,5 @@ class FileSettingsStore(SettingsStore):
     async def get_instance(
         cls, config: AppConfig, user_id: str | None
     ) -> FileSettingsStore:
-        file_store = get_file_store(config.file_store, config.file_store_location)
+        file_store = get_file_store(config.file_store, config.file_store_path)
         return FileSettingsStore(file_store)

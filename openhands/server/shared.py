@@ -12,7 +12,7 @@ load_dotenv()
 
 config = load_app_config()
 openhands_config = load_openhands_config()
-file_store = get_file_store(config.file_store, config.file_store_location)
+file_store = get_file_store(config.file_store, config.file_store_path)
 
 client_manager = None
 redis_host = os.environ.get('REDIS_HOST')

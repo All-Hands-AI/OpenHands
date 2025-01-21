@@ -97,7 +97,7 @@
   - 描述: 存储轨迹的路径(可以是文件夹或文件)。如果是文件夹,轨迹将保存在该文件夹中以会话 ID 命名的 .json 文件中。
 
 **文件存储**
-- `file_store_location`
+- `file_store_path`
   - 类型: `str`
   - 默认值: `"/tmp/file_store"`
   - 描述: 文件存储路径

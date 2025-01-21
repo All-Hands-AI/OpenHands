@@ -61,7 +61,7 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Description: Path to load a trajectory and replay. If given, must be a path to the trajectory file in JSON format. The actions in the trajectory file would be replayed first before any user instruction is executed.
 
 ### File Store
-- `file_store_location`
+- `file_store_path`
   - Type: `str`
   - Default: `"/tmp/file_store"`
   - Description: File store path

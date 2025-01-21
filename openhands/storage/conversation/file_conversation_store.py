@@ -101,7 +101,7 @@ class FileConversationStore(ConversationStore):
     async def get_instance(
         cls, config: AppConfig, user_id: str | None
     ) -> FileConversationStore:
-        file_store = get_file_store(config.file_store, config.file_store_location)
+        file_store = get_file_store(config.file_store, config.file_store_path)
         return FileConversationStore(file_store)
 
 
