@@ -15,7 +15,6 @@ import { SettingsModal } from "#/components/shared/modals/settings/settings-moda
 import { useCurrentSettings } from "#/context/settings-context";
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
-import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 import { useEndSession } from "#/hooks/use-end-session";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
@@ -75,16 +74,14 @@ export function Sidebar() {
           </div>
           {user.isLoading && <LoadingSpinner size="small" />}
           <ExitProjectButton onClick={handleEndSession} />
-          {MULTI_CONVERSATION_UI && (
-            <TooltipButton
-              testId="toggle-conversation-panel"
-              tooltip="Conversations"
-              ariaLabel="Conversations"
-              onClick={() => setConversationPanelIsOpen((prev) => !prev)}
-            >
-              <FaListUl size={22} />
-            </TooltipButton>
-          )}
+          <TooltipButton
+            testId="toggle-conversation-panel"
+            tooltip="Conversations"
+            ariaLabel="Conversations"
+            onClick={() => setConversationPanelIsOpen((prev) => !prev)}
+          >
+            <FaListUl size={22} />
+          </TooltipButton>
           <DocsButton />
           <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
           {!user.isLoading && (

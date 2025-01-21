@@ -4,7 +4,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { createRoutesStub } from "react-router";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
-import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 import OpenHands from "#/api/open-hands";
 import { MOCK_USER_PREFERENCES } from "#/mocks/handlers";
 
@@ -20,7 +19,7 @@ const renderSidebar = () => {
 };
 
 describe("Sidebar", () => {
-  it.skipIf(!MULTI_CONVERSATION_UI)(
+  it(
     "should have the conversation panel open by default",
     () => {
       renderSidebar();
@@ -28,7 +27,7 @@ describe("Sidebar", () => {
     },
   );
 
-  it.skipIf(!MULTI_CONVERSATION_UI)(
+  it(
     "should toggle the conversation panel",
     async () => {
       const user = userEvent.setup();
