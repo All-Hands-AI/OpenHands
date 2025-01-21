@@ -277,7 +277,7 @@ class CodeActAgent(Agent):
             # if it doesn't have tool call metadata, it was triggered by a user action
             if obs.tool_call_metadata is None:
                 text = truncate_content(
-                    f'\nObserved result of command executed by user:\n{obs.content}',
+                    f'\nObserved result of command executed by user:\n{obs._to_agent_observation()}',
                     max_message_chars,
                 )
             else:
