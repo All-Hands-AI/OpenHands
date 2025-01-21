@@ -152,6 +152,12 @@ class LLM(RetryMixin, DebugMixin):
             temperature=self.config.temperature,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
+            # add reasoning_effort, only if the model is supported
+            **(
+                {'reasoning_effort': self.config.reasoning_effort}
+                if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
+                else {}
+            ),
         )
 
         self._completion_unwrapped = self._completion
@@ -216,10 +222,6 @@ class LLM(RetryMixin, DebugMixin):
                     kwargs['extra_headers'] = {
                         'anthropic-beta': 'prompt-caching-2024-07-31',
                     }
-
-            # Set reasoning effort for models that support it
-            if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS:
-                kwargs['reasoning_effort'] = self.config.reasoning_effort
 
             # set litellm modify_params to the configured value
             # True by default to allow litellm to do transformations like adding a default message, when a message is empty
