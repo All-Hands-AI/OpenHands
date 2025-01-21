@@ -28,6 +28,7 @@ from openhands.server.routes.manage_conversations import (
 from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.routes.settings import app as settings_router
+from openhands.server.routes.trajectory import app as trajectory_router
 from openhands.server.shared import openhands_config, session_manager
 from openhands.utils.import_utils import get_impl
 
@@ -71,6 +72,7 @@ app.include_router(conversation_api_router)
 app.include_router(manage_conversation_api_router)
 app.include_router(settings_router)
 app.include_router(github_api_router)
+app.include_router(trajectory_router)
 
 AttachConversationMiddlewareImpl = get_impl(
     AttachConversationMiddleware, openhands_config.attach_conversation_middleware_path
