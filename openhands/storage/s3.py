@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 import boto3
 import botocore
@@ -8,7 +7,7 @@ from openhands.storage.files import FileStore
 
 
 class S3FileStore(FileStore):
-    def __init__(self, bucket_name: Optional[str] = None) -> None:
+    def __init__(self, bucket_name: str | None = None) -> None:
         if bucket_name is None:
             bucket_name = os.environ['FILE_STORE_BUCKET']
         self.bucket = bucket_name
