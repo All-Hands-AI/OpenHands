@@ -13,13 +13,14 @@ from openhands.core.exceptions import (
     AgentRuntimeNotReadyError,
     AgentRuntimeUnavailableError,
 )
+from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.utils.command import get_remote_startup_command
+from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
@@ -66,12 +67,18 @@ class RemoteRuntime(ActionExecutionClient):
             )
 
         self.runtime_builder = RemoteRuntimeBuilder(
-            self.config.sandbox.remote_runtime_api_url, self.config.sandbox.api_key
+            self.config.sandbox.remote_runtime_api_url,
+            self.config.sandbox.api_key,
+            self.session,
         )
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
         self.available_hosts: dict[str, int] = {}
         self._runtime_initialized: bool = False
+
+    def log(self, level: str, message: str) -> None:
+        message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
+        getattr(logger, level)(message, stacklevel=2)
 
     def _get_action_execution_server_host(self):
         return self.runtime_url
@@ -194,22 +201,10 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _start_runtime(self):
         # Prepare the request body for the /start endpoint
-        plugin_args = []
-        if self.plugins is not None and len(self.plugins) > 0:
-            plugin_args = ['--plugins'] + [plugin.name for plugin in self.plugins]
-        browsergym_args = []
-        if self.config.sandbox.browsergym_eval_env is not None:
-            browsergym_args = [
-                '--browsergym-eval-env'
-            ] + self.config.sandbox.browsergym_eval_env.split(' ')
-        command = get_remote_startup_command(
-            self.port,
-            self.config.workspace_mount_path_in_sandbox,
-            'openhands' if self.config.run_as_openhands else 'root',
-            self.config.sandbox.user_id,
-            plugin_args,
-            browsergym_args,
-            is_root=not self.config.run_as_openhands,  # is_root=True when running as root
+        command = get_action_execution_server_startup_command(
+            server_port=self.port,
+            plugins=self.plugins,
+            app_config=self.config,
         )
         start_request = {
             'image': self.container_image,
@@ -235,10 +230,17 @@ class RemoteRuntime(ActionExecutionClient):
                 f'Runtime started. URL: {self.runtime_url}',
             )
         except requests.HTTPError as e:
-            self.log('error', f'Unable to start runtime: {e}')
+            self.log('error', f'Unable to start runtime: {str(e)}')
             raise AgentRuntimeUnavailableError() from e
 
     def _resume_runtime(self):
+        """
+        1. Show status update that runtime is being started.
+        2. Send the runtime API a /resume request
+        3. Poll for the runtime to be ready
+        4. Update env vars
+        """
+        self.send_status_message('STATUS$STARTING_RUNTIME')
         with self._send_runtime_api_request(
             'POST',
             f'{self.config.sandbox.remote_runtime_api_url}/resume',
@@ -313,10 +315,11 @@ class RemoteRuntime(ActionExecutionClient):
                 self.check_if_alive()
             except requests.HTTPError as e:
                 self.log(
-                    'warning', f"Runtime /alive failed, but pod says it's ready: {e}"
+                    'warning',
+                    f"Runtime /alive failed, but pod says it's ready: {str(e)}",
                 )
                 raise AgentRuntimeNotReadyError(
-                    f'Runtime /alive failed to respond with 200: {e}'
+                    f'Runtime /alive failed to respond with 200: {str(e)}'
                 )
             return
         elif (
@@ -353,20 +356,34 @@ class RemoteRuntime(ActionExecutionClient):
             super().close()
             return
         try:
-            with self._send_runtime_api_request(
-                'POST',
-                f'{self.config.sandbox.remote_runtime_api_url}/stop',
-                json={'runtime_id': self.runtime_id},
-            ):
-                self.log('debug', 'Runtime stopped.')
+            if not self._runtime_closed:
+                with self._send_runtime_api_request(
+                    'POST',
+                    f'{self.config.sandbox.remote_runtime_api_url}/stop',
+                    json={'runtime_id': self.runtime_id},
+                ):
+                    self.log('debug', 'Runtime stopped.')
         except Exception as e:
+            self.log('error', f'Unable to stop runtime: {str(e)}')
             raise e
         finally:
             super().close()
 
     def _send_runtime_api_request(self, method, url, **kwargs):
-        return send_request(self.session, method, url, **kwargs)
+        try:
+            return send_request(self.session, method, url, **kwargs)
+        except requests.Timeout:
+            self.log(
+                'error',
+                f'No response received within the timeout period for url: {url}',
+            )
+            raise
 
+    @tenacity.retry(
+        retry=tenacity.retry_if_exception_type(ConnectionError),
+        stop=tenacity.stop_after_attempt(3) | stop_if_should_exit(),
+        wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
+    )
     def _send_action_server_request(self, method, url, **kwargs):
         try:
             return super()._send_action_server_request(method, url, **kwargs)
@@ -378,18 +395,23 @@ class RemoteRuntime(ActionExecutionClient):
             raise
 
         except requests.HTTPError as e:
-            if e.response.status_code in (404, 502):
+            if e.response.status_code in (404, 502, 504):
                 if e.response.status_code == 404:
                     raise AgentRuntimeDisconnectedError(
-                        'Runtime is not responding. This may be temporary, please try again.'
+                        f'Runtime is not responding. This may be temporary, please try again. Original error: {e}'
                     ) from e
-                else:  # 502
+                else:  # 502, 504
                     raise AgentRuntimeDisconnectedError(
-                        'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again.'
+                        f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
                     ) from e
             elif e.response.status_code == 503:
-                self.log('warning', 'Runtime appears to be paused. Resuming...')
-                self._resume_runtime()
-                return super()._send_action_server_request(method, url, **kwargs)
+                if self.config.sandbox.keep_runtime_alive:
+                    self.log('warning', 'Runtime appears to be paused. Resuming...')
+                    self._resume_runtime()
+                    return super()._send_action_server_request(method, url, **kwargs)
+                else:
+                    raise AgentRuntimeDisconnectedError(
+                        f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
+                    ) from e
             else:
                 raise e
