@@ -26,7 +26,7 @@ function isFileSystemAccessSupported(): boolean {
  * Checks if the Save File Picker API is supported
  */
 function isSaveFilePickerSupported(): boolean {
-  return 'showSaveFilePicker' in window;
+  return "showSaveFilePicker" in window;
 }
 
 /**
@@ -169,7 +169,10 @@ async function processBatch(
   };
 }
 
-export async function downloadTrajectory(conversationId: string, data: unknown[] | null): Promise<void> {
+export async function downloadTrajectory(
+  conversationId: string,
+  data: unknown[] | null,
+): Promise<void> {
   try {
     if (!isSaveFilePickerSupported()) {
       throw new Error(
@@ -178,12 +181,14 @@ export async function downloadTrajectory(conversationId: string, data: unknown[]
     }
     const options = {
       suggestedName: `trajectory-${conversationId}.json`,
-      types: [{
-        description: 'JSON File',
-        accept: {
-          'application/json': ['.json'],
+      types: [
+        {
+          description: "JSON File",
+          accept: {
+            "application/json": [".json"],
+          },
         },
-      }],
+      ],
     };
 
     const handle = await window.showSaveFilePicker(options);

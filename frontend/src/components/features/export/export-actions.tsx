@@ -5,9 +5,7 @@ interface ExportActionsProps {
   onExportTrajectory: () => void;
 }
 
-export function ExportActions({
-    onExportTrajectory,
-}: ExportActionsProps) {
+export function ExportActions({ onExportTrajectory }: ExportActionsProps) {
   return (
     <div data-testid="export-actions" className="flex gap-1">
       <ExportActionButton

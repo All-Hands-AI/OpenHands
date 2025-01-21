@@ -2,6 +2,7 @@ import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import React from "react";
 import posthog from "posthog-js";
+import { useParams } from "react-router";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { FeedbackActions } from "../feedback/feedback-actions";
 import { ExportActions } from "../export/export-actions";
@@ -22,7 +23,6 @@ import { ContinueButton } from "#/components/shared/buttons/continue-button";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
-import { useParams } from "react-router";
 import { downloadTrajectory } from "#/utils/download-files";
 
 function getEntryPoint(
@@ -105,11 +105,14 @@ export function ChatInterface() {
 
     getTrajectory(params.conversationId, {
       onSuccess: async (data) => {
-        await downloadTrajectory(params.conversationId ?? 'unknown', data.trajectory);
+        await downloadTrajectory(
+          params.conversationId ?? "unknown",
+          data.trajectory,
+        );
       },
       onError: (error) => {
         toast.error(error.message);
-      }
+      },
     });
   };
 
@@ -161,10 +164,8 @@ export function ChatInterface() {
             }
           />
           <ExportActions
-            onExportTrajectory={() =>
-              onClickExportTrajectoryButton()
-            }>
-          </ExportActions>
+            onExportTrajectory={() => onClickExportTrajectoryButton()}
+          />
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
             {messages.length > 2 &&
