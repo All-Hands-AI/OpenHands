@@ -1,7 +1,6 @@
 import asyncio
 import json
 import os
-import sys
 from pathlib import Path
 from typing import Callable, Protocol
 
@@ -222,7 +221,7 @@ if __name__ == '__main__':
 
     # Read task from file, CLI args, or stdin
     task_str = read_task(args, config.cli_multiline_input)
-    
+
     if config.replay_trajectory_path:
         if task_str:
             raise ValueError(
