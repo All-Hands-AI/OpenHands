@@ -368,4 +368,26 @@ Les options de configuration de l'agent sont définies dans les sections `[agent
 - `codeact_enable_llm_editor`
   - Type : `bool`
   - Valeur par défaut : `false`
-  - Description : Si l'éditeur LLM est activé dans l'espace d'action (foncti
+  - Description : Si l'éditeur LLM est activé dans l'espace d'action (fonctionne uniquement avec l'appel de fonction)
+
+**Utilisation du micro-agent**
+- `enable_prompt_extensions`
+  - Type : `bool`
+  - Valeur par défaut : `true`
+  - Description : Indique si l'utilisation des micro-agents est activée ou non
+
+- `disabled_microagents`
+  - Type : `list of str`
+  - Valeur par défaut : `None`
+  - Description : Liste des micro-agents à désactiver
+
+### Exécution
+- `timeout`
+  - Type : `int`
+  - Valeur par défaut : `120`
+  - Description : Délai d'expiration du bac à sable, en secondes
+
+- `user_id`
+  - Type : `int`
+  - Valeur par défaut : `1000`
+  - Description : ID de l'utilisateur du bac à sable

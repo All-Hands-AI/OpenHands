@@ -148,6 +148,7 @@ def get_config(
         codeact_enable_jupyter=False,
         codeact_enable_browsing=RUN_WITH_BROWSING,
         codeact_enable_llm_editor=False,
+        enable_prompt_extensions=False,
     )
     config.set_agent_config(agent_config)
     return config
