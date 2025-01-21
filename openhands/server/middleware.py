@@ -75,6 +75,8 @@ class InMemoryRateLimiter:
         self.history[key] = [ts for ts in self.history[key] if ts > cutoff]
 
     async def __call__(self, request: Request) -> bool:
+        if not request.client:
+            return True  # Allow requests without client info
         key = request.client.host
         now = datetime.now()
 

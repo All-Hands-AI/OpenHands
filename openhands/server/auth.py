@@ -41,4 +41,5 @@ def sign_token(payload: dict[str, object], jwt_secret: str, algorithm='HS256') -
     #     "sid": sid,
     #     # "exp": datetime.now(timezone.utc) + timedelta(minutes=15),
     # }
-    return jwt.encode(payload, jwt_secret, algorithm=algorithm)
+    token = jwt.encode(payload, jwt_secret, algorithm=algorithm)
+    return token if isinstance(token, str) else token.decode('utf-8')

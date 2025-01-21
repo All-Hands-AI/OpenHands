@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
@@ -18,24 +18,27 @@ ConversationStoreImpl = get_impl(
 )
 
 
-@app.get('/settings')
-async def load_settings(request: Request) -> Settings | None:
+@app.get('/settings', response_model=Settings)
+async def load_settings(request: Request) -> Settings:
     try:
         settings_store = await SettingsStoreImpl.get_instance(
             config, get_user_id(request)
         )
         settings = await settings_store.load()
         if not settings:
-            return JSONResponse(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content={'error': 'Settings not found'},
-            )
+            raise ValueError('Settings not found')
         return settings
+    except ValueError as e:
+        logger.warning(str(e))
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Settings not found',
+        )
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
-        return JSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Invalid token'},
+            detail='Invalid token',
         )
 
 
