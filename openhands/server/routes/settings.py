@@ -80,6 +80,7 @@ async def store_settings(
             if settings.github_token is None:
                 settings.github_token = existing_settings.github_token
 
+        # type: ignore
         if settings.unset_github_token:
             settings.github_token = None
             settings.unset_github_token = None
