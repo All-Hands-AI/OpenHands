@@ -281,12 +281,7 @@ class CodeActAgent(Agent):
                     max_message_chars,
                 )
             else:
-                text = truncate_content(
-                    obs.content
-                    + f'\n[Python Interpreter: {obs.metadata.py_interpreter_path}]',
-                    max_message_chars,
-                )
-            text += f'\n[Command finished with exit code {obs.exit_code}]'
+                text = truncate_content(obs._to_agent_observation(), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
