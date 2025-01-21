@@ -227,6 +227,7 @@ async def delete_conversation(
     is_running = await session_manager.is_agent_loop_running(conversation_id)
     if is_running:
         await session_manager.close_session(conversation_id)
+    # TODO: Delete
     await conversation_store.delete_metadata(conversation_id)
     return True
 
