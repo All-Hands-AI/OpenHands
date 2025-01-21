@@ -34,7 +34,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       ...newSettings,
     };
 
-    if (updatedSettings.LLM_API_KEY === "SET") {
+    if (updatedSettings.LLM_API_KEY === "**********") {
       delete updatedSettings.LLM_API_KEY;
     }
 
