@@ -1,4 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
+import toast from "react-hot-toast";
 import React from "react";
 import posthog from "posthog-js";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
@@ -20,6 +21,9 @@ import { ActionSuggestions } from "./action-suggestions";
 import { ContinueButton } from "#/components/shared/buttons/continue-button";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
+import { useParams } from "react-router";
+import { downloadTrajectory } from "#/utils/download-files";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -48,6 +52,8 @@ export function ChatInterface() {
   const { selectedRepository, importedProjectZip } = useSelector(
     (state: RootState) => state.initialQuery,
   );
+  const params = useParams();
+  const { mutate: getTrajectory } = useGetTrajectory();
 
   const handleSendMessage = async (content: string, files: File[]) => {
     if (messages.length === 0) {
@@ -91,8 +97,20 @@ export function ChatInterface() {
     setFeedbackPolarity(polarity);
   };
 
-  const onClickExportTrajectoryBUtton = () => {
-    console.log("export button clicked");
+  const onClickExportTrajectoryButton = () => {
+    if (!params.conversationId) {
+      console.error("No conversation ID available");
+      return;
+    }
+
+    getTrajectory(params.conversationId, {
+      onSuccess: async (data) => {
+        await downloadTrajectory(params.conversationId ?? 'unknown', data.trajectory);
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      }
+    });
   };
 
   const isWaitingForUserInput =
@@ -144,7 +162,7 @@ export function ChatInterface() {
           />
           <ExportActions
             onExportTrajectory={() =>
-              onClickExportTrajectoryBUtton()
+              onClickExportTrajectoryButton()
             }>
           </ExportActions>
 
