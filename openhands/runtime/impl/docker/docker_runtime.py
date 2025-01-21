@@ -188,36 +188,6 @@ class DockerRuntime(ActionExecutionClient):
     def _init_container(self):
         self.log('debug', 'Preparing to start container...')
         self.send_status_message('STATUS$PREPARING_CONTAINER')
-
-        try:
-            print('TRACE:101')
-            container = self.docker_client.containers.get(self.container_name)
-            container.restart()
-            print('TRACE:103')
-            self.container = container
-            config = container.attrs['Config']
-            for env_var in config['Env']:
-                if env_var.startswith('port='):
-                    self._host_port = int(env_var.split('port=')[1])
-                    self._container_port = self._host_port
-                elif env_var.startswith('VSCODE_PORT='):
-                    self._vscode_port = int(env_var.split('VSCODE_PORT=')[1])
-            self._app_ports = []
-            for exposed_port in config['ExposedPorts'].keys():
-                exposed_port = int(exposed_port.split('/tcp')[0])
-                if (
-                    exposed_port != self._host_port
-                    and exposed_port != self._vscode_port
-                ):
-                    self._app_ports.append(exposed_port)
-            return
-        except docker.errors.NotFound:
-            print('TRACE:104')
-            pass
-        except docker.errors.APIError:
-            print('TRACE:105')
-            pass
-
         self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
         self._container_port = self._host_port
         self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
@@ -340,7 +310,6 @@ class DockerRuntime(ActionExecutionClient):
         self.container = self.docker_client.containers.get(self.container_name)
         if self.container.status == 'exited':
             self.container.start()
-
         config = self.container.attrs['Config']
         for env_var in config['Env']:
             if env_var.startswith('port='):
@@ -353,22 +322,6 @@ class DockerRuntime(ActionExecutionClient):
             exposed_port = int(exposed_port.split('/tcp')[0])
             if exposed_port != self._host_port and exposed_port != self._vscode_port:
                 self._app_ports.append(exposed_port)
-        """
-        for port in self.container.attrs['NetworkSettings']['Ports']:  # type: ignore
-            port = int(port.split('/')[0])
-            if (
-                port >= EXECUTION_SERVER_PORT_RANGE[0]
-                and port <= EXECUTION_SERVER_PORT_RANGE[1]
-            ):
-                self._container_port = port
-            if port >= VSCODE_PORT_RANGE[0] and port <= VSCODE_PORT_RANGE[1]:
-                self._vscode_port = port
-            elif port >= APP_PORT_RANGE_1[0] and port <= APP_PORT_RANGE_1[1]:
-                self._app_ports.append(port)
-            elif port >= APP_PORT_RANGE_2[0] and port <= APP_PORT_RANGE_2[1]:
-                self._app_ports.append(port)
-        self._host_port = self._container_port
-        """
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(
             'debug',
@@ -451,3 +404,17 @@ class DockerRuntime(ActionExecutionClient):
             hosts[f'http://localhost:{port}'] = port
 
         return hosts
+
+    @classmethod
+    def delete(cls, conversation_id: str):
+        docker_client = cls._init_docker_client()
+        try:
+            container_name = CONTAINER_NAME_PREFIX + conversation_id
+            container = docker_client.containers.get(container_name)
+            container.remove(force=True)
+        except docker.errors.APIError:
+            pass
+        except docker.errors.NotFound:
+            pass
+        finally:
+            docker_client.close()

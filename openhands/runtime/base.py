@@ -136,6 +136,10 @@ class Runtime(FileEditRuntimeMixin):
     def close(self) -> None:
         pass
 
+    @classmethod
+    def delete(cls, conversation_id: str) -> None:
+        pass
+
     def log(self, level: str, message: str) -> None:
         message = f'[runtime {self.sid}] {message}'
         getattr(logger, level)(message, stacklevel=2)
