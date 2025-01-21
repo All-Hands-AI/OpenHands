@@ -277,11 +277,11 @@ class CodeActAgent(Agent):
             # if it doesn't have tool call metadata, it was triggered by a user action
             if obs.tool_call_metadata is None:
                 text = truncate_content(
-                    f'\nObserved result of command executed by user:\n{obs._to_agent_observation()}',
+                    f'\nObserved result of command executed by user:\n{obs.to_agent_observation()}',
                     max_message_chars,
                 )
             else:
-                text = truncate_content(obs._to_agent_observation(), max_message_chars)
+                text = truncate_content(obs.to_agent_observation(), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
