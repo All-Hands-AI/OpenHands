@@ -20,7 +20,7 @@ class ReplayManager:
                 event = replay_events[index]
                 if isinstance(event, MessageAction) and event.wait_for_response:
                     # For any message waiting for response that is not the last
-                    # event, we override wait_for_response to True, as a response
+                    # event, we override wait_for_response to False, as a response
                     # would have been included in the next event, and we don't
                     # want the user to interfere with the replay process
                     logger.info(
