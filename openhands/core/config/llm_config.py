@@ -44,6 +44,7 @@ class LLMConfig(BaseModel):
         log_completions_folder: The folder to log LLM completions to. Required if log_completions is True.
         custom_tokenizer: A custom tokenizer to use for token counting.
         native_tool_calling: Whether to use native tool calling if supported by the model. Can be True, False, or not set.
+        reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Exclusive for o1 models.
     """
 
     model: str = Field(default='claude-3-5-sonnet-20241022')
@@ -84,6 +85,7 @@ class LLMConfig(BaseModel):
     log_completions_folder: str = Field(default=os.path.join(LOG_DIR, 'completions'))
     custom_tokenizer: str | None = Field(default=None)
     native_tool_calling: bool | None = Field(default=None)
+    reasoning_effort: str | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
 
