@@ -181,14 +181,20 @@ class CodeActAgent(Agent):
             logger.debug(
                 f'Tool calls type: {type(assistant_msg.tool_calls)}, value: {assistant_msg.tool_calls}'
             )
-            pending_tool_call_action_messages[llm_response.id] = Message(
+            # Create message with token counts from Usage data
+            message = Message(
                 role=assistant_msg.role,
                 # tool call content SHOULD BE a string
                 content=[TextContent(text=assistant_msg.content or '')]
                 if assistant_msg.content is not None
                 else [],
                 tool_calls=assistant_msg.tool_calls,
+                event_id=action.id,
             )
+            # Update token counts if Usage data is available
+            if llm_response.usage:
+                message.usage = llm_response.usage
+            pending_tool_call_action_messages[llm_response.id] = message
             return []
         elif isinstance(action, AgentFinishAction):
             role = 'user' if action.source == 'user' else 'assistant'
@@ -215,6 +221,7 @@ class CodeActAgent(Agent):
                 Message(
                     role=role,
                     content=[TextContent(text=action.thought)],
+                    event_id=action.id,
                 )
             ]
         elif isinstance(action, MessageAction):
@@ -226,6 +233,7 @@ class CodeActAgent(Agent):
                 Message(
                     role=role,
                     content=content,
+                    event_id=action.id,
                 )
             ]
         elif isinstance(action, CmdRunAction) and action.source == 'user':
@@ -236,6 +244,7 @@ class CodeActAgent(Agent):
                 Message(
                     role='user',
                     content=content,
+                    event_id=action.id,
                 )
             ]
         return []
@@ -287,7 +296,9 @@ class CodeActAgent(Agent):
                     max_message_chars,
                 )
             text += f'\n[Command finished with exit code {obs.exit_code}]'
-            message = Message(role='user', content=[TextContent(text=text)])
+            message = Message(
+                role='user', content=[TextContent(text=text)], event_id=obs.id
+            )
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
             # replace base64 images with a placeholder
@@ -299,37 +310,51 @@ class CodeActAgent(Agent):
                     )
             text = '\n'.join(splitted)
             text = truncate_content(text, max_message_chars)
-            message = Message(role='user', content=[TextContent(text=text)])
+            message = Message(
+                role='user', content=[TextContent(text=text)], event_id=obs.id
+            )
         elif isinstance(obs, FileEditObservation):
             text = truncate_content(str(obs), max_message_chars)
-            message = Message(role='user', content=[TextContent(text=text)])
+            message = Message(
+                role='user', content=[TextContent(text=text)], event_id=obs.id
+            )
         elif isinstance(obs, FileReadObservation):
             message = Message(
-                role='user', content=[TextContent(text=obs.content)]
+                role='user',
+                content=[TextContent(text=obs.content)],
+                event_id=obs.id,
             )  # Content is already truncated by openhands-aci
         elif isinstance(obs, BrowserOutputObservation):
             text = obs.get_agent_obs_text()
             message = Message(
                 role='user',
                 content=[TextContent(text=text)],
+                event_id=obs.id,
             )
         elif isinstance(obs, AgentDelegateObservation):
             text = truncate_content(
                 obs.outputs['content'] if 'content' in obs.outputs else '',
                 max_message_chars,
             )
-            message = Message(role='user', content=[TextContent(text=text)])
+            message = Message(
+                role='user', content=[TextContent(text=text)], event_id=obs.id
+            )
         elif isinstance(obs, ErrorObservation):
             text = truncate_content(obs.content, max_message_chars)
             text += '\n[Error occurred in processing last action]'
-            message = Message(role='user', content=[TextContent(text=text)])
+            message = Message(
+                role='user', content=[TextContent(text=text)], event_id=obs.id
+            )
         elif isinstance(obs, UserRejectObservation):
             text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
             text += '\n[Last action has been rejected by the user]'
-            message = Message(role='user', content=[TextContent(text=text)])
+            message = Message(
+                role='user', content=[TextContent(text=text)], event_id=obs.id
+            )
         elif isinstance(obs, AgentCondensationObservation):
             text = truncate_content(obs.content, max_message_chars)
-            message = Message(role='user', content=[TextContent(text=text)])
+            message = Message(
+                role='user', content=[TextContent(text=text)], event_id=obs.id
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message
@@ -342,6 +367,7 @@ class CodeActAgent(Agent):
                 content=message.content,
                 tool_call_id=tool_call_metadata.tool_call_id,
                 name=tool_call_metadata.function_name,
+                event_id=obs.id,
             )
             # No need to return the observation message
             # because it will be added by get_action_message when all the corresponding
