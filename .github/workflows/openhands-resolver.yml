@@ -39,7 +39,6 @@ on:
       PAT_USERNAME:
         required: false
 
-
   issues:
     types: [labeled]
   pull_request:
