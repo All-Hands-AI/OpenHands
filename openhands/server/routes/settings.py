@@ -82,6 +82,7 @@ async def store_settings(
 
         if settings.unset_github_token:
             settings.github_token = None
+            settings.unset_github_token = None
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
