@@ -231,6 +231,10 @@ def load_replay_log(trajectory_path: str) -> tuple[list[Event] | None, Action]:
             events = []
             for item in data:
                 event = event_from_dict(item)
+                if event.source == EventSource.ENVIRONMENT:
+                    # ignore ENVIRONMENT events as they are not issued by
+                    # the user or agent, and should not be replayed
+                    continue
                 # cannot add an event with _id to event stream
                 event._id = None  # type: ignore[attr-defined]
                 events.append(event)
