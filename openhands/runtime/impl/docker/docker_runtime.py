@@ -406,7 +406,7 @@ class DockerRuntime(ActionExecutionClient):
         return hosts
 
     @classmethod
-    def delete(cls, conversation_id: str):
+    async def delete(cls, conversation_id: str):
         docker_client = cls._init_docker_client()
         try:
             container_name = CONTAINER_NAME_PREFIX + conversation_id

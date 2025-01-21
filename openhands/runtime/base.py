@@ -137,7 +137,7 @@ class Runtime(FileEditRuntimeMixin):
         pass
 
     @classmethod
-    def delete(cls, conversation_id: str) -> None:
+    async def delete(cls, conversation_id: str) -> None:
         pass
 
     def log(self, level: str, message: str) -> None:
