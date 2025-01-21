@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import { AccountSettingsModal } from "#/components/shared/modals/account-settings/account-settings-modal";
-import { MOCK_USER_PREFERENCES } from "#/mocks/handlers";
+import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import OpenHands from "#/api/open-hands";
 
 describe("AccountSettingsModal", () => {
@@ -44,7 +44,7 @@ describe("AccountSettingsModal", () => {
   it("should render a checkmark and not the input if the github token is set", async () => {
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     getSettingsSpy.mockResolvedValue({
-      ...MOCK_USER_PREFERENCES.settings,
+      ...MOCK_DEFAULT_USER_SETTINGS,
       github_token_is_set: true,
     });
     renderWithProviders(<AccountSettingsModal onClose={() => {}} />);
@@ -62,7 +62,7 @@ describe("AccountSettingsModal", () => {
     const user = userEvent.setup();
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     getSettingsSpy.mockResolvedValue({
-      ...MOCK_USER_PREFERENCES.settings,
+      ...MOCK_DEFAULT_USER_SETTINGS,
       github_token_is_set: true,
     });
     renderWithProviders(<AccountSettingsModal onClose={() => {}} />);
@@ -86,7 +86,7 @@ describe("AccountSettingsModal", () => {
     const user = userEvent.setup();
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     getSettingsSpy.mockResolvedValue({
-      ...MOCK_USER_PREFERENCES.settings,
+      ...MOCK_DEFAULT_USER_SETTINGS,
       github_token_is_set: true,
     });
     renderWithProviders(<AccountSettingsModal onClose={() => {}} />);

@@ -10,21 +10,23 @@ import {
   PostApiSettings,
 } from "#/services/settings";
 
-export const MOCK_USER_PREFERENCES: {
+export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
+  llm_model: DEFAULT_SETTINGS.LLM_MODEL,
+  llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
+  llm_api_key: DEFAULT_SETTINGS.LLM_API_KEY,
+  agent: DEFAULT_SETTINGS.AGENT,
+  language: DEFAULT_SETTINGS.LANGUAGE,
+  confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,
+  security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
+  remote_runtime_resource_factor:
+    DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+  github_token_is_set: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
+};
+
+const MOCK_USER_PREFERENCES: {
   settings: ApiSettings | PostApiSettings;
 } = {
-  settings: {
-    llm_model: DEFAULT_SETTINGS.LLM_MODEL,
-    llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
-    llm_api_key: DEFAULT_SETTINGS.LLM_API_KEY,
-    agent: DEFAULT_SETTINGS.AGENT,
-    language: DEFAULT_SETTINGS.LANGUAGE,
-    confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,
-    security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
-    remote_runtime_resource_factor:
-      DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-    github_token_is_set: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
-  },
+  settings: MOCK_DEFAULT_USER_SETTINGS,
 };
 
 const conversations: Conversation[] = [
