@@ -72,6 +72,8 @@ async def store_settings(
             config, get_user_id(request)
         )
         existing_settings = await settings_store.load()
+        logger.info(f'Storing settings: {settings}')
+        logger.info(f'Existing settings: {existing_settings}')
 
         if existing_settings:
             # LLM key isn't on the frontend, so we need to keep it if unset
@@ -87,7 +89,6 @@ async def store_settings(
         )
 
         if settings.unset_github_token:
-            response.delete_cookie('github_token')
             settings.github_token = None
             settings.unset_github_token = None
 
