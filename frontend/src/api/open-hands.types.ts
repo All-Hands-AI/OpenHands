@@ -57,6 +57,11 @@ export interface GetVSCodeUrlResponse {
   error?: string;
 }
 
+export interface GetTrajectoryResponse {
+  trajectory: unknown[] | null;
+  error?: string;
+}
+
 export interface AuthenticateResponse {
   message?: string;
   error?: string;

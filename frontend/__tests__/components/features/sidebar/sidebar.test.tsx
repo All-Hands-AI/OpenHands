@@ -162,7 +162,7 @@ describe("Sidebar", () => {
       await user.click(advancedOptionsSwitch);
 
       const apiKeyInput = within(settingsModal).getByLabelText(/API\$KEY/i);
-      await user.type(apiKeyInput, "SET");
+      await user.type(apiKeyInput, "**********");
 
       const saveButton = within(settingsModal).getByTestId(
         "save-settings-button",
