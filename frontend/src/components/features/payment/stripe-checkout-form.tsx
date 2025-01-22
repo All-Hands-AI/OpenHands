@@ -3,8 +3,9 @@ import {
   EmbeddedCheckout,
 } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
+import { TEST_STRIPE_PUBLIC_KEY } from "#/utils/stripe-test-keys";
 
-const stripePromise = loadStripe("");
+const stripePromise = loadStripe(TEST_STRIPE_PUBLIC_KEY);
 
 interface CheckoutFormProps {
   clientSecret: string;

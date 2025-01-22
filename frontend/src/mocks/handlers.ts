@@ -5,6 +5,7 @@ import {
   ResultSet,
 } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
 
 export const MOCK_USER_PREFERENCES = {
   settings: {
@@ -134,6 +135,7 @@ const openHandsHandlers = [
 ];
 
 export const handlers = [
+  ...STRIPE_BILLING_HANDLERS,
   ...openHandsHandlers,
   http.get("/api/github/repositories", () =>
     HttpResponse.json([
@@ -264,12 +266,5 @@ export const handlers = [
     }
 
     return HttpResponse.json(null, { status: 404 });
-  }),
-
-  http.get("/api/credits", () => HttpResponse.json({ credits: 100 })),
-
-  http.post("/api/create-checkout-session", async () => {
-    const clientSecret = "fake-client-secret";
-    return HttpResponse.json({ clientSecret });
   }),
 ];
