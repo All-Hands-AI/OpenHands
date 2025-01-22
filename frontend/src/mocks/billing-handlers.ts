@@ -14,7 +14,7 @@ export const STRIPE_BILLING_HANDLERS = [
   http.post("/api/create-checkout-session", async ({ request }) => {
     const body = await request.json();
 
-    if (body && typeof body === "object" && body.amount && body.user_id) {
+    if (body && typeof body === "object" && body.amount) {
       const price = PRICES[body.amount];
       if (!price) {
         return HttpResponse.json(
@@ -33,9 +33,13 @@ export const STRIPE_BILLING_HANDLERS = [
           },
         ],
         mode: "payment",
+        payment_intent_data: {
+          metadata: {
+            // NOTE: This data will be sent on the server via cookie data
+            user_id: "abc-123-test",
+          },
+        },
         return_url: `http://localhost:3001/billing?session_id={CHECKOUT_SESSION_ID}`,
-        // customer data
-        client_reference_id: body.user_id,
       });
 
       return HttpResponse.json({ clientSecret: session.client_secret });

@@ -6,6 +6,7 @@ import {
 } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
+import { TEST_STRIPE_PUBLIC_KEY } from "#/utils/stripe-test-keys";
 
 export const MOCK_USER_PREFERENCES = {
   settings: {
@@ -166,6 +167,7 @@ export const handlers = [
       APP_MODE: "oss",
       GITHUB_CLIENT_ID: "fake-github-client-id",
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
+      STRIPE_PUBLIC_KEY: TEST_STRIPE_PUBLIC_KEY,
     };
 
     return HttpResponse.json(config);
