@@ -122,11 +122,9 @@ class S3FileStore(FileStore):
         if not url:
             return None
         if secure:
-            # Add "https://" if secure is True and the URL doesn't already start with "https://"
             if not url.startswith('https://'):
                 url = 'https://' + url.removeprefix('http://')
         else:
-            # Add "http://" if secure is False and the URL doesn't already start with "http://"
             if not url.startswith('http://'):
                 url = 'http://' + url.removeprefix('https://')
         return url
