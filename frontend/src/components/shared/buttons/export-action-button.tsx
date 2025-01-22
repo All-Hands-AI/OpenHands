@@ -4,7 +4,7 @@ interface ExportActionButtonProps {
   icon: React.ReactNode;
 }
 
-export function ExportActionButton({ onClick, icon }: ExportActionButtonProps) {
+export function ExportActionButton({ testId, onClick, icon }: ExportActionButtonProps) {
   return (
     <button
       type="button"
