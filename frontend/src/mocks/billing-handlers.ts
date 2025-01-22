@@ -2,6 +2,12 @@ import { http, HttpResponse } from "msw";
 import Stripe from "stripe";
 import { TEST_STRIPE_SECRET_KEY } from "#/utils/stripe-test-keys";
 
+const PRICES: Record<number, string> = {
+  "25": "price_1Qk3elK5Ces1YVhflhgIflrx",
+  "50": "price_1Qk2qwK5Ces1YVhfSbLbgNYg",
+  "100": "price_1Qk2mZK5Ces1YVhfu8XNJuxU",
+};
+
 export const STRIPE_BILLING_HANDLERS = [
   http.get("/api/credits", () => HttpResponse.json({ credits: 100 })),
 
@@ -11,11 +17,7 @@ export const STRIPE_BILLING_HANDLERS = [
       ui_mode: "embedded",
       line_items: [
         {
-          price: "price_1Qk2mZK5Ces1YVhfu8XNJuxU",
-          quantity: 1,
-        },
-        {
-          price: "price_1Qk2qwK5Ces1YVhfSbLbgNYg",
+          price: PRICES["25"],
           quantity: 1,
         },
       ],

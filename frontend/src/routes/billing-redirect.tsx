@@ -1,24 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
-import { openHands } from "#/api/open-hands-axios";
+import { useCheckStripePaymentStatus } from "#/hooks/query/stripe/use-check-stripe-payment-status";
 
 function BillingRedirect() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id")?.toString();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["checkout-session", sessionId],
-    queryFn: async () => {
-      const response = await openHands.get<{
-        status: "complete" | "open";
-        customer_email: string | undefined;
-      }>("/api/session-status", {
-        params: { session_id: sessionId },
-      });
-
-      return response.data;
-    },
-  });
+  const { data, isLoading } = useCheckStripePaymentStatus(sessionId);
 
   return (
     <div>

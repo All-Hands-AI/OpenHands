@@ -11,6 +11,7 @@ import {
   Conversation,
   ResultSet,
   GetTrajectoryResponse,
+  GetStripePaymentStatusResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings } from "#/services/settings";
@@ -322,6 +323,19 @@ class OpenHands {
       "/api/create-checkout-session",
     );
     return data.clientSecret;
+  }
+
+  static async checkSessionStatus(
+    sessionId: string,
+  ): Promise<GetStripePaymentStatusResponse> {
+    const response = await openHands.get<GetStripePaymentStatusResponse>(
+      "/api/session-status",
+      {
+        params: { session_id: sessionId },
+      },
+    );
+
+    return response.data;
   }
 
   static async getBalance(): Promise<number> {

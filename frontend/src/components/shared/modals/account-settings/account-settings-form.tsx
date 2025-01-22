@@ -1,6 +1,5 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useMutation } from "@tanstack/react-query";
 import {
   BaseModalDescription,
   BaseModalTitle,
@@ -17,10 +16,10 @@ import { useConfig } from "#/hooks/query/use-config";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { UserBalance } from "#/components/features/payment/user-balance";
 import { useCurrentSettings } from "#/context/settings-context";
-import OpenHands from "#/api/open-hands";
 import { useBalance } from "#/hooks/query/use-balance";
 import { StripeCheckoutForm } from "#/components/features/payment/stripe-checkout-form";
 import { cn } from "#/utils/utils";
+import { useCreateStripeCheckoutSession } from "#/hooks/mutation/stripe/use-create-stripe-checkout-session";
 
 interface AccountSettingsFormProps {
   onClose: () => void;
@@ -43,9 +42,7 @@ export function AccountSettingsForm({
     data: clientSecret,
     mutate: getClientSecret,
     isPending: isGettingClientSecret,
-  } = useMutation({
-    mutationFn: OpenHands.createCheckoutSession,
-  });
+  } = useCreateStripeCheckoutSession();
 
   const shouldRenderStripeForm = !!clientSecret;
 
