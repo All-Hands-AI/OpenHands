@@ -66,8 +66,8 @@ describe("TrajectoryActions", () => {
       />,
     );
 
-    const export = screen.getByTestId("export-trajectory");
-    await user.click(export);
+    const exportButton = screen.getByTestId("export-trajectory");
+    await user.click(exportButton);
 
     expect(onExportTrajectory).toHaveBeenCalled();
   });
