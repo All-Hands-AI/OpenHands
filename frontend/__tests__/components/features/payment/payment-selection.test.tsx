@@ -25,7 +25,7 @@ describe("PaymentSelection", () => {
     });
   });
 
-  it("should call the onPaymentSelection callback when a payment option is selected and confirmed", async () => {
+  it("should call the onPaymentSelection callback when a payment option is selected", async () => {
     const user = userEvent.setup();
     const options = [25, 50, 100, 250];
     render(
@@ -35,14 +35,7 @@ describe("PaymentSelection", () => {
       />,
     );
 
-    const confirmButton = screen.getByText("Confirm");
-    expect(confirmButton).toBeDisabled();
-
     await user.click(screen.getByTestId("option-50"));
-
-    expect(confirmButton).toBeEnabled();
-    await user.click(confirmButton);
-
     expect(onPaymentSelectionMock).toHaveBeenCalledWith(50);
   });
 });

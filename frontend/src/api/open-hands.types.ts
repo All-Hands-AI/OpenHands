@@ -61,7 +61,7 @@ export interface GetTrajectoryResponse {
 }
 
 export interface GetStripePaymentStatusResponse {
-  status: "complete" | "open";
+  status: "complete" | "open" | "expired";
   customer_email: string | undefined;
 }
 

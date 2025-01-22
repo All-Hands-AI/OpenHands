@@ -3,5 +3,6 @@ import OpenHands from "#/api/open-hands";
 
 export const useCreateStripeCheckoutSession = () =>
   useMutation({
-    mutationFn: OpenHands.createCheckoutSession,
+    mutationFn: (variables: { amount: number }) =>
+      OpenHands.createCheckoutSession(variables.amount),
   });

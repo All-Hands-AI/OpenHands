@@ -20,6 +20,7 @@ import { useBalance } from "#/hooks/query/use-balance";
 import { StripeCheckoutForm } from "#/components/features/payment/stripe-checkout-form";
 import { cn } from "#/utils/utils";
 import { useCreateStripeCheckoutSession } from "#/hooks/mutation/stripe/use-create-stripe-checkout-session";
+import { PaymentSelection } from "#/components/features/payment/payment-selection";
 
 interface AccountSettingsFormProps {
   onClose: () => void;
@@ -43,6 +44,8 @@ export function AccountSettingsForm({
     mutate: getClientSecret,
     isPending: isGettingClientSecret,
   } = useCreateStripeCheckoutSession();
+
+  const [showPaymentOptions, setShowPaymentOptions] = React.useState(false);
 
   const shouldRenderStripeForm = !!clientSecret;
 
@@ -101,7 +104,14 @@ export function AccountSettingsForm({
               <UserBalance
                 balance={balance}
                 isLoading={isGettingClientSecret}
-                onTopUp={() => getClientSecret()}
+                onTopUp={() => setShowPaymentOptions(true)}
+              />
+            )}
+
+            {showPaymentOptions && (
+              <PaymentSelection
+                options={[25, 50, 100, 250]}
+                onPaymentSelection={(amount) => getClientSecret({ amount })}
               />
             )}
 

@@ -11,21 +11,37 @@ const PRICES: Record<number, string> = {
 export const STRIPE_BILLING_HANDLERS = [
   http.get("/api/credits", () => HttpResponse.json({ credits: 100 })),
 
-  http.post("/api/create-checkout-session", async () => {
-    const stripe = new Stripe(TEST_STRIPE_SECRET_KEY);
-    const session = await stripe.checkout.sessions.create({
-      ui_mode: "embedded",
-      line_items: [
-        {
-          price: PRICES["25"],
-          quantity: 1,
-        },
-      ],
-      mode: "payment",
-      return_url: `http://localhost:3001/billing?session_id={CHECKOUT_SESSION_ID}`,
-    });
+  http.post("/api/create-checkout-session", async ({ request }) => {
+    const body = await request.json();
 
-    return HttpResponse.json({ clientSecret: session.client_secret });
+    if (body && typeof body === "object" && body.amount && body.user_id) {
+      const price = PRICES[body.amount];
+      if (!price) {
+        return HttpResponse.json(
+          { message: "Invalid amount" },
+          { status: 400 },
+        );
+      }
+
+      const stripe = new Stripe(TEST_STRIPE_SECRET_KEY);
+      const session = await stripe.checkout.sessions.create({
+        ui_mode: "embedded",
+        line_items: [
+          {
+            price,
+            quantity: 1,
+          },
+        ],
+        mode: "payment",
+        return_url: `http://localhost:3001/billing?session_id={CHECKOUT_SESSION_ID}`,
+        // customer data
+        client_reference_id: body.user_id,
+      });
+
+      return HttpResponse.json({ clientSecret: session.client_secret });
+    }
+
+    return HttpResponse.json({ message: "Invalid request" }, { status: 400 });
   }),
 
   http.get("/api/session-status", async ({ request }) => {
