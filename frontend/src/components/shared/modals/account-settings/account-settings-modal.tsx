@@ -15,7 +15,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     <ModalBackdrop onClose={onClose}>
       <AccountSettingsForm
         onClose={onClose}
-        selectedLanguage={settings.LANGUAGE}
+        selectedLanguage={settings?.LANGUAGE || "en"}
         analyticsConsent={analyticsConsent}
       />
     </ModalBackdrop>

@@ -39,21 +39,21 @@ Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or jump to the [
 ## ⚡ Quick Start
 
 The easiest way to run OpenHands is in Docker.
-See the [Installation](https://docs.all-hands.dev/modules/usage/installation) guide for
+See the [Running OpenHands](https://docs.all-hands.dev/modules/usage/installation) guide for
 system requirements and more information.
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.19-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.20-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.19-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.20-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.19
+    docker.all-hands.dev/all-hands-ai/openhands:0.20
 ```
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
@@ -69,7 +69,7 @@ run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules
 interact with it via a [friendly CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode),
 or run it on tagged issues with [a github action](https://docs.all-hands.dev/modules/usage/how-to/github-action).
 
-Visit [Installation](https://docs.all-hands.dev/modules/usage/installation) for more information and setup instructions.
+Visit [Running OpenHands](https://docs.all-hands.dev/modules/usage/installation) for more information and setup instructions.
 
 > [!CAUTION]
 > OpenHands is meant to be run by a single user on their local workstation.

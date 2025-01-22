@@ -91,7 +91,7 @@
   - 描述: 禁用终端输出中的颜色
 
 **轨迹**
-- `trajectories_path`
+- `save_trajectory_path`
   - 类型: `str`
   - 默认值: `"./trajectories"`
   - 描述: 存储轨迹的路径(可以是文件夹或文件)。如果是文件夹,轨迹将保存在该文件夹中以会话 ID 命名的 .json 文件中。
@@ -373,7 +373,7 @@ Agent 配置选项在 `config.toml` 文件的 `[agent]` 和 `[agent.<agent_name>
   - 描述: 是否在 action space 中启用 Jupyter
 
 **Microagent 使用**
-- `use_microagents`
+- `enable_prompt_extensions`
   - 类型: `bool`
   - 默认值: `true`
   - 描述: 是否使用 microagents

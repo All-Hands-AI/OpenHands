@@ -12,7 +12,7 @@ import { SettingsButton } from "#/components/shared/buttons/settings-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { AccountSettingsModal } from "#/components/shared/modals/account-settings/account-settings-modal";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
-import { useSettingsUpToDate } from "#/context/settings-up-to-date-context";
+import { useCurrentSettings } from "#/context/settings-context";
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
@@ -28,8 +28,13 @@ export function Sidebar() {
   const user = useGitHubUser();
   const { data: isAuthed } = useIsAuthed();
   const { logout } = useAuth();
-  const { data: settings, isError: settingsIsError } = useSettings();
-  const { isUpToDate: settingsAreUpToDate } = useSettingsUpToDate();
+  const {
+    data: settings,
+    isError: settingsIsError,
+    isSuccess: settingsSuccessfulyFetched,
+  } = useSettings();
+
+  const { isUpToDate: settingsAreUpToDate } = useCurrentSettings();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
@@ -72,7 +77,7 @@ export function Sidebar() {
           <ExitProjectButton onClick={handleEndSession} />
           {MULTI_CONVERSATION_UI && (
             <TooltipButton
-              data-testid="toggle-conversation-panel"
+              testId="toggle-conversation-panel"
               tooltip="Conversations"
               ariaLabel="Conversations"
               onClick={() => setConversationPanelIsOpen((prev) => !prev)}
@@ -106,7 +111,7 @@ export function Sidebar() {
         <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
       )}
       {settingsIsError ||
-        (showSettingsModal && (
+        (showSettingsModal && settingsSuccessfulyFetched && (
           <SettingsModal
             settings={settings}
             onClose={() => setSettingsModalIsOpen(false)}
