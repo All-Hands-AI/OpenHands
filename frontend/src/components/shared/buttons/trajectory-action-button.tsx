@@ -1,21 +1,20 @@
-interface ExportActionButtonProps {
+interface TrajectoryActionButtonProps {
   testId?: string;
   onClick: () => void;
   icon: React.ReactNode;
 }
 
-export function ExportActionButton({
+export function TrajectoryActionButton({
   testId,
   onClick,
   icon,
-}: ExportActionButtonProps) {
+}: TrajectoryActionButtonProps) {
   return (
     <button
       type="button"
-      onClick={onClick}
       data-testid={testId}
+      onClick={onClick}
       className="button-base p-1 hover:bg-neutral-500"
-      title="Export trajectory"
     >
       {icon}
     </button>
