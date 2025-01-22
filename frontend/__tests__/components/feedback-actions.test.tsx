@@ -7,6 +7,7 @@ describe("TrajectoryActions", () => {
   const user = userEvent.setup();
   const onPositiveFeedback = vi.fn();
   const onNegativeFeedback = vi.fn();
+  const onExportTrajectory = vi.fn();
 
   afterEach(() => {
     vi.clearAllMocks();
@@ -17,6 +18,7 @@ describe("TrajectoryActions", () => {
       <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
+        onExportTrajectory={onExportTrajectory}
       />,
     );
 
@@ -30,6 +32,7 @@ describe("TrajectoryActions", () => {
       <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
+        onExportTrajectory={onExportTrajectory}
       />,
     );
 
@@ -44,6 +47,7 @@ describe("TrajectoryActions", () => {
       <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
+        onExportTrajectory={onExportTrajectory}
       />,
     );
 
@@ -51,5 +55,20 @@ describe("TrajectoryActions", () => {
     await user.click(negativeFeedback);
 
     expect(onNegativeFeedback).toHaveBeenCalled();
+  });
+
+  it("should call onExportTrajectory when negative feedback is clicked", async () => {
+    render(
+      <TrajectoryActions
+        onPositiveFeedback={onPositiveFeedback}
+        onNegativeFeedback={onNegativeFeedback}
+        onExportTrajectory={onExportTrajectory}
+      />,
+    );
+
+    const export = screen.getByTestId("export-trajectory");
+    await user.click(export);
+
+    expect(onExportTrajectory).toHaveBeenCalled();
   });
 });

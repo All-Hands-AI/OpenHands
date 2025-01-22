@@ -28,6 +28,7 @@ export function TrajectoryActions({
         icon={<ThumbDownIcon width={15} height={15} />}
       />
       <ExportActionButton
+        testId="export-trajectory"
         onClick={onExportTrajectory}
         icon={<ExportIcon width={15} height={15} />}
       />
