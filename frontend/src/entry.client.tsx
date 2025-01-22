@@ -15,8 +15,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
-import { SettingsUpToDateProvider } from "./context/settings-up-to-date-context";
 import { queryClientConfig } from "./query-client-config";
+import { SettingsProvider } from "./context/settings-context";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -55,12 +55,12 @@ prepareApp().then(() =>
       <StrictMode>
         <Provider store={store}>
           <AuthProvider>
-            <SettingsUpToDateProvider>
-              <QueryClientProvider client={queryClient}>
+            <QueryClientProvider client={queryClient}>
+              <SettingsProvider>
                 <HydratedRouter />
                 <PosthogInit />
-              </QueryClientProvider>
-            </SettingsUpToDateProvider>
+              </SettingsProvider>
+            </QueryClientProvider>
           </AuthProvider>
         </Provider>
       </StrictMode>,

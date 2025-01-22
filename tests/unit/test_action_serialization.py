@@ -97,6 +97,7 @@ def test_cmd_run_action_serialization_deserialization():
         'args': {
             'blocking': False,
             'command': 'echo "Hello world"',
+            'is_input': False,
             'thought': '',
             'hidden': False,
             'confirmation_state': ActionConfirmationStatus.CONFIRMED,
@@ -181,3 +182,4 @@ def test_legacy_serialization():
     assert event_dict['args']['blocking'] is False
     assert event_dict['args']['command'] == 'echo "Hello world"'
     assert event_dict['args']['thought'] == ''
+    assert event_dict['args']['is_input'] is False

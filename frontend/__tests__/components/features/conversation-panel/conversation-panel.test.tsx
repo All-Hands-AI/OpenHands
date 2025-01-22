@@ -73,7 +73,7 @@ describe("ConversationPanel", () => {
 
     renderConversationPanel();
 
-    const emptyState = await screen.findByText("No conversations found");
+    const emptyState = await screen.findByText("CONVERSATION$NO_CONVERSATIONS");
     expect(emptyState).toBeInTheDocument();
   });
 

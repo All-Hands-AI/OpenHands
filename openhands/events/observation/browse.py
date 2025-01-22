@@ -12,7 +12,7 @@ class BrowserOutputObservation(Observation):
 
     url: str
     trigger_by_action: str
-    screenshot: str = field(repr=False)  # don't show in repr
+    screenshot: str = field(repr=False, default='')  # don't show in repr
     error: bool = False
     observation: str = ObservationType.BROWSE
     # do not include in the memory
@@ -100,5 +100,4 @@ class BrowserOutputObservation(Observation):
             skip_generic=False,
             filter_visible_only=filter_visible_only,
         )
-        self._axtree_str = cur_axtree_txt
         return cur_axtree_txt
