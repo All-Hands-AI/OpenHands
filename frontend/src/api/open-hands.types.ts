@@ -26,7 +26,9 @@ export interface FeedbackResponse {
 }
 
 export interface GitHubAccessTokenResponse {
-  access_token: string;
+  keycloakAccessToken: string;
+  providerAccessToken: string;
+  keycloakUserId: string;
 }
 
 export interface AuthenticationResponse {
@@ -63,6 +65,10 @@ export interface GetTrajectoryResponse {
 export interface AuthenticateResponse {
   message?: string;
   error?: string;
+}
+
+export interface KeycloakErrorResponse {
+  keycloak_error: string;
 }
 
 export interface Conversation {

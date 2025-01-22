@@ -11,7 +11,7 @@ def get_file_store(file_store: str, file_store_path: str | None = None) -> FileS
             raise ValueError('file_store_path is required for local file store')
         return LocalFileStore(file_store_path)
     elif file_store == 's3':
-        return S3FileStore()
+        return S3FileStore(file_store_path)
     elif file_store == 'google_cloud':
         return GoogleCloudFileStore(file_store_path)
     return InMemoryFileStore()

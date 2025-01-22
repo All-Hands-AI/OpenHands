@@ -4,18 +4,23 @@ import OpenHands from "#/api/open-hands";
 import {
   removeGitHubTokenHeader as removeOpenHandsGitHubTokenHeader,
   setGitHubTokenHeader as setOpenHandsGitHubTokenHeader,
+  setupOpenhandsAxiosInterceptors,
 } from "#/api/open-hands-axios";
 import {
   setAuthTokenHeader as setGitHubAuthTokenHeader,
   removeAuthTokenHeader as removeGitHubAuthTokenHeader,
-  setupAxiosInterceptors as setupGithubAxiosInterceptors,
+  // setupAxiosInterceptors as setupGithubAxiosInterceptors,
 } from "#/api/github-axios-instance";
 
 interface AuthContextType {
   gitHubToken: string | null;
+  keycloakToken: string | null;
   setUserId: (userId: string) => void;
-  setGitHubToken: (token: string | null) => void;
-  clearGitHubToken: () => void;
+  setAccessTokens: (
+    gitHubToken: string | null,
+    keycloakToken: string | null,
+  ) => void;
+  clearAccessTokens: () => void;
   refreshToken: () => Promise<boolean>;
   logout: () => void;
 }
@@ -27,69 +32,88 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     () => localStorage.getItem("ghToken"),
   );
 
-  const [userIdState, setUserIdState] = React.useState<string>(
+  const [keycloakTokenState, setKeycloakTokenState] = React.useState<
+    string | null
+  >(() => localStorage.getItem("kcToken"));
+
+  const [, setUserIdState] = React.useState<string>(
     () => localStorage.getItem("userId") || "",
   );
 
-  const clearGitHubToken = () => {
+  const clearAccessTokens = () => {
+    console.debug("clearAccessTokens");
     setGitHubTokenState(null);
+    setKeycloakTokenState(null);
     setUserIdState("");
     localStorage.removeItem("ghToken");
+    localStorage.removeItem("kcToken");
     localStorage.removeItem("userId");
 
     removeOpenHandsGitHubTokenHeader();
     removeGitHubAuthTokenHeader();
   };
 
-  const setGitHubToken = (token: string | null) => {
-    setGitHubTokenState(token);
+  const setAccessTokens = (
+    gitHubToken: string | null,
+    keycloakToken: string | null,
+  ) => {
+    console.debug(
+      `setAccessTokens keycloakToken: ${keycloakToken}, githubToken: ${gitHubToken}`,
+    );
+    setGitHubTokenState(gitHubToken);
+    setKeycloakTokenState(keycloakToken);
 
-    if (token) {
-      localStorage.setItem("ghToken", token);
-      setOpenHandsGitHubTokenHeader(token);
-      setGitHubAuthTokenHeader(token);
+    if (gitHubToken && keycloakToken) {
+      localStorage.setItem("ghToken", gitHubToken);
+      localStorage.setItem("kcToken", keycloakToken);
+      setOpenHandsGitHubTokenHeader(keycloakToken);
+      setGitHubAuthTokenHeader(gitHubToken);
     } else {
-      clearGitHubToken();
+      clearAccessTokens();
     }
   };
 
   const setUserId = (userId: string) => {
-    setUserIdState(userIdState);
+    console.debug(`setUserId userId: ${userId}`);
+    setUserIdState(userId);
     localStorage.setItem("userId", userId);
   };
 
   const logout = () => {
-    clearGitHubToken();
+    clearAccessTokens();
     posthog.reset();
   };
 
   const refreshToken = async (): Promise<boolean> => {
-    const config = await OpenHands.getConfig();
+    // const config = await OpenHands.getConfig();
 
-    if (config.APP_MODE !== "saas" || !gitHubTokenState) {
-      return false;
-    }
+    // if (config.APP_MODE !== "saas" || !gitHubTokenState) {
+    //   return false;
+    // }
 
-    const newToken = await OpenHands.refreshToken(config.APP_MODE, userIdState);
-    if (newToken) {
-      setGitHubToken(newToken);
+    const storedUserid = localStorage.getItem("userId") || "";
+    const data = await OpenHands.refreshToken("saas", storedUserid);
+    if (data) {
+      setAccessTokens(data.providerAccessToken, data.keycloakAccessToken);
       return true;
     }
 
-    clearGitHubToken();
+    clearAccessTokens();
     return false;
   };
 
   React.useEffect(() => {
     const storedGitHubToken = localStorage.getItem("ghToken");
+    const storedKeycloakToken = localStorage.getItem("kcToken");
 
     const userId = localStorage.getItem("userId") || "";
 
-    setGitHubToken(storedGitHubToken);
+    setAccessTokens(storedGitHubToken, storedKeycloakToken);
     setUserId(userId);
     const setupIntercepter = async () => {
       const config = await OpenHands.getConfig();
-      setupGithubAxiosInterceptors(config.APP_MODE, refreshToken, logout);
+      setupOpenhandsAxiosInterceptors(config.APP_MODE, refreshToken, logout);
+      // setupGithubAxiosInterceptors(config.APP_MODE, refreshToken, logout);
     };
 
     setupIntercepter();
@@ -98,13 +122,14 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   const value = React.useMemo(
     () => ({
       gitHubToken: gitHubTokenState,
-      setGitHubToken,
+      keycloakToken: keycloakTokenState,
+      setAccessTokens,
       setUserId,
-      clearGitHubToken,
+      clearAccessTokens,
       refreshToken,
       logout,
     }),
-    [gitHubTokenState],
+    [gitHubTokenState, keycloakTokenState],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

@@ -9,7 +9,7 @@ app = APIRouter(prefix='/api/github')
 
 
 def require_github_token(request: Request):
-    github_token = request.headers.get('X-GitHub-Token')
+    github_token = request.state.github_token
     if not github_token:
         raise HTTPException(
             status_code=400,

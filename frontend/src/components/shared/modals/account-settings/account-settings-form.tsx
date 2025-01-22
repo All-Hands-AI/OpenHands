@@ -28,7 +28,7 @@ export function AccountSettingsForm({
   gitHubError,
   analyticsConsent,
 }: AccountSettingsFormProps) {
-  const { gitHubToken, setGitHubToken, logout } = useAuth();
+  const { gitHubToken, keycloakToken, setAccessTokens, logout } = useAuth();
   const { data: config } = useConfig();
   const { saveUserSettings } = useCurrentSettings();
   const { t } = useTranslation();
@@ -38,10 +38,11 @@ export function AccountSettingsForm({
     const formData = new FormData(event.currentTarget);
 
     const ghToken = formData.get("ghToken")?.toString();
+    const kcToken = formData.get("kcToken")?.toString();
     const language = formData.get("language")?.toString();
     const analytics = formData.get("analytics")?.toString() === "on";
 
-    if (ghToken) setGitHubToken(ghToken);
+    if (ghToken && kcToken) setAccessTokens(ghToken, kcToken);
 
     // The form returns the language label, so we need to find the corresponding
     // language key to save it in the settings
@@ -94,6 +95,12 @@ export function AccountSettingsForm({
                 label={t(I18nKey.GITHUB$TOKEN_LABEL)}
                 type="password"
                 defaultValue={gitHubToken ?? ""}
+              />
+              <CustomInput
+                name="kcToken"
+                label="Keycloak Token"
+                type="password"
+                defaultValue={keycloakToken ?? ""}
               />
               <BaseModalDescription>
                 {t(I18nKey.GITHUB$GET_TOKEN)}{" "}

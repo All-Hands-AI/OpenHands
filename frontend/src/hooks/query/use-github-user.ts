@@ -6,7 +6,7 @@ import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
 
 export const useGitHubUser = () => {
-  const { gitHubToken, setUserId } = useAuth();
+  const { gitHubToken } = useAuth();
   const { data: config } = useConfig();
 
   const user = useQuery({
@@ -18,7 +18,7 @@ export const useGitHubUser = () => {
 
   React.useEffect(() => {
     if (user.data) {
-      setUserId(user.data.id.toString());
+      // setUserId(user.data.id.toString());
       posthog.identify(user.data.login, {
         company: user.data.company,
         name: user.data.name,

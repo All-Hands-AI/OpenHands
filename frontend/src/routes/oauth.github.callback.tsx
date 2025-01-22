@@ -7,19 +7,24 @@ import { useAuth } from "#/context/auth-context";
 function OAuthGitHubCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { setGitHubToken } = useAuth();
+  const { setAccessTokens, setUserId } = useAuth();
 
   const code = searchParams.get("code");
+  const requesterUrl = new URL(window.location.href);
+  const redirectUrl = `${requesterUrl.origin}/oauth/github/callback`;
 
   const { data, isSuccess, error } = useQuery({
-    queryKey: ["access_token", code],
-    queryFn: () => OpenHands.getGitHubAccessToken(code!),
+    queryKey: ["access_token", code, redirectUrl],
+    queryFn: () => OpenHands.getGitHubAccessToken(code!, redirectUrl),
     enabled: !!code,
   });
 
+  console.debug(`data: ${JSON.stringify(data)}, isSuccess: ${isSuccess}`);
+
   React.useEffect(() => {
     if (isSuccess) {
-      setGitHubToken(data.access_token);
+      setAccessTokens(data.providerAccessToken, data.keycloakAccessToken);
+      setUserId(data.keycloakUserId);
       navigate("/");
     }
   }, [isSuccess]);
