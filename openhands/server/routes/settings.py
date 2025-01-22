@@ -34,8 +34,9 @@ async def load_settings(request: Request) -> Settings | None:
             )
 
         # For security reasons we don't ever send the api key to the client
+        github_token = settings.github_token or request.state.github_token
         settings.llm_api_key = 'SET' if settings.llm_api_key else None
-        settings.github_token_is_set = True if settings.github_token else False
+        settings.github_token_is_set = True if github_token else False
         settings.github_token = None
 
         return settings
@@ -80,8 +81,13 @@ async def store_settings(
             if settings.github_token is None:
                 settings.github_token = existing_settings.github_token
 
-        # type: ignore
+        response = JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings stored'},
+        )
+
         if settings.unset_github_token:
+            response.delete_cookie('github_token')
             settings.github_token = None
             settings.unset_github_token = None
 
@@ -92,11 +98,7 @@ async def store_settings(
             )
 
         await settings_store.store(settings)
-
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={'message': 'Settings stored'},
-        )
+        return response
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
         return JSONResponse(
