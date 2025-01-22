@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from openhands.core.config import AppConfig
 from openhands.events import EventStream
@@ -14,7 +15,7 @@ def mock_docker_client():
         container_mock.attrs = {
             'Config': {
                 'Env': ['port=12345', 'VSCODE_PORT=54321'],
-                'ExposedPorts': {'12345/tcp': {}, '54321/tcp': {}}
+                'ExposedPorts': {'12345/tcp': {}, '54321/tcp': {}},
             }
         }
         mock_client.return_value.containers.get.return_value = container_mock
@@ -37,27 +38,31 @@ def event_stream():
 
 
 @patch('openhands.runtime.impl.docker.docker_runtime.stop_all_containers')
-def test_container_stopped_when_keep_runtime_alive_false(mock_stop_containers, mock_docker_client, config, event_stream):
+def test_container_stopped_when_keep_runtime_alive_false(
+    mock_stop_containers, mock_docker_client, config, event_stream
+):
     # Arrange
     runtime = DockerRuntime(config, event_stream, sid='test-sid')
     runtime.container = mock_docker_client.containers.get.return_value
-    
+
     # Act
     runtime.close()
-    
+
     # Assert
-    mock_stop_containers.assert_called_once_with(f'openhands-runtime-test-sid')
+    mock_stop_containers.assert_called_once_with('openhands-runtime-test-sid')
 
 
 @patch('openhands.runtime.impl.docker.docker_runtime.stop_all_containers')
-def test_container_not_stopped_when_keep_runtime_alive_true(mock_stop_containers, mock_docker_client, config, event_stream):
+def test_container_not_stopped_when_keep_runtime_alive_true(
+    mock_stop_containers, mock_docker_client, config, event_stream
+):
     # Arrange
     config.sandbox.keep_runtime_alive = True
     runtime = DockerRuntime(config, event_stream, sid='test-sid')
     runtime.container = mock_docker_client.containers.get.return_value
-    
+
     # Act
     runtime.close()
-    
+
     # Assert
     mock_stop_containers.assert_not_called()

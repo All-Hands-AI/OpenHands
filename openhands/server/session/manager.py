@@ -456,7 +456,10 @@ class SessionManager:
             response_ids = await self.get_running_agent_loops(user_id)
             if len(response_ids) >= MAX_RUNNING_CONVERSATIONS:
                 logger.info('too_many_sessions_for:{user_id}')
-                await self.close_session(next(iter(response_ids)))
+                # Order is not guaranteed, but response_ids tend to be in descending chronological order
+                # By reversing, we are likely to pick the oldest (or at least an older) conversation
+                session_id = next(iter(reversed(list(response_ids))))
+                await self.close_session(session_id)
 
             session = Session(
                 sid=sid,
