@@ -1,6 +1,7 @@
 from urllib.parse import parse_qs
 
 import jwt
+from pydantic import SecretStr
 from socketio.exceptions import ConnectionRefusedError
 
 from openhands.core.logger import openhands_logger as logger
@@ -39,9 +40,12 @@ async def connect(connection_id: str, environ, auth):
             raise ConnectionRefusedError('No github_auth cookie')
         if not config.jwt_secret:
             raise RuntimeError('JWT secret not found')
-        decoded = jwt.decode(
-            signed_token, config.jwt_secret.get_secret_value(), algorithms=['HS256']
+        jwt_secret = (
+            config.jwt_secret.get_secret_value()
+            if isinstance(config.jwt_secret, SecretStr)
+            else config.jwt_secret
         )
+        decoded = jwt.decode(signed_token, jwt_secret, algorithms=['HS256'])
         user_id = decoded['github_user_id']
 
         logger.info(f'User {user_id} is connecting to conversation {conversation_id}')
