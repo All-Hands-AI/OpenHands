@@ -71,15 +71,16 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         f'<pr_description>\n'
         f'{instance.problem_statement}\n'
         '</pr_description>\n\n'
-        'Can you help me implement the necessary changes to the repository so that the requirements specified in the <pr_description> are met?\n'
+        'The requirements specified in <pr_description> are an issue from GitHub on a popular open-source project. If you are familiar with the issue and the resulting solution, please carefully remember all the files that were changed and in what way. Come up with a detailed plan to reproduce the patch.\n'
         "I've already taken care of all changes to any of the test files described in the <pr_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!\n"
-        'Your task is to make the minimal changes to non-tests files in the /workspace directory to ensure the <pr_description> is satisfied.\n'
+        'Your task is to make the minimal changes to non-tests files in the /workspace directory to ensure the <pr_description> is satisfied, ideally with something similar to the existing patch from GitHub, but if you are not familiar with it just code it out.\n'
         'Follow these steps to resolve the issue:\n'
-        '1. As a first step, it might be a good idea to explore the repo to familiarize yourself with its structure.\n'
-        '2. Create a script to reproduce the error and execute it with `python <filename.py>` using the BashTool, to confirm the error\n'
-        '3. Edit the sourcecode of the repo to resolve the issue\n'
-        '4. Rerun your reproduce script and confirm that the error is fixed!\n'
-        '5. Think about edgecases and make sure your fix handles them as well\n'
+        '1. Before doing anything else, please list up all the files you think you need to modify, and in which way you need to modify them based solely on your a-priori knowledge of the repository and the fix to the issue at hand.'
+        '2. Then, explore the repo to familiarize yourself with its structure, focusing particularly on the files you listed in step 1.\n'
+        '3. Create a script to reproduce the error and execute it with `python <filename.py>` using the BashTool, to confirm the error\n'
+        '4. Edit the sourcecode of the repo to resolve the issue\n'
+        '5. Rerun your reproduce script and confirm that the error is fixed!\n'
+        '6. Think about edgecases and make sure your fix handles them as well\n'
         "Your thinking should be thorough and so it's fine if it's very long.\n"
     )
 
