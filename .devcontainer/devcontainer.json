@@ -1,15 +1,23 @@
 {
 	"name": "OpenHands Codespaces",
+	/* Doesn't work because Dockerfile uses HEREDOCS (currently not supported by Dev Containers)
+	"build": {
+		"dockerfile": "../containers/dev/Dockerfile"
+	},
+	*/
 	"image": "mcr.microsoft.com/devcontainers/universal",
+	"runArgs": [
+		"--name=openhands-dev-container",
+		"--network=host"
+	],
 	"customizations":{
-        "vscode":{
-            "extensions": [
-                "ms-python.python"
-            ]
-        }
-    },
+		"vscode":{
+			"extensions": [
+				"ms-python.python"
+			]
+		}
+	},
 	"onCreateCommand": "sh ./.devcontainer/on_create.sh",
-	"postCreateCommand": "make build",
-	"postStartCommand": "USE_HOST_NETWORK=True nohup bash -c 'make run &'"
-
+	"postCreateCommand": "yes | make build",
+	"postStartCommand": "bash ./.devcontainer/on_run.sh"
 }
