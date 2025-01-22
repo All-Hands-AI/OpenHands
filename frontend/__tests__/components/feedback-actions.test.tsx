@@ -1,9 +1,9 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FeedbackActions } from "#/components/features/feedback/feedback-actions";
+import { TrajectoryActions } from "#/components/features/trajectory/trajectory-actions";
 
-describe("FeedbackActions", () => {
+describe("TrajectoryActions", () => {
   const user = userEvent.setup();
   const onPositiveFeedback = vi.fn();
   const onNegativeFeedback = vi.fn();
@@ -14,7 +14,7 @@ describe("FeedbackActions", () => {
 
   it("should render correctly", () => {
     render(
-      <FeedbackActions
+      <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
       />,
@@ -27,7 +27,7 @@ describe("FeedbackActions", () => {
 
   it("should call onPositiveFeedback when positive feedback is clicked", async () => {
     render(
-      <FeedbackActions
+      <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
       />,
@@ -41,7 +41,7 @@ describe("FeedbackActions", () => {
 
   it("should call onNegativeFeedback when negative feedback is clicked", async () => {
     render(
-      <FeedbackActions
+      <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
       />,
