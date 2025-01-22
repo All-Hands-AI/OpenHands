@@ -8,6 +8,9 @@ import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 import OpenHands from "#/api/open-hands";
 import { MOCK_USER_PREFERENCES } from "#/mocks/handlers";
 
+// These tests will now fail because the conversation panel is rendered through a portal
+// and technically not a child of the Sidebar component.
+
 const renderSidebar = () => {
   const RouterStub = createRoutesStub([
     {
