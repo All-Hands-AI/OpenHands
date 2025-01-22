@@ -10,6 +10,7 @@ import {
   AuthenticateResponse,
   Conversation,
   ResultSet,
+  GetTrajectoryResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings } from "#/services/settings";
@@ -353,6 +354,15 @@ class OpenHands {
     );
 
     return response.data.items;
+  }
+
+  static async getTrajectory(
+    conversationId: string,
+  ): Promise<GetTrajectoryResponse> {
+    const { data } = await openHands.get<GetTrajectoryResponse>(
+      `/api/conversations/${conversationId}/trajectory`,
+    );
+    return data;
   }
 }
 

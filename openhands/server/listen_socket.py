@@ -37,7 +37,11 @@ async def connect(connection_id: str, environ, auth):
         if not signed_token:
             logger.error('No github_auth cookie')
             raise ConnectionRefusedError('No github_auth cookie')
-        decoded = jwt.decode(signed_token, config.jwt_secret, algorithms=['HS256'])
+        if not config.jwt_secret:
+            raise RuntimeError('JWT secret not found')
+        decoded = jwt.decode(
+            signed_token, config.jwt_secret.get_secret_value(), algorithms=['HS256']
+        )
         user_id = decoded['github_user_id']
 
         logger.info(f'User {user_id} is connecting to conversation {conversation_id}')

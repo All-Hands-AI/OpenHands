@@ -48,7 +48,8 @@ each of which has a corresponding port:
 * {{ host }} (port {{ port }})
 {% endfor %}
 When starting a web server, use the corresponding ports. You should also
-set any options to allow iframes and CORS requests.
+set any options to allow iframes and CORS requests, and allow the server to
+be accessed from any host (e.g. 0.0.0.0).
 </RUNTIME_INFORMATION>
 {% endif %}
 """
