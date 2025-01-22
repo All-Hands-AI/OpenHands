@@ -421,8 +421,7 @@ class GitlabPRHandler(GitlabIssueHandler):
             comments = [
                 comment
                 for comment in comments
-                if not comment.get('resolvable', True)
-                and not comment.get('system', True)
+                if comment.get('resolvable', True) and not comment.get('system', True)
             ]
 
             if not comments:
