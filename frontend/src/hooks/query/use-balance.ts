@@ -8,6 +8,7 @@ export const useBalance = (user: string) => {
   return useQuery({
     queryKey: [user, "balance"],
     queryFn: OpenHands.getBalance,
+    // TODO: Should be saas-only and if user is
     enabled: config?.APP_MODE !== "saas",
   });
 };
