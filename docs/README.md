@@ -2,6 +2,10 @@
 
 This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
 
+## Search Functionality
+
+The documentation site includes search functionality powered by Algolia DocSearch. For setup instructions, see [SEARCH_SETUP.md](./SEARCH_SETUP.md).
+
 ### Installation
 
 ```
