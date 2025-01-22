@@ -1,3 +1,4 @@
+import httpx
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
@@ -49,45 +50,40 @@ async def get_github_repositories(
 
     # Fetch repositories from GitHub
     try:
-        response = await call_sync_from_async(
-            requests.get, github_api_url, headers=headers, params=params
-        )
-        response.raise_for_status()  # Raise an error for HTTP codes >= 400
+        async with httpx.AsyncClient() as client:
+            response = await client.get(github_api_url, headers=headers, params=params)
+            response.raise_for_status()  # Raise an error for HTTP codes >= 400
+            json_response = JSONResponse(content=response.json())
+
+            # Forward the Link header if it exists
+            if 'Link' in response.headers:
+                json_response.headers['Link'] = response.headers['Link']
+
+            return json_response
+
     except requests.exceptions.RequestException as e:
         raise HTTPException(
             status_code=response.status_code if response else 500,
             detail=f'Error fetching repositories: {str(e)}',
         )
 
-    # Create response with the JSON content
-    json_response = JSONResponse(content=response.json())
-    response.close()
-
-    # Forward the Link header if it exists
-    if 'Link' in response.headers:
-        json_response.headers['Link'] = response.headers['Link']
-
-    return json_response
-
 
 @app.get('/user')
 async def get_github_user(github_token: str = Depends(require_github_token)):
     headers = generate_github_headers(github_token)
     try:
-        response = await call_sync_from_async(
-            requests.get, 'https://api.github.com/user', headers=headers
-        )
-        response.raise_for_status()
+        async with httpx.AsyncClient() as client:
+            response = await client.get('https://api.github.com/user', headers=headers)
+            response.raise_for_status()  # Raise an error for HTTP codes >= 400
+            json_response = JSONResponse(content=response.json())
+
+            return json_response
+
     except requests.exceptions.RequestException as e:
         raise HTTPException(
             status_code=response.status_code if response else 500,
             detail=f'Error fetching user: {str(e)}',
         )
-
-    json_response = JSONResponse(content=response.json())
-    response.close()
-
-    return json_response
 
 
 @app.get('/installations')
