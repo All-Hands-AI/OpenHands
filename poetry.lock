@@ -3751,19 +3751,19 @@ pydantic = ">=1.10"
 
 [[package]]
 name = "llama-index"
-version = "0.12.11"
+version = "0.12.12"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "llama_index-0.12.11-py3-none-any.whl", hash = "sha256:007361c35e1981a1656cef287b7bcdf22aa88e7d41b8e3a8ee261bb5a10519a9"},
-    {file = "llama_index-0.12.11.tar.gz", hash = "sha256:b1116946a2414aec104a6c417b847da5b4f077a0966c50ebd2fc445cd713adce"},
+    {file = "llama_index-0.12.12-py3-none-any.whl", hash = "sha256:208f77dba5fd8268cacd3d56ec3ee33b0001d5b6ec623c5b91c755af7b08cfae"},
+    {file = "llama_index-0.12.12.tar.gz", hash = "sha256:d4e475726e342b1178736ae3ed93336fe114605e86431b6dfcb454a9e1f26e72"},
 ]
 
 [package.dependencies]
 llama-index-agent-openai = ">=0.4.0,<0.5.0"
 llama-index-cli = ">=0.4.0,<0.5.0"
-llama-index-core = ">=0.12.11,<0.13.0"
+llama-index-core = ">=0.12.12,<0.13.0"
 llama-index-embeddings-openai = ">=0.3.0,<0.4.0"
 llama-index-indices-managed-llama-cloud = ">=0.4.0"
 llama-index-llms-openai = ">=0.3.0,<0.4.0"
@@ -3808,13 +3808,13 @@ llama-index-llms-openai = ">=0.3.0,<0.4.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.11"
+version = "0.12.12"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "llama_index_core-0.12.11-py3-none-any.whl", hash = "sha256:3b1e019c899e9e011dfa01c96b7e3f666e0c161035fbca6cb787b4c61e0c94db"},
-    {file = "llama_index_core-0.12.11.tar.gz", hash = "sha256:9a41ca91167ea5eec9ebaac7f5e958b7feddbd8af3bfbf7c393a5edfb994d566"},
+    {file = "llama_index_core-0.12.12-py3-none-any.whl", hash = "sha256:cea491e87f65e6b775b5aef95720de302b85af1bdc67d779c4b09170a30e5b98"},
+    {file = "llama_index_core-0.12.12.tar.gz", hash = "sha256:068b755bbc681731336e822f5977d7608585e8f759c6293ebd812e2659316a37"},
 ]
 
 [package.dependencies]
@@ -3859,13 +3859,13 @@ llama-index-llms-azure-openai = ">=0.3.0,<0.4.0"
 
 [[package]]
 name = "llama-index-embeddings-huggingface"
-version = "0.5.0"
+version = "0.5.1"
 description = "llama-index embeddings huggingface integration"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "llama_index_embeddings_huggingface-0.5.0-py3-none-any.whl", hash = "sha256:70634b2cfaad28103b5125971fc98118f1bc404cb6145744b55de4ed54b0ad99"},
-    {file = "llama_index_embeddings_huggingface-0.5.0.tar.gz", hash = "sha256:bb75924bd52631364bd3b1a4b0ab78753a0bef00210f2762b425cbd05f4ea60e"},
+    {file = "llama_index_embeddings_huggingface-0.5.1-py3-none-any.whl", hash = "sha256:cff600538e9616829d379ced09f08fc6d237e5599975d781ca52b599a419394e"},
+    {file = "llama_index_embeddings_huggingface-0.5.1.tar.gz", hash = "sha256:def1639bab8511e3ac0284520104b0c6dce9bc053b4dce38c127bd62bc28f7fc"},
 ]
 
 [package.dependencies]
