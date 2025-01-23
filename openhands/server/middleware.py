@@ -14,9 +14,7 @@ from starlette.types import ASGIApp
 from openhands.server import shared
 from openhands.server.auth import get_user_id
 from openhands.server.types import SessionMiddlewareInterface
-from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.settings.settings_store import SettingsStore
-from openhands.utils.import_utils import get_impl
 
 
 class LocalhostCORSMiddleware(CORSMiddleware):
@@ -186,19 +184,13 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         return response
 
 
-SettingsStoreImpl = get_impl(
-    SettingsStore,  # type: ignore
-    shared.openhands_config.settings_store_class,  # type: ignore
-)
-ConversationStoreImpl = get_impl(
-    ConversationStore,  # type: ignore
-    shared.openhands_config.conversation_store_class,  # type: ignore
-)
-
-
 class GitHubTokenMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, settings_store: SettingsStore):
+        super().__init__(app)
+        self.settings_store_impl = settings_store
+
     async def dispatch(self, request: Request, call_next: Callable):
-        settings_store = await SettingsStoreImpl.get_instance(
+        settings_store = await self.settings_store_impl.get_instance(
             shared.config, get_user_id(request)
         )
         settings = await settings_store.load()
