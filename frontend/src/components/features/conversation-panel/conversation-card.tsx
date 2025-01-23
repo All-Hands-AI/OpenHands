@@ -97,9 +97,10 @@ export function ConversationCard({
       data-testid="conversation-card"
       onClick={handleClick}
       className={cn(
-        "h-[100px] w-full px-[18px] py-4 border-b border-neutral-600 cursor-pointer",
+        "h-[100px] w-full px-[18px] py-4 border-b border-neutral-600",
         variant === "compact" &&
           "h-auto w-fit rounded-xl border border-[#525252]",
+        titleMode === "view" && "cursor-pointer",
       )}
     >
       <div className="flex items-center justify-between">
