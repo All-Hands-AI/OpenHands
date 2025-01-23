@@ -367,8 +367,8 @@ async def test_unsafe_bash_command(temp_dir: str):
                         arguments={
                             'blocking': False,
                             'command': 'ls',
+                            'is_input': False,
                             'hidden': False,
-                            'keep_prompt': True,
                             'confirmation_state': ActionConfirmationStatus.CONFIRMED,
                         },
                     ),
@@ -495,9 +495,7 @@ def test_parse_action(action, expected_trace):
             ],
         ),
         (
-            CmdOutputObservation(
-                content='cmd output content', command_id=1, command='ls'
-            ),
+            CmdOutputObservation(content='cmd output content', command='ls'),
             [
                 ToolOutput(
                     metadata={},

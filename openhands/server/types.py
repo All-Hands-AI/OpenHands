@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import ClassVar, Protocol
 
+from fastapi import FastAPI
+
 
 class AppMode(Enum):
     OSS = 'oss'
@@ -35,3 +37,20 @@ class OpenhandsConfigInterface(ABC):
     async def get_config(self) -> dict[str, str]:
         """Configure attributes for frontend"""
         raise NotImplementedError
+
+    @abstractmethod
+    def attach_middleware(self, api: FastAPI) -> None:
+        """Attach required middleware for the current environment"""
+        raise NotImplementedError
+
+
+class MissingSettingsError(ValueError):
+    """Raised when settings are missing or not found."""
+
+    pass
+
+
+class LLMAuthenticationError(ValueError):
+    """Raised when there is an issue with LLM authentication."""
+
+    pass

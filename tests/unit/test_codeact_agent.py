@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 
 import pytest
+from litellm import ChatCompletionMessageToolCall
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.function_calling import (
@@ -15,6 +16,7 @@ from openhands.agenthub.codeact_agent.function_calling import (
     get_tools,
     response_to_actions,
 )
+from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import FunctionCallNotExistsError
 from openhands.core.message import ImageContent, TextContent
@@ -26,6 +28,7 @@ from openhands.events.action import (
 from openhands.events.event import EventSource, FileEditSource, FileReadSource
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
+    CmdOutputMetadata,
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
@@ -39,20 +42,38 @@ from openhands.llm.llm import LLM
 
 @pytest.fixture
 def agent() -> CodeActAgent:
-    agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
+    config = AgentConfig()
+    agent = CodeActAgent(llm=LLM(LLMConfig()), config=config)
     agent.llm = Mock()
     agent.llm.config = Mock()
-    agent.llm.config.max_message_chars = 100
+    agent.llm.config.max_message_chars = 1000
     return agent
 
 
+@pytest.fixture
+def mock_state() -> State:
+    state = Mock(spec=State)
+    state.history = []
+    state.extra_data = {}
+
+    return state
+
+
 def test_cmd_output_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = CmdOutputObservation(
-        command='echo hello', content='Command output', command_id=1, exit_code=0
+        command='echo hello',
+        content='Command output',
+        metadata=CmdOutputMetadata(
+            exit_code=0,
+            prefix='[THIS IS PREFIX]',
+            suffix='[THIS IS SUFFIX]',
+        ),
     )
 
-    results = agent.get_observation_message(obs, tool_call_id_to_message={})
+    tool_call_id_to_message = {}
+    results = agent.get_observation_message(
+        obs, tool_call_id_to_message=tool_call_id_to_message
+    )
     assert len(results) == 1
 
     result = results[0]
@@ -60,12 +81,13 @@ def test_cmd_output_observation_message(agent: CodeActAgent):
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
-    assert 'Command output' in result.content[0].text
-    assert 'Command finished with exit code 0' in result.content[0].text
+    assert 'Observed result of command executed by user:' in result.content[0].text
+    assert '[Command finished with exit code 0]' in result.content[0].text
+    assert '[THIS IS PREFIX]' in result.content[0].text
+    assert '[THIS IS SUFFIX]' in result.content[0].text
 
 
 def test_ipython_run_cell_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = IPythonRunCellObservation(
         code='plt.plot()',
         content='IPython output\n![image](data:image/png;base64,ABC123)',
@@ -88,7 +110,6 @@ def test_ipython_run_cell_observation_message(agent: CodeActAgent):
 
 
 def test_agent_delegate_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = AgentDelegateObservation(
         content='Content', outputs={'content': 'Delegated agent output'}
     )
@@ -105,7 +126,6 @@ def test_agent_delegate_observation_message(agent: CodeActAgent):
 
 
 def test_error_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = ErrorObservation('Error message')
 
     results = agent.get_observation_message(obs, tool_call_id_to_message={})
@@ -128,7 +148,6 @@ def test_unknown_observation_message(agent: CodeActAgent):
 
 
 def test_file_edit_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = FileEditObservation(
         path='/test/file.txt',
         prev_exist=True,
@@ -150,7 +169,6 @@ def test_file_edit_observation_message(agent: CodeActAgent):
 
 
 def test_file_read_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = FileReadObservation(
         path='/test/file.txt',
         content='File content',
@@ -169,7 +187,6 @@ def test_file_read_observation_message(agent: CodeActAgent):
 
 
 def test_browser_output_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = BrowserOutputObservation(
         url='http://example.com',
         trigger_by_action='browse',
@@ -190,7 +207,6 @@ def test_browser_output_observation_message(agent: CodeActAgent):
 
 
 def test_user_reject_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = UserRejectObservation('Action rejected')
 
     results = agent.get_observation_message(obs, tool_call_id_to_message={})
@@ -206,7 +222,6 @@ def test_user_reject_observation_message(agent: CodeActAgent):
 
 
 def test_function_calling_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = True
     mock_response = {
         'id': 'mock_id',
         'total_calls_in_response': 1,
@@ -454,7 +469,7 @@ def test_mock_function_calling():
     llm = Mock()
     llm.is_function_calling_active = lambda: False
     config = AgentConfig()
-    config.use_microagents = False
+    config.enable_prompt_extensions = False
     agent = CodeActAgent(llm=llm, config=config)
     assert agent.mock_function_calling is True
 
@@ -475,7 +490,7 @@ def test_response_to_actions_invalid_tool():
         response_to_actions(mock_response)
 
 
-def test_step_with_no_pending_actions():
+def test_step_with_no_pending_actions(mock_state: State):
     # Mock the LLM response
     mock_response = Mock()
     mock_response.id = 'mock_id'
@@ -492,20 +507,72 @@ def test_step_with_no_pending_actions():
 
     # Create agent with mocked LLM
     config = AgentConfig()
-    config.use_microagents = False
+    config.enable_prompt_extensions = False
     agent = CodeActAgent(llm=llm, config=config)
 
     # Test step with no pending actions
-    state = Mock()
-    state.history = []
-    state.latest_user_message = None
-    state.latest_user_message_id = None
-    state.latest_user_message_timestamp = None
-    state.latest_user_message_cause = None
-    state.latest_user_message_timeout = None
-    state.latest_user_message_llm_metrics = None
-    state.latest_user_message_tool_call_metadata = None
+    mock_state.latest_user_message = None
+    mock_state.latest_user_message_id = None
+    mock_state.latest_user_message_timestamp = None
+    mock_state.latest_user_message_cause = None
+    mock_state.latest_user_message_timeout = None
+    mock_state.latest_user_message_llm_metrics = None
+    mock_state.latest_user_message_tool_call_metadata = None
 
-    action = agent.step(state)
+    action = agent.step(mock_state)
     assert isinstance(action, MessageAction)
     assert action.content == 'Task completed'
+
+
+def test_mismatched_tool_call_events(mock_state: State):
+    """Tests that the agent can convert mismatched tool call events (i.e., an observation with no corresponding action) into messages."""
+    agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
+
+    tool_call_metadata = Mock(
+        spec=ToolCallMetadata,
+        model_response=Mock(
+            id='model_response_0',
+            choices=[
+                Mock(
+                    message=Mock(
+                        role='assistant',
+                        content='',
+                        tool_calls=[
+                            Mock(spec=ChatCompletionMessageToolCall, id='tool_call_0')
+                        ],
+                    )
+                )
+            ],
+        ),
+        tool_call_id='tool_call_0',
+        function_name='foo',
+    )
+
+    action = CmdRunAction('foo')
+    action._source = 'agent'
+    action.tool_call_metadata = tool_call_metadata
+
+    observation = CmdOutputObservation(content='', command_id=0, command='foo')
+    observation.tool_call_metadata = tool_call_metadata
+
+    # When both events are provided, the agent should get three messages:
+    # 1. The system message,
+    # 2. The action message, and
+    # 3. The observation message
+    mock_state.history = [action, observation]
+    messages = agent._get_messages(mock_state)
+    assert len(messages) == 3
+
+    # The same should hold if the events are presented out-of-order
+    mock_state.history = [observation, action]
+    messages = agent._get_messages(mock_state)
+    assert len(messages) == 3
+
+    # If only one of the two events is present, then we should just get the system message
+    mock_state.history = [action]
+    messages = agent._get_messages(mock_state)
+    assert len(messages) == 1
+
+    mock_state.history = [observation]
+    messages = agent._get_messages(mock_state)
+    assert len(messages) == 1

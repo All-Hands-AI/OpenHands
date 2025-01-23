@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   QueryClientProvider,
@@ -6,15 +6,25 @@ import {
   QueryClientConfig,
 } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
+import { createRoutesStub } from "react-router";
+import React from "react";
 import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
+import { clickOnEditButton } from "./utils";
+import { queryClientConfig } from "#/query-client-config";
 
 describe("ConversationPanel", () => {
   const onCloseMock = vi.fn();
+  const RouterStub = createRoutesStub([
+    {
+      Component: () => <ConversationPanel onClose={onCloseMock} />,
+      path: "/",
+    },
+  ]);
 
   const renderConversationPanel = (config?: QueryClientConfig) =>
-    render(<ConversationPanel onClose={onCloseMock} />, {
+    render(<RouterStub />, {
       wrapper: ({ children }) => (
         <AuthProvider>
           <QueryClientProvider client={new QueryClient(config)}>
@@ -52,6 +62,8 @@ describe("ConversationPanel", () => {
     renderConversationPanel();
     const cards = await screen.findAllByTestId("conversation-card");
 
+    // NOTE that we filter out conversations that don't have a created_at property
+    // (mock data has 4 conversations, but only 3 have a created_at property)
     expect(cards).toHaveLength(3);
   });
 
@@ -61,7 +73,7 @@ describe("ConversationPanel", () => {
 
     renderConversationPanel();
 
-    const emptyState = await screen.findByText("No conversations found");
+    const emptyState = await screen.findByText("CONVERSATION$NO_CONVERSATIONS");
     expect(emptyState).toBeInTheDocument();
   });
 
@@ -169,13 +181,15 @@ describe("ConversationPanel", () => {
     const cards = await screen.findAllByTestId("conversation-card");
     const title = within(cards[0]).getByTestId("conversation-card-title");
 
+    await clickOnEditButton(user);
+
     await user.clear(title);
     await user.type(title, "Conversation 1 Renamed");
     await user.tab();
 
     // Ensure the conversation is renamed
     expect(updateUserConversationSpy).toHaveBeenCalledWith("3", {
-      name: "Conversation 1 Renamed",
+      title: "Conversation 1 Renamed",
     });
   });
 
@@ -195,6 +209,8 @@ describe("ConversationPanel", () => {
 
     // Ensure the conversation is not renamed
     expect(updateUserConversationSpy).not.toHaveBeenCalled();
+
+    await clickOnEditButton(user);
 
     await user.type(title, "Conversation 1");
     await user.click(title);
@@ -218,50 +234,46 @@ describe("ConversationPanel", () => {
     expect(onCloseMock).toHaveBeenCalledOnce();
   });
 
-  describe("New Conversation Button", () => {
-    it("should display a confirmation modal when clicking", async () => {
-      const user = userEvent.setup();
-      renderConversationPanel();
+  it("should refetch data on rerenders", async () => {
+    // We need to simulate the toggling of the component to test the refetching
+    function PanelWithToggle() {
+      const [isOpen, setIsOpen] = React.useState(true);
+      return (
+        <>
+          <button type="button" onClick={() => setIsOpen((prev) => !prev)}>
+            Toggle
+          </button>
+          {isOpen && <ConversationPanel onClose={onCloseMock} />}
+        </>
+      );
+    }
 
-      expect(
-        screen.queryByTestId("confirm-new-conversation-modal"),
-      ).not.toBeInTheDocument();
+    const MyRouterStub = createRoutesStub([
+      {
+        Component: PanelWithToggle,
+        path: "/",
+      },
+    ]);
 
-      const newProjectButton = screen.getByTestId("new-conversation-button");
-      await user.click(newProjectButton);
-
-      const modal = screen.getByTestId("confirm-new-conversation-modal");
-      expect(modal).toBeInTheDocument();
+    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    render(<MyRouterStub />, {
+      wrapper: ({ children }) => (
+        <AuthProvider>
+          <QueryClientProvider client={new QueryClient(queryClientConfig)}>
+            {children}
+          </QueryClientProvider>
+        </AuthProvider>
+      ),
     });
 
-    it("should call endSession and close panel after confirming", async () => {
-      const user = userEvent.setup();
-      renderConversationPanel();
+    await waitFor(() => expect(getUserConversationsSpy).toHaveBeenCalledOnce());
 
-      const newProjectButton = screen.getByTestId("new-conversation-button");
-      await user.click(newProjectButton);
+    const button = screen.getByText("Toggle");
+    await userEvent.click(button);
+    await userEvent.click(button);
 
-      const confirmButton = screen.getByText("Confirm");
-      await user.click(confirmButton);
-
-      expect(endSessionMock).toHaveBeenCalledOnce();
-      expect(onCloseMock).toHaveBeenCalledOnce();
-    });
-
-    it("should close the modal when cancelling", async () => {
-      const user = userEvent.setup();
-      renderConversationPanel();
-
-      const newProjectButton = screen.getByTestId("new-conversation-button");
-      await user.click(newProjectButton);
-
-      const cancelButton = screen.getByText("Cancel");
-      await user.click(cancelButton);
-
-      expect(endSessionMock).not.toHaveBeenCalled();
-      expect(
-        screen.queryByTestId("confirm-new-conversation-modal"),
-      ).not.toBeInTheDocument();
-    });
+    await waitFor(() =>
+      expect(getUserConversationsSpy).toHaveBeenCalledTimes(2),
+    );
   });
 });

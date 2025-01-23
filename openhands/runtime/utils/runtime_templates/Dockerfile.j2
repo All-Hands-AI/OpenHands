@@ -15,13 +15,13 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
 # Install base system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        wget curl sudo apt-utils git jq \
-        {% if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) %}
+        wget curl sudo apt-utils git jq tmux \
+        {%- if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) -%}
         libgl1 \
-        {% else %}
+        {%- else %}
         libgl1-mesa-glx \
-        {% endif %}
-        libasound2-plugins libatomic1 curl && \
+        {% endif -%}
+        libasound2-plugins libatomic1 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

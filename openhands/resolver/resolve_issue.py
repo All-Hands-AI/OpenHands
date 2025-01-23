@@ -14,12 +14,7 @@ from termcolor import colored
 
 import openhands
 from openhands.controller.state.state import State
-from openhands.core.config import (
-    AgentConfig,
-    AppConfig,
-    LLMConfig,
-    SandboxConfig,
-)
+from openhands.core.config import AgentConfig, AppConfig, LLMConfig, SandboxConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
@@ -122,11 +117,8 @@ async def complete_runtime(
     n_retries = 0
     git_patch = None
     while n_retries < 5:
-        action = CmdRunAction(
-            command=f'git diff --no-color --cached {base_commit}',
-            keep_prompt=False,
-        )
-        action.timeout = 600 + 100 * n_retries
+        action = CmdRunAction(command=f'git diff --no-color --cached {base_commit}')
+        action.set_hard_timeout(600 + 100 * n_retries)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -156,7 +148,7 @@ async def process_issue(
     max_iterations: int,
     llm_config: LLMConfig,
     output_dir: str,
-    runtime_container_image: str,
+    runtime_container_image: str | None,
     prompt_template: str,
     issue_handler: IssueHandlerInterface,
     repo_instruction: str | None = None,
@@ -247,9 +239,9 @@ async def process_issue(
     else:
         histories = [dataclasses.asdict(event) for event in state.history]
         metrics = state.metrics.get() if state.metrics else None
-        # determine success based on the history and the issue description
+        # determine success based on the history, issue description and git patch
         success, comment_success, result_explanation = issue_handler.guess_success(
-            issue, state.history
+            issue, state.history, git_patch
         )
 
         if issue_handler.issue_type == 'pr' and comment_success:
@@ -309,7 +301,7 @@ async def resolve_issue(
     max_iterations: int,
     output_dir: str,
     llm_config: LLMConfig,
-    runtime_container_image: str,
+    runtime_container_image: str | None,
     prompt_template: str,
     issue_type: str,
     repo_instruction: str | None,
@@ -586,11 +578,16 @@ def main():
         default=None,
         help="Target branch to pull and create PR against (for PRs). If not specified, uses the PR's base branch.",
     )
+    parser.add_argument(
+        '--is-experimental',
+        type=lambda x: x.lower() == 'true',
+        help='Whether to run in experimental mode.',
+    )
 
     my_args = parser.parse_args()
 
     runtime_container_image = my_args.runtime_container_image
-    if runtime_container_image is None:
+    if runtime_container_image is None and not my_args.is_experimental:
         runtime_container_image = (
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )

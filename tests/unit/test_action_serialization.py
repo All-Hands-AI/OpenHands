@@ -41,11 +41,10 @@ def serialization_deserialization(
     serialized_action_memory = event_to_memory(action_instance, max_message_chars)
     original_memory_dict = original_action_dict.copy()
 
-    # we don't send backend properties like id or 'keep_prompt'
+    # we don't send backend properties like id
     original_memory_dict.pop('id', None)
     original_memory_dict.pop('timestamp', None)
     if 'args' in original_memory_dict:
-        original_memory_dict['args'].pop('keep_prompt', None)
         original_memory_dict['args'].pop('blocking', None)
         original_memory_dict['args'].pop('confirmation_state', None)
 
@@ -98,8 +97,8 @@ def test_cmd_run_action_serialization_deserialization():
         'args': {
             'blocking': False,
             'command': 'echo "Hello world"',
+            'is_input': False,
             'thought': '',
-            'keep_prompt': True,
             'hidden': False,
             'confirmation_state': ActionConfirmationStatus.CONFIRMED,
         },
@@ -154,3 +153,33 @@ def test_file_write_action_serialization_deserialization():
         },
     }
     serialization_deserialization(original_action_dict, FileWriteAction)
+
+
+def test_legacy_serialization():
+    original_action_dict = {
+        'action': 'run',
+        'args': {
+            'blocking': False,
+            'command': 'echo "Hello world"',
+            'thought': '',
+            'hidden': False,
+            'confirmation_state': ActionConfirmationStatus.CONFIRMED,
+            'keep_prompt': False,  # will be treated as no-op
+        },
+    }
+    event = event_from_dict(original_action_dict)
+    assert isinstance(event, Action)
+    assert isinstance(event, CmdRunAction)
+    assert event.command == 'echo "Hello world"'
+    assert event.hidden is False
+    assert not hasattr(event, 'keep_prompt')
+
+    event_dict = event_to_dict(event)
+    assert 'keep_prompt' not in event_dict['args']
+    assert (
+        event_dict['args']['confirmation_state'] == ActionConfirmationStatus.CONFIRMED
+    )
+    assert event_dict['args']['blocking'] is False
+    assert event_dict['args']['command'] == 'echo "Hello world"'
+    assert event_dict['args']['thought'] == ''
+    assert event_dict['args']['is_input'] is False
