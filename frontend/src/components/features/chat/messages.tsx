@@ -13,15 +13,22 @@ export function Messages({
   isAwaitingUserConfirmation,
 }: MessagesProps) {
   return messages.map((message, index) => {
+    const shouldShowConfirmationButtons =
+      messages.length - 1 === index &&
+      message.sender === "assistant" &&
+      isAwaitingUserConfirmation;
+
     if (message.type === "error" || message.type === "action") {
       return (
-        <ExpandableMessage
-          key={index}
-          type={message.type}
-          id={message.translationID}
-          message={message.content}
-          success={message.success}
-        />
+        <div key={index}>
+          <ExpandableMessage
+            type={message.type}
+            id={message.translationID}
+            message={message.content}
+            success={message.success}
+          />
+          {shouldShowConfirmationButtons && <ConfirmationButtons />}
+        </div>
       );
     }
 
@@ -30,9 +37,7 @@ export function Messages({
         {message.imageUrls && message.imageUrls.length > 0 && (
           <ImageCarousel size="small" images={message.imageUrls} />
         )}
-        {messages.length - 1 === index &&
-          message.sender === "assistant" &&
-          isAwaitingUserConfirmation && <ConfirmationButtons />}
+        {shouldShowConfirmationButtons && <ConfirmationButtons />}
       </ChatMessage>
     );
   });
