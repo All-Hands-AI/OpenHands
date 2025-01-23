@@ -119,7 +119,10 @@ export function ConversationCard({
           ) : (
             <h3
               data-testid="conversation-card-title"
-              className="text-sm leading-6 font-semibold">{title}</h3>
+              className="text-sm leading-6 font-semibold"
+            >
+              {title}
+            </h3>
           )}
         </div>
 
