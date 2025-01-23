@@ -1,8 +1,16 @@
 import os
 
-from fastapi import HTTPException
+from fastapi import FastAPI, HTTPException
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.middleware import (
+    AttachConversationMiddleware,
+    CacheControlMiddleware,
+    GitHubTokenMiddleware,
+    InMemoryRateLimiter,
+    LocalhostCORSMiddleware,
+    RateLimitMiddleware,
+)
 from openhands.server.types import AppMode, OpenhandsConfigInterface
 from openhands.utils.import_utils import get_impl
 
@@ -12,9 +20,6 @@ class OpenhandsConfig(OpenhandsConfigInterface):
     app_mode = AppMode.OSS
     posthog_client_key = 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
     github_client_id = os.environ.get('GITHUB_APP_CLIENT_ID', '')
-    attach_conversation_middleware_path = (
-        'openhands.server.middleware.AttachConversationMiddleware'
-    )
     settings_store_class: str = (
         'openhands.storage.settings.file_settings_store.FileSettingsStore'
     )
@@ -41,6 +46,22 @@ class OpenhandsConfig(OpenhandsConfigInterface):
         }
 
         return config
+
+    def attach_middleware(self, api: FastAPI) -> None:
+        api.add_middleware(
+            LocalhostCORSMiddleware,
+            allow_credentials=True,
+            allow_methods=['*'],
+            allow_headers=['*'],
+        )
+
+        api.add_middleware(CacheControlMiddleware)
+        api.add_middleware(
+            RateLimitMiddleware,
+            rate_limiter=InMemoryRateLimiter(requests=10, seconds=1),
+        )
+        api.add_middleware(GitHubTokenMiddleware)
+        api.middleware('http')(AttachConversationMiddleware(api))
 
 
 def load_openhands_config():

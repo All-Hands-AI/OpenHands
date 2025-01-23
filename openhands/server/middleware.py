@@ -11,8 +11,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
 from starlette.types import ASGIApp
 
+from openhands.server import shared
 from openhands.server.auth import get_user_id
-from openhands.server.shared import config, openhands_config, session_manager
 from openhands.server.types import SessionMiddlewareInterface
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.settings.settings_store import SettingsStore
@@ -150,8 +150,8 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         """
         Attach the user's session based on the provided authentication token.
         """
-        request.state.conversation = await session_manager.attach_to_conversation(
-            request.state.sid
+        request.state.conversation = (
+            await shared.session_manager.attach_to_conversation(request.state.sid)
         )
         if not request.state.conversation:
             return JSONResponse(
@@ -164,7 +164,9 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         """
         Detach the user's session.
         """
-        await session_manager.detach_from_conversation(request.state.conversation)
+        await shared.session_manager.detach_from_conversation(
+            request.state.conversation
+        )
 
     async def __call__(self, request: Request, call_next: Callable):
         if not self._should_attach(request):
@@ -184,17 +186,20 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         return response
 
 
-SettingsStoreImpl = get_impl(SettingsStore, openhands_config.settings_store_class)  # type: ignore
+SettingsStoreImpl = get_impl(
+    SettingsStore,  # type: ignore
+    shared.openhands_config.settings_store_class,  # type: ignore
+)
 ConversationStoreImpl = get_impl(
     ConversationStore,  # type: ignore
-    openhands_config.conversation_store_class,
+    shared.openhands_config.conversation_store_class,  # type: ignore
 )
 
 
 class GitHubTokenMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable):
         settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
+            shared.config, get_user_id(request)
         )
         settings = await settings_store.load()
 
