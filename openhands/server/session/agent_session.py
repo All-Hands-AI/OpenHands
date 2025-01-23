@@ -223,9 +223,7 @@ class AgentSession:
             repo_directory = await call_sync_from_async(
                 self.runtime.clone_repo, github_token, selected_repository
             )
-            await call_sync_from_async(
-                self.runtime.maybe_run_setup_script, selected_repository
-            )
+            await call_sync_from_async(self.runtime.maybe_run_setup_script)
 
         if agent.prompt_manager:
             agent.prompt_manager.set_runtime_info(self.runtime)
