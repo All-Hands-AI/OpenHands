@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.stream import EventStreamSubscriber
+from openhands.runtime import get_runtime_cls
 from openhands.server.auth import get_user_id
 from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
@@ -227,6 +228,8 @@ async def delete_conversation(
     is_running = await conversation_manager.is_agent_loop_running(conversation_id)
     if is_running:
         await conversation_manager.close_session(conversation_id)
+    runtime_cls = get_runtime_cls(config.runtime)
+    await runtime_cls.delete(conversation_id)
     await conversation_store.delete_metadata(conversation_id)
     return True
 
