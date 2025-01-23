@@ -40,7 +40,7 @@ export function ConversationCard({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  const handleBlur = () => {
+  const finishTitleChange = () => {
     if (inputRef.current?.value) {
       const trimmed = inputRef.current.value.trim();
       onChangeTitle?.(trimmed);
@@ -48,6 +48,13 @@ export function ConversationCard({
     } else {
       // reset the value if it's empty
       inputRef.current!.value = title;
+    }
+    setTitleMode("view");
+  };
+
+  const handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      finishTitleChange();
     }
   };
 
@@ -71,7 +78,7 @@ export function ConversationCard({
 
   const handleClick = (event: React.MouseEvent<HTMLInputElement>) => {
     if (titleMode === "edit") {
-      setTitleMode("view");
+      finishTitleChange();
       event.stopPropagation();
     } else {
       navigate(`/conversations/${conversationID}`);
@@ -105,7 +112,6 @@ export function ConversationCard({
               ref={inputRef}
               disabled={titleMode === "view"}
               data-testid="conversation-card-title"
-              onBlur={handleBlur}
               onKeyUp={handleKeyUp}
               type="text"
               defaultValue={title}
