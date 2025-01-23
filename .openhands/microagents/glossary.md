@@ -159,6 +159,7 @@ A specialized runtime environment built on E2B for secure and isolated code exec
 
 #### Local Runtime
 A runtime environment that executes on the local machine, suitable for development and testing.
+
 #### Modal Runtime
 A runtime environment built on Modal for scalable and distributed agent operations.
 
