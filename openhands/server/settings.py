@@ -20,9 +20,7 @@ class Settings(BaseModel):
     llm_api_key: SecretStr | None = None
     llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = None
-    unset_github_token: bool | None = None
     github_token: str | None = None
-    github_token_is_set: bool = False
 
     @field_serializer('llm_api_key')
     def llm_api_key_serializer(self, llm_api_key: SecretStr, info: SerializationInfo):
@@ -57,3 +55,12 @@ class Settings(BaseModel):
             github_token=None,
         )
         return settings
+
+
+class SettingsWithTokenMeta(Settings):
+    """
+    Settings with additional token data for the frontend
+    """
+
+    github_token_is_set: bool | None = None
+    unset_github_token: bool | None = None

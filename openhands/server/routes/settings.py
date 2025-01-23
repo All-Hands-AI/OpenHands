@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
-from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth import get_user_id
 from openhands.server.services.github_service import GitHubService
-from openhands.server.settings import Settings
+from openhands.server.settings import Settings, SettingsWithTokenMeta
 from openhands.server.shared import config, openhands_config
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.settings.settings_store import SettingsStore
@@ -22,7 +21,7 @@ ConversationStoreImpl = get_impl(
 
 
 @app.get('/settings')
-async def load_settings(request: Request) -> Settings | None:
+async def load_settings(request: Request) -> SettingsWithTokenMeta | None:
     try:
         settings_store = await SettingsStoreImpl.get_instance(
             config, get_user_id(request)
@@ -34,18 +33,14 @@ async def load_settings(request: Request) -> Settings | None:
                 content={'error': 'Settings not found'},
             )
 
-        # For security reasons we don't ever send the api key to the client
         github_token = settings.github_token or request.state.github_token
+        settings_with_token_data = SettingsWithTokenMeta(
+            **settings.model_dump(),
+            github_token_is_set=bool(github_token),
+        )
 
-        if settings.llm_api_key and settings.llm_api_key.get_secret_value().strip():
-            settings.llm_api_key = SecretStr('SET')
-        else:
-            settings.llm_api_key = SecretStr(None)
-
-        settings.github_token_is_set = True if github_token else False
-        settings.github_token = None
-
-        return settings
+        del settings_with_token_data.github_token
+        return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
         return JSONResponse(
@@ -57,7 +52,7 @@ async def load_settings(request: Request) -> Settings | None:
 @app.post('/settings')
 async def store_settings(
     request: Request,
-    settings: Settings,
+    settings: SettingsWithTokenMeta,
 ) -> JSONResponse:
     # Check if token is valid
     if settings.github_token:
@@ -79,10 +74,6 @@ async def store_settings(
         )
         existing_settings = await settings_store.load()
 
-        logger.info(f'token: {settings.github_token}')
-        logger.info(f'token is set: {settings.github_token_is_set}')
-        logger.info(f'unset github token: {settings.unset_github_token}')
-
         if existing_settings:
             # LLM key isn't on the frontend, so we need to keep it if unset
             if settings.llm_api_key is None:
@@ -97,14 +88,15 @@ async def store_settings(
         )
 
         if settings.unset_github_token:
-            settings.github_token = ''
-            settings.unset_github_token = False
+            settings.github_token = None
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
             config.sandbox.remote_runtime_resource_factor = (
                 settings.remote_runtime_resource_factor
             )
+
+        settings = convert_to_settings(settings)
 
         await settings_store.store(settings)
         return response
@@ -114,3 +106,16 @@ async def store_settings(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Invalid token'},
         )
+
+
+def convert_to_settings(settings_with_token_data: SettingsWithTokenMeta) -> Settings:
+    settings_data = settings_with_token_data.model_dump()
+
+    # Filter out additional fields from `SettingsWithTokenData`
+    filtered_settings_data = {
+        key: value
+        for key, value in settings_data.items()
+        if key in Settings.model_fields  # Ensures only `Settings` fields are included
+    }
+
+    return Settings(**filtered_settings_data)
