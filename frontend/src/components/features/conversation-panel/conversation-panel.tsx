@@ -89,7 +89,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       {conversations?.map((conversation) => (
         <div key={conversation.conversation_id} onClick={onClose}>
           <ConversationCard
-            isActive={conversation.isActive}
+            isActive={conversation.conversation_id === cid}
             onDelete={() => handleDeleteProject(conversation.conversation_id)}
             onChangeTitle={(title) =>
               handleChangeTitle(
