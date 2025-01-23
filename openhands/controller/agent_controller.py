@@ -728,10 +728,11 @@ class AgentController:
         self.log(log_level, str(action), extra={'msg_type': 'ACTION'})
 
     def _notify_on_llm_retry(self, retries: int, max: int) -> None:
-        self.event_stream.add_event(
-            ErrorObservation(content=f'Retry {retries} / {max}'),
-            EventSource.ENVIRONMENT,
-        )
+        if self.status_callback is not None:
+            msg_id = 'STATUS$LLM_RETRY'
+            self.status_callback(
+                'info', msg_id, f'Retrying LLM request, {retries} / {max}'
+            )
 
     async def _handle_traffic_control(
         self, limit_type: str, current_value: float, max_value: float
