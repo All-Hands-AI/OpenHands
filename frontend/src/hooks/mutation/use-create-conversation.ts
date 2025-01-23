@@ -32,6 +32,8 @@ export const useCreateConversation = () => {
       return OpenHands.createConversation(
         gitHubToken || undefined,
         selectedRepository || undefined,
+        variables.q,
+        files,
       );
     },
     onSuccess: async ({ conversation_id: conversationId }, { q }) => {

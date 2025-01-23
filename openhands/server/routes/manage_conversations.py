@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Callable
 
-from fastapi import APIRouter, Body, Request
+from fastapi import APIRouter, Body, File, Form, Request, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -30,10 +30,7 @@ app = APIRouter(prefix='/api')
 UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 
-class InitSessionRequest(BaseModel):
-    github_token: str | None = None
-    selected_repository: str | None = None
-    initial_user_msg: str | None = None
+# Removed InitSessionRequest class since we're using Form and File parameters directly
 
 
 async def _create_new_conversation(
@@ -111,21 +108,32 @@ async def _create_new_conversation(
 
 
 @app.post('/conversations')
-async def new_conversation(request: Request, data: InitSessionRequest):
+async def new_conversation(
+    request: Request,
+    github_token: str = Form(""),
+    selected_repository: str = Form(""),
+    initial_user_msg: str = Form(""),
+    files: list[UploadFile] = File([]),
+):
     """Initialize a new session or join an existing one.
     After successful initialization, the client should connect to the WebSocket
     using the returned conversation ID
     """
     logger.info('Initializing new conversation')
     user_id = get_user_id(request)
-    github_token = getattr(request.state, 'github_token', '') or data.github_token
-    selected_repository = data.selected_repository
-    initial_user_msg = data.initial_user_msg
+    github_token = getattr(request.state, 'github_token', '') or github_token
 
     try:
         conversation_id = await _create_new_conversation(
             user_id, github_token, selected_repository, initial_user_msg
         )
+        
+        # Upload any attached files
+        if files:
+            conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
+            for file in files:
+                content = await file.read()
+                await conversation_store.save_file(conversation_id, file.filename, content)
 
         return JSONResponse(
             content={'status': 'ok', 'conversation_id': conversation_id}
