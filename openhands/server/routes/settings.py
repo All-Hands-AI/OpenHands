@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
+from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth import get_user_id
@@ -35,7 +36,12 @@ async def load_settings(request: Request) -> Settings | None:
 
         # For security reasons we don't ever send the api key to the client
         github_token = settings.github_token or request.state.github_token
-        settings.llm_api_key = 'SET' if settings.llm_api_key else None
+
+        if settings.llm_api_key and settings.llm_api_key.get_secret_value().strip():
+            settings.llm_api_key = SecretStr('SET')
+        else:
+            settings.llm_api_key = SecretStr(None)
+
         settings.github_token_is_set = True if github_token else False
         settings.github_token = None
 
@@ -72,8 +78,10 @@ async def store_settings(
             config, get_user_id(request)
         )
         existing_settings = await settings_store.load()
-        logger.info(f'Storing settings: {settings}')
-        logger.info(f'Existing settings: {existing_settings}')
+
+        logger.info(f'token: {settings.github_token}')
+        logger.info(f'token is set: {settings.github_token_is_set}')
+        logger.info(f'unset github token: {settings.unset_github_token}')
 
         if existing_settings:
             # LLM key isn't on the frontend, so we need to keep it if unset
@@ -89,8 +97,8 @@ async def store_settings(
         )
 
         if settings.unset_github_token:
-            settings.github_token = None
-            settings.unset_github_token = None
+            settings.github_token = ''
+            settings.unset_github_token = False
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:

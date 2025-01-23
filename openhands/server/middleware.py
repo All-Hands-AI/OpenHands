@@ -200,5 +200,7 @@ class GitHubTokenMiddleware(BaseHTTPMiddleware):
 
         if settings and settings.github_token:
             request.state.github_token = settings.github_token
+        else:
+            request.state.github_token = None
 
         return await call_next(request)

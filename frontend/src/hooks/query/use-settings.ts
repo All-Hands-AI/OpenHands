@@ -43,6 +43,8 @@ export const useSettings = () => {
   const query = useQuery({
     queryKey: ["settings"],
     queryFn: getSettingsQueryFn,
+    initialData: DEFAULT_SETTINGS,
+    staleTime: 0,
   });
 
   React.useEffect(() => {
