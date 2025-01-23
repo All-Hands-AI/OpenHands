@@ -38,7 +38,7 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
       </div>
 
       <ConversationCard
-        conversationID={params.conversationId}
+        conversationID={params.conversationId || ''}
         variant="compact"
         onDownloadWorkspace={handleDownloadWorkspace}
         title={conversation?.title ?? ""}

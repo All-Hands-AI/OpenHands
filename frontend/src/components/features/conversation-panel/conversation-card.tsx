@@ -110,7 +110,6 @@ export function ConversationCard({
           {titleMode !== "view" ? (
             <input
               ref={inputRef}
-              disabled={titleMode === "view"}
               data-testid="conversation-card-title"
               onKeyUp={handleKeyUp}
               type="text"
