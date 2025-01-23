@@ -24,8 +24,6 @@ The current context and status of an agent, including its memory, active tools, 
 ### Browser
 A system for web-based interactions and tasks.
 
-#### Browser Environment
-
 #### Browser Gym
 A testing and evaluation environment for browser-based agent interactions and tasks.
 
@@ -35,11 +33,9 @@ A tool that enables agents to interact with web pages and perform web-based task
 ### Commands
 Terminal and execution related functionality.
 
-#### Bash Parser
-A component that processes and interprets bash commands and their outputs for agent interaction.
-
 #### Bash Session
 A persistent terminal session that maintains state and history for bash command execution.
+This uses tmux under the hood.
 
 ### Configuration
 System-wide settings and options.
