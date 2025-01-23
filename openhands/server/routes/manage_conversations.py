@@ -7,6 +7,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.action.message import MessageAction
+from openhands.events.event import EventSource
 from openhands.events.stream import EventStreamSubscriber
 from openhands.runtime import get_runtime_cls
 from openhands.server.auth import get_user_id
@@ -42,6 +44,7 @@ async def _create_new_conversation(
     token: str | None,
     selected_repository: str | None,
     initial_user_msg: str | None,
+    image_urls: list[str] | None,
 ):
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
@@ -96,8 +99,16 @@ async def _create_new_conversation(
 
     logger.info(f'Starting agent loop for conversation {conversation_id}')
     event_stream = await session_manager.maybe_start_agent_loop(
-        conversation_id, conversation_init_data, user_id, initial_user_msg
+        conversation_id, conversation_init_data, user_id
     )
+    if initial_user_msg or image_urls:
+        event_stream.add_event(
+            MessageAction(
+                content=initial_user_msg or '',
+                image_urls=image_urls or [],
+            ),
+            EventSource.USER,
+        )
     try:
         event_stream.subscribe(
             EventStreamSubscriber.SERVER,
@@ -127,20 +138,12 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     try:
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
-            user_id, github_token, selected_repository, initial_user_msg
+            user_id,
+            github_token,
+            selected_repository,
+            initial_user_msg,
+            image_urls,
         )
-        
-        # Send initial message with image URLs if provided
-        if initial_user_msg or image_urls:
-            from openhands.events.action.message import MessageAction
-            event_stream = await session_manager.get_event_stream(conversation_id)
-            if event_stream:
-                timestamp = datetime.now(timezone.utc).isoformat()
-                event_stream.emit(MessageAction(
-                    content=initial_user_msg or "",
-                    image_urls=image_urls,
-                    timestamp=timestamp,
-                ))
 
         return JSONResponse(
             content={'status': 'ok', 'conversation_id': conversation_id}
