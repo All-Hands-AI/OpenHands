@@ -82,7 +82,7 @@ function AppContent() {
     if (conversationId && (initialPrompt || files.length > 0)) {
       dispatch(
         addUserMessage({
-          content: initialPrompt || '',
+          content: initialPrompt || "",
           imageUrls: files || [],
           timestamp: new Date().toISOString(),
           pending: true,
