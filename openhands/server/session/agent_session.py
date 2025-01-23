@@ -9,7 +9,7 @@ from openhands.core.config import AgentConfig, AppConfig, LLMConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
-from openhands.events.action import ChangeAgentStateAction
+from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.microagent import BaseMicroAgent
@@ -71,6 +71,7 @@ class AgentSession:
         agent_configs: dict[str, AgentConfig] | None = None,
         github_token: str | None = None,
         selected_repository: str | None = None,
+        initial_message: MessageAction | None = None,
     ):
         """Starts the Agent session
         Parameters:
@@ -112,6 +113,8 @@ class AgentSession:
         self.event_stream.add_event(
             ChangeAgentStateAction(AgentState.RUNNING), EventSource.ENVIRONMENT
         )
+        if initial_message:
+            self.event_stream.add_event(initial_message, EventSource.USER)
 
         self._starting = False
 

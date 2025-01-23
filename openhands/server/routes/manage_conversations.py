@@ -8,7 +8,6 @@ from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
-from openhands.events.event import EventSource
 from openhands.events.stream import EventStreamSubscriber
 from openhands.runtime import get_runtime_cls
 from openhands.server.auth import get_user_id
@@ -98,17 +97,15 @@ async def _create_new_conversation(
     )
 
     logger.info(f'Starting agent loop for conversation {conversation_id}')
-    event_stream = await session_manager.maybe_start_agent_loop(
-        conversation_id, conversation_init_data, user_id
-    )
+    initial_message_action = None
     if initial_user_msg or image_urls:
-        event_stream.add_event(
-            MessageAction(
-                content=initial_user_msg or '',
-                image_urls=image_urls or [],
-            ),
-            EventSource.USER,
+        initial_message_action = MessageAction(
+            content=initial_user_msg or '',
+            image_urls=image_urls or [],
         )
+    event_stream = await session_manager.maybe_start_agent_loop(
+        conversation_id, conversation_init_data, user_id, initial_message_action
+    )
     try:
         event_stream.subscribe(
             EventStreamSubscriber.SERVER,
