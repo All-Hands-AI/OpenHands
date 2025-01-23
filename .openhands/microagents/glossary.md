@@ -19,7 +19,7 @@ A specific capability or function that an agent can perform, such as file manipu
 The current context and status of an agent, including its memory, active tools, and ongoing tasks.
 
 #### CodeAct Agent
-A specialized agent type in OpenHands designed specifically for software development tasks and code manipulation.
+[A generalist agent in OpenHands](https://arxiv.org/abs/2407.16741) designed to perform tasks by editing and executing code.
 
 ### Browser
 A system for web-based interactions and tasks.
