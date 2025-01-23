@@ -54,8 +54,6 @@ export function TaskForm({ ref }: TaskFormProps) {
 
     const q = formData.get("q")?.toString();
     createConversation({ q });
-    dispatch(clearFiles());
-    dispatch(clearInitialQuery());
   };
 
   return (

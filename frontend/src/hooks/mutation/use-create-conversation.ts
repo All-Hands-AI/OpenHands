@@ -7,6 +7,7 @@ import { setInitialQuery } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { useAuth } from "#/context/auth-context";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
+import { clearFiles, clearInitialQuery } from "#/state/initial-query-slice";
 
 export const useCreateConversation = () => {
   const navigate = useNavigate();
@@ -31,12 +32,14 @@ export const useCreateConversation = () => {
 
       if (variables.q) dispatch(setInitialQuery(variables.q));
 
-      return OpenHands.createConversation(
+      await OpenHands.createConversation(
         gitHubToken || undefined,
         selectedRepository || undefined,
         variables.q,
         files,
       );
+      dispatch(clearInitialQuery());
+      dispatch(clearFiles());
     },
     onSuccess: async ({ conversation_id: conversationId }, { q }) => {
       posthog.capture("initial_query_submitted", {
