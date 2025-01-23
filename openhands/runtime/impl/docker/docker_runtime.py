@@ -321,6 +321,9 @@ class DockerRuntime(ActionExecutionClient):
                 self._app_ports.append(port)
             elif port >= APP_PORT_RANGE_2[0] and port <= APP_PORT_RANGE_2[1]:
                 self._app_ports.append(port)
+        else:
+            # fallback if host network is used
+            self._container_port = int(self.container.attrs['Args'][9])
         self._host_port = self._container_port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(
