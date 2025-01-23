@@ -19,7 +19,7 @@ export const useCreateConversation = () => {
   );
 
   return useMutation({
-    mutationFn: (variables: { q?: string }) => {
+    mutationFn: async (variables: { q?: string }) => {
       if (
         !variables.q?.trim() &&
         !selectedRepository &&
