@@ -110,7 +110,7 @@ class AgentSession:
             agent_configs=agent_configs,
         )
         self.event_stream.add_event(
-            ChangeAgentStateAction(AgentState.INIT), EventSource.ENVIRONMENT
+            ChangeAgentStateAction(AgentState.RUNNING), EventSource.ENVIRONMENT
         )
 
         self._starting = False
