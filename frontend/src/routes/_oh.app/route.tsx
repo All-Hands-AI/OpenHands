@@ -82,8 +82,8 @@ function AppContent() {
     if (conversationId && (initialQuery || files.length > 0)) {
       dispatch(
         addUserMessage({
-          content: initialQuery,
-          imageUrls: files,
+          content: initialQuery || '',
+          imageUrls: files || [],
           timestamp: new Date().toISOString(),
           pending: true,
         }),
