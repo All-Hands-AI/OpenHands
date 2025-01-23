@@ -86,26 +86,24 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           </p>
         </div>
       )}
-      {conversations?.map((project) => (
-        <NavLink
-          key={project.conversation_id}
-          to={`/conversations/${project.conversation_id}`}
+      {conversations?.map((conversation) => (
+        <div
+          key={conversation.conversation_id}
           onClick={onClose}
         >
-          {({ isActive }) => (
-            <ConversationCard
-              isActive={isActive}
-              onDelete={() => handleDeleteProject(project.conversation_id)}
-              onChangeTitle={(title) =>
-                handleChangeTitle(project.conversation_id, project.title, title)
-              }
-              title={project.title}
-              selectedRepository={project.selected_repository}
-              lastUpdatedAt={project.last_updated_at}
-              status={project.status}
-            />
-          )}
-        </NavLink>
+          <ConversationCard
+            isActive={conversation.isActive}
+            onDelete={() => handleDeleteProject(conversation.conversation_id)}
+            onChangeTitle={(title) =>
+              handleChangeTitle(conversation.conversation_id, conversation.title, title)
+            }
+            conversationID={conversation.conversation_id}
+            title={conversation.title}
+            selectedRepository={conversation.selected_repository}
+            lastUpdatedAt={conversation.last_updated_at}
+            status={conversation.status}
+          />
+        </div>
       ))}
 
       {confirmDeleteModalVisible && (

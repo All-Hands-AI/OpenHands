@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
 import {
@@ -10,12 +11,12 @@ import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { cn } from "#/utils/utils";
 
 interface ConversationCardProps {
-  onClick?: () => void;
   onDelete?: () => void;
   onChangeTitle?: (title: string) => void;
   onDownloadWorkspace?: () => void;
   isActive?: boolean;
   title: string;
+  conversationID: string;
   selectedRepository: string | null;
   lastUpdatedAt: string; // ISO 8601
   status?: ProjectStatus;
@@ -23,12 +24,12 @@ interface ConversationCardProps {
 }
 
 export function ConversationCard({
-  onClick,
   onDelete,
   onChangeTitle,
   onDownloadWorkspace,
   isActive,
   title,
+  conversationID,
   selectedRepository,
   lastUpdatedAt,
   status = "STOPPED",
@@ -37,6 +38,7 @@ export function ConversationCard({
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
@@ -47,19 +49,12 @@ export function ConversationCard({
       // reset the value if it's empty
       inputRef.current!.value = title;
     }
-
-    setTitleMode("view");
   };
 
   const handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.currentTarget.blur();
     }
-  };
-
-  const handleInputClick = (event: React.MouseEvent<HTMLInputElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
   };
 
   const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -80,6 +75,15 @@ export function ConversationCard({
     onDownloadWorkspace?.();
   };
 
+  const handleClick = (event: React.MouseEvent<HTMLInputElement>) => {
+    if (titleMode === "edit") {
+      setTitleMode("view");
+      event.stopPropagation();
+    } else {
+      navigate(`/conversations/${conversationID}`);
+    }
+  };
+
   React.useEffect(() => {
     if (titleMode === "edit") {
       inputRef.current?.focus();
@@ -91,7 +95,7 @@ export function ConversationCard({
   return (
     <div
       data-testid="conversation-card"
-      onClick={onClick}
+      onClick={handleClick}
       className={cn(
         "h-[100px] w-full px-[18px] py-4 border-b border-neutral-600 cursor-pointer",
         variant === "compact" &&
@@ -101,17 +105,20 @@ export function ConversationCard({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 w-full">
           {isActive && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
-          <input
-            ref={inputRef}
-            disabled={titleMode === "view"}
-            data-testid="conversation-card-title"
-            onClick={handleInputClick}
-            onBlur={handleBlur}
-            onKeyUp={handleKeyUp}
-            type="text"
-            defaultValue={title}
-            className="text-sm leading-6 font-semibold bg-transparent w-full"
-          />
+          { titleMode !== "view" ? (
+            <input
+              ref={inputRef}
+              disabled={titleMode === "view"}
+              data-testid="conversation-card-title"
+              onBlur={handleBlur}
+              onKeyUp={handleKeyUp}
+              type="text"
+              defaultValue={title}
+              className="text-sm leading-6 font-semibold bg-transparent w-full"
+            />
+          ) : (
+            <h3 className="text-sm leading-6 font-semibold">{ title }</h3>
+          )}
         </div>
 
         <div className="flex items-center gap-2 relative">
