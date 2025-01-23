@@ -6,8 +6,6 @@ import OpenHands from "#/api/open-hands";
 import { setInitialQuery } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { useAuth } from "#/context/auth-context";
-import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
-import { addUserMessage } from "#/state/chat-slice";
 
 export const useCreateConversation = () => {
   const navigate = useNavigate();

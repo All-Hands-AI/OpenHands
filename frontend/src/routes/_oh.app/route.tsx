@@ -11,7 +11,7 @@ import {
   useConversation,
 } from "#/context/conversation-context";
 import { Controls } from "#/components/features/controls/controls";
-import { clearMessages } from "#/state/chat-slice";
+import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
@@ -36,7 +36,6 @@ import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
 import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
-import { addUserMessage } from "#/state/chat-slice";
 import { clearFiles, clearInitialQuery } from "#/state/initial-query-slice";
 
 function AppContent() {
