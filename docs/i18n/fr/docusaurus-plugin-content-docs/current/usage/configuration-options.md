@@ -373,7 +373,7 @@ Les options de configuration de l'agent sont définies dans les sections `[agent
   - Description : Si l'éditeur LLM est activé dans l'espace d'action (fonctionne uniquement avec l'appel de fonction)
 
 **Utilisation du micro-agent**
-- `use_microagents`
+- `enable_prompt_extensions`
   - Type : `bool`
   - Valeur par défaut : `true`
   - Description : Indique si l'utilisation des micro-agents est activée ou non

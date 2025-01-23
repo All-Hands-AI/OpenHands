@@ -8,9 +8,10 @@ from fastapi import Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request as StarletteRequest
 from starlette.types import ASGIApp
 
-from openhands.server.shared import session_manager
+from openhands.server import shared
 from openhands.server.types import SessionMiddlewareInterface
 
 
@@ -36,14 +37,17 @@ class LocalhostCORSMiddleware(CORSMiddleware):
         return super().is_allowed_origin(origin)
 
 
-class NoCacheMiddleware(BaseHTTPMiddleware):
+class CacheControlMiddleware(BaseHTTPMiddleware):
     """
     Middleware to disable caching for all routes by adding appropriate headers
     """
 
     async def dispatch(self, request, call_next):
         response = await call_next(request)
-        if not request.url.path.startswith('/assets'):
+        if request.url.path.startswith('/assets'):
+            # The content of the assets directory has fingerprinted file names so we cache aggressively
+            response.headers['Cache-Control'] = 'public, max-age=2592000, immutable'
+        else:
             response.headers['Cache-Control'] = (
                 'no-cache, no-store, must-revalidate, max-age=0'
             )
@@ -95,7 +99,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.rate_limiter = rate_limiter
 
-    async def dispatch(self, request, call_next):
+    async def dispatch(self, request: StarletteRequest, call_next):
+        if not self.is_rate_limited_request(request):
+            return await call_next(request)
         ok = await self.rate_limiter(request)
         if not ok:
             return JSONResponse(
@@ -104,6 +110,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 headers={'Retry-After': '1'},
             )
         return await call_next(request)
+
+    def is_rate_limited_request(self, request: StarletteRequest):
+        if request.url.path.startswith('/assets'):
+            return False
+        # Put Other non rate limited checks here
+        return True
 
 
 class AttachConversationMiddleware(SessionMiddlewareInterface):
@@ -134,8 +146,8 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         """
         Attach the user's session based on the provided authentication token.
         """
-        request.state.conversation = await session_manager.attach_to_conversation(
-            request.state.sid
+        request.state.conversation = (
+            await shared.session_manager.attach_to_conversation(request.state.sid)
         )
         if not request.state.conversation:
             return JSONResponse(
@@ -148,7 +160,9 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         """
         Detach the user's session.
         """
-        await session_manager.detach_from_conversation(request.state.conversation)
+        await shared.session_manager.detach_from_conversation(
+            request.state.conversation
+        )
 
     async def __call__(self, request: Request, call_next: Callable):
         if not self._should_attach(request):
