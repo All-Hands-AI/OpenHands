@@ -6,7 +6,6 @@ import { ConversationCard } from "#/components/features/conversation-panel/conve
 import { clickOnEditButton } from "./utils";
 
 describe("ConversationCard", () => {
-  const onClick = vi.fn();
   const onDelete = vi.fn();
   const onChangeTitle = vi.fn();
   const onDownloadWorkspace = vi.fn();
@@ -18,6 +17,7 @@ describe("ConversationCard", () => {
   it("should render the conversation card", () => {
     render(
       <ConversationCard
+        conversationID="deadbeef"
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
         isActive
@@ -38,6 +38,7 @@ describe("ConversationCard", () => {
   it("should render the selectedRepository if available", () => {
     const { rerender } = render(
       <ConversationCard
+        conversationID="deadbeef"
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
         isActive
@@ -53,6 +54,7 @@ describe("ConversationCard", () => {
 
     rerender(
       <ConversationCard
+        conversationID="deadbeef"
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
         isActive
@@ -69,6 +71,7 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
+        conversationID="deadbeef"
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
         isActive
@@ -94,6 +97,7 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
+        conversationID="deadbeef"
         onDelete={onDelete}
         isActive
         onChangeTitle={onChangeTitle}
@@ -114,31 +118,11 @@ describe("ConversationCard", () => {
     expect(onDelete).toHaveBeenCalled();
   });
 
-  test("clicking the selectedRepository should not trigger the onClick handler", async () => {
-    const user = userEvent.setup();
-    render(
-      <ConversationCard
-        onDelete={onDelete}
-        isActive
-        onChangeTitle={onChangeTitle}
-        title="Conversation 1"
-        selectedRepository="org/selectedRepository"
-        lastUpdatedAt="2021-10-01T12:00:00Z"
-      />,
-    );
-
-    const selectedRepository = screen.getByTestId(
-      "conversation-card-selected-repository",
-    );
-    await user.click(selectedRepository);
-
-    expect(onClick).not.toHaveBeenCalled();
-  });
-
   test("conversation title should call onChangeTitle when changed and blurred", async () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
+        conversationID="deadbeef"
         onDelete={onDelete}
         isActive
         title="Conversation 1"
@@ -171,6 +155,7 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
+        conversationID="deadbeef"
         onDelete={onDelete}
         isActive
         onChangeTitle={onChangeTitle}
@@ -191,54 +176,11 @@ describe("ConversationCard", () => {
     expect(title).toHaveValue("Conversation 1");
   });
 
-  test("clicking the title should not trigger the onClick handler", async () => {
-    const user = userEvent.setup();
-    render(
-      <ConversationCard
-        onDelete={onDelete}
-        isActive
-        onChangeTitle={onChangeTitle}
-        title="Conversation 1"
-        selectedRepository={null}
-        lastUpdatedAt="2021-10-01T12:00:00Z"
-      />,
-    );
-
-    const title = screen.getByTestId("conversation-card-title");
-    await user.click(title);
-
-    expect(onClick).not.toHaveBeenCalled();
-  });
-
-  test("clicking the delete button should not trigger the onClick handler", async () => {
-    const user = userEvent.setup();
-    render(
-      <ConversationCard
-        onDelete={onDelete}
-        isActive
-        onChangeTitle={onChangeTitle}
-        title="Conversation 1"
-        selectedRepository={null}
-        lastUpdatedAt="2021-10-01T12:00:00Z"
-      />,
-    );
-
-    const ellipsisButton = screen.getByTestId("ellipsis-button");
-    await user.click(ellipsisButton);
-
-    const menu = screen.getByTestId("context-menu");
-    const deleteButton = within(menu).getByTestId("delete-button");
-
-    await user.click(deleteButton);
-
-    expect(onClick).not.toHaveBeenCalled();
-  });
-
   it("should call onDownloadWorkspace when the download button is clicked", async () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
-        onClick={onClick}
+        conversationID="deadbeef"
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
         onDownloadWorkspace={onDownloadWorkspace}
@@ -263,7 +205,7 @@ describe("ConversationCard", () => {
     const user = userEvent.setup();
     const { rerender } = render(
       <ConversationCard
-        onClick={onClick}
+        conversationID="deadbeef"
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
@@ -282,7 +224,7 @@ describe("ConversationCard", () => {
 
     rerender(
       <ConversationCard
-        onClick={onClick}
+        conversationID="deadbeef"
         onDelete={onDelete}
         title="Conversation 1"
         selectedRepository={null}
@@ -299,7 +241,7 @@ describe("ConversationCard", () => {
   it("should not render the ellipsis button if there are no actions", () => {
     const { rerender } = render(
       <ConversationCard
-        onClick={onClick}
+        conversationID="deadbeef"
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
         onDownloadWorkspace={onDownloadWorkspace}
@@ -313,7 +255,7 @@ describe("ConversationCard", () => {
 
     rerender(
       <ConversationCard
-        onClick={onClick}
+        conversationID="deadbeef"
         onDelete={onDelete}
         onDownloadWorkspace={onDownloadWorkspace}
         title="Conversation 1"
@@ -326,7 +268,7 @@ describe("ConversationCard", () => {
 
     rerender(
       <ConversationCard
-        onClick={onClick}
+        conversationID="deadbeef"
         onDownloadWorkspace={onDownloadWorkspace}
         title="Conversation 1"
         selectedRepository={null}
@@ -338,7 +280,7 @@ describe("ConversationCard", () => {
 
     rerender(
       <ConversationCard
-        onClick={onClick}
+        conversationID="deadbeef"
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -352,6 +294,7 @@ describe("ConversationCard", () => {
     it("should render the 'STOPPED' indicator by default", () => {
       render(
         <ConversationCard
+        conversationID="deadbeef"
           onDelete={onDelete}
           isActive
           onChangeTitle={onChangeTitle}
@@ -367,6 +310,7 @@ describe("ConversationCard", () => {
     it("should render the other indicators when provided", () => {
       render(
         <ConversationCard
+        conversationID="deadbeef"
           onDelete={onDelete}
           isActive
           onChangeTitle={onChangeTitle}
