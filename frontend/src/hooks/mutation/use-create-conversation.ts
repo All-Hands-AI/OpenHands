@@ -32,14 +32,12 @@ export const useCreateConversation = () => {
 
       if (variables.q) dispatch(setInitialQuery(variables.q));
 
-      await OpenHands.createConversation(
+      return OpenHands.createConversation(
         gitHubToken || undefined,
         selectedRepository || undefined,
         variables.q,
         files,
       );
-      dispatch(clearInitialQuery());
-      dispatch(clearFiles());
     },
     onSuccess: async ({ conversation_id: conversationId }, { q }) => {
       posthog.capture("initial_query_submitted", {
@@ -48,6 +46,8 @@ export const useCreateConversation = () => {
         has_repository: !!selectedRepository,
         has_files: files.length > 0,
       });
+      dispatch(clearInitialQuery());
+      dispatch(clearFiles());
       await queryClient.invalidateQueries({
         queryKey: ["user", "conversations"],
       });
