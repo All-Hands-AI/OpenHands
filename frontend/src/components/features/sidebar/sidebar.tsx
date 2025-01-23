@@ -21,13 +21,17 @@ import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
 import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
+import { useLogout } from "#/hooks/mutation/use-logout";
+import { useConfig } from "#/hooks/query/use-config";
 
 export function Sidebar() {
   const dispatch = useDispatch();
   const endSession = useEndSession();
   const user = useGitHubUser();
+  const { data: config } = useConfig();
   const { data: isAuthed } = useIsAuthed();
   const { data: settings } = useSettings();
+  const { mutate: logout } = useLogout();
 
   const { saveUserSettings, isUpToDate: settingsAreUpToDate } =
     useCurrentSettings();
@@ -56,6 +60,7 @@ export function Sidebar() {
   };
 
   const handleLogout = async () => {
+    if (config?.APP_MODE === "saas") logout();
     await saveUserSettings({ unset_github_token: true });
     posthog.reset();
   };

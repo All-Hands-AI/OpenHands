@@ -362,6 +362,10 @@ class OpenHands {
     );
     return data;
   }
+
+  static async logout(): Promise<void> {
+    await openHands.post("/api/logout");
+  }
 }
 
 export default OpenHands;
