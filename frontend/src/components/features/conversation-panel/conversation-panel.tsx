@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { ConversationCard } from "./conversation-card";
@@ -87,15 +87,16 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
         </div>
       )}
       {conversations?.map((conversation) => (
-        <div
-          key={conversation.conversation_id}
-          onClick={onClose}
-        >
+        <div key={conversation.conversation_id} onClick={onClose}>
           <ConversationCard
             isActive={conversation.isActive}
             onDelete={() => handleDeleteProject(conversation.conversation_id)}
             onChangeTitle={(title) =>
-              handleChangeTitle(conversation.conversation_id, conversation.title, title)
+              handleChangeTitle(
+                conversation.conversation_id,
+                conversation.title,
+                title,
+              )
             }
             conversationID={conversation.conversation_id}
             title={conversation.title}

@@ -107,7 +107,7 @@ export function ConversationCard({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 w-full">
           {isActive && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
-          { titleMode !== "view" ? (
+          {titleMode !== "view" ? (
             <input
               ref={inputRef}
               disabled={titleMode === "view"}
@@ -118,7 +118,7 @@ export function ConversationCard({
               className="text-sm leading-6 font-semibold bg-transparent w-full"
             />
           ) : (
-            <h3 className="text-sm leading-6 font-semibold">{ title }</h3>
+            <h3 className="text-sm leading-6 font-semibold">{title}</h3>
           )}
         </div>
 
