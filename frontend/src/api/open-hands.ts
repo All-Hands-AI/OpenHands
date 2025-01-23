@@ -245,19 +245,18 @@ class OpenHands {
     githubToken?: string,
     selectedRepository?: string,
     initialUserMsg?: string,
-    files?: File[],
+    imageUrls?: string[],
   ): Promise<Conversation> {
-    const formData = new FormData();
-    formData.append("github_token", githubToken || "");
-    formData.append("selected_repository", selectedRepository || "");
-    formData.append("initial_user_msg", initialUserMsg || "");
-    if (files) {
-      files.forEach((file) => formData.append("files", file));
-    }
+    const body = {
+      github_token: githubToken,
+      selected_repository: selectedRepository,
+      initial_user_msg: initialUserMsg,
+      image_urls: imageUrls,
+    };
 
     const { data } = await openHands.post<Conversation>(
       "/api/conversations",
-      formData,
+      body,
     );
 
     // TODO: remove this once we have a multi-conversation UI

@@ -6,6 +6,7 @@ import OpenHands from "#/api/open-hands";
 import { setInitialQuery } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { useAuth } from "#/context/auth-context";
+import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 
 export const useCreateConversation = () => {
   const navigate = useNavigate();
@@ -29,11 +30,17 @@ export const useCreateConversation = () => {
       }
 
       if (variables.q) dispatch(setInitialQuery(variables.q));
+      
+      // Convert any image files to base64
+      const imageFiles = files.filter(file => file.type.startsWith('image/'));
+      const imagePromises = imageFiles.map(file => convertImageToBase64(file));
+      const imageUrls = await Promise.all(imagePromises);
+
       return OpenHands.createConversation(
         gitHubToken || undefined,
         selectedRepository || undefined,
         variables.q,
-        files,
+        imageUrls,
       );
     },
     onSuccess: async ({ conversation_id: conversationId }, { q }) => {
