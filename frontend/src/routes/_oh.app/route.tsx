@@ -35,7 +35,6 @@ import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
-import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 
 function AppContent() {
   useConversationConfig();
@@ -62,7 +61,7 @@ function AppContent() {
   );
 
   React.useEffect(() => {
-    if (MULTI_CONVERSATION_UI && isFetched && !conversation) {
+    if (isFetched && !conversation) {
       toast.error(
         "This conversation does not exist, or you do not have permission to access it.",
       );
