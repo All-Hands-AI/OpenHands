@@ -142,8 +142,10 @@ gdown = "*"
 matplotlib = "*"
 seaborn = "*"
 tabulate = "*"
+browsergym = "0.10.2"
 browsergym-webarena = "0.10.2"
 browsergym-miniwob = "0.10.2"
+browsergym-visualwebarena = "0.10.2"
 
 [tool.poetry-dynamic-versioning]
 enable = true
