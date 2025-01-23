@@ -110,11 +110,16 @@ class AgentSession:
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
         )
-        self.event_stream.add_event(
-            ChangeAgentStateAction(AgentState.RUNNING), EventSource.ENVIRONMENT
-        )
         if initial_message:
             self.event_stream.add_event(initial_message, EventSource.USER)
+            self.event_stream.add_event(
+                ChangeAgentStateAction(AgentState.RUNNING), EventSource.ENVIRONMENT
+            )
+        else:
+            self.event_stream.add_event(
+                ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT),
+                EventSource.ENVIRONMENT,
+            )
 
         self._starting = False
 
