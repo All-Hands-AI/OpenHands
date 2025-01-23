@@ -80,7 +80,7 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
+        runtime='docker',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             base_container_image='public.ecr.aws/i5g0m1f6/ml-bench',
@@ -92,6 +92,8 @@ def get_config(
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
+    agent_config = config.get_agent_config(metadata.agent_class)
+    agent_config.enable_prompt_extensions = False
     return config
 
 
@@ -161,7 +163,7 @@ def complete_runtime(
     eval_script = os.path.join(task_path, 'run.sh')
     logger.info(f'Running evaluation script: {eval_script}')
 
-    action = CmdRunAction(command=f'cat {eval_script}', keep_prompt=False)
+    action = CmdRunAction(command=f'cat {eval_script}')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     if obs.exit_code == 0:

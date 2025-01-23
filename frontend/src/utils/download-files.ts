@@ -23,6 +23,13 @@ function isFileSystemAccessSupported(): boolean {
 }
 
 /**
+ * Checks if the Save File Picker API is supported
+ */
+function isSaveFilePickerSupported(): boolean {
+  return "showSaveFilePicker" in window;
+}
+
+/**
  * Creates subdirectories and returns the final directory handle
  */
 async function createSubdirectories(
@@ -160,6 +167,39 @@ async function processBatch(
     newCompleted,
     newBytes: newTotalBytes,
   };
+}
+
+export async function downloadTrajectory(
+  conversationId: string,
+  data: unknown[] | null,
+): Promise<void> {
+  try {
+    if (!isSaveFilePickerSupported()) {
+      throw new Error(
+        "Your browser doesn't support downloading folders. Please use Chrome, Edge, or another browser that supports the File System Access API.",
+      );
+    }
+    const options = {
+      suggestedName: `trajectory-${conversationId}.json`,
+      types: [
+        {
+          description: "JSON File",
+          accept: {
+            "application/json": [".json"],
+          },
+        },
+      ],
+    };
+
+    const handle = await window.showSaveFilePicker(options);
+    const writable = await handle.createWritable();
+    await writable.write(JSON.stringify(data, null, 2));
+    await writable.close();
+  } catch (error) {
+    throw new Error(
+      `Failed to download file: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }
 
 /**
