@@ -36,7 +36,7 @@ import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
 import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
-import { clearFiles, clearInitialQuery } from "#/state/initial-query-slice";
+import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 
 function AppContent() {
@@ -48,7 +48,7 @@ function AppContent() {
   const { data: conversation, isFetched } = useUserConversation(
     conversationId || null,
   );
-  const { initialQuery, files } = useSelector(
+  const { initialPrompt, files } = useSelector(
     (state: RootState) => state.initialQuery,
   );
   const dispatch = useDispatch();
@@ -79,16 +79,16 @@ function AppContent() {
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
-    if (conversationId && (initialQuery || files.length > 0)) {
+    if (conversationId && (initialPrompt || files.length > 0)) {
       dispatch(
         addUserMessage({
-          content: initialQuery || '',
+          content: initialPrompt || '',
           imageUrls: files || [],
           timestamp: new Date().toISOString(),
           pending: true,
         }),
       );
-      dispatch(clearInitialQuery());
+      dispatch(clearInitialPrompt());
       dispatch(clearFiles());
     }
   }, [conversationId]);
