@@ -14,6 +14,7 @@ import { ImageCarousel } from "../features/images/image-carousel";
 import { UploadImageInput } from "../features/images/upload-image-input";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { LoadingSpinner } from "./loading-spinner";
+import { clearFiles, clearInitialQuery } from "#/state/initial-query-slice";
 
 interface TaskFormProps {
   ref: React.RefObject<HTMLFormElement | null>;
@@ -53,6 +54,8 @@ export function TaskForm({ ref }: TaskFormProps) {
 
     const q = formData.get("q")?.toString();
     createConversation({ q });
+    dispatch(clearFiles());
+    dispatch(clearInitialQuery());
   };
 
   return (
