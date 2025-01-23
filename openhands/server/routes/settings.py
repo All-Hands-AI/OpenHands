@@ -33,7 +33,8 @@ async def load_settings(request: Request) -> SettingsWithTokenMeta | None:
                 content={'error': 'Settings not found'},
             )
 
-        github_token = settings.github_token or request.state.github_token
+        logger.info(f'Loaded state: {request.state}')
+        github_token = request.state.github_token or settings.github_token
         settings_with_token_data = SettingsWithTokenMeta(
             **settings.model_dump(),
             github_token_is_set=bool(github_token),
@@ -68,35 +69,44 @@ async def store_settings(
                 content={'error': 'Invalid GitHub token'},
             )
 
-    settings_store = await SettingsStoreImpl.get_instance(config, get_user_id(request))
-    existing_settings = await settings_store.load()
+    try:
+        settings_store = await SettingsStoreImpl.get_instance(
+            config, get_user_id(request)
+        )
+        existing_settings = await settings_store.load()
 
-    if existing_settings:
-        # LLM key isn't on the frontend, so we need to keep it if unset
-        if settings.llm_api_key is None:
-            settings.llm_api_key = existing_settings.llm_api_key
+        if existing_settings:
+            # LLM key isn't on the frontend, so we need to keep it if unset
+            if settings.llm_api_key is None:
+                settings.llm_api_key = existing_settings.llm_api_key
 
-        if settings.github_token is None:
-            settings.github_token = existing_settings.github_token
+            if settings.github_token is None:
+                settings.github_token = existing_settings.github_token
 
-    response = JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'message': 'Settings stored'},
-    )
-
-    if settings.unset_github_token:
-        settings.github_token = None
-
-    # Update sandbox config with new settings
-    if settings.remote_runtime_resource_factor is not None:
-        config.sandbox.remote_runtime_resource_factor = (
-            settings.remote_runtime_resource_factor
+        response = JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings stored'},
         )
 
-    settings = convert_to_settings(settings)
+        if settings.unset_github_token:
+            settings.github_token = None
 
-    await settings_store.store(settings)
-    return response
+        # Update sandbox config with new settings
+        if settings.remote_runtime_resource_factor is not None:
+            config.sandbox.remote_runtime_resource_factor = (
+                settings.remote_runtime_resource_factor
+            )
+
+        settings = convert_to_settings(settings)
+
+        await settings_store.store(settings)
+        return response
+    except Exception as e:
+        logger.warning(f'Invalid token: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={'error': 'Invalid token'},
+        )
 
 
 def convert_to_settings(settings_with_token_data: SettingsWithTokenMeta) -> Settings:
