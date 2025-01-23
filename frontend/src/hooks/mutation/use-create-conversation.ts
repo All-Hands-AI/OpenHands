@@ -7,7 +7,6 @@ import { setInitialQuery } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import { useAuth } from "#/context/auth-context";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
-import { clearFiles, clearInitialQuery } from "#/state/initial-query-slice";
 import { addUserMessage } from "#/state/chat-slice";
 
 export const useCreateConversation = () => {
@@ -32,14 +31,6 @@ export const useCreateConversation = () => {
       }
 
       if (variables.q) dispatch(setInitialQuery(variables.q));
-      dispatch(
-        addUserMessage({
-          content: variables.q,
-          imageUrls: files,
-          timestamp: new Date().toISOString(),
-          pending: true,
-        }),
-      );
 
       return OpenHands.createConversation(
         gitHubToken || undefined,
@@ -55,8 +46,6 @@ export const useCreateConversation = () => {
         has_repository: !!selectedRepository,
         has_files: files.length > 0,
       });
-      dispatch(clearInitialQuery());
-      dispatch(clearFiles());
       await queryClient.invalidateQueries({
         queryKey: ["user", "conversations"],
       });

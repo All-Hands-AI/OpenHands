@@ -1,7 +1,7 @@
 import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet } from "react-router";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { FaServer } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
@@ -36,6 +36,8 @@ import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
 import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
+import { addUserMessage } from "#/state/chat-slice";
+import { clearFiles, clearInitialQuery } from "#/state/initial-query-slice";
 
 function AppContent() {
   useConversationConfig();
@@ -45,6 +47,9 @@ function AppContent() {
   const { conversationId } = useConversation();
   const { data: conversation, isFetched } = useUserConversation(
     conversationId || null,
+  );
+  const { initialQuery, files } = useSelector(
+    (state: RootState) => state.initialQuery,
   );
   const dispatch = useDispatch();
   const endSession = useEndSession();
@@ -74,6 +79,18 @@ function AppContent() {
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
+    if (conversationId && (initialQuery || files.length > 0)) {
+      dispatch(
+        addUserMessage({
+          content: initialQuery,
+          imageUrls: files,
+          timestamp: new Date().toISOString(),
+          pending: true,
+        }),
+      );
+      dispatch(clearInitialQuery());
+      dispatch(clearFiles());
+    }
   }, [conversationId]);
 
   useEffectOnce(() => {
