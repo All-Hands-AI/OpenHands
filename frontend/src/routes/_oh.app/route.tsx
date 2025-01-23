@@ -37,6 +37,7 @@ import { TerminalStatusLabel } from "#/components/features/terminal/terminal-sta
 import { useSettings } from "#/hooks/query/use-settings";
 import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 import { clearFiles, clearInitialQuery } from "#/state/initial-query-slice";
+import { RootState } from "#/store";
 
 function AppContent() {
   useConversationConfig();

@@ -2,10 +2,7 @@ import React from "react";
 import { useNavigation } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "#/store";
-import {
-  addFile,
-  removeFile,
-} from "#/state/initial-query-slice";
+import { addFile, removeFile } from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/features/suggestions/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
