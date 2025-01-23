@@ -30,8 +30,7 @@ describe("ConversationCard", () => {
 
     const card = screen.getByTestId("conversation-card");
     const title = within(card).getByTestId("conversation-card-title");
-
-    expect(title).toHaveValue("Conversation 1");
+    expect(title).toHaveTextContent("Conversation 1");
     within(card).getByText(expectedDate);
   });
 
@@ -132,23 +131,25 @@ describe("ConversationCard", () => {
       />,
     );
 
-    const title = screen.getByTestId("conversation-card-title");
-    expect(title).toBeDisabled();
+    let title = screen.getByTestId("conversation-card-title");
+    expect(title).toHaveTextContent("Conversation 1");
 
     await clickOnEditButton(user);
+    const titleInput = screen.getByTestId("conversation-card-title-input");
 
-    expect(title).toBeEnabled();
+    expect(titleInput).toBeEnabled();
     expect(screen.queryByTestId("context-menu")).not.toBeInTheDocument();
     // expect to be focused
     expect(document.activeElement).toBe(title);
 
-    await user.clear(title);
-    await user.type(title, "New Conversation Name   ");
+    await user.clear(titleInput);
+    await user.type(titleInput, "New Conversation Name   ");
+    // hit enter key
     await user.tab();
 
     expect(onChangeTitle).toHaveBeenCalledWith("New Conversation Name");
-    expect(title).toHaveValue("New Conversation Name");
-    expect(title).toBeDisabled();
+    title = screen.getByTestId("conversation-card-title");
+    expect(title).toHaveTextContent("New Conversation Name");
   });
 
   it("should reset title and not call onChangeTitle when the title is empty", async () => {
@@ -167,7 +168,7 @@ describe("ConversationCard", () => {
 
     await clickOnEditButton(user);
 
-    const title = screen.getByTestId("conversation-card-title");
+    const title = screen.getByTestId("conversation-card-title-input");
 
     await user.clear(title);
     await user.tab();

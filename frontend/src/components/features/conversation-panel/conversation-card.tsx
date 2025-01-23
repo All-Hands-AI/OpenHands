@@ -110,14 +110,16 @@ export function ConversationCard({
           {titleMode !== "view" ? (
             <input
               ref={inputRef}
-              data-testid="conversation-card-title"
+              data-testid="conversation-card-title-input"
               onKeyUp={handleKeyUp}
               type="text"
               defaultValue={title}
               className="text-sm leading-6 font-semibold bg-transparent w-full"
             />
           ) : (
-            <h3 className="text-sm leading-6 font-semibold">{title}</h3>
+            <h3
+              data-testid="conversation-card-title"
+              className="text-sm leading-6 font-semibold">{title}</h3>
           )}
         </div>
 
