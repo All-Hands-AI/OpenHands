@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { ConversationCard } from "./conversation-card";
@@ -21,6 +21,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const { conversationId: cid } = useParams();
   const endSession = useEndSession();
   const ref = useClickOutsideElement<HTMLDivElement>(onClose);
+  const navigate = useNavigate();
 
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
     React.useState(false);
@@ -89,6 +90,9 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       {conversations?.map((conversation) => (
         <div key={conversation.conversation_id} onClick={onClose}>
           <ConversationCard
+            onClick={() => {
+              navigate(`/conversations/${conversation.conversation_id}`);
+            }}
             isActive={conversation.conversation_id === cid}
             onDelete={() => handleDeleteProject(conversation.conversation_id)}
             onChangeTitle={(title) =>

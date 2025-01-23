@@ -11,6 +11,7 @@ import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { cn } from "#/utils/utils";
 
 interface ConversationCardProps {
+  onClick?: () => void;
   onDelete?: () => void;
   onChangeTitle?: (title: string) => void;
   onDownloadWorkspace?: () => void;
@@ -24,6 +25,7 @@ interface ConversationCardProps {
 }
 
 export function ConversationCard({
+  onClick,
   onDelete,
   onChangeTitle,
   onDownloadWorkspace,
@@ -38,7 +40,6 @@ export function ConversationCard({
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
 
   const finishTitleChange = () => {
     if (inputRef.current?.value) {
@@ -81,7 +82,7 @@ export function ConversationCard({
       finishTitleChange();
       event.stopPropagation();
     } else {
-      navigate(`/conversations/${conversationID}`);
+      onClick();
     }
   };
 
