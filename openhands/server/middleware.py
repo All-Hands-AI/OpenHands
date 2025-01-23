@@ -147,7 +147,7 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         Attach the user's session based on the provided authentication token.
         """
         request.state.conversation = (
-            await shared.session_manager.attach_to_conversation(request.state.sid)
+            await shared.conversation_manager.attach_to_conversation(request.state.sid)
         )
         if not request.state.conversation:
             return JSONResponse(
@@ -160,7 +160,7 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         """
         Detach the user's session.
         """
-        await shared.session_manager.detach_from_conversation(
+        await shared.conversation_manager.detach_from_conversation(
             request.state.conversation
         )
 

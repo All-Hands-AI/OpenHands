@@ -12,7 +12,7 @@ from openhands.runtime import get_runtime_cls
 from openhands.server.auth import get_user_id
 from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.shared import config, session_manager
+from openhands.server.shared import config, conversation_manager
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_info import ConversationInfo
 from openhands.storage.data_models.conversation_info_result_set import (
@@ -94,7 +94,7 @@ async def _create_new_conversation(
     )
 
     logger.info(f'Starting agent loop for conversation {conversation_id}')
-    event_stream = await session_manager.maybe_start_agent_loop(
+    event_stream = await conversation_manager.maybe_start_agent_loop(
         conversation_id, conversation_init_data, user_id, initial_user_msg
     )
     try:
@@ -166,7 +166,7 @@ async def search_conversations(
         for conversation in conversation_metadata_result_set.results
         if hasattr(conversation, 'created_at')
     )
-    running_conversations = await session_manager.get_running_agent_loops(
+    running_conversations = await conversation_manager.get_running_agent_loops(
         get_user_id(request), set(conversation_ids)
     )
     result = ConversationInfoResultSet(
@@ -191,7 +191,7 @@ async def get_conversation(
     )
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
-        is_running = await session_manager.is_agent_loop_running(conversation_id)
+        is_running = await conversation_manager.is_agent_loop_running(conversation_id)
         conversation_info = await _get_conversation_info(metadata, is_running)
         return conversation_info
     except FileNotFoundError:
@@ -225,9 +225,9 @@ async def delete_conversation(
         await conversation_store.get_metadata(conversation_id)
     except FileNotFoundError:
         return False
-    is_running = await session_manager.is_agent_loop_running(conversation_id)
+    is_running = await conversation_manager.is_agent_loop_running(conversation_id)
     if is_running:
-        await session_manager.close_session(conversation_id)
+        await conversation_manager.close_session(conversation_id)
     runtime_cls = get_runtime_cls(config.runtime)
     await runtime_cls.delete(conversation_id)
     await conversation_store.delete_metadata(conversation_id)
