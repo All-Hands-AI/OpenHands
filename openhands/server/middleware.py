@@ -184,12 +184,12 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         return response
 
 
-class GitHubTokenMiddleware(BaseHTTPMiddleware):
+class GitHubTokenMiddleware(SessionMiddlewareInterface):
     def __init__(self, app, settings_store: SettingsStore):
-        super().__init__(app)
+        self.app = app
         self.settings_store_impl = settings_store
 
-    async def dispatch(self, request: Request, call_next: Callable):
+    async def __call__(self, request: Request, call_next: Callable):
         settings_store = await self.settings_store_impl.get_instance(
             shared.config, get_user_id(request)
         )
