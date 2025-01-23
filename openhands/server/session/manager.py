@@ -11,7 +11,7 @@ from openhands.core.config import AppConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
-from openhands.events.actions import MessageAction
+from openhands.events.action import MessageAction
 from openhands.events.stream import EventStream, session_exists
 from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
 from openhands.server.session.conversation import Conversation
