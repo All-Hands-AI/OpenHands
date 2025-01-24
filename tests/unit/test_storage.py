@@ -9,6 +9,8 @@ from typing import Dict, List, Optional
 from unittest import TestCase
 from unittest.mock import patch
 
+from google.api_core.exceptions import NotFound
+
 from openhands.storage.files import FileStore
 from openhands.storage.google_cloud import GoogleCloudFileStore
 from openhands.storage.local import LocalFileStore
@@ -73,6 +75,33 @@ class _StorageTest(ABC):
         store.delete('foo/bar/qux.txt')
         store.delete('foo/bar/quux.txt')
 
+    def test_directory_deletion(self):
+        store = self.get_store()
+        # Create a directory structure
+        store.write('foo/bar/baz.txt', 'Hello, world!')
+        store.write('foo/bar/qux.txt', 'Hello, world!')
+        store.write('foo/other.txt', 'Hello, world!')
+        store.write('foo/bar/subdir/file.txt', 'Hello, world!')
+        
+        # Verify initial structure
+        self.assertEqual(store.list(''), ['foo/'])
+        self.assertEqual(sorted(store.list('foo')), ['foo/bar/', 'foo/other.txt'])
+        self.assertEqual(sorted(store.list('foo/bar')), 
+                        ['foo/bar/baz.txt', 'foo/bar/qux.txt', 'foo/bar/subdir/'])
+        
+        # Delete a directory
+        store.delete('foo/bar')
+        
+        # Verify directory and its contents are gone, but other files remain
+        self.assertEqual(store.list(''), ['foo/'])
+        self.assertEqual(store.list('foo'), ['foo/other.txt'])
+        
+        # Delete root directory
+        store.delete('foo')
+        
+        # Verify everything is gone
+        self.assertEqual(store.list(''), [])
+
 
 class TestLocalFileStore(TestCase, _StorageTest):
     def setUp(self):
@@ -131,6 +160,8 @@ class _MockGoogleCloudBlob:
             return _MockGoogleCloudBlobWriter(self)
 
     def delete(self):
+        if self.name not in self.bucket.blobs_by_path:
+            raise NotFound('Blob not found')
         del self.bucket.blobs_by_path[self.name]
 
 
