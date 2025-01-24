@@ -60,26 +60,19 @@ class GoogleCloudFileStore(FileStore):
         return list(blobs)
 
     def delete(self, path: str) -> None:
+        # Sanitize path
         if not path or path == '/':
             path = ''
-        elif not path.endswith('/'):
-            # Try to delete as a single file first
-            try:
-                blob = self.bucket.blob(path)
-                try:
-                    blob.delete()
-                    return
-                except NotFound:
-                    # If not found, try as a directory by appending /
-                    path += '/'
-            except NotFound:
-                path += '/'
+        if path.endswith('/'):
+            path = path[:-1]
 
-        # Delete all blobs with the given path prefix (directory deletion)
-        blobs = self.bucket.list_blobs(prefix=path)
-        for blob in blobs:
-            try:
-                blob.delete()
-            except NotFound:
-                # Skip if blob was already deleted
-                continue
+        # Try to delete any child resources (Assume the path is a directory)
+        for blob in self.bucket.list_blobs(prefix=f'{path}/'):
+            blob.delete()
+
+        # Next try to delete item as a file
+        try:
+            blob = self.bucket.blob(path)
+            blob.delete()
+        except NotFound:
+            pass

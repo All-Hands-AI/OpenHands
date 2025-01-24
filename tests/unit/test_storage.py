@@ -260,17 +260,7 @@ class _MockS3Client:
                 },
                 'DeleteObject',
             )
-        if Key not in self.objects_by_bucket[Bucket]:
-            raise botocore.exceptions.ClientError(
-                {
-                    'Error': {
-                        'Code': 'NoSuchKey',
-                        'Message': f"The specified key '{Key}' does not exist",
-                    }
-                },
-                'DeleteObject',
-            )
-        del self.objects_by_bucket[Bucket][Key]
+        self.objects_by_bucket[Bucket].pop(Key, None)
 
 
 @dataclass
