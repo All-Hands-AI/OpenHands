@@ -96,19 +96,25 @@ class S3FileStore(FileStore):
         return list(results)
 
     def delete(self, path: str) -> None:
-        list_path = path
-        if not list_path or list_path == '/':
+        if not path or path == '/':
             path = ''
-        elif not list_path.endswith('/'):
-            path += '/'
         try:
-            # First we try and delete any child resources
+            # First try to delete as a single file
+            if not path.endswith('/'):
+                try:
+                    self.client.delete_object(Bucket=self.bucket, Key=path)
+                    return
+                except botocore.exceptions.ClientError as e:
+                    if e.response['Error']['Code'] != 'NoSuchKey':
+                        raise
+                    # If not found as a file, try as a directory
+                    path = f"{path}/"
+
+            # Delete all objects with this prefix (directory deletion)
             response = self.client.list_objects_v2(Bucket=self.bucket, Prefix=path)
             for content in response.get('Contents') or []:
                 self.client.delete_object(Bucket=self.bucket, Key=content['Key'])
 
-            # Then we delete the main resource
-            self.client.delete_object(Bucket=self.bucket, Key=path)
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] == 'NoSuchBucket':
                 raise FileNotFoundError(
