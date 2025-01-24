@@ -1,6 +1,7 @@
 from urllib.parse import parse_qs
 
 import jwt
+from pydantic import SecretStr
 from socketio.exceptions import ConnectionRefusedError
 
 from openhands.core.logger import openhands_logger as logger
@@ -15,7 +16,7 @@ from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
-from openhands.server.shared import config, openhands_config, session_manager, sio
+from openhands.server.shared import config, conversation_manager, openhands_config, sio
 from openhands.server.types import AppMode
 
 
@@ -37,7 +38,15 @@ async def connect(connection_id: str, environ, auth):
         if not signed_token:
             logger.error('No github_auth cookie')
             raise ConnectionRefusedError('No github_auth cookie')
-        decoded = jwt.decode(signed_token, config.jwt_secret, algorithms=['HS256'])
+        if not config.jwt_secret:
+            raise RuntimeError('JWT secret not found')
+
+        jwt_secret = (
+            config.jwt_secret.get_secret_value()
+            if isinstance(config.jwt_secret, SecretStr)
+            else config.jwt_secret
+        )
+        decoded = jwt.decode(signed_token, jwt_secret, algorithms=['HS256'])
         user_id = decoded['github_user_id']
 
         logger.info(f'User {user_id} is connecting to conversation {conversation_id}')
@@ -61,7 +70,7 @@ async def connect(connection_id: str, environ, auth):
             'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
         )
 
-    event_stream = await session_manager.join_conversation(
+    event_stream = await conversation_manager.join_conversation(
         conversation_id, connection_id, settings, user_id
     )
 
@@ -88,10 +97,10 @@ async def connect(connection_id: str, environ, auth):
 
 @sio.event
 async def oh_action(connection_id: str, data: dict):
-    await session_manager.send_to_event_stream(connection_id, data)
+    await conversation_manager.send_to_event_stream(connection_id, data)
 
 
 @sio.event
 async def disconnect(connection_id: str):
     logger.info(f'sio:disconnect:{connection_id}')
-    await session_manager.disconnect_from_session(connection_id)
+    await conversation_manager.disconnect_from_session(connection_id)
