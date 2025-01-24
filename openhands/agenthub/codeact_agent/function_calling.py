@@ -502,15 +502,14 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
                     )
                 # convert is_input to boolean
-                if 'is_input' in arguments:
-                    arguments['is_input'] = arguments['is_input'] == 'true'
-                action = CmdRunAction(**arguments)
+                is_input = arguments.get('is_input', 'false') == 'true'
+                action = CmdRunAction(command=arguments['command'], is_input=is_input)
             elif tool_call.function.name == 'execute_ipython_cell':
                 if 'code' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
-                action = IPythonRunCellAction(**arguments)
+                action = IPythonRunCellAction(code=arguments['code'])
             elif tool_call.function.name == 'delegate_to_browsing_agent':
                 action = AgentDelegateAction(
                     agent='BrowsingAgent',
@@ -527,7 +526,12 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     raise FunctionCallValidationError(
                         f'Missing required argument "content" in tool call {tool_call.function.name}'
                     )
-                action = FileEditAction(**arguments)
+                action = FileEditAction(
+                    path=arguments['path'],
+                    content=arguments['content'],
+                    start=arguments.get('start', 1),
+                    end=arguments.get('end', -1),
+                )
             elif tool_call.function.name == 'str_replace_editor':
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
