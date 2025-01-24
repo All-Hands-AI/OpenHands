@@ -50,10 +50,10 @@ export function ConversationCard({
     setTitleMode("view");
   };
 
-  const handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter") {
-      finishTitleChange();
-    }
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    finishTitleChange();
   };
 
   const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -106,14 +106,15 @@ export function ConversationCard({
         <div className="flex items-center gap-2 w-full">
           {isActive && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
           {titleMode !== "view" ? (
-            <input
-              ref={inputRef}
-              data-testid="conversation-card-title-input"
-              onKeyUp={handleKeyUp}
-              type="text"
-              defaultValue={title}
-              className="text-sm leading-6 font-semibold bg-transparent w-full"
-            />
+            <form onSubmit={handleSubmit}>
+              <input
+                ref={inputRef}
+                data-testid="conversation-card-title-input"
+                type="text"
+                defaultValue={title}
+                className="text-sm leading-6 font-semibold bg-transparent w-full"
+              />
+            </form>
           ) : (
             <h3
               data-testid="conversation-card-title"
