@@ -12,7 +12,10 @@ from litellm import (
     ModelResponse,
 )
 
-from openhands.core.exceptions import FunctionCallNotExistsError
+from openhands.core.exceptions import (
+    FunctionCallNotExistsError,
+    FunctionCallValidationError,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
@@ -494,14 +497,19 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     f'Failed to parse tool call arguments: {tool_call.function.arguments}'
                 ) from e
             if tool_call.function.name == 'execute_bash':
-                # this is an LLM error: add empty command to avoid breaking the tool call
                 if 'command' not in arguments:
-                    arguments['command'] = ''
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "command" in tool call {tool_call.function.name}'
+                    )
                 # convert is_input to boolean
                 if 'is_input' in arguments:
                     arguments['is_input'] = arguments['is_input'] == 'true'
                 action = CmdRunAction(**arguments)
             elif tool_call.function.name == 'execute_ipython_cell':
+                if 'code' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "code" in tool call {tool_call.function.name}'
+                    )
                 action = IPythonRunCellAction(**arguments)
             elif tool_call.function.name == 'delegate_to_browsing_agent':
                 action = AgentDelegateAction(
@@ -511,8 +519,44 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             elif tool_call.function.name == 'finish':
                 action = AgentFinishAction()
             elif tool_call.function.name == 'edit_file':
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+                if 'content' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "content" in tool call {tool_call.function.name}'
+                    )
                 action = FileEditAction(**arguments)
             elif tool_call.function.name == 'str_replace_editor':
+                if 'command' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "command" in tool call {tool_call.function.name}'
+                    )
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+                # Check additional required arguments based on command
+                if arguments['command'] == 'create' and 'file_text' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "file_text" for command "create" in tool call {tool_call.function.name}'
+                    )
+                if arguments['command'] == 'str_replace':
+                    if 'old_str' not in arguments:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "old_str" for command "str_replace" in tool call {tool_call.function.name}'
+                        )
+                if arguments['command'] == 'insert':
+                    if 'new_str' not in arguments:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "new_str" for command "insert" in tool call {tool_call.function.name}'
+                        )
+                    if 'insert_line' not in arguments:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "insert_line" for command "insert" in tool call {tool_call.function.name}'
+                        )
+
                 # We implement this in agent_skills, which can be used via Jupyter
                 # convert tool_call.function.arguments to kwargs that can be passed to file_editor
                 code = f'print(file_editor(**{arguments}))'
@@ -534,8 +578,16 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         impl_source=FileEditSource.OH_ACI,
                     )
             elif tool_call.function.name == 'browser':
+                if 'code' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "code" in tool call {tool_call.function.name}'
+                    )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
             elif tool_call.function.name == 'web_read':
+                if 'url' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "url" in tool call {tool_call.function.name}'
+                    )
                 action = BrowseURLAction(url=arguments['url'])
             else:
                 raise FunctionCallNotExistsError(
