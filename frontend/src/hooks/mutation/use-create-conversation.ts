@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import posthog from "posthog-js";
 import { useDispatch, useSelector } from "react-redux";
 import OpenHands from "#/api/open-hands";
-import { setInitialQuery } from "#/state/initial-query-slice";
+import { setInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 
 export const useCreateConversation = () => {
@@ -16,7 +16,7 @@ export const useCreateConversation = () => {
   );
 
   return useMutation({
-    mutationFn: (variables: { q?: string }) => {
+    mutationFn: async (variables: { q?: string }) => {
       if (
         !variables.q?.trim() &&
         !selectedRepository &&
@@ -26,8 +26,13 @@ export const useCreateConversation = () => {
         throw new Error("No query provided");
       }
 
-      if (variables.q) dispatch(setInitialQuery(variables.q));
-      return OpenHands.createConversation(selectedRepository || undefined);
+      if (variables.q) dispatch(setInitialPrompt(variables.q));
+
+      return OpenHands.createConversation(
+        selectedRepository || undefined,
+        variables.q,
+        files,
+      );
     },
     onSuccess: async ({ conversation_id: conversationId }, { q }) => {
       posthog.capture("initial_query_submitted", {

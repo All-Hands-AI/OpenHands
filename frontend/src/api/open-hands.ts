@@ -243,9 +243,13 @@ class OpenHands {
 
   static async createConversation(
     selectedRepository?: string,
+    initialUserMsg?: string,
+    imageUrls?: string[],
   ): Promise<Conversation> {
     const body = {
       selected_repository: selectedRepository,
+      initial_user_msg: initialUserMsg,
+      image_urls: imageUrls,
     };
 
     const { data } = await openHands.post<Conversation>(
