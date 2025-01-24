@@ -5582,15 +5582,17 @@ realtime = ["websockets (>=13,<15)"]
 
 [[package]]
 name = "openhands-aci"
-version = "0.1.8"
+version = "0.1.9"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
-python-versions = "^3.12"
-files = []
-develop = false
+python-versions = "<4.0,>=3.12"
+files = [
+    {file = "openhands_aci-0.1.9-py3-none-any.whl", hash = "sha256:62af189878db046aa98475a41fa01200efd5ddf1db8a435c38da3d4ad32cb11a"},
+    {file = "openhands_aci-0.1.9.tar.gz", hash = "sha256:690d33d355a3e4111f52861dbb96ff766b5a268202324a87c94ba67b628a63b1"},
+]
 
 [package.dependencies]
-diskcache = "^5.6.3"
+diskcache = ">=5.6.3,<6.0.0"
 flake8 = "*"
 gitpython = "*"
 grep-ast = "0.3.3"
@@ -5600,13 +5602,7 @@ numpy = "*"
 pandas = "*"
 scipy = "*"
 tree-sitter = "0.21.3"
-whatthepatch = "^1.0.6"
-
-[package.source]
-type = "git"
-url = "https://github.com/All-Hands-AI/openhands-aci.git"
-reference = "fix-find-show-only-hidden-subpaths"
-resolved_reference = "910e8c470aff0e496bf262bc673c7ee7b4531159"
+whatthepatch = ">=1.0.6,<2.0.0"
 
 [[package]]
 name = "opentelemetry-api"
@@ -10120,4 +10116,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "6b74056694bdc84a4583c2f93a5b218f15688827cb59e289eb83331045a1582e"
+content-hash = "fbca4b2ca0fe2d1d3cac46164c0c1eb9e468dc6f6bc7165e9a3d62ea9f25d801"
