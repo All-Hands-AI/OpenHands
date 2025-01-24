@@ -184,7 +184,9 @@ class IssueHandler(IssueHandlerInterface):
         for file_url, file_name in attachments:
             content = self._download_attachment(file_url)
             if content:
-                attachment_contexts.append(f"Content of attached file '{file_name}':\n{content}")
+                attachment_contexts.append(
+                    f"Content of attached file '{file_name}':\n{content}"
+                )
 
         return '\n\n'.join(attachment_contexts)
 
@@ -279,7 +281,7 @@ class IssueHandler(IssueHandlerInterface):
         # Format issues string with both the issue body and attachments
         issues_str = issue.body
         if attachments_context:
-            issues_str += f"\n\nAttached Files:\n{attachments_context}"
+            issues_str += f'\n\nAttached Files:\n{attachments_context}'
 
         # Add attachments from closing issues if any
         if issue.closing_issues:
@@ -289,7 +291,9 @@ class IssueHandler(IssueHandlerInterface):
             for closing_issue in issue.closing_issues:
                 closing_attachments = self._get_attachments_context(closing_issue)
                 if closing_attachments:
-                    closing_issues_str += f"\n\nAttached Files from Referenced Issue:\n{closing_attachments}"
+                    closing_issues_str += (
+                        f'\n\nAttached Files from Referenced Issue:\n{closing_attachments}'
+                    )
             issues_str += f'\n\n{closing_issues_str}'
 
         template = jinja2.Template(prompt_template)
