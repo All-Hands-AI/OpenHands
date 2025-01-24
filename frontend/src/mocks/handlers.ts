@@ -141,7 +141,7 @@ export const handlers = [
       { id: 2, full_name: "octocat/earth" },
     ]),
   ),
-  http.get("https://api.github.com/user", () => {
+  http.get("/api/github/user", () => {
     const user: GitHubUser = {
       id: 1,
       login: "octocat",
