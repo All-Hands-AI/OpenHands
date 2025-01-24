@@ -154,6 +154,40 @@ class IssueHandler(IssueHandlerInterface):
 
         return all_comments if all_comments else None
 
+    def _extract_attachments(self, issue_body: str) -> list[tuple[str, str]]:
+        """Extract text file attachments from issue body.
+        Returns a list of tuples (file_url, file_name)."""
+        # Match Markdown links that end in .txt, .md, or other text file extensions
+        text_file_pattern = r'\[([^\]]+)\]\((https?://[^\s)]+\.(?:txt|md|log|py|js|json|yaml|yml|xml|csv))\)'
+        matches = re.findall(text_file_pattern, issue_body)
+        return [(url, name) for name, url in matches]
+
+    def _download_attachment(self, file_url: str) -> str | None:
+        """Download a text file attachment and return its contents."""
+        try:
+            headers = {
+                'Authorization': f'token {self.token}',
+                'Accept': 'application/vnd.github.v3.raw',
+            }
+            response = requests.get(file_url, headers=headers)
+            response.raise_for_status()
+            return response.text
+        except requests.exceptions.RequestException as e:
+            logger.warning(f'Failed to download attachment {file_url}: {str(e)}')
+            return None
+
+    def _get_attachments_context(self, issue_body: str) -> str:
+        """Get context from text file attachments in the issue."""
+        attachments = self._extract_attachments(issue_body)
+        attachment_contexts = []
+
+        for file_url, file_name in attachments:
+            content = self._download_attachment(file_url)
+            if content:
+                attachment_contexts.append(f"Content of attached file '{file_name}':\n{content}")
+
+        return '\n\n'.join(attachment_contexts)
+
     def get_converted_issues(
         self, issue_numbers: list[int] | None = None, comment_id: int | None = None
     ) -> list[GithubIssue]:
@@ -239,10 +273,29 @@ class IssueHandler(IssueHandlerInterface):
         images.extend(self._extract_image_urls(issue.body))
         images.extend(self._extract_image_urls(thread_context))
 
+        # Get context from attachments
+        attachments_context = self._get_attachments_context(issue.body)
+        
+        # Format issues string with both the issue body and attachments
+        issues_str = issue.body
+        if attachments_context:
+            issues_str += f"\n\nAttached Files:\n{attachments_context}"
+
+        # Add attachments from closing issues if any
+        if issue.closing_issues:
+            closing_issues_str = '\n\n'.join(
+                [f'Referenced Issue:\n{issue}' for issue in issue.closing_issues]
+            )
+            for closing_issue in issue.closing_issues:
+                closing_attachments = self._get_attachments_context(closing_issue)
+                if closing_attachments:
+                    closing_issues_str += f"\n\nAttached Files from Referenced Issue:\n{closing_attachments}"
+            issues_str += f'\n\n{closing_issues_str}'
+
         template = jinja2.Template(prompt_template)
         return (
             template.render(
-                body=issue.title + '\n\n' + issue.body + thread_context,
+                issues=issues_str,
                 repo_instruction=repo_instruction,
             ),
             images,
