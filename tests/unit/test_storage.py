@@ -207,13 +207,23 @@ class _MockS3Client:
     def get_object(self, Bucket: str, Key: str) -> Dict:
         if Bucket not in self.objects_by_bucket:
             raise botocore.exceptions.ClientError(
-                {'Error': {'Code': 'NoSuchBucket', 'Message': f"The bucket '{Bucket}' does not exist"}},
-                'GetObject'
+                {
+                    'Error': {
+                        'Code': 'NoSuchBucket',
+                        'Message': f"The bucket '{Bucket}' does not exist",
+                    }
+                },
+                'GetObject',
             )
         if Key not in self.objects_by_bucket[Bucket]:
             raise botocore.exceptions.ClientError(
-                {'Error': {'Code': 'NoSuchKey', 'Message': f"The specified key '{Key}' does not exist"}},
-                'GetObject'
+                {
+                    'Error': {
+                        'Code': 'NoSuchKey',
+                        'Message': f"The specified key '{Key}' does not exist",
+                    }
+                },
+                'GetObject',
             )
         content = self.objects_by_bucket[Bucket][Key].content
         if isinstance(content, bytes):
@@ -223,12 +233,18 @@ class _MockS3Client:
     def list_objects_v2(self, Bucket: str, Prefix: str = '') -> Dict:
         if Bucket not in self.objects_by_bucket:
             raise botocore.exceptions.ClientError(
-                {'Error': {'Code': 'NoSuchBucket', 'Message': f"The bucket '{Bucket}' does not exist"}},
-                'ListObjectsV2'
+                {
+                    'Error': {
+                        'Code': 'NoSuchBucket',
+                        'Message': f"The bucket '{Bucket}' does not exist",
+                    }
+                },
+                'ListObjectsV2',
             )
         objects = self.objects_by_bucket[Bucket]
         contents = [
-            {'Key': key} for key in objects.keys()
+            {'Key': key}
+            for key in objects.keys()
             if not Prefix or key.startswith(Prefix)
         ]
         return {'Contents': contents} if contents else {}
@@ -236,13 +252,23 @@ class _MockS3Client:
     def delete_object(self, Bucket: str, Key: str) -> None:
         if Bucket not in self.objects_by_bucket:
             raise botocore.exceptions.ClientError(
-                {'Error': {'Code': 'NoSuchBucket', 'Message': f"The bucket '{Bucket}' does not exist"}},
-                'DeleteObject'
+                {
+                    'Error': {
+                        'Code': 'NoSuchBucket',
+                        'Message': f"The bucket '{Bucket}' does not exist",
+                    }
+                },
+                'DeleteObject',
             )
         if Key not in self.objects_by_bucket[Bucket]:
             raise botocore.exceptions.ClientError(
-                {'Error': {'Code': 'NoSuchKey', 'Message': f"The specified key '{Key}' does not exist"}},
-                'DeleteObject'
+                {
+                    'Error': {
+                        'Code': 'NoSuchKey',
+                        'Message': f"The specified key '{Key}' does not exist",
+                    }
+                },
+                'DeleteObject',
             )
         del self.objects_by_bucket[Bucket][Key]
 
