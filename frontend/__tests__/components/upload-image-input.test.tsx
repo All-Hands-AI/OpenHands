@@ -2,6 +2,13 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { UploadImageInput } from "#/components/features/images/upload-image-input";
+import { toast } from "#/utils/toast";
+
+vi.mock("#/utils/toast", () => ({
+  toast: {
+    error: vi.fn(),
+  },
+}));
 
 describe("UploadImageInput", () => {
   const user = userEvent.setup();
@@ -41,17 +48,37 @@ describe("UploadImageInput", () => {
     expect(onUploadMock).toHaveBeenNthCalledWith(1, files);
   });
 
-  it("should not upload any file that is not an image", async () => {
+  it("should show error and not upload unsupported image types", async () => {
     render(<UploadImageInput onUpload={onUploadMock} />);
 
-    const file = new File(["(⌐□_□)"], "chucknorris.txt", {
-      type: "text/plain",
+    const file = new File(["(⌐□_□)"], "chucknorris.bmp", {
+      type: "image/bmp",
     });
     const input = screen.getByTestId("upload-image-input");
 
     await user.upload(input, file);
 
     expect(onUploadMock).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith(
+      expect.stringContaining("Only JPEG, PNG, GIF, and WebP images are supported")
+    );
+  });
+
+  it("should handle mix of supported and unsupported image types", async () => {
+    render(<UploadImageInput onUpload={onUploadMock} />);
+
+    const files = [
+      new File(["(⌐□_□)"], "valid.png", { type: "image/png" }),
+      new File(["(⌐□_□)"], "invalid.bmp", { type: "image/bmp" }),
+    ];
+    const input = screen.getByTestId("upload-image-input");
+
+    await user.upload(input, files);
+
+    expect(onUploadMock).toHaveBeenCalledWith([files[0]]);
+    expect(toast.error).toHaveBeenCalledWith(
+      expect.stringContaining("Only JPEG, PNG, GIF, and WebP images are supported")
+    );
   });
 
   it("should render custom labels", () => {

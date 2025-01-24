@@ -5,6 +5,8 @@ import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { SubmitButton } from "#/components/shared/buttons/submit-button";
 import { StopButton } from "#/components/shared/buttons/stop-button";
+import { getValidImageFiles } from "#/utils/validate-image-type";
+import { toast } from "#/utils/toast";
 
 interface ChatInputProps {
   name?: string;
@@ -46,13 +48,22 @@ export function ChatInput({
   const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
     // Only handle paste if we have an image paste handler and there are files
     if (onImagePaste && event.clipboardData.files.length > 0) {
-      const files = Array.from(event.clipboardData.files).filter((file) =>
-        file.type.startsWith("image/"),
-      );
-      // Only prevent default if we found image files to handle
-      if (files.length > 0) {
+      const files = Array.from(event.clipboardData.files);
+      const { validFiles, invalidFiles } = getValidImageFiles(files);
+
+      if (invalidFiles.length > 0) {
+        toast.error(
+          t(I18nKey.UPLOAD$UNSUPPORTED_IMAGE_TYPE, {
+            count: invalidFiles.length,
+            files: invalidFiles.map((f) => f.name).join(", "),
+          })
+        );
+      }
+
+      // Only prevent default if we found valid image files to handle
+      if (validFiles.length > 0) {
         event.preventDefault();
-        onImagePaste(files);
+        onImagePaste(validFiles);
       }
     }
     // For text paste, let the default behavior handle it
@@ -74,11 +85,20 @@ export function ChatInput({
     event.preventDefault();
     setIsDraggingOver(false);
     if (onImagePaste && event.dataTransfer.files.length > 0) {
-      const files = Array.from(event.dataTransfer.files).filter((file) =>
-        file.type.startsWith("image/"),
-      );
-      if (files.length > 0) {
-        onImagePaste(files);
+      const files = Array.from(event.dataTransfer.files);
+      const { validFiles, invalidFiles } = getValidImageFiles(files);
+
+      if (invalidFiles.length > 0) {
+        toast.error(
+          t(I18nKey.UPLOAD$UNSUPPORTED_IMAGE_TYPE, {
+            count: invalidFiles.length,
+            files: invalidFiles.map((f) => f.name).join(", "),
+          })
+        );
+      }
+
+      if (validFiles.length > 0) {
+        onImagePaste(validFiles);
       }
     }
   };

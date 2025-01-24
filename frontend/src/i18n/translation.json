@@ -419,6 +419,22 @@
         "ja": "コードエディタ",
         "tr": "Kod Editörü"
     },
+    "UPLOAD$UNSUPPORTED_IMAGE_TYPE": {
+        "en": "Only JPEG, PNG, GIF, and WebP images are supported",
+        "zh-CN": "仅支持 JPEG、PNG、GIF 和 WebP 图片",
+        "de": "Nur JPEG-, PNG-, GIF- und WebP-Bilder werden unterstützt",
+        "ko-KR": "JPEG, PNG, GIF 및 WebP 이미지만 지원됩니다",
+        "no": "Kun JPEG, PNG, GIF og WebP bilder støttes",
+        "zh-TW": "僅支援 JPEG、PNG、GIF 和 WebP 圖片",
+        "ar": "يتم دعم صور JPEG و PNG و GIF و WebP فقط",
+        "fr": "Seules les images JPEG, PNG, GIF et WebP sont prises en charge",
+        "it": "Sono supportate solo immagini JPEG, PNG, GIF e WebP",
+        "pt": "Apenas imagens JPEG, PNG, GIF e WebP são suportadas",
+        "es": "Solo se admiten imágenes JPEG, PNG, GIF y WebP",
+        "ja": "JPEG、PNG、GIF、WebP画像のみがサポートされています",
+        "tr": "Yalnızca JPEG, PNG, GIF ve WebP görüntüleri desteklenir"
+    },
+
     "WORKSPACE$BROWSER_TAB_LABEL": {
         "en": "Browser",
         "zh-CN": "浏览器",
