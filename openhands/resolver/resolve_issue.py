@@ -307,7 +307,6 @@ async def resolve_issue(
     repo_instruction: str | None,
     issue_number: int,
     comment_id: int | None,
-    target_branch: str | None = None,
     reset_logger: bool = False,
 ) -> None:
     """Resolve a single github issue.
@@ -326,7 +325,7 @@ async def resolve_issue(
         repo_instruction: Repository instruction to use.
         issue_number: Issue number to resolve.
         comment_id: Optional ID of a specific comment to focus on.
-        target_branch: Optional target branch to create PR against (for PRs).
+
         reset_logger: Whether to reset the logger for multiprocessing.
     """
     issue_handler = issue_handler_factory(issue_type, owner, repo, token, llm_config)
@@ -424,9 +423,9 @@ async def resolve_issue(
     try:
         # checkout to pr branch if needed
         if issue_type == 'pr':
-            branch_to_use = target_branch if target_branch else issue.head_branch
+            branch_to_use = issue.head_branch
             logger.info(
-                f'Checking out to PR branch {target_branch} for issue {issue.number}'
+                f'Checking out to PR branch {branch_to_use} for issue {issue.number}'
             )
 
             if not branch_to_use:
@@ -445,10 +444,6 @@ async def resolve_issue(
                 checkout_cmd,
                 cwd=repo_dir,
             )
-
-            # Update issue's base_branch if using custom target branch
-            if target_branch:
-                issue.base_branch = target_branch
 
             base_commit = (
                 subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
@@ -644,7 +639,6 @@ def main():
             repo_instruction=repo_instruction,
             issue_number=my_args.issue_number,
             comment_id=my_args.comment_id,
-            target_branch=my_args.target_branch,
         )
     )
 
