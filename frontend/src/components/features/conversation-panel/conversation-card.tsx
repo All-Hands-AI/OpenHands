@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
 import {
@@ -17,7 +16,6 @@ interface ConversationCardProps {
   onDownloadWorkspace?: () => void;
   isActive?: boolean;
   title: string;
-  conversationID: string;
   selectedRepository: string | null;
   lastUpdatedAt: string; // ISO 8601
   status?: ProjectStatus;
@@ -31,7 +29,6 @@ export function ConversationCard({
   onDownloadWorkspace,
   isActive,
   title,
-  conversationID,
   selectedRepository,
   lastUpdatedAt,
   status = "STOPPED",

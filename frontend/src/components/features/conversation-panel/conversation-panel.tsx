@@ -102,7 +102,6 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
                 title,
               )
             }
-            conversationID={conversation.conversation_id}
             title={conversation.title}
             selectedRepository={conversation.selected_repository}
             lastUpdatedAt={conversation.last_updated_at}
