@@ -117,7 +117,7 @@ describe("ConversationCard", () => {
     expect(onDelete).toHaveBeenCalled();
   });
 
-  test("conversation title should call onChangeTitle when changed and blurred", async () => {
+  test("conversation title should call onChangeTitle when changed and enter is hit", async () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
