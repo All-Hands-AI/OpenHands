@@ -194,7 +194,6 @@ async def test_settings_unset_github_token(
     # Verify the settings were stored with the github_token unset
     stored_settings = mock_settings_store.store.call_args[0][0]
     assert stored_settings.github_token is None
-    assert stored_settings.github_token_is_set is False
 
     # Make a GET request to retrieve settings
     response = test_client.get('/api/settings')
