@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 import socketio
 
 from openhands.core.config import AppConfig
+from openhands.events.action import MessageAction
 from openhands.events.stream import EventStream
 from openhands.server.session.conversation import Conversation
 from openhands.server.settings import Settings
@@ -68,7 +69,7 @@ class ConversationManager(ABC):
         sid: str,
         settings: Settings,
         user_id: str | None,
-        initial_user_msg: str | None = None,
+        initial_user_msg: MessageAction | None = None,
     ) -> EventStream:
         """Start an event loop if one is not already running"""
 
