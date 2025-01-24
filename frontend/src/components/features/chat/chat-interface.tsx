@@ -1,8 +1,10 @@
 import { useDispatch, useSelector } from "react-redux";
+import toast from "react-hot-toast";
 import React from "react";
 import posthog from "posthog-js";
+import { useParams } from "react-router";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
-import { FeedbackActions } from "../feedback/feedback-actions";
+import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
 import { addUserMessage } from "#/state/chat-slice";
@@ -19,6 +21,8 @@ import { ActionSuggestions } from "./action-suggestions";
 import { ContinueButton } from "#/components/shared/buttons/continue-button";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
+import { downloadTrajectory } from "#/utils/download-files";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -45,8 +49,10 @@ export function ChatInterface() {
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
   const { selectedRepository, importedProjectZip } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
+  const params = useParams();
+  const { mutate: getTrajectory } = useGetTrajectory();
 
   const handleSendMessage = async (content: string, files: File[]) => {
     if (messages.length === 0) {
@@ -90,6 +96,25 @@ export function ChatInterface() {
     setFeedbackPolarity(polarity);
   };
 
+  const onClickExportTrajectoryButton = () => {
+    if (!params.conversationId) {
+      toast.error("ConversationId unknown, cannot download trajectory");
+      return;
+    }
+
+    getTrajectory(params.conversationId, {
+      onSuccess: async (data) => {
+        await downloadTrajectory(
+          params.conversationId ?? "unknown",
+          data.trajectory,
+        );
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    });
+  };
+
   const isWaitingForUserInput =
     curAgentState === AgentState.AWAITING_USER_INPUT ||
     curAgentState === AgentState.FINISHED;
@@ -129,13 +154,14 @@ export function ChatInterface() {
 
       <div className="flex flex-col gap-[6px] px-4 pb-4">
         <div className="flex justify-between relative">
-          <FeedbackActions
+          <TrajectoryActions
             onPositiveFeedback={() =>
               onClickShareFeedbackActionButton("positive")
             }
             onNegativeFeedback={() =>
               onClickShareFeedbackActionButton("negative")
             }
+            onExportTrajectory={() => onClickExportTrajectoryButton()}
           />
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
@@ -154,7 +180,8 @@ export function ChatInterface() {
           onStop={handleStop}
           isDisabled={
             curAgentState === AgentState.LOADING ||
-            curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+            curAgentState === AgentState.AWAITING_USER_CONFIRMATION ||
+            curAgentState === AgentState.RATE_LIMITED
           }
           mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
           value={messageToSend ?? undefined}

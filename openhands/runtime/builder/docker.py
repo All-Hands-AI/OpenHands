@@ -26,6 +26,17 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         self.rolling_logger = RollingLogger(max_lines=10)
 
+    @staticmethod
+    def check_buildx():
+        """Check if Docker Buildx is available"""
+        try:
+            result = subprocess.run(
+                ['docker', 'buildx', 'version'], capture_output=True, text=True
+            )
+            return result.returncode == 0
+        except FileNotFoundError:
+            return False
+
     def build(
         self,
         path: str,
@@ -61,6 +72,38 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             raise AgentRuntimeBuildError(
                 'Docker server version must be >= 18.09 to use BuildKit'
             )
+
+        if not DockerRuntimeBuilder.check_buildx():
+            # when running openhands in a container, there might not be a "docker"
+            # binary available, in which case we need to download docker binary.
+            # since the official openhands app image is built from debian, we use
+            # debian way to install docker binary
+            logger.info(
+                'No docker binary available inside openhands-app container, trying to download online...'
+            )
+            commands = [
+                'apt-get update',
+                'apt-get install -y ca-certificates curl gnupg',
+                'install -m 0755 -d /etc/apt/keyrings',
+                'curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc',
+                'chmod a+r /etc/apt/keyrings/docker.asc',
+                'echo \
+                  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+                  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+                  tee /etc/apt/sources.list.d/docker.list > /dev/null',
+                'apt-get update',
+                'apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin',
+            ]
+            for cmd in commands:
+                try:
+                    subprocess.run(
+                        cmd, shell=True, check=True, stdout=subprocess.DEVNULL
+                    )
+                except subprocess.CalledProcessError as e:
+                    logger.error(f'Image build failed:\n{e}')
+                    logger.error(f'Command output:\n{e.output}')
+                    raise
+            logger.info('Downloaded and installed docker binary')
 
         target_image_hash_name = tags[0]
         target_image_repo, target_image_source_tag = target_image_hash_name.split(':')

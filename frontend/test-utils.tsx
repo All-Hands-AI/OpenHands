@@ -3,17 +3,15 @@
 import React, { PropsWithChildren } from "react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { RenderOptions, render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { I18nextProvider } from "react-i18next";
+import { I18nextProvider, initReactI18next } from "react-i18next";
 import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
-import { AppStore, RootState, rootReducer } from "./src/store";
 import { vi } from "vitest";
+import { AppStore, RootState, rootReducer } from "./src/store";
 import { AuthProvider } from "#/context/auth-context";
-import { UserPrefsProvider } from "#/context/user-prefs-context";
 import { ConversationProvider } from "#/context/conversation-context";
+import { SettingsProvider } from "#/context/settings-context";
 
 // Mock useParams before importing components
 vi.mock("react-router", async () => {
@@ -26,22 +24,20 @@ vi.mock("react-router", async () => {
 });
 
 // Initialize i18n for tests
-i18n
-  .use(initReactI18next)
-  .init({
-    lng: "en",
-    fallbackLng: "en",
-    ns: ["translation"],
-    defaultNS: "translation",
-    resources: {
-      en: {
-        translation: {},
-      },
+i18n.use(initReactI18next).init({
+  lng: "en",
+  fallbackLng: "en",
+  ns: ["translation"],
+  defaultNS: "translation",
+  resources: {
+    en: {
+      translation: {},
     },
-    interpolation: {
-      escapeValue: false,
-    },
-  });
+  },
+  interpolation: {
+    escapeValue: false,
+  },
+});
 
 const setupStore = (preloadedState?: Partial<RootState>): AppStore =>
   configureStore({
@@ -67,20 +63,24 @@ export function renderWithProviders(
     ...renderOptions
   }: ExtendedRenderOptions = {},
 ) {
-  function Wrapper({ children }: PropsWithChildren<object>): JSX.Element {
+  function Wrapper({ children }: PropsWithChildren) {
     return (
       <Provider store={store}>
-        <UserPrefsProvider>
-          <AuthProvider>
-            <ConversationProvider>
-              <QueryClientProvider client={new QueryClient()}>
-                <I18nextProvider i18n={i18n}>
-                    {children}
-                </I18nextProvider>
-              </QueryClientProvider>
-            </ConversationProvider>
-          </AuthProvider>
-        </UserPrefsProvider>
+        <AuthProvider>
+          <QueryClientProvider
+            client={
+              new QueryClient({
+                defaultOptions: { queries: { retry: false } },
+              })
+            }
+          >
+            <SettingsProvider>
+              <ConversationProvider>
+                <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+              </ConversationProvider>
+            </SettingsProvider>
+          </QueryClientProvider>
+        </AuthProvider>
       </Provider>
     );
   }

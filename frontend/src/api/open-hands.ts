@@ -8,8 +8,12 @@ import {
   GetConfigResponse,
   GetVSCodeUrlResponse,
   AuthenticateResponse,
+  Conversation,
+  ResultSet,
+  GetTrajectoryResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
+import { ApiSettings } from "#/services/settings";
 
 class OpenHands {
   /**
@@ -219,6 +223,54 @@ class OpenHands {
     return data;
   }
 
+  static async getUserConversations(): Promise<Conversation[]> {
+    const { data } = await openHands.get<ResultSet<Conversation>>(
+      "/api/conversations?limit=9",
+    );
+    return data.results;
+  }
+
+  static async deleteUserConversation(conversationId: string): Promise<void> {
+    await openHands.delete(`/api/conversations/${conversationId}`);
+  }
+
+  static async updateUserConversation(
+    conversationId: string,
+    conversation: Partial<Omit<Conversation, "conversation_id">>,
+  ): Promise<void> {
+    await openHands.patch(`/api/conversations/${conversationId}`, conversation);
+  }
+
+  static async createConversation(
+    githubToken?: string,
+    selectedRepository?: string,
+  ): Promise<Conversation> {
+    const body = {
+      github_token: githubToken,
+      selected_repository: selectedRepository,
+    };
+
+    const { data } = await openHands.post<Conversation>(
+      "/api/conversations",
+      body,
+    );
+
+    // TODO: remove this once we have a multi-conversation UI
+    localStorage.setItem("latest_conversation_id", data.conversation_id);
+
+    return data;
+  }
+
+  static async getConversation(
+    conversationId: string,
+  ): Promise<Conversation | null> {
+    const { data } = await openHands.get<Conversation | null>(
+      `/api/conversations/${conversationId}`,
+    );
+
+    return data;
+  }
+
   static async searchEvents(
     conversationId: string,
     params: {
@@ -248,18 +300,68 @@ class OpenHands {
     return data;
   }
 
-  static async newConversation(params: {
-    githubToken?: string;
-    args?: Record<string, unknown>;
-    selectedRepository?: string;
-  }): Promise<{ conversation_id: string }> {
-    const { data } = await openHands.post<{
-      conversation_id: string;
-    }>("/api/conversations", {
-      github_token: params.githubToken,
-      args: params.args,
-      selected_repository: params.selectedRepository,
-    });
+  /**
+   * Get the settings from the server or use the default settings if not found
+   */
+  static async getSettings(): Promise<ApiSettings> {
+    const { data } = await openHands.get<ApiSettings>("/api/settings");
+    return data;
+  }
+
+  /**
+   * Save the settings to the server. Only valid settings are saved.
+   * @param settings - the settings to save
+   */
+  static async saveSettings(settings: Partial<ApiSettings>): Promise<boolean> {
+    const data = await openHands.post("/api/settings", settings);
+    return data.status === 200;
+  }
+
+  static async getGitHubUser(): Promise<GitHubUser> {
+    const response = await openHands.get<GitHubUser>("/api/github/user");
+
+    const { data } = response;
+
+    const user: GitHubUser = {
+      id: data.id,
+      login: data.login,
+      avatar_url: data.avatar_url,
+      company: data.company,
+      name: data.name,
+      email: data.email,
+    };
+
+    return user;
+  }
+
+  static async getGitHubUserInstallationIds(): Promise<number[]> {
+    const response = await openHands.get<number[]>("/api/github/installations");
+    return response.data;
+  }
+
+  static async searchGitHubRepositories(
+    query: string,
+    per_page = 5,
+  ): Promise<GitHubRepository[]> {
+    const response = await openHands.get<{ items: GitHubRepository[] }>(
+      "/api/github/search/repositories",
+      {
+        params: {
+          query,
+          per_page,
+        },
+      },
+    );
+
+    return response.data.items;
+  }
+
+  static async getTrajectory(
+    conversationId: string,
+  ): Promise<GetTrajectoryResponse> {
+    const { data } = await openHands.get<GetTrajectoryResponse>(
+      `/api/conversations/${conversationId}/trajectory`,
+    );
     return data;
   }
 }

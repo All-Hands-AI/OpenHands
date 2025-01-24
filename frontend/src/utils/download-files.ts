@@ -1,4 +1,5 @@
 import OpenHands from "#/api/open-hands";
+import { downloadWorkspace } from "./download-workspace";
 
 interface DownloadProgress {
   filesTotal: number;
@@ -19,6 +20,13 @@ interface DownloadOptions {
  */
 function isFileSystemAccessSupported(): boolean {
   return "showDirectoryPicker" in window;
+}
+
+/**
+ * Checks if the Save File Picker API is supported
+ */
+function isSaveFilePickerSupported(): boolean {
+  return "showSaveFilePicker" in window;
 }
 
 /**
@@ -161,6 +169,39 @@ async function processBatch(
   };
 }
 
+export async function downloadTrajectory(
+  conversationId: string,
+  data: unknown[] | null,
+): Promise<void> {
+  try {
+    if (!isSaveFilePickerSupported()) {
+      throw new Error(
+        "Your browser doesn't support downloading folders. Please use Chrome, Edge, or another browser that supports the File System Access API.",
+      );
+    }
+    const options = {
+      suggestedName: `trajectory-${conversationId}.json`,
+      types: [
+        {
+          description: "JSON File",
+          accept: {
+            "application/json": [".json"],
+          },
+        },
+      ],
+    };
+
+    const handle = await window.showSaveFilePicker(options);
+    const writable = await handle.createWritable();
+    await writable.write(JSON.stringify(data, null, 2));
+    await writable.close();
+  } catch (error) {
+    throw new Error(
+      `Failed to download file: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
 /**
  * Downloads files from the workspace one by one
  * @param initialPath Initial path to start downloading from. If not provided, downloads from root
@@ -296,14 +337,15 @@ export async function downloadFiles(
     if (error instanceof Error && error.message === "Download cancelled") {
       throw error;
     }
-    // Re-throw the error as is if it's already a user-friendly message
+    // Fallback to old style download
     if (
       error instanceof Error &&
       (error.message.includes("browser doesn't support") ||
         error.message.includes("Failed to select") ||
-        error.message === "Download cancelled")
+        error.message.includes("Permission denied"))
     ) {
-      throw error;
+      await downloadWorkspace(conversationID);
+      return;
     }
 
     // Otherwise, wrap it with a generic message

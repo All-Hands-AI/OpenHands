@@ -13,8 +13,8 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 
+from litellm import ChatCompletionMessageToolCall, ModelInfo, PromptTokensDetails
 from litellm import Message as LiteLLMMessage
-from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
@@ -71,6 +71,15 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-5-haiku-20241022',
     'gpt-4o-mini',
     'gpt-4o',
+    'o1-2024-12-17',
+]
+
+REASONING_EFFORT_SUPPORTED_MODELS = [
+    'o1-2024-12-17',
+]
+
+MODELS_WITHOUT_STOP_WORDS = [
+    'o1-mini',
 ]
 
 
@@ -132,7 +141,9 @@ class LLM(RetryMixin, DebugMixin):
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
-            api_key=self.config.api_key,
+            api_key=self.config.api_key.get_secret_value()
+            if self.config.api_key
+            else None,
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
@@ -141,6 +152,12 @@ class LLM(RetryMixin, DebugMixin):
             temperature=self.config.temperature,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
+            # add reasoning_effort, only if the model is supported
+            **(
+                {'reasoning_effort': self.config.reasoning_effort}
+                if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
+                else {}
+            ),
         )
 
         self._completion_unwrapped = self._completion
@@ -186,7 +203,8 @@ class LLM(RetryMixin, DebugMixin):
                     messages, kwargs['tools']
                 )
                 kwargs['messages'] = messages
-                kwargs['stop'] = STOP_WORDS
+                if self.config.model not in MODELS_WITHOUT_STOP_WORDS:
+                    kwargs['stop'] = STOP_WORDS
                 mock_fncall_tools = kwargs.pop('tools')
 
             # if we have no messages, something went very wrong
@@ -213,7 +231,6 @@ class LLM(RetryMixin, DebugMixin):
             try:
                 # Record start time for latency measurement
                 start_time = time.time()
-
                 # we don't support streaming here, thus we get a ModelResponse
                 resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
@@ -240,7 +257,9 @@ class LLM(RetryMixin, DebugMixin):
                     resp.choices[0].message = fn_call_response_message
 
                 message_back: str = resp['choices'][0]['message']['content'] or ''
-                tool_calls = resp['choices'][0]['message'].get('tool_calls', [])
+                tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
+                    'message'
+                ].get('tool_calls', [])
                 if tool_calls:
                     for tool_call in tool_calls:
                         fn_name = tool_call.function.name
@@ -316,7 +335,9 @@ class LLM(RetryMixin, DebugMixin):
             # GET {base_url}/v1/model/info with litellm_model_id as path param
             response = requests.get(
                 f'{self.config.base_url}/v1/model/info',
-                headers={'Authorization': f'Bearer {self.config.api_key}'},
+                headers={
+                    'Authorization': f'Bearer {self.config.api_key.get_secret_value() if self.config.api_key else None}'
+                },
             )
             resp_json = response.json()
             if 'data' not in resp_json:
@@ -353,7 +374,9 @@ class LLM(RetryMixin, DebugMixin):
             # noinspection PyBroadException
             except Exception:
                 pass
-        logger.debug(f'Model info: {self.model_info}')
+        from openhands.core.utils import json
+
+        logger.debug(f'Model info: {json.dumps(self.model_info, indent=2)}')
 
         if self.config.model.startswith('huggingface'):
             # HF doesn't support the OpenAI default value for top_p (1)
@@ -430,13 +453,24 @@ class LLM(RetryMixin, DebugMixin):
         )
 
     def is_function_calling_active(self) -> bool:
-        # Check if model name is in supported list before checking model_info
+        # Check if model name is in our supported list
         model_name_supported = (
             self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
             or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
             or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
         )
-        return model_name_supported
+
+        # Handle native_tool_calling user-defined configuration
+        if self.config.native_tool_calling is None:
+            return model_name_supported
+        elif self.config.native_tool_calling is False:
+            return False
+        else:
+            # try to enable native tool calling if supported by the model
+            supports_fn_call = litellm.supports_function_calling(
+                model=self.config.model
+            )
+            return supports_fn_call
 
     def _post_completion(self, response: ModelResponse) -> float:
         """Post-process the completion response.
@@ -582,12 +616,31 @@ class LLM(RetryMixin, DebugMixin):
             logger.debug(f'Using custom cost per token: {cost_per_token}')
             extra_kwargs['custom_cost_per_token'] = cost_per_token
 
+        # try directly get response_cost from response
+        _hidden_params = getattr(response, '_hidden_params', {})
+        cost = _hidden_params.get('additional_headers', {}).get(
+            'llm_provider-x-litellm-response-cost', None
+        )
+        if cost is not None:
+            cost = float(cost)
+            logger.debug(f'Got response_cost from response: {cost}')
+
         try:
-            # try directly get response_cost from response
-            cost = getattr(response, '_hidden_params', {}).get('response_cost', None)
             if cost is None:
+                try:
+                    cost = litellm_completion_cost(
+                        completion_response=response, **extra_kwargs
+                    )
+                except Exception as e:
+                    logger.error(f'Error getting cost from litellm: {e}')
+
+            if cost is None:
+                _model_name = '/'.join(self.config.model.split('/')[1:])
                 cost = litellm_completion_cost(
-                    completion_response=response, **extra_kwargs
+                    completion_response=response, model=_model_name, **extra_kwargs
+                )
+                logger.debug(
+                    f'Using fallback model name {_model_name} to get cost: {cost}'
                 )
             self.metrics.add_cost(cost)
             return cost
@@ -618,6 +671,8 @@ class LLM(RetryMixin, DebugMixin):
             message.cache_enabled = self.is_caching_prompt_active()
             message.vision_enabled = self.vision_is_active()
             message.function_calling_enabled = self.is_function_calling_active()
+            if 'deepseek' in self.config.model:
+                message.force_string_serializer = True
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]

@@ -20,7 +20,7 @@ export function useDownloadProgress(
   const [progress, setProgress] =
     useState<DownloadProgressState>(INITIAL_PROGRESS);
   const progressRef = useRef<DownloadProgressState>(INITIAL_PROGRESS);
-  const abortController = useRef<AbortController>();
+  const abortController = useRef<AbortController>(null);
   const { conversationId } = useConversation();
 
   // Create AbortController on mount
@@ -31,7 +31,7 @@ export function useDownloadProgress(
     progressRef.current = INITIAL_PROGRESS;
     return () => {
       controller.abort();
-      abortController.current = undefined;
+      abortController.current = null;
     };
   }, []); // Empty deps array - only run on mount/unmount
 

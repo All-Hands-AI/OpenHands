@@ -87,7 +87,12 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
     setGitHubToken(storedGitHubToken);
     setUserId(userId);
-    setupGithubAxiosInterceptors(refreshToken, logout);
+    const setupIntercepter = async () => {
+      const config = await OpenHands.getConfig();
+      setupGithubAxiosInterceptors(config.APP_MODE, refreshToken, logout);
+    };
+
+    setupIntercepter();
   }, []);
 
   const value = React.useMemo(
@@ -102,7 +107,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     [gitHubTokenState],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext value={value}>{children}</AuthContext>;
 }
 
 function useAuth() {
