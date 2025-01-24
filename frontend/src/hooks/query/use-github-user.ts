@@ -6,7 +6,7 @@ import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
 
 export const useGitHubUser = () => {
-  const { gitHubToken, setUserId } = useAuth();
+  const { gitHubToken, setUserId, logout } = useAuth();
   const { data: config } = useConfig();
 
   const user = useQuery({
@@ -28,6 +28,12 @@ export const useGitHubUser = () => {
       });
     }
   }, [user.data]);
+
+  React.useEffect(() => {
+    if (user.isError) {
+      logout();
+    }
+  }, [user.isError]);
 
   return user;
 };

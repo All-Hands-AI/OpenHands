@@ -8,6 +8,9 @@ Please follow instruction [here](../../README.md#setup) to setup your local deve
 
 ## Test if your environment works
 
+Follow the instructions here https://miniwob.farama.org/content/getting_started/ & https://miniwob.farama.org/content/viewing/
+to set up MiniWoB server in your local environment at http://localhost:8080/miniwob/
+
 Access with browser the above MiniWoB URLs and see if they load correctly.
 
 ## Run Evaluation

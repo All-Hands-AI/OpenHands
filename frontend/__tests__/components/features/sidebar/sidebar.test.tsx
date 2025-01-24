@@ -8,6 +8,9 @@ import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 import OpenHands from "#/api/open-hands";
 import { MOCK_USER_PREFERENCES } from "#/mocks/handlers";
 
+// These tests will now fail because the conversation panel is rendered through a portal
+// and technically not a child of the Sidebar component.
+
 const renderSidebar = () => {
   const RouterStub = createRoutesStub([
     {
@@ -152,11 +155,13 @@ describe("Sidebar", () => {
       const settingsModal = screen.getByTestId("ai-config-modal");
 
       // Click the advanced options switch to show the API key input
-      const advancedOptionsSwitch = within(settingsModal).getByTestId("advanced-option-switch");
+      const advancedOptionsSwitch = within(settingsModal).getByTestId(
+        "advanced-option-switch",
+      );
       await user.click(advancedOptionsSwitch);
 
       const apiKeyInput = within(settingsModal).getByLabelText(/API\$KEY/i);
-      await user.type(apiKeyInput, "SET");
+      await user.type(apiKeyInput, "**********");
 
       const saveButton = within(settingsModal).getByTestId(
         "save-settings-button",

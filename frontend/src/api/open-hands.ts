@@ -10,6 +10,7 @@ import {
   AuthenticateResponse,
   Conversation,
   ResultSet,
+  GetTrajectoryResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings } from "#/services/settings";
@@ -243,10 +244,14 @@ class OpenHands {
   static async createConversation(
     githubToken?: string,
     selectedRepository?: string,
+    initialUserMsg?: string,
+    imageUrls?: string[],
   ): Promise<Conversation> {
     const body = {
       github_token: githubToken,
       selected_repository: selectedRepository,
+      initial_user_msg: initialUserMsg,
+      image_urls: imageUrls,
     };
 
     const { data } = await openHands.post<Conversation>(
@@ -353,6 +358,15 @@ class OpenHands {
     );
 
     return response.data.items;
+  }
+
+  static async getTrajectory(
+    conversationId: string,
+  ): Promise<GetTrajectoryResponse> {
+    const { data } = await openHands.get<GetTrajectoryResponse>(
+      `/api/conversations/${conversationId}/trajectory`,
+    );
+    return data;
   }
 }
 
