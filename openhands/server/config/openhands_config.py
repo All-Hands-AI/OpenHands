@@ -3,8 +3,8 @@ import os
 from fastapi import FastAPI, HTTPException
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.conversation_middleware import AttachConversationMiddleware
 from openhands.server.middleware import (
-    AttachConversationMiddleware,
     CacheControlMiddleware,
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
