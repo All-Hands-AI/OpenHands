@@ -501,10 +501,6 @@ class AgentController:
             EventSource.ENVIRONMENT,
         )
 
-        if new_state == AgentState.INIT and self.state.resume_state:
-            await self.set_agent_state_to(self.state.resume_state)
-            self.state.resume_state = None
-
     def get_agent_state(self) -> AgentState:
         """Returns the current state of the agent.
 
