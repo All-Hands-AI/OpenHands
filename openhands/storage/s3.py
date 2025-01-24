@@ -108,7 +108,7 @@ class S3FileStore(FileStore):
                     if e.response['Error']['Code'] != 'NoSuchKey':
                         raise
                     # If not found as a file, try as a directory
-                    path = f"{path}/"
+                    path = f'{path}/'
 
             # Delete all objects with this prefix (directory deletion)
             response = self.client.list_objects_v2(Bucket=self.bucket, Prefix=path)
