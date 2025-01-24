@@ -40,6 +40,8 @@ class FileConversationStore(ConversationStore):
 
         # Temp: force int to str to stop pydandic being, well... pedantic
         json_obj = json.loads(json_str)
+        if 'created_at' not in json_obj:
+            raise FileNotFoundError(path)
         if isinstance(json_obj.get('github_user_id'), int):
             json_obj['github_user_id'] = str(json_obj.get('github_user_id'))
 

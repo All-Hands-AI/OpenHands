@@ -84,6 +84,10 @@ jobs:
         run: |
           python -m pip index versions openhands-ai > openhands_versions.txt
           OPENHANDS_VERSION=$(head -n 1 openhands_versions.txt | awk '{print $2}' | tr -d '()')
+          # Ensure requirements.txt ends with newline before appending
+          if [ -f requirements.txt ] && [ -s requirements.txt ]; then
+            sed -i -e '$a\' requirements.txt
+          fi
           echo "openhands-ai==${OPENHANDS_VERSION}" >> requirements.txt
           cat requirements.txt
 

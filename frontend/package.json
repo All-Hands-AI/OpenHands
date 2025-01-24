@@ -1,6 +1,6 @@
 {
   "name": "openhands-frontend",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -22,6 +22,7 @@
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
+    "framer-motion": "^12.0.1",
     "i18next": "^24.2.1",
     "i18next-browser-languagedetector": "^8.0.2",
     "i18next-http-backend": "^3.0.1",
@@ -82,6 +83,7 @@
     "@react-router/dev": "^7.1.2",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/eslint-plugin-query": "^5.64.2",
+    "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.1",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.0",
