@@ -33,7 +33,7 @@ async def load_settings(request: Request) -> SettingsWithTokenMeta | None:
                 content={'error': 'Settings not found'},
             )
 
-        github_token = request.state.github_token or settings.github_token
+        github_token = request.state.github_token
         settings_with_token_data = SettingsWithTokenMeta(
             **settings.model_dump(),
             github_token_is_set=bool(github_token),

@@ -31,7 +31,7 @@ export function Sidebar() {
   const { data: config } = useConfig();
   const { data: isAuthed } = useIsAuthed();
   const { data: settings } = useSettings();
-  const { mutate: logout } = useLogout();
+  const { mutateAsync: logout } = useLogout();
 
   const { saveUserSettings, isUpToDate: settingsAreUpToDate } =
     useCurrentSettings();
@@ -60,8 +60,8 @@ export function Sidebar() {
   };
 
   const handleLogout = async () => {
-    if (config?.APP_MODE === "saas") logout();
-    await saveUserSettings({ unset_github_token: true });
+    if (config?.APP_MODE === "saas") await logout();
+    else await saveUserSettings({ unset_github_token: true });
     posthog.reset();
   };
 

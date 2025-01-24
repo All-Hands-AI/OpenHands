@@ -55,7 +55,7 @@ export const useSettings = () => {
 
   React.useEffect(() => {
     setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
-  }, [query.data?.GITHUB_TOKEN_IS_SET]);
+  }, [query.data?.GITHUB_TOKEN_IS_SET, query.isFetched]);
 
   return query;
 };
