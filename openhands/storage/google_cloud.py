@@ -74,7 +74,7 @@ class GoogleCloudFileStore(FileStore):
                     path += '/'
             except NotFound:
                 path += '/'
-        
+
         # Delete all blobs with the given path prefix (directory deletion)
         blobs = self.bucket.list_blobs(prefix=path)
         for blob in blobs:

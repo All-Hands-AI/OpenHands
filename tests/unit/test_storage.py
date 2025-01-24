@@ -82,23 +82,25 @@ class _StorageTest(ABC):
         store.write('foo/bar/qux.txt', 'Hello, world!')
         store.write('foo/other.txt', 'Hello, world!')
         store.write('foo/bar/subdir/file.txt', 'Hello, world!')
-        
+
         # Verify initial structure
         self.assertEqual(store.list(''), ['foo/'])
         self.assertEqual(sorted(store.list('foo')), ['foo/bar/', 'foo/other.txt'])
-        self.assertEqual(sorted(store.list('foo/bar')), 
-                        ['foo/bar/baz.txt', 'foo/bar/qux.txt', 'foo/bar/subdir/'])
-        
+        self.assertEqual(
+            sorted(store.list('foo/bar')),
+            ['foo/bar/baz.txt', 'foo/bar/qux.txt', 'foo/bar/subdir/'],
+        )
+
         # Delete a directory
         store.delete('foo/bar')
-        
+
         # Verify directory and its contents are gone, but other files remain
         self.assertEqual(store.list(''), ['foo/'])
         self.assertEqual(store.list('foo'), ['foo/other.txt'])
-        
+
         # Delete root directory
         store.delete('foo')
-        
+
         # Verify everything is gone
         self.assertEqual(store.list(''), [])
 
