@@ -9,7 +9,7 @@ from openhands.core.config.app_config import AppConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
-from openhands.events.actions import MessageAction
+from openhands.events.action import MessageAction
 from openhands.events.stream import EventStream, session_exists
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session

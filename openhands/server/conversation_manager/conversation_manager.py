@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 import socketio
 
 from openhands.core.config import AppConfig
-from openhands.events.actions import MessageAction
+from openhands.events.action import MessageAction
 from openhands.events.stream import EventStream
 from openhands.server.session.conversation import Conversation
 from openhands.server.settings import Settings
