@@ -3,12 +3,6 @@ from unittest.mock import patch
 from openhands.core.config import AppConfig
 
 
-# Mock the SessionManager to avoid asyncio issues
-class MockSessionManager:
-    def __init__(self, *args, **kwargs):
-        pass
-
-
 # Mock StaticFiles
 class MockStaticFiles:
     def __init__(self, *args, **kwargs):
@@ -17,7 +11,6 @@ class MockStaticFiles:
 
 # Patch necessary components before importing from listen
 with (
-    patch('openhands.server.session.SessionManager', MockSessionManager),
     patch('fastapi.staticfiles.StaticFiles', MockStaticFiles),
 ):
     from openhands.server.file_config import (

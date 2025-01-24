@@ -155,7 +155,9 @@ describe("Sidebar", () => {
       const settingsModal = screen.getByTestId("ai-config-modal");
 
       // Click the advanced options switch to show the API key input
-      const advancedOptionsSwitch = within(settingsModal).getByTestId("advanced-option-switch");
+      const advancedOptionsSwitch = within(settingsModal).getByTestId(
+        "advanced-option-switch",
+      );
       await user.click(advancedOptionsSwitch);
 
       const apiKeyInput = within(settingsModal).getByLabelText(/API\$KEY/i);
