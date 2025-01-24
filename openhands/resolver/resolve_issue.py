@@ -568,12 +568,6 @@ def main():
         help='Type of issue to resolve, either open issue or pr comments.',
     )
     parser.add_argument(
-        '--target-branch',
-        type=str,
-        default=None,
-        help="Target branch to pull and create PR against (for PRs). If not specified, uses the PR's base branch.",
-    )
-    parser.add_argument(
         '--is-experimental',
         type=lambda x: x.lower() == 'true',
         help='Whether to run in experimental mode.',
