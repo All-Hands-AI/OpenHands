@@ -541,25 +541,6 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     raise FunctionCallValidationError(
                         f'Missing required argument "path" in tool call {tool_call.function.name}'
                     )
-                # Check additional required arguments based on command
-                if arguments['command'] == 'create' and 'file_text' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "file_text" for command "create" in tool call {tool_call.function.name}'
-                    )
-                if arguments['command'] == 'str_replace':
-                    if 'old_str' not in arguments:
-                        raise FunctionCallValidationError(
-                            f'Missing required argument "old_str" for command "str_replace" in tool call {tool_call.function.name}'
-                        )
-                if arguments['command'] == 'insert':
-                    if 'new_str' not in arguments:
-                        raise FunctionCallValidationError(
-                            f'Missing required argument "new_str" for command "insert" in tool call {tool_call.function.name}'
-                        )
-                    if 'insert_line' not in arguments:
-                        raise FunctionCallValidationError(
-                            f'Missing required argument "insert_line" for command "insert" in tool call {tool_call.function.name}'
-                        )
 
                 # We implement this in agent_skills, which can be used via Jupyter
                 # convert tool_call.function.arguments to kwargs that can be passed to file_editor
