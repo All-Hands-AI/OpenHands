@@ -46,7 +46,7 @@ def agent() -> CodeActAgent:
     agent = CodeActAgent(llm=LLM(LLMConfig()), config=config)
     agent.llm = Mock()
     agent.llm.config = Mock()
-    agent.llm.config.max_message_chars = 100
+    agent.llm.config.max_message_chars = 1000
     return agent
 
 
@@ -65,10 +65,15 @@ def test_cmd_output_observation_message(agent: CodeActAgent):
         content='Command output',
         metadata=CmdOutputMetadata(
             exit_code=0,
+            prefix='[THIS IS PREFIX]',
+            suffix='[THIS IS SUFFIX]',
         ),
     )
 
-    results = agent.get_observation_message(obs, tool_call_id_to_message={})
+    tool_call_id_to_message = {}
+    results = agent.get_observation_message(
+        obs, tool_call_id_to_message=tool_call_id_to_message
+    )
     assert len(results) == 1
 
     result = results[0]
@@ -76,8 +81,10 @@ def test_cmd_output_observation_message(agent: CodeActAgent):
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
-    assert 'Command output' in result.content[0].text
+    assert 'Observed result of command executed by user:' in result.content[0].text
     assert '[Command finished with exit code 0]' in result.content[0].text
+    assert '[THIS IS PREFIX]' in result.content[0].text
+    assert '[THIS IS SUFFIX]' in result.content[0].text
 
 
 def test_ipython_run_cell_observation_message(agent: CodeActAgent):
