@@ -140,12 +140,13 @@ describe("ConversationCard", () => {
     expect(titleInput).toBeEnabled();
     expect(screen.queryByTestId("context-menu")).not.toBeInTheDocument();
     // expect to be focused
-    expect(document.activeElement).toBe(title);
+    expect(document.activeElement).toBe(titleInput);
 
     await user.clear(titleInput);
     await user.type(titleInput, "New Conversation Name   ");
     // hit enter key
-    await user.tab();
+    const enterEvent = new KeyboardEvent('keyup', { key: 'Enter' });
+    titleInput.dispatchEvent(enterEvent);
 
     expect(onChangeTitle).toHaveBeenCalledWith("New Conversation Name");
     title = screen.getByTestId("conversation-card-title");
@@ -171,7 +172,8 @@ describe("ConversationCard", () => {
     const title = screen.getByTestId("conversation-card-title-input");
 
     await user.clear(title);
-    await user.tab();
+    const enterEvent = new KeyboardEvent('keyup', { key: 'Enter' });
+    title.dispatchEvent(enterEvent);
 
     expect(onChangeTitle).not.toHaveBeenCalled();
     expect(title).toHaveValue("Conversation 1");
