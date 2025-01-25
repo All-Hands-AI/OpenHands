@@ -273,6 +273,9 @@ llm_config = 'gpt3'
 # BrowserGym environment to use for evaluation
 #browsergym_eval_env = ""
 
+# Support docker snapshots
+docker_snapshots = false
+
 #################################### Security ###################################
 # Configuration for security features
 ##############################################################################

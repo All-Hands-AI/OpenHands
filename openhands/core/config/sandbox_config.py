@@ -64,5 +64,6 @@ class SandboxConfig(BaseModel):
     remote_runtime_resource_factor: int = Field(default=1)
     enable_gpu: bool = Field(default=False)
     docker_runtime_kwargs: dict | None = Field(default=None)
+    docker_snapshots: bool = Field(default=False)
 
     model_config = {'extra': 'forbid'}

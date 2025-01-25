@@ -17,6 +17,12 @@ config = load_app_config()
 openhands_config = load_openhands_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
 
+from openhands.storage.docker_snapshots import sudo_command
+if config.sandbox.docker_snapshots:
+    sudo_command(["enable"])
+else:
+    sudo_command(["disable"])
+
 client_manager = None
 redis_host = os.environ.get('REDIS_HOST')
 if redis_host:

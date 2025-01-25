@@ -279,6 +279,11 @@ class DockerRuntime(ActionExecutionClient):
                 ),
                 **(self.config.sandbox.docker_runtime_kwargs or {}),
             )
+
+            if self.config.sandbox.docker_snapshots:
+                from openhands.storage.docker_snapshots import sudo_command
+                sudo_command(["register_new_subvolume", "--container", self.container.id])
+
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')
         except docker.errors.APIError as e:
@@ -426,3 +431,12 @@ class DockerRuntime(ActionExecutionClient):
             pass
         finally:
             docker_client.close()
+
+    def create_snapshot(self):
+        from openhands.storage.docker_snapshots import create_snapshot
+        snapshot_id = create_snapshot(self.container.id)
+        if snapshot_id:
+            self.log(
+                'info', f"Created new snapshot. Restore with: /workspaces/OpenHands/openhands/storage/docker_snapshots.py restore_snapshot --container {self.container.id} --snapshot {snapshot_id}"
+            )
+            # TODO: Store in the session so we can restore later
