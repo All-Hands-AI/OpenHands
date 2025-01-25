@@ -11,7 +11,8 @@ N_WORKERS=${3:-64}
 N_RUNS=${4:-1}
 
 export EXP_NAME=$EXP_NAME
-# export DEFAULT_RUNTIME_RESOURCE_FACTOR=2  # use 2x resources for rollout since some codebase are pretty resource-intensive
+# use 2x resources for rollout since some codebase are pretty resource-intensive
+export DEFAULT_RUNTIME_RESOURCE_FACTOR=2
 echo "MODEL: $MODEL"
 echo "EXP_NAME: $EXP_NAME"
 DATASET="SWE-Gym/SWE-Gym"  # change this to the "/SWE-Gym-Lite" if you want to rollout the lite subset
@@ -34,7 +35,6 @@ MAX_ITER=100
 source "evaluation/utils/version_control.sh"
 get_openhands_version
 
-echo "AGENT: $AGENT"
 echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 echo "DATASET: $DATASET"
@@ -96,7 +96,7 @@ for run_idx in $(seq 1 $N_RUNS); do
     while true; do
         echo "### Evaluating on $OUTPUT_FILE ... ###"
         COMMAND="poetry run python evaluation/benchmarks/swe_bench/eval_infer.py \
-        --eval-num-workers $((N_WORKERS * 4)) \
+        --eval-num-workers $((N_WORKERS * 2)) \
         --input-file $OUTPUT_FILE \
         --dataset $DATASET \
         --split $SPLIT"
