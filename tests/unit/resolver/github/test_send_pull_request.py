@@ -508,7 +508,7 @@ def test_send_pull_request_with_reviewer(
 @patch('requests.post')
 @patch('requests.get')
 def test_send_pull_request_target_branch_with_fork(
-    mock_get, mock_post, mock_run, mock_github_issue, mock_output_dir
+    mock_get, mock_post, mock_run, mock_issue, mock_output_dir
 ):
     """Test that target_branch works correctly when using a fork."""
     repo_path = os.path.join(mock_output_dir, 'repo')
@@ -533,9 +533,10 @@ def test_send_pull_request_target_branch_with_fork(
 
     # Call the function with fork_owner and target_branch
     send_pull_request(
-        github_issue=mock_github_issue,
-        github_token='test-token',
-        github_username='test-user',
+        issue=mock_issue,
+        token='test-token',
+        username='test-user',
+        platform=Platform.GITHUB,
         patch_dir=repo_path,
         pr_type='ready',
         fork_owner=fork_owner,
@@ -571,7 +572,7 @@ def test_send_pull_request_target_branch_with_fork(
 @patch('requests.post')
 @patch('requests.get')
 def test_send_pull_request_target_branch_with_additional_message(
-    mock_get, mock_post, mock_run, mock_github_issue, mock_output_dir
+    mock_get, mock_post, mock_run, mock_issue, mock_output_dir
 ):
     """Test that target_branch works correctly with additional PR message."""
     repo_path = os.path.join(mock_output_dir, 'repo')
@@ -596,9 +597,10 @@ def test_send_pull_request_target_branch_with_additional_message(
 
     # Call the function with target_branch and additional_message
     send_pull_request(
-        github_issue=mock_github_issue,
-        github_token='test-token',
-        github_username='test-user',
+        issue=mock_issue,
+        token='test-token',
+        username='test-user',
+        platform=Platform.GITHUB,
         patch_dir=repo_path,
         pr_type='ready',
         target_branch=target_branch,
@@ -822,7 +824,6 @@ def test_process_single_pr_update(
     token = 'test_token'
     username = 'test_user'
     pr_type = 'draft'
-    platform = Platform.GITHUB
 
     resolver_output = ResolverOutput(
         issue=Issue(
@@ -902,6 +903,7 @@ def test_process_single_issue(
     token = 'test_token'
     username = 'test_user'
     pr_type = 'draft'
+    platform = Platform.GITHUB
 
     resolver_output = ResolverOutput(
         issue=Issue(

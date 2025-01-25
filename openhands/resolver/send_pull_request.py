@@ -294,7 +294,7 @@ def send_pull_request(
     # Determine the repository to push to (original or fork)
     push_owner = fork_owner if fork_owner else issue.owner
 
-    handler._strategy.set_owner = push_owner
+    handler._strategy.owner = push_owner
 
     print('Pushing changes...')
     push_url = handler.get_clone_url()
