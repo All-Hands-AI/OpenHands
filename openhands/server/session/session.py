@@ -166,10 +166,6 @@ class Session:
             await self.send(event_dict)
 
     async def dispatch(self, data: dict):
-        if self.config.sandbox.docker_snapshots:
-            if(hasattr(self.agent_session.runtime, "create_snapshot")):
-                self.agent_session.runtime.create_snapshot()
-
         event = event_from_dict(data.copy())
         # This checks if the model supports images
         if isinstance(event, MessageAction) and event.image_urls:
