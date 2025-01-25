@@ -508,7 +508,7 @@ def test_send_pull_request_with_reviewer(
 @patch('requests.post')
 @patch('requests.get')
 def test_send_pull_request_target_branch_with_fork(
-    mock_get, mock_post, mock_run, mock_github_issue, mock_output_dir
+    mock_get, mock_post, mock_run, mock_issue, mock_output_dir
 ):
     """Test that target_branch works correctly when using a fork."""
     repo_path = os.path.join(mock_output_dir, 'repo')
@@ -532,10 +532,11 @@ def test_send_pull_request_target_branch_with_fork(
     ]
 
     # Call the function with fork_owner and target_branch
-    result = send_pull_request(
-        github_issue=mock_github_issue,
-        github_token='test-token',
-        github_username='test-user',
+    send_pull_request(
+        issue=mock_issue,
+        token='test-token',
+        username='test-user',
+        platform=Platform.GITHUB,
         patch_dir=repo_path,
         pr_type='ready',
         fork_owner=fork_owner,
@@ -544,27 +545,34 @@ def test_send_pull_request_target_branch_with_fork(
 
     # Assert API calls
     assert mock_get.call_count == 2
-    
+
     # Verify target branch was checked in original repo, not fork
     target_branch_check = mock_get.call_args_list[1]
-    assert target_branch_check[0][0] == f'https://api.github.com/repos/test-owner/test-repo/branches/{target_branch}'
+    assert (
+        target_branch_check[0][0]
+        == f'https://api.github.com/repos/test-owner/test-repo/branches/{target_branch}'
+    )
 
     # Check PR creation
     mock_post.assert_called_once()
     post_data = mock_post.call_args[1]['json']
     assert post_data['base'] == target_branch  # PR should target the specified branch
-    assert post_data['head'] == 'openhands-fix-issue-42'  # Branch name should be standard
+    assert (
+        post_data['head'] == 'openhands-fix-issue-42'
+    )  # Branch name should be standard
 
     # Check that push was to fork
     push_call = mock_run.call_args_list[1]
-    assert f'https://test-user:test-token@github.com/{fork_owner}/test-repo.git' in str(push_call)
+    assert f'https://test-user:test-token@github.com/{fork_owner}/test-repo.git' in str(
+        push_call
+    )
 
 
 @patch('subprocess.run')
 @patch('requests.post')
 @patch('requests.get')
 def test_send_pull_request_target_branch_with_additional_message(
-    mock_get, mock_post, mock_run, mock_github_issue, mock_output_dir
+    mock_get, mock_post, mock_run, mock_issue, mock_output_dir
 ):
     """Test that target_branch works correctly with additional PR message."""
     repo_path = os.path.join(mock_output_dir, 'repo')
@@ -588,10 +596,11 @@ def test_send_pull_request_target_branch_with_additional_message(
     ]
 
     # Call the function with target_branch and additional_message
-    result = send_pull_request(
-        github_issue=mock_github_issue,
-        github_token='test-token',
-        github_username='test-user',
+    send_pull_request(
+        issue=mock_issue,
+        token='test-token',
+        username='test-user',
+        platform=Platform.GITHUB,
         patch_dir=repo_path,
         pr_type='ready',
         target_branch=target_branch,
@@ -815,7 +824,6 @@ def test_process_single_pr_update(
     token = 'test_token'
     username = 'test_user'
     pr_type = 'draft'
-    platform = Platform.GITHUB
 
     resolver_output = ResolverOutput(
         issue=Issue(
@@ -895,6 +903,7 @@ def test_process_single_issue(
     token = 'test_token'
     username = 'test_user'
     pr_type = 'draft'
+    platform = Platform.GITHUB
 
     resolver_output = ResolverOutput(
         issue=Issue(
