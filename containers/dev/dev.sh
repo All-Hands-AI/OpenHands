@@ -34,6 +34,9 @@ export BACKEND_HOST="0.0.0.0"
 export SANDBOX_USER_ID=$(id -u)
 export WORKSPACE_BASE=${WORKSPACE_BASE:-$OPENHANDS_WORKSPACE/workspace}
 
+# Required for HEREDOC support
+export DOCKER_BUILDKIT=1
+
 docker compose run --rm --service-ports "$@" dev
 
 ##
