@@ -2,9 +2,11 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.empty import NullAction
 from openhands.events.event import Event
-from openhands.events.observation.commands import CmdOutputObservation
-from openhands.events.observation.empty import NullObservation
-from openhands.events.observation.observation import Observation
+from openhands.events.observation import (
+    CmdOutputObservation,
+    NullObservation,
+    Observation,
+)
 
 
 def get_pairs_from_events(events: list[Event]) -> list[tuple[Action, Observation]]:

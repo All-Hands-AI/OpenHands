@@ -14,12 +14,7 @@ from termcolor import colored
 
 import openhands
 from openhands.controller.state.state import State
-from openhands.core.config import (
-    AgentConfig,
-    AppConfig,
-    LLMConfig,
-    SandboxConfig,
-)
+from openhands.core.config import AgentConfig, AppConfig, LLMConfig, SandboxConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
@@ -122,11 +117,8 @@ async def complete_runtime(
     n_retries = 0
     git_patch = None
     while n_retries < 5:
-        action = CmdRunAction(
-            command=f'git diff --no-color --cached {base_commit}',
-            keep_prompt=False,
-        )
-        action.timeout = 600 + 100 * n_retries
+        action = CmdRunAction(command=f'git diff --no-color --cached {base_commit}')
+        action.set_hard_timeout(600 + 100 * n_retries)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -156,7 +148,7 @@ async def process_issue(
     max_iterations: int,
     llm_config: LLMConfig,
     output_dir: str,
-    runtime_container_image: str,
+    runtime_container_image: str | None,
     prompt_template: str,
     issue_handler: IssueHandlerInterface,
     repo_instruction: str | None = None,
@@ -182,7 +174,7 @@ async def process_issue(
 
     config = AppConfig(
         default_agent='CodeActAgent',
-        runtime='eventstream',
+        runtime='docker',
         max_budget_per_task=4,
         max_iterations=max_iterations,
         sandbox=SandboxConfig(
@@ -202,7 +194,7 @@ async def process_issue(
     runtime = create_runtime(config)
     await runtime.connect()
 
-    async def on_event(evt):
+    def on_event(evt):
         logger.info(evt)
 
     runtime.event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
@@ -242,25 +234,25 @@ async def process_issue(
         metrics = None
         success = False
         comment_success = None
-        success_explanation = 'Agent failed to run'
+        result_explanation = 'Agent failed to run'
         last_error = 'Agent failed to run or crashed'
     else:
         histories = [dataclasses.asdict(event) for event in state.history]
         metrics = state.metrics.get() if state.metrics else None
-        # determine success based on the history and the issue description
-        success, comment_success, success_explanation = issue_handler.guess_success(
-            issue, state.history, llm_config
+        # determine success based on the history, issue description and git patch
+        success, comment_success, result_explanation = issue_handler.guess_success(
+            issue, state.history, git_patch
         )
 
         if issue_handler.issue_type == 'pr' and comment_success:
             success_log = 'I have updated the PR and resolved some of the issues that were cited in the pull request review. Specifically, I identified the following revision requests, and all the ones that I think I successfully resolved are checked off. All the unchecked ones I was not able to resolve, so manual intervention may be required:\n'
             try:
-                explanations = json.loads(success_explanation)
+                explanations = json.loads(result_explanation)
             except json.JSONDecodeError:
                 logger.error(
-                    f'Failed to parse success_explanation as JSON: {success_explanation}'
+                    f'Failed to parse result_explanation as JSON: {result_explanation}'
                 )
-                explanations = [str(success_explanation)]  # Use raw string as fallback
+                explanations = [str(result_explanation)]  # Use raw string as fallback
 
             for success_indicator, explanation in zip(comment_success, explanations):
                 status = (
@@ -284,19 +276,19 @@ async def process_issue(
         metrics=metrics,
         success=success,
         comment_success=comment_success,
-        success_explanation=success_explanation,
+        result_explanation=result_explanation,
         error=last_error,
     )
     return output
 
 
 def issue_handler_factory(
-    issue_type: str, owner: str, repo: str, token: str
+    issue_type: str, owner: str, repo: str, token: str, llm_config: LLMConfig
 ) -> IssueHandlerInterface:
     if issue_type == 'issue':
-        return IssueHandler(owner, repo, token)
+        return IssueHandler(owner, repo, token, llm_config)
     elif issue_type == 'pr':
-        return PRHandler(owner, repo, token)
+        return PRHandler(owner, repo, token, llm_config)
     else:
         raise ValueError(f'Invalid issue type: {issue_type}')
 
@@ -309,13 +301,12 @@ async def resolve_issue(
     max_iterations: int,
     output_dir: str,
     llm_config: LLMConfig,
-    runtime_container_image: str,
+    runtime_container_image: str | None,
     prompt_template: str,
     issue_type: str,
     repo_instruction: str | None,
     issue_number: int,
     comment_id: int | None,
-    target_branch: str | None = None,
     reset_logger: bool = False,
 ) -> None:
     """Resolve a single github issue.
@@ -334,15 +325,23 @@ async def resolve_issue(
         repo_instruction: Repository instruction to use.
         issue_number: Issue number to resolve.
         comment_id: Optional ID of a specific comment to focus on.
-        target_branch: Optional target branch to create PR against (for PRs).
+
         reset_logger: Whether to reset the logger for multiprocessing.
     """
-    issue_handler = issue_handler_factory(issue_type, owner, repo, token)
+    issue_handler = issue_handler_factory(issue_type, owner, repo, token, llm_config)
 
     # Load dataset
     issues: list[GithubIssue] = issue_handler.get_converted_issues(
         issue_numbers=[issue_number], comment_id=comment_id
     )
+
+    if not issues:
+        raise ValueError(
+            f'No issues found for issue number {issue_number}. Please verify that:\n'
+            f'1. The issue/PR #{issue_number} exists in the repository {owner}/{repo}\n'
+            f'2. You have the correct permissions to access it\n'
+            f'3. The repository name is spelled correctly'
+        )
 
     issue = issues[0]
 
@@ -424,9 +423,9 @@ async def resolve_issue(
     try:
         # checkout to pr branch if needed
         if issue_type == 'pr':
-            branch_to_use = target_branch if target_branch else issue.head_branch
+            branch_to_use = issue.head_branch
             logger.info(
-                f'Checking out to PR branch {target_branch} for issue {issue.number}'
+                f'Checking out to PR branch {branch_to_use} for issue {issue.number}'
             )
 
             if not branch_to_use:
@@ -445,10 +444,6 @@ async def resolve_issue(
                 checkout_cmd,
                 cwd=repo_dir,
             )
-
-            # Update issue's base_branch if using custom target branch
-            if target_branch:
-                issue.base_branch = target_branch
 
             base_commit = (
                 subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
@@ -573,16 +568,15 @@ def main():
         help='Type of issue to resolve, either open issue or pr comments.',
     )
     parser.add_argument(
-        '--target-branch',
-        type=str,
-        default=None,
-        help="Target branch to pull and create PR against (for PRs). If not specified, uses the PR's base branch.",
+        '--is-experimental',
+        type=lambda x: x.lower() == 'true',
+        help='Whether to run in experimental mode.',
     )
 
     my_args = parser.parse_args()
 
     runtime_container_image = my_args.runtime_container_image
-    if runtime_container_image is None:
+    if runtime_container_image is None and not my_args.is_experimental:
         runtime_container_image = (
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
@@ -596,9 +590,10 @@ def main():
     if not token:
         raise ValueError('Github token is required.')
 
+    api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(
         model=my_args.llm_model or os.environ['LLM_MODEL'],
-        api_key=my_args.llm_api_key or os.environ['LLM_API_KEY'],
+        api_key=str(api_key) if api_key else None,
         base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
     )
 
@@ -638,7 +633,6 @@ def main():
             repo_instruction=repo_instruction,
             issue_number=my_args.issue_number,
             comment_id=my_args.comment_id,
-            target_branch=my_args.target_branch,
         )
     )
 

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { UploadImageInput } from "#/components/upload-image-input";
+import { UploadImageInput } from "#/components/features/images/upload-image-input";
 
 describe("UploadImageInput", () => {
   const user = userEvent.setup();

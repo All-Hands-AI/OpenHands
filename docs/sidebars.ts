@@ -5,7 +5,7 @@ const sidebars: SidebarsConfig = {
   docsSidebar: [
     {
       type: 'doc',
-      label: 'Installation',
+      label: 'Running OpenHands',
       id: 'usage/installation',
     },
     {
@@ -14,9 +14,36 @@ const sidebars: SidebarsConfig = {
       id: 'usage/getting-started',
     },
     {
-      type: 'doc',
-      label: 'Prompting Best Practices',
-      id: 'usage/prompting-best-practices',
+      type: 'category',
+      label: 'Prompting',
+      items: [
+        {
+          type: 'doc',
+          label: 'Best Practices',
+          id: 'usage/prompting/prompting-best-practices',
+        },
+        {
+          type: 'category',
+          label: 'Microagents',
+          items: [
+            {
+              type: 'doc',
+              label: 'Overview',
+              id: 'usage/prompting/microagents-overview',
+            },
+            {
+              type: 'doc',
+              label: 'Repository',
+              id: 'usage/prompting/microagents-repo',
+            },
+            {
+              type: 'doc',
+              label: 'Public',
+              id: 'usage/prompting/microagents-public',
+            },
+          ],
+        }
+      ],
     },
     {
       type: 'category',
@@ -102,6 +129,11 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: 'doc',
+          label: 'Configuration Options',
+          id: 'usage/configuration-options',
+        },
+        {
+          type: 'doc',
           label: 'Custom Sandbox',
           id: 'usage/how-to/custom-sandbox-guide',
         },
@@ -146,11 +178,6 @@ const sidebars: SidebarsConfig = {
           type: 'doc',
           label: 'Evaluation',
           id: 'usage/how-to/evaluation-harness',
-        },
-        {
-          type: 'doc',
-          label: 'Kubernetes Deployment',
-          id: 'usage/how-to/openshift-example',
         },
       ],
     },

@@ -1,53 +1,61 @@
 import posthog from "posthog-js";
 import React from "react";
+import OpenHands from "#/api/open-hands";
+import {
+  removeGitHubTokenHeader as removeOpenHandsGitHubTokenHeader,
+  setGitHubTokenHeader as setOpenHandsGitHubTokenHeader,
+} from "#/api/open-hands-axios";
+import {
+  setAuthTokenHeader as setGitHubAuthTokenHeader,
+  removeAuthTokenHeader as removeGitHubAuthTokenHeader,
+  setupAxiosInterceptors as setupGithubAxiosInterceptors,
+} from "#/api/github-axios-instance";
 
 interface AuthContextType {
-  token: string | null;
   gitHubToken: string | null;
-  setToken: (token: string | null) => void;
+  setUserId: (userId: string) => void;
   setGitHubToken: (token: string | null) => void;
-  clearToken: () => void;
   clearGitHubToken: () => void;
+  refreshToken: () => Promise<boolean>;
   logout: () => void;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 function AuthProvider({ children }: React.PropsWithChildren) {
-  const [tokenState, setTokenState] = React.useState<string | null>(() =>
-    localStorage.getItem("token"),
-  );
   const [gitHubTokenState, setGitHubTokenState] = React.useState<string | null>(
     () => localStorage.getItem("ghToken"),
   );
 
-  React.useLayoutEffect(() => {
-    setTokenState(localStorage.getItem("token"));
-    setGitHubTokenState(localStorage.getItem("ghToken"));
-  });
+  const [userIdState, setUserIdState] = React.useState<string>(
+    () => localStorage.getItem("userId") || "",
+  );
 
-  const setToken = (token: string | null) => {
-    setTokenState(token);
+  const clearGitHubToken = () => {
+    setGitHubTokenState(null);
+    setUserIdState("");
+    localStorage.removeItem("ghToken");
+    localStorage.removeItem("userId");
 
-    if (token) localStorage.setItem("token", token);
-    else localStorage.removeItem("token");
+    removeOpenHandsGitHubTokenHeader();
+    removeGitHubAuthTokenHeader();
   };
 
   const setGitHubToken = (token: string | null) => {
     setGitHubTokenState(token);
 
-    if (token) localStorage.setItem("ghToken", token);
-    else localStorage.removeItem("ghToken");
+    if (token) {
+      localStorage.setItem("ghToken", token);
+      setOpenHandsGitHubTokenHeader(token);
+      setGitHubAuthTokenHeader(token);
+    } else {
+      clearGitHubToken();
+    }
   };
 
-  const clearToken = () => {
-    setTokenState(null);
-    localStorage.removeItem("token");
-  };
-
-  const clearGitHubToken = () => {
-    setGitHubTokenState(null);
-    localStorage.removeItem("ghToken");
+  const setUserId = (userId: string) => {
+    setUserIdState(userIdState);
+    localStorage.setItem("userId", userId);
   };
 
   const logout = () => {
@@ -55,20 +63,51 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     posthog.reset();
   };
 
+  const refreshToken = async (): Promise<boolean> => {
+    const config = await OpenHands.getConfig();
+
+    if (config.APP_MODE !== "saas" || !gitHubTokenState) {
+      return false;
+    }
+
+    const newToken = await OpenHands.refreshToken(config.APP_MODE, userIdState);
+    if (newToken) {
+      setGitHubToken(newToken);
+      return true;
+    }
+
+    clearGitHubToken();
+    return false;
+  };
+
+  React.useEffect(() => {
+    const storedGitHubToken = localStorage.getItem("ghToken");
+
+    const userId = localStorage.getItem("userId") || "";
+
+    setGitHubToken(storedGitHubToken);
+    setUserId(userId);
+    const setupIntercepter = async () => {
+      const config = await OpenHands.getConfig();
+      setupGithubAxiosInterceptors(config.APP_MODE, refreshToken, logout);
+    };
+
+    setupIntercepter();
+  }, []);
+
   const value = React.useMemo(
     () => ({
-      token: tokenState,
       gitHubToken: gitHubTokenState,
-      setToken,
       setGitHubToken,
-      clearToken,
+      setUserId,
       clearGitHubToken,
+      refreshToken,
       logout,
     }),
-    [tokenState, gitHubTokenState],
+    [gitHubTokenState],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext value={value}>{children}</AuthContext>;
 }
 
 function useAuth() {

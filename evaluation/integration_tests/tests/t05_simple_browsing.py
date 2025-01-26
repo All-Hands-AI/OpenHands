@@ -83,11 +83,11 @@ class Test(BaseIntegrationTest):
 
     @classmethod
     def initialize_runtime(cls, runtime: Runtime) -> None:
-        action = CmdRunAction(command='mkdir -p /workspace', keep_prompt=False)
+        action = CmdRunAction(command='mkdir -p /workspace')
         obs = runtime.run_action(action)
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
-        action = CmdRunAction(command='mkdir -p /tmp/server', keep_prompt=False)
+        action = CmdRunAction(command='mkdir -p /tmp/server')
         obs = runtime.run_action(action)
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
@@ -101,13 +101,14 @@ class Test(BaseIntegrationTest):
 
         # create README.md
         action = CmdRunAction(
-            command='cd /tmp/server && nohup python3 -m http.server 8000 &',
-            keep_prompt=False,
+            command='cd /tmp/server && nohup python3 -m http.server 8000 &'
         )
         obs = runtime.run_action(action)
 
     @classmethod
     def verify_result(cls, runtime: Runtime, histories: list[Event]) -> TestResult:
+        from openhands.core.logger import openhands_logger as logger
+
         # check if the "The answer is OpenHands is all you need!" is in any message
         message_actions = [
             event
@@ -116,19 +117,29 @@ class Test(BaseIntegrationTest):
                 event, (MessageAction, AgentFinishAction, AgentDelegateObservation)
             )
         ]
-        for event in message_actions:
-            if isinstance(event, AgentDelegateObservation):
-                content = event.content
-            elif isinstance(event, AgentFinishAction):
-                content = event.outputs.get('content', '')
-            elif isinstance(event, MessageAction):
-                content = event.content
-            else:
-                raise ValueError(f'Unknown event type: {type(event)}')
+        logger.debug(f'Total message-like events: {len(message_actions)}')
 
-            if 'OpenHands is all you need!' in content:
-                return TestResult(success=True)
+        for event in message_actions:
+            try:
+                if isinstance(event, AgentDelegateObservation):
+                    content = event.content
+                elif isinstance(event, AgentFinishAction):
+                    content = event.outputs.get('content', '')
+                elif isinstance(event, MessageAction):
+                    content = event.content
+                else:
+                    logger.warning(f'Unexpected event type: {type(event)}')
+                    continue
+
+                if 'OpenHands is all you need!' in content:
+                    return TestResult(success=True)
+            except Exception as e:
+                logger.error(f'Error processing event: {e}')
+
+        logger.debug(
+            f'Total messages: {len(message_actions)}. Messages: {message_actions}'
+        )
         return TestResult(
             success=False,
-            reason=f'The answer is not found in any message. Total messages: {len(message_actions)}. Messages: {message_actions}',
+            reason=f'The answer is not found in any message. Total messages: {len(message_actions)}.',
         )

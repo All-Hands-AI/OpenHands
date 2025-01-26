@@ -1,4 +1,4 @@
-name: Run Evaluation
+name: Run SWE-Bench Evaluation
 
 on:
   pull_request:
@@ -29,6 +29,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install tmux
+        run: sudo apt-get update && sudo apt-get install -y tmux
       - name: Install poetry via pipx
         run: pipx install poetry
 
@@ -57,24 +59,6 @@ jobs:
           echo "model = \"deepseek/deepseek-chat\"" >> config.toml
           echo "api_key = \"$DEEPSEEK_API_KEY\"" >> config.toml
           echo "temperature = 0.0" >> config.toml
-
-      - name: Run integration test evaluation
-        env:
-          ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
-          RUNTIME: remote
-          SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
-          EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
-
-        run: |
-          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES
-
-          # get evaluation report
-          REPORT_FILE=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/deepseek-chat_maxiter_10_N* -name "report.md" -type f | head -n 1)
-          echo "REPORT_FILE: $REPORT_FILE"
-          echo "INTEGRATION_TEST_REPORT<<EOF" >> $GITHUB_ENV
-          cat $REPORT_FILE >> $GITHUB_ENV
-          echo >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
 
       - name: Run SWE-Bench evaluation
         env:
@@ -143,14 +127,11 @@ jobs:
               **SWE-Bench Evaluation Report**
               ${{ env.SWEBENCH_REPORT }}
               ---
-              **Integration Tests Evaluation Report**
-              ${{ env.INTEGRATION_TEST_REPORT }}
-              ---
               You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL }}).
 
       - name: Post to a Slack channel
         id: slack
-        uses: slackapi/slack-github-action@v1.27.0
+        uses: slackapi/slack-github-action@v2.0.0
         with:
           channel-id: 'C07SVQSCR6F'
           slack-message: "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}\n\nLink to summary: [here](https://github.com/${{ github.repository }}/issues/${{ github.event_name == 'pull_request' && github.event.pull_request.number || 4504 }}#issuecomment-${{ steps.create_comment.outputs.comment-id }})"

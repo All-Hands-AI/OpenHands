@@ -1,16 +1,16 @@
 import { useMutation } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
-import { useAuth } from "#/context/auth-context";
+import { useConversation } from "#/context/conversation-context";
 
 type UploadFilesArgs = {
   files: File[];
 };
 
 export const useUploadFiles = () => {
-  const { token } = useAuth();
+  const { conversationId } = useConversation();
 
   return useMutation({
     mutationFn: ({ files }: UploadFilesArgs) =>
-      OpenHands.uploadFiles(token || "", files),
+      OpenHands.uploadFiles(conversationId, files),
   });
 };

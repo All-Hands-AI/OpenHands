@@ -2,27 +2,7 @@ import { act, screen } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import { vi, describe, afterEach, it, expect } from "vitest";
 import { Command, appendInput, appendOutput } from "#/state/command-slice";
-import Terminal from "#/components/terminal/terminal";
-
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  disconnect: vi.fn(),
-}));
-
-const mockTerminal = {
-  open: vi.fn(),
-  write: vi.fn(),
-  writeln: vi.fn(),
-  dispose: vi.fn(),
-  onKey: vi.fn(),
-  attachCustomKeyEventHandler: vi.fn(),
-  loadAddon: vi.fn(),
-};
-
-vi.mock("@xterm/xterm", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@xterm/xterm")>()),
-  Terminal: vi.fn().mockImplementation(() => mockTerminal),
-}));
+import Terminal from "#/components/features/terminal/terminal";
 
 const renderTerminal = (commands: Command[] = []) =>
   renderWithProviders(<Terminal secrets={[]} />, {
@@ -34,6 +14,26 @@ const renderTerminal = (commands: Command[] = []) =>
   });
 
 describe.skip("Terminal", () => {
+  global.ResizeObserver = vi.fn().mockImplementation(() => ({
+    observe: vi.fn(),
+    disconnect: vi.fn(),
+  }));
+
+  const mockTerminal = {
+    open: vi.fn(),
+    write: vi.fn(),
+    writeln: vi.fn(),
+    dispose: vi.fn(),
+    onKey: vi.fn(),
+    attachCustomKeyEventHandler: vi.fn(),
+    loadAddon: vi.fn(),
+  };
+
+  vi.mock("@xterm/xterm", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@xterm/xterm")>()),
+    Terminal: vi.fn().mockImplementation(() => mockTerminal),
+  }));
+
   afterEach(() => {
     vi.clearAllMocks();
   });

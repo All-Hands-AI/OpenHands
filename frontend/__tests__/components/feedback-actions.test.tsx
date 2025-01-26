@@ -1,12 +1,13 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FeedbackActions } from "#/components/feedback-actions";
+import { TrajectoryActions } from "#/components/features/trajectory/trajectory-actions";
 
-describe("FeedbackActions", () => {
+describe("TrajectoryActions", () => {
   const user = userEvent.setup();
   const onPositiveFeedback = vi.fn();
   const onNegativeFeedback = vi.fn();
+  const onExportTrajectory = vi.fn();
 
   afterEach(() => {
     vi.clearAllMocks();
@@ -14,9 +15,10 @@ describe("FeedbackActions", () => {
 
   it("should render correctly", () => {
     render(
-      <FeedbackActions
+      <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
+        onExportTrajectory={onExportTrajectory}
       />,
     );
 
@@ -27,9 +29,10 @@ describe("FeedbackActions", () => {
 
   it("should call onPositiveFeedback when positive feedback is clicked", async () => {
     render(
-      <FeedbackActions
+      <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
+        onExportTrajectory={onExportTrajectory}
       />,
     );
 
@@ -41,9 +44,10 @@ describe("FeedbackActions", () => {
 
   it("should call onNegativeFeedback when negative feedback is clicked", async () => {
     render(
-      <FeedbackActions
+      <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
+        onExportTrajectory={onExportTrajectory}
       />,
     );
 
@@ -51,5 +55,20 @@ describe("FeedbackActions", () => {
     await user.click(negativeFeedback);
 
     expect(onNegativeFeedback).toHaveBeenCalled();
+  });
+
+  it("should call onExportTrajectory when negative feedback is clicked", async () => {
+    render(
+      <TrajectoryActions
+        onPositiveFeedback={onPositiveFeedback}
+        onNegativeFeedback={onNegativeFeedback}
+        onExportTrajectory={onExportTrajectory}
+      />,
+    );
+
+    const exportButton = screen.getByTestId("export-trajectory");
+    await user.click(exportButton);
+
+    expect(onExportTrajectory).toHaveBeenCalled();
   });
 });

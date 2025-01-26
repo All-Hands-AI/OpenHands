@@ -5,7 +5,7 @@
  * For more information, see https://remix.run/file-conventions/entry.client
  */
 
-import { RemixBrowser } from "@remix-run/react";
+import { HydratedRouter } from "react-router/dom";
 import React, { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { Provider } from "react-redux";
@@ -15,7 +15,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
-import { UserPrefsProvider } from "./context/user-prefs-context";
+import { queryClientConfig } from "./query-client-config";
+import { SettingsProvider } from "./context/settings-context";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -45,7 +46,7 @@ async function prepareApp() {
   }
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient(queryClientConfig);
 
 prepareApp().then(() =>
   startTransition(() => {
@@ -53,14 +54,14 @@ prepareApp().then(() =>
       document,
       <StrictMode>
         <Provider store={store}>
-          <UserPrefsProvider>
-            <AuthProvider>
-              <QueryClientProvider client={queryClient}>
-                <RemixBrowser />
+          <AuthProvider>
+            <QueryClientProvider client={queryClient}>
+              <SettingsProvider>
+                <HydratedRouter />
                 <PosthogInit />
-              </QueryClientProvider>
-            </AuthProvider>
-          </UserPrefsProvider>
+              </SettingsProvider>
+            </QueryClientProvider>
+          </AuthProvider>
         </Provider>
       </StrictMode>,
     );

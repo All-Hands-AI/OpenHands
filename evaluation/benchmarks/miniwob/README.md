@@ -4,9 +4,12 @@ This folder contains evaluation for [MiniWoB++](https://miniwob.farama.org/) ben
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Test if your environment works
+
+Follow the instructions here https://miniwob.farama.org/content/getting_started/ & https://miniwob.farama.org/content/viewing/
+to set up MiniWoB server in your local environment at http://localhost:8080/miniwob/
 
 Access with browser the above MiniWoB URLs and see if they load correctly.
 
@@ -41,7 +44,6 @@ poetry run python evaluation/benchmarks/miniwob/get_success_rate.py evaluation/e
 ## Submit your evaluation results
 
 You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenHands/evaluation) and submit a PR of your evaluation results following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).
-
 
 ## BrowsingAgent V1.0 result
 

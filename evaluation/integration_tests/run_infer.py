@@ -8,12 +8,14 @@ from evaluation.integration_tests.tests.base import BaseIntegrationTest, TestRes
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
-    codeact_user_response,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
     update_llm_config_for_completions_logging,
+)
+from evaluation.utils.shared import (
+    codeact_user_response as fake_user_response,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -31,7 +33,9 @@ from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
 FAKE_RESPONSES = {
-    'CodeActAgent': codeact_user_response,
+    'CodeActAgent': fake_user_response,
+    'DelegatorAgent': fake_user_response,
+    'VisualBrowsingAgent': fake_user_response,
 }
 
 
@@ -42,19 +46,25 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime=os.environ.get('RUNTIME', 'eventstream'),
+        runtime=os.environ.get('RUNTIME', 'docker'),
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             # use default base_container_image
             enable_auto_lint=True,
             use_host_network=False,
-            timeout=100,
+            timeout=300,
+            # Add platform to the sandbox config to solve issue 4401
+            platform='linux/amd64',
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+            keep_runtime_alive=False,
+            remote_runtime_init_timeout=3600,
         ),
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
+        # debug
+        debug=True,
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(
@@ -107,31 +117,37 @@ def process_instance(
     # =============================================
     # create sandbox and run the agent
     # =============================================
-
     runtime: Runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
+    try:
+        test_class.initialize_runtime(runtime)
 
-    test_class.initialize_runtime(runtime)
-
-    # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            initial_user_action=MessageAction(content=instruction),
-            runtime=runtime,
-            fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
+        # Here's how you can run the agent (similar to the `main` function) and get the final task state
+        state: State | None = asyncio.run(
+            run_controller(
+                config=config,
+                initial_user_action=MessageAction(content=instruction),
+                runtime=runtime,
+                fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
+            )
         )
-    )
-    if state is None:
-        raise ValueError('State should not be None.')
+        if state is None:
+            raise ValueError('State should not be None.')
 
-    # # =============================================
-    # # result evaluation
-    # # =============================================
+        # # =============================================
+        # # result evaluation
+        # # =============================================
 
-    histories = [event_to_dict(event) for event in state.history]
-    test_result: TestResult = test_class.verify_result(runtime, histories)
-    metrics = state.metrics.get() if state.metrics else None
+        histories = state.history
+
+        # some basic check
+        logger.info(f'Total events in history: {len(histories)}')
+        assert len(histories) > 0, 'History should not be empty'
+
+        test_result: TestResult = test_class.verify_result(runtime, histories)
+        metrics = state.metrics.get() if state.metrics else None
+    finally:
+        runtime.close()
 
     # Save the output
     output = EvalOutput(
@@ -139,7 +155,7 @@ def process_instance(
         instance=instance.to_dict(),
         instruction=instruction,
         metadata=metadata,
-        history=histories,
+        history=[event_to_dict(event) for event in histories],
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result=test_result.model_dump(),
@@ -206,6 +222,8 @@ if __name__ == '__main__':
     )
 
     df = pd.read_json(output_file, lines=True, orient='records')
+
+    # record success and reason
     df['success'] = df['test_result'].apply(lambda x: x['success'])
     df['reason'] = df['test_result'].apply(lambda x: x['reason'])
     logger.info('-' * 100)
@@ -219,9 +237,28 @@ if __name__ == '__main__':
     )
     logger.info('-' * 100)
 
+    # record cost for each instance, with 3 decimal places
+    # we sum up all the "costs" from the metrics array
+    df['cost'] = df['metrics'].apply(
+        lambda m: round(sum(c['cost'] for c in m['costs']), 3)
+        if m and 'costs' in m
+        else 0.0
+    )
+
+    # capture the top-level error if present, per instance
+    df['error_message'] = df.get('error', None)
+
+    logger.info(f'Total cost: USD {df["cost"].sum():.2f}')
+
     report_file = os.path.join(metadata.eval_output_dir, 'report.md')
     with open(report_file, 'w') as f:
         f.write(
-            f'Success rate: {df["success"].mean():.2%} ({df["success"].sum()}/{len(df)})\n'
+            f'Success rate: {df["success"].mean():.2%}'
+            f' ({df["success"].sum()}/{len(df)})\n'
         )
-        f.write(df[['instance_id', 'success', 'reason']].to_markdown(index=False))
+        f.write(f'\nTotal cost: USD {df["cost"].sum():.2f}\n')
+        f.write(
+            df[
+                ['instance_id', 'success', 'reason', 'cost', 'error_message']
+            ].to_markdown(index=False)
+        )

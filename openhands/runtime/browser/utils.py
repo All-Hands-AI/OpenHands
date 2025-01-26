@@ -5,6 +5,7 @@ from openhands.core.schema import ActionType
 from openhands.events.action import BrowseInteractiveAction, BrowseURLAction
 from openhands.events.observation import BrowserOutputObservation
 from openhands.runtime.browser.browser_env import BrowserEnv
+from openhands.utils.async_utils import call_sync_from_async
 
 
 async def browse(
@@ -29,11 +30,15 @@ async def browse(
 
     try:
         # obs provided by BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/env.py#L396
-        obs = browser.step(action_str)
+        obs = await call_sync_from_async(browser.step, action_str)
         return BrowserOutputObservation(
             content=obs['text_content'],  # text content of the page
             url=obs.get('url', ''),  # URL of the page
             screenshot=obs.get('screenshot', None),  # base64-encoded screenshot, png
+            set_of_marks=obs.get(
+                'set_of_marks', None
+            ),  # base64-encoded Set-of-Marks annotated screenshot, png,
+            goal_image_urls=obs.get('image_content', []),
             open_pages_urls=obs.get('open_pages_urls', []),  # list of open pages
             active_page_index=obs.get(
                 'active_page_index', -1
@@ -49,6 +54,7 @@ async def browse(
             ),  # last browser env action performed
             last_browser_action_error=obs.get('last_action_error', ''),
             error=True if obs.get('last_action_error', '') else False,  # error flag
+            trigger_by_action=action.action,
         )
     except Exception as e:
         return BrowserOutputObservation(
@@ -57,4 +63,5 @@ async def browse(
             error=True,
             last_browser_action_error=str(e),
             url=asked_url if action.action == ActionType.BROWSE else '',
+            trigger_by_action=action.action,
         )

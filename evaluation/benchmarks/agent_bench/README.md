@@ -4,7 +4,7 @@ This folder contains evaluation harness for evaluating agents on the [AgentBench
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Start the evaluation
 
@@ -36,3 +36,21 @@ You can update the arguments in the script `evaluation/benchmarks/agent_bench/sc
 ```bash
 ./evaluation/benchmarks/agent_bench/scripts/run_infer.sh eval_gpt35_turbo HEAD CodeActAgent 1
 ```
+
+## Run with Remote Runtime (experimental)
+
+You can run the evaluation using a remote runtime instead of a local Docker container. This is useful when you want to run the evaluation in a cloud environment or when you don't have Docker installed locally.
+
+To use the remote runtime, set the following environment variables:
+
+```bash
+# Required environment variables
+export ALLHANDS_API_KEY="your-api-key"  # Contact the team to get an API key
+export RUNTIME=remote
+export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev"
+
+# Run the evaluation
+./evaluation/benchmarks/agent_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 1
+```
+
+The remote runtime will build a container image and run the evaluation in a cloud environment. The results will be saved locally in the same way as when running with a local runtime.

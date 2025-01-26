@@ -1,6 +1,8 @@
 export interface ActionMessage {
+  id: number;
+
   // Either 'agent' or 'user'
-  source: string;
+  source: "agent" | "user";
 
   // The action to be taken
   action: string;
@@ -19,11 +21,17 @@ export interface ObservationMessage {
   // The type of observation
   observation: string;
 
+  id: number;
+  cause: number;
+
   // The observed data
   content: string;
 
-  // Additional structured data
-  extras: Record<string, string>;
+  extras: {
+    metadata: Record<string, unknown>;
+    error_id: string;
+    [key: string]: string | Record<string, unknown>;
+  };
 
   // A friendly message that can be put in the chat log
   message: string;
@@ -35,6 +43,6 @@ export interface ObservationMessage {
 export interface StatusMessage {
   status_update: true;
   type: string;
-  id: string;
+  id?: string;
   message: string;
 }
