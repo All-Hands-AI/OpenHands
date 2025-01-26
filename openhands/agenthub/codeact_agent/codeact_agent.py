@@ -308,10 +308,11 @@ class CodeActAgent(Agent):
             if (
                 obs.trigger_by_action == ActionType.BROWSE_INTERACTIVE
                 and self.config.codeact_enable_visual_browsing
+                and self.llm.vision_is_active()
                 and obs.set_of_marks is not None
                 and len(obs.set_of_marks) > 0
             ):
-                text += 'Image: Current page screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
+                text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
                 message = Message(
                     role='user',
                     content=[
