@@ -219,7 +219,8 @@ def write_row_to_md_file(row, instance_id_to_test_result):
     elif 'test_result' in row and 'git_patch' in row['test_result']:
         model_patch = row['test_result']['git_patch']
     else:
-        raise ValueError(f'Row {row} does not have a git_patch')
+        print(f'Row {row} does not have a git_patch')
+        return
 
     test_output = None
     # Use result from output.jsonl FIRST if available.
