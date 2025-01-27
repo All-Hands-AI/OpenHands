@@ -63,7 +63,9 @@ export const getLocalStorageSettings = (): Settings => {
   const llmApiKey = localStorage.getItem("LLM_API_KEY");
   const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
   const securityAnalyzer = localStorage.getItem("SECURITY_ANALYZER");
-  const enableDefaultCondenser = localStorage.getItem("ENABLE_DEFAULT_CONDENSER") === "true";
+  const enableDefaultCondenser = (
+    localStorage.getItem("ENABLE_DEFAULT_CONDENSER") === "true"
+  );
 
   return {
     LLM_MODEL: llmModel || DEFAULT_SETTINGS.LLM_MODEL,
@@ -75,7 +77,8 @@ export const getLocalStorageSettings = (): Settings => {
     SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
     REMOTE_RUNTIME_RESOURCE_FACTOR:
       DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-    ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser || DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
+    ENABLE_DEFAULT_CONDENSER:
+      enableDefaultCondenser || DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
   };
 };
 

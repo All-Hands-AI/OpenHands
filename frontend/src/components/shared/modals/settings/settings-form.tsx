@@ -205,7 +205,6 @@ export function SettingsForm({
                 isDisabled={!!disabled}
                 defaultSelected={settings.CONFIRMATION_MODE}
               />
-
             </>
           )}
         </div>
