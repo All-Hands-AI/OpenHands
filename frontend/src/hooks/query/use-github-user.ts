@@ -5,10 +5,13 @@ import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { useLogout } from "../mutation/use-logout";
+import { useCurrentSettings } from "#/context/settings-context";
 
 export const useGitHubUser = () => {
   const { githubTokenIsSet } = useAuth();
-  const { mutate: logout } = useLogout();
+  const { setGitHubTokenIsSet } = useAuth();
+  const { mutateAsync: logout } = useLogout();
+  const { saveUserSettings } = useCurrentSettings();
   const { data: config } = useConfig();
 
   const user = useQuery({
@@ -30,9 +33,18 @@ export const useGitHubUser = () => {
     }
   }, [user.data]);
 
+  const handleLogout = async () => {
+    if (config?.APP_MODE === "saas") await logout();
+    else {
+      await saveUserSettings({ unset_github_token: true });
+      setGitHubTokenIsSet(false);
+    }
+    posthog.reset();
+  };
+
   React.useEffect(() => {
     if (user.isError) {
-      logout();
+      handleLogout();
     }
   }, [user.isError]);
 
