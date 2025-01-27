@@ -20,32 +20,23 @@ _shutdown_listeners: dict[UUID, Callable] = {}
 
 
 def _register_signal_handler(sig: signal.Signals):
+    original_handler = None
+
     def handler(sig_: int, frame: FrameType | None):
-        global _should_exit
         logger.debug(f'shutdown_signal:{sig_}')
+        global _should_exit
         if not _should_exit:
-            _should_exit = (
-                True  # Set this before calling listeners to prevent recursion
-            )
-            listeners = list(
-                _shutdown_listeners.values()
-            )  # Get a snapshot of listeners
+            _should_exit = True
+            listeners = list(_shutdown_listeners.values())
             for callable in listeners:
                 try:
                     callable()
                 except Exception:
                     logger.exception('Error calling shutdown listener')
+            if original_handler:
+                original_handler(sig_, frame)  # type: ignore[unreachable]
 
-    try:
-        original_handler = signal.signal(sig, handler)
-        if original_handler and original_handler != handler:
-            handler.original_handler = original_handler  # type: ignore[attr-defined]
-    except (ValueError, OSError):
-        pass
-    handler(
-        sig, None
-    )  # Call the handler immediately to handle the case where signal.signal() fails
-    return handler
+    original_handler = signal.signal(sig, handler)
 
 
 def _register_signal_handlers():
