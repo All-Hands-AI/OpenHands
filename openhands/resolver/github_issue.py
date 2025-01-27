@@ -18,3 +18,4 @@ class GithubIssue(BaseModel):
     review_threads: list[ReviewThread] | None = None
     thread_ids: list[str] | None = None
     head_branch: str | None = None
+    base_branch: str | None = None

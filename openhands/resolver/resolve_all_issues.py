@@ -331,9 +331,10 @@ def main():
     if not token:
         raise ValueError('Github token is required.')
 
+    api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(
         model=my_args.llm_model or os.environ['LLM_MODEL'],
-        api_key=my_args.llm_api_key or os.environ['LLM_API_KEY'],
+        api_key=str(api_key) if api_key else None,
         base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
     )
 

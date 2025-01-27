@@ -177,7 +177,7 @@ export function SettingsForm({
 
           <APIKeyInput
             isDisabled={!!disabled}
-            isSet={settings.LLM_API_KEY === "SET"}
+            isSet={settings.LLM_API_KEY === "**********"}
           />
 
           {showAdvancedOptions && (
