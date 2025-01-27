@@ -1,4 +1,3 @@
-import atexit
 from functools import lru_cache
 from typing import Callable
 from uuid import UUID
@@ -49,6 +48,7 @@ class DockerRuntime(ActionExecutionClient):
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
     """
+
     _shutdown_listener_id: UUID | None = None
 
     def __init__(
@@ -62,8 +62,10 @@ class DockerRuntime(ActionExecutionClient):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
     ):
-        if not self._shutdown_listener_id:
-            self.__class__._shutdown_listener_id = add_shutdown_listener(lambda: stop_all_containers(CONTAINER_NAME_PREFIX))
+        if not DockerRuntime._shutdown_listener_id:
+            DockerRuntime._shutdown_listener_id = add_shutdown_listener(
+                lambda: stop_all_containers(CONTAINER_NAME_PREFIX)
+            )
 
         self.config = config
         self._runtime_initialized: bool = False
