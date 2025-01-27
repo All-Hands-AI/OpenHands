@@ -54,7 +54,11 @@ export default function MainApp() {
   );
 
   const config = useConfig();
-  const { data: isAuthed, isFetching: isFetchingAuth } = useIsAuthed();
+  const {
+    data: isAuthed,
+    isFetching: isFetchingAuth,
+    isError: authError,
+  } = useIsAuthed();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config.data?.APP_MODE || null,
@@ -68,12 +72,16 @@ export default function MainApp() {
   }, [settings?.LANGUAGE]);
 
   const isInWaitlist =
-    !isFetchingAuth && !isAuthed && config.data?.APP_MODE === "saas";
+    !isFetchingAuth &&
+    !isAuthed &&
+    !authError &&
+    config.data?.APP_MODE === "saas";
 
   console.log({
     isInWaitlist,
     isFetchingAuth,
     isAuthed,
+    authError,
     config: config.data?.APP_MODE,
   });
 
