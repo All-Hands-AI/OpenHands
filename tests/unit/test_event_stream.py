@@ -7,6 +7,7 @@ from openhands.events import EventSource, EventStream
 from openhands.events.action import (
     NullAction,
 )
+from openhands.events.action.message import MessageAction
 from openhands.events.observation import NullObservation
 from openhands.storage import get_file_store
 
@@ -72,16 +73,21 @@ def test_get_matching_events_type_filter(temp_dir: str):
     event_stream.add_event(NullAction(), EventSource.AGENT)
     event_stream.add_event(NullObservation('test'), EventSource.AGENT)
     event_stream.add_event(NullAction(), EventSource.AGENT)
+    event_stream.add_event(MessageAction(content='test'), EventSource.AGENT)
 
     # Filter by NullAction
-    events = event_stream.get_matching_events(event_type=NullAction)
+    events = event_stream.get_matching_events(event_types=(NullAction,))
     assert len(events) == 2
     assert all(e['action'] == 'null' for e in events)
 
     # Filter by NullObservation
-    events = event_stream.get_matching_events(event_type=NullObservation)
+    events = event_stream.get_matching_events(event_types=(NullObservation,))
     assert len(events) == 1
     assert events[0]['observation'] == 'null'
+
+    # Filter by NullAction and MessageAction
+    events = event_stream.get_matching_events(event_types=(NullAction, MessageAction))
+    assert len(events) == 3
 
 
 def test_get_matching_events_query_search(temp_dir: str):

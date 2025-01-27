@@ -119,14 +119,14 @@ async def search_events(
 ):
     """Search through the event stream with filtering and pagination.
     Args:
-        request (Request): The incoming request object
-        query (str, optional): Text to search for in event content
-        start_id (int): Starting ID in the event stream. Defaults to 0
-        limit (int): Maximum number of events to return. Must be between 1 and 100. Defaults to 20
-        event_type (str, optional): Filter by event type (e.g., "FileReadAction")
-        source (str, optional): Filter by event source
-        start_date (str, optional): Filter events after this date (ISO format)
-        end_date (str, optional): Filter events before this date (ISO format)
+        request: The incoming request object
+        query: Text to search for in event content
+        start_id: Starting ID in the event stream. Defaults to 0
+        limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 20
+        event_type: Filter by event type (e.g., "FileReadAction")
+        source: Filter by event source
+        start_date: Filter events after this date (ISO format)
+        end_date: Filter events before this date (ISO format)
     Returns:
         dict: Dictionary containing:
             - events: List of matching events
@@ -145,7 +145,7 @@ async def search_events(
     cast_event_type = str_to_event_type(event_type)
     matching_events = event_stream.get_matching_events(
         query=query,
-        event_type=cast_event_type,
+        event_types=(cast_event_type),
         source=source,
         start_date=start_date,
         end_date=end_date,
