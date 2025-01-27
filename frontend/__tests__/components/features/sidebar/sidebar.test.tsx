@@ -12,7 +12,7 @@ import OpenHands from "#/api/open-hands";
 const RouterStub = createRoutesStub([
   {
     path: "/conversation/:conversationId",
-    Component: () => <Sidebar userIsAuthed />,
+    Component: () => <Sidebar />,
   },
 ]);
 

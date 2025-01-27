@@ -23,11 +23,7 @@ import { ConversationPanelWrapper } from "../conversation-panel/conversation-pan
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 
-interface SidebarProps {
-  userIsAuthed: boolean;
-}
-
-export function Sidebar({ userIsAuthed }: SidebarProps) {
+export function Sidebar() {
   const dispatch = useDispatch();
   const endSession = useEndSession();
   const user = useGitHubUser();
@@ -113,7 +109,7 @@ export function Sidebar({ userIsAuthed }: SidebarProps) {
       {accountSettingsModalOpen && (
         <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
       )}
-      {userIsAuthed && (settingsError || showSettingsModal) && (
+      {(settingsError || showSettingsModal) && (
         <SettingsModal
           settings={settings}
           onClose={() => setSettingsModalIsOpen(false)}

@@ -80,7 +80,7 @@ export default function MainApp() {
       data-testid="root-layout"
       className="bg-root-primary p-3 h-screen md:min-w-[1024px] overflow-x-hidden flex flex-col md:flex-row gap-3"
     >
-      <Sidebar userIsAuthed={userIsAuthed} />
+      <Sidebar />
 
       <div
         id="root-outlet"
