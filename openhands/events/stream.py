@@ -367,6 +367,7 @@ class EventStream:
         end_date: str | None = None,
         start_id: int = 0,
         limit: int = 100,
+        reverse: bool = False,
     ) -> list:
         """Get matching events from the event stream based on filters.
 
@@ -378,6 +379,7 @@ class EventStream:
             end_date: Filter events before this date (ISO format)
             start_id: Starting ID in the event stream. Defaults to 0
             limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 100
+            reverse: Whether to retrieve events in reverse order. Defaults to False.
 
         Returns:
             list: List of matching events (as dicts)
@@ -390,7 +392,7 @@ class EventStream:
 
         matching_events: list = []
 
-        for event in self.get_events(start_id=start_id):
+        for event in self.get_events(start_id=start_id, reverse=reverse):
             if self._should_filter_event(
                 event, query, event_types, source, start_date, end_date
             ):
