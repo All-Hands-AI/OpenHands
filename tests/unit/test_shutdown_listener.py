@@ -1,13 +1,12 @@
 import signal
 from types import FrameType
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from uuid import UUID
 
 import pytest
 
 from openhands.utils.shutdown_listener import (
     _register_signal_handler,
-    _register_signal_handlers,
     _shutdown_listeners,
     add_shutdown_listener,
     remove_shutdown_listener,
@@ -24,23 +23,33 @@ def cleanup_listeners():
     _shutdown_listeners.clear()
     _should_exit = False
 
+
 @pytest.fixture(autouse=True)
 def mock_register_handlers(monkeypatch):
     def mock_register_all():
         pass
-    monkeypatch.setattr('openhands.utils.shutdown_listener._register_signal_handlers', mock_register_all)
+
+    monkeypatch.setattr(
+        'openhands.utils.shutdown_listener._register_signal_handlers', mock_register_all
+    )
+
 
 @pytest.fixture(autouse=True)
 def mock_should_continue(monkeypatch):
     def mock_continue():
         return not _should_exit
-    monkeypatch.setattr('openhands.utils.shutdown_listener.should_continue', mock_continue)
+
+    monkeypatch.setattr(
+        'openhands.utils.shutdown_listener.should_continue', mock_continue
+    )
+
 
 @pytest.fixture(autouse=True)
 def mock_signal(monkeypatch):
     def mock_signal_handler(sig, handler):
         handler(sig, None)  # Call the handler immediately
         return None
+
     monkeypatch.setattr('signal.signal', mock_signal_handler)
 
 
@@ -101,13 +110,14 @@ def test_listeners_called_only_once():
 def test_remove_listener_during_shutdown():
     mock_callable1 = MagicMock()
     mock_callable2 = MagicMock()
-    
+
     # Second listener removes the first listener when called
     listener1_id = add_shutdown_listener(mock_callable1)
+
     def remove_other_listener():
         remove_shutdown_listener(listener1_id)
         mock_callable2()
-    
+
     add_shutdown_listener(remove_other_listener)
 
     # Register and trigger signal handler

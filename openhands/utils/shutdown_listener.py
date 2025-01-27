@@ -16,7 +16,7 @@ from uvicorn.server import HANDLED_SIGNALS
 from openhands.core.logger import openhands_logger as logger
 
 _should_exit = None
-_shutdown_listeners = {}
+_shutdown_listeners: dict[UUID, Callable] = {}
 
 
 def _register_signal_handler(sig: signal.Signals):
@@ -24,8 +24,12 @@ def _register_signal_handler(sig: signal.Signals):
         global _should_exit
         logger.debug(f'shutdown_signal:{sig_}')
         if not _should_exit:
-            _should_exit = True  # Set this before calling listeners to prevent recursion
-            listeners = list(_shutdown_listeners.values())  # Get a snapshot of listeners
+            _should_exit = (
+                True  # Set this before calling listeners to prevent recursion
+            )
+            listeners = list(
+                _shutdown_listeners.values()
+            )  # Get a snapshot of listeners
             for callable in listeners:
                 try:
                     callable()
@@ -38,7 +42,9 @@ def _register_signal_handler(sig: signal.Signals):
             handler.original_handler = original_handler  # type: ignore[attr-defined]
     except (ValueError, OSError):
         pass
-    handler(sig, None)  # Call the handler immediately to handle the case where signal.signal() fails
+    handler(
+        sig, None
+    )  # Call the handler immediately to handle the case where signal.signal() fails
     return handler
 
 
@@ -94,7 +100,4 @@ def add_shutdown_listener(callable: Callable) -> UUID:
 
 
 def remove_shutdown_listener(id_: UUID) -> bool:
-    try:
-        return _shutdown_listeners.pop(id_) is not None
-    except KeyError:
-        return False
+    return _shutdown_listeners.pop(id_, None) is not None
