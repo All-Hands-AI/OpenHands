@@ -37,7 +37,7 @@ class SandboxConfig(BaseModel):
             This should be a JSON string that will be parsed into a dictionary.
     """
 
-    remote_runtime_api_url: str = Field(default='http://localhost:8000')
+    remote_runtime_api_url: str | None = Field(default='http://localhost:8000')
     local_runtime_url: str = Field(default='http://localhost')
     keep_runtime_alive: bool = Field(default=False)
     rm_all_containers: bool = Field(default=False)
