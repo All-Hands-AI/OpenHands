@@ -487,7 +487,7 @@ class CodeActAgent(Agent):
                     if msg.role == 'user' and not is_first_message_handled:
                         is_first_message_handled = True
                         # compose the first user message with examples
-                        self.prompt_manager.add_examples_to_first_user_message(msg)
+                        self.prompt_manager.add_examples_to_initial_message(msg)
 
                         # and/or repo/runtime info
                         if self.config.enable_prompt_extensions:

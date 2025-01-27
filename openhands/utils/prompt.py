@@ -184,7 +184,7 @@ class PromptManager:
                 micro_text += '\n</extra_info>'
                 message.content.append(TextContent(text=micro_text))
 
-    def add_examples_to_first_user_message(self, message: Message) -> None:
+    def add_examples_to_initial_message(self, message: Message) -> None:
         """Add example_message to the first user message."""
         example_message = self.get_example_user_message() or None
 
