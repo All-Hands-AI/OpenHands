@@ -145,7 +145,7 @@ async def search_events(
     cast_event_type = str_to_event_type(event_type)
     matching_events = event_stream.get_matching_events(
         query=query,
-        event_type=cast_event_type,
+        event_types=(cast_event_type),
         source=source,
         start_date=start_date,
         end_date=end_date,
