@@ -22,6 +22,7 @@ const getSettingsQueryFn = async () => {
         REMOTE_RUNTIME_RESOURCE_FACTOR:
           apiSettings.remote_runtime_resource_factor,
         GITHUB_TOKEN_IS_SET: apiSettings.github_token_is_set,
+        ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
       };
     }
 

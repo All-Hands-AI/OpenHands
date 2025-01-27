@@ -18,6 +18,7 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
     remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     github_token: settings.github_token,
     unset_github_token: settings.unset_github_token,
+    enable_default_condenser: settings.ENABLE_DEFAULT_CONDENSER,
   };
 
   await OpenHands.saveSettings(apiSettings);

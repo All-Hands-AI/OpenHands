@@ -22,6 +22,7 @@ class Settings(BaseModel):
     llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = None
     github_token: str | None = None
+    enable_default_condenser: bool = False
 
     @field_serializer('llm_api_key')
     def llm_api_key_serializer(self, llm_api_key: SecretStr, info: SerializationInfo):

@@ -335,7 +335,7 @@ class EventStream:
         self,
         event,
         query: str | None = None,
-        event_type: str | None = None,
+        event_type: type[Event] | None = None,
         source: str | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
@@ -345,7 +345,7 @@ class EventStream:
         Args:
             event: The event to check
             query (str, optional): Text to search for in event content
-            event_type (str, optional): Filter by event type (e.g., "FileReadAction")
+            event_type (type[Event], optional): Filter by event type class (e.g., FileReadAction)
             source (str, optional): Filter by event source
             start_date (str, optional): Filter events after this date (ISO format)
             end_date (str, optional): Filter events before this date (ISO format)
@@ -353,7 +353,7 @@ class EventStream:
         Returns:
             bool: True if the event should be filtered out, False if it matches all criteria
         """
-        if event_type and not event.__class__.__name__ == event_type:
+        if event_type and not isinstance(event, event_type):
             return True
 
         if source and not event.source.value == source:
@@ -377,7 +377,7 @@ class EventStream:
     def get_matching_events(
         self,
         query: str | None = None,
-        event_type: str | None = None,
+        event_type: type[Event] | None = None,
         source: str | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
@@ -388,7 +388,7 @@ class EventStream:
 
         Args:
             query (str, optional): Text to search for in event content
-            event_type (str, optional): Filter by event type (e.g., "FileReadAction")
+            event_type (type[Event], optional): Filter by event type class (e.g., FileReadAction)
             source (str, optional): Filter by event source
             start_date (str, optional): Filter events after this date (ISO format)
             end_date (str, optional): Filter events before this date (ISO format)
