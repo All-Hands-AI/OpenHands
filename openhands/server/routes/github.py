@@ -90,22 +90,18 @@ async def get_github_installation_ids(
 ):
     headers = generate_github_headers(github_token)
     try:
-        response = await call_sync_from_async(
-            requests.get, 'https://api.github.com/user/installations', headers=headers
-        )
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
+        async with httpx.AsyncClient() as client:
+            response = await client.get('https://api.github.com/user/installations', headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            ids = [installation['id'] for installation in data['installations']]
+            return JSONResponse(content=ids)
+
+    except httpx.HTTPError as e:
         raise HTTPException(
-            status_code=response.status_code if response else 500,
+            status_code=e.response.status_code if hasattr(e, 'response') else 500,
             detail=f'Error fetching installations: {str(e)}',
         )
-
-    data = response.json()
-    ids = [installation['id'] for installation in data['installations']]
-    json_response = JSONResponse(content=ids)
-    response.close()
-
-    return json_response
 
 
 @app.get('/search/repositories')
