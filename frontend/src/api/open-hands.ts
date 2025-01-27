@@ -151,6 +151,8 @@ class OpenHands {
 
     const response =
       await openHands.post<AuthenticateResponse>("/api/authenticate");
+
+    console.log(response);
     return response.status === 200;
   }
 

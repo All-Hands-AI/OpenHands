@@ -8,9 +8,9 @@ export const useLogout = () => {
 
   return useMutation({
     mutationFn: OpenHands.logout,
-    onSuccess: () => {
+    onSuccess: async () => {
       setGitHubTokenIsSet(false);
-      queryClient.invalidateQueries();
+      await queryClient.invalidateQueries();
     },
   });
 };
