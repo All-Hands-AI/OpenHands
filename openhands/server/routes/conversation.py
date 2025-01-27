@@ -2,10 +2,24 @@ from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.serialization.utils import str_to_event_type
+from openhands.events.event import Event
+from openhands.events.serialization.event import event_from_dict
 from openhands.runtime.base import Runtime
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
+
+
+def str_to_event_type(event: str | None) -> Event | None:
+    if not event:
+        return None
+
+    for event_type in ['observation', 'action']:
+        try:
+            return event_from_dict({event_type: event})
+        except Exception:
+            continue
+
+    return None
 
 
 @app.get('/config')
