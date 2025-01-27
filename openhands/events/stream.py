@@ -284,7 +284,7 @@ class EventStream:
                 data[key] = self._replace_secrets(data[key])
             elif isinstance(data[key], str):
                 for secret in self.secrets.values():
-                    data[key] = data[key].replace(secret, '********')
+                    data[key] = data[key].replace(secret, '<secret_hidden>')
         return data
 
     def _run_queue_loop(self):
