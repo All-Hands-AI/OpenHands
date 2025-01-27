@@ -74,12 +74,12 @@ def test_get_matching_events_type_filter(temp_dir: str):
     event_stream.add_event(NullAction(), EventSource.AGENT)
 
     # Filter by NullAction
-    events = event_stream.get_matching_events(event_type='NullAction')
+    events = event_stream.get_matching_events(event_type=NullAction)
     assert len(events) == 2
     assert all(e['action'] == 'null' for e in events)
 
     # Filter by NullObservation
-    events = event_stream.get_matching_events(event_type='NullObservation')
+    events = event_stream.get_matching_events(event_type=NullObservation)
     assert len(events) == 1
     assert events[0]['observation'] == 'null'
 
