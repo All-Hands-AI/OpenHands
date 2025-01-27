@@ -46,6 +46,7 @@ export const useSettings = () => {
     queryFn: getSettingsQueryFn,
     initialData: DEFAULT_SETTINGS,
     staleTime: 0,
+    retry: false,
   });
 
   React.useEffect(() => {
