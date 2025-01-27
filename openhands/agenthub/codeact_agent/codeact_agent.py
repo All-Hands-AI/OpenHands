@@ -486,10 +486,12 @@ class CodeActAgent(Agent):
                 if msg:
                     if msg.role == 'user' and not is_first_message_handled:
                         is_first_message_handled = True
-                        # compose the first user message with examples or repo/runtime info
-                        self.prompt_manager.enhance_first_user_message(
-                            msg, self.config.enable_prompt_extensions
-                        )
+                        # compose the first user message with examples
+                        self.prompt_manager.add_examples_to_first_user_message(msg)
+
+                        # and/or repo/runtime info
+                        if self.config.enable_prompt_extensions:
+                            self.prompt_manager.add_info_to_initial_message(msg)
 
                     # enhance the user message with additional context based on keywords matched
                     if msg.role == 'user':
