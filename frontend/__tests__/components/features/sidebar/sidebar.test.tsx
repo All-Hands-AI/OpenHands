@@ -49,6 +49,7 @@ describe("Sidebar", () => {
       expect(saveSettingsSpy).toHaveBeenCalledWith({
         agent: "CodeActAgent",
         confirmation_mode: false,
+        enable_default_condenser: false,
         language: "en",
         llm_model: "anthropic/claude-3-5-sonnet-20241022",
         remote_runtime_resource_factor: 1,
@@ -88,6 +89,7 @@ describe("Sidebar", () => {
       expect(saveSettingsSpy).toHaveBeenCalledWith({
         agent: "CodeActAgent",
         confirmation_mode: false,
+        enable_default_condenser: false,
         github_token: "new-token",
         language: "no",
         llm_base_url: "",
@@ -123,6 +125,7 @@ describe("Sidebar", () => {
       expect(saveSettingsSpy).toHaveBeenCalledWith({
         agent: "CodeActAgent",
         confirmation_mode: false,
+        enable_default_condenser: false,
         language: "en",
         llm_base_url: "",
         llm_model: "anthropic/claude-3-5-sonnet-20241022",

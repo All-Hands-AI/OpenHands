@@ -32,6 +32,7 @@ describe("AccountSettingsModal", () => {
     expect(saveSettingsSpy).toHaveBeenCalledWith({
       agent: "CodeActAgent",
       confirmation_mode: false,
+      enable_default_condenser: false,
       language: "no",
       github_token: "new-token",
       llm_base_url: "",
@@ -73,6 +74,7 @@ describe("AccountSettingsModal", () => {
     expect(saveSettingsSpy).toHaveBeenCalledWith({
       agent: "CodeActAgent",
       confirmation_mode: false,
+      enable_default_condenser: false,
       language: "en",
       llm_base_url: "",
       llm_model: "anthropic/claude-3-5-sonnet-20241022",
@@ -103,6 +105,7 @@ describe("AccountSettingsModal", () => {
     expect(saveSettingsSpy).toHaveBeenCalledWith({
       agent: "CodeActAgent",
       confirmation_mode: false,
+      enable_default_condenser: false,
       language: "no",
       llm_base_url: "",
       llm_model: "anthropic/claude-3-5-sonnet-20241022",
