@@ -73,8 +73,7 @@ export default function MainApp() {
 
   const isInWaitlist =
     !isFetchingAuth &&
-    !isAuthed &&
-    !authError &&
+    (authError || !isAuthed) &&
     config.data?.APP_MODE === "saas";
 
   console.log({
