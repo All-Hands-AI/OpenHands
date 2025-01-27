@@ -70,6 +70,13 @@ export default function MainApp() {
   const isInWaitlist =
     !isFetchingAuth && !isAuthed && config.data?.APP_MODE === "saas";
 
+  console.log({
+    isInWaitlist,
+    isFetchingAuth,
+    isAuthed,
+    config: config.data?.APP_MODE,
+  });
+
   return (
     <div
       data-testid="root-layout"
