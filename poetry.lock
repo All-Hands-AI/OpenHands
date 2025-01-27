@@ -3944,19 +3944,19 @@ pydantic = ">=1.10"
 
 [[package]]
 name = "llama-index"
-version = "0.12.13"
+version = "0.12.14"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "llama_index-0.12.13-py3-none-any.whl", hash = "sha256:0b285aa451ced6bd8da40df99068ac96badf8b5725c4edc29f2bce4da2ffd8bc"},
-    {file = "llama_index-0.12.13.tar.gz", hash = "sha256:1e39a397dcc51dabe280c121fd8d5451a6a84595233a8b26caa54d9b7ecf9ffc"},
+    {file = "llama_index-0.12.14-py3-none-any.whl", hash = "sha256:cafbac9f08f1f7293169bfd3c75545db3b761742ea829ba6940c3f2c3b1c2d26"},
+    {file = "llama_index-0.12.14.tar.gz", hash = "sha256:aa74315b32e93a77e285519459d77b98be7db9ae4c5aa64aac2c54cc919c838f"},
 ]
 
 [package.dependencies]
 llama-index-agent-openai = ">=0.4.0,<0.5.0"
 llama-index-cli = ">=0.4.0,<0.5.0"
-llama-index-core = ">=0.12.13,<0.13.0"
+llama-index-core = ">=0.12.14,<0.13.0"
 llama-index-embeddings-openai = ">=0.3.0,<0.4.0"
 llama-index-indices-managed-llama-cloud = ">=0.4.0"
 llama-index-llms-openai = ">=0.3.0,<0.4.0"
@@ -4001,13 +4001,13 @@ llama-index-llms-openai = ">=0.3.0,<0.4.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.13"
+version = "0.12.14"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "llama_index_core-0.12.13-py3-none-any.whl", hash = "sha256:9708bb594bbddffd6ff0767242e49d8978d1ba60a2e62e071d9d123ad2f17e6f"},
-    {file = "llama_index_core-0.12.13.tar.gz", hash = "sha256:77af0161246ce1de38efc17cb6438dfff9e9558af00bcfac7dd4d0b7325efa4b"},
+    {file = "llama_index_core-0.12.14-py3-none-any.whl", hash = "sha256:6fdb30e3fadf98e7df75f9db5d06f6a7f8503ca545a71e048d786ff88012bd50"},
+    {file = "llama_index_core-0.12.14.tar.gz", hash = "sha256:378bbf5bf4d1a8c692d3a980c1a6ed3be7a9afb676a4960429dea15f62d06cd3"},
 ]
 
 [package.dependencies]
@@ -5582,15 +5582,17 @@ realtime = ["websockets (>=13,<15)"]
 
 [[package]]
 name = "openhands-aci"
-version = "0.1.8"
+version = "0.1.9"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
-python-versions = "^3.12"
-files = []
-develop = false
+python-versions = "<4.0,>=3.12"
+files = [
+    {file = "openhands_aci-0.1.9-py3-none-any.whl", hash = "sha256:62af189878db046aa98475a41fa01200efd5ddf1db8a435c38da3d4ad32cb11a"},
+    {file = "openhands_aci-0.1.9.tar.gz", hash = "sha256:690d33d355a3e4111f52861dbb96ff766b5a268202324a87c94ba67b628a63b1"},
+]
 
 [package.dependencies]
-diskcache = "^5.6.3"
+diskcache = ">=5.6.3,<6.0.0"
 flake8 = "*"
 gitpython = "*"
 grep-ast = "0.3.3"
@@ -5600,13 +5602,7 @@ numpy = "*"
 pandas = "*"
 scipy = "*"
 tree-sitter = "0.21.3"
-whatthepatch = "^1.0.6"
-
-[package.source]
-type = "git"
-url = "https://github.com/All-Hands-AI/openhands-aci.git"
-reference = "fix-find-show-only-hidden-subpaths"
-resolved_reference = "910e8c470aff0e496bf262bc673c7ee7b4531159"
+whatthepatch = ">=1.0.6,<2.0.0"
 
 [[package]]
 name = "opentelemetry-api"
@@ -10120,4 +10116,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "6b74056694bdc84a4583c2f93a5b218f15688827cb59e289eb83331045a1582e"
+content-hash = "fbca4b2ca0fe2d1d3cac46164c0c1eb9e468dc6f6bc7165e9a3d62ea9f25d801"

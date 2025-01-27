@@ -245,10 +245,14 @@ class OpenHands {
   static async createConversation(
     githubToken?: string,
     selectedRepository?: string,
+    initialUserMsg?: string,
+    imageUrls?: string[],
   ): Promise<Conversation> {
     const body = {
       github_token: githubToken,
       selected_repository: selectedRepository,
+      initial_user_msg: initialUserMsg,
+      image_urls: imageUrls,
     };
 
     const { data } = await openHands.post<Conversation>(

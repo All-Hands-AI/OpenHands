@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.action.message import MessageAction
 from openhands.events.stream import EventStreamSubscriber
 from openhands.runtime import get_runtime_cls
 from openhands.server.auth import get_user_id
@@ -34,6 +35,7 @@ class InitSessionRequest(BaseModel):
     github_token: str | None = None
     selected_repository: str | None = None
     initial_user_msg: str | None = None
+    image_urls: list[str] | None = None
 
 
 async def _create_new_conversation(
@@ -41,6 +43,7 @@ async def _create_new_conversation(
     token: str | None,
     selected_repository: str | None,
     initial_user_msg: str | None,
+    image_urls: list[str] | None,
 ):
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
@@ -94,8 +97,14 @@ async def _create_new_conversation(
     )
 
     logger.info(f'Starting agent loop for conversation {conversation_id}')
+    initial_message_action = None
+    if initial_user_msg or image_urls:
+        initial_message_action = MessageAction(
+            content=initial_user_msg or '',
+            image_urls=image_urls or [],
+        )
     event_stream = await conversation_manager.maybe_start_agent_loop(
-        conversation_id, conversation_init_data, user_id, initial_user_msg
+        conversation_id, conversation_init_data, user_id, initial_message_action
     )
     try:
         event_stream.subscribe(
@@ -121,10 +130,16 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     github_token = getattr(request.state, 'github_token', '') or data.github_token
     selected_repository = data.selected_repository
     initial_user_msg = data.initial_user_msg
+    image_urls = data.image_urls or []
 
     try:
+        # Create conversation with initial message
         conversation_id = await _create_new_conversation(
-            user_id, github_token, selected_repository, initial_user_msg
+            user_id,
+            github_token,
+            selected_repository,
+            initial_user_msg,
+            image_urls,
         )
 
         return JSONResponse(

@@ -306,6 +306,12 @@ class RemoteRuntime(ActionExecutionClient):
         assert 'pod_status' in runtime_data
         pod_status = runtime_data['pod_status'].lower()
         self.log('debug', f'Pod status: {pod_status}')
+        restart_count = runtime_data.get('restart_count', 0)
+        if restart_count != 0:
+            restart_reasons = runtime_data.get('restart_reasons')
+            self.log(
+                'debug', f'Pod restarts: {restart_count}, reasons: {restart_reasons}'
+            )
 
         # FIXME: We should fix it at the backend of /start endpoint, make sure
         # the pod is created before returning the response.
