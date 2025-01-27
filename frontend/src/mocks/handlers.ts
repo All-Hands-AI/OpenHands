@@ -21,6 +21,7 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   remote_runtime_resource_factor:
     DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
   github_token_is_set: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
+  enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
 };
 
 const MOCK_USER_PREFERENCES: {
