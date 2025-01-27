@@ -64,8 +64,8 @@ class OpenhandsConfig(OpenhandsConfigInterface):
             RateLimitMiddleware,
             rate_limiter=InMemoryRateLimiter(requests=10, seconds=1),
         )
-        api.middleware('http')(GitHubTokenMiddleware(api, SettingsStoreImpl))  # type: ignore
         api.middleware('http')(AttachConversationMiddleware(api))
+        api.middleware('http')(GitHubTokenMiddleware(api, SettingsStoreImpl))  # type: ignore
 
 
 def load_openhands_config():
