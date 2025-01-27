@@ -29,9 +29,11 @@ export function Sidebar() {
   const endSession = useEndSession();
   const user = useGitHubUser();
   const { data: config } = useConfig();
-  const { data: isAuthed } = useIsAuthed();
-  const { data: settings } = useSettings();
+  const { data: isAuthed, isError: authError } = useIsAuthed();
+  const { data: settings, isError: settingsError } = useSettings();
   const { mutateAsync: logout } = useLogout();
+
+  const userIsAuthed = isAuthed && !authError;
 
   const { saveUserSettings, isUpToDate: settingsAreUpToDate } =
     useCurrentSettings();
@@ -112,7 +114,7 @@ export function Sidebar() {
       {accountSettingsModalOpen && (
         <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
       )}
-      {showSettingsModal && (
+      {userIsAuthed && (settingsError || showSettingsModal) && (
         <SettingsModal
           settings={settings}
           onClose={() => setSettingsModalIsOpen(false)}
