@@ -13,7 +13,7 @@ const renderSidebar = () => {
   const RouterStub = createRoutesStub([
     {
       path: "/conversation/:conversationId",
-      Component: Sidebar,
+      Component: () => <Sidebar userIsAuthed />,
     },
   ]);
 

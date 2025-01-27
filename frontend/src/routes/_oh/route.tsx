@@ -71,25 +71,16 @@ export default function MainApp() {
     }
   }, [settings?.LANGUAGE]);
 
-  const isInWaitlist =
-    !isFetchingAuth &&
-    (authError || !isAuthed) &&
-    config.data?.APP_MODE === "saas";
-
-  console.log({
-    isInWaitlist,
-    isFetchingAuth,
-    isAuthed,
-    authError,
-    config: config.data?.APP_MODE,
-  });
+  const userIsAuthed = !!isAuthed && !authError;
+  const renderWaitlistModal =
+    !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
 
   return (
     <div
       data-testid="root-layout"
       className="bg-root-primary p-3 h-screen md:min-w-[1024px] overflow-x-hidden flex flex-col md:flex-row gap-3"
     >
-      <Sidebar />
+      <Sidebar userIsAuthed={userIsAuthed} />
 
       <div
         id="root-outlet"
@@ -98,7 +89,7 @@ export default function MainApp() {
         <Outlet />
       </div>
 
-      {isInWaitlist && (
+      {renderWaitlistModal && (
         <WaitlistModal
           ghTokenIsSet={githubTokenIsSet}
           githubAuthUrl={gitHubAuthUrl}

@@ -3,7 +3,6 @@ import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
-import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { DocsButton } from "#/components/shared/buttons/docs-button";
@@ -24,16 +23,17 @@ import { ConversationPanelWrapper } from "../conversation-panel/conversation-pan
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 
-export function Sidebar() {
+interface SidebarProps {
+  userIsAuthed: boolean;
+}
+
+export function Sidebar({ userIsAuthed }: SidebarProps) {
   const dispatch = useDispatch();
   const endSession = useEndSession();
   const user = useGitHubUser();
   const { data: config } = useConfig();
-  const { data: isAuthed, isError: authError } = useIsAuthed();
   const { data: settings, isError: settingsError } = useSettings();
   const { mutateAsync: logout } = useLogout();
-
-  const userIsAuthed = isAuthed && !authError;
 
   const { saveUserSettings, isUpToDate: settingsAreUpToDate } =
     useCurrentSettings();
@@ -67,8 +67,7 @@ export function Sidebar() {
     posthog.reset();
   };
 
-  const showSettingsModal =
-    isAuthed && (!settingsAreUpToDate || settingsModalIsOpen);
+  const showSettingsModal = !settingsAreUpToDate || settingsModalIsOpen;
 
   return (
     <>
