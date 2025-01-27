@@ -63,9 +63,8 @@ export const getLocalStorageSettings = (): Settings => {
   const llmApiKey = localStorage.getItem("LLM_API_KEY");
   const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
   const securityAnalyzer = localStorage.getItem("SECURITY_ANALYZER");
-  const enableDefaultCondenser = (
-    localStorage.getItem("ENABLE_DEFAULT_CONDENSER") === "true"
-  );
+  const enableDefaultCondenser =
+    localStorage.getItem("ENABLE_DEFAULT_CONDENSER") === "true";
 
   return {
     LLM_MODEL: llmModel || DEFAULT_SETTINGS.LLM_MODEL,
