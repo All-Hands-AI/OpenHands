@@ -420,6 +420,10 @@ class ActionExecutor:
         self.browser.close()
 
 
+def _allow_entry(entry: str) -> bool:
+    return entry != 'lost+found/'
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
@@ -714,7 +718,9 @@ if __name__ == '__main__':
 
             # Combine sorted directories and files
             sorted_entries = directories + files
-            return sorted_entries
+
+            filtered_entries = [e for e in sorted_entries if _allow_entry(e)]
+            return filtered_entries
 
         except Exception as e:
             logger.error(f'Error listing files: {e}')
