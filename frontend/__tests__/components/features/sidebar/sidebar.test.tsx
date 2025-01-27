@@ -9,16 +9,15 @@ import OpenHands from "#/api/open-hands";
 // These tests will now fail because the conversation panel is rendered through a portal
 // and technically not a child of the Sidebar component.
 
-const renderSidebar = () => {
-  const RouterStub = createRoutesStub([
-    {
-      path: "/conversation/:conversationId",
-      Component: () => <Sidebar userIsAuthed />,
-    },
-  ]);
+const RouterStub = createRoutesStub([
+  {
+    path: "/conversation/:conversationId",
+    Component: () => <Sidebar userIsAuthed />,
+  },
+]);
 
+const renderSidebar = () =>
   renderWithProviders(<RouterStub initialEntries={["/conversation/123"]} />);
-};
 
 describe("Sidebar", () => {
   describe("Settings", () => {
@@ -129,6 +128,53 @@ describe("Sidebar", () => {
         llm_model: "anthropic/claude-3-5-sonnet-20241022",
         remote_runtime_resource_factor: 1,
       });
+    });
+  });
+
+  describe("Settings Modal", () => {
+    it("should open the settings modal if the settings version is out of date", async () => {
+      const user = userEvent.setup();
+      localStorage.clear();
+
+      const { rerender } = renderSidebar();
+
+      const settingsModal = await screen.findByTestId("ai-config-modal");
+      expect(settingsModal).toBeInTheDocument();
+
+      const saveSettingsButton = await within(settingsModal).findByTestId(
+        "save-settings-button",
+      );
+      await user.click(saveSettingsButton);
+
+      expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
+
+      rerender(<RouterStub />);
+
+      expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
+    });
+
+    it("should open the settings modal if the user clicks the settings button", async () => {
+      const user = userEvent.setup();
+      renderSidebar();
+
+      expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
+
+      const settingsButton = screen.getByTestId("settings-button");
+      await user.click(settingsButton);
+
+      const settingsModal = screen.getByTestId("ai-config-modal");
+      expect(settingsModal).toBeInTheDocument();
+    });
+
+    it("should open the settings modal if GET /settings fails", async () => {
+      vi.spyOn(OpenHands, "getSettings").mockRejectedValue(
+        new Error("Failed to fetch settings"),
+      );
+
+      renderSidebar();
+
+      const settingsModal = await screen.findByTestId("ai-config-modal");
+      expect(settingsModal).toBeInTheDocument();
     });
   });
 });
