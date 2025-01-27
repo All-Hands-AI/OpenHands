@@ -2,9 +2,24 @@ from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.event import Event
+from openhands.events.serialization.event import event_from_dict
 from openhands.runtime.base import Runtime
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
+
+
+def str_to_event_type(event: str | None) -> Event | None:
+    if not event:
+        return None
+
+    for event_type in ['observation', 'action']:
+        try:
+            return event_from_dict({event_type: event})
+        except Exception:
+            continue
+
+    return None
 
 
 @app.get('/config')
@@ -126,9 +141,11 @@ async def search_events(
         )
     # Get matching events from the stream
     event_stream = request.state.conversation.event_stream
+
+    cast_event_type = str_to_event_type(event_type)
     matching_events = event_stream.get_matching_events(
         query=query,
-        event_type=event_type,
+        event_type=cast_event_type,
         source=source,
         start_date=start_date,
         end_date=end_date,
