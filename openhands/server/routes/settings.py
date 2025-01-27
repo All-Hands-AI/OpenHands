@@ -38,6 +38,7 @@ async def load_settings(request: Request) -> SettingsWithTokenMeta | None:
             **settings.model_dump(),
             github_token_is_set=bool(github_token),
         )
+        settings_with_token_data.llm_api_key = settings.llm_api_key
 
         del settings_with_token_data.github_token
         return settings_with_token_data
@@ -117,5 +118,8 @@ def convert_to_settings(settings_with_token_data: SettingsWithTokenMeta) -> Sett
         for key, value in settings_data.items()
         if key in Settings.model_fields  # Ensures only `Settings` fields are included
     }
+
+    # Convert the `llm_api_key` to a `SecretStr` instance
+    filtered_settings_data['llm_api_key'] = settings_with_token_data.llm_api_key
 
     return Settings(**filtered_settings_data)
