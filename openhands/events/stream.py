@@ -328,11 +328,11 @@ class EventStream:
 
         Args:
             event: The event to check
-            query (str, optional): Text to search for in event content
-            event_type (tuple[type[Event], ...], optional): Filter by event type classes (e.g., (FileReadAction, ) ).
-            source (str, optional): Filter by event source
-            start_date (str, optional): Filter events after this date (ISO format)
-            end_date (str, optional): Filter events before this date (ISO format)
+            query: Text to search for in event content
+            event_type: Filter by event type classes (e.g., (FileReadAction, ) ).
+            source: Filter by event source
+            start_date: Filter events after this date (ISO format)
+            end_date: Filter events before this date (ISO format)
 
         Returns:
             bool: True if the event should be filtered out, False if it matches all criteria
@@ -371,13 +371,13 @@ class EventStream:
         """Get matching events from the event stream based on filters.
 
         Args:
-            query (str, optional): Text to search for in event content
-            event_types (tuple[type[Event], ...], optional): Filter by event type classes (e.g., (FileReadAction, ) ).
-            source (str, optional): Filter by event source
-            start_date (str, optional): Filter events after this date (ISO format)
-            end_date (str, optional): Filter events before this date (ISO format)
-            start_id (int): Starting ID in the event stream. Defaults to 0
-            limit (int): Maximum number of events to return. Must be between 1 and 100. Defaults to 100
+            query: Text to search for in event content
+            event_types: Filter by event type classes (e.g., (FileReadAction, ) ).
+            source: Filter by event source
+            start_date: Filter events after this date (ISO format)
+            end_date: Filter events before this date (ISO format)
+            start_id: Starting ID in the event stream. Defaults to 0
+            limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 100
 
         Returns:
             list: List of matching events (as dicts)
