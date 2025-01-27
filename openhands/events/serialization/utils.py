@@ -1,3 +1,7 @@
+from openhands.events.event import Event
+from openhands.events.serialization.event import event_from_dict
+
+
 def remove_fields(obj, fields: set[str]):
     """Remove fields from an object.
 
@@ -18,3 +22,16 @@ def remove_fields(obj, fields: set[str]):
         raise ValueError(
             'Object must not contain dataclass, consider converting to dict first'
         )
+
+
+def str_to_event_type(event: str | None) -> Event | None:
+    if not event:
+        return None
+
+    for event_type in ['observation', 'action']:
+        try:
+            return event_from_dict({event_type: event})
+        except Exception:
+            continue
+
+    return None
