@@ -205,6 +205,30 @@ class PromptManager:
                 micro_text += '\n</extra_info>'
                 message.content.append(TextContent(text=micro_text))
 
+    def enhance_first_user_message(
+        self,
+        message: Message,
+        enable_prompt_extensions: bool,
+    ) -> None:
+        """
+        Add example_message and additional_info into the first user message.
+        """
+        # Get additional info, if enabled
+        additional_info = None
+        if enable_prompt_extensions:
+            additional_info = self.get_additional_info() or None
+
+        # And insert the new content at the start of the list
+        if additional_info:
+            message.content.insert(0, TextContent(text=additional_info))
+
+        # Fetch the sample user text, if any
+        example_message = self.get_example_user_message() or None
+
+        # And insert it at the start
+        if example_message:
+            message.content.insert(0, TextContent(text=example_message))
+
     def add_turns_left_reminder(self, messages: list[Message], state: State) -> None:
         latest_user_message = next(
             islice(
