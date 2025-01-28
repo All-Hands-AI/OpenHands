@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
+from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth import get_user_id
 from openhands.server.services.github_service import GitHubService
-from openhands.server.settings import Settings, SettingsWithTokenMeta
+from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import config, openhands_config
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.settings.settings_store import SettingsStore
@@ -21,7 +22,7 @@ ConversationStoreImpl = get_impl(
 
 
 @app.get('/settings')
-async def load_settings(request: Request) -> SettingsWithTokenMeta | None:
+async def load_settings(request: Request) -> GETSettingsModel | None:
     try:
         settings_store = await SettingsStoreImpl.get_instance(
             config, get_user_id(request)
@@ -34,7 +35,7 @@ async def load_settings(request: Request) -> SettingsWithTokenMeta | None:
             )
 
         github_token = request.state.github_token
-        settings_with_token_data = SettingsWithTokenMeta(
+        settings_with_token_data = GETSettingsModel(
             **settings.model_dump(),
             github_token_is_set=bool(github_token),
         )
@@ -53,7 +54,7 @@ async def load_settings(request: Request) -> SettingsWithTokenMeta | None:
 @app.post('/settings')
 async def store_settings(
     request: Request,
-    settings: SettingsWithTokenMeta,
+    settings: POSTSettingsModel,
 ) -> JSONResponse:
     # Check if token is valid
     if settings.github_token:
@@ -109,7 +110,7 @@ async def store_settings(
         )
 
 
-def convert_to_settings(settings_with_token_data: SettingsWithTokenMeta) -> Settings:
+def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings:
     settings_data = settings_with_token_data.model_dump()
 
     # Filter out additional fields from `SettingsWithTokenData`
@@ -119,7 +120,10 @@ def convert_to_settings(settings_with_token_data: SettingsWithTokenMeta) -> Sett
         if key in Settings.model_fields  # Ensures only `Settings` fields are included
     }
 
-    # Convert the `llm_api_key` to a `SecretStr` instance
+    # Convert the `llm_api_key` and `github_token` to a `SecretStr` instance
     filtered_settings_data['llm_api_key'] = settings_with_token_data.llm_api_key
+    filtered_settings_data['github_token'] = SecretStr(
+        settings_with_token_data.github_token
+    )
 
     return Settings(**filtered_settings_data)

@@ -196,7 +196,7 @@ class GitHubTokenMiddleware(SessionMiddlewareInterface):
         settings = await settings_store.load()
 
         if settings and settings.github_token:
-            request.state.github_token = settings.github_token
+            request.state.github_token = settings.github_token.get_secret_value()
         else:
             request.state.github_token = None
 

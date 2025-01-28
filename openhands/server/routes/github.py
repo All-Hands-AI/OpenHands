@@ -93,7 +93,9 @@ async def get_github_installation_ids(
     headers = generate_github_headers(github_token)
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get('https://api.github.com/user/installations', headers=headers)
+            response = await client.get(
+                'https://api.github.com/user/installations', headers=headers
+            )
             response.raise_for_status()
             data = response.json()
             ids = [installation['id'] for installation in data['installations']]
