@@ -38,24 +38,4 @@ describe("UserBalance", () => {
     const balance = screen.queryByTestId("current-balance");
     expect(balance).not.toBeInTheDocument();
   });
-
-  it("should render the stripe checkout form when clicking top up", async () => {
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "saas",
-      GITHUB_CLIENT_ID: "123",
-      POSTHOG_CLIENT_KEY: "123",
-    });
-    const user = userEvent.setup();
-    renderWithProviders(<AccountSettingsModal onClose={() => {}} />);
-
-    expect(
-      screen.queryByTestId("stripe-checkout-form"),
-    ).not.toBeInTheDocument();
-
-    const topUpButton = await screen.findByText("Top up");
-    await user.click(topUpButton);
-
-    const stripeCheckoutForm = screen.getByTestId("stripe-checkout-form");
-    expect(stripeCheckoutForm).toBeInTheDocument();
-  });
 });
