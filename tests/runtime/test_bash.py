@@ -13,6 +13,7 @@ from conftest import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
+from openhands.runtime.impl.local.local_runtime import LocalRuntime
 
 # ============================================================================================================================
 # Bash-specific tests
@@ -209,7 +210,9 @@ done && echo "success"
 def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        obs = _run_cmd_action(runtime, 'ls -l /workspace')
+        obs = _run_cmd_action(
+            runtime, f'ls -l {config.workspace_mount_path_in_sandbox}'
+        )
         assert obs.exit_code == 0
 
         obs = _run_cmd_action(runtime, 'ls -l')
@@ -248,7 +251,9 @@ def test_run_as_user_correct_home_dir(temp_dir, runtime_cls, run_as_openhands):
     try:
         obs = _run_cmd_action(runtime, 'cd ~ && pwd')
         assert obs.exit_code == 0
-        if run_as_openhands:
+        if runtime_cls == LocalRuntime:
+            assert os.getenv('HOME') in obs.content
+        elif run_as_openhands:
             assert '/home/openhands' in obs.content
         else:
             assert '/root' in obs.content
@@ -278,7 +283,7 @@ def test_stateful_cmd(temp_dir, runtime_cls):
 
         obs = _run_cmd_action(runtime, 'pwd')
         assert obs.exit_code == 0, 'The exit code should be 0.'
-        assert '/workspace/test' in obs.content
+        assert f'{config.workspace_mount_path_in_sandbox}/test' in obs.content
     finally:
         _close_test_runtime(runtime)
 
@@ -453,8 +458,9 @@ def test_git_operation(runtime_cls):
     # this will happen if permission of runtime is not properly configured
     # fatal: detected dubious ownership in repository at config.workspace_mount_path_in_sandbox
     try:
-        obs = _run_cmd_action(runtime, 'sudo chown -R openhands:root .')
-        assert obs.exit_code == 0
+        if runtime_cls != LocalRuntime:
+            obs = _run_cmd_action(runtime, 'sudo chown -R openhands:root .')
+            assert obs.exit_code == 0
 
         # check the ownership of the current directory
         obs = _run_cmd_action(runtime, 'ls -alh .')
@@ -462,6 +468,9 @@ def test_git_operation(runtime_cls):
         # drwx--S--- 2 openhands root   64 Aug  7 23:32 .
         # drwxr-xr-x 1 root      root 4.0K Aug  7 23:33 ..
         for line in obs.content.split('\n'):
+            if runtime_cls == LocalRuntime:
+                continue  # skip these checks
+
             if ' ..' in line:
                 # parent directory should be owned by root
                 assert 'root' in line

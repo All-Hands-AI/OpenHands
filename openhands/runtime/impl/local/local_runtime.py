@@ -158,6 +158,10 @@ class LocalRuntime(ActionExecutionClient):
         self.server_process: Optional[subprocess.Popen[str]] = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
+        # Update env vars
+        if self.config.sandbox.runtime_startup_env_vars:
+            os.environ.update(self.config.sandbox.runtime_startup_env_vars)
+
         # Initialize the action_execution_server
         super().__init__(
             config,
