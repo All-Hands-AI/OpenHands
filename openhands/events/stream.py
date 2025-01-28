@@ -335,7 +335,7 @@ class EventStream:
         self,
         event,
         query: str | None = None,
-        event_type: type[Event] | None = None,
+        event_types: tuple[type[Event], ...] | None = None,
         source: str | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
@@ -344,16 +344,16 @@ class EventStream:
 
         Args:
             event: The event to check
-            query (str, optional): Text to search for in event content
-            event_type (type[Event], optional): Filter by event type class (e.g., FileReadAction)
-            source (str, optional): Filter by event source
-            start_date (str, optional): Filter events after this date (ISO format)
-            end_date (str, optional): Filter events before this date (ISO format)
+            query: Text to search for in event content
+            event_type: Filter by event type classes (e.g., (FileReadAction, ) ).
+            source: Filter by event source
+            start_date: Filter events after this date (ISO format)
+            end_date: Filter events before this date (ISO format)
 
         Returns:
             bool: True if the event should be filtered out, False if it matches all criteria
         """
-        if event_type and not isinstance(event, event_type):
+        if event_types and not isinstance(event, event_types):
             return True
 
         if source and not event.source.value == source:
@@ -377,23 +377,25 @@ class EventStream:
     def get_matching_events(
         self,
         query: str | None = None,
-        event_type: type[Event] | None = None,
+        event_types: tuple[type[Event], ...] | None = None,
         source: str | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
         start_id: int = 0,
         limit: int = 100,
+        reverse: bool = False,
     ) -> list:
         """Get matching events from the event stream based on filters.
 
         Args:
-            query (str, optional): Text to search for in event content
-            event_type (type[Event], optional): Filter by event type class (e.g., FileReadAction)
-            source (str, optional): Filter by event source
-            start_date (str, optional): Filter events after this date (ISO format)
-            end_date (str, optional): Filter events before this date (ISO format)
-            start_id (int): Starting ID in the event stream. Defaults to 0
-            limit (int): Maximum number of events to return. Must be between 1 and 100. Defaults to 100
+            query: Text to search for in event content
+            event_types: Filter by event type classes (e.g., (FileReadAction, ) ).
+            source: Filter by event source
+            start_date: Filter events after this date (ISO format)
+            end_date: Filter events before this date (ISO format)
+            start_id: Starting ID in the event stream. Defaults to 0
+            limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 100
+            reverse: Whether to retrieve events in reverse order. Defaults to False.
 
         Returns:
             list: List of matching events (as dicts)
@@ -406,9 +408,9 @@ class EventStream:
 
         matching_events: list = []
 
-        for event in self.get_events(start_id=start_id):
+        for event in self.get_events(start_id=start_id, reverse=reverse):
             if self._should_filter_event(
-                event, query, event_type, source, start_date, end_date
+                event, query, event_types, source, start_date, end_date
             ):
                 continue
 
