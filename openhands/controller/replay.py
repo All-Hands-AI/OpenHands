@@ -7,9 +7,15 @@ class ReplayManager:
     """ReplayManager manages the lifecycle of a replay session of a given trajectory.
 
     Replay manager keeps track of a list of events, replays actions, and ignore
-    messages and observations. It could lead to unexpected or even errorneous
-    results if any action is non-deterministic, or if the initial state before
-    the replay session is different from the initial state of the trajectory.
+    messages and observations.
+
+    Note that unexpected or even errorneous results could happen if
+    1) any action is non-deterministic, OR
+    2) if the initial state before the replay session is different from the
+    initial state of the trajectory.
+
+    In case of a "new" error (an error that is only observed in the replay session
+    but not in the replay logs), replay manager halts the replay session.
     """
 
     def __init__(self, replay_events: list[Event] | None):
