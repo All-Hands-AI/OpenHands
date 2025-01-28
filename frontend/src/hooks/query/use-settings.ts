@@ -4,6 +4,7 @@ import posthog from "posthog-js";
 import { AxiosError } from "axios";
 import { DEFAULT_SETTINGS, getLocalStorageSettings } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
+import { useAuth } from "#/context/auth-context";
 
 const getSettingsQueryFn = async () => {
   try {
@@ -20,6 +21,7 @@ const getSettingsQueryFn = async () => {
         LLM_API_KEY: apiSettings.llm_api_key,
         REMOTE_RUNTIME_RESOURCE_FACTOR:
           apiSettings.remote_runtime_resource_factor,
+        GITHUB_TOKEN_IS_SET: apiSettings.github_token_is_set,
         ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
       };
     }
@@ -37,9 +39,14 @@ const getSettingsQueryFn = async () => {
 };
 
 export const useSettings = () => {
+  const { setGitHubTokenIsSet } = useAuth();
+
   const query = useQuery({
     queryKey: ["settings"],
     queryFn: getSettingsQueryFn,
+    initialData: DEFAULT_SETTINGS,
+    staleTime: 0,
+    retry: false,
   });
 
   React.useEffect(() => {
@@ -47,6 +54,10 @@ export const useSettings = () => {
       posthog.capture("user_activated");
     }
   }, [query.data?.LLM_API_KEY]);
+
+  React.useEffect(() => {
+    setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
+  }, [query.data?.GITHUB_TOKEN_IS_SET, query.isFetched]);
 
   return query;
 };

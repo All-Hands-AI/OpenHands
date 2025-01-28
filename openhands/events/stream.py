@@ -57,6 +57,7 @@ class AsyncEventStreamWrapper:
 class EventStream:
     sid: str
     file_store: FileStore
+    secrets: dict[str, str]
     # For each subscriber ID, there is a map of callback functions - useful
     # when there are multiple listeners
     _subscribers: dict[str, dict[str, Callable]]
@@ -82,6 +83,7 @@ class EventStream:
         self._subscribers = {}
         self._lock = threading.Lock()
         self._cur_id = 0
+        self.secrets = {}
 
         # load the stream
         self.__post_init__()
@@ -267,9 +269,23 @@ class EventStream:
         event._timestamp = datetime.now().isoformat()
         event._source = source  # type: ignore [attr-defined]
         data = event_to_dict(event)
+        data = self._replace_secrets(data)
+        event = event_from_dict(data)
         if event.id is not None:
             self.file_store.write(self._get_filename_for_id(event.id), json.dumps(data))
         self._queue.put(event)
+
+    def set_secrets(self, secrets: dict[str, str]):
+        self.secrets = secrets.copy()
+
+    def _replace_secrets(self, data: dict) -> dict:
+        for key in data:
+            if isinstance(data[key], dict):
+                data[key] = self._replace_secrets(data[key])
+            elif isinstance(data[key], str):
+                for secret in self.secrets.values():
+                    data[key] = data[key].replace(secret, '<secret_hidden>')
+        return data
 
     def _run_queue_loop(self):
         self._queue_loop = asyncio.new_event_loop()
