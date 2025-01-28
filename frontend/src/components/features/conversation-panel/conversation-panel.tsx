@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink, useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { ConversationCard } from "./conversation-card";
@@ -21,6 +21,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const { conversationId: cid } = useParams();
   const endSession = useEndSession();
   const ref = useClickOutsideElement<HTMLDivElement>(onClose);
+  const navigate = useNavigate();
 
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
     React.useState(false);
@@ -86,26 +87,27 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           </p>
         </div>
       )}
-      {conversations?.map((project) => (
-        <NavLink
-          key={project.conversation_id}
-          to={`/conversations/${project.conversation_id}`}
-          onClick={onClose}
-        >
-          {({ isActive }) => (
-            <ConversationCard
-              isActive={isActive}
-              onDelete={() => handleDeleteProject(project.conversation_id)}
-              onChangeTitle={(title) =>
-                handleChangeTitle(project.conversation_id, project.title, title)
-              }
-              title={project.title}
-              selectedRepository={project.selected_repository}
-              lastUpdatedAt={project.last_updated_at}
-              status={project.status}
-            />
-          )}
-        </NavLink>
+      {conversations?.map((conversation) => (
+        <div key={conversation.conversation_id} onClick={onClose}>
+          <ConversationCard
+            onClick={() => {
+              navigate(`/conversations/${conversation.conversation_id}`);
+            }}
+            isActive={conversation.conversation_id === cid}
+            onDelete={() => handleDeleteProject(conversation.conversation_id)}
+            onChangeTitle={(title) =>
+              handleChangeTitle(
+                conversation.conversation_id,
+                conversation.title,
+                title,
+              )
+            }
+            title={conversation.title}
+            selectedRepository={conversation.selected_repository}
+            lastUpdatedAt={conversation.last_updated_at}
+            status={conversation.status}
+          />
+        </div>
       ))}
 
       {confirmDeleteModalVisible && (
