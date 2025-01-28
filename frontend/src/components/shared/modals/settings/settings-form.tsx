@@ -4,7 +4,7 @@ import React from "react";
 import posthog from "posthog-js";
 import { I18nKey } from "#/i18n/declaration";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
-import { getDefaultSettings, Settings } from "#/services/settings";
+import { getDefaultSettings } from "#/services/settings";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
 import { DangerModal } from "../confirmation-modals/danger-modal";
 import { extractSettings, saveSettingsView } from "#/utils/settings-utils";
@@ -24,6 +24,7 @@ import { RuntimeSizeSelector } from "./runtime-size-selector";
 import { useConfig } from "#/hooks/query/use-config";
 import { useCurrentSettings } from "#/context/settings-context";
 import { MEMORY_CONDENSER } from "#/utils/feature-flags";
+import { Settings } from "#/types/settings";
 
 interface SettingsFormProps {
   disabled?: boolean;

@@ -1,12 +1,11 @@
 import React from "react";
 import {
   LATEST_SETTINGS_VERSION,
-  PostSettings,
-  Settings,
   settingsAreUpToDate,
 } from "#/services/settings";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import { PostSettings, Settings } from "#/types/settings";
 
 interface SettingsContextType {
   isUpToDate: boolean;

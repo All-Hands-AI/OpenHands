@@ -13,8 +13,8 @@ import { ModalButton } from "../../buttons/modal-button";
 import { FormFieldset } from "../../form-fieldset";
 import { useConfig } from "#/hooks/query/use-config";
 import { useCurrentSettings } from "#/context/settings-context";
-import { PostSettings } from "#/services/settings";
 import { GitHubTokenInput } from "./github-token-input";
+import { PostSettings } from "#/types/settings";
 
 interface AccountSettingsFormProps {
   onClose: () => void;
