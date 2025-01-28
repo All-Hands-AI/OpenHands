@@ -23,6 +23,7 @@ import { ModelSelector } from "./model-selector";
 import { RuntimeSizeSelector } from "./runtime-size-selector";
 import { useConfig } from "#/hooks/query/use-config";
 import { useCurrentSettings } from "#/context/settings-context";
+import { MEMORY_CONDENSER } from "#/utils/feature-flags";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -64,12 +65,14 @@ export function SettingsForm({
       const isUsingConfirmationMode = !!settings.CONFIRMATION_MODE;
       const isUsingBaseUrl = !!settings.LLM_BASE_URL;
       const isUsingCustomModel = !!settings.LLM_MODEL && !isKnownModel;
+      const isUsingDefaultCondenser = !!settings.ENABLE_DEFAULT_CONDENSER;
 
       return (
         isUsingSecurityAnalyzer ||
         isUsingConfirmationMode ||
         isUsingBaseUrl ||
-        isUsingCustomModel
+        isUsingCustomModel ||
+        isUsingDefaultCondenser
       );
     }
 
@@ -93,6 +96,9 @@ export function SettingsForm({
     const keys = Array.from(formData.keys());
     const isUsingAdvancedOptions = keys.includes("use-advanced-options");
     const newSettings = extractSettings(formData);
+
+    // Inject the condenser config from the current feature flag value
+    newSettings.ENABLE_DEFAULT_CONDENSER = MEMORY_CONDENSER;
 
     saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
     await saveUserSettings(newSettings);
@@ -171,7 +177,7 @@ export function SettingsForm({
 
           <APIKeyInput
             isDisabled={!!disabled}
-            isSet={settings.LLM_API_KEY === "SET"}
+            isSet={settings.LLM_API_KEY === "**********"}
           />
 
           {showAdvancedOptions && (

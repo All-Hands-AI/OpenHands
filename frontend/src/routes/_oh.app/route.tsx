@@ -11,8 +11,7 @@ import {
   useConversation,
 } from "#/context/conversation-context";
 import { Controls } from "#/components/features/controls/controls";
-import { RootState } from "#/store";
-import { clearMessages } from "#/state/chat-slice";
+import { clearMessages, addUserMessage } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
@@ -23,7 +22,6 @@ import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "../../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "./event-handler";
-import { useAuth } from "#/context/auth-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import {
@@ -33,30 +31,33 @@ import {
 import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
-import { CountBadge } from "#/components/layout/count-badge";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
 import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
+import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
+import { RootState } from "#/store";
 
 function AppContent() {
   useConversationConfig();
   const { t } = useTranslation();
-  const { gitHubToken } = useAuth();
   const { data: settings } = useSettings();
   const { conversationId } = useConversation();
   const { data: conversation, isFetched } = useUserConversation(
     conversationId || null,
   );
+  const { initialPrompt, files } = useSelector(
+    (state: RootState) => state.initialQuery,
+  );
   const dispatch = useDispatch();
   const endSession = useEndSession();
 
   const [width, setWidth] = React.useState(window.innerWidth);
-  const { updateCount } = useSelector((state: RootState) => state.browser);
 
   const secrets = React.useMemo(
-    () => [gitHubToken].filter((secret) => secret !== null),
-    [gitHubToken],
+    // secrets to filter go here
+    () => [].filter((secret) => secret !== null),
+    [],
   );
 
   const Terminal = React.useMemo(
@@ -77,6 +78,18 @@ function AppContent() {
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
+    if (conversationId && (initialPrompt || files.length > 0)) {
+      dispatch(
+        addUserMessage({
+          content: initialPrompt || "",
+          imageUrls: files || [],
+          timestamp: new Date().toISOString(),
+          pending: true,
+        }),
+      );
+      dispatch(clearInitialPrompt());
+      dispatch(clearFiles());
+    }
   }, [conversationId]);
 
   useEffectOnce(() => {
@@ -144,7 +157,6 @@ function AppContent() {
                     label: (
                       <div className="flex items-center gap-1">
                         {t(I18nKey.BROWSER$TITLE)}
-                        {updateCount > 0 && <CountBadge count={updateCount} />}
                       </div>
                     ),
                     to: "browser",

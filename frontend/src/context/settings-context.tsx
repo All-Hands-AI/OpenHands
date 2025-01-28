@@ -1,6 +1,7 @@
 import React from "react";
 import {
   LATEST_SETTINGS_VERSION,
+  PostSettings,
   Settings,
   settingsAreUpToDate,
 } from "#/services/settings";
@@ -10,7 +11,7 @@ import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 interface SettingsContextType {
   isUpToDate: boolean;
   setIsUpToDate: (value: boolean) => void;
-  saveUserSettings: (newSettings: Partial<Settings>) => Promise<void>;
+  saveUserSettings: (newSettings: Partial<PostSettings>) => Promise<void>;
   settings: Settings | undefined;
 }
 
@@ -28,13 +29,13 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
 
   const [isUpToDate, setIsUpToDate] = React.useState(settingsAreUpToDate());
 
-  const saveUserSettings = async (newSettings: Partial<Settings>) => {
-    const updatedSettings: Partial<Settings> = {
+  const saveUserSettings = async (newSettings: Partial<PostSettings>) => {
+    const updatedSettings: Partial<PostSettings> = {
       ...userSettings,
       ...newSettings,
     };
 
-    if (updatedSettings.LLM_API_KEY === "SET") {
+    if (updatedSettings.LLM_API_KEY === "**********") {
       delete updatedSettings.LLM_API_KEY;
     }
 

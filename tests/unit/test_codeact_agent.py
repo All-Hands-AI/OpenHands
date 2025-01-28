@@ -46,7 +46,7 @@ def agent() -> CodeActAgent:
     agent = CodeActAgent(llm=LLM(LLMConfig()), config=config)
     agent.llm = Mock()
     agent.llm.config = Mock()
-    agent.llm.config.max_message_chars = 100
+    agent.llm.config.max_message_chars = 1000
     return agent
 
 
@@ -60,16 +60,20 @@ def mock_state() -> State:
 
 
 def test_cmd_output_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = CmdOutputObservation(
         command='echo hello',
         content='Command output',
         metadata=CmdOutputMetadata(
             exit_code=0,
+            prefix='[THIS IS PREFIX]',
+            suffix='[THIS IS SUFFIX]',
         ),
     )
 
-    results = agent.get_observation_message(obs, tool_call_id_to_message={})
+    tool_call_id_to_message = {}
+    results = agent.get_observation_message(
+        obs, tool_call_id_to_message=tool_call_id_to_message
+    )
     assert len(results) == 1
 
     result = results[0]
@@ -77,12 +81,13 @@ def test_cmd_output_observation_message(agent: CodeActAgent):
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
-    assert 'Command output' in result.content[0].text
+    assert 'Observed result of command executed by user:' in result.content[0].text
     assert '[Command finished with exit code 0]' in result.content[0].text
+    assert '[THIS IS PREFIX]' in result.content[0].text
+    assert '[THIS IS SUFFIX]' in result.content[0].text
 
 
 def test_ipython_run_cell_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = IPythonRunCellObservation(
         code='plt.plot()',
         content='IPython output\n![image](data:image/png;base64,ABC123)',
@@ -105,7 +110,6 @@ def test_ipython_run_cell_observation_message(agent: CodeActAgent):
 
 
 def test_agent_delegate_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = AgentDelegateObservation(
         content='Content', outputs={'content': 'Delegated agent output'}
     )
@@ -122,7 +126,6 @@ def test_agent_delegate_observation_message(agent: CodeActAgent):
 
 
 def test_error_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = ErrorObservation('Error message')
 
     results = agent.get_observation_message(obs, tool_call_id_to_message={})
@@ -145,7 +148,6 @@ def test_unknown_observation_message(agent: CodeActAgent):
 
 
 def test_file_edit_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = FileEditObservation(
         path='/test/file.txt',
         prev_exist=True,
@@ -167,7 +169,6 @@ def test_file_edit_observation_message(agent: CodeActAgent):
 
 
 def test_file_read_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = FileReadObservation(
         path='/test/file.txt',
         content='File content',
@@ -186,7 +187,6 @@ def test_file_read_observation_message(agent: CodeActAgent):
 
 
 def test_browser_output_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = BrowserOutputObservation(
         url='http://example.com',
         trigger_by_action='browse',
@@ -207,7 +207,6 @@ def test_browser_output_observation_message(agent: CodeActAgent):
 
 
 def test_user_reject_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = False
     obs = UserRejectObservation('Action rejected')
 
     results = agent.get_observation_message(obs, tool_call_id_to_message={})
@@ -223,7 +222,6 @@ def test_user_reject_observation_message(agent: CodeActAgent):
 
 
 def test_function_calling_observation_message(agent: CodeActAgent):
-    agent.config.function_calling = True
     mock_response = {
         'id': 'mock_id',
         'total_calls_in_response': 1,
@@ -471,7 +469,7 @@ def test_mock_function_calling():
     llm = Mock()
     llm.is_function_calling_active = lambda: False
     config = AgentConfig()
-    config.use_microagents = False
+    config.enable_prompt_extensions = False
     agent = CodeActAgent(llm=llm, config=config)
     assert agent.mock_function_calling is True
 
@@ -509,7 +507,7 @@ def test_step_with_no_pending_actions(mock_state: State):
 
     # Create agent with mocked LLM
     config = AgentConfig()
-    config.use_microagents = False
+    config.enable_prompt_extensions = False
     agent = CodeActAgent(llm=llm, config=config)
 
     # Test step with no pending actions

@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
+from litellm import ContextWindowExceededError
 
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
@@ -19,7 +20,6 @@ from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.runtime.base import Runtime
-from openhands.storage import get_file_store
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -132,7 +132,7 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
 @pytest.mark.asyncio
 async def test_run_controller_with_fatal_error():
     config = AppConfig()
-    file_store = get_file_store(config.file_store, config.file_store_path)
+    file_store = InMemoryFileStore({})
     event_stream = EventStream(sid='test', file_store=file_store)
 
     agent = MagicMock(spec=Agent)
@@ -167,11 +167,12 @@ async def test_run_controller_with_fatal_error():
         fake_user_response_fn=lambda _: 'repeat',
     )
     print(f'state: {state}')
-    print(f'event_stream: {list(event_stream.get_events())}')
+    events = list(event_stream.get_events())
+    print(f'event_stream: {events}')
     assert state.iteration == 4
     assert state.agent_state == AgentState.ERROR
     assert state.last_error == 'AgentStuckInLoopError: Agent got stuck in a loop'
-    assert len(list(event_stream.get_events())) == 11
+    assert len(events) == 11
 
 
 @pytest.mark.asyncio
@@ -552,3 +553,49 @@ async def test_run_controller_max_iterations_has_metrics():
     assert (
         state.metrics.accumulated_cost == 10.0 * 3
     ), f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
+
+
+@pytest.mark.asyncio
+async def test_context_window_exceeded_error_handling(mock_agent, mock_event_stream):
+    """Test that context window exceeded errors are handled correctly by truncating history."""
+
+    class StepState:
+        def __init__(self):
+            self.has_errored = False
+
+        def step(self, state: State):
+            # Append a few messages to the history -- these will be truncated when we throw the error
+            state.history = [
+                MessageAction(content='Test message 0'),
+                MessageAction(content='Test message 1'),
+            ]
+
+            error = ContextWindowExceededError(
+                message='prompt is too long: 233885 tokens > 200000 maximum',
+                model='',
+                llm_provider='',
+            )
+            self.has_errored = True
+            raise error
+
+    state = StepState()
+    mock_agent.step = state.step
+
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Set the agent running and take a step in the controller -- this is similar
+    # to taking a single step using `run_controller`, but much easier to control
+    # termination for testing purposes
+    controller.state.agent_state = AgentState.RUNNING
+    await controller._step()
+
+    # Check that the error was thrown and the history has been truncated
+    assert state.has_errored
+    assert controller.state.history == [MessageAction(content='Test message 1')]

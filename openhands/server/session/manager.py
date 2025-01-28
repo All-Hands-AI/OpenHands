@@ -11,7 +11,9 @@ from openhands.core.config import AppConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
+from openhands.events.action import MessageAction
 from openhands.events.stream import EventStream, session_exists
+from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.server.settings import Settings
@@ -302,11 +304,15 @@ class SessionManager:
                         await conversation.disconnect()
                     self._detached_conversations.clear()
                 await wait_all(
-                    self._close_session(sid) for sid in self._local_agent_loops_by_sid
+                    (
+                        self._close_session(sid)
+                        for sid in self._local_agent_loops_by_sid
+                    ),
+                    timeout=WAIT_TIME_BEFORE_CLOSE,
                 )
                 return
-            except Exception as e:
-                logger.warning(f'error_cleaning_stale: {str(e)}')
+            except Exception:
+                logger.warning('error_cleaning_stale', exc_info=True, stack_info=True)
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
     async def is_agent_loop_running(self, sid: str) -> bool:
@@ -437,7 +443,11 @@ class SessionManager:
             self._connection_queries.pop(query_id, None)
 
     async def maybe_start_agent_loop(
-        self, sid: str, settings: Settings, user_id: str | None
+        self,
+        sid: str,
+        settings: Settings,
+        user_id: str | None,
+        initial_message: MessageAction | None = None,
     ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}')
         session: Session | None = None
@@ -447,7 +457,10 @@ class SessionManager:
             response_ids = await self.get_running_agent_loops(user_id)
             if len(response_ids) >= MAX_RUNNING_CONVERSATIONS:
                 logger.info('too_many_sessions_for:{user_id}')
-                await self.close_session(next(iter(response_ids)))
+                # Order is not guaranteed, but response_ids tend to be in descending chronological order
+                # By reversing, we are likely to pick the oldest (or at least an older) conversation
+                session_id = next(iter(reversed(list(response_ids))))
+                await self.close_session(session_id)
 
             session = Session(
                 sid=sid,
@@ -457,7 +470,7 @@ class SessionManager:
                 user_id=user_id,
             )
             self._local_agent_loops_by_sid[sid] = session
-            asyncio.create_task(session.initialize_agent(settings))
+            asyncio.create_task(session.initialize_agent(settings, initial_message))
 
         event_stream = await self._get_event_stream(sid)
         if not event_stream:

@@ -40,6 +40,7 @@ class ModalRuntime(ActionExecutionClient):
 
     container_name_prefix = 'openhands-sandbox-'
     sandbox: modal.Sandbox | None
+    sid: str
 
     def __init__(
         self,
@@ -57,9 +58,11 @@ class ModalRuntime(ActionExecutionClient):
 
         self.config = config
         self.sandbox = None
+        self.sid = sid
 
         self.modal_client = modal.Client.from_credentials(
-            config.modal_api_token_id, config.modal_api_token_secret
+            config.modal_api_token_id.get_secret_value(),
+            config.modal_api_token_secret.get_secret_value(),
         )
         self.app = modal.App.lookup(
             'openhands', create_if_missing=True, client=self.modal_client
@@ -74,6 +77,8 @@ class ModalRuntime(ActionExecutionClient):
 
         # This value is arbitrary as it's private to the container
         self.container_port = 3000
+        self._vscode_port = 4445
+        self._vscode_url: str | None = None
 
         self.status_callback = status_callback
         self.base_container_image_id = self.config.sandbox.base_container_image
@@ -139,6 +144,7 @@ class ModalRuntime(ActionExecutionClient):
 
         if not self.attach_to_existing:
             self.send_status_message(' ')
+        self._runtime_initialized = True
 
     def _get_action_execution_server_host(self):
         return self.api_url
@@ -207,6 +213,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
             environment: dict[str, str | None] = {
                 'port': str(self.container_port),
                 'PYTHONUNBUFFERED': '1',
+                'VSCODE_PORT': str(self._vscode_port),
             }
             if self.config.debug:
                 environment['DEBUG'] = 'true'
@@ -224,7 +231,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
                 *sandbox_start_cmd,
                 secrets=[env_secret],
                 workdir='/openhands/code',
-                encrypted_ports=[self.container_port],
+                encrypted_ports=[self.container_port, self._vscode_port],
                 image=self.image,
                 app=self.app,
                 client=self.modal_client,
@@ -247,3 +254,27 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
 
         if not self.attach_to_existing and self.sandbox:
             self.sandbox.terminate()
+
+    @property
+    def vscode_url(self) -> str | None:
+        if self._vscode_url is not None:  # cached value
+            self.log('debug', f'VSCode URL: {self._vscode_url}')
+            return self._vscode_url
+        token = super().get_vscode_token()
+        if not token:
+            self.log('error', 'VSCode token not found')
+            return None
+        if not self.sandbox:
+            self.log('error', 'Sandbox not initialized')
+            return None
+
+        tunnel = self.sandbox.tunnels()[self._vscode_port]
+        tunnel_url = tunnel.url
+        self._vscode_url = tunnel_url + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+
+        self.log(
+            'debug',
+            f'VSCode URL: {self._vscode_url}',
+        )
+
+        return self._vscode_url

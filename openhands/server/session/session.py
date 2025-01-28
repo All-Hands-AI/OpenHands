@@ -6,6 +6,7 @@ import socketio
 
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
+from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
 from openhands.core.const.guide_url import TROUBLESHOOTING_URL
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
@@ -75,8 +76,7 @@ class Session:
         await self.agent_session.close()
 
     async def initialize_agent(
-        self,
-        settings: Settings,
+        self, settings: Settings, initial_message: MessageAction | None
     ):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
@@ -94,6 +94,9 @@ class Session:
         )
         max_iterations = settings.max_iterations or self.config.max_iterations
 
+        # This is a shallow copy of the default LLM config, so changes here will
+        # persist if we retrieve the default LLM config again when constructing
+        # the agent
         default_llm_config = self.config.get_llm_config()
         default_llm_config.model = settings.llm_model or ''
         default_llm_config.api_key = settings.llm_api_key
@@ -103,6 +106,14 @@ class Session:
 
         llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
         agent_config = self.config.get_agent_config(agent_cls)
+
+        if settings.enable_default_condenser:
+            default_condenser_config = AmortizedForgettingCondenserConfig(
+                keep_first=3, max_size=20
+            )
+            logger.info(f'Enabling default condenser: {default_condenser_config}')
+            agent_config.condenser = default_condenser_config
+
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
         github_token = None
@@ -122,6 +133,7 @@ class Session:
                 agent_configs=self.config.get_agent_configs(),
                 github_token=github_token,
                 selected_repository=selected_repository,
+                initial_message=initial_message,
             )
         except Exception as e:
             logger.exception(f'Error creating agent_session: {e}')
