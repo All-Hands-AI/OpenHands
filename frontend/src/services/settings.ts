@@ -62,45 +62,7 @@ export const getCurrentSettingsVersion = () => {
 export const settingsAreUpToDate = () =>
   getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
 
-// TODO: localStorage settings are deprecated. Remove this after 1/31/2025
-/**
- * Get the settings from local storage
- * @returns the settings from local storage
- * @deprecated
- */
-export const getLocalStorageSettings = (): Settings => {
-  const llmModel = localStorage.getItem("LLM_MODEL");
-  const baseUrl = localStorage.getItem("LLM_BASE_URL");
-  const agent = localStorage.getItem("AGENT");
-  const language = localStorage.getItem("LANGUAGE");
-  const llmApiKey = localStorage.getItem("LLM_API_KEY");
-  const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
-  const securityAnalyzer = localStorage.getItem("SECURITY_ANALYZER");
-  const enableDefaultCondenser =
-    localStorage.getItem("ENABLE_DEFAULT_CONDENSER") === "true";
-
-  return {
-    LLM_MODEL: llmModel || DEFAULT_SETTINGS.LLM_MODEL,
-    LLM_BASE_URL: baseUrl || DEFAULT_SETTINGS.LLM_BASE_URL,
-    AGENT: agent || DEFAULT_SETTINGS.AGENT,
-    LANGUAGE: language || DEFAULT_SETTINGS.LANGUAGE,
-    LLM_API_KEY: llmApiKey || DEFAULT_SETTINGS.LLM_API_KEY,
-    CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
-    SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
-    REMOTE_RUNTIME_RESOURCE_FACTOR:
-      DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-    GITHUB_TOKEN_IS_SET: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
-    ENABLE_DEFAULT_CONDENSER:
-      enableDefaultCondenser || DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
-  };
-};
-
 /**
  * Get the default settings
  */
 export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
-
-/**
- * Get the current settings, either from local storage or defaults
- */
-export const getSettings = (): Settings => getLocalStorageSettings();

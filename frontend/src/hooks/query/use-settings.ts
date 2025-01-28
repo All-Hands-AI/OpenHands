@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import posthog from "posthog-js";
 import { AxiosError } from "axios";
-import { DEFAULT_SETTINGS, getLocalStorageSettings } from "#/services/settings";
+import { DEFAULT_SETTINGS } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 
@@ -26,7 +26,7 @@ const getSettingsQueryFn = async () => {
       };
     }
 
-    return getLocalStorageSettings();
+    return DEFAULT_SETTINGS;
   } catch (error) {
     if (error instanceof AxiosError) {
       if (error.response?.status === 404) {
