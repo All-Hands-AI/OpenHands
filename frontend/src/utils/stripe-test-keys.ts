@@ -1,2 +1,4 @@
-export const TEST_STRIPE_SECRET_KEY = "";
-export const TEST_STRIPE_PUBLIC_KEY = "";
+export const TEST_STRIPE_SECRET_KEY =
+  "sk_test_51QfO2dK5Ces1YVhfVdZ2oTHz6xhgEnZkNtMKVTgCIGO6RISEPekbqSdtf4UV6oXRL96JMffdWAi5ESeedm5YZnhR00qVSEgA4I";
+export const TEST_STRIPE_PUBLIC_KEY =
+  "pk_test_51QfO2dK5Ces1YVhftq4Ho99vVd71BwIipudyBaTXLDB9RF7hyUbsik8fBgOGdlSNOTpEM6e03k1skuSElSH0LDt600eUCCSOZm";
