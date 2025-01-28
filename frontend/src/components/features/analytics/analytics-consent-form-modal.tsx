@@ -5,6 +5,7 @@ import {
 } from "#/components/shared/modals/confirmation-modals/base-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
+import { useCurrentSettings } from "#/context/settings-context";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 
 interface AnalyticsConsentFormModalProps {
@@ -14,12 +15,15 @@ interface AnalyticsConsentFormModalProps {
 export function AnalyticsConsentFormModal({
   onClose,
 }: AnalyticsConsentFormModalProps) {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const { saveUserSettings } = useCurrentSettings();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const analytics = formData.get("analytics") === "on";
 
     handleCaptureConsent(analytics);
+    await saveUserSettings({ user_consents_to_analytics: analytics });
     localStorage.setItem("analytics-consent", analytics.toString());
 
     onClose();
@@ -46,6 +50,7 @@ export function AnalyticsConsentFormModal({
           </label>
 
           <ModalButton
+            testId="confirm-preferences"
             type="submit"
             text="Confirm Preferences"
             className="bg-primary text-white w-full hover:opacity-80"
