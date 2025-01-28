@@ -4,8 +4,10 @@ import os
 import tempfile
 from typing import Any
 
+import mlflow
 import numpy as np
 import pandas as pd
+import tiktoken
 import toml
 from datasets import load_dataset
 
@@ -47,6 +49,9 @@ from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
+mlflow.set_tracking_uri('http://0.0.0.0:8888')
+mlflow.litellm.autolog()
+
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
@@ -77,11 +82,20 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         ]
     )
 
+    MAX_TOKENS = 30_000
+
+    cut_file = truncate_prompt(
+        instance['code_src'], metadata.llm_config.model, MAX_TOKENS
+    )
+
     # Testing general agents
     instruction = CODEACT_TESTGEN_PROMPT.format(
-        code_file=instance.code_file,
-        test_file=instance.test_file,
+        code_file=os.path.join('/testbed', instance.code_file),
+        test_file=os.path.join('/testbed', instance.test_file),
         coverage_command=coverage_command,
+        code_src=cut_file,
+        imports='\n'.join(instance.local_imports),
+        workspace_dir_name=_get_swebench_workspace_dir_name(instance),
     )
 
     if RUN_WITH_BROWSING:
@@ -91,7 +105,18 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             '</IMPORTANT!>\n'
         )
 
+    print(instruction)
     return instruction
+
+
+def truncate_prompt(prompt, model, model_limit):
+    encoding = tiktoken.encoding_for_model(model)
+    tokenized = encoding.encode(prompt)
+    if len(tokenized) > model_limit:
+        # Truncate to the last model_limit tokens and decode back to text
+        return prompt
+    else:
+        return prompt
 
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands

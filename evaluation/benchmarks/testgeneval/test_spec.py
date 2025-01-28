@@ -32,6 +32,7 @@ class TestSpec:
     code_file: str
     test_file: str
     baseline_covs: dict
+    local_imports: list[str]
     test_script_list: list[str]
     mutation_script_list: list[str]
 
@@ -129,6 +130,7 @@ def make_test_spec(
     baseline_covs = instance['baseline_covs']
     code_file = instance['code_file']
     test_file = instance['test_file']
+    local_imports = instance['local_imports']
 
     env_name = 'testbed'
     repo_directory = f'/{env_name}'
@@ -155,6 +157,7 @@ def make_test_spec(
         repo=repo,
         test_script_list=test_script_list,
         test_cmd=test_cmd,
+        local_imports=local_imports,
         mutation_script_list=mutation_script_list,
         code_file=code_file,
         test_file=test_file,
