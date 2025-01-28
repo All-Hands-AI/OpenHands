@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from openhands.runtime.plugins.agent_skills.openhands_client import (
+from openhands.runtime.plugins.agent_skills.openhands_client.openhands_client import (
     OpenhandsClient,
     message_to_remote_OH,
 )
@@ -245,16 +245,16 @@ async def test_message_to_remote_OH_flow():
     message_to_remote_OH should call connect -> wait_ready -> send_message_action -> wait_ready -> close
     """
     with patch(
-        'openhands.runtime.plugins.agent_skills.openhands_client.OpenhandsClient.connect',
+        'openhands.runtime.plugins.agent_skills.openhands_client.openhands_client.OpenhandsClient.connect',
         new_callable=AsyncMock,
     ) as mock_connect, patch(
-        'openhands.runtime.plugins.agent_skills.openhands_client.OpenhandsClient.wait_ready',
+        'openhands.runtime.plugins.agent_skills.openhands_client.openhands_client.OpenhandsClient.wait_ready',
         new_callable=AsyncMock,
     ) as mock_wait_ready, patch(
-        'openhands.runtime.plugins.agent_skills.openhands_client.OpenhandsClient.send_message_action',
+        'openhands.runtime.plugins.agent_skills.openhands_client.openhands_client.OpenhandsClient.send_message_action',
         new_callable=AsyncMock,
     ) as mock_send_message_action, patch(
-        'openhands.runtime.plugins.agent_skills.openhands_client.OpenhandsClient.close',
+        'openhands.runtime.plugins.agent_skills.openhands_client.openhands_client.OpenhandsClient.close',
         new_callable=AsyncMock,
     ) as mock_close:
         mock_wait_ready.return_value = True

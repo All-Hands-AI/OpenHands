@@ -132,4 +132,4 @@ async def message_to_remote_OH(message: str, url: str, conversation_id: str = ''
         await client.close()
 
 
-__all__ = ['message_to_remote_OH', 'OpenhandsClient']
+__all__ = ['message_to_remote_OH']
