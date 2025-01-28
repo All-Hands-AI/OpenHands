@@ -1,6 +1,8 @@
 import { http, HttpResponse } from "msw";
 import Stripe from "stripe";
-import { TEST_STRIPE_SECRET_KEY } from "#/utils/stripe-test-keys";
+
+export const TEST_STRIPE_SECRET_KEY =
+  "sk_test_51QfO2dK5Ces1YVhfVdZ2oTHz6xhgEnZkNtMKVTgCIGO6RISEPekbqSdtf4UV6oXRL96JMffdWAi5ESeedm5YZnhR00qVSEgA4I";
 
 const PRICES: Record<number, string> = {
   "25": "price_1Qk3elK5Ces1YVhflhgIflrx",
@@ -25,7 +27,6 @@ export const STRIPE_BILLING_HANDLERS = [
 
       const stripe = new Stripe(TEST_STRIPE_SECRET_KEY);
       const session = await stripe.checkout.sessions.create({
-        ui_mode: "embedded",
         line_items: [
           {
             price,
@@ -39,10 +40,13 @@ export const STRIPE_BILLING_HANDLERS = [
             user_id: "abc-123-test",
           },
         },
-        return_url: `http://localhost:3001/billing?session_id={CHECKOUT_SESSION_ID}`,
+        success_url:
+          "http://localhost:3001/billing?success=true&session_id={CHECKOUT_SESSION_ID}",
+        cancel_url:
+          "http://localhost:3001/billing?canceled=true&session_id={CHECKOUT_SESSION_ID}",
       });
 
-      return HttpResponse.json({ clientSecret: session.client_secret });
+      if (session.url) return HttpResponse.redirect(session.url, 303);
     }
 
     return HttpResponse.json({ message: "Invalid request" }, { status: 400 });

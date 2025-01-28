@@ -320,14 +320,10 @@ class OpenHands {
     return data.status === 200;
   }
 
-  static async createCheckoutSession(amount: number): Promise<string> {
-    const { data } = await openHands.post<{ clientSecret: string }>(
-      "/api/create-checkout-session",
-      {
-        amount,
-      },
-    );
-    return data.clientSecret;
+  static async createCheckoutSession(amount: number): Promise<void> {
+    await openHands.post("/api/create-checkout-session", {
+      amount,
+    });
   }
 
   static async checkSessionStatus(

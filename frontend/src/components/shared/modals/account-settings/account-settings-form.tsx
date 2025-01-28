@@ -16,8 +16,6 @@ import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { UserBalance } from "#/components/features/payment/user-balance";
 import { useCurrentSettings } from "#/context/settings-context";
 import { useBalance } from "#/hooks/query/use-balance";
-import { StripeCheckoutForm } from "#/components/features/payment/stripe-checkout-form";
-import { cn } from "#/utils/utils";
 import { useCreateStripeCheckoutSession } from "#/hooks/mutation/stripe/use-create-stripe-checkout-session";
 import { PaymentSelection } from "#/components/features/payment/payment-selection";
 import { PostSettings } from "#/services/settings";
@@ -41,15 +39,11 @@ export function AccountSettingsForm({
   const { data: config } = useConfig();
   const { saveUserSettings, settings } = useCurrentSettings();
   const { data: balance } = useBalance(user.data?.login ?? "");
-  const {
-    data: clientSecret,
-    mutate: getClientSecret,
-    isPending: isGettingClientSecret,
-  } = useCreateStripeCheckoutSession();
+  const { mutate: createPaymentSession, isPending: isGettingClientSecret } =
+    useCreateStripeCheckoutSession();
 
   const [showPaymentOptions, setShowPaymentOptions] = React.useState(false);
 
-  const shouldRenderStripeForm = !!clientSecret;
   const githubTokenIsSet = !!settings?.GITHUB_TOKEN_IS_SET;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -90,113 +84,104 @@ export function AccountSettingsForm({
   };
 
   return (
-    <ModalBody
-      testID="account-settings-form"
-      className={cn(shouldRenderStripeForm && "p-1 block bg-white")}
-    >
-      {shouldRenderStripeForm && (
-        <StripeCheckoutForm clientSecret={clientSecret} />
-      )}
+    <ModalBody testID="account-settings-form">
+      <form className="flex flex-col w-full gap-6" onSubmit={handleSubmit}>
+        <div className="w-full flex flex-col gap-2">
+          <BaseModalTitle title={t(I18nKey.ACCOUNT_SETTINGS$TITLE)} />
 
-      {!shouldRenderStripeForm && (
-        <form className="flex flex-col w-full gap-6" onSubmit={handleSubmit}>
-          <div className="w-full flex flex-col gap-2">
-            <BaseModalTitle title={t(I18nKey.ACCOUNT_SETTINGS$TITLE)} />
-
-            {config?.APP_MODE === "saas" && config?.APP_SLUG && (
-              <a
-                href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="underline"
-              >
-                {t(I18nKey.GITHUB$CONFIGURE_REPOS)}
-              </a>
-            )}
-            {balance && (
-              <UserBalance
-                balance={balance}
-                isLoading={isGettingClientSecret}
-                onTopUp={() => setShowPaymentOptions(true)}
-              />
-            )}
-
-            {showPaymentOptions && (
-              <PaymentSelection
-                options={[25, 50, 100, 250]}
-                onPaymentSelection={(amount) => getClientSecret({ amount })}
-              />
-            )}
-
-            <FormFieldset
-              id="language"
-              label={t(I18nKey.LANGUAGE$LABEL)}
-              defaultSelectedKey={selectedLanguage}
-              isClearable={false}
-              items={AvailableLanguages.map(({ label, value: key }) => ({
-                key,
-                value: label,
-              }))}
+          {config?.APP_MODE === "saas" && config?.APP_SLUG && (
+            <a
+              href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="underline"
+            >
+              {t(I18nKey.GITHUB$CONFIGURE_REPOS)}
+            </a>
+          )}
+          {balance && (
+            <UserBalance
+              balance={balance}
+              isLoading={isGettingClientSecret}
+              onTopUp={() => setShowPaymentOptions(true)}
             />
-            {config?.APP_MODE !== "saas" && (
-              <>
-                <GitHubTokenInput githubTokenIsSet={githubTokenIsSet} />
-                {!githubTokenIsSet && (
-                  <BaseModalDescription>
-                    {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
-                    <a
-                      href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="text-[#791B80] underline"
-                    >
-                      {t(I18nKey.COMMON$HERE)}
-                    </a>
-                  </BaseModalDescription>
-                )}
-              </>
-            )}
-            {gitHubError && (
-              <p className="text-danger text-xs">
-                {t(I18nKey.GITHUB$TOKEN_INVALID)}
-              </p>
-            )}
-            {githubTokenIsSet && !gitHubError && (
-              <ModalButton
-                testId="disconnect-github"
-                variant="text-like"
-                text={t(I18nKey.BUTTON$DISCONNECT)}
-                onClick={onDisconnect}
-                className="text-danger self-start"
-              />
-            )}
-          </div>
+          )}
 
-          <label className="flex gap-2 items-center self-start">
-            <input
-              name="analytics"
-              type="checkbox"
-              defaultChecked={analyticsConsent === "true"}
+          {showPaymentOptions && (
+            <PaymentSelection
+              options={[25, 50, 100, 250]}
+              onPaymentSelection={(amount) => createPaymentSession({ amount })}
             />
-            {t(I18nKey.ANALYTICS$ENABLE)}
-          </label>
+          )}
 
-          <div className="flex flex-col gap-2 w-full">
+          <FormFieldset
+            id="language"
+            label={t(I18nKey.LANGUAGE$LABEL)}
+            defaultSelectedKey={selectedLanguage}
+            isClearable={false}
+            items={AvailableLanguages.map(({ label, value: key }) => ({
+              key,
+              value: label,
+            }))}
+          />
+          {config?.APP_MODE !== "saas" && (
+            <>
+              <GitHubTokenInput githubTokenIsSet={githubTokenIsSet} />
+              {!githubTokenIsSet && (
+                <BaseModalDescription>
+                  {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
+                  <a
+                    href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-[#791B80] underline"
+                  >
+                    {t(I18nKey.COMMON$HERE)}
+                  </a>
+                </BaseModalDescription>
+              )}
+            </>
+          )}
+          {gitHubError && (
+            <p className="text-danger text-xs">
+              {t(I18nKey.GITHUB$TOKEN_INVALID)}
+            </p>
+          )}
+          {githubTokenIsSet && !gitHubError && (
             <ModalButton
-              testId="save-settings"
-              type="submit"
-              intent="account"
-              text={t(I18nKey.BUTTON$SAVE)}
-              className="bg-[#4465DB]"
+              testId="disconnect-github"
+              variant="text-like"
+              text={t(I18nKey.BUTTON$DISCONNECT)}
+              onClick={onDisconnect}
+              className="text-danger self-start"
             />
-            <ModalButton
-              text={t(I18nKey.BUTTON$CLOSE)}
-              onClick={onClose}
-              className="bg-[#737373]"
-            />
-          </div>
-        </form>
-      )}
+          )}
+        </div>
+
+        <label className="flex gap-2 items-center self-start">
+          <input
+            name="analytics"
+            type="checkbox"
+            defaultChecked={analyticsConsent === "true"}
+          />
+          {t(I18nKey.ANALYTICS$ENABLE)}
+        </label>
+
+        <div className="flex flex-col gap-2 w-full">
+          <ModalButton
+            testId="save-settings"
+            type="submit"
+            intent="account"
+            text={t(I18nKey.BUTTON$SAVE)}
+            className="bg-[#4465DB]"
+          />
+          <ModalButton
+            text={t(I18nKey.BUTTON$CLOSE)}
+            onClick={onClose}
+            className="bg-[#737373]"
+          />
+        </div>
+      </form>
     </ModalBody>
   );
 }
