@@ -89,6 +89,10 @@ def test_get_matching_events_type_filter(temp_dir: str):
     events = event_stream.get_matching_events(event_types=(NullAction, MessageAction))
     assert len(events) == 3
 
+    # Filter in reverse
+    events = event_stream.get_matching_events(reverse=True, limit=1)
+    assert events[0]['message'] == 'test'
+
 
 def test_get_matching_events_query_search(temp_dir: str):
     file_store = get_file_store('local', temp_dir)
