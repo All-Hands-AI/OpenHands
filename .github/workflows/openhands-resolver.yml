@@ -20,6 +20,10 @@ on:
         required: false
         type: string
         default: "anthropic/claude-3-5-sonnet-20241022"
+      LLM_API_VERSION:
+        required: false
+        type: string
+        default: ""
       base_container_image:
         required: false
         type: string
@@ -31,8 +35,6 @@ on:
       LLM_API_KEY:
         required: true
       LLM_BASE_URL:
-        required: false
-      LLM_API_VERSION:
         required: false
       PAT_TOKEN:
         required: false
@@ -118,7 +120,7 @@ jobs:
           LLM_MODEL: ${{ secrets.LLM_MODEL || inputs.LLM_MODEL }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-          LLM_API_VERSION: ${{ secrets.LLM_API_VERSION }}
+          LLM_API_VERSION: ${{ inputs.LLM_API_VERSION }}
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
           PAT_USERNAME: ${{ secrets.PAT_USERNAME }}
           GITHUB_TOKEN: ${{ github.token }}
@@ -233,7 +235,7 @@ jobs:
           LLM_MODEL: ${{ secrets.LLM_MODEL || inputs.LLM_MODEL }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-          LLM_API_VERSION: ${{ secrets.LLM_API_VERSION }}
+          LLM_API_VERSION: ${{ inputs.LLM_API_VERSION }}
           PYTHONPATH: ""
         run: |
           cd /tmp && python -m openhands.resolver.resolve_issue \
@@ -269,7 +271,7 @@ jobs:
           LLM_MODEL: ${{ secrets.LLM_MODEL || inputs.LLM_MODEL }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-          LLM_API_VERSION: ${{ secrets.LLM_API_VERSION }}
+          LLM_API_VERSION: ${{ inputs.LLM_API_VERSION }}
           PYTHONPATH: ""
         run: |
           if [ "${{ steps.check_result.outputs.RESOLUTION_SUCCESS }}" == "true" ]; then
