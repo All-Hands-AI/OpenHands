@@ -105,7 +105,6 @@ RUN \
 # rather than the current OpenHands release
 
 {{ setup_base_system() }}
-{{ setup_vscode_server() }}
 
 # Install micromamba
 RUN mkdir -p /openhands/micromamba/bin && \
@@ -139,6 +138,8 @@ RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; 
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 COPY ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py
+
+{{ setup_vscode_server() }}
 
 # ================================================================
 # END: Build from versioned image
