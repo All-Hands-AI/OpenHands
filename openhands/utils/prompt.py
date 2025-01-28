@@ -28,6 +28,34 @@ class RepositoryInfo:
     repo_directory: str | None = None
 
 
+ADDITIONAL_INFO_TEMPLATE = Template(
+    """
+{% if repository_info %}
+<REPOSITORY_INFO>
+At the user's request, repository {{ repository_info.repo_name }} has been cloned to directory {{ repository_info.repo_directory }}.
+</REPOSITORY_INFO>
+{% endif %}
+{% if repository_instructions -%}
+<REPOSITORY_INSTRUCTIONS>
+{{ repository_instructions }}
+</REPOSITORY_INSTRUCTIONS>
+{% endif %}
+{% if runtime_info and runtime_info.available_hosts -%}
+<RUNTIME_INFORMATION>
+The user has access to the following hosts for accessing a web application,
+each of which has a corresponding port:
+{% for host, port in runtime_info.available_hosts.items() -%}
+* {{ host }} (port {{ port }})
+{% endfor %}
+When starting a web server, use the corresponding ports. You should also
+set any options to allow iframes and CORS requests, and allow the server to
+be accessed from any host (e.g. 0.0.0.0).
+</RUNTIME_INFORMATION>
+{% endif %}
+"""
+)
+
+
 class PromptManager:
     """
     Manages prompt templates and micro-agents for AI interactions.
@@ -59,6 +87,9 @@ class PromptManager:
         self.repo_microagents: dict[str, RepoMicroAgent] = {}
 
         if microagent_dir:
+            # This loads micro-agents from the microagent_dir
+            # which is typically the OpenHands/microagents (i.e., the PUBLIC microagents)
+
             # Only load KnowledgeMicroAgents
             repo_microagents, knowledge_microagents, _ = load_microagents_from_dir(
                 microagent_dir
@@ -79,6 +110,10 @@ class PromptManager:
                     self.repo_microagents[name] = microagent
 
     def load_microagents(self, microagents: list[BaseMicroAgent]):
+        """Load microagents from a list of BaseMicroAgents.
+
+        This is typically used when loading microagents from inside a repo.
+        """
         # Only keep KnowledgeMicroAgents and RepoMicroAgents
         for microagent in microagents:
             if microagent.name in self.disabled_microagents:
@@ -98,21 +133,7 @@ class PromptManager:
             return Template(file.read())
 
     def get_system_message(self) -> str:
-        repo_instructions = ''
-        assert (
-            len(self.repo_microagents) <= 1
-        ), f'Expecting at most one repo microagent, but found {len(self.repo_microagents)}: {self.repo_microagents.keys()}'
-        for microagent in self.repo_microagents.values():
-            # We assume these are the repo instructions
-            if repo_instructions:
-                repo_instructions += '\n\n'
-            repo_instructions += microagent.content
-
-        return self.system_template.render(
-            repository_instructions=repo_instructions,
-            repository_info=self.repository_info,
-            runtime_info=self.runtime_info,
-        ).strip()
+        return self.system_template.render().strip()
 
     def set_runtime_info(self, runtime: Runtime):
         self.runtime_info.available_hosts = runtime.web_hosts
@@ -162,6 +183,43 @@ class PromptManager:
                 micro_text += '\n\n' + microagent.content
                 micro_text += '\n</extra_info>'
                 message.content.append(TextContent(text=micro_text))
+
+    def add_examples_to_initial_message(self, message: Message) -> None:
+        """Add example_message to the first user message."""
+        example_message = self.get_example_user_message() or None
+
+        # Insert it at the start of the TextContent list
+        if example_message:
+            message.content.insert(0, TextContent(text=example_message))
+
+    def add_info_to_initial_message(
+        self,
+        message: Message,
+    ) -> None:
+        """Adds information about the repository and runtime to the initial user message.
+
+        Args:
+            message: The initial user message to add information to.
+        """
+        repo_instructions = ''
+        assert (
+            len(self.repo_microagents) <= 1
+        ), f'Expecting at most one repo microagent, but found {len(self.repo_microagents)}: {self.repo_microagents.keys()}'
+        for microagent in self.repo_microagents.values():
+            # We assume these are the repo instructions
+            if repo_instructions:
+                repo_instructions += '\n\n'
+            repo_instructions += microagent.content
+
+        additional_info = ADDITIONAL_INFO_TEMPLATE.render(
+            repository_instructions=repo_instructions,
+            repository_info=self.repository_info,
+            runtime_info=self.runtime_info,
+        ).strip()
+
+        # Insert the new content at the start of the TextContent list
+        if additional_info:
+            message.content.insert(0, TextContent(text=additional_info))
 
     def add_turns_left_reminder(self, messages: list[Message], state: State) -> None:
         latest_user_message = next(

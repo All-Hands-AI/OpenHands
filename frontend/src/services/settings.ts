@@ -9,6 +9,8 @@ export type Settings = {
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
   REMOTE_RUNTIME_RESOURCE_FACTOR: number;
+  GITHUB_TOKEN_IS_SET: boolean;
+  ENABLE_DEFAULT_CONDENSER: boolean;
 };
 
 export type ApiSettings = {
@@ -20,6 +22,18 @@ export type ApiSettings = {
   confirmation_mode: boolean;
   security_analyzer: string;
   remote_runtime_resource_factor: number;
+  github_token_is_set: boolean;
+  enable_default_condenser: boolean;
+};
+
+export type PostSettings = Settings & {
+  github_token: string;
+  unset_github_token: boolean;
+};
+
+export type PostApiSettings = ApiSettings & {
+  github_token: string;
+  unset_github_token: boolean;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -31,6 +45,8 @@ export const DEFAULT_SETTINGS: Settings = {
   CONFIRMATION_MODE: false,
   SECURITY_ANALYZER: "",
   REMOTE_RUNTIME_RESOURCE_FACTOR: 1,
+  GITHUB_TOKEN_IS_SET: false,
+  ENABLE_DEFAULT_CONDENSER: false,
 };
 
 export const getCurrentSettingsVersion = () => {
@@ -60,6 +76,8 @@ export const getLocalStorageSettings = (): Settings => {
   const llmApiKey = localStorage.getItem("LLM_API_KEY");
   const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
   const securityAnalyzer = localStorage.getItem("SECURITY_ANALYZER");
+  const enableDefaultCondenser =
+    localStorage.getItem("ENABLE_DEFAULT_CONDENSER") === "true";
 
   return {
     LLM_MODEL: llmModel || DEFAULT_SETTINGS.LLM_MODEL,
@@ -71,6 +89,9 @@ export const getLocalStorageSettings = (): Settings => {
     SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
     REMOTE_RUNTIME_RESOURCE_FACTOR:
       DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+    GITHUB_TOKEN_IS_SET: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
+    ENABLE_DEFAULT_CONDENSER:
+      enableDefaultCondenser || DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
   };
 };
 

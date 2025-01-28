@@ -30,6 +30,7 @@ body:
       description: How are you running OpenHands?
       options:
         - Docker command in README
+        - GitHub resolver
         - Development workflow
         - app.all-hands.dev
         - Other

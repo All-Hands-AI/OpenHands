@@ -1,9 +1,18 @@
 import os
 
-from fastapi import HTTPException
+from fastapi import FastAPI, HTTPException
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.middleware import (
+    AttachConversationMiddleware,
+    CacheControlMiddleware,
+    GitHubTokenMiddleware,
+    InMemoryRateLimiter,
+    LocalhostCORSMiddleware,
+    RateLimitMiddleware,
+)
 from openhands.server.types import AppMode, OpenhandsConfigInterface
+from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.import_utils import get_impl
 
 
@@ -12,15 +21,13 @@ class OpenhandsConfig(OpenhandsConfigInterface):
     app_mode = AppMode.OSS
     posthog_client_key = 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
     github_client_id = os.environ.get('GITHUB_APP_CLIENT_ID', '')
-    attach_conversation_middleware_path = (
-        'openhands.server.middleware.AttachConversationMiddleware'
-    )
     settings_store_class: str = (
         'openhands.storage.settings.file_settings_store.FileSettingsStore'
     )
     conversation_store_class: str = (
         'openhands.storage.conversation.file_conversation_store.FileConversationStore'
     )
+    conversation_manager_class: str = 'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
 
     def verify_config(self):
         if self.config_cls:
@@ -41,6 +48,24 @@ class OpenhandsConfig(OpenhandsConfigInterface):
         }
 
         return config
+
+    def attach_middleware(self, api: FastAPI) -> None:
+        SettingsStoreImpl = get_impl(SettingsStore, self.settings_store_class)  # type: ignore
+
+        api.add_middleware(
+            LocalhostCORSMiddleware,
+            allow_credentials=True,
+            allow_methods=['*'],
+            allow_headers=['*'],
+        )
+
+        api.add_middleware(CacheControlMiddleware)
+        api.add_middleware(
+            RateLimitMiddleware,
+            rate_limiter=InMemoryRateLimiter(requests=10, seconds=1),
+        )
+        api.middleware('http')(AttachConversationMiddleware(api))
+        api.middleware('http')(GitHubTokenMiddleware(api, SettingsStoreImpl))  # type: ignore
 
 
 def load_openhands_config():

@@ -7,11 +7,14 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.action.message import MessageAction
 from openhands.events.stream import EventStreamSubscriber
-from openhands.server.auth import get_user_id
+from openhands.runtime import get_runtime_cls
+from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.shared import config, session_manager
+from openhands.server.shared import config, conversation_manager
+from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_info import ConversationInfo
 from openhands.storage.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
@@ -29,20 +32,19 @@ UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 
 class InitSessionRequest(BaseModel):
-    github_token: str | None = None
     selected_repository: str | None = None
+    initial_user_msg: str | None = None
+    image_urls: list[str] | None = None
 
 
-@app.post('/conversations')
-async def new_conversation(request: Request, data: InitSessionRequest):
-    """Initialize a new session or join an existing one.
-    After successful initialization, the client should connect to the WebSocket
-    using the returned conversation ID
-    """
-    logger.info('Initializing new conversation')
-
+async def _create_new_conversation(
+    user_id: str | None,
+    token: str | None,
+    selected_repository: str | None,
+    initial_user_msg: str | None,
+    image_urls: list[str] | None,
+):
     logger.info('Loading settings')
-    user_id = get_user_id(request)
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
     logger.info('Settings loaded')
@@ -52,27 +54,21 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         session_init_args = {**settings.__dict__, **session_init_args}
         # We could use litellm.check_valid_key for a more accurate check,
         # but that would run a tiny inference.
-        if not settings.llm_api_key or settings.llm_api_key.isspace():
+        if (
+            not settings.llm_api_key
+            or settings.llm_api_key.get_secret_value().isspace()
+        ):
             logger.warn(f'Missing api key for model {settings.llm_model}')
-            return JSONResponse(
-                content={
-                    'status': 'error',
-                    'message': 'Error authenticating with the LLM provider. Please check your API key',
-                    'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
-                }
+            raise LLMAuthenticationError(
+                'Error authenticating with the LLM provider. Please check your API key'
             )
+
     else:
         logger.warn('Settings not present, not starting conversation')
-        return JSONResponse(
-            content={
-                'status': 'error',
-                'message': 'Settings not found',
-                'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND',
-            }
-        )
-    github_token = getattr(request.state, 'github_token', '')
-    session_init_args['github_token'] = github_token or data.github_token or ''
-    session_init_args['selected_repository'] = data.selected_repository
+        raise MissingSettingsError('Settings not found')
+
+    session_init_args['github_token'] = token or ''
+    session_init_args['selected_repository'] = selected_repository
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
@@ -85,7 +81,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     logger.info(f'New conversation ID: {conversation_id}')
 
     repository_title = (
-        data.selected_repository.split('/')[-1] if data.selected_repository else None
+        selected_repository.split('/')[-1] if selected_repository else None
     )
     conversation_title = f'{repository_title or "Conversation"} {conversation_id[:5]}'
 
@@ -95,13 +91,19 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             conversation_id=conversation_id,
             title=conversation_title,
             github_user_id=user_id,
-            selected_repository=data.selected_repository,
+            selected_repository=selected_repository,
         )
     )
 
     logger.info(f'Starting agent loop for conversation {conversation_id}')
-    event_stream = await session_manager.maybe_start_agent_loop(
-        conversation_id, conversation_init_data, user_id
+    initial_message_action = None
+    if initial_user_msg or image_urls:
+        initial_message_action = MessageAction(
+            content=initial_user_msg or '',
+            image_urls=image_urls or [],
+        )
+    event_stream = await conversation_manager.maybe_start_agent_loop(
+        conversation_id, conversation_init_data, user_id, initial_message_action
     )
     try:
         event_stream.subscribe(
@@ -112,7 +114,55 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     except ValueError:
         pass  # Already subscribed - take no action
     logger.info(f'Finished initializing conversation {conversation_id}')
-    return JSONResponse(content={'status': 'ok', 'conversation_id': conversation_id})
+
+    return conversation_id
+
+
+@app.post('/conversations')
+async def new_conversation(request: Request, data: InitSessionRequest):
+    """Initialize a new session or join an existing one.
+    After successful initialization, the client should connect to the WebSocket
+    using the returned conversation ID
+    """
+    logger.info('Initializing new conversation')
+    user_id = get_user_id(request)
+    github_token = get_github_token(request)
+    selected_repository = data.selected_repository
+    initial_user_msg = data.initial_user_msg
+    image_urls = data.image_urls or []
+
+    try:
+        # Create conversation with initial message
+        conversation_id = await _create_new_conversation(
+            user_id,
+            github_token,
+            selected_repository,
+            initial_user_msg,
+            image_urls,
+        )
+
+        return JSONResponse(
+            content={'status': 'ok', 'conversation_id': conversation_id}
+        )
+    except MissingSettingsError as e:
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': str(e),
+                'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND',
+            },
+            status_code=400,
+        )
+
+    except LLMAuthenticationError as e:
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': str(e),
+                'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
+            },
+            status_code=400,
+        )
 
 
 @app.get('/conversations')
@@ -130,7 +180,7 @@ async def search_conversations(
         for conversation in conversation_metadata_result_set.results
         if hasattr(conversation, 'created_at')
     )
-    running_conversations = await session_manager.get_agent_loop_running(
+    running_conversations = await conversation_manager.get_running_agent_loops(
         get_user_id(request), set(conversation_ids)
     )
     result = ConversationInfoResultSet(
@@ -155,7 +205,7 @@ async def get_conversation(
     )
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
-        is_running = await session_manager.is_agent_loop_running(conversation_id)
+        is_running = await conversation_manager.is_agent_loop_running(conversation_id)
         conversation_info = await _get_conversation_info(metadata, is_running)
         return conversation_info
     except FileNotFoundError:
@@ -189,9 +239,11 @@ async def delete_conversation(
         await conversation_store.get_metadata(conversation_id)
     except FileNotFoundError:
         return False
-    is_running = await session_manager.is_agent_loop_running(conversation_id)
+    is_running = await conversation_manager.is_agent_loop_running(conversation_id)
     if is_running:
-        await session_manager.close_session(conversation_id)
+        await conversation_manager.close_session(conversation_id)
+    runtime_cls = get_runtime_cls(config.runtime)
+    await runtime_cls.delete(conversation_id)
     await conversation_store.delete_metadata(conversation_id)
     return True
 

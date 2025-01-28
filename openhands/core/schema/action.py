@@ -4,10 +4,6 @@ __all__ = ['ActionType']
 
 
 class ActionTypeSchema(BaseModel):
-    INIT: str = Field(default='initialize')
-    """Initializes the agent. Only sent by client.
-    """
-
     MESSAGE: str = Field(default='message')
     """Represents a message.
     """

@@ -27,7 +27,7 @@ def runtime(mock_session):
 def test_runtime_timeout_error(runtime, mock_session):
     # Create a command action
     action = CmdRunAction(command='test command')
-    action.timeout = 120
+    action.set_hard_timeout(120)
 
     # Mock the runtime to raise a timeout error
     runtime.send_action_for_execution.side_effect = AgentRuntimeTimeoutError(
@@ -78,7 +78,7 @@ def test_runtime_disconnected_error(
 
     # Create a command action
     action = CmdRunAction(command='test command')
-    action.timeout = 120
+    action.set_hard_timeout(120)
 
     # Verify that the error message is correct
     with pytest.raises(AgentRuntimeDisconnectedError) as exc_info:
