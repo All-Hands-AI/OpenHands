@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 
 import requests
 
+from openhands.core.logger import openhands_logger as logger
+
 
 @dataclass
 class HttpSession:
@@ -15,10 +17,11 @@ class HttpSession:
 
     def __getattr__(self, name):
         if self.session is None:
-            raise ValueError('session_was_closed')
+            logger.error(
+                'Session is being used after close!', stack_info=True, exc_info=True
+            )
         return object.__getattribute__(self.session, name)
 
     def close(self):
         if self.session is not None:
             self.session.close()
-        self.session = None
