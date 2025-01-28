@@ -215,7 +215,9 @@ class Runtime(FileEditRuntimeMixin):
         source = event.source if event.source else EventSource.AGENT
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    def clone_repo(self, github_token: str, selected_repository: str) -> str:
+    def clone_repo(
+        self, github_token: str, selected_repository: str, selected_branch: str | None
+    ) -> str:
         if not github_token or not selected_repository:
             raise ValueError(
                 'github_token and selected_repository must be provided to clone a repository'
@@ -226,9 +228,9 @@ class Runtime(FileEditRuntimeMixin):
         random_str = ''.join(
             random.choices(string.ascii_lowercase + string.digits, k=8)
         )
-        branch_name = f'openhands-workspace-{random_str}'
+        openhands_workspace_branch = f'openhands-workspace-{random_str}'
         action = CmdRunAction(
-            command=f'git clone {url} {dir_name} ; cd {dir_name} ; git checkout -b {branch_name}',
+            command=f'git clone {url} {dir_name} ; cd {dir_name} ; git checkout -b {openhands_workspace_branch}',
         )
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
