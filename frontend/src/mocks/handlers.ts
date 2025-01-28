@@ -10,7 +10,6 @@ import {
   PostApiSettings,
 } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
-import { TEST_STRIPE_PUBLIC_KEY } from "#/utils/stripe-test-keys";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
@@ -179,7 +178,6 @@ export const handlers = [
       APP_MODE: "oss",
       GITHUB_CLIENT_ID: "fake-github-client-id",
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
-      STRIPE_PUBLIC_KEY: TEST_STRIPE_PUBLIC_KEY,
     };
 
     return HttpResponse.json(config);
