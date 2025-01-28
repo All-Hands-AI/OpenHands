@@ -1,8 +1,9 @@
 import httpx
 import requests
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
+from openhands.server.auth import get_github_token
 from openhands.server.shared import openhands_config
 from openhands.utils.async_utils import call_sync_from_async
 
@@ -10,12 +11,13 @@ app = APIRouter(prefix='/api/github')
 
 
 def require_github_token(request: Request):
-    github_token = request.headers.get('X-GitHub-Token')
+    github_token = get_github_token(request)
     if not github_token:
         raise HTTPException(
-            status_code=400,
-            detail='Missing X-GitHub-Token header',
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Missing GitHub token',
         )
+
     return github_token
 
 
@@ -90,22 +92,18 @@ async def get_github_installation_ids(
 ):
     headers = generate_github_headers(github_token)
     try:
-        response = await call_sync_from_async(
-            requests.get, 'https://api.github.com/user/installations', headers=headers
-        )
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
+        async with httpx.AsyncClient() as client:
+            response = await client.get('https://api.github.com/user/installations', headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            ids = [installation['id'] for installation in data['installations']]
+            return JSONResponse(content=ids)
+
+    except httpx.HTTPError as e:
         raise HTTPException(
-            status_code=response.status_code if response else 500,
+            status_code=e.response.status_code if hasattr(e, 'response') else 500,
             detail=f'Error fetching installations: {str(e)}',
         )
-
-    data = response.json()
-    ids = [installation['id'] for installation in data['installations']]
-    json_response = JSONResponse(content=ids)
-    response.close()
-
-    return json_response
 
 
 @app.get('/search/repositories')
