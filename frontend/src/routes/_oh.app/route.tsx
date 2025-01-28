@@ -22,7 +22,6 @@ import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "../../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "./event-handler";
-import { useAuth } from "#/context/auth-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import {
@@ -42,7 +41,6 @@ import { RootState } from "#/store";
 function AppContent() {
   useConversationConfig();
   const { t } = useTranslation();
-  const { gitHubToken } = useAuth();
   const { data: settings } = useSettings();
   const { conversationId } = useConversation();
   const { data: conversation, isFetched } = useUserConversation(
@@ -57,8 +55,9 @@ function AppContent() {
   const [width, setWidth] = React.useState(window.innerWidth);
 
   const secrets = React.useMemo(
-    () => [gitHubToken].filter((secret) => secret !== null),
-    [gitHubToken],
+    // secrets to filter go here
+    () => [].filter((secret) => secret !== null),
+    [],
   );
 
   const Terminal = React.useMemo(
