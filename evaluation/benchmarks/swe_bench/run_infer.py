@@ -67,11 +67,11 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         '<uploaded_files>\n'
         f'/workspace/{workspace_dir_name}\n'
         '</uploaded_files>\n'
-        f"I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following PR description:\n\n"
-        f'<pr_description>\n'
+        f"I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following issue description:\n\n"
+        f'<issue_description>\n'
         f'{instance.problem_statement}\n'
-        '</pr_description>\n\n'
-        'Can you help me implement the necessary changes to the repository so that the requirements specified in the <pr_description> are met?\n'
+        '</issue_description>\n\n'
+        'Can you help me implement the necessary changes to the repository so that the requirements specified in the <issue_description> are met?\n'
         "I've already taken care of all changes to any of the test files described in the <pr_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!\n"
         'Your task is to make the minimal changes to non-tests files in the /workspace directory to ensure the <pr_description> is satisfied.\n'
         'Follow these steps to resolve the issue:\n'

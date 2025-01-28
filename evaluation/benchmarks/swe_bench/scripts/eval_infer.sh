@@ -87,7 +87,7 @@ if [ -z "$INSTANCE_ID" ]; then
         --dataset_name "$DATASET_NAME" \
         --split "$SPLIT" \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
-        --timeout 1800 \
+        --timeout 3600 \
         --cache_level instance \
         --max_workers $N_PROCESS \
         --run_id $RUN_ID
@@ -133,7 +133,7 @@ else
         --dataset_name "$DATASET_NAME" \
         --split "$SPLIT" \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
-        --timeout 1800 \
+        --timeout 3600 \
         --instance_ids $INSTANCE_ID \
         --cache_level instance \
         --max_workers $N_PROCESS \
