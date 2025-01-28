@@ -386,10 +386,11 @@ class DockerRuntime(ActionExecutionClient):
     @property
     def vscode_url(self) -> str | None:
         token = super().get_vscode_token()
+        domain = os.env.get("DOMAIN")
         if not token:
             return None
 
-        vscode_url = f'http://openhands-code-{self._vscode_port}.dev-linux.canopyhub.io/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        vscode_url = f'http://openhands-code-{self._vscode_port}.{domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return vscode_url
 
     @property
