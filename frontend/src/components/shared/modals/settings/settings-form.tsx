@@ -7,7 +7,7 @@ import { organizeModelsAndProviders } from "#/utils/organize-models-and-provider
 import { getDefaultSettings } from "#/services/settings";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
 import { DangerModal } from "../confirmation-modals/danger-modal";
-import { extractSettings, saveSettingsView } from "#/utils/settings-utils";
+import { extractSettings } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
 import { ModalButton } from "../../buttons/modal-button";
 import { AdvancedOptionSwitch } from "../../inputs/advanced-option-switch";
@@ -94,14 +94,11 @@ export function SettingsForm({
   };
 
   const handleFormSubmission = async (formData: FormData) => {
-    const keys = Array.from(formData.keys());
-    const isUsingAdvancedOptions = keys.includes("use-advanced-options");
     const newSettings = extractSettings(formData);
 
     // Inject the condenser config from the current feature flag value
     newSettings.ENABLE_DEFAULT_CONDENSER = MEMORY_CONDENSER;
 
-    saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
     await saveUserSettings(newSettings);
     onClose();
     resetOngoingSession();

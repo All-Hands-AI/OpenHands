@@ -15,19 +15,6 @@ export const DEFAULT_SETTINGS: Settings = {
   ENABLE_DEFAULT_CONDENSER: false,
 };
 
-export const getCurrentSettingsVersion = () => {
-  const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
-  if (!settingsVersion) return 0;
-  try {
-    return parseInt(settingsVersion, 10);
-  } catch (e) {
-    return 0;
-  }
-};
-
-export const settingsAreUpToDate = () =>
-  getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
-
 /**
  * Get the default settings
  */
