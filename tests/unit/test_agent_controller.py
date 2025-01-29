@@ -603,9 +603,7 @@ async def test_context_window_exceeded_error_handling(mock_agent, mock_event_str
 
 
 @pytest.mark.asyncio
-async def test_run_controller_with_context_window_exceeded(
-    mock_agent, mock_event_stream
-):
+async def test_run_controller_with_context_window_exceeded(mock_agent):
     """Tests that the controller handles context window exceeded errors correctly."""
     config = AppConfig(max_iterations=3)
     file_store = InMemoryFileStore({})
@@ -616,7 +614,6 @@ async def test_run_controller_with_context_window_exceeded(
             self.has_errored = False
 
         def step(self, state: State):
-            print(state)
             # If the state has more than one message and we haven't errored, throw the context window exceeded error
             if len(state.history) > 1 and not self.has_errored:
                 error = ContextWindowExceededError(
