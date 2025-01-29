@@ -35,6 +35,7 @@ async def get_github_repositories(
     params: dict[str, str] = {
         'page': str(page),
         'per_page': str(per_page),
+        'sort': sort,
     }
     # Construct the GitHub API URL
     if installation_id:
@@ -43,7 +44,6 @@ async def get_github_repositories(
         )
     else:
         github_api_url = 'https://api.github.com/user/repos'
-        params['sort'] = sort
 
     # Set the authorization header with the GitHub token
     headers = generate_github_headers(github_token)
@@ -93,7 +93,9 @@ async def get_github_installation_ids(
     headers = generate_github_headers(github_token)
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get('https://api.github.com/user/installations', headers=headers)
+            response = await client.get(
+                'https://api.github.com/user/installations', headers=headers
+            )
             response.raise_for_status()
             data = response.json()
             ids = [installation['id'] for installation in data['installations']]
