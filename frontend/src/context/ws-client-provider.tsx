@@ -221,8 +221,12 @@ export function WsClientProvider({
 
   return (
     <>
-      <WsClientContext.Provider value={value}>{children}</WsClientContext.Provider>
-      <ConnectionStatusModal isOpen={status === WsClientProviderStatus.DISCONNECTED} />
+      <WsClientContext.Provider value={value}>
+        {children}
+      </WsClientContext.Provider>
+      <ConnectionStatusModal
+        isOpen={status === WsClientProviderStatus.DISCONNECTED}
+      />
     </>
   );
 }
