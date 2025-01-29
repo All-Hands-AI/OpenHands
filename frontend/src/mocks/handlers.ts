@@ -211,7 +211,7 @@ export const handlers = [
     return HttpResponse.json(null, { status: 400 });
   }),
 
-  http.post("/api/authenticate", async () =>
+  http.post("/api/github/authenticate", async () =>
     HttpResponse.json({ message: "Authenticated" }),
   ),
 

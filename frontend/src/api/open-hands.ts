@@ -149,8 +149,9 @@ class OpenHands {
   ): Promise<boolean> {
     if (appMode === "oss") return true;
 
-    const response =
-      await openHands.post<AuthenticateResponse>("/api/authenticate");
+    const response = await openHands.post<AuthenticateResponse>(
+      "/api/github/authenticate",
+    );
     return response.status === 200;
   }
 
