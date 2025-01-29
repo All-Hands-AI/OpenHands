@@ -155,25 +155,6 @@ class OpenHands {
   }
 
   /**
-   * Refresh Github Token
-   * @returns Refreshed Github access token
-   */
-  static async refreshToken(
-    appMode: GetConfigResponse["APP_MODE"],
-    userId: string,
-  ): Promise<string> {
-    if (appMode === "oss") return "";
-
-    const response = await openHands.post<GitHubAccessTokenResponse>(
-      "/api/refresh-token",
-      {
-        userId,
-      },
-    );
-    return response.data.access_token;
-  }
-
-  /**
    * Get the blob of the workspace zip
    * @returns Blob of the workspace zip
    */
@@ -242,13 +223,11 @@ class OpenHands {
   }
 
   static async createConversation(
-    githubToken?: string,
     selectedRepository?: string,
     initialUserMsg?: string,
     imageUrls?: string[],
   ): Promise<Conversation> {
     const body = {
-      github_token: githubToken,
       selected_repository: selectedRepository,
       initial_user_msg: initialUserMsg,
       image_urls: imageUrls,
@@ -367,6 +346,10 @@ class OpenHands {
       `/api/conversations/${conversationId}/trajectory`,
     );
     return data;
+  }
+
+  static async logout(): Promise<void> {
+    await openHands.post("/api/logout");
   }
 }
 

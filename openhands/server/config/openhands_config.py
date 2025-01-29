@@ -6,11 +6,13 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.server.middleware import (
     AttachConversationMiddleware,
     CacheControlMiddleware,
+    GitHubTokenMiddleware,
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
     RateLimitMiddleware,
 )
 from openhands.server.types import AppMode, OpenhandsConfigInterface
+from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.import_utils import get_impl
 
 
@@ -48,6 +50,8 @@ class OpenhandsConfig(OpenhandsConfigInterface):
         return config
 
     def attach_middleware(self, api: FastAPI) -> None:
+        SettingsStoreImpl = get_impl(SettingsStore, self.settings_store_class)  # type: ignore
+
         api.add_middleware(
             LocalhostCORSMiddleware,
             allow_credentials=True,
@@ -61,6 +65,7 @@ class OpenhandsConfig(OpenhandsConfigInterface):
             rate_limiter=InMemoryRateLimiter(requests=10, seconds=1),
         )
         api.middleware('http')(AttachConversationMiddleware(api))
+        api.middleware('http')(GitHubTokenMiddleware(api, SettingsStoreImpl))  # type: ignore
 
 
 def load_openhands_config():

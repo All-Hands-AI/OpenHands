@@ -12,7 +12,9 @@ from starlette.requests import Request as StarletteRequest
 from starlette.types import ASGIApp
 
 from openhands.server import shared
+from openhands.server.auth import get_user_id
 from openhands.server.types import SessionMiddlewareInterface
+from openhands.storage.settings.settings_store import SettingsStore
 
 
 class LocalhostCORSMiddleware(CORSMiddleware):
@@ -180,3 +182,22 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
             await self._detach_session(request)
 
         return response
+
+
+class GitHubTokenMiddleware(SessionMiddlewareInterface):
+    def __init__(self, app, settings_store: SettingsStore):
+        self.app = app
+        self.settings_store_impl = settings_store
+
+    async def __call__(self, request: Request, call_next: Callable):
+        settings_store = await self.settings_store_impl.get_instance(
+            shared.config, get_user_id(request)
+        )
+        settings = await settings_store.load()
+
+        if settings and settings.github_token:
+            request.state.github_token = settings.github_token
+        else:
+            request.state.github_token = None
+
+        return await call_next(request)

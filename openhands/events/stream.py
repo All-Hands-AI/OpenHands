@@ -57,6 +57,7 @@ class AsyncEventStreamWrapper:
 class EventStream:
     sid: str
     file_store: FileStore
+    secrets: dict[str, str]
     # For each subscriber ID, there is a map of callback functions - useful
     # when there are multiple listeners
     _subscribers: dict[str, dict[str, Callable]]
@@ -82,6 +83,7 @@ class EventStream:
         self._subscribers = {}
         self._lock = threading.Lock()
         self._cur_id = 0
+        self.secrets = {}
 
         # load the stream
         self.__post_init__()
@@ -267,9 +269,23 @@ class EventStream:
         event._timestamp = datetime.now().isoformat()
         event._source = source  # type: ignore [attr-defined]
         data = event_to_dict(event)
+        data = self._replace_secrets(data)
+        event = event_from_dict(data)
         if event.id is not None:
             self.file_store.write(self._get_filename_for_id(event.id), json.dumps(data))
         self._queue.put(event)
+
+    def set_secrets(self, secrets: dict[str, str]):
+        self.secrets = secrets.copy()
+
+    def _replace_secrets(self, data: dict) -> dict:
+        for key in data:
+            if isinstance(data[key], dict):
+                data[key] = self._replace_secrets(data[key])
+            elif isinstance(data[key], str):
+                for secret in self.secrets.values():
+                    data[key] = data[key].replace(secret, '<secret_hidden>')
+        return data
 
     def _run_queue_loop(self):
         self._queue_loop = asyncio.new_event_loop()
@@ -367,7 +383,8 @@ class EventStream:
         end_date: str | None = None,
         start_id: int = 0,
         limit: int = 100,
-    ) -> list:
+        reverse: bool = False,
+    ) -> list[type[Event]]:
         """Get matching events from the event stream based on filters.
 
         Args:
@@ -378,6 +395,7 @@ class EventStream:
             end_date: Filter events before this date (ISO format)
             start_id: Starting ID in the event stream. Defaults to 0
             limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 100
+            reverse: Whether to retrieve events in reverse order. Defaults to False.
 
         Returns:
             list: List of matching events (as dicts)
@@ -390,13 +408,13 @@ class EventStream:
 
         matching_events: list = []
 
-        for event in self.get_events(start_id=start_id):
+        for event in self.get_events(start_id=start_id, reverse=reverse):
             if self._should_filter_event(
                 event, query, event_types, source, start_date, end_date
             ):
                 continue
 
-            matching_events.append(event_to_dict(event))
+            matching_events.append(event)
 
             # Stop if we have enough events
             if len(matching_events) >= limit:
