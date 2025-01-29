@@ -70,7 +70,7 @@
 <script crossorigin="anonymous" defer="defer" type="application/javascript" src="https://github.githubassets.com/assets/app_assets_modules_github_sticky-scroll-into-view_ts-83e480198629.js"></script>
 <script crossorigin="anonymous" defer="defer" type="application/javascript" src="https://github.githubassets.com/assets/app_assets_modules_github_behaviors_ajax-error_ts-app_assets_modules_github_behaviors_include-87a4ae-0b8c605658e8.js"></script>
 <script crossorigin="anonymous" defer="defer" type="application/javascript" src="https://github.githubassets.com/assets/app_assets_modules_github_behaviors_commenting_edit_ts-app_assets_modules_github_behaviors_ht-83c235-46a08c354b6f.js"></script>
-<script crossorigin="anonymous" defer="defer" type="application/javascript" src="https://github.githubassets.com/assets/behaviors-9e2b097643e7.js"></script>
+<script crossorigin="anonymous" defer="defer" type="application/javascript" src="https://github.githubassets.com/assets/behaviors-27aee9d5f86c.js"></script>
 <script crossorigin="anonymous" defer="defer" type="application/javascript" src="https://github.githubassets.com/assets/vendors-node_modules_delegated-events_dist_index_js-node_modules_github_catalyst_lib_index_js-f6223d90c7ba.js"></script>
 <script crossorigin="anonymous" defer="defer" type="application/javascript" src="https://github.githubassets.com/assets/notifications-global-7556bd523830.js"></script>
   
@@ -87,16 +87,16 @@
   <meta name="current-catalog-service-hash" content="f3abb0cc802f3d7b95fc8762b94bdcb13bf39634c40c357301c4aa1d67a256fb">
 
 
-  <meta name="request-id" content="376F:207D85:32E479:466276:679AA5A6" data-turbo-transient="true" /><meta name="html-safe-nonce" content="e7d4f338ae87a9cff6bed1438ea9aa82556d7429c0b0a333f62d09f9a7d19239" data-turbo-transient="true" /><meta name="visitor-payload" content="eyJyZWZlcnJlciI6bnVsbCwicmVxdWVzdF9pZCI6IjM3NkY6MjA3RDg1OjMyRTQ3OTo0NjYyNzY6Njc5QUE1QTYiLCJ2aXNpdG9yX2lkIjoiNzMxNjQ1MTA2NzkxNTA1MjQ1NCIsInJlZ2lvbl9lZGdlIjoiaWFkIiwicmVnaW9uX3JlbmRlciI6ImlhZCJ9" data-turbo-transient="true" /><meta name="visitor-hmac" content="e8e698475021eae5eb4c58e562fced123f4ddb628b61b82a16040fdcf9b4dd7b" data-turbo-transient="true" />
+  <meta name="request-id" content="A2FC:31E74D:5E903F:811DE7:679AB123" data-turbo-transient="true" /><meta name="html-safe-nonce" content="588fc9b1f7da480e743aa4df520f5fc3e4ad2d4d402e179f37557bf6a8a03b6f" data-turbo-transient="true" /><meta name="visitor-payload" content="eyJyZWZlcnJlciI6bnVsbCwicmVxdWVzdF9pZCI6IkEyRkM6MzFFNzREOjVFOTAzRjo4MTFERTc6Njc5QUIxMjMiLCJ2aXNpdG9yX2lkIjoiMjA4NjczNjgwOTEyNDYwNjI0MyIsInJlZ2lvbl9lZGdlIjoiaWFkIiwicmVnaW9uX3JlbmRlciI6ImlhZCJ9" data-turbo-transient="true" /><meta name="visitor-hmac" content="671e6683afb90d1af9b865f36778ab41038176346273fa33791d5730a29aee94" data-turbo-transient="true" />
 
 
-    <meta name="hovercard-subject-tag" content="repository:771302083" data-turbo-transient>
+    <meta name="hovercard-subject-tag" content="repository:28457823" data-turbo-transient>
 
 
   <meta name="github-keyboard-shortcuts" content="copilot" data-turbo-transient="true" />
   
 
-  <meta name="selected-link" value="/All-Hands-AI/OpenHands/raw/main/frontend/src/assets/notification.mp3" data-turbo-transient>
+  <meta name="selected-link" value="/freeCodeCamp/freeCodeCamp/raw/main/client/static/sounds/notification.mp3" data-turbo-transient>
   <link rel="assets" href="https://github.githubassets.com/">
 
     <meta name="google-site-verification" content="Apib7-x98H0j5cPqHWwSMm6dNU4GmODRoqxLiDzdx9I">
@@ -124,7 +124,7 @@
 
     <link rel="fluid-icon" href="https://github.com/fluidicon.png" title="GitHub">
     <meta property="fb:app_id" content="1401488693436528">
-    <meta name="apple-itunes-app" content="app-id=1477376905, app-argument=https://github.com/All-Hands-AI/OpenHands/raw/main/frontend/src/assets/notification.mp3" />
+    <meta name="apple-itunes-app" content="app-id=1477376905, app-argument=https://github.com/freeCodeCamp/freeCodeCamp/raw/main/client/static/sounds/notification.mp3" />
 
       <meta property="og:url" content="https://github.com">
   <meta property="og:site_name" content="GitHub">
@@ -164,10 +164,10 @@
         <meta name="expected-hostname" content="github.com">
 
 
-  <meta http-equiv="x-pjax-version" content="41fbebf12f59f264130f5efdf013747b74278f4bb1839f34d526dd5b0e6fc538" data-turbo-track="reload">
+  <meta http-equiv="x-pjax-version" content="8455a986988f7170fcbfc86f888b961974b9f2f1e6a73075ea930d512432f2db" data-turbo-track="reload">
   <meta http-equiv="x-pjax-csp-version" content="ace39c3b6632770952207593607e6e0be0db363435a8b877b1f96abe6430f345" data-turbo-track="reload">
   <meta http-equiv="x-pjax-css-version" content="1176077845c9479908e07e5cf5cf240c66928ac47340d56f202a3cfb9fc04dd3" data-turbo-track="reload">
-  <meta http-equiv="x-pjax-js-version" content="e7dfed9766c28673a415e2845431b3cf290772ab05e0fbbc1211ab38db8f3847" data-turbo-track="reload">
+  <meta http-equiv="x-pjax-js-version" content="99785eb7a28b5a3fcb1425da0011eda45c448f63f47367a92798844f4abf4975" data-turbo-track="reload">
 
   <meta name="turbo-cache-control" content="no-preview" data-turbo-transient="">
 
@@ -179,7 +179,7 @@
 
 
 
-      <link rel="canonical" href="https://github.com/All-Hands-AI/OpenHands/raw/main/frontend/src/assets/notification.mp3" data-turbo-transient>
+      <link rel="canonical" href="https://github.com/freeCodeCamp/freeCodeCamp/raw/main/client/static/sounds/notification.mp3" data-turbo-transient>
 
 
     <meta name="turbo-body-classes" content="logged-out env-production page-responsive min-height-full d-flex flex-column">
@@ -273,9 +273,9 @@
 
       <div class="flex-1 flex-order-2 text-right">
           <a
-            href="/login?return_to=https%3A%2F%2Fgithub.com%2FAll-Hands-AI%2FOpenHands%2Fraw%2Fmain%2Ffrontend%2Fsrc%2Fassets%2Fnotification.mp3"
+            href="/login?return_to=https%3A%2F%2Fgithub.com%2FfreeCodeCamp%2FfreeCodeCamp%2Fraw%2Fmain%2Fclient%2Fstatic%2Fsounds%2Fnotification.mp3"
             class="HeaderMenu-link HeaderMenu-button d-inline-flex d-lg-none flex-order-1 f5 no-underline border color-border-default rounded-2 px-2 py-1 color-fg-inherit js-prevent-focus-on-mobile-nav"
-            data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header menu&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;originating_url&quot;:&quot;https://github.com/All-Hands-AI/OpenHands/raw/main/frontend/src/assets/notification.mp3&quot;,&quot;user_id&quot;:null}}" data-hydro-click-hmac="7109215df2f72d58fcb37418dbbc84282712ac4b53a90d64eb16bb83858a48ca"
+            data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header menu&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;originating_url&quot;:&quot;https://github.com/freeCodeCamp/freeCodeCamp/raw/main/client/static/sounds/notification.mp3&quot;,&quot;user_id&quot;:null}}" data-hydro-click-hmac="2637c94b5be395074503eba93ae43163f103ea76d38a028d6a1f17a34fdba42a"
             data-analytics-event="{&quot;category&quot;:&quot;Marketing nav&quot;,&quot;action&quot;:&quot;click to Sign in&quot;,&quot;label&quot;:&quot;ref_page:Marketing;ref_cta:Sign in;ref_loc:Header&quot;}"
           >
             Sign in
@@ -836,7 +836,7 @@
                 
 
 
-<qbsearch-input class="search-input" data-scope="" data-custom-scopes-path="/search/custom_scopes" data-delete-custom-scopes-csrf="iFDzprtqLZxy16JUjS0B96g0dJ_Kkkg_6CarUnzBB9gKNDHB1f7vjDvdLmKeHoFyyWelRDt5ld048fJTl8TVSg" data-max-custom-scopes="10" data-header-redesign-enabled="false" data-initial-value="" data-blackbird-suggestions-path="/search/suggestions" data-jump-to-suggestions-path="/_graphql/GetSuggestedNavigationDestinations" data-current-repository="" data-current-org="" data-current-owner="" data-logged-in="false" data-copilot-chat-enabled="false" data-nl-search-enabled="false" data-retain-scroll-position="true">
+<qbsearch-input class="search-input" data-scope="" data-custom-scopes-path="/search/custom_scopes" data-delete-custom-scopes-csrf="DQQ8EqdAC_O9L3V-1MkQMCIyiCr4atFeWEapDRHgIe-eTblHQC3NKRmYRmlzu7BgcrND2ZDnJ8BbwqiZZx4H6w" data-max-custom-scopes="10" data-header-redesign-enabled="false" data-initial-value="" data-blackbird-suggestions-path="/search/suggestions" data-jump-to-suggestions-path="/_graphql/GetSuggestedNavigationDestinations" data-current-repository="" data-current-org="" data-current-owner="" data-logged-in="false" data-copilot-chat-enabled="false" data-nl-search-enabled="false" data-retain-scroll-position="true">
   <div
     class="search-input-container search-with-dialog position-relative d-flex flex-row flex-items-center mr-4 rounded"
     data-action="click:qbsearch-input#searchInputContainerClicked"
@@ -901,7 +901,7 @@
           ></div>
           <div class="QueryBuilder-InputWrapper">
             <div aria-hidden="true" class="QueryBuilder-Sizer" data-target="query-builder.sizer"></div>
-            <input id="query-builder-test" name="query-builder-test" value="" autocomplete="off" type="text" role="combobox" spellcheck="false" aria-expanded="false" aria-describedby="validation-112a6598-8715-4443-8d88-8e325b7ff3e7" data-target="query-builder.input" data-action="
+            <input id="query-builder-test" name="query-builder-test" value="" autocomplete="off" type="text" role="combobox" spellcheck="false" aria-expanded="false" aria-describedby="validation-895a951d-85b6-4b31-9fcf-52fcbfe439b8" data-target="query-builder.input" data-action="
           input:query-builder#inputChange
           blur:query-builder#inputBlur
           keydown:query-builder#inputKeydown
@@ -1138,7 +1138,7 @@
                   id="query-builder-test-results"
                 ></ul>
         </div>
-      <div class="FormControl-inlineValidation" id="validation-112a6598-8715-4443-8d88-8e325b7ff3e7" hidden="hidden">
+      <div class="FormControl-inlineValidation" id="validation-895a951d-85b6-4b31-9fcf-52fcbfe439b8" hidden="hidden">
         <span class="FormControl-inlineValidation--visual">
           <svg aria-hidden="true" height="12" viewBox="0 0 12 12" version="1.1" width="12" data-view-component="true" class="octicon octicon-alert-fill">
     <path d="M4.855.708c.5-.896 1.79-.896 2.29 0l4.675 8.351a1.312 1.312 0 0 1-1.146 1.954H1.33A1.313 1.313 0 0 1 .183 9.058ZM7 7V3H5v4Zm-1 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"></path>
@@ -1179,7 +1179,7 @@
   
 </div>
       <scrollable-region data-labelled-by="feedback-dialog-title">
-        <div data-view-component="true" class="Overlay-body">        <!-- '"` --><!-- </textarea></xmp> --></option></form><form id="code-search-feedback-form" data-turbo="false" action="/search/feedback" accept-charset="UTF-8" method="post"><input type="hidden" name="authenticity_token" value="3oum-pdDI1T3DRqhA8t4oJ1VCFmyzV5oYJplUriBfzUejrzGoOVVRIdDRuBAELFfFYgFb12_kYipVT_QN9EOmA" />
+        <div data-view-component="true" class="Overlay-body">        <!-- '"` --><!-- </textarea></xmp> --></option></form><form id="code-search-feedback-form" data-turbo="false" action="/search/feedback" accept-charset="UTF-8" method="post"><input type="hidden" name="authenticity_token" value="hn9iqIvf4WupivwcPdGTnubT7mW7Bi0yKmH8j8xDke2LG0eckcmUN_UjITMAFkwRq6XiwYol88w67PA59rNsQA" />
           <p>We read every piece of feedback, and take your input very seriously.</p>
           <textarea name="feedback" class="form-control width-full mb-2" style="height: 120px" id="feedback"></textarea>
           <input name="include_email" id="include_email" aria-label="Include my email address so I can be contacted" class="form-control mr-2" type="checkbox">
@@ -1217,7 +1217,7 @@
         <div data-view-component="true" class="Overlay-body">        <div data-target="custom-scopes.customScopesModalDialogFlash"></div>
 
         <div hidden class="create-custom-scope-form" data-target="custom-scopes.createCustomScopeForm">
-        <!-- '"` --><!-- </textarea></xmp> --></option></form><form id="custom-scopes-dialog-form" data-turbo="false" action="/search/custom_scopes" accept-charset="UTF-8" method="post"><input type="hidden" name="authenticity_token" value="Duf6Isc9wh_aYrCNs8zUVcLtilExel8-5gHxlV7PYNZ-TQUgGGuDGb2zqeO_KNUgndUQu8OlKcj9tay6gu6SBA" />
+        <!-- '"` --><!-- </textarea></xmp> --></option></form><form id="custom-scopes-dialog-form" data-turbo="false" action="/search/custom_scopes" accept-charset="UTF-8" method="post"><input type="hidden" name="authenticity_token" value="TTIorBokBCQYMM3_YbRnnzBbiwIKlxQMefBX4VEkza5UfUzVmRJLvUsWQzu-WYNyDonucDWCkwMj3UXMjljnjw" />
           <div data-target="custom-scopes.customScopesModalDialogFlash"></div>
 
           <input type="hidden" id="custom_scope_id" name="custom_scope_id" data-target="custom-scopes.customScopesIdField">
@@ -1235,7 +1235,7 @@
                 placeholder="github-ruby"
                 required
                 maxlength="50">
-              <input type="hidden" value="yEemMUROC94k7bUV0EJkovO426sR6_dSfjcD1Z_D-rkAlT2SZJ1cfzEnyuhdz0u21CeAkJOdVj-zwYhmlxFJDQ" data-csrf="true" />
+              <input type="hidden" value="MkJBjuAzJOrDLI0DxocFSpSUGCp-NLZT0yRBKXgtMCloUNQJXGcxUt6spYrNkLv6ZT5EGG97q-5pqZmBlgxGfg" data-csrf="true" />
             </auto-check>
           </div>
 
@@ -1277,10 +1277,10 @@
 
             <div class="position-relative HeaderMenu-link-wrap d-lg-inline-block">
               <a
-                href="/login?return_to=https%3A%2F%2Fgithub.com%2FAll-Hands-AI%2FOpenHands%2Fraw%2Fmain%2Ffrontend%2Fsrc%2Fassets%2Fnotification.mp3"
+                href="/login?return_to=https%3A%2F%2Fgithub.com%2FfreeCodeCamp%2FfreeCodeCamp%2Fraw%2Fmain%2Fclient%2Fstatic%2Fsounds%2Fnotification.mp3"
                 class="HeaderMenu-link HeaderMenu-link--sign-in HeaderMenu-button flex-shrink-0 no-underline d-none d-lg-inline-flex border border-lg-0 rounded rounded-lg-0 px-2 py-1"
                 style="margin-left: 12px;"
-                data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header menu&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;originating_url&quot;:&quot;https://github.com/All-Hands-AI/OpenHands/raw/main/frontend/src/assets/notification.mp3&quot;,&quot;user_id&quot;:null}}" data-hydro-click-hmac="7109215df2f72d58fcb37418dbbc84282712ac4b53a90d64eb16bb83858a48ca"
+                data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header menu&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;originating_url&quot;:&quot;https://github.com/freeCodeCamp/freeCodeCamp/raw/main/client/static/sounds/notification.mp3&quot;,&quot;user_id&quot;:null}}" data-hydro-click-hmac="2637c94b5be395074503eba93ae43163f103ea76d38a028d6a1f17a34fdba42a"
                 data-analytics-event="{&quot;category&quot;:&quot;Marketing nav&quot;,&quot;action&quot;:&quot;click to go to homepage&quot;,&quot;label&quot;:&quot;ref_page:Marketing;ref_cta:Sign in;ref_loc:Header&quot;}"
               >
                 Sign in
@@ -1290,7 +1290,7 @@
     <h4 data-view-component="true" class="color-fg-default mb-2">                    Sign in to GitHub
 </h4>
                         
-<!-- '"` --><!-- </textarea></xmp> --></option></form><form data-turbo="false" action="/session" accept-charset="UTF-8" method="post"><input type="hidden" name="authenticity_token" value="PPH8KtXL3rQuaYfXsfC2-ARSvTUInlZVkPx7CFkDEjULXvL6rW0MEo5LlO1N3kfaXJmy6df48WV-BrKQ6GcaVg" />  <input type="hidden" name="add_account" id="add_account" autocomplete="off" class="form-control" />
+<!-- '"` --><!-- </textarea></xmp> --></option></form><form data-turbo="false" action="/session" accept-charset="UTF-8" method="post"><input type="hidden" name="authenticity_token" value="4Om81t4rfqf5ffuhTc2wUsus44YgGlzl3MJCiXvrXH_xQJ5GXKnMevYVdWD4dTRc1c6wWj7Dz9liBgEcOcbkcA" />  <input type="hidden" name="add_account" id="add_account" autocomplete="off" class="form-control" />
 
     <label for="login_field">
       Username or email address
@@ -1308,17 +1308,17 @@
 <input type="hidden" class="js-support" name="javascript-support" value="unknown">
 <input type="hidden" class="js-webauthn-support" name="webauthn-support" value="unknown">
 <input type="hidden" class="js-webauthn-iuvpaa-support" name="webauthn-iuvpaa-support" value="unknown">
-<input type="hidden" name="return_to" id="return_to" value="https://github.com/All-Hands-AI/OpenHands/raw/main/frontend/src/assets/notification.mp3" autocomplete="off" class="form-control" />
+<input type="hidden" name="return_to" id="return_to" value="https://github.com/freeCodeCamp/freeCodeCamp/raw/main/client/static/sounds/notification.mp3" autocomplete="off" class="form-control" />
 <input type="hidden" name="allow_signup" id="allow_signup" autocomplete="off" class="form-control" />
 <input type="hidden" name="client_id" id="client_id" autocomplete="off" class="form-control" />
 <input type="hidden" name="integration" id="integration" autocomplete="off" class="form-control" />
-<input type="text" name="required_field_4168" hidden="hidden" class="form-control" /><input type="hidden" name="timestamp" value="1738188198851" autocomplete="off" class="form-control" /><input type="hidden" name="timestamp_secret" value="6a348f868e01d89741e9ccad650569c23f80d0b2cc414d5450f9708933bf2878" autocomplete="off" class="form-control" />
+<input type="text" name="required_field_0638" hidden="hidden" class="form-control" /><input type="hidden" name="timestamp" value="1738191139492" autocomplete="off" class="form-control" /><input type="hidden" name="timestamp_secret" value="4e821ebafc9878e3d25984c1b727d44ab52cd9d1c53618f6a4764089d12b0e73" autocomplete="off" class="form-control" />
 
     <input type="submit" name="commit" value="Sign in" class="btn btn-primary btn-block js-sign-in-button" data-disable-with="Signing in…" data-signin-label="Sign in" data-sso-label="Sign in with your identity provider" development="false" disable-emu-sso="false" />
   </div>
 </form>  <webauthn-status class="js-webauthn-login-emu-control">
         <div data-target="webauthn-status.partial" class="d-flex flex-justify-between flex-column mt-3 mb-0" hidden>
-          <a href="/login?passkey=true&amp;return_to=https%3A%2F%2Fgithub.com%2FAll-Hands-AI%2FOpenHands%2Fraw%2Fmain%2Ffrontend%2Fsrc%2Fassets%2Fnotification.mp3" data-analytics-event="{&quot;category&quot;:&quot;passkey_404_login&quot;,&quot;action&quot;:&quot;clicked&quot;,&quot;label&quot;:null}" data-view-component="true" class="Button--link Button--medium Button">  <span class="Button-content">
+          <a href="/login?passkey=true&amp;return_to=https%3A%2F%2Fgithub.com%2FfreeCodeCamp%2FfreeCodeCamp%2Fraw%2Fmain%2Fclient%2Fstatic%2Fsounds%2Fnotification.mp3" data-analytics-event="{&quot;category&quot;:&quot;passkey_404_login&quot;,&quot;action&quot;:&quot;clicked&quot;,&quot;label&quot;:null}" data-view-component="true" class="Button--link Button--medium Button">  <span class="Button-content">
     <span class="Button-label">or sign in with a passkey</span>
   </span>
 </a>
@@ -1328,10 +1328,10 @@
 
 </div></div>            </div>
 
-              <a href="/signup?ref_cta=Sign+up&amp;ref_loc=header+logged+out&amp;ref_page=%2FAll-Hands-AI%2FOpenHands%2Fraw%2Fmain%2Ffrontend%2Fsrc%2Fassets%2Fnotification.mp3&amp;source=header"
+              <a href="/signup?ref_cta=Sign+up&amp;ref_loc=header+logged+out&amp;ref_page=%2FfreeCodeCamp%2FfreeCodeCamp%2Fraw%2Fmain%2Fclient%2Fstatic%2Fsounds%2Fnotification.mp3&amp;source=header"
                 class="HeaderMenu-link HeaderMenu-link--sign-up HeaderMenu-button flex-shrink-0 d-flex d-lg-inline-flex no-underline border color-border-default rounded px-2 py-1"
-                data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header menu&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;originating_url&quot;:&quot;https://github.com/All-Hands-AI/OpenHands/raw/main/frontend/src/assets/notification.mp3&quot;,&quot;user_id&quot;:null}}" data-hydro-click-hmac="7109215df2f72d58fcb37418dbbc84282712ac4b53a90d64eb16bb83858a48ca"
-                data-analytics-event="{&quot;category&quot;:&quot;Sign up&quot;,&quot;action&quot;:&quot;click to sign up for account&quot;,&quot;label&quot;:&quot;ref_page:/All-Hands-AI/OpenHands/raw/main/frontend/src/assets/notification.mp3;ref_cta:Sign up;ref_loc:header logged out&quot;}"
+                data-hydro-click="{&quot;event_type&quot;:&quot;authentication.click&quot;,&quot;payload&quot;:{&quot;location_in_page&quot;:&quot;site header menu&quot;,&quot;repository_id&quot;:null,&quot;auth_type&quot;:&quot;SIGN_UP&quot;,&quot;originating_url&quot;:&quot;https://github.com/freeCodeCamp/freeCodeCamp/raw/main/client/static/sounds/notification.mp3&quot;,&quot;user_id&quot;:null}}" data-hydro-click-hmac="2637c94b5be395074503eba93ae43163f103ea76d38a028d6a1f17a34fdba42a"
+                data-analytics-event="{&quot;category&quot;:&quot;Sign up&quot;,&quot;action&quot;:&quot;click to sign up for account&quot;,&quot;label&quot;:&quot;ref_page:/freeCodeCamp/freeCodeCamp/raw/main/client/static/sounds/notification.mp3;ref_cta:Sign up;ref_loc:header logged out&quot;}"
               >
                 Sign up
               </a>
@@ -1351,10 +1351,10 @@
         <span class="js-stale-session-flash-signed-out" hidden>You signed out in another tab or window. <a class="Link--inTextBlock" href="">Reload</a> to refresh your session.</span>
         <span class="js-stale-session-flash-switched" hidden>You switched accounts on another tab or window. <a class="Link--inTextBlock" href="">Reload</a> to refresh your session.</span>
 
-    <button id="icon-button-2ca2338b-151b-44eb-bab9-b2a66c39f230" aria-labelledby="tooltip-7d22aa65-03eb-415d-91db-5c70329f0210" type="button" data-view-component="true" class="Button Button--iconOnly Button--invisible Button--medium flash-close js-flash-close">  <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-x Button-visual">
+    <button id="icon-button-01c3a391-3a96-48c5-8f77-7cdc81411b74" aria-labelledby="tooltip-e70ac4d4-9666-4628-8a98-db2077d0318d" type="button" data-view-component="true" class="Button Button--iconOnly Button--invisible Button--medium flash-close js-flash-close">  <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="octicon octicon-x Button-visual">
     <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"></path>
 </svg>
-</button><tool-tip id="tooltip-7d22aa65-03eb-415d-91db-5c70329f0210" for="icon-button-2ca2338b-151b-44eb-bab9-b2a66c39f230" popover="manual" data-direction="s" data-type="label" data-view-component="true" class="sr-only position-absolute">Dismiss alert</tool-tip>
+</button><tool-tip id="tooltip-e70ac4d4-9666-4628-8a98-db2077d0318d" for="icon-button-01c3a391-3a96-48c5-8f77-7cdc81411b74" popover="manual" data-direction="s" data-type="label" data-view-component="true" class="sr-only position-absolute">Dismiss alert</tool-tip>
 
 
   
