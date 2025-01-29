@@ -4506,5 +4506,8 @@
         "fr": "Que voulez-vous construire ?",
         "tr": "Ne inşa etmek istiyorsun?",
         "de": "Was möchten Sie erstellen?"
+    },
+    "SETTINGS_FORM$ENABLE_DEFAULT_CONDENSER_SWITCH_LABEL": {
+        "en": "Enable Memory Condenser"
     }
 }

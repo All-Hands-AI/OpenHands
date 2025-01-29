@@ -110,6 +110,12 @@ class AgentSession:
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
         )
+        if github_token:
+            self.event_stream.set_secrets(
+                {
+                    'github_token': github_token,
+                }
+            )
         if initial_message:
             self.event_stream.add_event(initial_message, EventSource.USER)
             self.event_stream.add_event(
