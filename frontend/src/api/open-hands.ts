@@ -13,7 +13,7 @@ import {
   GetTrajectoryResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings } from "#/services/settings";
+import { ApiSettings } from "#/types/settings";
 
 class OpenHands {
   /**
