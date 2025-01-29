@@ -2,6 +2,7 @@ from functools import lru_cache
 from typing import Callable
 from uuid import UUID
 
+import os
 import docker
 import requests
 import tenacity
