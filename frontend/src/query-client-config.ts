@@ -1,7 +1,7 @@
 import { QueryClientConfig, QueryCache } from "@tanstack/react-query";
 import { renderToastIfError } from "./utils/render-toast-if-error";
 
-const QUERY_KEYS_TO_IGNORE = ["authenticated", "hosts"];
+const QUERY_KEYS_TO_IGNORE = ["authenticated", "hosts", "settings"];
 
 export const queryClientConfig: QueryClientConfig = {
   queryCache: new QueryCache({

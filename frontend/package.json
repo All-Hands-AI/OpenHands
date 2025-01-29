@@ -1,6 +1,6 @@
 {
   "name": "openhands-frontend",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -24,10 +24,10 @@
     "i18next": "^24.2.2",
     "i18next-browser-languagedetector": "^8.0.2",
     "i18next-http-backend": "^3.0.2",
-    "isbot": "^5.1.21",
+    "isbot": "^5.1.22",
     "jose": "^5.9.4",
     "monaco-editor": "^0.52.2",
-    "posthog-js": "^1.211.1",
+    "posthog-js": "^1.211.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-highlight": "^0.15.0",
