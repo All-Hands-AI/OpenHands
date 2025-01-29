@@ -80,7 +80,6 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         '3. Edit the sourcecode of the repo to resolve the issue\n'
         '4. Rerun your reproduce script and confirm that the error is fixed!\n'
         '5. Think about edgecases and make sure your fix handles them as well\n'
-        '6. If possible, find existing tests that involve the function you are fixing and try to make sure your fix passes them\n'
         "Your thinking should be thorough and so it's fine if it's very long.\n"
     )
 
