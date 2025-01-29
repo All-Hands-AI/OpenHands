@@ -254,35 +254,6 @@ class OpenHands {
     return data;
   }
 
-  static async searchEvents(
-    conversationId: string,
-    params: {
-      query?: string;
-      startId?: number;
-      limit?: number;
-      eventType?: string;
-      source?: string;
-      startDate?: string;
-      endDate?: string;
-    },
-  ): Promise<{ events: Record<string, unknown>[]; has_more: boolean }> {
-    const { data } = await openHands.get<{
-      events: Record<string, unknown>[];
-      has_more: boolean;
-    }>(`/api/conversations/${conversationId}/events/search`, {
-      params: {
-        query: params.query,
-        start_id: params.startId,
-        limit: params.limit,
-        event_type: params.eventType,
-        source: params.source,
-        start_date: params.startDate,
-        end_date: params.endDate,
-      },
-    });
-    return data;
-  }
-
   /**
    * Get the settings from the server or use the default settings if not found
    */
