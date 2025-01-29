@@ -1,15 +1,19 @@
 import useSound from "use-sound";
 import notificationSound from "../assets/notification.mp3";
+import { useCurrentSettings } from "../context/settings-context";
 
 export const useNotification = () => {
   const [playSound] = useSound(notificationSound);
+  const { settings } = useCurrentSettings();
 
   const notify = (
     title: string,
     options?: NotificationOptions,
   ): Notification | void => {
-    // Play sound
-    playSound();
+    // Play sound if enabled
+    if (settings?.ENABLE_SOUND_NOTIFICATIONS) {
+      playSound();
+    }
 
     // Request permission for browser notifications if not granted
     if (Notification.permission !== "granted") {

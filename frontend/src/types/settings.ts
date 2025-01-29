@@ -9,6 +9,7 @@ export type Settings = {
   REMOTE_RUNTIME_RESOURCE_FACTOR: number;
   GITHUB_TOKEN_IS_SET: boolean;
   ENABLE_DEFAULT_CONDENSER: boolean;
+  ENABLE_SOUND_NOTIFICATIONS: boolean;
 };
 
 export type ApiSettings = {
@@ -22,6 +23,7 @@ export type ApiSettings = {
   remote_runtime_resource_factor: number;
   github_token_is_set: boolean;
   enable_default_condenser: boolean;
+  enable_sound_notifications: boolean;
 };
 
 export type PostSettings = Settings & {

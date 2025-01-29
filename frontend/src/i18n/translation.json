@@ -4510,4 +4510,35 @@
     "SETTINGS_FORM$ENABLE_DEFAULT_CONDENSER_SWITCH_LABEL": {
         "en": "Enable Memory Condenser"
     }
+,
+    "SETTINGS$ENABLE_SOUND_NOTIFICATIONS": {
+        "en": "Enable sound notifications",
+        "zh-CN": "启用声音通知",
+        "zh-TW": "啟用聲音通知",
+        "de": "Tonbenachrichtigungen aktivieren",
+        "ko-KR": "소리 알림 활성화",
+        "no": "Aktiver lydvarsler",
+        "it": "Abilita notifiche sonore",
+        "pt": "Ativar notificações sonoras",
+        "es": "Habilitar notificaciones sonoras",
+        "ar": "تمكين التنبيهات الصوتية",
+        "fr": "Activer les notifications sonores",
+        "tr": "Ses bildirimlerini etkinleştir",
+        "ja": "サウンド通知を有効にする"
+    },
+    "SETTINGS$ENABLE_SOUND_NOTIFICATIONS_DESCRIPTION": {
+        "en": "Play a sound when the agent needs your attention",
+        "zh-CN": "当代理需要您的注意时播放声音",
+        "zh-TW": "當代理需要您的注意時播放聲音",
+        "de": "Einen Ton abspielen, wenn der Agent Ihre Aufmerksamkeit benötigt",
+        "ko-KR": "에이전트가 주의를 필요로 할 때 소리 재생",
+        "no": "Spill av en lyd når agenten trenger din oppmerksomhet",
+        "it": "Riproduci un suono quando lagente richiede la tua attenzione",
+        "pt": "Tocar um som quando o agente precisar da sua atenção",
+        "es": "Reproducir un sonido cuando el agente necesite su atención",
+        "ar": "تشغيل صوت عندما يحتاج العميل إلى انتباهك",
+        "fr": "Jouer un son lorsque lagent nécessite votre attention",
+        "tr": "Ajan dikkatinizi gerektirdiğinde ses çal",
+        "ja": "エージェントが注意を必要とするときにサウンドを再生"
+    }
 }
