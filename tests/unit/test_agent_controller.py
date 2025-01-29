@@ -52,6 +52,14 @@ def mock_event_stream():
 
 
 @pytest.fixture
+def mock_runtime() -> Runtime:
+    return MagicMock(
+        spec=Runtime,
+        event_stream=EventStream(sid='test', file_store=InMemoryFileStore({})),
+    )
+
+
+@pytest.fixture
 def mock_status_callback():
     return AsyncMock()
 
@@ -603,7 +611,7 @@ async def test_context_window_exceeded_error_handling(mock_agent, mock_event_str
 
 
 @pytest.mark.asyncio
-async def test_run_controller_with_context_window_exceeded(mock_agent):
+async def test_run_controller_with_context_window_exceeded(mock_agent, mock_runtime):
     """Tests that the controller can make progress after handling context window exceeded errors."""
 
     class StepState:
@@ -611,7 +619,8 @@ async def test_run_controller_with_context_window_exceeded(mock_agent):
             self.has_errored = False
 
         def step(self, state: State):
-            # If the state has more than one message and we haven't errored, throw the context window exceeded error
+            # If the state has more than one message and we haven't errored yet,
+            # throw the context window exceeded error
             if len(state.history) > 1 and not self.has_errored:
                 error = ContextWindowExceededError(
                     message='prompt is too long: 233885 tokens > 200000 maximum',
@@ -631,12 +640,7 @@ async def test_run_controller_with_context_window_exceeded(mock_agent):
             run_controller(
                 config=AppConfig(max_iterations=3),
                 initial_user_action=MessageAction(content='INITIAL'),
-                runtime=MagicMock(
-                    spec=Runtime,
-                    event_stream=EventStream(
-                        sid='test', file_store=InMemoryFileStore({})
-                    ),
-                ),
+                runtime=mock_runtime,
                 sid='test',
                 agent=mock_agent,
                 fake_user_response_fn=lambda _: 'repeat',
