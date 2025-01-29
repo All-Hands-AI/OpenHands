@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event
-from openhands.events.serialization.event import event_from_dict
+from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.runtime.base import Runtime
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
@@ -156,6 +156,8 @@ async def search_events(
     has_more = len(matching_events) > limit
     if has_more:
         matching_events = matching_events[:limit]  # Remove the extra event
+
+    matching_events = [event_to_dict(event) for event in matching_events]
     return {
         'events': matching_events,
         'has_more': has_more,
