@@ -7,7 +7,11 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@monaco-editor/react": "^4.7.0-rc.0",
+    "@mui/icons-material": "^6.4.2",
+    "@mui/material": "^6.4.2",
     "@nextui-org/react": "^2.6.11",
     "@react-router/node": "^7.1.3",
     "@react-router/serve": "^7.1.3",
