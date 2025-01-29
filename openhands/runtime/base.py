@@ -167,11 +167,14 @@ class Runtime(FileEditRuntimeMixin):
             obs = self.run_ipython(IPythonRunCellAction(code))
             self.log('debug', f'Added env vars to IPython: code={code}, obs={obs}')
 
-        # Add env vars to the Bash shell
+        # Add env vars to the Bash shell and .bashrc for persistence
         cmd = ''
+        bashrc_cmd = ''
         for key, value in env_vars.items():
             # Note: json.dumps gives us nice escaping for free
             cmd += f'export {key}={json.dumps(value)}; '
+            # Add to .bashrc if not already present
+            bashrc_cmd += f'grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
         if not cmd:
             return
         cmd = cmd.strip()
@@ -180,6 +183,15 @@ class Runtime(FileEditRuntimeMixin):
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(
                 f'Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}'
+            )
+
+        # Add to .bashrc for persistence
+        bashrc_cmd = bashrc_cmd.strip()
+        logger.debug(f'Adding env var to .bashrc: {bashrc_cmd}')
+        obs = self.run(CmdRunAction(bashrc_cmd))
+        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+            raise RuntimeError(
+                f'Failed to add env vars [{env_vars.keys()}] to .bashrc: {obs.content}'
             )
 
     def on_event(self, event: Event) -> None:
