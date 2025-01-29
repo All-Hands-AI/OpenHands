@@ -31,6 +31,9 @@ class RemoteRuntime(ActionExecutionClient):
     """This runtime will connect to a remote oh-runtime-client."""
 
     port: int = 60000  # default port for the remote runtime client
+    runtime_id: str | None = None
+    runtime_url: str | None = None
+    _runtime_initialized: bool = False
 
     def __init__(
         self,
@@ -65,16 +68,17 @@ class RemoteRuntime(ActionExecutionClient):
                 'debug',
                 'Setting workspace_base is not supported in the remote runtime.',
             )
+        if self.config.sandbox.remote_runtime_api_url is None:
+            raise ValueError(
+                'remote_runtime_api_url is required in the remote runtime.'
+            )
 
         self.runtime_builder = RemoteRuntimeBuilder(
             self.config.sandbox.remote_runtime_api_url,
             self.config.sandbox.api_key,
             self.session,
         )
-        self.runtime_id: str | None = None
-        self.runtime_url: str | None = None
         self.available_hosts: dict[str, int] = {}
-        self._runtime_initialized: bool = False
 
     def log(self, level: str, message: str) -> None:
         message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
@@ -306,6 +310,12 @@ class RemoteRuntime(ActionExecutionClient):
         assert 'pod_status' in runtime_data
         pod_status = runtime_data['pod_status'].lower()
         self.log('debug', f'Pod status: {pod_status}')
+        restart_count = runtime_data.get('restart_count', 0)
+        if restart_count != 0:
+            restart_reasons = runtime_data.get('restart_reasons')
+            self.log(
+                'debug', f'Pod restarts: {restart_count}, reasons: {restart_reasons}'
+            )
 
         # FIXME: We should fix it at the backend of /start endpoint, make sure
         # the pod is created before returning the response.
@@ -405,8 +415,13 @@ class RemoteRuntime(ActionExecutionClient):
                         f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
                     ) from e
             elif e.response.status_code == 503:
-                self.log('warning', 'Runtime appears to be paused. Resuming...')
-                self._resume_runtime()
-                return super()._send_action_server_request(method, url, **kwargs)
+                if self.config.sandbox.keep_runtime_alive:
+                    self.log('warning', 'Runtime appears to be paused. Resuming...')
+                    self._resume_runtime()
+                    return super()._send_action_server_request(method, url, **kwargs)
+                else:
+                    raise AgentRuntimeDisconnectedError(
+                        f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
+                    ) from e
             else:
                 raise e

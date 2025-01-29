@@ -20,7 +20,7 @@ The key classes in OpenHands are:
     * Sandbox: the part of the runtime responsible for running commands, e.g. inside of Docker
 * Server: brokers OpenHands sessions over HTTP, e.g. to drive the frontend
     * Session: holds a single EventStream, a single AgentController, and a single Runtime. Generally represents a single task (but potentially including several user prompts)
-    * SessionManager: keeps a list of active sessions, and ensures requests are routed to the correct Session
+    * ConversationManager: keeps a list of active sessions, and ensures requests are routed to the correct Session
 
 ## Control Flow
 Here's the basic loop (in pseudocode) that drives agents.

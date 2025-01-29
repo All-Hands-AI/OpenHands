@@ -4,10 +4,10 @@ import React from "react";
 import posthog from "posthog-js";
 import { I18nKey } from "#/i18n/declaration";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
-import { getDefaultSettings, Settings } from "#/services/settings";
+import { getDefaultSettings } from "#/services/settings";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
 import { DangerModal } from "../confirmation-modals/danger-modal";
-import { extractSettings, saveSettingsView } from "#/utils/settings-utils";
+import { extractSettings } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
 import { ModalButton } from "../../buttons/modal-button";
 import { AdvancedOptionSwitch } from "../../inputs/advanced-option-switch";
@@ -23,6 +23,8 @@ import { ModelSelector } from "./model-selector";
 import { RuntimeSizeSelector } from "./runtime-size-selector";
 import { useConfig } from "#/hooks/query/use-config";
 import { useCurrentSettings } from "#/context/settings-context";
+import { MEMORY_CONDENSER } from "#/utils/feature-flags";
+import { Settings } from "#/types/settings";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -64,12 +66,14 @@ export function SettingsForm({
       const isUsingConfirmationMode = !!settings.CONFIRMATION_MODE;
       const isUsingBaseUrl = !!settings.LLM_BASE_URL;
       const isUsingCustomModel = !!settings.LLM_MODEL && !isKnownModel;
+      const isUsingDefaultCondenser = !!settings.ENABLE_DEFAULT_CONDENSER;
 
       return (
         isUsingSecurityAnalyzer ||
         isUsingConfirmationMode ||
         isUsingBaseUrl ||
-        isUsingCustomModel
+        isUsingCustomModel ||
+        isUsingDefaultCondenser
       );
     }
 
@@ -90,11 +94,11 @@ export function SettingsForm({
   };
 
   const handleFormSubmission = async (formData: FormData) => {
-    const keys = Array.from(formData.keys());
-    const isUsingAdvancedOptions = keys.includes("use-advanced-options");
     const newSettings = extractSettings(formData);
 
-    saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
+    // Inject the condenser config from the current feature flag value
+    newSettings.ENABLE_DEFAULT_CONDENSER = MEMORY_CONDENSER;
+
     await saveUserSettings(newSettings);
     onClose();
     resetOngoingSession();
@@ -171,7 +175,7 @@ export function SettingsForm({
 
           <APIKeyInput
             isDisabled={!!disabled}
-            isSet={settings.LLM_API_KEY === "SET"}
+            isSet={settings.LLM_API_KEY === "**********"}
           />
 
           {showAdvancedOptions && (

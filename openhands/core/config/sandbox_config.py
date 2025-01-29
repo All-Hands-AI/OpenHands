@@ -37,7 +37,7 @@ class SandboxConfig(BaseModel):
             This should be a JSON string that will be parsed into a dictionary.
     """
 
-    remote_runtime_api_url: str = Field(default='http://localhost:8000')
+    remote_runtime_api_url: str | None = Field(default='http://localhost:8000')
     local_runtime_url: str = Field(default='http://localhost')
     keep_runtime_alive: bool = Field(default=False)
     rm_all_containers: bool = Field(default=False)
@@ -60,7 +60,7 @@ class SandboxConfig(BaseModel):
     runtime_startup_env_vars: dict[str, str] = Field(default_factory=dict)
     browsergym_eval_env: str | None = Field(default=None)
     platform: str | None = Field(default=None)
-    close_delay: int = Field(default=900)
+    close_delay: int = Field(default=15)
     remote_runtime_resource_factor: int = Field(default=1)
     enable_gpu: bool = Field(default=False)
     docker_runtime_kwargs: str | None = Field(default=None)

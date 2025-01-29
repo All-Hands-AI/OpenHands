@@ -48,7 +48,8 @@ each of which has a corresponding port:
 * {{ host }} (port {{ port }})
 {% endfor %}
 When starting a web server, use the corresponding ports. You should also
-set any options to allow iframes and CORS requests.
+set any options to allow iframes and CORS requests, and allow the server to
+be accessed from any host (e.g. 0.0.0.0).
 </RUNTIME_INFORMATION>
 {% endif %}
 """
@@ -134,27 +135,6 @@ class PromptManager:
     def get_system_message(self) -> str:
         return self.system_template.render().strip()
 
-    def get_additional_info(self) -> str:
-        """Gets information about the repository and runtime.
-
-        This is used to inject information about the repository and runtime into the initial user message.
-        """
-        repo_instructions = ''
-        assert (
-            len(self.repo_microagents) <= 1
-        ), f'Expecting at most one repo microagent, but found {len(self.repo_microagents)}: {self.repo_microagents.keys()}'
-        for microagent in self.repo_microagents.values():
-            # We assume these are the repo instructions
-            if repo_instructions:
-                repo_instructions += '\n\n'
-            repo_instructions += microagent.content
-
-        return ADDITIONAL_INFO_TEMPLATE.render(
-            repository_instructions=repo_instructions,
-            repository_info=self.repository_info,
-            runtime_info=self.runtime_info,
-        ).strip()
-
     def set_runtime_info(self, runtime: Runtime):
         self.runtime_info.available_hosts = runtime.web_hosts
 
@@ -203,6 +183,43 @@ class PromptManager:
                 micro_text += '\n\n' + microagent.content
                 micro_text += '\n</extra_info>'
                 message.content.append(TextContent(text=micro_text))
+
+    def add_examples_to_initial_message(self, message: Message) -> None:
+        """Add example_message to the first user message."""
+        example_message = self.get_example_user_message() or None
+
+        # Insert it at the start of the TextContent list
+        if example_message:
+            message.content.insert(0, TextContent(text=example_message))
+
+    def add_info_to_initial_message(
+        self,
+        message: Message,
+    ) -> None:
+        """Adds information about the repository and runtime to the initial user message.
+
+        Args:
+            message: The initial user message to add information to.
+        """
+        repo_instructions = ''
+        assert (
+            len(self.repo_microagents) <= 1
+        ), f'Expecting at most one repo microagent, but found {len(self.repo_microagents)}: {self.repo_microagents.keys()}'
+        for microagent in self.repo_microagents.values():
+            # We assume these are the repo instructions
+            if repo_instructions:
+                repo_instructions += '\n\n'
+            repo_instructions += microagent.content
+
+        additional_info = ADDITIONAL_INFO_TEMPLATE.render(
+            repository_instructions=repo_instructions,
+            repository_info=self.repository_info,
+            runtime_info=self.runtime_info,
+        ).strip()
+
+        # Insert the new content at the start of the TextContent list
+        if additional_info:
+            message.content.insert(0, TextContent(text=additional_info))
 
     def add_turns_left_reminder(self, messages: list[Message], state: State) -> None:
         latest_user_message = next(
