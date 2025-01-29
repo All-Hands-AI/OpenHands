@@ -4,11 +4,8 @@ import {
   Conversation,
   ResultSet,
 } from "#/api/open-hands.types";
-import {
-  ApiSettings,
-  DEFAULT_SETTINGS,
-  PostApiSettings,
-} from "#/services/settings";
+import { DEFAULT_SETTINGS } from "#/services/settings";
+import { ApiSettings, PostApiSettings } from "#/types/settings";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
