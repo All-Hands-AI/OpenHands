@@ -13,7 +13,7 @@ import {
   GetTrajectoryResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings } from "#/services/settings";
+import { ApiSettings } from "#/types/settings";
 
 class OpenHands {
   /**
@@ -152,25 +152,6 @@ class OpenHands {
     const response =
       await openHands.post<AuthenticateResponse>("/api/authenticate");
     return response.status === 200;
-  }
-
-  /**
-   * Refresh Github Token
-   * @returns Refreshed Github access token
-   */
-  static async refreshToken(
-    appMode: GetConfigResponse["APP_MODE"],
-    userId: string,
-  ): Promise<string> {
-    if (appMode === "oss") return "";
-
-    const response = await openHands.post<GitHubAccessTokenResponse>(
-      "/api/refresh-token",
-      {
-        userId,
-      },
-    );
-    return response.data.access_token;
   }
 
   /**

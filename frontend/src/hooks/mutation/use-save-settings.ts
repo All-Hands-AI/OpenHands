@@ -1,10 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  DEFAULT_SETTINGS,
-  PostApiSettings,
-  PostSettings,
-} from "#/services/settings";
+import { DEFAULT_SETTINGS } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
+import { PostSettings, PostApiSettings } from "#/types/settings";
 
 const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
   const apiSettings: Partial<PostApiSettings> = {

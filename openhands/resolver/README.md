@@ -185,4 +185,4 @@ You can customize how the AI agent approaches issue resolution by adding a `.ope
 ## Troubleshooting
 
 If you have any issues, please open an issue on this github repo, we're happy to help!
-Alternatively, you can [email us](mailto:contact@all-hands.dev) or join the [OpenHands Slack workspace](https://join.slack.com/t/openhands-ai/shared_invite/zt-2wkh4pklz-w~h_DVDtEe9H5kyQlcNxVw) and ask there.
+Alternatively, you can [email us](mailto:contact@all-hands.dev) or join the OpenHands Slack workspace (see [the README](/README.md) for an invite link).
