@@ -1,6 +1,7 @@
 import asyncio
 import copy
 import os
+import sys
 import traceback
 from typing import Callable, ClassVar, Type
 
@@ -11,6 +12,7 @@ from litellm.exceptions import (
     RateLimitError,
 )
 
+import openhands
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State, TrafficControlState
@@ -26,6 +28,7 @@ from openhands.core.exceptions import (
 )
 from openhands.core.logger import LOG_ALL_EVENTS
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.message import Message, TextContent
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
@@ -39,6 +42,8 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
     NullAction,
+    PromptExtensionAction,
+    SystemMessageAction,
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
@@ -50,6 +55,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
+from openhands.utils.prompt import PromptManager
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -144,6 +150,34 @@ class AgentController:
 
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
+
+        # prompt manager and first user message tracking
+        microagent_dir = None
+        if agent.config.enable_prompt_extensions:
+            microagent_dir = os.path.join(
+                os.path.dirname(os.path.dirname(openhands.__file__)),
+                'microagents',
+            )
+
+        agent_module = sys.modules[agent.__class__.__module__]
+        agent_module_file = getattr(agent_module, '__file__', None)
+        if agent_module_file is None:
+            raise ValueError(f'Could not find file for module {agent_module.__name__}')
+        prompt_dir = os.path.join(os.path.dirname(agent_module_file), 'prompts')
+
+        self.prompt_manager = PromptManager(
+            microagent_dir=microagent_dir,
+            prompt_dir=prompt_dir,
+            disabled_microagents=agent.config.disabled_microagents,
+        )
+        self._first_user_message_received = False
+
+        # Send system message at initialization
+        if not self.is_delegate and self.prompt_manager:
+            self.event_stream.add_event(
+                SystemMessageAction(content=self.prompt_manager.get_system_message()),
+                EventSource.AGENT,
+            )
 
     async def close(self) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -397,11 +431,51 @@ class AgentController:
                 self.state.max_iterations = (
                     self.state.iteration + self._initial_max_iterations
                 )
-                if (
-                    self.state.traffic_control_state == TrafficControlState.THROTTLING
-                    or self.state.traffic_control_state == TrafficControlState.PAUSED
-                ):
-                    self.state.traffic_control_state = TrafficControlState.NORMAL
+
+            # Handle first user message to trigger prompt extensions
+            if not self._first_user_message_received and self.prompt_manager:
+                self._first_user_message_received = True
+                # Create a Message object from the action content
+                msg = Message(
+                    role='user',
+                    content=[TextContent(text=action.content)],
+                )
+
+                # Add examples to initial message
+                self.prompt_manager.add_examples_to_initial_message(msg)
+                if msg.content[0].text != action.content:
+                    self.event_stream.add_event(
+                        PromptExtensionAction(
+                            content=msg.content[0].text, extension_type='examples'
+                        ),
+                        EventSource.AGENT,
+                    )
+
+                # Add info to initial message
+                self.prompt_manager.add_info_to_initial_message(msg)
+                if msg.content[0].text != action.content:
+                    self.event_stream.add_event(
+                        PromptExtensionAction(
+                            content=msg.content[0].text, extension_type='info'
+                        ),
+                        EventSource.AGENT,
+                    )
+
+                # Enhance message
+                self.prompt_manager.enhance_message(msg)
+                if msg.content[0].text != action.content:
+                    self.event_stream.add_event(
+                        PromptExtensionAction(
+                            content=msg.content[0].text, extension_type='enhance'
+                        ),
+                        EventSource.AGENT,
+                    )
+
+            if (
+                self.state.traffic_control_state == TrafficControlState.THROTTLING
+                or self.state.traffic_control_state == TrafficControlState.PAUSED
+            ):
+                self.state.traffic_control_state = TrafficControlState.NORMAL
                 self.log(
                     'debug',
                     f'Extended max iterations to {self.state.max_iterations} after user message',

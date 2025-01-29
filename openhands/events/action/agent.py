@@ -78,3 +78,39 @@ class AgentDelegateAction(Action):
     @property
     def message(self) -> str:
         return f"I'm asking {self.agent} for help with this task."
+
+
+@dataclass
+class SystemMessageAction(Action):
+    """An action that sends a system message to the agent.
+
+    Attributes:
+        content (str): The system message content.
+        action (str): The action type, namely ActionType.SYSTEM_MESSAGE.
+    """
+
+    content: str
+    action: str = ActionType.SYSTEM_MESSAGE
+
+    @property
+    def message(self) -> str:
+        return f'System message: {self.content}'
+
+
+@dataclass
+class PromptExtensionAction(Action):
+    """An action that adds extensions to the prompt.
+
+    Attributes:
+        content (str): The prompt extension content.
+        extension_type (str): The type of extension (e.g., 'examples', 'info', 'enhance').
+        action (str): The action type, namely ActionType.PROMPT_EXTENSION.
+    """
+
+    content: str
+    extension_type: str
+    action: str = ActionType.PROMPT_EXTENSION
+
+    @property
+    def message(self) -> str:
+        return f'Prompt extension ({self.extension_type}): {self.content}'

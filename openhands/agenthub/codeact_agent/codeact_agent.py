@@ -1,10 +1,8 @@
 import json
-import os
 from collections import deque
 
 from litellm import ModelResponse
 
-import openhands
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -22,6 +20,8 @@ from openhands.events.action import (
     FileReadAction,
     IPythonRunCellAction,
     MessageAction,
+    PromptExtensionAction,
+    SystemMessageAction,
 )
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -43,7 +43,6 @@ from openhands.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
 )
-from openhands.utils.prompt import PromptManager
 
 
 class CodeActAgent(Agent):
@@ -105,16 +104,6 @@ class CodeActAgent(Agent):
         )
         logger.debug(
             f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2, ensure_ascii=False).replace("\\n", "\n")}'
-        )
-        self.prompt_manager = PromptManager(
-            microagent_dir=os.path.join(
-                os.path.dirname(os.path.dirname(openhands.__file__)),
-                'microagents',
-            )
-            if self.config.enable_prompt_extensions
-            else None,
-            prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
-            disabled_microagents=self.config.disabled_microagents,
         )
 
         self.condenser = Condenser.from_config(self.config.condenser)
@@ -236,6 +225,24 @@ class CodeActAgent(Agent):
                 Message(
                     role='user',
                     content=content,
+                )
+            ]
+        elif isinstance(action, SystemMessageAction):
+            return [
+                Message(
+                    role='system',
+                    content=[TextContent(text=action.content)],
+                )
+            ]
+        elif isinstance(action, PromptExtensionAction):
+            # For prompt extensions, we add them as assistant messages
+            # This way they appear in the conversation history but don't interfere with the system message
+            return [
+                Message(
+                    role='assistant',
+                    content=[
+                        TextContent(text=f'[{action.extension_type}] {action.content}')
+                    ],
                 )
             ]
         return []
