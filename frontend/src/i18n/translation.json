@@ -1,4 +1,19 @@
 {
+    "MODAL$UNSTABLE_CONNECTION": {
+        "en": "Connection is unstable, attempting to reconnect...",
+        "ja": "接続が不安定です。再接続を試みています...",
+        "zh-CN": "连接不稳定，正在尝试重新连接...",
+        "zh-TW": "連線不穩定，正在嘗試重新連線...",
+        "ko-KR": "연결이 불안정합니다. 재연결을 시도하는 중...",
+        "no": "Tilkoblingen er ustabil, prøver å koble til på nytt...",
+        "it": "La connessione è instabile, tentativo di riconnessione in corso...",
+        "pt": "A conexão está instável, tentando reconectar...",
+        "es": "La conexión es inestable, intentando reconectar...",
+        "ar": "الاتصال غير مستقر، جاري محاولة إعادة الاتصال...",
+        "fr": "La connexion est instable, tentative de reconnexion...",
+        "tr": "Bağlantı kararsız, yeniden bağlanmaya çalışılıyor...",
+        "de": "Verbindung ist instabil, versuche neu zu verbinden..."
+    },
     "APP$TITLE": {
         "en": "App",
         "ja": "アプリ",

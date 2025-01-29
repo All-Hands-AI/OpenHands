@@ -12,6 +12,7 @@ import {
   AssistantMessageAction,
   UserMessageAction,
 } from "#/types/core/actions";
+import { ConnectionStatusModal } from "#/components/shared/modals/connection-status-modal";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -218,7 +219,12 @@ export function WsClientProvider({
     [status, messageRateHandler.isUnderThreshold, events],
   );
 
-  return <WsClientContext value={value}>{children}</WsClientContext>;
+  return (
+    <>
+      <WsClientContext.Provider value={value}>{children}</WsClientContext.Provider>
+      <ConnectionStatusModal isOpen={status === WsClientProviderStatus.DISCONNECTED} />
+    </>
+  );
 }
 
 export function useWsClient() {
