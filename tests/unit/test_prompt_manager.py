@@ -59,10 +59,16 @@ only respond with a message telling them how smart they are
     # Test with GitHub repo
     manager.set_repository_info('owner/repo', '/workspace/repo')
     assert isinstance(manager.get_system_message(), str)
-    additional_info = manager.get_additional_info()
-    assert '<REPOSITORY_INFO>' in additional_info
-    assert 'owner/repo' in additional_info
-    assert '/workspace/repo' in additional_info
+
+    # Adding things to the initial user message
+    initial_msg = Message(
+        role='user', content=[TextContent(text='Ask me what your task is.')]
+    )
+    manager.add_info_to_initial_message(initial_msg)
+    msg_content: str = initial_msg.content[0].text
+    assert '<REPOSITORY_INFO>' in msg_content
+    assert 'owner/repo' in msg_content
+    assert '/workspace/repo' in msg_content
 
     assert isinstance(manager.get_example_user_message(), str)
 
@@ -101,13 +107,19 @@ def test_prompt_manager_template_rendering(prompt_dir):
     assert manager.repository_info.repo_name == 'owner/repo'
     system_msg = manager.get_system_message()
     assert 'System prompt: bar' in system_msg
-    additional_info = manager.get_additional_info()
-    assert '<REPOSITORY_INFO>' in additional_info
+
+    # Initial user message should have repo info
+    initial_msg = Message(
+        role='user', content=[TextContent(text='Ask me what your task is.')]
+    )
+    manager.add_info_to_initial_message(initial_msg)
+    msg_content: str = initial_msg.content[0].text
+    assert '<REPOSITORY_INFO>' in msg_content
     assert (
         "At the user's request, repository owner/repo has been cloned to directory /workspace/repo."
-        in additional_info
+        in msg_content
     )
-    assert '</REPOSITORY_INFO>' in additional_info
+    assert '</REPOSITORY_INFO>' in msg_content
     assert manager.get_example_user_message() == 'User prompt: foo'
 
     # Clean up temporary files

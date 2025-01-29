@@ -68,6 +68,10 @@ class RemoteRuntime(ActionExecutionClient):
                 'debug',
                 'Setting workspace_base is not supported in the remote runtime.',
             )
+        if self.config.sandbox.remote_runtime_api_url is None:
+            raise ValueError(
+                'remote_runtime_api_url is required in the remote runtime.'
+            )
 
         self.runtime_builder = RemoteRuntimeBuilder(
             self.config.sandbox.remote_runtime_api_url,
