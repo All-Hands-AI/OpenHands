@@ -43,6 +43,7 @@ from openhands.events.action import (
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
+    AgentCondensationObservation,
     AgentDelegateObservation,
     AgentStateChangedObservation,
     ErrorObservation,
@@ -693,7 +694,10 @@ class AgentController:
 
                     # Add an error event to trigger another step by the agent
                     self.event_stream.add_event(
-                        ErrorObservation(content=str(e)), EventSource.AGENT
+                        AgentCondensationObservation(
+                            content='Trimming prompt to meet context window limitations'
+                        ),
+                        EventSource.AGENT,
                     )
                     return
                 raise e
