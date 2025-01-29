@@ -22,9 +22,14 @@ export function AnalyticsConsentFormModal({
     const formData = new FormData(e.currentTarget);
     const analytics = formData.get("analytics") === "on";
 
-    handleCaptureConsent(analytics);
-    await saveUserSettings({ user_consents_to_analytics: analytics });
-    localStorage.setItem("analytics-consent", analytics.toString());
+    await saveUserSettings(
+      { user_consents_to_analytics: analytics },
+      {
+        onSuccess: () => {
+          handleCaptureConsent(analytics);
+        },
+      },
+    );
 
     onClose();
   };

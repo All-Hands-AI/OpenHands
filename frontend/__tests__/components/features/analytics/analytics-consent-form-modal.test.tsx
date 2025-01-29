@@ -40,5 +40,6 @@ describe("AnalyticsConsentFormModal", () => {
       security_analyzer: "",
       unset_github_token: undefined,
     });
+    expect(onCloseMock).toHaveBeenCalled();
   });
 });

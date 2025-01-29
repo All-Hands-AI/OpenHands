@@ -47,7 +47,7 @@ export default function MainApp() {
   const { data: settings } = useSettings();
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
-    !localStorage.getItem("analytics-consent"),
+    !localStorage.getItem("consent-form-closed"),
   );
 
   const config = useConfig();
@@ -95,7 +95,10 @@ export default function MainApp() {
 
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
-          onClose={() => setConsentFormIsOpen(false)}
+          onClose={() => {
+            setConsentFormIsOpen(false);
+            localStorage.setItem("consent-form-closed", "true");
+          }}
         />
       )}
     </div>
