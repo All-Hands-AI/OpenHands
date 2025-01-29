@@ -8,6 +8,7 @@ import litellm
 from litellm.exceptions import (
     BadRequestError,
     ContextWindowExceededError,
+    OpenAIError,
     RateLimitError,
 )
 
@@ -672,7 +673,7 @@ class AgentController:
                     EventSource.AGENT,
                 )
                 return
-            except (ContextWindowExceededError, BadRequestError) as e:
+            except (ContextWindowExceededError, BadRequestError, OpenAIError) as e:
                 # FIXME: this is a hack until a litellm fix is confirmed
                 # Check if this is a nested context window error
                 error_str = str(e).lower()
@@ -689,12 +690,13 @@ class AgentController:
                     # Save the ID of the first event in our truncated history for future reloading
                     if self.state.history:
                         self.state.start_id = self.state.history[0].id
-                    # Don't add error event - let the agent retry with reduced context
+
+                    # Add an error event to trigger another step by the agent
                     self.event_stream.add_event(
                         ErrorObservation(content=str(e)), EventSource.AGENT
                     )
                     return
-                raise
+                raise e
 
         if action.runnable:
             if self.state.confirmation_mode and (

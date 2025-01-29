@@ -664,5 +664,5 @@ async def test_run_controller_with_context_window_exceeded(mock_agent, mock_runt
         == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
     )
 
-    # Check that the context window exceeded error was raised during the run,
+    # Check that the context window exceeded error was raised during the run
     assert step_state.has_errored
