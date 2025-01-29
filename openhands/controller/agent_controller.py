@@ -690,6 +690,9 @@ class AgentController:
                     if self.state.history:
                         self.state.start_id = self.state.history[0].id
                     # Don't add error event - let the agent retry with reduced context
+                    self.event_stream.add_event(
+                        ErrorObservation(content=str(e)), EventSource.AGENT
+                    )
                     return
                 raise
 

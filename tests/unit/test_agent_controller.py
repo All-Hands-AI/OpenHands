@@ -604,10 +604,7 @@ async def test_context_window_exceeded_error_handling(mock_agent, mock_event_str
 
 @pytest.mark.asyncio
 async def test_run_controller_with_context_window_exceeded(mock_agent):
-    """Tests that the controller handles context window exceeded errors correctly."""
-    config = AppConfig(max_iterations=3)
-    file_store = InMemoryFileStore({})
-    event_stream = EventStream(sid='test', file_store=file_store)
+    """Tests that the controller can make progress after handling context window exceeded errors."""
 
     class StepState:
         def __init__(self):
@@ -629,15 +626,17 @@ async def test_run_controller_with_context_window_exceeded(mock_agent):
     step_state = StepState()
     mock_agent.step = step_state.step
 
-    runtime = MagicMock(spec=Runtime)
-    runtime.event_stream = event_stream
-
     try:
         state = await asyncio.wait_for(
             run_controller(
-                config=config,
+                config=AppConfig(max_iterations=3),
                 initial_user_action=MessageAction(content='INITIAL'),
-                runtime=runtime,
+                runtime=MagicMock(
+                    spec=Runtime,
+                    event_stream=EventStream(
+                        sid='test', file_store=InMemoryFileStore({})
+                    ),
+                ),
                 sid='test',
                 agent=mock_agent,
                 fake_user_response_fn=lambda _: 'repeat',
@@ -645,11 +644,15 @@ async def test_run_controller_with_context_window_exceeded(mock_agent):
             timeout=10,
         )
 
-    # A timeout error indicates the run_controller entrypoint is not making progress
-    except asyncio.TimeoutError:
-        raise AssertionError('The run_controller function did not complete in time.')
+    # A timeout error indicates the run_controller entrypoint is not making
+    # progress
+    except asyncio.TimeoutError as e:
+        raise AssertionError(
+            'The run_controller function did not complete in time.'
+        ) from e
 
-    # Hitting the iteration limit indicates the controller is failing for the expected reason
+    # Hitting the iteration limit indicates the controller is failing for the
+    # expected reason
     assert state.iteration == 3
     assert state.agent_state == AgentState.ERROR
     assert (
@@ -657,5 +660,5 @@ async def test_run_controller_with_context_window_exceeded(mock_agent):
         == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
     )
 
-    # Check that the context window exceeded error was raised during the run
+    # Check that the context window exceeded error was raised during the run,
     assert step_state.has_errored
