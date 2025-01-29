@@ -9,6 +9,7 @@ import { AgentState } from "#/types/agent-state";
 import { useWsClient } from "#/context/ws-client-provider";
 import { IGNORE_TASK_STATE_MAP } from "#/ignore-task-state-map.constant";
 import { ActionButton } from "#/components/shared/buttons/action-button";
+import { SoundToggleButton } from "#/components/shared/buttons/sound-toggle-button";
 
 export function AgentControlBar() {
   const { t } = useTranslation();
@@ -22,7 +23,8 @@ export function AgentControlBar() {
   };
 
   return (
-    <div className="flex justify-between items-center gap-20">
+    <div className="flex justify-between items-center gap-4">
+      <SoundToggleButton />
       <ActionButton
         isDisabled={
           curAgentState !== AgentState.RUNNING &&

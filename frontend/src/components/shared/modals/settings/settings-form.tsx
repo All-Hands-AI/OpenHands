@@ -17,7 +17,6 @@ import { BaseUrlInput } from "../../inputs/base-url-input";
 import { ConfirmationModeSwitch } from "../../inputs/confirmation-mode-switch";
 import { CustomModelInput } from "../../inputs/custom-model-input";
 import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
-import { SoundNotificationsSwitch } from "../../inputs/sound-notifications-switch";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
 
@@ -203,11 +202,6 @@ export function SettingsForm({
               <ConfirmationModeSwitch
                 isDisabled={!!disabled}
                 defaultSelected={settings.CONFIRMATION_MODE}
-              />
-
-              <SoundNotificationsSwitch
-                isDisabled={!!disabled}
-                defaultSelected={settings.ENABLE_SOUND_NOTIFICATIONS}
               />
             </>
           )}
