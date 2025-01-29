@@ -80,6 +80,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         '3. Edit the sourcecode of the repo to resolve the issue\n'
         '4. Rerun your reproduce script and confirm that the error is fixed!\n'
         '5. Think about edgecases and make sure your fix handles them as well\n'
+        '6. If possible, find existing tests that involve the function you are fixing and try to make sure your fix passes them\n'
         "Your thinking should be thorough and so it's fine if it's very long.\n"
     )
 
@@ -139,6 +140,7 @@ def get_config(
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             keep_runtime_alive=False,
             remote_runtime_init_timeout=3600,
+            remote_runtime_api_timeout=120,
             remote_runtime_resource_factor=get_instance_resource_factor(
                 dataset_name=metadata.dataset,
                 instance_id=instance['instance_id'],
