@@ -14,7 +14,6 @@ from openhands.core.config.condenser_config import (
     CondenserConfig,
     LLMAttentionCondenserConfig,
     LLMSummarizingCondenserConfig,
-    NoOpCondenserConfig,
     ObservationMaskingCondenserConfig,
     RecentEventsCondenserConfig,
 )
@@ -183,21 +182,6 @@ class RollingCondenser(Condenser, ABC):
         self._last_history_length = len(state.history)
 
         return results
-
-
-class NoOpCondenser(Condenser):
-    """A condenser that does nothing to the event sequence."""
-
-    def condense(self, events: list[Event]) -> list[Event]:
-        """Returns the list of events unchanged."""
-        return events
-
-    @classmethod
-    def from_config(cls, config: NoOpCondenserConfig) -> NoOpCondenser:
-        return NoOpCondenser()
-
-
-NoOpCondenser.register_config(NoOpCondenserConfig)
 
 
 class ObservationMaskingCondenser(Condenser):

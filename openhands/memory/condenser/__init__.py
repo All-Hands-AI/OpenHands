@@ -4,10 +4,10 @@ from openhands.memory.condenser.condenser import (
     ImportantEventSelection,
     LLMAttentionCondenser,
     LLMSummarizingCondenser,
-    NoOpCondenser,
     ObservationMaskingCondenser,
     RecentEventsCondenser,
 )
+from openhands.memory.condenser.impl.no_op_condenser import NoOpCondenser
 
 __all__ = [
     'Condenser',
