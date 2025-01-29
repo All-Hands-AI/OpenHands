@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from typing import Callable
 from uuid import UUID
@@ -239,7 +240,15 @@ class DockerRuntime(ActionExecutionClient):
                     'mode': 'rw',
                 }
             }
-            logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
+            logger.debug(
+                f'Mounting host path: {self.config.workspace_mount_path} (exists: {os.path.exists(self.config.workspace_mount_path)})'
+            )
+            logger.debug(
+                f'Container mount path: {self.config.workspace_mount_path_in_sandbox}'
+            )
+            logger.debug(
+                f'Directory contents: {os.listdir(self.config.workspace_mount_path)}'
+            )
         else:
             logger.debug(
                 'Mount dir is not set, will not mount the workspace directory to the container'

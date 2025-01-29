@@ -63,10 +63,10 @@ workspace_base = "./workspace"
 #max_iterations = 100
 
 # Path to mount the workspace in the sandbox
-#workspace_mount_path_in_sandbox = "/workspace"
+workspace_mount_path_in_sandbox = "/workspace"
 
 # Path to mount the workspace
-#workspace_mount_path = ""
+workspace_mount_path = "./workspace"
 
 # Path to rewrite the workspace mount path to
 #workspace_mount_rewrite = ""
