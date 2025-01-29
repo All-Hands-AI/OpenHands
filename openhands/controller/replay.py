@@ -13,9 +13,6 @@ class ReplayManager:
     1) any action is non-deterministic, OR
     2) if the initial state before the replay session is different from the
     initial state of the trajectory.
-
-    In case of a "new" error (an error that is only observed in the replay session
-    but not in the replay logs), replay manager halts the replay session.
     """
 
     def __init__(self, replay_events: list[Event] | None):
