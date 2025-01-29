@@ -1,8 +1,8 @@
-import { useTranslation } from "react-i18next";
-import { Button } from "@nextui-org/react";
-import { I18nKey } from "#/i18n/declaration";
-import { useCurrentSettings } from "#/context/settings-context";
 import { VolumeUp, VolumeOff } from "@mui/icons-material";
+import { Button } from "@nextui-org/react";
+import { useTranslation } from "react-i18next";
+import { useCurrentSettings } from "#/context/settings-context";
+import { I18nKey } from "#/i18n/declaration";
 
 export function SoundToggleButton() {
   const { t } = useTranslation();
