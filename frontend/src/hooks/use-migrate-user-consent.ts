@@ -15,9 +15,6 @@ export const useMigrateUserConsent = () => {
       if (userAnalyticsConsent) {
         args?.handleAnalyticsWasPresentInLocalStorage();
 
-        // transfer modal state to new key
-        localStorage.setItem("consent-form-closed", "true");
-
         await saveUserSettings(
           { user_consents_to_analytics: userAnalyticsConsent === "true" },
           {

@@ -49,7 +49,7 @@ export default function MainApp() {
   const { migrateUserConsent } = useMigrateUserConsent();
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
-    !localStorage.getItem("consent-form-closed"),
+    settings.USER_CONSENTS_TO_ANALYTICS === null,
   );
 
   const config = useConfig();
@@ -108,7 +108,6 @@ export default function MainApp() {
         <AnalyticsConsentFormModal
           onClose={() => {
             setConsentFormIsOpen(false);
-            localStorage.setItem("consent-form-closed", "true");
           }}
         />
       )}
