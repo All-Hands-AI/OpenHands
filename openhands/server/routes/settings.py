@@ -66,7 +66,9 @@ async def store_settings(
             logger.warning(f'Invalid GitHub token: {e}')
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'error': 'Invalid GitHub token'},
+                content={
+                    'error': 'Invalid GitHub token. Please make sure it is valid.'
+                },
             )
 
     try:
@@ -107,10 +109,10 @@ async def store_settings(
         await settings_store.store(settings)
         return response
     except Exception as e:
-        logger.warning(f'Invalid token: {e}')
+        logger.warning(f'Something went wrong storing settings: {e}')
         return JSONResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Invalid token'},
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong storing settings'},
         )
 
 
