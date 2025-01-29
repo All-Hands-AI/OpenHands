@@ -41,6 +41,10 @@ def get_condensation_metadata(state: State) -> list[dict[str, Any]]:
     return []
 
 
+CONDENSER_REGISTRY: dict[type[CondenserConfig], type[Condenser]] = {}
+"""Registry of condenser configurations to their corresponding condenser classes."""
+
+
 class Condenser(ABC):
     """Abstract condenser interface.
 
@@ -109,6 +113,24 @@ class Condenser(ABC):
             return self.condense(state.history)
 
     @classmethod
+    def register_config(cls, configuration_type: type[CondenserConfig]) -> None:
+        """Register a new condenser configuration type.
+
+        Instances of registered configuration types can be passed to `from_config` to create instances of the corresponding condenser.
+
+        Args:
+            configuration_type: The type of configuration used to create instances of the condenser.
+
+        Raises:
+            ValueError: If the configuration type is already registered.
+        """
+        if configuration_type in CONDENSER_REGISTRY:
+            raise ValueError(
+                f'Condenser configuration {configuration_type} is already registered'
+            )
+        CONDENSER_REGISTRY[configuration_type] = cls
+
+    @classmethod
     def from_config(cls, config: CondenserConfig) -> Condenser:
         """Create a condenser from a configuration object.
 
@@ -121,34 +143,11 @@ class Condenser(ABC):
         Raises:
             ValueError: If the condenser type is not recognized.
         """
-        match config:
-            case NoOpCondenserConfig():
-                return NoOpCondenser()
-
-            case ObservationMaskingCondenserConfig():
-                return ObservationMaskingCondenser(
-                    **config.model_dump(exclude=['type'])
-                )
-
-            case RecentEventsCondenserConfig():
-                return RecentEventsCondenser(**config.model_dump(exclude=['type']))
-
-            case LLMSummarizingCondenserConfig(llm_config=llm_config):
-                return LLMSummarizingCondenser(llm=LLM(config=llm_config))
-
-            case AmortizedForgettingCondenserConfig():
-                return AmortizedForgettingCondenser(
-                    **config.model_dump(exclude=['type'])
-                )
-
-            case LLMAttentionCondenserConfig(llm_config=llm_config):
-                return LLMAttentionCondenser(
-                    llm=LLM(config=llm_config),
-                    **config.model_dump(exclude=['type', 'llm_config']),
-                )
-
-            case _:
-                raise ValueError(f'Unknown condenser config: {config}')
+        try:
+            condenser_class = CONDENSER_REGISTRY[type(config)]
+            return condenser_class.from_config(config)
+        except KeyError:
+            raise ValueError(f'Unknown condenser config: {config}')
 
 
 class RollingCondenser(Condenser, ABC):
@@ -193,6 +192,13 @@ class NoOpCondenser(Condenser):
         """Returns the list of events unchanged."""
         return events
 
+    @classmethod
+    def from_config(cls, config: NoOpCondenserConfig) -> NoOpCondenser:
+        return NoOpCondenser()
+
+
+NoOpCondenser.register_config(NoOpCondenserConfig)
+
 
 class ObservationMaskingCondenser(Condenser):
     """A condenser that masks the values of observations outside of a recent attention window."""
@@ -216,6 +222,15 @@ class ObservationMaskingCondenser(Condenser):
 
         return results
 
+    @classmethod
+    def from_config(
+        cls, config: ObservationMaskingCondenserConfig
+    ) -> ObservationMaskingCondenser:
+        return ObservationMaskingCondenser(**config.model_dump(exclude=['type']))
+
+
+ObservationMaskingCondenser.register_config(ObservationMaskingCondenserConfig)
+
 
 class RecentEventsCondenser(Condenser):
     """A condenser that only keeps a certain number of the most recent events."""
@@ -232,6 +247,13 @@ class RecentEventsCondenser(Condenser):
         tail_length = max(0, self.max_events - len(head))
         tail = events[-tail_length:]
         return head + tail
+
+    @classmethod
+    def from_config(cls, config: RecentEventsCondenserConfig) -> RecentEventsCondenser:
+        return RecentEventsCondenser(**config.model_dump(exclude=['type']))
+
+
+RecentEventsCondenser.register_config(RecentEventsCondenserConfig)
 
 
 class LLMSummarizingCondenser(Condenser):
@@ -270,6 +292,15 @@ class LLMSummarizingCondenser(Condenser):
         except Exception as e:
             logger.error(f'Error condensing events: {str(e)}')
             raise e
+
+    @classmethod
+    def from_config(
+        cls, config: LLMSummarizingCondenserConfig
+    ) -> LLMSummarizingCondenser:
+        return LLMSummarizingCondenser(llm=LLM(config=config.llm_config))
+
+
+LLMSummarizingCondenser.register_config(LLMSummarizingCondenserConfig)
 
 
 class AmortizedForgettingCondenser(RollingCondenser):
@@ -311,6 +342,15 @@ class AmortizedForgettingCondenser(RollingCondenser):
         tail = events[-events_from_tail:]
 
         return head + tail
+
+    @classmethod
+    def from_config(
+        cls, config: AmortizedForgettingCondenserConfig
+    ) -> AmortizedForgettingCondenser:
+        return AmortizedForgettingCondenser(**config.model_dump(exclude=['type']))
+
+
+AmortizedForgettingCondenser.register_config(AmortizedForgettingCondenserConfig)
 
 
 class ImportantEventSelection(BaseModel):
@@ -407,3 +447,14 @@ class LLMAttentionCondenser(RollingCondenser):
         tail = [event for event in events if event.id in response_ids]
 
         return head + tail
+
+    @classmethod
+    def from_config(cls, config: LLMAttentionCondenserConfig) -> LLMAttentionCondenser:
+        return LLMAttentionCondenser(
+            llm=LLM(config=config.llm_config),
+            max_size=config.max_size,
+            keep_first=config.keep_first,
+        )
+
+
+LLMAttentionCondenser.register_config(LLMAttentionCondenserConfig)
