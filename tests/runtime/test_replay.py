@@ -46,7 +46,7 @@ def test_simple_replay(temp_dir, runtime_cls, run_as_openhands):
     _close_test_runtime(runtime)
 
 
-def test_replay_abort_with_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
+def test_replay_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
     """
     Replay requires a consistent initial state to start with, otherwise it might
     be producing garbage. The trajectory used in this test assumes existence of
@@ -67,7 +67,6 @@ def test_replay_abort_with_wrong_initial_state(temp_dir, runtime_cls, run_as_ope
         )
     )
 
-    print(state)
     assert state.agent_state == AgentState.FINISHED
 
     has_error_in_action = False
