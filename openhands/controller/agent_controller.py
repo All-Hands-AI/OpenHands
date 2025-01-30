@@ -1098,6 +1098,9 @@ class AgentController:
         # start_id points to first user message
         if first_user_msg:
             self.state.start_id = first_user_msg.id
+            # Make sure start_id is not greater than truncation_id
+            if self.state.truncation_id is not None and self.state.start_id > self.state.truncation_id:
+                self.state.truncation_id = self.state.start_id
 
         return kept_events
 
