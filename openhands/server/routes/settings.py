@@ -5,7 +5,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth import get_user_id
 from openhands.server.services.github_service import GitHubService
 from openhands.server.settings import Settings, SettingsWithTokenMeta
-from openhands.server.shared import config, openhands_config
+from openhands.server.shared import config, server_config
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import call_sync_from_async
@@ -13,10 +13,10 @@ from openhands.utils.import_utils import get_impl
 
 app = APIRouter(prefix='/api')
 
-SettingsStoreImpl = get_impl(SettingsStore, openhands_config.settings_store_class)  # type: ignore
+SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)  # type: ignore
 ConversationStoreImpl = get_impl(
     ConversationStore,  # type: ignore
-    openhands_config.conversation_store_class,
+    server_config.conversation_store_class,
 )
 
 
