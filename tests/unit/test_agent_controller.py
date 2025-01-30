@@ -1,5 +1,5 @@
 import asyncio
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import ANY, AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
@@ -562,6 +562,22 @@ async def test_run_controller_max_iterations_has_metrics():
     assert (
         state.metrics.accumulated_cost == 10.0 * 3
     ), f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
+
+
+@pytest.mark.asyncio
+async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_callback):
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        status_callback=mock_status_callback,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+    controller._notify_on_llm_retry(1, 2)
+    controller.status_callback.assert_called_once_with('info', 'STATUS$LLM_RETRY', ANY)
+    await controller.close()
 
 
 @pytest.mark.asyncio
