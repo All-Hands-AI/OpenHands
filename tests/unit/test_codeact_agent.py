@@ -509,6 +509,9 @@ def test_step_with_no_pending_actions(mock_state: State):
     config = AgentConfig()
     config.enable_prompt_extensions = False
     agent = CodeActAgent(llm=llm, config=config)
+    agent.prompt_manager = Mock()
+    agent.prompt_manager.get_system_message.return_value = "System message"
+    agent.prompt_manager.add_examples_to_initial_message = Mock()
 
     # Test step with no pending actions
     mock_state.latest_user_message = None
@@ -518,6 +521,7 @@ def test_step_with_no_pending_actions(mock_state: State):
     mock_state.latest_user_message_timeout = None
     mock_state.latest_user_message_llm_metrics = None
     mock_state.latest_user_message_tool_call_metadata = None
+    mock_state.history = []
 
     action = agent.step(mock_state)
     assert isinstance(action, MessageAction)
@@ -526,7 +530,16 @@ def test_step_with_no_pending_actions(mock_state: State):
 
 def test_mismatched_tool_call_events(mock_state: State):
     """Tests that the agent can convert mismatched tool call events (i.e., an observation with no corresponding action) into messages."""
-    agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
+    llm = Mock()
+    llm.is_function_calling_active = Mock(return_value=True)  # Enable function calling
+    llm.is_caching_prompt_active = Mock(return_value=False)
+    llm.config = Mock()
+    llm.config.max_message_chars = 1000
+
+    agent = CodeActAgent(llm=llm, config=AgentConfig())
+    agent.prompt_manager = Mock()
+    agent.prompt_manager.get_system_message.return_value = "System message"
+    agent.prompt_manager.add_examples_to_initial_message = Mock()
 
     tool_call_metadata = Mock(
         spec=ToolCallMetadata,
