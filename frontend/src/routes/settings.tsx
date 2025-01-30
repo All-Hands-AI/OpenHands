@@ -50,6 +50,9 @@ function SettingsScreen() {
           <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
             LLM Settings
           </h2>
+          <SettingsSwitch testId="advanced-settings-switch">
+            Advanced
+          </SettingsSwitch>
           <div className="flex w-full justify-between gap-[46px]">
             <SettingsInput
               testId="llm-provider-input"

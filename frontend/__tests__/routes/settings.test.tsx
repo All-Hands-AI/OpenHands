@@ -111,6 +111,7 @@ describe("Settings Screen", () => {
     it("should render the basic LLM settings by default", async () => {
       renderSettingsScreen();
 
+      screen.getByTestId("advanced-settings-switch");
       screen.getByTestId("llm-provider-input");
       screen.getByTestId("llm-model-input");
       screen.getByTestId("llm-api-key-input");
