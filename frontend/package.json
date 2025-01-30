@@ -51,7 +51,7 @@
   "scripts": {
     "dev": "npm run make-i18n && cross-env VITE_MOCK_API=false react-router dev",
     "dev:mock": "npm run make-i18n && cross-env VITE_MOCK_API=true react-router dev",
-    "build": "npm run make-i18n && tsc && react-router build",
+    "build": "npm run make-i18n && tsc && vite build",
     "start": "npx sirv-cli build/ --single",
     "test": "vitest run",
     "test:e2e": "playwright test",
