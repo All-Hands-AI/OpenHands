@@ -235,7 +235,6 @@ class Session:
         """Sends a status message to the client."""
         if msg_type == 'error':
             await self.agent_session.stop_agent_loop_for_error()
-        print('SNET')
         await self.send(
             {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
         )
