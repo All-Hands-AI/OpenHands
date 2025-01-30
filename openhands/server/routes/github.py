@@ -53,7 +53,22 @@ async def get_github_repositories(
         async with httpx.AsyncClient() as client:
             response = await client.get(github_api_url, headers=headers, params=params)
             response.raise_for_status()  # Raise an error for HTTP codes >= 400
-            json_response = JSONResponse(content=response.json())
+            
+            data = response.json()
+            if installation_id:
+                # For installation repositories, we need to sort manually
+                repositories = data['repositories']
+                if sort == 'pushed':
+                    repositories.sort(key=lambda x: x['pushed_at'], reverse=True)
+                elif sort == 'updated':
+                    repositories.sort(key=lambda x: x['updated_at'], reverse=True)
+                elif sort == 'created':
+                    repositories.sort(key=lambda x: x['created_at'], reverse=True)
+                elif sort == 'full_name':
+                    repositories.sort(key=lambda x: x['full_name'].lower())
+                data['repositories'] = repositories
+            
+            json_response = JSONResponse(content=data)
 
             # Forward the Link header if it exists
             if 'Link' in response.headers:
@@ -93,7 +108,9 @@ async def get_github_installation_ids(
     headers = generate_github_headers(github_token)
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get('https://api.github.com/user/installations', headers=headers)
+            response = await client.get(
+                'https://api.github.com/user/installations', headers=headers
+            )
             response.raise_for_status()
             data = response.json()
             ids = [installation['id'] for installation in data['installations']]
