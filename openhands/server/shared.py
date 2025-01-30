@@ -9,6 +9,8 @@ from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
 )
 from openhands.storage import get_file_store
+from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.import_utils import get_impl
 
 load_dotenv()
@@ -35,3 +37,10 @@ ConversationManagerImpl = get_impl(
     server_config.conversation_manager_class,
 )
 conversation_manager = ConversationManagerImpl.get_instance(sio, config, file_store)
+
+SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)  # type: ignore
+
+ConversationStoreImpl = get_impl(
+    ConversationStore,  # type: ignore
+    server_config.conversation_store_class,
+)

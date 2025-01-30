@@ -10,16 +10,12 @@ from openhands.server.middleware import (
     LocalhostCORSMiddleware,
     RateLimitMiddleware,
 )
-from openhands.server.shared import server_config
+from openhands.server.shared import SettingsStoreImpl
 from openhands.server.static import SPAStaticFiles
-from openhands.storage.settings.settings_store import SettingsStore
-from openhands.utils.import_utils import get_impl
 
 base_app.mount(
     '/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist'
 )
-
-SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)  # type: ignore
 
 base_app.add_middleware(
     LocalhostCORSMiddleware,
