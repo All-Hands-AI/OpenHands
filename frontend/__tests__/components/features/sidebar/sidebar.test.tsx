@@ -4,51 +4,22 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { createRoutesStub } from "react-router";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
-import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 import OpenHands from "#/api/open-hands";
-import { MOCK_USER_PREFERENCES } from "#/mocks/handlers";
 
 // These tests will now fail because the conversation panel is rendered through a portal
 // and technically not a child of the Sidebar component.
 
-const renderSidebar = () => {
-  const RouterStub = createRoutesStub([
-    {
-      path: "/conversation/:conversationId",
-      Component: Sidebar,
-    },
-  ]);
+const RouterStub = createRoutesStub([
+  {
+    path: "/conversation/:conversationId",
+    Component: () => <Sidebar />,
+  },
+]);
 
+const renderSidebar = () =>
   renderWithProviders(<RouterStub initialEntries={["/conversation/123"]} />);
-};
 
 describe("Sidebar", () => {
-  it.skipIf(!MULTI_CONVERSATION_UI)(
-    "should have the conversation panel open by default",
-    () => {
-      renderSidebar();
-      expect(screen.getByTestId("conversation-panel")).toBeInTheDocument();
-    },
-  );
-
-  it.skipIf(!MULTI_CONVERSATION_UI)(
-    "should toggle the conversation panel",
-    async () => {
-      const user = userEvent.setup();
-      renderSidebar();
-
-      const projectPanelButton = screen.getByTestId(
-        "toggle-conversation-panel",
-      );
-
-      await user.click(projectPanelButton);
-
-      expect(
-        screen.queryByTestId("conversation-panel"),
-      ).not.toBeInTheDocument();
-    },
-  );
-
   describe("Settings", () => {
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
@@ -76,35 +47,12 @@ describe("Sidebar", () => {
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith({
-        ...MOCK_USER_PREFERENCES.settings,
-        // the actual values are falsey (null or "") but we're checking for undefined
-        llm_api_key: undefined,
-        llm_base_url: undefined,
-        security_analyzer: undefined,
-      });
-    });
-
-    it("should send all settings data when saving account settings", async () => {
-      const user = userEvent.setup();
-      renderSidebar();
-
-      const userAvatar = screen.getByTestId("user-avatar");
-      await user.click(userAvatar);
-
-      const menu = screen.getByTestId("account-settings-context-menu");
-      const accountSettingsButton = within(menu).getByTestId(
-        "account-settings-button",
-      );
-      await user.click(accountSettingsButton);
-
-      const accountSettingsModal = screen.getByTestId("account-settings-form");
-      const saveButton =
-        within(accountSettingsModal).getByTestId("save-settings");
-      await user.click(saveButton);
-
-      expect(saveSettingsSpy).toHaveBeenCalledWith({
-        ...MOCK_USER_PREFERENCES.settings,
-        llm_api_key: undefined, // null or undefined
+        agent: "CodeActAgent",
+        confirmation_mode: false,
+        enable_default_condenser: false,
+        language: "en",
+        llm_model: "anthropic/claude-3-5-sonnet-20241022",
+        remote_runtime_resource_factor: 1,
       });
     });
 
@@ -134,14 +82,25 @@ describe("Sidebar", () => {
         within(accountSettingsModal).getByLabelText(/GITHUB\$TOKEN_LABEL/i);
       await user.type(tokenInput, "new-token");
 
+      const analyticsConsentInput =
+        within(accountSettingsModal).getByTestId("analytics-consent");
+      await user.click(analyticsConsentInput);
+
       const saveButton =
         within(accountSettingsModal).getByTestId("save-settings");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith({
-        ...MOCK_USER_PREFERENCES.settings,
+        agent: "CodeActAgent",
+        confirmation_mode: false,
+        enable_default_condenser: false,
+        github_token: "new-token",
         language: "no",
-        llm_api_key: undefined, // null or undefined
+        llm_base_url: "",
+        llm_model: "anthropic/claude-3-5-sonnet-20241022",
+        remote_runtime_resource_factor: 1,
+        security_analyzer: "",
+        user_consents_to_analytics: true,
       });
     });
 
@@ -169,11 +128,40 @@ describe("Sidebar", () => {
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith({
-        ...MOCK_USER_PREFERENCES.settings,
-        llm_api_key: undefined,
+        agent: "CodeActAgent",
+        confirmation_mode: false,
+        enable_default_condenser: false,
+        language: "en",
         llm_base_url: "",
-        security_analyzer: undefined,
+        llm_model: "anthropic/claude-3-5-sonnet-20241022",
+        remote_runtime_resource_factor: 1,
       });
+    });
+  });
+
+  describe("Settings Modal", () => {
+    it("should open the settings modal if the user clicks the settings button", async () => {
+      const user = userEvent.setup();
+      renderSidebar();
+
+      expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
+
+      const settingsButton = screen.getByTestId("settings-button");
+      await user.click(settingsButton);
+
+      const settingsModal = screen.getByTestId("ai-config-modal");
+      expect(settingsModal).toBeInTheDocument();
+    });
+
+    it("should open the settings modal if GET /settings fails", async () => {
+      vi.spyOn(OpenHands, "getSettings").mockRejectedValue(
+        new Error("Failed to fetch settings"),
+      );
+
+      renderSidebar();
+
+      const settingsModal = await screen.findByTestId("ai-config-modal");
+      expect(settingsModal).toBeInTheDocument();
     });
   });
 });

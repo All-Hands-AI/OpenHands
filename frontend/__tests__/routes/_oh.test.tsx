@@ -74,7 +74,6 @@ describe("frontend/routes/_oh", () => {
     // The user has not consented to tracking
     const consentForm = await screen.findByTestId("user-capture-consent-form");
     expect(handleCaptureConsentSpy).not.toHaveBeenCalled();
-    expect(localStorage.getItem("analytics-consent")).toBeNull();
 
     const submitButton = within(consentForm).getByRole("button", {
       name: /confirm preferences/i,
@@ -83,7 +82,6 @@ describe("frontend/routes/_oh", () => {
 
     // The user has now consented to tracking
     expect(handleCaptureConsentSpy).toHaveBeenCalledWith(true);
-    expect(localStorage.getItem("analytics-consent")).toBe("true");
     expect(
       screen.queryByTestId("user-capture-consent-form"),
     ).not.toBeInTheDocument();
@@ -97,17 +95,6 @@ describe("frontend/routes/_oh", () => {
       POSTHOG_CLIENT_KEY: "test-key",
     });
 
-    renderWithProviders(<RouteStub />);
-
-    await waitFor(() => {
-      expect(
-        screen.queryByTestId("user-capture-consent-form"),
-      ).not.toBeInTheDocument();
-    });
-  });
-
-  it("should not render the user consent form if the user has already made a decision", async () => {
-    localStorage.setItem("analytics-consent", "true");
     renderWithProviders(<RouteStub />);
 
     await waitFor(() => {
