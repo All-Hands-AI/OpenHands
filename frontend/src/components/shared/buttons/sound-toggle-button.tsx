@@ -20,13 +20,13 @@ export function SoundToggleButton() {
       isIconOnly
       variant="light"
       aria-label={t(
-        settings?.ENABLE_SOUND_NOTIFICATIONS
+        settings?.ENABLE_SOUND_NOTIFICATIONS !== false
           ? I18nKey.BUTTON$DISABLE_SOUND
           : I18nKey.BUTTON$ENABLE_SOUND,
       )}
       onClick={toggleSound}
     >
-      {settings?.ENABLE_SOUND_NOTIFICATIONS ? (
+      {settings?.ENABLE_SOUND_NOTIFICATIONS !== false ? (
         <HiVolumeUp className="text-default-500" />
       ) : (
         <HiVolumeOff className="text-default-500" />
