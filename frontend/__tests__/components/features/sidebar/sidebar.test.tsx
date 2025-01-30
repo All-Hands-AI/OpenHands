@@ -135,27 +135,6 @@ describe("Sidebar", () => {
   });
 
   describe("Settings Modal", () => {
-    it("should open the settings modal if the settings version is out of date", async () => {
-      const user = userEvent.setup();
-      localStorage.clear();
-
-      const { rerender } = renderSidebar();
-
-      const settingsModal = await screen.findByTestId("ai-config-modal");
-      expect(settingsModal).toBeInTheDocument();
-
-      const saveSettingsButton = await within(settingsModal).findByTestId(
-        "save-settings-button",
-      );
-      await user.click(saveSettingsButton);
-
-      expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
-
-      rerender(<RouterStub />);
-
-      expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
-    });
-
     it("should open the settings modal if the user clicks the settings button", async () => {
       const user = userEvent.setup();
       renderSidebar();

@@ -30,9 +30,7 @@ export function Sidebar() {
   const { data: config } = useConfig();
   const { data: settings, isError: settingsError } = useSettings();
   const { mutateAsync: logout } = useLogout();
-
-  const { saveUserSettings, isUpToDate: settingsAreUpToDate } =
-    useCurrentSettings();
+  const { saveUserSettings } = useCurrentSettings();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
@@ -62,8 +60,6 @@ export function Sidebar() {
     else await saveUserSettings({ unset_github_token: true });
     posthog.reset();
   };
-
-  const showSettingsModal = !settingsAreUpToDate || settingsModalIsOpen;
 
   return (
     <>
@@ -109,7 +105,7 @@ export function Sidebar() {
       {accountSettingsModalOpen && (
         <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
       )}
-      {(settingsError || showSettingsModal) && (
+      {(settingsError || settingsModalIsOpen) && (
         <SettingsModal
           settings={settings}
           onClose={() => setSettingsModalIsOpen(false)}

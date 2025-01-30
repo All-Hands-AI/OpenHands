@@ -8,7 +8,6 @@ import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
-import { useMaybeMigrateSettings } from "#/hooks/use-maybe-migrate-settings";
 import { useAuth } from "#/context/auth-context";
 
 export function ErrorBoundary() {
@@ -44,8 +43,6 @@ export function ErrorBoundary() {
 }
 
 export default function MainApp() {
-  useMaybeMigrateSettings();
-
   const { githubTokenIsSet } = useAuth();
   const { data: settings } = useSettings();
 
