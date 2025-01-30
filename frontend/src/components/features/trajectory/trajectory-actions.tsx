@@ -17,11 +17,13 @@ export function TrajectoryActions({
   onExportTrajectory,
 }: TrajectoryActionsProps) {
   const { settings, saveUserSettings } = useCurrentSettings();
+  // Ensure settings is defined before accessing properties
+  const soundEnabled = settings?.ENABLE_SOUND_NOTIFICATIONS ?? true;
 
   const toggleSound = async () => {
     await saveUserSettings({
       ...settings,
-      ENABLE_SOUND_NOTIFICATIONS: !settings?.ENABLE_SOUND_NOTIFICATIONS,
+      ENABLE_SOUND_NOTIFICATIONS: !soundEnabled,
     });
   };
   return (
@@ -45,11 +47,7 @@ export function TrajectoryActions({
         testId="sound-toggle"
         onClick={toggleSound}
         icon={
-          settings?.ENABLE_SOUND_NOTIFICATIONS === true ? (
-            <HiVolumeUp size={15} />
-          ) : (
-            <HiVolumeOff size={15} />
-          )
+          soundEnabled ? <HiVolumeUp size={15} /> : <HiVolumeOff size={15} />
         }
       />
     </div>
