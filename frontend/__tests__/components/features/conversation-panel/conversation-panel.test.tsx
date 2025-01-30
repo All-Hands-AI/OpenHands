@@ -227,7 +227,7 @@ describe("ConversationPanel", () => {
   it("should call onClose after clicking a card", async () => {
     renderConversationPanel();
     const cards = await screen.findAllByTestId("conversation-card");
-    const firstCard = cards[0];
+    const firstCard = cards[1];
 
     await userEvent.click(firstCard);
 
