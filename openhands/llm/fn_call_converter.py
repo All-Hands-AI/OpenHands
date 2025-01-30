@@ -200,7 +200,6 @@ ASSISTANT:
 Running the updated file:
 <function=execute_bash>
 <parameter=command>
-<parameter=command>
 python3 app.py > server.log 2>&1 &
 </parameter>
 </function>

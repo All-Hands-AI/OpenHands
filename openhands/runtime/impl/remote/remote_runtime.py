@@ -68,6 +68,10 @@ class RemoteRuntime(ActionExecutionClient):
                 'debug',
                 'Setting workspace_base is not supported in the remote runtime.',
             )
+        if self.config.sandbox.remote_runtime_api_url is None:
+            raise ValueError(
+                'remote_runtime_api_url is required in the remote runtime.'
+            )
 
         self.runtime_builder = RemoteRuntimeBuilder(
             self.config.sandbox.remote_runtime_api_url,
@@ -377,6 +381,7 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _send_runtime_api_request(self, method, url, **kwargs):
         try:
+            kwargs['timeout'] = self.config.sandbox.remote_runtime_api_timeout
             return send_request(self.session, method, url, **kwargs)
         except requests.Timeout:
             self.log(

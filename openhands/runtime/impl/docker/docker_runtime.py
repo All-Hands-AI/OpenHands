@@ -1,6 +1,6 @@
-import atexit
 from functools import lru_cache
 from typing import Callable
+from uuid import UUID
 
 import docker
 import requests
@@ -26,6 +26,7 @@ from openhands.runtime.utils.command import get_action_execution_server_startup_
 from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.shutdown_listener import add_shutdown_listener
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
@@ -34,13 +35,6 @@ EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
 VSCODE_PORT_RANGE = (40000, 49999)
 APP_PORT_RANGE_1 = (50000, 54999)
 APP_PORT_RANGE_2 = (55000, 59999)
-
-
-def stop_all_runtime_containers():
-    stop_all_containers(CONTAINER_NAME_PREFIX)
-
-
-_atexit_registered = False
 
 
 class DockerRuntime(ActionExecutionClient):
@@ -55,6 +49,8 @@ class DockerRuntime(ActionExecutionClient):
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
     """
 
+    _shutdown_listener_id: UUID | None = None
+
     def __init__(
         self,
         config: AppConfig,
@@ -66,10 +62,10 @@ class DockerRuntime(ActionExecutionClient):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
     ):
-        global _atexit_registered
-        if not _atexit_registered:
-            _atexit_registered = True
-            atexit.register(stop_all_runtime_containers)
+        if not DockerRuntime._shutdown_listener_id:
+            DockerRuntime._shutdown_listener_id = add_shutdown_listener(
+                lambda: stop_all_containers(CONTAINER_NAME_PREFIX)
+            )
 
         self.config = config
         self._runtime_initialized: bool = False
