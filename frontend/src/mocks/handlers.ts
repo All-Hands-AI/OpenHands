@@ -5,6 +5,7 @@ import {
   ResultSet,
 } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
@@ -143,6 +144,7 @@ const openHandsHandlers = [
 ];
 
 export const handlers = [
+  ...STRIPE_BILLING_HANDLERS,
   ...openHandsHandlers,
   http.get("/api/github/repositories", () =>
     HttpResponse.json([

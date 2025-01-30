@@ -11,6 +11,7 @@ import {
   Conversation,
   ResultSet,
   GetTrajectoryResponse,
+  GetStripePaymentStatusResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings } from "#/types/settings";
@@ -269,6 +270,30 @@ class OpenHands {
   static async saveSettings(settings: Partial<ApiSettings>): Promise<boolean> {
     const data = await openHands.post("/api/settings", settings);
     return data.status === 200;
+  }
+
+  static async createCheckoutSession(amount: number): Promise<void> {
+    await openHands.post("/api/create-checkout-session", {
+      amount,
+    });
+  }
+
+  static async checkSessionStatus(
+    sessionId: string,
+  ): Promise<GetStripePaymentStatusResponse> {
+    const response = await openHands.get<GetStripePaymentStatusResponse>(
+      "/api/session-status",
+      {
+        params: { session_id: sessionId },
+      },
+    );
+
+    return response.data;
+  }
+
+  static async getBalance(): Promise<number> {
+    const { data } = await openHands.get<{ credits: number }>("/api/credits");
+    return data.credits;
   }
 
   static async getGitHubUser(): Promise<GitHubUser> {

@@ -12,7 +12,12 @@ import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { ModalButton } from "../../buttons/modal-button";
 import { FormFieldset } from "../../form-fieldset";
 import { useConfig } from "#/hooks/query/use-config";
+import { useGitHubUser } from "#/hooks/query/use-github-user";
+import { UserBalance } from "#/components/features/payment/user-balance";
 import { useCurrentSettings } from "#/context/settings-context";
+import { useBalance } from "#/hooks/query/use-balance";
+import { useCreateStripeCheckoutSession } from "#/hooks/mutation/stripe/use-create-stripe-checkout-session";
+import { PaymentSelection } from "#/components/features/payment/payment-selection";
 import { GitHubTokenInput } from "./github-token-input";
 import { PostSettings } from "#/types/settings";
 
@@ -29,9 +34,15 @@ export function AccountSettingsForm({
   gitHubError,
   analyticsConsent,
 }: AccountSettingsFormProps) {
+  const { t } = useTranslation();
+  const user = useGitHubUser();
   const { data: config } = useConfig();
   const { saveUserSettings, settings } = useCurrentSettings();
-  const { t } = useTranslation();
+  const { data: balance } = useBalance(user.data?.login ?? "");
+  const { mutate: createPaymentSession, isPending: isGettingClientSecret } =
+    useCreateStripeCheckoutSession();
+
+  const [showPaymentOptions, setShowPaymentOptions] = React.useState(false);
 
   const githubTokenIsSet = !!settings?.GITHUB_TOKEN_IS_SET;
 
@@ -88,6 +99,21 @@ export function AccountSettingsForm({
               {t(I18nKey.GITHUB$CONFIGURE_REPOS)}
             </a>
           )}
+          {balance && (
+            <UserBalance
+              balance={balance}
+              isLoading={isGettingClientSecret}
+              onTopUp={() => setShowPaymentOptions(true)}
+            />
+          )}
+
+          {showPaymentOptions && (
+            <PaymentSelection
+              options={[25, 50, 100, 250]}
+              onPaymentSelection={(amount) => createPaymentSession({ amount })}
+            />
+          )}
+
           <FormFieldset
             id="language"
             label={t(I18nKey.LANGUAGE$LABEL)}
@@ -98,7 +124,6 @@ export function AccountSettingsForm({
               value: label,
             }))}
           />
-
           {config?.APP_MODE !== "saas" && (
             <>
               <GitHubTokenInput githubTokenIsSet={githubTokenIsSet} />

@@ -10,7 +10,6 @@ interface AccountSettingsModalProps {
 export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   const user = useGitHubUser();
   const { data: settings } = useSettings();
-
   // FIXME: Bad practice to use localStorage directly
   const analyticsConsent = localStorage.getItem("analytics-consent");
 
