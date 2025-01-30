@@ -1,6 +1,6 @@
-import { VolumeUp, VolumeOff } from "@mui/icons-material";
-import { Button } from "@nextui-org/react";
 import { useTranslation } from "react-i18next";
+import { Button } from "@nextui-org/react";
+import { HiVolumeUp, HiVolumeOff } from "react-icons/hi";
 import { useCurrentSettings } from "#/context/settings-context";
 import { I18nKey } from "#/i18n/declaration";
 
@@ -27,9 +27,9 @@ export function SoundToggleButton() {
       onClick={toggleSound}
     >
       {settings?.ENABLE_SOUND_NOTIFICATIONS ? (
-        <VolumeUp className="text-default-500" />
+        <HiVolumeUp className="text-default-500" />
       ) : (
-        <VolumeOff className="text-default-500" />
+        <HiVolumeOff className="text-default-500" />
       )}
     </Button>
   );
