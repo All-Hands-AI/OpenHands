@@ -45,7 +45,7 @@ export function TrajectoryActions({
         testId="sound-toggle"
         onClick={toggleSound}
         icon={
-          settings?.ENABLE_SOUND_NOTIFICATIONS !== false ? (
+          settings?.ENABLE_SOUND_NOTIFICATIONS === true ? (
             <HiVolumeUp size={15} />
           ) : (
             <HiVolumeOff size={15} />
