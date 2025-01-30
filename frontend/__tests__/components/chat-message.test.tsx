@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, test } from "vitest";
+import { describe, it, expect } from "vitest";
 import { ChatMessage } from "#/components/features/chat/chat-message";
 
 describe("ChatMessage", () => {
@@ -45,7 +45,9 @@ describe("ChatMessage", () => {
 
     await user.click(copyToClipboardButton);
 
-    expect(navigator.clipboard.readText()).resolves.toBe("Hello, World!");
+    await waitFor(() =>
+      expect(navigator.clipboard.readText()).resolves.toBe("Hello, World!"),
+    );
   });
 
   it("should display an error toast if copying content to clipboard fails", async () => {});
