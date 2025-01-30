@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import posthog from "posthog-js";
 import {
   BaseModalDescription,
   BaseModalTitle,
@@ -7,31 +8,28 @@ import {
 import { ModalBody } from "../modal-body";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
-import { useAuth } from "#/context/auth-context";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { ModalButton } from "../../buttons/modal-button";
-import { CustomInput } from "../../custom-input";
 import { FormFieldset } from "../../form-fieldset";
 import { useConfig } from "#/hooks/query/use-config";
 import { useCurrentSettings } from "#/context/settings-context";
+import { GitHubTokenInput } from "./github-token-input";
+import { PostSettings } from "#/types/settings";
+import { useGitHubUser } from "#/hooks/query/use-github-user";
 
 interface AccountSettingsFormProps {
   onClose: () => void;
-  selectedLanguage: string;
-  gitHubError: boolean;
-  analyticsConsent: string | null;
 }
 
-export function AccountSettingsForm({
-  onClose,
-  selectedLanguage,
-  gitHubError,
-  analyticsConsent,
-}: AccountSettingsFormProps) {
-  const { gitHubToken, setGitHubToken, logout } = useAuth();
+export function AccountSettingsForm({ onClose }: AccountSettingsFormProps) {
+  const { isError: isGitHubError } = useGitHubUser();
   const { data: config } = useConfig();
-  const { saveUserSettings } = useCurrentSettings();
+  const { saveUserSettings, settings } = useCurrentSettings();
   const { t } = useTranslation();
+
+  const githubTokenIsSet = !!settings?.GITHUB_TOKEN_IS_SET;
+  const analyticsConsentValue = !!settings?.USER_CONSENTS_TO_ANALYTICS;
+  const selectedLanguage = settings?.LANGUAGE || "en";
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -41,7 +39,10 @@ export function AccountSettingsForm({
     const language = formData.get("language")?.toString();
     const analytics = formData.get("analytics")?.toString() === "on";
 
-    if (ghToken) setGitHubToken(ghToken);
+    const newSettings: Partial<PostSettings> = {};
+    newSettings.user_consents_to_analytics = analytics;
+
+    if (ghToken) newSettings.github_token = ghToken;
 
     // The form returns the language label, so we need to find the corresponding
     // language key to save it in the settings
@@ -50,13 +51,21 @@ export function AccountSettingsForm({
         ({ label }) => label === language,
       )?.value;
 
-      if (languageKey) await saveUserSettings({ LANGUAGE: languageKey });
+      if (languageKey) newSettings.LANGUAGE = languageKey;
     }
 
-    handleCaptureConsent(analytics);
-    const ANALYTICS = analytics.toString();
-    localStorage.setItem("analytics-consent", ANALYTICS);
+    await saveUserSettings(newSettings, {
+      onSuccess: () => {
+        handleCaptureConsent(analytics);
+      },
+    });
 
+    onClose();
+  };
+
+  const onDisconnect = async () => {
+    await saveUserSettings({ unset_github_token: true });
+    posthog.reset();
     onClose();
   };
 
@@ -89,38 +98,33 @@ export function AccountSettingsForm({
 
           {config?.APP_MODE !== "saas" && (
             <>
-              <CustomInput
-                name="ghToken"
-                label={t(I18nKey.GITHUB$TOKEN_LABEL)}
-                type="password"
-                defaultValue={gitHubToken ?? ""}
-              />
-              <BaseModalDescription>
-                {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
-                <a
-                  href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="text-[#791B80] underline"
-                >
-                  {t(I18nKey.COMMON$HERE)}
-                </a>
-              </BaseModalDescription>
+              <GitHubTokenInput githubTokenIsSet={githubTokenIsSet} />
+              {!githubTokenIsSet && (
+                <BaseModalDescription>
+                  {t(I18nKey.GITHUB$GET_TOKEN)}{" "}
+                  <a
+                    href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-[#791B80] underline"
+                  >
+                    {t(I18nKey.COMMON$HERE)}
+                  </a>
+                </BaseModalDescription>
+              )}
             </>
           )}
-          {gitHubError && (
+          {isGitHubError && (
             <p className="text-danger text-xs">
               {t(I18nKey.GITHUB$TOKEN_INVALID)}
             </p>
           )}
-          {gitHubToken && !gitHubError && (
+          {githubTokenIsSet && !isGitHubError && (
             <ModalButton
+              testId="disconnect-github"
               variant="text-like"
               text={t(I18nKey.BUTTON$DISCONNECT)}
-              onClick={() => {
-                logout();
-                onClose();
-              }}
+              onClick={onDisconnect}
               className="text-danger self-start"
             />
           )}
@@ -128,9 +132,10 @@ export function AccountSettingsForm({
 
         <label className="flex gap-2 items-center self-start">
           <input
+            data-testid="analytics-consent"
             name="analytics"
             type="checkbox"
-            defaultChecked={analyticsConsent === "true"}
+            defaultChecked={analyticsConsentValue}
           />
           {t(I18nKey.ANALYTICS$ENABLE)}
         </label>

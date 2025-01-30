@@ -1,8 +1,9 @@
 import httpx
 import requests
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
+from openhands.server.auth import get_github_token
 from openhands.server.shared import openhands_config
 from openhands.utils.async_utils import call_sync_from_async
 
@@ -10,12 +11,13 @@ app = APIRouter(prefix='/api/github')
 
 
 def require_github_token(request: Request):
-    github_token = request.headers.get('X-GitHub-Token')
+    github_token = get_github_token(request)
     if not github_token:
         raise HTTPException(
-            status_code=400,
-            detail='Missing X-GitHub-Token header',
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Missing GitHub token',
         )
+
     return github_token
 
 

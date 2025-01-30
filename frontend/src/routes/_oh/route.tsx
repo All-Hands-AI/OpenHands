@@ -3,13 +3,13 @@ import { useRouteError, isRouteErrorResponse, Outlet } from "react-router";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
-import { useAuth } from "#/context/auth-context";
 import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
-import { useMaybeMigrateSettings } from "#/hooks/use-maybe-migrate-settings";
+import { useAuth } from "#/context/auth-context";
+import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -44,20 +44,22 @@ export function ErrorBoundary() {
 }
 
 export default function MainApp() {
-  useMaybeMigrateSettings();
-
-  const { gitHubToken } = useAuth();
+  const { githubTokenIsSet } = useAuth();
   const { data: settings } = useSettings();
+  const { migrateUserConsent } = useMigrateUserConsent();
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
-    !localStorage.getItem("analytics-consent"),
+    settings.USER_CONSENTS_TO_ANALYTICS === null,
   );
 
   const config = useConfig();
-  const { data: isAuthed, isFetching: isFetchingAuth } = useIsAuthed();
+  const {
+    data: isAuthed,
+    isFetching: isFetchingAuth,
+    isError: authError,
+  } = useIsAuthed();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
-    gitHubToken,
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
@@ -68,8 +70,18 @@ export default function MainApp() {
     }
   }, [settings?.LANGUAGE]);
 
-  const isInWaitlist =
-    !isFetchingAuth && !isAuthed && config.data?.APP_MODE === "saas";
+  React.useEffect(() => {
+    // Migrate user consent to the server if it was previously stored in localStorage
+    migrateUserConsent({
+      handleAnalyticsWasPresentInLocalStorage: () => {
+        setConsentFormIsOpen(false);
+      },
+    });
+  }, []);
+
+  const userIsAuthed = !!isAuthed && !authError;
+  const renderWaitlistModal =
+    !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
 
   return (
     <div
@@ -85,13 +97,18 @@ export default function MainApp() {
         <Outlet />
       </div>
 
-      {isInWaitlist && (
-        <WaitlistModal ghToken={gitHubToken} githubAuthUrl={gitHubAuthUrl} />
+      {renderWaitlistModal && (
+        <WaitlistModal
+          ghTokenIsSet={githubTokenIsSet}
+          githubAuthUrl={gitHubAuthUrl}
+        />
       )}
 
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
-          onClose={() => setConsentFormIsOpen(false)}
+          onClose={() => {
+            setConsentFormIsOpen(false);
+          }}
         />
       )}
     </div>
