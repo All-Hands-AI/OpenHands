@@ -143,10 +143,7 @@ export function ConversationCard({
         )}
       >
         {selectedRepository && (
-          <ConversationRepoLink
-            selectedRepository={selectedRepository}
-            onClick={(e) => e.stopPropagation()}
-          />
+          <ConversationRepoLink selectedRepository={selectedRepository} />
         )}
         <p className="text-xs text-neutral-400">
           <time>{formatTimeDelta(new Date(lastUpdatedAt))} ago</time>

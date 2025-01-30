@@ -85,6 +85,11 @@ async def store_settings(
             if settings.github_token is None:
                 settings.github_token = existing_settings.github_token
 
+            if settings.user_consents_to_analytics is None:
+                settings.user_consents_to_analytics = (
+                    existing_settings.user_consents_to_analytics
+                )
+
         response = JSONResponse(
             status_code=status.HTTP_200_OK,
             content={'message': 'Settings stored'},
