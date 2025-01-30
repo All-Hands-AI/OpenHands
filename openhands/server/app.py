@@ -21,7 +21,7 @@ from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.routes.settings import app as settings_router
 from openhands.server.routes.trajectory import app as trajectory_router
-from openhands.server.shared import conversation_manager, openhands_config
+from openhands.server.shared import conversation_manager
 
 
 @asynccontextmanager
@@ -36,7 +36,6 @@ app = FastAPI(
     version=__version__,
     lifespan=_lifespan,
 )
-openhands_config.attach_middleware(app)
 
 
 @app.get('/health')
