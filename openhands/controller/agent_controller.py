@@ -644,7 +644,8 @@ class AgentController:
         delegate_state = self.delegate.get_agent_state()
 
         # update iteration that is shared across agents
-        self.state.iteration = self.delegate.state.iteration
+        # Add 1 to account for the parent's step that initiated delegation
+        self.state.iteration = self.delegate.state.iteration + 1
 
         # close the delegate controller before adding new events
         asyncio.get_event_loop().run_until_complete(self.delegate.close())
