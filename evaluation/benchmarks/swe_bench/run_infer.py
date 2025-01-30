@@ -139,6 +139,7 @@ def get_config(
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             keep_runtime_alive=False,
             remote_runtime_init_timeout=3600,
+            remote_runtime_api_timeout=120,
             remote_runtime_resource_factor=get_instance_resource_factor(
                 dataset_name=metadata.dataset,
                 instance_id=instance['instance_id'],
