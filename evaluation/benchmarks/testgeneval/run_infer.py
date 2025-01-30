@@ -2,9 +2,9 @@ import asyncio
 import json
 import os
 import tempfile
+import time
 from typing import Any
 
-import mlflow
 import numpy as np
 import pandas as pd
 import tiktoken
@@ -13,12 +13,8 @@ from datasets import load_dataset
 
 import openhands.agenthub
 from evaluation.benchmarks.testgeneval.constants import MAP_REPO_VERSION_TO_SPECS
-from evaluation.benchmarks.testgeneval.prompt import (
-    CODEACT_TESTGEN_PROMPT,
-)
-from evaluation.benchmarks.testgeneval.utils import (
-    get_test_directives,
-)
+from evaluation.benchmarks.testgeneval.prompt import CODEACT_TESTGEN_PROMPT
+from evaluation.benchmarks.testgeneval.utils import get_test_directives
 from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
@@ -48,9 +44,6 @@ from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
-
-mlflow.set_tracking_uri('http://0.0.0.0:8888')
-mlflow.litellm.autolog()
 
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
 
@@ -367,6 +360,7 @@ def process_instance(
     reset_logger: bool = True,
 ) -> EvalOutput:
     config = get_config(instance, metadata)
+    start_time = time.time()  # Track start time
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
@@ -407,6 +401,13 @@ def process_instance(
         )
     finally:
         runtime.close()
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    logger.info(
+        f'Evaluation for instance {instance.instance_id} took {elapsed_time:.2f} seconds.'
+    )
+
     # ==========================================
 
     # ======= Attempt to evaluate the agent's edits =======
@@ -414,6 +415,7 @@ def process_instance(
     # because the agent may alter the environment / testcases
     test_result = {
         'test_suite': test_suite,
+        'elapsed_time': elapsed_time,
     }
 
     # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
