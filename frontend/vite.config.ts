@@ -73,9 +73,6 @@ export default defineConfig(({ mode }) => {
       minify: 'esbuild',
       outDir: 'build',
       rollupOptions: {
-        input: {
-          main: './index.html'
-        },
         output: {
           format: 'es',
           chunkFileNames: 'assets/[name]-[hash].js',
