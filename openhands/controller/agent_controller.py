@@ -816,6 +816,10 @@ class AgentController:
                 current_str = f'{current_value:.2f}'
                 max_str = f'{max_value:.2f}'
 
+            # Sync metrics before handling the error
+            await self.update_state_after_step()
+            self.state.metrics.merge(self.state.local_metrics)
+
             if self.headless_mode:
                 e = RuntimeError(
                     f'Agent reached maximum {limit_type} in headless mode. '
