@@ -1,10 +1,11 @@
-import atexit
 from functools import lru_cache
 from typing import Callable
+from uuid import UUID
 
 import docker
 import requests
 import tenacity
+from docker.models.containers import Container
 
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import (
@@ -18,13 +19,14 @@ from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
-from openhands.runtime.impl.docker.containers import remove_all_containers
+from openhands.runtime.impl.docker.containers import stop_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.shutdown_listener import add_shutdown_listener
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
@@ -33,13 +35,6 @@ EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
 VSCODE_PORT_RANGE = (40000, 49999)
 APP_PORT_RANGE_1 = (50000, 54999)
 APP_PORT_RANGE_2 = (55000, 59999)
-
-
-def remove_all_runtime_containers():
-    remove_all_containers(CONTAINER_NAME_PREFIX)
-
-
-_atexit_registered = False
 
 
 class DockerRuntime(ActionExecutionClient):
@@ -54,6 +49,8 @@ class DockerRuntime(ActionExecutionClient):
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
     """
 
+    _shutdown_listener_id: UUID | None = None
+
     def __init__(
         self,
         config: AppConfig,
@@ -65,10 +62,10 @@ class DockerRuntime(ActionExecutionClient):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
     ):
-        global _atexit_registered
-        if not _atexit_registered and not config.sandbox.keep_runtime_alive:
-            _atexit_registered = True
-            atexit.register(remove_all_runtime_containers)
+        if not DockerRuntime._shutdown_listener_id:
+            DockerRuntime._shutdown_listener_id = add_shutdown_listener(
+                lambda: stop_all_containers(CONTAINER_NAME_PREFIX)
+            )
 
         self.config = config
         self._runtime_initialized: bool = False
@@ -85,7 +82,7 @@ class DockerRuntime(ActionExecutionClient):
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
         self.container_name = CONTAINER_NAME_PREFIX + sid
-        self.container = None
+        self.container: Container | None = None
 
         self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
 
@@ -187,7 +184,6 @@ class DockerRuntime(ActionExecutionClient):
     def _init_container(self):
         self.log('debug', 'Preparing to start container...')
         self.send_status_message('STATUS$PREPARING_CONTAINER')
-
         self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
         self._container_port = self._host_port
         self._vscode_port = self._find_available_port(VSCODE_PORT_RANGE)
@@ -287,7 +283,7 @@ class DockerRuntime(ActionExecutionClient):
                     'warning',
                     f'Container {self.container_name} already exists. Removing...',
                 )
-                remove_all_containers(self.container_name)
+                stop_all_containers(self.container_name)
                 return self._init_container()
 
             else:
@@ -308,20 +304,20 @@ class DockerRuntime(ActionExecutionClient):
 
     def _attach_to_container(self):
         self.container = self.docker_client.containers.get(self.container_name)
-        for port in self.container.attrs['NetworkSettings']['Ports']:  # type: ignore
-            port = int(port.split('/')[0])
-            if (
-                port >= EXECUTION_SERVER_PORT_RANGE[0]
-                and port <= EXECUTION_SERVER_PORT_RANGE[1]
-            ):
-                self._container_port = port
-            if port >= VSCODE_PORT_RANGE[0] and port <= VSCODE_PORT_RANGE[1]:
-                self._vscode_port = port
-            elif port >= APP_PORT_RANGE_1[0] and port <= APP_PORT_RANGE_1[1]:
-                self._app_ports.append(port)
-            elif port >= APP_PORT_RANGE_2[0] and port <= APP_PORT_RANGE_2[1]:
-                self._app_ports.append(port)
-        self._host_port = self._container_port
+        if self.container.status == 'exited':
+            self.container.start()
+        config = self.container.attrs['Config']
+        for env_var in config['Env']:
+            if env_var.startswith('port='):
+                self._host_port = int(env_var.split('port=')[1])
+                self._container_port = self._host_port
+            elif env_var.startswith('VSCODE_PORT='):
+                self._vscode_port = int(env_var.split('VSCODE_PORT=')[1])
+        self._app_ports = []
+        for exposed_port in config['ExposedPorts'].keys():
+            exposed_port = int(exposed_port.split('/tcp')[0])
+            if exposed_port != self._host_port and exposed_port != self._vscode_port:
+                self._app_ports.append(exposed_port)
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(
             'debug',
@@ -368,7 +364,7 @@ class DockerRuntime(ActionExecutionClient):
         close_prefix = (
             CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
         )
-        remove_all_containers(close_prefix)
+        stop_all_containers(close_prefix)
 
     def _is_port_in_use_docker(self, port):
         containers = self.docker_client.containers.list()
@@ -404,3 +400,17 @@ class DockerRuntime(ActionExecutionClient):
             hosts[f'http://localhost:{port}'] = port
 
         return hosts
+
+    @classmethod
+    async def delete(cls, conversation_id: str):
+        docker_client = cls._init_docker_client()
+        try:
+            container_name = CONTAINER_NAME_PREFIX + conversation_id
+            container = docker_client.containers.get(container_name)
+            container.remove(force=True)
+        except docker.errors.APIError:
+            pass
+        except docker.errors.NotFound:
+            pass
+        finally:
+            docker_client.close()

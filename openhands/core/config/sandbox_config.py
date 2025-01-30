@@ -14,6 +14,7 @@ class SandboxConfig(BaseModel):
         user_id: The user ID for the sandbox.
         timeout: The timeout for the default sandbox action execution.
         remote_runtime_init_timeout: The timeout for the remote runtime to start.
+        remote_runtime_api_timeout: The timeout for the remote runtime API requests.
         enable_auto_lint: Whether to enable auto-lint.
         use_host_network: Whether to use the host network.
         initialize_plugins: Whether to initialize plugins.
@@ -37,9 +38,9 @@ class SandboxConfig(BaseModel):
             This should be a JSON string that will be parsed into a dictionary.
     """
 
-    remote_runtime_api_url: str = Field(default='http://localhost:8000')
+    remote_runtime_api_url: str | None = Field(default='http://localhost:8000')
     local_runtime_url: str = Field(default='http://localhost')
-    keep_runtime_alive: bool = Field(default=True)
+    keep_runtime_alive: bool = Field(default=False)
     rm_all_containers: bool = Field(default=False)
     api_key: str | None = Field(default=None)
     base_container_image: str = Field(
@@ -49,6 +50,7 @@ class SandboxConfig(BaseModel):
     user_id: int = Field(default=os.getuid() if hasattr(os, 'getuid') else 1000)
     timeout: int = Field(default=120)
     remote_runtime_init_timeout: int = Field(default=180)
+    remote_runtime_api_timeout: int = Field(default=10)
     enable_auto_lint: bool = Field(
         default=False  # once enabled, OpenHands would lint files after editing
     )

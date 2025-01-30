@@ -7,10 +7,6 @@ const dirname = path.dirname(filename);
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
-  await page.evaluate(() => {
-    localStorage.setItem("analytics-consent", "true");
-    localStorage.setItem("SETTINGS_VERSION", "5");
-  });
 });
 
 test("should redirect to /conversations after uploading a project zip", async ({

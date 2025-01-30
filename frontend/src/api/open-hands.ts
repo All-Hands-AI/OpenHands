@@ -13,7 +13,7 @@ import {
   GetTrajectoryResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings } from "#/services/settings";
+import { ApiSettings } from "#/types/settings";
 
 class OpenHands {
   /**
@@ -155,25 +155,6 @@ class OpenHands {
   }
 
   /**
-   * Refresh Github Token
-   * @returns Refreshed Github access token
-   */
-  static async refreshToken(
-    appMode: GetConfigResponse["APP_MODE"],
-    userId: string,
-  ): Promise<string> {
-    if (appMode === "oss") return "";
-
-    const response = await openHands.post<GitHubAccessTokenResponse>(
-      "/api/refresh-token",
-      {
-        userId,
-      },
-    );
-    return response.data.access_token;
-  }
-
-  /**
    * Get the blob of the workspace zip
    * @returns Blob of the workspace zip
    */
@@ -242,12 +223,14 @@ class OpenHands {
   }
 
   static async createConversation(
-    githubToken?: string,
     selectedRepository?: string,
+    initialUserMsg?: string,
+    imageUrls?: string[],
   ): Promise<Conversation> {
     const body = {
-      github_token: githubToken,
       selected_repository: selectedRepository,
+      initial_user_msg: initialUserMsg,
+      image_urls: imageUrls,
     };
 
     const { data } = await openHands.post<Conversation>(
@@ -268,35 +251,6 @@ class OpenHands {
       `/api/conversations/${conversationId}`,
     );
 
-    return data;
-  }
-
-  static async searchEvents(
-    conversationId: string,
-    params: {
-      query?: string;
-      startId?: number;
-      limit?: number;
-      eventType?: string;
-      source?: string;
-      startDate?: string;
-      endDate?: string;
-    },
-  ): Promise<{ events: Record<string, unknown>[]; has_more: boolean }> {
-    const { data } = await openHands.get<{
-      events: Record<string, unknown>[];
-      has_more: boolean;
-    }>(`/api/conversations/${conversationId}/events/search`, {
-      params: {
-        query: params.query,
-        start_id: params.startId,
-        limit: params.limit,
-        event_type: params.eventType,
-        source: params.source,
-        start_date: params.startDate,
-        end_date: params.endDate,
-      },
-    });
     return data;
   }
 
@@ -363,6 +317,10 @@ class OpenHands {
       `/api/conversations/${conversationId}/trajectory`,
     );
     return data;
+  }
+
+  static async logout(): Promise<void> {
+    await openHands.post("/api/logout");
   }
 }
 
