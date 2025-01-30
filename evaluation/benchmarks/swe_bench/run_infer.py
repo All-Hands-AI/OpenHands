@@ -345,6 +345,32 @@ def complete_runtime(
         f'Failed to git config --global core.pager "": {str(obs)}',
     )
 
+    # First check for any git repositories in subdirectories
+    action = CmdRunAction(command='find . -type d -name .git -not -path "./.git"')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+        f'Failed to find git repositories: {str(obs)}',
+    )
+
+    git_dirs = [p for p in obs.content.strip().split('\n') if p]
+    if git_dirs:
+        # Remove all .git directories in subdirectories
+        for git_dir in git_dirs:
+            action = CmdRunAction(command=f'rm -rf "{git_dir}"')
+            action.set_hard_timeout(600)
+            logger.info(action, extra={'msg_type': 'ACTION'})
+            obs = runtime.run_action(action)
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+            assert_and_raise(
+                isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+                f'Failed to remove git directory {git_dir}: {str(obs)}',
+            )
+
+    # add all files
     action = CmdRunAction(command='git add -A')
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
