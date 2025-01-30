@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
   const FE_PORT = Number.parseInt(VITE_FRONTEND_PORT, 10);
 
   return {
+    base: '/',
     plugins: [
       !process.env.VITEST && reactRouter(),
       viteTsconfigPaths(),
@@ -65,6 +66,24 @@ export default defineConfig(({ mode }) => {
         reportsDirectory: "coverage",
         include: ["src/**/*.{ts,tsx}"],
       },
+    },
+    build: {
+      modulePreload: false,
+      target: 'esnext',
+      minify: 'esbuild',
+      rollupOptions: {
+        output: {
+          format: 'esm',
+          entryFileNames: '[name]-[hash].js',
+          chunkFileNames: '[name]-[hash].js',
+          assetFileNames: '[name]-[hash].[ext]'
+        }
+      }
+    },
+    optimizeDeps: {
+      esbuildOptions: {
+        target: 'esnext'
+      }
     },
   };
 });
