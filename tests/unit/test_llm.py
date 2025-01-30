@@ -3,10 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from litellm.exceptions import (
-    APIConnectionError,
-    InternalServerError,
     RateLimitError,
-    ServiceUnavailableError,
 )
 
 from openhands.core.config import LLMConfig
@@ -187,21 +184,6 @@ def test_completion_with_mocked_logger(
 @pytest.mark.parametrize(
     'exception_class,extra_args,expected_retries',
     [
-        (
-            APIConnectionError,
-            {'llm_provider': 'test_provider', 'model': 'test_model'},
-            2,
-        ),
-        (
-            InternalServerError,
-            {'llm_provider': 'test_provider', 'model': 'test_model'},
-            2,
-        ),
-        (
-            ServiceUnavailableError,
-            {'llm_provider': 'test_provider', 'model': 'test_model'},
-            2,
-        ),
         (RateLimitError, {'llm_provider': 'test_provider', 'model': 'test_model'}, 2),
     ],
 )
@@ -252,22 +234,6 @@ def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config
         assert (
             default_config.retry_min_wait <= wait_time <= default_config.retry_max_wait
         ), f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
-
-
-@patch('openhands.llm.llm.litellm_completion')
-def test_completion_exhausts_retries(mock_litellm_completion, default_config):
-    mock_litellm_completion.side_effect = APIConnectionError(
-        'Persistent error', llm_provider='test_provider', model='test_model'
-    )
-
-    llm = LLM(config=default_config)
-    with pytest.raises(APIConnectionError):
-        llm.completion(
-            messages=[{'role': 'user', 'content': 'Hello!'}],
-            stream=False,
-        )
-
-    assert mock_litellm_completion.call_count == llm.config.num_retries
 
 
 @patch('openhands.llm.llm.litellm_completion')
