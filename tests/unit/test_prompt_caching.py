@@ -73,6 +73,11 @@ def test_get_messages(codeact_agent: CodeActAgent):
     message_action_5._source = 'user'
     history.append(message_action_5)
 
+    # Mock prompt manager
+    codeact_agent.prompt_manager = Mock()
+    codeact_agent.prompt_manager.get_system_message.return_value = "You are OpenHands agent"
+    codeact_agent.prompt_manager.add_examples_to_initial_message = Mock()
+
     codeact_agent.reset()
     messages = codeact_agent._get_messages(
         Mock(history=history, max_iterations=5, iteration=0, extra_data={})
@@ -108,6 +113,11 @@ def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
         message_action_agent = MessageAction(f'Agent message {i}')
         message_action_agent._source = 'assistant'
         history.append(message_action_agent)
+
+    # Mock prompt manager
+    codeact_agent.prompt_manager = Mock()
+    codeact_agent.prompt_manager.get_system_message.return_value = "You are OpenHands agent"
+    codeact_agent.prompt_manager.add_examples_to_initial_message = Mock()
 
     codeact_agent.reset()
     messages = codeact_agent._get_messages(
@@ -145,6 +155,11 @@ def test_prompt_caching_headers(codeact_agent: CodeActAgent):
     mock_state.max_iterations = 5
     mock_state.iteration = 0
     mock_state.extra_data = {}
+
+    # Mock prompt manager
+    codeact_agent.prompt_manager = Mock()
+    codeact_agent.prompt_manager.get_system_message.return_value = "You are OpenHands agent"
+    codeact_agent.prompt_manager.add_examples_to_initial_message = Mock()
 
     codeact_agent.reset()
 
