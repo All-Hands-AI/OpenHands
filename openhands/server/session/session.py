@@ -104,7 +104,7 @@ class Session:
 
         # TODO: override other LLM config & agent config groups (#2075)
 
-        llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
+        llm = self._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
@@ -141,6 +141,21 @@ class Session:
                 f'Error creating agent_session. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
             return
+
+    def _create_llm(self, agent_cls: str | None) -> LLM:
+        """
+        Initialize LLM, extracted for testing.
+        """
+        return LLM(
+            config=self.config.get_llm_config_from_agent(agent_cls),
+            retry_listener=self._notify_on_llm_retry,
+        )
+
+    def _notify_on_llm_retry(self, retries: int, max: int) -> None:
+        msg_id = 'STATUS$LLM_RETRY'
+        self.queue_status_message(
+            'info', msg_id, f'Retrying LLM request, {retries} / {max}'
+        )
 
     def on_event(self, event: Event):
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
@@ -220,7 +235,7 @@ class Session:
         """Sends a status message to the client."""
         if msg_type == 'error':
             await self.agent_session.stop_agent_loop_for_error()
-
+        print('SNET')
         await self.send(
             {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
         )
