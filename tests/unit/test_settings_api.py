@@ -28,8 +28,9 @@ def test_client(mock_settings_store):
 
         async def __call__(self, scope, receive, send):
             settings = mock_settings_store.load.return_value
+            token = settings.github_token if settings else None
             if scope['type'] == 'http':
-                scope['state'] = {'github_token': settings.github_token}
+                scope['state'] = {'github_token': token}
             await self.app(scope, receive, send)
 
     # Replace the middleware
