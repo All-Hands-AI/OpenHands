@@ -566,8 +566,10 @@ async def test_context_window_exceeded_error_handling(mock_agent, mock_event_str
         def step(self, state: State):
             # Append a few messages to the history -- these will be truncated when we throw the error
             state.history = [
-                MessageAction(content='Test message 0'),
-                MessageAction(content='Test message 1'),
+                MessageAction(content='Test message 0', source=EventSource.USER),  # First user message
+                MessageAction(content='Test message 1'),  # Agent response
+                MessageAction(content='Test message 2'),  # Another agent message
+                MessageAction(content='Test message 3'),  # Another agent message
             ]
 
             error = ContextWindowExceededError(
@@ -598,4 +600,9 @@ async def test_context_window_exceeded_error_handling(mock_agent, mock_event_str
 
     # Check that the error was thrown and the history has been truncated
     assert state.has_errored
-    assert controller.state.history == [MessageAction(content='Test message 1')]
+    # Should keep first user message and second half of history
+    assert controller.state.history == [
+        MessageAction(content='Test message 0', source=EventSource.USER),  # First user message always kept
+        MessageAction(content='Test message 2'),  # Second half of history
+        MessageAction(content='Test message 3'),
+    ]
