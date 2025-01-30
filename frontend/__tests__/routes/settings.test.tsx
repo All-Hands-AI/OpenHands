@@ -108,7 +108,14 @@ describe("Settings Screen", () => {
   });
 
   describe("LLM Settings", () => {
-    it.todo("should render the basic LLM settings");
+    it("should render the basic LLM settings by default", async () => {
+      renderSettingsScreen();
+
+      screen.getByTestId("llm-provider-input");
+      screen.getByTestId("llm-model-input");
+      screen.getByTestId("llm-api-key-input");
+    });
+
     it.todo(
       "should render the advanced LLM settings if the advanced switch is toggled",
     );
