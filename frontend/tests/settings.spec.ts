@@ -2,9 +2,6 @@ import test, { expect, Page } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
-  await page.evaluate(() => {
-    localStorage.setItem("analytics-consent", "true");
-  });
 });
 
 const selectGpt4o = async (page: Page) => {

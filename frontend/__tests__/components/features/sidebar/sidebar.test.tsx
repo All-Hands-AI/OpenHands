@@ -82,6 +82,10 @@ describe("Sidebar", () => {
         within(accountSettingsModal).getByLabelText(/GITHUB\$TOKEN_LABEL/i);
       await user.type(tokenInput, "new-token");
 
+      const analyticsConsentInput =
+        within(accountSettingsModal).getByTestId("analytics-consent");
+      await user.click(analyticsConsentInput);
+
       const saveButton =
         within(accountSettingsModal).getByTestId("save-settings");
       await user.click(saveButton);
@@ -96,6 +100,7 @@ describe("Sidebar", () => {
         llm_model: "anthropic/claude-3-5-sonnet-20241022",
         remote_runtime_resource_factor: 1,
         security_analyzer: "",
+        user_consents_to_analytics: true,
       });
     });
 

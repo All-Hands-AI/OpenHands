@@ -10,6 +10,7 @@ export type Settings = {
   GITHUB_TOKEN_IS_SET: boolean;
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
+  USER_CONSENTS_TO_ANALYTICS: boolean | null;
 };
 
 export type ApiSettings = {
@@ -24,14 +25,17 @@ export type ApiSettings = {
   github_token_is_set: boolean;
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
+  user_consents_to_analytics: boolean | null;
 };
 
 export type PostSettings = Settings & {
   github_token: string;
   unset_github_token: boolean;
+  user_consents_to_analytics: boolean | null;
 };
 
 export type PostApiSettings = ApiSettings & {
   github_token: string;
   unset_github_token: boolean;
+  user_consents_to_analytics: boolean | null;
 };

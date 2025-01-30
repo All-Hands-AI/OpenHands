@@ -20,6 +20,7 @@ const getSettingsQueryFn = async () => {
     GITHUB_TOKEN_IS_SET: apiSettings.github_token_is_set,
     ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
     ENABLE_SOUND_NOTIFICATIONS: apiSettings.enable_sound_notifications,
+    USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
   };
 };
 
