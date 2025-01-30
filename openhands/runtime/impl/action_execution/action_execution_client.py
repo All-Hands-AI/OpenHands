@@ -11,6 +11,7 @@ import requests
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import (
     AgentRuntimeTimeoutError,
+    AgentRuntimeUnavailableError,
 )
 from openhands.events import EventStream
 from openhands.events.action import (
@@ -263,6 +264,10 @@ class ActionExecutionClient(Runtime):
                 raise AgentRuntimeTimeoutError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
+            except requests.HTTPError as e:
+                raise AgentRuntimeUnavailableError(
+                    f'Runtime HTTP failure: {str(e)}'
+                ) from e
             return obs
 
     def run(self, action: CmdRunAction) -> Observation:

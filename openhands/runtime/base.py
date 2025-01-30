@@ -134,6 +134,10 @@ class Runtime(FileEditRuntimeMixin):
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
 
     def close(self) -> None:
+        """
+        This should only be called by conversation manager or closing the session.
+        If called for instance by error handling, it could prevent recovery.
+        """
         pass
 
     @classmethod
@@ -205,7 +209,6 @@ class Runtime(FileEditRuntimeMixin):
             self.log('error', f'Unexpected error while running action: {error_message}')
             self.log('error', f'Problematic action: {str(event)}')
             self.send_error_message(err_id, error_message)
-            self.close()
             return
 
         observation._cause = event.id  # type: ignore[attr-defined]
