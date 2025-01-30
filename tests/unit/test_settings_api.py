@@ -185,6 +185,10 @@ async def test_settings_unset_github_token(
     # Mock settings store to return our settings for the GET request
     mock_settings_store.load.return_value = Settings(**settings_data)
 
+    response = test_client.get('/api/settings')
+    assert response.status_code == 200
+    assert response.json()['github_token_is_set'] is True
+
     settings_data['unset_github_token'] = True
 
     # Make the POST request to store settings
