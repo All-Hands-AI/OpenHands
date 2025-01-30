@@ -10,25 +10,6 @@ from openhands.server.settings import Settings
 
 
 @pytest.fixture
-def test_client():
-    # Mock the middleware that adds github_token
-    class MockMiddleware:
-        def __init__(self, app):
-            self.app = app
-
-        async def __call__(self, scope, receive, send):
-            if scope['type'] == 'http':
-                scope['state'] = {'github_token': 'test-token'}
-            await self.app(scope, receive, send)
-
-    # Replace the middleware
-    app.middleware_stack = None  # Clear existing middleware
-    app.add_middleware(MockMiddleware)
-
-    return TestClient(app)
-
-
-@pytest.fixture
 def mock_settings_store():
     with patch('openhands.server.routes.settings.SettingsStoreImpl') as mock:
         store_instance = MagicMock()
@@ -36,6 +17,26 @@ def mock_settings_store():
         store_instance.load = AsyncMock()
         store_instance.store = AsyncMock()
         yield store_instance
+
+
+@pytest.fixture
+def test_client(mock_settings_store):
+    # Mock the middleware that adds github_token
+    class MockMiddleware:
+        def __init__(self, app):
+            self.app = app
+
+        async def __call__(self, scope, receive, send):
+            settings = mock_settings_store.load.return_value
+            if scope['type'] == 'http':
+                scope['state'] = {'github_token': settings.github_token}
+            await self.app(scope, receive, send)
+
+    # Replace the middleware
+    app.middleware_stack = None  # Clear existing middleware
+    app.add_middleware(MockMiddleware)
+
+    return TestClient(app)
 
 
 @pytest.fixture
@@ -198,6 +199,7 @@ async def test_settings_unset_github_token(
     # Verify the settings were stored with the github_token unset
     stored_settings = mock_settings_store.store.call_args[0][0]
     assert stored_settings.github_token is None
+    mock_settings_store.load.return_value = Settings(**stored_settings.dict())
 
     # Make a GET request to retrieve settings
     response = test_client.get('/api/settings')
