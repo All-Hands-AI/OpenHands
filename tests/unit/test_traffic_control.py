@@ -11,7 +11,9 @@ from openhands.storage import InMemoryFileStore
 
 @pytest.fixture
 def agent_controller():
-    llm = LLM(config=LLMConfig())
+    llm = MagicMock(spec=LLM)
+    llm.config = MagicMock()
+    llm.metrics = MagicMock()
     agent = MagicMock()
     agent.name = 'test_agent'
     agent.llm = llm
