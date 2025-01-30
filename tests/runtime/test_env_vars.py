@@ -99,13 +99,23 @@ def test_env_vars_persist_after_restart(temp_dir, runtime_cls):
     assert obs.exit_code == 0
     assert 'export GITHUB_TOKEN=' in obs.content
 
-    # Close the runtime to simulate a restart
-    _close_test_runtime(runtime)
+    # Simulate a runtime pause/resume cycle
+    if hasattr(runtime, '_resume_runtime'):
+        # For RemoteRuntime, use pause/resume
+        with runtime._send_runtime_api_request(
+            'POST',
+            f'{runtime.config.sandbox.remote_runtime_api_url}/pause',
+            json={'runtime_id': runtime.runtime_id},
+        ):
+            pass
+        runtime._resume_runtime()
+    else:
+        # For DockerRuntime, use container stop/start
+        container = runtime.container
+        container.stop()
+        container.start()
 
-    # Start a new runtime session
-    runtime = _load_runtime(temp_dir, runtime_cls)
-
-    # Verify the variable persists
+    # Verify the variable persists after restart
     obs = runtime.run_action(CmdRunAction(command='echo $GITHUB_TOKEN'))
     assert obs.exit_code == 0
     assert obs.content.strip().split('\r\n')[0].strip() == 'test_token'
