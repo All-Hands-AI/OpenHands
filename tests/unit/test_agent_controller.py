@@ -12,7 +12,12 @@ from openhands.core.config import AppConfig
 from openhands.core.main import run_controller
 from openhands.core.schema import AgentState
 from openhands.events import Event, EventSource, EventStream, EventStreamSubscriber
-from openhands.events.action import ChangeAgentStateAction, CmdRunAction, MessageAction
+from openhands.events.action import (
+    ChangeAgentStateAction,
+    CmdRunAction,
+    MessageAction,
+    SystemMessageAction,
+)
 from openhands.events.observation import (
     ErrorObservation,
 )
@@ -21,6 +26,7 @@ from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.runtime.base import Runtime
 from openhands.storage.memory import InMemoryFileStore
+from openhands.utils.prompt import PromptManager
 
 
 @pytest.fixture
@@ -606,3 +612,79 @@ async def test_context_window_exceeded_error_handling(mock_agent, mock_event_str
         MessageAction(content='Test message 2'),  # Second half of history
         MessageAction(content='Test message 3'),
     ]
+
+
+@pytest.mark.asyncio
+async def test_prompt_manager_initialization(mock_agent, mock_event_stream):
+    """Test that the prompt manager is properly initialized and sends system message."""
+    # Mock the prompt manager
+    mock_agent.prompt_manager = MagicMock(spec=PromptManager)
+    mock_agent.prompt_manager.get_system_message.return_value = "Test system message"
+
+    # Create controller
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Verify that system message was sent
+    mock_event_stream.add_event.assert_called_with(
+        SystemMessageAction(content="Test system message"),
+        EventSource.AGENT,
+    )
+
+    await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_prompt_manager_not_initialized(mock_agent, mock_event_stream):
+    """Test that no system message is sent if prompt manager is not initialized."""
+    # Set prompt manager to None
+    mock_agent.prompt_manager = None
+
+    # Create controller
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Verify that no system message was sent
+    for call in mock_event_stream.add_event.call_args_list:
+        args, _ = call
+        assert not isinstance(args[0], SystemMessageAction)
+
+    await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_prompt_manager_delegate_initialization(mock_agent, mock_event_stream):
+    """Test that system message is not sent for delegate controllers."""
+    # Mock the prompt manager
+    mock_agent.prompt_manager = MagicMock(spec=PromptManager)
+    mock_agent.prompt_manager.get_system_message.return_value = "Test system message"
+
+    # Create controller with is_delegate=True
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+        is_delegate=True,  # This should prevent system message from being sent
+    )
+
+    # Verify that no system message was sent
+    for call in mock_event_stream.add_event.call_args_list:
+        args, _ = call
+        assert not isinstance(args[0], SystemMessageAction)
+
+    await controller.close()
