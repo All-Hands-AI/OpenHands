@@ -18,8 +18,8 @@ import { useCurrentSettings } from "#/context/settings-context";
 import { useBalance } from "#/hooks/query/use-balance";
 import { useCreateStripeCheckoutSession } from "#/hooks/mutation/stripe/use-create-stripe-checkout-session";
 import { PaymentSelection } from "#/components/features/payment/payment-selection";
-import { PostSettings } from "#/services/settings";
 import { GitHubTokenInput } from "./github-token-input";
+import { PostSettings } from "#/types/settings";
 
 interface AccountSettingsFormProps {
   onClose: () => void;
