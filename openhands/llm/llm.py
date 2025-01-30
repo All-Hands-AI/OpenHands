@@ -171,7 +171,7 @@ class LLM(RetryMixin, DebugMixin):
         )
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
-            from openhands.core.utils import json
+            from openhands.io import json
 
             messages: list[dict[str, Any]] | dict[str, Any] = []
             mock_function_calling = kwargs.pop('mock_function_calling', False)
@@ -374,7 +374,7 @@ class LLM(RetryMixin, DebugMixin):
             # noinspection PyBroadException
             except Exception:
                 pass
-        from openhands.core.utils import json
+        from openhands.io import json
 
         logger.debug(f'Model info: {json.dumps(self.model_info, indent=2)}')
 

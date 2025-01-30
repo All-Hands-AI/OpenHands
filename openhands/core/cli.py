@@ -15,7 +15,6 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
 from openhands.core.setup import create_agent, create_controller, create_runtime
-from openhands.core.utils.io import read_input, read_task
 from openhands.events import EventSource, EventStreamSubscriber
 from openhands.events.action import (
     Action,
@@ -32,6 +31,7 @@ from openhands.events.observation import (
     FileEditObservation,
     NullObservation,
 )
+from openhands.io import read_input, read_task
 
 
 def display_message(message: str):

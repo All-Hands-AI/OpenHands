@@ -6,11 +6,11 @@ from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.message import ImageContent, Message, TextContent
-from openhands.core.utils import json
 from openhands.events.action import Action
 from openhands.events.event import Event
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.event import event_to_memory
+from openhands.io import json
 from openhands.llm.llm import LLM
 
 
