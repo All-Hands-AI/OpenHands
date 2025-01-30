@@ -68,19 +68,24 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
-      modulePreload: false,
+      modulePreload: { polyfill: true },
       target: 'esnext',
       minify: 'esbuild',
+      outDir: 'build',
       rollupOptions: {
+        input: {
+          main: './index.html'
+        },
         output: {
-          format: 'esm',
-          entryFileNames: '[name]-[hash].js',
-          chunkFileNames: '[name]-[hash].js',
-          assetFileNames: '[name]-[hash].[ext]'
+          format: 'es',
+          chunkFileNames: 'assets/[name]-[hash].js',
+          entryFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash].[ext]'
         }
       }
     },
     optimizeDeps: {
+      include: ['react', 'react-dom', 'react-router', 'react-router-dom'],
       esbuildOptions: {
         target: 'esnext'
       }
