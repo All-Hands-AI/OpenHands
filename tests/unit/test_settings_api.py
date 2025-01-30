@@ -30,7 +30,7 @@ def test_client():
 
 @pytest.fixture
 def mock_settings_store():
-    with patch('openhands.server.shared.SettingsStoreImpl') as mock:
+    with patch('openhands.server.routes.settings.SettingsStoreImpl') as mock:
         store_instance = MagicMock()
         mock.get_instance = AsyncMock(return_value=store_instance)
         store_instance.load = AsyncMock()
