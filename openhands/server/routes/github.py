@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
 from openhands.server.auth import get_github_token
+from openhands.server.shared import server_config
 from openhands.utils.async_utils import call_sync_from_async
 
 app = APIRouter(prefix='/api/github')
@@ -31,7 +32,7 @@ class GithubClient:
         }
 
     def should_refresh(self, status_code: int):
-        if openhands_config.APP_MODE == 'SAAS' and status_code == 401:
+        if server_config.app_mode == 'SAAS' and status_code == 401:
             return True
 
         return False
@@ -60,6 +61,26 @@ class GithubClient:
         except httpx.HTTPError as e:
             raise HTTPException(status_code=500, detail=f'HTTP error: {str(e)}')
 
+    async def get_repositories(
+        self, page: int, per_page: int, sort: str, installation_id: int | None
+    ):
+        params = {'page': str(page), 'per_page': str(per_page)}
+        if installation_id:
+            url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
+        else:
+            url = f'{self.BASE_URL}/user/repos'
+            params['sort'] = sort
+        return await self._fetch_data(url, params)
+
+    async def fetch_response(self, method: str, *args, **kwargs):
+        response = await getattr(self, method)(*args, **kwargs)
+        json_response = JSONResponse(
+            content=response.json(), status_code=response.status_code
+        )
+        if 'Link' in response.headers:
+            json_response.headers['Link'] = response.headers['Link']
+        return json_response
+
 
 @app.get('/repositories')
 async def get_github_repositories(
@@ -69,37 +90,10 @@ async def get_github_repositories(
     installation_id: int | None = None,
     github_token: str = Depends(require_github_token),
 ):
-    params: dict[str, str] = {
-        'page': str(page),
-        'per_page': str(per_page),
-    }
-    if installation_id:
-        github_api_url = (
-            f'https://api.github.com/user/installations/{installation_id}/repositories'
-        )
-    else:
-        github_api_url = 'https://api.github.com/user/repos'
-        params['sort'] = sort
-
-    headers = generate_github_headers(github_token)
-
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(github_api_url, headers=headers, params=params)
-            response.raise_for_status()  # Raise an error for HTTP codes >= 400
-            json_response = JSONResponse(content=response.json())
-
-            # Forward the Link header if it exists
-            if 'Link' in response.headers:
-                json_response.headers['Link'] = response.headers['Link']
-
-            return json_response
-
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(
-            status_code=response.status_code if response else 500,
-            detail=f'Error fetching repositories: {str(e)}',
-        )
+    client = GithubClient(github_token)
+    return await client.fetch_response(
+        'get_repositories', page, per_page, sort, installation_id
+    )
 
 
 @app.get('/user')
