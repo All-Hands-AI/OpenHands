@@ -4,7 +4,6 @@ import requests
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 
-from openhands.server.shared import openhands_config
 from openhands.utils.async_utils import call_sync_from_async
 
 app = APIRouter(prefix='/api/gitlab')
@@ -29,28 +28,26 @@ async def get_gitlab_repositories(
     group_id: int | None = None,
     gitlab_token: str = Depends(require_gitlab_token),
 ):
-    openhands_config.verify_github_repo_list(group_id)
-
     # Add query parameters
     params: dict[str, str] = {
         'page': str(page),
         'per_page': str(per_page),
     }
-    # Construct the GitHub API URL
+    # Construct the GitLab API URL
     if group_id:
-        github_api_url = f'https://gitlab.com/api/v4/groups/{group_id}/projects'
+        gitlab_api_url = f'https://gitlab.com/api/v4/groups/{group_id}/projects'
     else:
-        github_api_url = 'https://gitlab.com/api/v4/projects'
+        gitlab_api_url = 'https://gitlab.com/api/v4/projects'
         params['order_by'] = sort
         params['owned'] = 'true'
 
-    # Set the authorization header with the GitHub token
+    # Set the authorization header with the GitLab token
     headers = generate_gitlab_headers(gitlab_token)
 
-    # Fetch repositories from GitHub
+    # Fetch repositories from GitLab
     try:
         response = await call_sync_from_async(
-            requests.get, github_api_url, headers=headers, params=params
+            requests.get, gitlab_api_url, headers=headers, params=params
         )
         response.raise_for_status()  # Raise an error for HTTP codes >= 400
     except requests.exceptions.RequestException as e:
@@ -71,7 +68,7 @@ async def get_gitlab_repositories(
 
 
 @app.get('/user')
-async def get_github_user(gitlab_token: str = Depends(require_gitlab_token)):
+async def get_gitlab_user(gitlab_token: str = Depends(require_gitlab_token)):
     headers = generate_gitlab_headers(gitlab_token)
     try:
         response = await call_sync_from_async(
@@ -85,30 +82,6 @@ async def get_github_user(gitlab_token: str = Depends(require_gitlab_token)):
         )
 
     json_response = JSONResponse(content=response.json())
-    response.close()
-
-    return json_response
-
-
-@app.get('/installations')
-async def get_github_installation_ids(
-    gitlab_token: str = Depends(require_gitlab_token),
-):
-    headers = generate_gitlab_headers(gitlab_token)
-    try:
-        response = await call_sync_from_async(
-            requests.get, 'https://api.github.com/user/installations', headers=headers
-        )
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(
-            status_code=response.status_code if response else 500,
-            detail=f'Error fetching installations: {str(e)}',
-        )
-
-    data = response.json()
-    ids = [installation['id'] for installation in data['installations']]
-    json_response = JSONResponse(content=ids)
     response.close()
 
     return json_response
