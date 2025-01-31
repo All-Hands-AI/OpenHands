@@ -8,10 +8,10 @@ triggers:
 - git
 ---
 
-You have access to an environment variable, `GIT_TOKEN`, which allows you to interact with
+You have access to an environment variable, `GITHUB_TOKEN`, which allows you to interact with
 the GitHub API.
 
-You can use `curl` with the `GIT_TOKEN` to interact with GitHub's API.
+You can use `curl` with the `GITHUB_TOKEN` to interact with GitHub's API.
 ALWAYS use the GitHub API for operations instead of a web browser.
 
 Here are some instructions for pushing, but ONLY do this if the user asks you to:
@@ -28,6 +28,6 @@ Here are some instructions for pushing, but ONLY do this if the user asks you to
 git remote -v && git branch # to find the current org, repo and branch
 git checkout -b create-widget && git add . && git commit -m "Create widget" && git push -u origin create-widget
 curl -X POST "https://api.github.com/repos/$ORG_NAME/$REPO_NAME/pulls" \
-    -H "Authorization: Bearer $GIT_TOKEN" \
+    -H "Authorization: Bearer $GITHUB_TOKEN" \
     -d '{"title":"Create widget","head":"create-widget","base":"openhands-workspace"}'
 ```

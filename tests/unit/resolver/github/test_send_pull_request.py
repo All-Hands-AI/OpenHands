@@ -1245,7 +1245,7 @@ def test_main(
 
     # Setup environment variables
     mock_getenv.side_effect = (
-        lambda key, default=None: 'mock_token' if key == 'GIT_TOKEN' else default
+        lambda key, default=None: 'mock_token' if key == 'GITHUB_TOKEN' else default
     )
 
     # Setup path exists
@@ -1286,7 +1286,7 @@ def test_main(
 
     # Other assertions
     mock_parser.assert_called_once()
-    mock_getenv.assert_any_call('GIT_TOKEN')
+    mock_getenv.assert_any_call('GITHUB_TOKEN')
     mock_path_exists.assert_called_with('/mock/output')
     mock_load_single_resolver_output.assert_called_with('/mock/output/output.jsonl', 42)
 

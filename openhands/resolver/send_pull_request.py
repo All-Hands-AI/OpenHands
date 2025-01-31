@@ -636,10 +636,10 @@ def main():
     )
     my_args = parser.parse_args()
 
-    token = my_args.token if my_args.token else os.getenv('GIT_TOKEN')
+    token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
     if not token:
         raise ValueError(
-            'token is not set, set via --token or GIT_TOKEN environment variable.'
+            'token is not set, set via --token or GITHUB_TOKEN or GITLAB_TOKEN environment variable.'
         )
     username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
 

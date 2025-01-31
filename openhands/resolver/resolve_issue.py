@@ -637,7 +637,7 @@ def main():
     else:
         owner, repo = parts
 
-    token = my_args.token if my_args.token else os.getenv('GIT_TOKEN')
+    token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
     username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
     if not username:
         raise ValueError('username is required.')
