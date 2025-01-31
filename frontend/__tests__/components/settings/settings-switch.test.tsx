@@ -37,4 +37,26 @@ describe("SettingsSwitch", () => {
 
     expect(screen.getByText(/optional/i)).toBeInTheDocument();
   });
+
+  it("should be able to set a default toggle state", async () => {
+    const user = userEvent.setup();
+    const onToggleMock = vi.fn();
+    render(
+      <SettingsSwitch
+        testId="test-switch"
+        onToggle={onToggleMock}
+        defaultIsToggled
+      >
+        Test Switch
+      </SettingsSwitch>,
+    );
+
+    expect(screen.getByTestId("test-switch")).toBeChecked();
+
+    const switchInput = screen.getByTestId("test-switch");
+    await user.click(switchInput);
+    expect(onToggleMock).toHaveBeenCalledWith(false);
+
+    expect(screen.getByTestId("test-switch")).not.toBeChecked();
+  });
 });
