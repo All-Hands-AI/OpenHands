@@ -33,6 +33,9 @@ export const useSettings = () => {
     initialData: DEFAULT_SETTINGS,
     staleTime: 0,
     retry: false,
+    meta: {
+      disableToast: true,
+    },
   });
 
   React.useEffect(() => {

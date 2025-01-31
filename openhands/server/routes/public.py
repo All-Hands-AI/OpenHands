@@ -16,7 +16,7 @@ from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm import bedrock
-from openhands.server.shared import config, openhands_config
+from openhands.server.shared import config, server_config
 
 app = APIRouter(prefix='/api/options')
 
@@ -112,4 +112,4 @@ async def get_config():
     Get current config
     """
 
-    return openhands_config.get_config()
+    return server_config.get_config()
