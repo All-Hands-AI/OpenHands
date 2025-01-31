@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
-from openhands.server.auth import get_github_token
+from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.services.github_service import GitHubService
 from openhands.server.shared import server_config
 from openhands.utils.import_utils import get_impl
@@ -30,24 +30,30 @@ async def get_github_repositories(
     sort: str = 'pushed',
     installation_id: int | None = None,
     github_token: str = Depends(require_github_token),
+    github_user_id: str | None = Depends(get_user_id),
 ):
-    client = GithubServiceImpl(github_token)
+    print('got user id ', github_user_id)
+    client = GithubServiceImpl(github_token, github_user_id)
     return await client.fetch_response(
         'get_repositories', page, per_page, sort, installation_id
     )
 
 
 @app.get('/user')
-async def get_github_user(github_token: str = Depends(require_github_token)):
-    client = GithubServiceImpl(github_token)
+async def get_github_user(
+    github_token: str = Depends(require_github_token),
+    github_user_id: str | None = Depends(get_user_id),
+):
+    client = GithubServiceImpl(github_token, github_user_id)
     return await client.fetch_response('get_user')
 
 
 @app.get('/installations')
 async def get_github_installation_ids(
     github_token: str = Depends(require_github_token),
+    github_user_id: str | None = Depends(get_user_id),
 ):
-    client = GithubServiceImpl(github_token)
+    client = GithubServiceImpl(github_token, github_user_id)
     installations = await client.get_installation_ids()
     return JSONResponse(content=[i['id'] for i in installations])
 
@@ -59,8 +65,9 @@ async def search_github_repositories(
     sort: str = 'stars',
     order: str = 'desc',
     github_token: str = Depends(require_github_token),
+    github_user_id: str | None = Depends(get_user_id),
 ):
-    client = GithubServiceImpl(github_token)
+    client = GithubServiceImpl(github_token, github_user_id)
     response = await client.search_repositories(query, per_page, sort, order)
     json_response = JSONResponse(content=response.json())
     response.close()

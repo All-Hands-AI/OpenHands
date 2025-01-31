@@ -9,8 +9,9 @@ from openhands.utils.async_utils import call_sync_from_async
 class GitHubService:
     BASE_URL = 'https://api.github.com'
 
-    def __init__(self, token: str):
+    def __init__(self, token: str, user_id: str | None):
         self.token = token
+        self.user_id = user_id
         self.headers = {
             'Authorization': f'Bearer {token}',
             'Accept': 'application/vnd.github.v3+json',
@@ -19,7 +20,7 @@ class GitHubService:
     def _has_token_expired(self, status_code: int):
         return status_code == 401
 
-    async def _refresh_token(self):
+    async def _get_latest_token(self):
         pass
 
     async def _fetch_data(self, url: str, params: dict | None = None):
@@ -29,7 +30,7 @@ class GitHubService:
                 if server_config.app_mode == 'SAAS' and self._has_token_expired(
                     response.status_code
                 ):
-                    await self._refresh_token()
+                    await self._get_latest_token()
                     response = await client.get(
                         url, headers=self.headers, params=params
                     )
