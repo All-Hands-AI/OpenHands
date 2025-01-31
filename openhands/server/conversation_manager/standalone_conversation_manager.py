@@ -150,7 +150,7 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 return
             except Exception as e:
-                logger.warning(f'error_cleaning_stale: {str(e)}', exc_info=True, stack_info=True)
+                logger.error(f'error_cleaning_stale')
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
     async def get_running_agent_loops(
