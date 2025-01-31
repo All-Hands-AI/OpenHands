@@ -21,4 +21,20 @@ describe("SettingsSwitch", () => {
     await user.click(switchInput);
     expect(onToggleMock).toHaveBeenCalledWith(false);
   });
+
+  it("should render an optional tag if showOptionalTag is true", () => {
+    const { rerender } = render(
+      <SettingsSwitch testId="test-switch">Test Switch</SettingsSwitch>,
+    );
+
+    expect(screen.queryByText(/optional/i)).not.toBeInTheDocument();
+
+    rerender(
+      <SettingsSwitch testId="test-switch" showOptionalTag>
+        Test Switch
+      </SettingsSwitch>,
+    );
+
+    expect(screen.getByText(/optional/i)).toBeInTheDocument();
+  });
 });
