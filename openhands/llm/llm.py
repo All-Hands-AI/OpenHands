@@ -72,6 +72,8 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'gpt-4o-mini',
     'gpt-4o',
     'o1-2024-12-17',
+    'o3-mini-2025-01-31',
+    'o3-mini',
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
