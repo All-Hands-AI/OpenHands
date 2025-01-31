@@ -394,7 +394,7 @@ class RemoteRuntime(ActionExecutionClient):
             stop=tenacity.stop_after_attempt(3) | stop_if_should_exit() | self._stop_if_closed,
             wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
         )
-        return retry_decorator(self._wait_until_alive_impl)()
+        return retry_decorator(self._send_action_server_request_impl)(method, url, **kwargs)
 
     def _send_action_server_request_impl(self, method, url, **kwargs):
         try:
