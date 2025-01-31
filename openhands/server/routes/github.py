@@ -6,6 +6,8 @@ from github import Github
 from github.AuthenticatedUser import AuthenticatedUser
 from github.GithubException import GithubException
 from github.NamedUser import NamedUser
+from github.PaginatedList import PaginatedList
+from github.Repository import Repository
 
 from openhands.server.auth import get_github_token
 from openhands.utils.async_utils import call_sync_from_async
@@ -32,36 +34,36 @@ async def get_github_repositories(
     installation_id: int | None = None,
     github_token: str = Depends(require_github_token),
 ):
-    params: dict[str, str] = {
-        'page': str(page),
-        'per_page': str(per_page),
-    }
-    if installation_id:
-        github_api_url = (
-            f'https://api.github.com/user/installations/{installation_id}/repositories'
-        )
-    else:
-        github_api_url = 'https://api.github.com/user/repos'
-        params['sort'] = sort
-
-    headers = generate_github_headers(github_token)
-
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(github_api_url, headers=headers, params=params)
-            response.raise_for_status()  # Raise an error for HTTP codes >= 400
-            json_response = JSONResponse(content=response.json())
+        with Github(github_token) as gh:
+            gh.per_page = per_page
+            gh_user: NamedUser | AuthenticatedUser = await call_sync_from_async(
+                gh.get_user
+            )
 
-            # Forward the Link header if it exists
-            if 'Link' in response.headers:
-                json_response.headers['Link'] = response.headers['Link']
+            repos_list: PaginatedList[Repository] = await call_sync_from_async(
+                gh_user.get_repos, sort
+            )
+
+            repos: list[Repository] = await call_sync_from_async(
+                repos_list.get_page, page - 1
+            )
+            print('repos', len(repos))
+            repos = [repo.raw_data for repo in repos]
+
+            json_response = JSONResponse(content=repos)
+
+            # PyGitHub does not expose next link header, we construct it
+            if (page - 1) * 30 + len(repos) < repos_list.totalCount:
+                next_page_url = f'<https://api.github.com/user/repos?page={page+1}&per_page=30>; rel="next",'
+                json_response.headers['Link'] = next_page_url
 
             return json_response
 
-    except requests.exceptions.RequestException as e:
+    except GithubException as e:
         raise HTTPException(
-            status_code=response.status_code if response else 500,
-            detail=f'Error fetching repositories: {str(e)}',
+            status_code=e.status if e else 500,
+            detail=f'Error fetching user: {str(e)}',
         )
 
 
