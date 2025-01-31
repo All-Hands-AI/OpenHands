@@ -48,9 +48,7 @@ export default function MainApp() {
   const { data: settings } = useSettings();
   const { migrateUserConsent } = useMigrateUserConsent();
 
-  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
-    settings.USER_CONSENTS_TO_ANALYTICS === null,
-  );
+  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
 
   const config = useConfig();
   const {
@@ -69,6 +67,13 @@ export default function MainApp() {
       i18n.changeLanguage(settings.LANGUAGE);
     }
   }, [settings?.LANGUAGE]);
+
+  React.useEffect(() => {
+    const consentFormModalIsOpen =
+      settings?.USER_CONSENTS_TO_ANALYTICS === null;
+
+    setConsentFormIsOpen(consentFormModalIsOpen);
+  }, [settings]);
 
   React.useEffect(() => {
     // Migrate user consent to the server if it was previously stored in localStorage

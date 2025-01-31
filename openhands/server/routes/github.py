@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
 from openhands.server.auth import get_github_token
-from openhands.server.shared import openhands_config
 from openhands.utils.async_utils import call_sync_from_async
 
 app = APIRouter(prefix='/api/github')
@@ -70,14 +69,10 @@ async def get_github_repositories(
     installation_id: int | None = None,
     github_token: str = Depends(require_github_token),
 ):
-    openhands_config.verify_github_repo_list(installation_id)
-
-    # Add query parameters
     params: dict[str, str] = {
         'page': str(page),
         'per_page': str(per_page),
     }
-    # Construct the GitHub API URL
     if installation_id:
         github_api_url = (
             f'https://api.github.com/user/installations/{installation_id}/repositories'
@@ -86,10 +81,8 @@ async def get_github_repositories(
         github_api_url = 'https://api.github.com/user/repos'
         params['sort'] = sort
 
-    # Set the authorization header with the GitHub token
     headers = generate_github_headers(github_token)
 
-    # Fetch repositories from GitHub
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(github_api_url, headers=headers, params=params)
