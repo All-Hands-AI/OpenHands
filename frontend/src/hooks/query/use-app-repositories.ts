@@ -1,17 +1,17 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import React from "react";
 import { retrieveGitHubAppRepositories } from "#/api/github";
-import { useAuth } from "#/context/auth-context";
 import { useAppInstallations } from "./use-app-installations";
 import { useConfig } from "./use-config";
+import { useAuth } from "#/context/auth-context";
 
 export const useAppRepositories = () => {
-  const { gitHubToken } = useAuth();
+  const { githubTokenIsSet } = useAuth();
   const { data: config } = useConfig();
   const { data: installations } = useAppInstallations();
 
   const repos = useInfiniteQuery({
-    queryKey: ["repositories", gitHubToken, installations],
+    queryKey: ["repositories", githubTokenIsSet, installations],
     queryFn: async ({
       pageParam,
     }: {
@@ -46,7 +46,7 @@ export const useAppRepositories = () => {
       return null;
     },
     enabled:
-      !!gitHubToken &&
+      githubTokenIsSet &&
       Array.isArray(installations) &&
       installations.length > 0 &&
       config?.APP_MODE === "saas",

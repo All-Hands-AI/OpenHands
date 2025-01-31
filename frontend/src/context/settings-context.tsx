@@ -1,16 +1,18 @@
 import React from "react";
-import {
-  LATEST_SETTINGS_VERSION,
-  Settings,
-  settingsAreUpToDate,
-} from "#/services/settings";
+import { MutateOptions } from "@tanstack/react-query";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import { PostSettings, Settings } from "#/types/settings";
+
+type SaveUserSettingsConfig = {
+  onSuccess: MutateOptions<void, Error, Partial<PostSettings>>["onSuccess"];
+};
 
 interface SettingsContextType {
-  isUpToDate: boolean;
-  setIsUpToDate: (value: boolean) => void;
-  saveUserSettings: (newSettings: Partial<Settings>) => Promise<void>;
+  saveUserSettings: (
+    newSettings: Partial<PostSettings>,
+    config?: SaveUserSettingsConfig,
+  ) => Promise<void>;
   settings: Settings | undefined;
 }
 
@@ -26,39 +28,28 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   const { data: userSettings } = useSettings();
   const { mutateAsync: saveSettings } = useSaveSettings();
 
-  const [isUpToDate, setIsUpToDate] = React.useState(settingsAreUpToDate());
-
-  const saveUserSettings = async (newSettings: Partial<Settings>) => {
-    const updatedSettings: Partial<Settings> = {
+  const saveUserSettings = async (
+    newSettings: Partial<PostSettings>,
+    config?: SaveUserSettingsConfig,
+  ) => {
+    const updatedSettings: Partial<PostSettings> = {
       ...userSettings,
       ...newSettings,
     };
 
-    if (updatedSettings.LLM_API_KEY === "SET") {
+    if (updatedSettings.LLM_API_KEY === "**********") {
       delete updatedSettings.LLM_API_KEY;
     }
 
-    await saveSettings(updatedSettings, {
-      onSuccess: () => {
-        if (!isUpToDate) {
-          localStorage.setItem(
-            "SETTINGS_VERSION",
-            LATEST_SETTINGS_VERSION.toString(),
-          );
-          setIsUpToDate(true);
-        }
-      },
-    });
+    await saveSettings(updatedSettings, { onSuccess: config?.onSuccess });
   };
 
   const value = React.useMemo(
     () => ({
-      isUpToDate,
-      setIsUpToDate,
       saveUserSettings,
       settings: userSettings,
     }),
-    [isUpToDate, setIsUpToDate, saveUserSettings, userSettings],
+    [saveUserSettings, userSettings],
   );
 
   return <SettingsContext value={value}>{children}</SettingsContext>;

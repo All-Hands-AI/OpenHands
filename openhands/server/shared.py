@@ -4,14 +4,19 @@ import socketio
 from dotenv import load_dotenv
 
 from openhands.core.config import load_app_config
-from openhands.server.config.openhands_config import load_openhands_config
-from openhands.server.session import SessionManager
+from openhands.server.config.server_config import load_server_config
+from openhands.server.conversation_manager.conversation_manager import (
+    ConversationManager,
+)
 from openhands.storage import get_file_store
+from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.settings.settings_store import SettingsStore
+from openhands.utils.import_utils import get_impl
 
 load_dotenv()
 
 config = load_app_config()
-openhands_config = load_openhands_config()
+server_config = load_server_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
 
 client_manager = None
@@ -27,4 +32,15 @@ sio = socketio.AsyncServer(
     async_mode='asgi', cors_allowed_origins='*', client_manager=client_manager
 )
 
-session_manager = SessionManager(sio, config, file_store)
+ConversationManagerImpl = get_impl(
+    ConversationManager,  # type: ignore
+    server_config.conversation_manager_class,
+)
+conversation_manager = ConversationManagerImpl.get_instance(sio, config, file_store)
+
+SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)  # type: ignore
+
+ConversationStoreImpl = get_impl(
+    ConversationStore,  # type: ignore
+    server_config.conversation_store_class,
+)

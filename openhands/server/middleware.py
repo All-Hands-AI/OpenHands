@@ -11,7 +11,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
 from starlette.types import ASGIApp
 
-from openhands.server.shared import session_manager
+from openhands.server import shared
+from openhands.server.auth import get_user_id
 from openhands.server.types import SessionMiddlewareInterface
 
 
@@ -146,8 +147,8 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         """
         Attach the user's session based on the provided authentication token.
         """
-        request.state.conversation = await session_manager.attach_to_conversation(
-            request.state.sid
+        request.state.conversation = (
+            await shared.conversation_manager.attach_to_conversation(request.state.sid)
         )
         if not request.state.conversation:
             return JSONResponse(
@@ -160,7 +161,9 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         """
         Detach the user's session.
         """
-        await session_manager.detach_from_conversation(request.state.conversation)
+        await shared.conversation_manager.detach_from_conversation(
+            request.state.conversation
+        )
 
     async def __call__(self, request: Request, call_next: Callable):
         if not self._should_attach(request):
@@ -178,3 +181,21 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
             await self._detach_session(request)
 
         return response
+
+
+class GitHubTokenMiddleware(SessionMiddlewareInterface):
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, request: Request, call_next: Callable):
+        settings_store = await shared.SettingsStoreImpl.get_instance(
+            shared.config, get_user_id(request)
+        )
+        settings = await settings_store.load()
+
+        if settings and settings.github_token:
+            request.state.github_token = settings.github_token
+        else:
+            request.state.github_token = None
+
+        return await call_next(request)
