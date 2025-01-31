@@ -1,13 +1,13 @@
 import { QueryClientConfig, QueryCache } from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { renderToastIfError } from "./utils/render-toast-if-error";
 
-const QUERY_KEYS_TO_IGNORE = ["authenticated", "hosts"];
+const QUERY_KEYS_TO_IGNORE = ["authenticated", "hosts", "settings"];
 
 export const queryClientConfig: QueryClientConfig = {
   queryCache: new QueryCache({
     onError: (error, query) => {
       if (!QUERY_KEYS_TO_IGNORE.some((key) => query.queryKey.includes(key))) {
-        toast.error(error.message);
+        renderToastIfError(error);
       }
     },
   }),
@@ -18,7 +18,7 @@ export const queryClientConfig: QueryClientConfig = {
     },
     mutations: {
       onError: (error) => {
-        toast.error(error.message);
+        renderToastIfError(error);
       },
     },
   },

@@ -6,19 +6,10 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth import get_user_id
 from openhands.server.services.github_service import GitHubService
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
-from openhands.server.shared import config, openhands_config
-from openhands.storage.conversation.conversation_store import ConversationStore
-from openhands.storage.settings.settings_store import SettingsStore
+from openhands.server.shared import SettingsStoreImpl, config
 from openhands.utils.async_utils import call_sync_from_async
-from openhands.utils.import_utils import get_impl
 
 app = APIRouter(prefix='/api')
-
-SettingsStoreImpl = get_impl(SettingsStore, openhands_config.settings_store_class)  # type: ignore
-ConversationStoreImpl = get_impl(
-    ConversationStore,  # type: ignore
-    openhands_config.conversation_store_class,
-)
 
 
 @app.get('/settings')
@@ -67,7 +58,9 @@ async def store_settings(
             logger.warning(f'Invalid GitHub token: {e}')
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'error': 'Invalid GitHub token'},
+                content={
+                    'error': 'Invalid GitHub token. Please make sure it is valid.'
+                },
             )
 
     try:
@@ -83,6 +76,11 @@ async def store_settings(
 
             if settings.github_token is None:
                 settings.github_token = existing_settings.github_token
+
+            if settings.user_consents_to_analytics is None:
+                settings.user_consents_to_analytics = (
+                    existing_settings.user_consents_to_analytics
+                )
 
         response = JSONResponse(
             status_code=status.HTTP_200_OK,
@@ -103,10 +101,10 @@ async def store_settings(
         await settings_store.store(settings)
         return response
     except Exception as e:
-        logger.warning(f'Invalid token: {e}')
+        logger.warning(f'Something went wrong storing settings: {e}')
         return JSONResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Invalid token'},
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong storing settings'},
         )
 
 

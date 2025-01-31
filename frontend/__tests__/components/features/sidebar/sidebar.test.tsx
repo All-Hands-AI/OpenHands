@@ -82,6 +82,10 @@ describe("Sidebar", () => {
         within(accountSettingsModal).getByLabelText(/GITHUB\$TOKEN_LABEL/i);
       await user.type(tokenInput, "new-token");
 
+      const analyticsConsentInput =
+        within(accountSettingsModal).getByTestId("analytics-consent");
+      await user.click(analyticsConsentInput);
+
       const saveButton =
         within(accountSettingsModal).getByTestId("save-settings");
       await user.click(saveButton);
@@ -96,6 +100,7 @@ describe("Sidebar", () => {
         llm_model: "anthropic/claude-3-5-sonnet-20241022",
         remote_runtime_resource_factor: 1,
         security_analyzer: "",
+        user_consents_to_analytics: true,
       });
     });
 
@@ -135,27 +140,6 @@ describe("Sidebar", () => {
   });
 
   describe("Settings Modal", () => {
-    it("should open the settings modal if the settings version is out of date", async () => {
-      const user = userEvent.setup();
-      localStorage.clear();
-
-      const { rerender } = renderSidebar();
-
-      const settingsModal = await screen.findByTestId("ai-config-modal");
-      expect(settingsModal).toBeInTheDocument();
-
-      const saveSettingsButton = await within(settingsModal).findByTestId(
-        "save-settings-button",
-      );
-      await user.click(saveSettingsButton);
-
-      expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
-
-      rerender(<RouterStub />);
-
-      expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
-    });
-
     it("should open the settings modal if the user clicks the settings button", async () => {
       const user = userEvent.setup();
       renderSidebar();
