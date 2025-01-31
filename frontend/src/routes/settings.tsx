@@ -5,6 +5,7 @@ import { SettingsSwitch } from "#/components/features/settings/settings-switch";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
 import { HelpLink } from "#/components/features/settings/help-link";
+import { SettingsDropdown } from "#/components/features/settings/settings-dropdown";
 
 function SettingsScreen() {
   const { data: config } = useConfig();
@@ -63,6 +64,18 @@ function SettingsScreen() {
             type="text"
             className="w-[680px]"
             showOptionalTag
+          />
+
+          <SettingsDropdown
+            testId="timezone-dropdown"
+            label="Timezone"
+            options={[
+              { label: "UTC", value: "utc" },
+              { label: "PST", value: "pst" },
+              { label: "EST", value: "est" },
+            ]}
+            showOptionalTag
+            className="w-[680px]"
           />
 
           <SettingsSwitch testId="enable-analytics-switch" showOptionalTag>
