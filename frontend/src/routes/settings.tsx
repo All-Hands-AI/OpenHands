@@ -52,7 +52,9 @@ function SettingsScreen() {
           )}
 
           {isGitHubTokenSet && (
-            <BrandButton variant="primary">Disconnect from GitHub</BrandButton>
+            <BrandButton variant="secondary">
+              Disconnect from GitHub
+            </BrandButton>
           )}
 
           <SettingsInput
