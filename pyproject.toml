@@ -65,7 +65,7 @@ runloop-api-client = "0.15.0"
 libtmux = ">=0.37,<0.40"
 pygithub = "^2.5.0"
 joblib = "*"
-openhands-aci = { git = "https://github.com/All-Hands-AI/openhands-aci.git", branch = "test-memory-leak-file-edits", rev = "f9e3edea06db8791a15bdf625bdeeba62a3e2cf0" }
+openhands-aci = "^0.2.0"
 python-socketio = "^5.11.4"
 redis = "^5.2.0"
 sse-starlette = "^2.1.3"
