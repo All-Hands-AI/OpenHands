@@ -61,6 +61,16 @@ class GithubClient:
         except httpx.HTTPError as e:
             raise HTTPException(status_code=500, detail=f'HTTP error: {str(e)}')
 
+    async def get_user(self):
+        url = f'{self.BASE_URL}/user'
+        return await self._fetch_data(url)
+
+    async def get_installation_ids(self):
+        url = f'{self.BASE_URL}/user/installations'
+        response = await self._fetch_data(url)
+        data = response.json()
+        return data.get('installations', [])
+
     async def get_repositories(
         self, page: int, per_page: int, sort: str, installation_id: int | None
     ):
@@ -106,22 +116,9 @@ async def get_github_user(github_token: str = Depends(require_github_token)):
 async def get_github_installation_ids(
     github_token: str = Depends(require_github_token),
 ):
-    headers = generate_github_headers(github_token)
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                'https://api.github.com/user/installations', headers=headers
-            )
-            response.raise_for_status()
-            data = response.json()
-            ids = [installation['id'] for installation in data['installations']]
-            return JSONResponse(content=ids)
-
-    except httpx.HTTPError as e:
-        raise HTTPException(
-            status_code=e.response.status_code if hasattr(e, 'response') else 500,
-            detail=f'Error fetching installations: {str(e)}',
-        )
+    client = GithubClient(github_token)
+    installations = await client.get_installation_ids()
+    return JSONResponse(content=[i['id'] for i in installations])
 
 
 @app.get('/search/repositories')
