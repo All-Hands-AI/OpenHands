@@ -7,10 +7,11 @@ function OAuthGitHubCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const code = searchParams.get("code");
+  const redirectUrl = `${requesterUrl.origin}/oauth/github/callback`;
 
-  const { isSuccess, error } = useQuery({
-    queryKey: ["access_token", code],
-    queryFn: () => OpenHands.getGitHubAccessToken(code!),
+  const { data, isSuccess, error } = useQuery({
+    queryKey: ["access_token", code, redirectUrl],
+    queryFn: () => OpenHands.getGitHubAccessToken(code!, redirectUrl),
     enabled: !!code,
   });
 

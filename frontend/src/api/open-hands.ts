@@ -173,7 +173,7 @@ class OpenHands {
   static async getGitHubAccessToken(
     code: string,
   ): Promise<GitHubAccessTokenResponse> {
-    const { data } = await openHands.post<GitHubAccessTokenResponse>(
+    const { data } = await openHands.get<GitHubAccessTokenResponse>(
       "/api/github/callback",
       {
         code,

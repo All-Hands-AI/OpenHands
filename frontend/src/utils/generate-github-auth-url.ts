@@ -5,7 +5,7 @@
  * @returns The URL to redirect to for GitHub OAuth
  */
 export const generateGitHubAuthUrl = (clientId: string, requestUrl: URL) => {
-  const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
+  const redirectUri = `${requestUrl.origin}/api/github/callback`;
   const scope = "repo,user,workflow,offline_access";
-  return `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
+  return `http://localhost:8080/realms/allhands/protocol/openid-connect/auth?client_id=allhands&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=openid+email+profile&state=some-state-value&nonce=222`;
 };
