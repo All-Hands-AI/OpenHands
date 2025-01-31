@@ -32,7 +32,6 @@ async def get_github_repositories(
     github_token: str = Depends(require_github_token),
     github_user_id: str | None = Depends(get_user_id),
 ):
-    print('got user id ', github_user_id)
     client = GithubServiceImpl(github_token, github_user_id)
     return await client.fetch_response(
         'get_repositories', page, per_page, sort, installation_id
