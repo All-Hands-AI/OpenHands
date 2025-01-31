@@ -21,6 +21,47 @@ def require_github_token(request: Request):
     return github_token
 
 
+class GithubClient:
+    BASE_URL = 'https://api.github.com'
+
+    def __init__(self, token: str):
+        self.token = token
+        self.headers = {
+            'Authorization': f'Bearer {self.token}',
+            'Accept': 'application/vnd.github.v3+json',
+        }
+
+    def should_refresh(self, status_code: int):
+        if openhands_config.APP_MODE == 'SAAS' and status_code == 401:
+            return True
+
+        return False
+
+    async def _refresh_token(self):
+        pass
+
+    async def _fetch_data(self, url: str, params: dict | None = None):
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, headers=self.headers, params=params)
+                if self.should_refresh(response.status_code):
+                    await self._refresh_token()
+                    response = await client.get(
+                        url, headers=self.headers, params=params
+                    )
+                response.raise_for_status()
+                return response
+        except httpx.HTTPStatusError as e:
+            status_code = e.response.status_code
+            error_detail = e.response.text
+            raise HTTPException(
+                status_code=status_code,
+                detail=f'GitHub API error: {error_detail}',
+            )
+        except httpx.HTTPError as e:
+            raise HTTPException(status_code=500, detail=f'HTTP error: {str(e)}')
+
+
 @app.get('/repositories')
 async def get_github_repositories(
     page: int = 1,
@@ -93,7 +134,9 @@ async def get_github_installation_ids(
     headers = generate_github_headers(github_token)
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get('https://api.github.com/user/installations', headers=headers)
+            response = await client.get(
+                'https://api.github.com/user/installations', headers=headers
+            )
             response.raise_for_status()
             data = response.json()
             ids = [installation['id'] for installation in data['installations']]
