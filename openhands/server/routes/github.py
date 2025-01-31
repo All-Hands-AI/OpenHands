@@ -1,5 +1,4 @@
 import httpx
-import requests
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from github import Github
@@ -48,12 +47,11 @@ async def get_github_repositories(
             repos: list[Repository] = await call_sync_from_async(
                 repos_list.get_page, page - 1
             )
-            print('repos', len(repos))
             repos = [repo.raw_data for repo in repos]
 
             json_response = JSONResponse(content=repos)
 
-            # PyGitHub does not expose next link header, we construct it
+            # PyGitHub does not expose next link header, we construct it by checking if we've reach total expected count
             if (page - 1) * 30 + len(repos) < repos_list.totalCount:
                 next_page_url = f'<https://api.github.com/user/repos?page={page+1}&per_page=30>; rel="next",'
                 json_response.headers['Link'] = next_page_url
@@ -112,32 +110,25 @@ async def search_github_repositories(
     order: str = 'desc',
     github_token: str = Depends(require_github_token),
 ):
-    headers = generate_github_headers(github_token)
-    params = {
-        'q': query,
-        'per_page': per_page,
-        'sort': sort,
-        'order': order,
-    }
-
     try:
-        response = await call_sync_from_async(
-            requests.get,
-            'https://api.github.com/search/repositories',
-            headers=headers,
-            params=params,
-        )
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
+        with Github(github_token) as gh:
+            gh.per_page = per_page
+            repos_list: PaginatedList[Repository] = await call_sync_from_async(
+                gh.search_repositories, query, sort, order
+            )
+
+            repos: list[Repository] = await call_sync_from_async(repos_list.get_page, 0)
+
+            repos = [repo.raw_data for repo in repos]
+
+            print('repos', repos)
+            return JSONResponse(content=repos)
+
+    except GithubException as e:
         raise HTTPException(
-            status_code=response.status_code if response else 500,
-            detail=f'Error searching repositories: {str(e)}',
+            status_code=e.status if e else 500,
+            detail=f'Error fetching user: {str(e)}',
         )
-
-    json_response = JSONResponse(content=response.json())
-    response.close()
-
-    return json_response
 
 
 def generate_github_headers(token: str) -> dict[str, str]:
