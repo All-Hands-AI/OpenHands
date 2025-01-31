@@ -21,12 +21,26 @@ export function SettingsDropdown({
   const [selectedOption, setSelectedOption] = React.useState("");
   const [dropdownOptions, setDropdownOptions] = React.useState(options);
 
+  const handleInputChange = (value: string) => {
+    const filteredOptions = options.filter((option) =>
+      option.label.toLowerCase().includes(value.toLowerCase()),
+    );
+    setSelectedOption(value);
+    setDropdownOptions(filteredOptions);
+  };
+
+  const handleSelectOption = (option: { label: string; value: string }) => {
+    setSelectedOption(option.label);
+    setDropdownIsOpen(false);
+    setDropdownOptions(options);
+  };
+
   return (
-    <div>
+    <div className="relative w-fit">
       <label
         onFocus={() => setDropdownIsOpen(true)}
         onBlur={() => setDropdownIsOpen(false)}
-        className={cn("flex flex-col gap-2.5 w-fit", className)}
+        className={cn("flex flex-col gap-2.5 w-full", className)}
       >
         <div className="flex items-center gap-1">
           <span className="text-sm">{label}</span>
@@ -35,29 +49,23 @@ export function SettingsDropdown({
         <input
           data-testid={testId}
           type="text"
-          value={selectedOption}
-          onChange={(e) => {
-            const filteredOptions = options.filter((option) =>
-              option.label.toLowerCase().includes(e.target.value.toLowerCase()),
-            );
-            setSelectedOption(e.target.value);
-            setDropdownOptions(filteredOptions);
-          }}
           className="bg-[#454545] border border-[#717888] h-10 w-full rounded p-2"
+          value={selectedOption}
+          onChange={(e) => handleInputChange(e.target.value)}
         />
       </label>
 
       {dropdownIsOpen && (
-        <div data-testid="dropdown">
+        <div
+          data-testid="dropdown"
+          className="absolute bg-[#454545] border border-[#717888] border-t-0 w-full rounded-b-xl"
+        >
           {dropdownOptions.map((option) => (
             <div
               key={option.value}
               data-testid="dropdown-option"
-              onMouseDown={() => {
-                setSelectedOption(option.label);
-                setDropdownIsOpen(false);
-                setDropdownOptions(options);
-              }}
+              className="p-2 cursor-pointer hover:bg-[#717888] last:rounded-b-xl"
+              onMouseDown={() => handleSelectOption(option)}
             >
               {option.label}
             </div>

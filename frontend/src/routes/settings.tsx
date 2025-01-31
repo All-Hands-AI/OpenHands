@@ -73,6 +73,12 @@ function SettingsScreen() {
               { label: "UTC", value: "utc" },
               { label: "PST", value: "pst" },
               { label: "EST", value: "est" },
+              { label: "CST", value: "cst" },
+              { label: "MST", value: "mst" },
+              { label: "AKST", value: "akst" },
+              { label: "HST", value: "hst" },
+              { label: "CET", value: "cet" },
+              { label: "EET", value: "eet" },
             ]}
             showOptionalTag
             className="w-[680px]"
