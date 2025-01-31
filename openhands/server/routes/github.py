@@ -2,6 +2,10 @@ import httpx
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
+from github import Github
+from github.AuthenticatedUser import AuthenticatedUser
+from github.GithubException import GithubException
+from github.NamedUser import NamedUser
 
 from openhands.server.auth import get_github_token
 from openhands.utils.async_utils import call_sync_from_async
@@ -63,18 +67,15 @@ async def get_github_repositories(
 
 @app.get('/user')
 async def get_github_user(github_token: str = Depends(require_github_token)):
-    headers = generate_github_headers(github_token)
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get('https://api.github.com/user', headers=headers)
-            response.raise_for_status()  # Raise an error for HTTP codes >= 400
-            json_response = JSONResponse(content=response.json())
-
-            return json_response
-
-    except requests.exceptions.RequestException as e:
+        with Github(github_token) as gh:
+            gh_user: NamedUser | AuthenticatedUser = await call_sync_from_async(
+                gh.get_user
+            )
+            return JSONResponse(content=gh_user.raw_data)
+    except GithubException as e:
         raise HTTPException(
-            status_code=response.status_code if response else 500,
+            status_code=e.status if e else 500,
             detail=f'Error fetching user: {str(e)}',
         )
 
