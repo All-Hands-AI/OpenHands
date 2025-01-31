@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
-from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth import get_user_id
@@ -120,8 +119,6 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
 
     # Convert the `llm_api_key` and `github_token` to a `SecretStr` instance
     filtered_settings_data['llm_api_key'] = settings_with_token_data.llm_api_key
-    filtered_settings_data['github_token'] = SecretStr(
-        settings_with_token_data.github_token
-    )
+    filtered_settings_data['github_token'] = settings_with_token_data.github_token
 
     return Settings(**filtered_settings_data)

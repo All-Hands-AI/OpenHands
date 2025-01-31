@@ -89,9 +89,7 @@ class POSTSettingsModel(Settings):
 
     # Override the serializer for the GitHub token to handle the string input
     @field_serializer('github_token')
-    def github_token_serializer(
-        self, github_token: str | None, info: SerializationInfo
-    ):
+    def github_token_serializer(self, github_token: str | None):
         return github_token
 
 
