@@ -23,7 +23,7 @@ function SettingsScreen() {
           Settings
         </header>
 
-        <div className="flex flex-col gap-6 grow overflow-y-auto">
+        <div className="flex flex-col gap-6 grow overflow-y-auto px-11 py-9">
           <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
             Account Settings
           </h2>
@@ -52,17 +52,21 @@ function SettingsScreen() {
           <SettingsSwitch testId="enable-analytics-switch" showOptionalTag>
             Enable analytics
           </SettingsSwitch>
-          <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-            LLM Settings
-          </h2>
-          <SettingsSwitch
-            testId="advanced-settings-switch"
-            onToggle={(isToggled) =>
-              setLlmConfigMode(isToggled ? "advanced" : "basic")
-            }
-          >
-            Advanced
-          </SettingsSwitch>
+
+          <div className="flex items-center gap-7">
+            <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
+              LLM Settings
+            </h2>
+            <SettingsSwitch
+              testId="advanced-settings-switch"
+              onToggle={(isToggled) =>
+                setLlmConfigMode(isToggled ? "advanced" : "basic")
+              }
+            >
+              Advanced
+            </SettingsSwitch>
+          </div>
+
           {llmConfigMode === "basic" && (
             <div className="flex w-[680px] justify-between gap-[46px]">
               <SettingsInput
