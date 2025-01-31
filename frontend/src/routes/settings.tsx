@@ -28,7 +28,9 @@ function SettingsScreen() {
             Account Settings
           </h2>
           {isSaas && (
-            <button type="button">Configure GitHub Repositories</button>
+            <BrandButton variant="primary">
+              Configure GitHub Repositories
+            </BrandButton>
           )}
           {!isSaas && (
             <SettingsInput
@@ -117,7 +119,7 @@ function SettingsScreen() {
             />
           )}
 
-          {config?.APP_MODE === "saas" && llmConfigMode === "advanced" && (
+          {isSaas && llmConfigMode === "advanced" && (
             <SettingsInput
               testId="runtime-settings-input"
               label="Runtime Settings"
