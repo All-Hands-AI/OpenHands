@@ -178,9 +178,14 @@ class OpenHands {
     const { data } = await openHands.get<GitHubAccessTokenResponse>(
       "/api/github/callback",
       {
-        code,
-        redirectUri
+        params: {
+          code,
+          redirectUri,
+        },
       },
+    );
+    console.debug(
+      `/api/github/callback response data: ${JSON.stringify(data)}`,
     );
     return data;
   }
