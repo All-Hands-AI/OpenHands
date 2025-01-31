@@ -4,6 +4,7 @@ import { SettingsInput } from "#/components/features/settings/settings-input";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
+import { HelpLink } from "#/components/features/settings/help-link";
 
 function SettingsScreen() {
   const { data: config } = useConfig();
@@ -28,29 +29,40 @@ function SettingsScreen() {
             Account Settings
           </h2>
           {isSaas && (
-            <BrandButton variant="primary">
+            <BrandButton variant="secondary">
               Configure GitHub Repositories
             </BrandButton>
           )}
           {!isSaas && (
-            <SettingsInput
-              testId="github-token-input"
-              label="GitHub Token"
-              type="password"
-              className="w-[680px]"
-            />
+            <>
+              <SettingsInput
+                testId="github-token-input"
+                label="GitHub Token"
+                type="password"
+                className="w-[680px]"
+              />
+
+              <HelpLink
+                testId="github-token-help-anchor"
+                text="Get your token"
+                linkText="here"
+                href="https://docs.all-hands.dev/modules/usage/llms"
+              />
+            </>
           )}
+
           {isGitHubTokenSet && (
             <BrandButton variant="primary">Disconnect from GitHub</BrandButton>
           )}
-          <label className="flex flex-col gap-2">
-            <span className="text-sm">Language</span>
-            <input
-              data-testid="language-input"
-              type="text"
-              className="bg-[#454545] border border-[#717888] h-10 w-[680px] rounded p-2"
-            />
-          </label>
+
+          <SettingsInput
+            testId="language-input"
+            label="Language"
+            type="text"
+            className="w-[680px]"
+            showOptionalTag
+          />
+
           <SettingsSwitch testId="enable-analytics-switch" showOptionalTag>
             Enable analytics
           </SettingsSwitch>
@@ -110,6 +122,13 @@ function SettingsScreen() {
             className="w-[680px]"
           />
 
+          <HelpLink
+            testId="llm-api-key-help-anchor"
+            text="Don't know your API key?"
+            linkText="Click here for instructions"
+            href="https://docs.all-hands.dev/modules/usage/llms"
+          />
+
           {llmConfigMode === "advanced" && (
             <SettingsInput
               testId="agent-input"
@@ -134,6 +153,7 @@ function SettingsScreen() {
               label="Security Analyzer"
               type="text"
               className="w-[680px]"
+              showOptionalTag
             />
           )}
           {llmConfigMode === "advanced" && (

@@ -40,6 +40,7 @@ describe("Settings Screen", () => {
       renderSettingsScreen();
 
       screen.getByTestId("github-token-input");
+      screen.getByTestId("github-token-help-anchor");
       screen.getByTestId("language-input");
       screen.getByTestId("enable-analytics-switch");
     });
@@ -103,7 +104,10 @@ describe("Settings Screen", () => {
 
       await waitFor(() => {
         const input = screen.queryByTestId("github-token-input");
+        const helpAnchor = screen.queryByTestId("github-token-help-anchor");
+
         expect(input).not.toBeInTheDocument();
+        expect(helpAnchor).not.toBeInTheDocument();
       });
     });
   });
@@ -116,6 +120,7 @@ describe("Settings Screen", () => {
       screen.getByTestId("llm-provider-input");
       screen.getByTestId("llm-model-input");
       screen.getByTestId("llm-api-key-input");
+      screen.getByTestId("llm-api-key-help-anchor");
     });
 
     it("should render the advanced LLM settings if the advanced switch is toggled", async () => {

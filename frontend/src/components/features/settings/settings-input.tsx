@@ -1,9 +1,11 @@
 import { cn } from "#/utils/utils";
+import { OptionalTag } from "./optional-tag";
 
 interface SettingsInputProps {
   testId?: string;
   label: string;
   type: React.HTMLInputTypeAttribute;
+  showOptionalTag?: boolean;
   className?: string;
 }
 
@@ -11,11 +13,15 @@ export function SettingsInput({
   testId,
   label,
   type,
+  showOptionalTag,
   className,
 }: SettingsInputProps) {
   return (
     <label className={cn("flex flex-col gap-2.5 w-fit", className)}>
-      <span className="text-sm">{label}</span>
+      <div className="flex items-center gap-1">
+        <span className="text-sm">{label}</span>
+        {showOptionalTag && <OptionalTag />}
+      </div>
       <input
         data-testid={testId}
         type={type}
