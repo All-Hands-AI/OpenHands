@@ -188,7 +188,7 @@ api_key = "custom-only-api-key"
     assert custom_only.model == 'custom-only-model'
     assert custom_only.api_key.get_secret_value() == 'custom-only-api-key'
     assert custom_only.embedding_model == 'local'  # default value
-    assert custom_only.num_retries == 8  # default value
+    assert custom_only.num_retries == 4  # default value
 
 
 def test_load_from_toml_llm_invalid_config(
