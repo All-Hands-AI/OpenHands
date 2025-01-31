@@ -7,6 +7,7 @@ function OAuthGitHubCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const code = searchParams.get("code");
+  const requesterUrl = new URL(window.location.href);
   const redirectUrl = `${requesterUrl.origin}/oauth/github/callback`;
 
   const { data, isSuccess, error } = useQuery({

@@ -168,15 +168,18 @@ class OpenHands {
 
   /**
    * @param code Code provided by GitHub
+   * @param redirectUri Code provided by GitHub
    * @returns GitHub access token
    */
   static async getGitHubAccessToken(
     code: string,
+    redirectUri: string,
   ): Promise<GitHubAccessTokenResponse> {
     const { data } = await openHands.get<GitHubAccessTokenResponse>(
       "/api/github/callback",
       {
         code,
+        redirectUri
       },
     );
     return data;
