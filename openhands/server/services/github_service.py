@@ -1,6 +1,5 @@
 import httpx
 import requests
-from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 
 from openhands.server.shared import server_config
@@ -23,11 +22,8 @@ class GitHubService:
 
     #     return response.json()
 
-    def _should_refresh(self, status_code: int):
-        if server_config.app_mode == 'SAAS' and status_code == 401:
-            return True
-
-        return False
+    def _has_token_expired(self, status_code: int):
+        return status_code == 401
 
     async def _refresh_token(self):
         pass
@@ -36,7 +32,9 @@ class GitHubService:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(url, headers=self.headers, params=params)
-                if self._should_refresh(response.status_code):
+                if server_config.app_mode == 'SAAS' and self._has_token_expired(
+                    response.status_code
+                ):
                     await self._refresh_token()
                     response = await client.get(
                         url, headers=self.headers, params=params
@@ -48,12 +46,11 @@ class GitHubService:
             status_code = e.response.status_code
             error_detail = e.response.text
 
-            raise HTTPException(
-                status_code=status_code,
-                detail=f'GitHub API error: {error_detail}',
+            return httpx.Response(
+                status_code=status_code, json=f'GitHub API error: {error_detail}'
             )
         except httpx.HTTPError as e:
-            raise HTTPException(status_code=500, detail=f'HTTP error: {str(e)}')
+            return httpx.Response(status_code=500, json=f'HTTP error: {str(e)}')
 
     async def get_user(self):
         url = f'{self.BASE_URL}/user'
