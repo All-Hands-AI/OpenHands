@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import userEvent, { UserEvent } from "@testing-library/user-event";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
 import SettingsScreen from "#/routes/settings";
@@ -117,8 +118,77 @@ describe("Settings Screen", () => {
       screen.getByTestId("llm-api-key-input");
     });
 
-    it.todo(
-      "should render the advanced LLM settings if the advanced switch is toggled",
-    );
+    it("should render the advanced LLM settings if the advanced switch is toggled", async () => {
+      const user = userEvent.setup();
+      renderSettingsScreen();
+
+      // Should not render the advanced settings by default
+      expect(
+        screen.queryByTestId("llm-custom-model-input"),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId("base-url-input")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("agent-input")).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("security-analyzer-input"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("enable-confirmation-mode-switch"),
+      ).not.toBeInTheDocument();
+
+      const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+      await user.click(advancedSwitch);
+
+      // Should render the advanced settings
+      expect(
+        screen.queryByTestId("llm-provider-input"),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId("llm-model-input")).not.toBeInTheDocument();
+
+      screen.getByTestId("llm-custom-model-input");
+      screen.getByTestId("base-url-input");
+      screen.getByTestId("agent-input");
+
+      // "Invariant" security analyzer
+      screen.getByTestId("security-analyzer-input");
+      screen.getByTestId("enable-confirmation-mode-switch");
+    });
+
+    describe("Advanced LLM Settings", () => {
+      const toggleAdvancedSettings = async (user: UserEvent) => {
+        const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+        await user.click(advancedSwitch);
+      };
+
+      it("should not render the runtime settings input if OSS mode", async () => {
+        const user = userEvent.setup();
+        const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+        getConfigSpy.mockResolvedValue({
+          APP_MODE: "oss",
+          GITHUB_CLIENT_ID: "123",
+          POSTHOG_CLIENT_KEY: "456",
+        });
+
+        renderSettingsScreen();
+
+        await toggleAdvancedSettings(user);
+        const input = screen.queryByTestId("runtime-settings-input");
+        expect(input).not.toBeInTheDocument();
+      });
+
+      it("should render the runtime settings input if SaaS mode", async () => {
+        const user = userEvent.setup();
+        const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+        getConfigSpy.mockResolvedValue({
+          APP_MODE: "saas",
+          GITHUB_CLIENT_ID: "123",
+          POSTHOG_CLIENT_KEY: "456",
+        });
+
+        renderSettingsScreen();
+
+        await toggleAdvancedSettings(user);
+        screen.getByTestId("runtime-settings-input");
+      });
+    });
   });
 });
