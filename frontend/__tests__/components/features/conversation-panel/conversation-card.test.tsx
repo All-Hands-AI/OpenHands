@@ -144,9 +144,9 @@ describe("ConversationCard", () => {
 
     await user.clear(titleInput);
     await user.type(titleInput, "New Conversation Name   ");
-    await user.keyboard("{Enter}");
-    // Wait for the form submission to complete
-    await new Promise(resolve => setTimeout(resolve, 0));
+    // hit enter key
+    const enterEvent = new KeyboardEvent('keyup', { key: 'Enter' });
+    titleInput.dispatchEvent(enterEvent);
 
     expect(onChangeTitle).toHaveBeenCalledWith("New Conversation Name");
     title = screen.getByTestId("conversation-card-title");
