@@ -80,9 +80,13 @@ class GitHubService:
 
     @handle_github_errors
     async def get_installation_ids(self):
-        # Note: PyGithub doesn't directly support installations
-        # We'll need to implement this separately if needed
-        raise NotImplementedError("Installation IDs not supported yet")
+        async def get_installations():
+            user = await call_sync_from_async(self.github.get_user)
+            installations = await call_sync_from_async(user.get_installations)
+            return await call_sync_from_async(
+                lambda: [installation.id for installation in installations]
+            )
+        return await get_installations()
 
     @handle_github_errors
     async def search_repositories(
