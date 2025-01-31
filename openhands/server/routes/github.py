@@ -65,12 +65,6 @@ class GithubClient:
         url = f'{self.BASE_URL}/user'
         return await self._fetch_data(url)
 
-    async def get_installation_ids(self):
-        url = f'{self.BASE_URL}/user/installations'
-        response = await self._fetch_data(url)
-        data = response.json()
-        return data.get('installations', [])
-
     async def get_repositories(
         self, page: int, per_page: int, sort: str, installation_id: int | None
     ):
@@ -81,6 +75,21 @@ class GithubClient:
             url = f'{self.BASE_URL}/user/repos'
             params['sort'] = sort
         return await self._fetch_data(url, params)
+
+    async def get_installation_ids(self):
+        url = f'{self.BASE_URL}/user/installations'
+        response = await self._fetch_data(url)
+        data = response.json()
+        return data.get('installations', [])
+
+    async def search_repositories(
+        self, query: str, per_page: int, sort: str, order: str
+    ):
+        url = f'{self.BASE_URL}/search/repositories'
+        params = {'q': query, 'per_page': per_page, 'sort': sort, 'order': order}
+        return await call_sync_from_async(
+            requests.get, url, headers=self.headers, params=params
+        )
 
     async def fetch_response(self, method: str, *args, **kwargs):
         response = await getattr(self, method)(*args, **kwargs)
@@ -129,36 +138,8 @@ async def search_github_repositories(
     order: str = 'desc',
     github_token: str = Depends(require_github_token),
 ):
-    headers = generate_github_headers(github_token)
-    params = {
-        'q': query,
-        'per_page': per_page,
-        'sort': sort,
-        'order': order,
-    }
-
-    try:
-        response = await call_sync_from_async(
-            requests.get,
-            'https://api.github.com/search/repositories',
-            headers=headers,
-            params=params,
-        )
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(
-            status_code=response.status_code if response else 500,
-            detail=f'Error searching repositories: {str(e)}',
-        )
-
+    client = GithubClient(github_token)
+    response = await client.search_repositories(query, per_page, sort, order)
     json_response = JSONResponse(content=response.json())
     response.close()
-
     return json_response
-
-
-def generate_github_headers(token: str) -> dict[str, str]:
-    return {
-        'Authorization': f'Bearer {token}',
-        'Accept': 'application/vnd.github.v3+json',
-    }
