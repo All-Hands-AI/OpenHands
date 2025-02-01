@@ -3801,6 +3801,37 @@
         "pt": "Erro ao autenticar com o provedor LLM. Por favor, verifique sua chave API",
         "tr": "LLM sağlayıcısı ile kimlik doğrulama hatası. Lütfen API anahtarınızı kontrol edin"
     },
+    "STATUS$ERROR_LLM_SERVICE_UNAVAILABLE": {
+        "en": "The LLM provider is currently unavailable. Please try again later.",
+        "es": "El proveedor LLM no está actualmente disponible. Por favor, inténtelo de nuevo más tarde.",
+        "zh-CN": "LLM提供商当前不可用",
+        "zh-TW": "LLM提供商目前無法使用",
+        "ko-KR": "LLM 공급자가 현재 사용 불가능합니다",
+        "ja": "LLMプロバイダーが現在利用できません。後でもう一度試してください。",
+        "no": "LLM-leverandøren er nå ikke tilgjengelig. Vennligst prøv igjen senere.",
+        "ar": "المزود LLM غير متاح حالياً. يرجى المحاولة مرة أخرى لاحقًا.",
+        "de": "Der LLM-Anbieter ist derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.",
+        "fr": "Le fournisseur LLM n'est actuellement pas disponible. Veuillez réessayer plus tard.",
+        "it": "Il provider LLM non è attualmente disponibile. Per favore, riprova più tardi.",
+        "pt": "O provedor LLM não está atualmente disponível. Por favor, tente novamente mais tarde.",
+        "tr": "LLM sağlayıcısı şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin."
+    },
+    "STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR": {
+        "en": "The request failed with an internal server error.",
+        "es": "La solicitud falló con un error del servidor interno.",
+        "zh-CN": "请求失败，请稍后再试",
+        "zh-TW": "請求失敗，請稍後再試",
+        "ko-KR": "요청이 실패했습니다. 나중에 다시 시도해주세요.",
+        "ja": "リクエストが内部サーバーエラーで失敗しました。後でもう一度試してください。",
+        "no": "Det oppstod en feil ved tilkobling til kjøretidsmiljøet. Vennligst oppdater siden.",
+        "ar": "حدث خطأ أثناء الاتصال بوقت التشغيل. يرجى تحديث الصفحة.",
+        "de": "Beim Verbinden mit der Laufzeitumgebung ist ein Fehler aufgetreten. Bitte aktualisieren Sie die Seite.",
+        "fr": "Une erreur s'est produite lors de la connexion à l'environnement d'exécution. Veuillez rafraîchir la page.",
+        "it": "Si è verificato un errore durante la connessione al runtime. Aggiorna la pagina.",
+        "pt": "Ocorreu um erro ao conectar ao ambiente de execução. Por favor, atualize a página.",
+        "tr": "Çalışma zamanına bağlanırken bir hata oluştu. Lütfen sayfayı yenileyin."
+    },
+
     "STATUS$ERROR_RUNTIME_DISCONNECTED": {
         "en": "There was an error while connecting to the runtime. Please refresh the page.",
         "zh-CN": "运行时已断开连接",
@@ -3817,7 +3848,19 @@
         "tr": "Çalışma zamanına bağlanırken bir hata oluştu. Lütfen sayfayı yenileyin."
     },
     "STATUS$LLM_RETRY": {
-        "en": "Retrying LLM request"
+        "en": "Retrying LLM request",
+        "es": "Reintentando solicitud LLM",
+        "zh-CN": "重试LLM请求",
+        "zh-TW": "重試LLM請求",
+        "ko-KR": "LLM 요청 재시도",
+        "ja": "LLM リクエストを再試行中",
+        "no": "Gjenforsøker LLM-forespørsel",
+        "ar": "يتم إعادة تحميل الطلب LLM",
+        "de": "LLM-Anfrage erneut versuchen",
+        "fr": "Réessayer la requête LLM",
+        "it": "Ritenta la richiesta LLM",
+        "pt": "Reintentando a solicitação LLM",
+        "tr": "LLM isteğini yeniden deniyor"
     },
     "AGENT_ERROR$BAD_ACTION": {
         "en": "Agent tried to execute a malformed action.",
