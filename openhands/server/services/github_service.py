@@ -68,14 +68,15 @@ class GitHubService:
             params['sort'] = sort
         return await self._fetch_data(url, params)
 
-    async def get_installation_ids(self):
+    async def get_installation_ids(self) -> list[int]:
         url = f'{self.BASE_URL}/user/installations'
         response = await self._fetch_data(url)
         data = response.json()
         if not isinstance(data, dict):  # Ensure data is a dictionary
             return []
 
-        return data.get('installations', [])
+        installations = data.get('installations', [])
+        return [i['id'] for i in installations]
 
     async def search_repositories(
         self, query: str, per_page: int, sort: str, order: str

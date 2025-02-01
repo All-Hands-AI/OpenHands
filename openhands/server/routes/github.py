@@ -53,8 +53,8 @@ async def get_github_installation_ids(
     github_user_id: str | None = Depends(get_user_id),
 ):
     client = GithubServiceImpl(github_token, github_user_id)
-    installations = await client.get_installation_ids()
-    return JSONResponse(content=[i['id'] for i in installations])
+    installations_ids = await client.get_installation_ids()
+    return JSONResponse(content=installations_ids)
 
 
 @app.get('/search/repositories')
