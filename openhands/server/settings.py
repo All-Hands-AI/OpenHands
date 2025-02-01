@@ -54,6 +54,23 @@ class Settings(BaseModel):
 
         return pydantic_encoder(github_token)
 
+    @field_serializer('github_token')
+    def github_token_serializer(
+        self, github_token: SecretStr | None, info: SerializationInfo
+    ):
+        """Custom serializer for the GitHub token.
+
+        To serialize the token instead of ********, set expose_secrets to True in the serialization context.
+        """
+        if github_token is None:
+            return None
+
+        context = info.context
+        if context and context.get('expose_secrets', False):
+            return github_token.get_secret_value()
+
+        return pydantic_encoder(github_token)
+
     @staticmethod
     def from_config() -> Settings | None:
         app_config = load_app_config()
