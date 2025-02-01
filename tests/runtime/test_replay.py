@@ -108,3 +108,38 @@ def test_replay_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
     assert has_error_in_action
 
     _close_test_runtime(runtime)
+
+
+def test_replay_basic_interactions(temp_dir, runtime_cls, run_as_openhands):
+    """
+    Replay a trajectory that involves interactions, i.e. with user messages
+    in the middle. This tests two things:
+    1) The controller should be able to replay all actions without human
+    interference (no asking for user input).
+    2) The user messages in the trajectory should appear in the history.
+    """
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+
+    config = _get_config('basic_interactions')
+
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            initial_user_action=NullAction(),
+            runtime=runtime,
+        )
+    )
+
+    assert state.agent_state == AgentState.FINISHED
+
+    # all user messages appear in the history, so that after a replay (assuming
+    # the trajectory doesn't end with `finish` action), LLM knows about all the
+    # context and can continue
+    for user_message in [
+        "what's 1+1?",
+        "No, I mean by Goldbach's conjecture!",
+        'Finish please',
+    ]:
+        assert user_message in str(state.history)
+
+    _close_test_runtime(runtime)
