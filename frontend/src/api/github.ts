@@ -14,7 +14,7 @@ export const retrieveGitHubAppRepositories = async (
   per_page = 30,
 ) => {
   const installationId = installations[installationIndex];
-  const response = await openHands.get<GitHubAppRepository>(
+  const response = await openHands.get<GitHubRepository[]>(
     "/api/github/repositories",
     {
       params: {
@@ -26,7 +26,11 @@ export const retrieveGitHubAppRepositories = async (
     },
   );
 
-  const link = response.headers.link ?? "";
+  const link =
+    response.data.length > 0 && response.data[0].link_header
+      ? response.data[0].link_header
+      : "";
+
   const nextPage = extractNextPageFromLink(link);
   let nextInstallation: number | null;
 
@@ -39,7 +43,7 @@ export const retrieveGitHubAppRepositories = async (
   }
 
   return {
-    data: response.data.repositories,
+    data: response.data,
     nextPage,
     installationIndex: nextInstallation,
   };
@@ -64,7 +68,10 @@ export const retrieveGitHubUserRepositories = async (
     },
   );
 
-  const link = response.headers.link ?? "";
+  const link =
+    response.data.length > 0 && response.data[0].link_header
+      ? response.data[0].link_header
+      : "";
   const nextPage = extractNextPageFromLink(link);
 
   return { data: response.data, nextPage };
