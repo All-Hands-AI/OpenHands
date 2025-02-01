@@ -17,8 +17,8 @@ When the `run_infer.sh` script is started, it will automatically pull all task i
 
 ```bash
 ./evaluation/benchmarks/the_agent_company/scripts/run_infer.sh \
-  --agent-llm-config <agent-llm-config>  \
-  --env-llm-config <env-llm-config> \
+  --agent-llm-config <agent-llm-config, default to 'agent'>  \
+  --env-llm-config <env-llm-config, default to 'env'> \
   --outputs-path <outputs-path, default to outputs> \
   --server-hostname <server-hostname, default to localhost> \
   --version <version, default to 1.0.0> \

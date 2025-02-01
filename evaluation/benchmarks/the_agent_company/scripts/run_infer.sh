@@ -96,25 +96,27 @@ if [ "$START_PERCENTILE" -lt 0 ] || [ "$END_PERCENTILE" -gt 100 ]; then
     exit 1
 fi
 
-# Calculate line numbers based on percentiles
-start_line=$(echo "scale=0; ($total_lines * $START_PERCENTILE / 100) + 1" | bc)
-end_line=$(echo "scale=0; $total_lines * $END_PERCENTILE / 100" | bc)
-
 echo "Using agent LLM config: $AGENT_LLM_CONFIG"
 echo "Using environment LLM config: $ENV_LLM_CONFIG"
 echo "Outputs path: $OUTPUTS_PATH"
 echo "Server hostname: $SERVER_HOSTNAME"
 echo "Version: $VERSION"
+echo "Start Percentile: $START_PERCENTILE"
+echo "End Percentile: $END_PERCENTILE"
 
 echo "Downloading tasks.md..."
 rm -f tasks.md tasks_subset.md
 wget https://github.com/TheAgentCompany/TheAgentCompany/releases/download/${VERSION}/tasks.md
 
-total_lines=$(wc -l < tasks.md)
+total_lines=$(cat tasks.md | grep "ghcr.io/theagentcompany" | wc -l)
 if [ "$total_lines" -ne 175 ]; then
     echo "Error: Expected 175 tasks in tasks.md but found $total_lines lines"
     exit 1
 fi
+
+# Calculate line numbers based on percentiles
+start_line=$(echo "scale=0; ($total_lines * $START_PERCENTILE / 100) + 1" | bc)
+end_line=$(echo "scale=0; $total_lines * $END_PERCENTILE / 100" | bc)
 
 echo "Using tasks No. $start_line to $end_line (inclusive) out of 1-175 tasks"
 
