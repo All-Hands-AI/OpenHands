@@ -309,7 +309,7 @@ class CodeActAgent(Agent):
                 obs.trigger_by_action == ActionType.BROWSE_INTERACTIVE
                 and obs.set_of_marks is not None
                 and len(obs.set_of_marks) > 0
-                and self.config.codeact_enable_visual_browsing
+                and self.config.enable_som_visual_browsing
                 and self.llm.vision_is_active()
                 and (
                     self.mock_function_calling
