@@ -47,6 +47,6 @@ When the `run_infer.sh` script is started, it will automatically pull all task i
 
 The script is idempotent. If you run it again, it will resume from the last checkpoint. It would usually take 2 days to finish evaluation if you run the whole task set.
 To speed up evaluation, you can use `start-percentile` and `end-percentile` to split the tasks for higher parallelism,
-provided concurrent runs are targeting different servers.
+provided concurrent runs are **targeting different servers**.
 
 Note: the script will automatically skip a task if it encounters an error. This usually happens when the OpenHands runtime dies due to some unexpected errors. This means even if the script finishes, it might not have evaluated all tasks. You can manually resume the evaluation by running the script again.
