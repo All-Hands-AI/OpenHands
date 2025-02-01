@@ -1,444 +1,351 @@
 # OpenHands Initialization Sequence Guide
 
-This guide details the complete initialization sequence of OpenHands, including component dependencies, configuration loading, and startup order. For runtime behavior and component interactions, see [SYSTEM_UNDERSTANDING.md](SYSTEM_UNDERSTANDING.md). For a complete overview, start with [SYSTEM_GUIDE.md](SYSTEM_GUIDE.md).
+This guide details the complete initialization sequence of OpenHands, focusing on runtime and event handling systems.
 
 ## System Initialization Flow
 
-### 1. Complete Initialization Sequence
-```plaintext
-┌─ Pre-Initialization ──────────────────────────────────────────────┐
-│ 1. Load Environment Variables                                     │
-│ 2. Parse Command Line Arguments                                  │
-│ 3. Initialize Logging                                            │
-└─────────────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌─ Configuration Loading ─────────────────────────────────────────┐
-│ 1. Load Default Configuration                                   │
-│ 2. Load Config Files                                           │
-│ 3. Apply Environment Overrides                                 │
-│ 4. Validate Configuration                                      │
-└─────────────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌─ Core Services Initialization ─────────────────────────────────┐
-│ 1. Storage System                                             │
-│ 2. Event System                                              │
-│ 3. Memory System                                             │
-│ 4. LLM Clients                                              │
-│ 5. Runtime Environment                                       │
-└───────────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌─ Component Registration ──────────────────────────────────────┐
-│ 1. Register Agents                                           │
-│ 2. Register Runtime Capabilities                             │
-│ 3. Register Event Handlers                                   │
-│ 4. Register Memory Providers                                 │
-└───────────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌─ Service Startup ───────────────────────────────────────────┐
-│ 1. Start FastAPI Application                               │
-│ 2. Initialize Session Manager                              │
-│ 3. Setup API Routes                                        │
-│ 4. Start Background Tasks                                  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 2. Component Dependencies
-
-```plaintext
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Config     │ ──► │   Storage   │ ──► │   Memory    │
-└─────────────┘     └─────────────┘     └─────────────┘
-       │                   │                   │
-       ▼                   ▼                   ▼
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│    LLM      │ ──► │   Event     │ ◄── │   Runtime   │
-└─────────────┘     └─────────────┘     └─────────────┘
-       │                   │                   │
-       ▼                   ▼                   ▼
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Agents    │ ──► │  Session    │ ◄── │   Router    │
-└─────────────┘     └─────────────┘     └─────────────┘
-```
-
-## Detailed Initialization Steps
-
-### 1. Pre-Initialization Phase
-```python
-# File: openhands/core/startup.py
-
-async def initialize_system():
-    """System initialization sequence"""
-    # 1. Load environment
-    load_environment()
-    
-    # 2. Parse arguments
-    args = parse_arguments()
-    
-    # 3. Setup logging
-    setup_logging(args.log_level)
-    
-def load_environment():
-    """Load environment variables"""
-    # Load .env file if exists
-    if os.path.exists('.env'):
-        load_dotenv()
-        
-    # Set required environment variables
-    os.environ.setdefault('OPENHANDS_ENV', 'development')
-    os.environ.setdefault('OPENHANDS_CONFIG_PATH', 'config')
-    
-def setup_logging(level: str):
-    """Initialize logging system"""
-    logging.basicConfig(
-        level=getattr(logging, level.upper()),
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-```
-
-### 2. Configuration Loading Phase
-```python
-# File: openhands/core/config.py
-
-class ConfigurationManager:
-    """Manages system configuration"""
-    
-    def __init__(self):
-        self.config = {}
-        self.validators = {}
-        self.loaded_files = []
-        
-    async def load_configuration(self):
-        """Complete configuration loading sequence"""
-        # 1. Load default configuration
-        self._load_defaults()
-        
-        # 2. Load configuration files
-        await self._load_config_files()
-        
-        # 3. Apply environment overrides
-        self._apply_environment()
-        
-        # 4. Validate configuration
-        self._validate_configuration()
-        
-    def _load_defaults(self):
-        """Load default configuration"""
-        self.config.update({
-            'core': {
-                'environment': 'development',
-                'debug': False,
-                'log_level': 'info'
-            },
-            'server': {
-                'host': '0.0.0.0',
-                'port': 8000,
-                'workers': 1
-            },
-            'llm': {
-                'provider': 'openai',
-                'model': 'gpt-4',
-                'temperature': 0.7
-            }
-        })
-        
-    async def _load_config_files(self):
-        """Load configuration from files"""
-        config_path = os.environ['OPENHANDS_CONFIG_PATH']
-        
-        # Load base config
-        base_config = f"{config_path}/config.yaml"
-        if os.path.exists(base_config):
-            self._load_yaml(base_config)
-            
-        # Load environment specific config
-        env = os.environ['OPENHANDS_ENV']
-        env_config = f"{config_path}/config.{env}.yaml"
-        if os.path.exists(env_config):
-            self._load_yaml(env_config)
-            
-    def _apply_environment(self):
-        """Apply environment variable overrides"""
-        prefix = 'OPENHANDS_'
-        
-        for key, value in os.environ.items():
-            if key.startswith(prefix):
-                config_key = key[len(prefix):].lower()
-                self._set_config_value(config_key, value)
-                
-    def _validate_configuration(self):
-        """Validate configuration values"""
-        for key, validator in self.validators.items():
-            value = self._get_config_value(key)
-            if not validator(value):
-                raise ConfigurationError(f"Invalid value for {key}")
-```
-
-### 3. Core Services Initialization
-```python
-# File: openhands/core/services.py
-
-class ServiceManager:
-    """Manages core services"""
-    
-    def __init__(self, config: Config):
-        self.config = config
-        self.services = {}
-        self.dependencies = self._build_dependencies()
-        
-    async def initialize_services(self):
-        """Initialize all core services"""
-        # Initialize in dependency order
-        for service_name in self._get_initialization_order():
-            await self._initialize_service(service_name)
-            
-    def _build_dependencies(self) -> Dict[str, Set[str]]:
-        """Build service dependency graph"""
-        return {
-            'storage': set(),  # No dependencies
-            'event': {'storage'},
-            'memory': {'storage', 'event'},
-            'llm': {'config'},
-            'runtime': {'event', 'memory'},
-            'session': {'event', 'runtime', 'memory'}
-        }
-        
-    def _get_initialization_order(self) -> List[str]:
-        """Get correct service initialization order"""
-        visited = set()
-        order = []
-        
-        def visit(service: str):
-            if service in visited:
-                return
-            visited.add(service)
-            
-            # Visit dependencies first
-            for dep in self.dependencies[service]:
-                visit(dep)
-            order.append(service)
-            
-        for service in self.dependencies:
-            visit(service)
-            
-        return order
-        
-    async def _initialize_service(self, name: str):
-        """Initialize individual service"""
-        logger.info(f"Initializing service: {name}")
-        
-        service_class = self._get_service_class(name)
-        service = service_class(self.config)
-        
-        try:
-            await service.initialize()
-            self.services[name] = service
-        except Exception as e:
-            logger.error(f"Failed to initialize {name}: {e}")
-            raise ServiceInitializationError(name, str(e))
-```
-
-### 4. Component Registration
-```python
-# File: openhands/core/registry.py
-
-class ComponentRegistry:
-    """Manages component registration"""
-    
-    def __init__(self):
-        self.agents = {}
-        self.capabilities = {}
-        self.event_handlers = {}
-        self.memory_providers = {}
-        
-    async def register_components(self):
-        """Register all system components"""
-        # 1. Register agents
-        await self._register_agents()
-        
-        # 2. Register capabilities
-        await self._register_capabilities()
-        
-        # 3. Register event handlers
-        await self._register_event_handlers()
-        
-        # 4. Register memory providers
-        await self._register_memory_providers()
-        
-    async def _register_agents(self):
-        """Register available agents"""
-        # Load agent modules
-        agent_path = Path('openhands/agents')
-        for module in agent_path.glob('*.py'):
-            if module.stem.startswith('_'):
-                continue
-                
-            # Import module
-            spec = importlib.util.spec_from_file_location(
-                module.stem,
-                str(module)
-            )
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            
-            # Register agents
-            for name, obj in inspect.getmembers(module):
-                if (inspect.isclass(obj) and 
-                    issubclass(obj, Agent) and
-                    obj != Agent):
-                    self.agents[name] = obj
-```
-
-### 5. Service Startup
+### 1. Server Startup
 ```python
 # File: openhands/server/app.py
 
-class ApplicationServer:
-    """Main application server"""
-    
-    def __init__(self, config: Config):
-        self.config = config
-        self.app = FastAPI()
-        self.background_tasks = []
-        
-    async def start(self):
-        """Start application server"""
-        # 1. Initialize components
-        await self._initialize_components()
-        
-        # 2. Setup routes
-        self._setup_routes()
-        
-        # 3. Start background tasks
-        await self._start_background_tasks()
-        
-        # 4. Start server
-        await self._start_server()
-        
-    async def _initialize_components(self):
-        """Initialize server components"""
-        # Initialize session manager
-        self.session_manager = SessionManager(self.config)
-        await self.session_manager.initialize()
-        
-        # Initialize API components
-        self.api = APIManager(self.config)
-        await self.api.initialize()
-        
-    def _setup_routes(self):
-        """Setup API routes"""
-        # Add routers
-        self.app.include_router(
-            conversation_router,
-            prefix="/api/v1/conversation",
-            tags=["conversation"]
-        )
-        
-        self.app.include_router(
-            agent_router,
-            prefix="/api/v1/agents",
-            tags=["agents"]
-        )
-        
-        self.app.include_router(
-            system_router,
-            prefix="/api/v1/system",
-            tags=["system"]
-        )
-        
-    async def _start_background_tasks(self):
-        """Start background tasks"""
-        # Add background tasks
-        self.background_tasks.extend([
-            asyncio.create_task(self._cleanup_task()),
-            asyncio.create_task(self._monitor_task()),
-            asyncio.create_task(self._maintenance_task())
-        ])
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    """Server lifespan management"""
+    async with conversation_manager:
+        yield
+
+app = FastAPI(
+    title='OpenHands',
+    description='OpenHands: Code Less, Make More',
+    version=__version__,
+    lifespan=_lifespan,
+)
+
+# Register routes
+app.include_router(public_api_router)
+app.include_router(files_api_router)
+app.include_router(security_api_router)
+app.include_router(feedback_api_router)
+app.include_router(conversation_api_router)
+app.include_router(manage_conversation_api_router)
+app.include_router(settings_router)
+app.include_router(github_api_router)
+app.include_router(trajectory_router)
 ```
 
-## Key Initialization Points
+### 2. Socket.IO Integration
+```python
+# File: openhands/server/listen.py
 
-1. **Configuration Dependencies**
-   - Environment variables must be set before configuration loading
-   - Configuration must be validated before service initialization
-   - Service-specific configs are loaded after core configuration
+# Create FastAPI and Socket.IO servers
+base_app = FastAPI()
+sio = socketio.AsyncServer(async_mode='asgi')
 
-2. **Service Dependencies**
-   - Storage system must initialize first
-   - Event system depends on storage
-   - Memory system depends on storage and events
-   - Runtime depends on events and memory
-   - Session manager depends on all core services
+# Add middleware
+base_app.add_middleware(LocalhostCORSMiddleware)
+base_app.add_middleware(CacheControlMiddleware)
+base_app.add_middleware(RateLimitMiddleware)
+base_app.middleware('http')(AttachConversationMiddleware)
+base_app.middleware('http')(GitHubTokenMiddleware)
 
-3. **Component Registration**
-   - Agents must be registered before session initialization
-   - Capabilities must be registered before runtime initialization
-   - Event handlers must be registered before event system start
-   - Memory providers must be registered before memory system start
+# Create ASGI app
+app = socketio.ASGIApp(sio, other_asgi_app=base_app)
+```
 
-4. **Startup Order**
-   - Core services must be initialized before component registration
-   - Component registration must complete before service startup
-   - Background tasks start after all components are initialized
-   - Server starts only after all systems are ready
+### 3. Event System Initialization
+```python
+# File: openhands/events/stream.py
 
-## Initialization Best Practices
+class EventStream:
+    """Core event handling system"""
+    
+    def __init__(self, sid: str, file_store: FileStore):
+        # Initialize core components
+        self.sid = sid
+        self.file_store = file_store
+        self._stop_flag = threading.Event()
+        self._queue = queue.Queue()
+        
+        # Initialize thread management
+        self._thread_pools = {}
+        self._thread_loops = {}
+        self._queue_loop = None
+        
+        # Start event processing thread
+        self._queue_thread = threading.Thread(target=self._run_queue_loop)
+        self._queue_thread.daemon = True
+        self._queue_thread.start()
+        
+        # Initialize subscriber management
+        self._subscribers = {}
+        self._lock = threading.Lock()
+        self._cur_id = 0
+        self.secrets = {}
+        
+        # Load existing events
+        self.__post_init__()
+```
 
-1. **Error Handling**
-   ```python
-   try:
-       await system.initialize()
-   except ConfigurationError as e:
-       logger.error(f"Configuration error: {e}")
-       sys.exit(1)
-   except ServiceInitializationError as e:
-       logger.error(f"Service initialization failed: {e}")
-       sys.exit(1)
-   except ComponentRegistrationError as e:
-       logger.error(f"Component registration failed: {e}")
-       sys.exit(1)
-   ```
+### 4. Runtime System Initialization
+```python
+# File: openhands/core/setup.py
 
-2. **Health Checks**
-   ```python
-   async def check_system_health():
-       """Verify system initialization"""
-       # Check core services
-       for service in service_manager.services.values():
-           if not await service.is_healthy():
-               return False
-               
-       # Check components
-       for component in component_registry.components.values():
-           if not await component.is_ready():
-               return False
-               
-       return True
-   ```
+def create_runtime(config: AppConfig, sid: str | None = None, headless_mode: bool = True) -> Runtime:
+    """Runtime initialization sequence"""
+    
+    # 1. Generate or use session ID
+    session_id = sid or generate_sid(config)
+    
+    # 2. Initialize file store and event stream
+    file_store = get_file_store(config.file_store, config.file_store_path)
+    event_stream = EventStream(session_id, file_store)
+    
+    # 3. Get agent class for plugins
+    agent_cls = openhands.agenthub.Agent.get_cls(config.default_agent)
+    
+    # 4. Get and create runtime
+    runtime_cls = get_runtime_cls(config.runtime)  # Get appropriate runtime class
+    runtime = runtime_cls(
+        config=config,
+        event_stream=event_stream,
+        sid=session_id,
+        plugins=agent_cls.sandbox_plugins,
+        headless_mode=headless_mode
+    )
+    
+    return runtime
 
-3. **Graceful Shutdown**
-   ```python
-   async def shutdown():
-       """Graceful system shutdown"""
-       # Stop background tasks
-       for task in background_tasks:
-           task.cancel()
-           
-       # Shutdown services in reverse order
-       for service in reversed(service_manager.services.values()):
-           await service.shutdown()
-           
-       # Close connections
-       await storage.close()
-       await event_system.close()
-   ```
+# File: openhands/runtime/base.py
+class Runtime:
+    """Base runtime implementation"""
+    
+    def __init__(
+        self,
+        config: AppConfig,
+        event_stream: EventStream,
+        sid: str,
+        plugins: list[PluginRequirement] | None = None,
+        env_vars: dict[str, str] | None = None,
+        status_callback: Callable | None = None,
+        attach_to_existing: bool = False,
+        headless_mode: bool = False,
+    ):
+        # Initialize core components
+        self.sid = sid
+        self.event_stream = event_stream
+        
+        # Register runtime as event subscriber
+        self.event_stream.subscribe(
+            EventStreamSubscriber.RUNTIME,
+            self.on_event,
+            self.sid
+        )
+        
+        # Initialize plugins
+        self.plugins = (
+            copy.deepcopy(plugins)
+            if plugins is not None and len(plugins) > 0
+            else []
+        )
+        
+        # Add VSCode plugin if not headless
+        if not headless_mode:
+            self.plugins.append(VSCodeRequirement())
+            
+        # Store configuration
+        self.status_callback = status_callback
+        self.attach_to_existing = attach_to_existing
+        self.config = copy.deepcopy(config)
+        
+        # Register cleanup
+        atexit.register(self.close)
+        
+        # Setup environment
+        self.initial_env_vars = _default_env_vars(
+            config.sandbox
+        )
+        if env_vars is not None:
+            self.initial_env_vars.update(env_vars)
+```
 
-Remember:
-- Always validate configuration before proceeding
-- Initialize services in correct dependency order
-- Handle initialization errors gracefully
-- Perform health checks after initialization
-- Implement proper shutdown procedures
+### 5. Event Handler Registration
+```python
+# File: openhands/events/stream.py
+
+class EventStreamSubscriber(str, Enum):
+    """Built-in event subscribers"""
+    AGENT_CONTROLLER = 'agent_controller'
+    SECURITY_ANALYZER = 'security_analyzer'
+    RESOLVER = 'openhands_resolver'
+    SERVER = 'server'
+    RUNTIME = 'runtime'
+    MAIN = 'main'
+    TEST = 'test'
+
+class EventStream:
+    def subscribe(
+        self,
+        subscriber_id: EventStreamSubscriber,
+        callback: Callable,
+        callback_id: str
+    ):
+        """Register event handler"""
+        # Create thread pool for handler
+        initializer = partial(
+            self._init_thread_loop,
+            subscriber_id,
+            callback_id
+        )
+        pool = ThreadPoolExecutor(
+            max_workers=1,
+            initializer=initializer
+        )
+        
+        # Initialize subscriber storage
+        if subscriber_id not in self._subscribers:
+            self._subscribers[subscriber_id] = {}
+            self._thread_pools[subscriber_id] = {}
+            
+        # Register callback
+        if callback_id in self._subscribers[subscriber_id]:
+            raise ValueError(
+                f'Callback ID on subscriber {subscriber_id} '
+                f'already exists: {callback_id}'
+            )
+            
+        self._subscribers[subscriber_id][callback_id] = callback
+        self._thread_pools[subscriber_id][callback_id] = pool
+```
+
+## System Interaction Flow
+
+### 1. Client Connection Flow
+```plaintext
+Client Connection Request
+    │
+    ▼
+Socket.IO connect event (listen_socket.py)
+    │
+    ├─► Parse query parameters
+    │   - Get conversation_id
+    │   - Get latest_event_id
+    │
+    ├─► Validate user (if not OSS mode)
+    │   - Check github_auth cookie
+    │   - Decode JWT token
+    │   - Verify user permissions
+    │
+    ├─► Load user settings
+    │   - Get settings store
+    │   - Load settings
+    │
+    └─► Join conversation
+        │
+        ├─► Create/Get Runtime
+        │   - Initialize event stream
+        │   - Setup runtime environment
+        │   - Register event handlers
+        │
+        ├─► Initialize Agent
+        │   - Create agent instance
+        │   - Setup LLM
+        │   - Register with event stream
+        │
+        └─► Start Processing
+            - Begin event handling
+            - Process messages
+            - Execute actions
+```
+
+### 2. Event Processing Flow
+```plaintext
+Event Received
+    │
+    ▼
+EventStream._process_queue
+    │
+    ├─► Get event from queue
+    │
+    └─► For each subscriber:
+        │
+        ├─► Get subscriber callbacks
+        │
+        ├─► Execute in thread pool
+        │   - Run callback
+        │   - Handle errors
+        │
+        └─► Process results
+            - Update state
+            - Generate responses
+            - Store events
+```
+
+### 3. Runtime Action Flow
+```plaintext
+Action Event Received
+    │
+    ▼
+Runtime.on_event
+    │
+    ├─► Validate action
+    │   - Check runnable
+    │   - Verify confirmation
+    │   - Check capabilities
+    │
+    ├─► Execute action
+    │   - Get handler
+    │   - Run action
+    │   - Generate observation
+    │
+    └─► Process result
+        - Create observation
+        - Add to event stream
+        - Update state
+```
+
+## Component Dependencies
+
+```plaintext
+FastAPI Server
+    │
+    ├─► Socket.IO Server
+    │   - Real-time communication
+    │   - Event handling
+    │
+    ├─► Event Stream
+    │   - Event processing
+    │   - State management
+    │   - Subscriber handling
+    │
+    ├─► Runtime System
+    │   - Action execution
+    │   - Environment management
+    │   - Plugin handling
+    │
+    └─► Agent System
+        - LLM integration
+        - Task processing
+        - Action generation
+```
+
+## Best Practices
+
+1. **Initialization Order**
+   - Server components first
+   - Event system second
+   - Runtime/agents as needed
+
+2. **Event Handling**
+   - Use appropriate subscriber IDs
+   - Handle errors properly
+   - Clean up resources
+
+3. **Runtime Management**
+   - Initialize plugins properly
+   - Handle environment variables
+   - Manage resources
+
+4. **Error Handling**
+   - Handle initialization errors
+   - Clean up on failures
+   - Log issues properly

@@ -1,0 +1,639 @@
+# OpenHands Initialization Sequence Guide
+
+This guide details the complete backend server initialization sequence of OpenHands, showing how each component is loaded and initialized.
+
+## Backend Server Initialization Flow
+
+```plaintext
+1. Server Start (openhands/server/listen.py)
+   │
+   ├─► Create FastAPI Application (openhands/server/app.py)
+   │   │
+   │   ├─► Register Middleware
+   │   │   ├── LocalhostCORSMiddleware (allow cross-origin)
+   │   │   ├── CacheControlMiddleware (handle caching)
+   │   │   ├── RateLimitMiddleware (rate limiting)
+   │   │   ├── AttachConversationMiddleware (conversation handling)
+   │   │   └── GitHubTokenMiddleware (authentication)
+   │   │
+   │   ├─► Register Routes
+   │   │   ├── public_api_router
+   │   │   ├── files_api_router
+   │   │   ├── security_api_router
+   │   │   ├── feedback_api_router
+   │   │   ├── conversation_api_router
+   │   │   ├── manage_conversation_api_router
+   │   │   ├── settings_router
+   │   │   ├── github_api_router
+   │   │   └── trajectory_router
+   │   │
+   │   └─► Setup Lifespan Manager
+   │       └── Initialize ConversationManager
+   │
+   ├─► Create Socket.IO Server
+   │   │
+   │   ├─► Setup Event Handlers (openhands/server/listen_socket.py)
+   │   │   ├── @sio.event async def connect()
+   │   │   ├── @sio.event async def oh_action()
+   │   │   └── @sio.event async def disconnect()
+   │   │
+   │   └─► Integrate with FastAPI
+   │       └── Create ASGIApp(sio, other_asgi_app=base_app)
+   │
+   └─► Mount Static Files
+       └── SPAStaticFiles(directory='./frontend/build')
+
+2. Conversation Manager Initialization (openhands/server/conversation_manager/standalone_conversation_manager.py)
+   │
+   ├─► Create StandaloneConversationManager
+   │   │
+   │   ├─► Initialize State
+   │   │   ├── _local_agent_loops_by_sid = {}
+   │   │   ├── _local_connection_id_to_session_id = {}
+   │   │   ├── _active_conversations = {}
+   │   │   └── _detached_conversations = {}
+   │   │
+   │   └─► Start Cleanup Task
+   │       └── _cleanup_task = asyncio.create_task(self._cleanup_stale())
+   │
+   └─► Setup Event Stream
+       └── Initialize EventStream for each conversation
+
+3. Client Connection Flow
+   │
+   ├─► Socket.IO Connect Event
+   │   │
+   │   ├─► Parse Query Parameters
+   │   │   ├── conversation_id
+   │   │   └── latest_event_id
+   │   │
+   │   ├─► Validate User (if not OSS mode)
+   │   │   ├── Check github_auth cookie
+   │   │   ├── Decode JWT token
+   │   │   └── Verify user permissions
+   │   │
+   │   └─► Load User Settings
+   │       └── Get settings from SettingsStore
+   │
+   ├─► Join Conversation
+   │   │
+   │   ├─► Get or Create Conversation
+   │   │   ├── Check active conversations
+   │   │   ├── Check detached conversations
+   │   │   └── Create new if needed
+   │   │
+   │   ├─► Initialize Event Stream
+   │   │   ├── Create AsyncEventStreamWrapper
+   │   │   └── Setup event processing
+   │   │
+   │   └─► Start Agent Loop
+   │       ├── Create agent session
+   │       ├── Initialize agent
+   │       └── Setup event handlers
+   │
+   └─► Setup Event Processing
+       └── Begin processing events through Socket.IO
+
+4. Runtime Initialization (When needed for a conversation)
+   │
+   ├─► Create Runtime Instance
+   │   │
+   │   ├─► Initialize Event Stream
+   │   │   ├── Create FileStore
+   │   │   └── Setup EventStream
+   │   │
+   │   ├─► Load Agent Class
+   │   │   └── Get from registered agents
+   │   │
+   │   └─► Setup Runtime
+   │       ├── Initialize plugins
+   │       └── Setup capabilities
+   │
+   ├─► Create Agent
+   │   │
+   │   ├─► Load Configurations
+   │   │   ├── Agent config
+   │   │   └── LLM config
+   │   │
+   │   ├─► Initialize LLM
+   │   │   └── Setup LLM client
+   │   │
+   │   └─► Setup Prompt Manager
+   │       └── Load microagents
+   │
+   └─► Create Controller
+       │
+       ├─► Try Restore State
+       │   └── Check for previous session
+       │
+       └─► Initialize Controller
+           ├── Set max iterations
+           ├── Set budget
+           └── Setup confirmation mode
+
+5. Cleanup and Maintenance
+   │
+   ├─► Periodic Cleanup (_cleanup_stale)
+   │   │
+   │   ├─► Clean Detached Conversations
+   │   │   └── Disconnect and remove
+   │   │
+   │   ├─► Check Inactive Sessions
+   │   │   ├── Find sessions past close_delay
+   │   │   └── Mark for closure
+   │   │
+   │   └─► Close Marked Sessions
+   │       ├── Remove connection mappings
+   │       ├── Close agent sessions
+   │       └── Clear from storage
+   │
+   └─► Resource Management
+       ├── Monitor active sessions
+       ├── Track connection counts
+       └── Manage memory usage
+```
+
+## Component Interaction Details
+
+### 1. Server Startup Sequence
+```python
+# 1. Create FastAPI app and Socket.IO server
+base_app = FastAPI()
+sio = socketio.AsyncServer(async_mode='asgi')
+
+# 2. Add middleware
+base_app.add_middleware(LocalhostCORSMiddleware)
+base_app.add_middleware(CacheControlMiddleware)
+base_app.add_middleware(RateLimitMiddleware)
+base_app.middleware('http')(AttachConversationMiddleware)
+base_app.middleware('http')(GitHubTokenMiddleware)
+
+# 3. Create ASGI app with Socket.IO integration
+app = socketio.ASGIApp(sio, other_asgi_app=base_app)
+```
+
+### 2. Conversation Manager Initialization
+```python
+@dataclass
+class StandaloneConversationManager(ConversationManager):
+    async def __aenter__(self):
+        """Initialize conversation manager"""
+        # Start cleanup task
+        self._cleanup_task = asyncio.create_task(
+            self._cleanup_stale()
+        )
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        """Cleanup on shutdown"""
+        if self._cleanup_task:
+            self._cleanup_task.cancel()
+            self._cleanup_task = None
+```
+
+### 3. Client Connection Handling
+```python
+@sio.event
+async def connect(connection_id: str, environ, auth):
+    # 1. Get conversation ID
+    query_params = parse_qs(environ.get('QUERY_STRING', ''))
+    conversation_id = query_params.get('conversation_id', [None])[0]
+    
+    # 2. Validate user if needed
+    if server_config.app_mode != AppMode.OSS:
+        # Check auth and permissions
+        user_id = validate_user(environ)
+        verify_conversation_access(user_id, conversation_id)
+    
+    # 3. Load settings
+    settings = await load_user_settings(user_id)
+    
+    # 4. Join conversation
+    event_stream = await conversation_manager.join_conversation(
+        conversation_id,
+        connection_id,
+        settings,
+        user_id
+    )
+```
+
+### 4. Event Stream Setup
+```python
+class AsyncEventStreamWrapper:
+    def __init__(self, event_stream: EventStream, start_index: int):
+        self.event_stream = event_stream
+        self.current_index = start_index
+        
+    async def __aiter__(self):
+        while True:
+            if self.current_index < len(self.event_stream.history):
+                event = self.event_stream.history[self.current_index]
+                self.current_index += 1
+                yield event
+```
+
+## Key Initialization Points
+
+### 1. Server Configuration
+- FastAPI application setup
+- Socket.IO server integration
+- Middleware configuration
+- Route registration
+
+### 2. Conversation Management
+- Conversation manager initialization
+- Session tracking
+- Connection management
+- Resource cleanup
+
+### 3. Event Processing
+- Event stream creation
+- Event handler setup
+- Socket.IO event routing
+- Message processing
+
+### 4. Runtime and Agent Setup
+- Runtime initialization
+- Agent creation
+- Controller setup
+- State management
+
+## Best Practices
+
+1. **Initialization Order**
+   - Server components first
+   - Conversation manager second
+   - Event system third
+   - Runtime/agents as needed
+
+2. **Resource Management**
+   - Track active connections
+   - Monitor conversation state
+   - Clean up inactive sessions
+   - Manage memory usage
+
+3. **Error Handling**
+   - Handle initialization failures
+   - Manage connection errors
+   - Clean up on failures
+   - Log issues properly
+
+4. **State Management**
+   - Track conversation state
+   - Manage user sessions
+   - Handle disconnections
+   - Persist important data
+
+## Core Initialization Flow
+
+### 1. Entry Points
+
+OpenHands has two main entry points:
+
+1. **Server Mode** (FastAPI/Socket.IO)
+```python
+# server/app.py
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    async with conversation_manager:
+        yield
+
+app = FastAPI(
+    title='OpenHands',
+    description='OpenHands: Code Less, Make More',
+    version=__version__,
+    lifespan=_lifespan,
+)
+```
+
+2. **CLI Mode** (Direct Execution)
+```python
+# core/main.py
+if __name__ == '__main__':
+    # Parse arguments
+    args = parse_arguments()
+    config = setup_config_from_args(args)
+    
+    # Get initial task
+    task_str = get_task_from_args(args)
+    initial_user_action = MessageAction(content=task_str)
+    
+    # Generate session ID
+    sid = generate_sid(config, args.name)
+    
+    # Run controller
+    asyncio.run(
+        run_controller(
+            config=config,
+            initial_user_action=initial_user_action,
+            sid=sid
+        )
+    )
+```
+
+### 2. Component Creation Sequence
+
+```python
+# core/setup.py
+def create_runtime(
+    config: AppConfig,
+    sid: str | None = None,
+    headless_mode: bool = True,
+) -> Runtime:
+    """Create runtime environment"""
+    # Generate session ID
+    session_id = sid or generate_sid(config)
+    
+    # Create file store and event stream
+    file_store = get_file_store(config.file_store, config.file_store_path)
+    event_stream = EventStream(session_id, file_store)
+    
+    # Get agent class and runtime class
+    agent_cls = openhands.agenthub.Agent.get_cls(config.default_agent)
+    runtime_cls = get_runtime_cls(config.runtime)
+    
+    # Create runtime instance
+    runtime = runtime_cls(
+        config=config,
+        event_stream=event_stream,
+        sid=session_id,
+        plugins=agent_cls.sandbox_plugins,
+        headless_mode=headless_mode,
+    )
+    
+    return runtime
+
+def create_agent(runtime: Runtime, config: AppConfig) -> Agent:
+    """Create agent instance"""
+    # Get agent class and configs
+    agent_cls = Agent.get_cls(config.default_agent)
+    agent_config = config.get_agent_config(config.default_agent)
+    llm_config = config.get_llm_config_from_agent(config.default_agent)
+    
+    # Create agent
+    agent = agent_cls(
+        llm=LLM(config=llm_config),
+        config=agent_config,
+    )
+    
+    # Setup prompt manager if exists
+    if agent.prompt_manager:
+        microagents = runtime.get_microagents_from_selected_repo(None)
+        agent.prompt_manager.load_microagents(microagents)
+    
+    # Setup security analyzer if configured
+    if config.security.security_analyzer:
+        analyzer_cls = options.SecurityAnalyzers.get(
+            config.security.security_analyzer,
+            SecurityAnalyzer
+        )
+        analyzer_cls(runtime.event_stream)
+    
+    return agent
+
+def create_controller(
+    agent: Agent,
+    runtime: Runtime,
+    config: AppConfig,
+    headless_mode: bool = True,
+    replay_events: list[Event] | None = None,
+) -> Tuple[AgentController, State | None]:
+    """Create agent controller"""
+    event_stream = runtime.event_stream
+    
+    # Try to restore previous state
+    initial_state = None
+    try:
+        initial_state = State.restore_from_session(
+            event_stream.sid,
+            event_stream.file_store
+        )
+    except Exception:
+        pass
+    
+    # Create controller
+    controller = AgentController(
+        agent=agent,
+        max_iterations=config.max_iterations,
+        max_budget_per_task=config.max_budget_per_task,
+        agent_to_llm_config=config.get_agent_to_llm_config_map(),
+        event_stream=event_stream,
+        initial_state=initial_state,
+        headless_mode=headless_mode,
+        confirmation_mode=config.security.confirmation_mode,
+        replay_events=replay_events,
+    )
+    
+    return (controller, initial_state)
+```
+
+## Server Mode Initialization
+
+### 1. FastAPI Application Setup
+```python
+# server/app.py
+# Register routes
+app.include_router(public_api_router)
+app.include_router(files_api_router)
+app.include_router(security_api_router)
+app.include_router(feedback_api_router)
+app.include_router(conversation_api_router)
+app.include_router(manage_conversation_api_router)
+app.include_router(settings_router)
+app.include_router(github_api_router)
+app.include_router(trajectory_router)
+```
+
+### 2. Socket.IO Integration
+```python
+# server/listen.py
+base_app = FastAPI()
+sio = socketio.AsyncServer(async_mode='asgi')
+
+# Add middleware
+base_app.add_middleware(LocalhostCORSMiddleware)
+base_app.add_middleware(CacheControlMiddleware)
+base_app.add_middleware(RateLimitMiddleware)
+base_app.middleware('http')(AttachConversationMiddleware)
+base_app.middleware('http')(GitHubTokenMiddleware)
+
+# Create ASGI app
+app = socketio.ASGIApp(sio, other_asgi_app=base_app)
+```
+
+### 3. Socket.IO Event Handlers
+```python
+# server/listen_socket.py
+@sio.event
+async def connect(connection_id: str, environ, auth):
+    # Get conversation ID
+    query_params = parse_qs(environ.get('QUERY_STRING', ''))
+    conversation_id = query_params.get('conversation_id', [None])[0]
+    
+    # Load user settings
+    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
+    settings = await settings_store.load()
+    
+    # Join conversation
+    event_stream = await conversation_manager.join_conversation(
+        conversation_id,
+        connection_id,
+        settings,
+        user_id
+    )
+```
+
+## CLI Mode Initialization
+
+### 1. Configuration Loading
+```python
+# core/main.py
+def setup_config_from_args(args):
+    """Setup configuration from command line arguments"""
+    # Load and validate config
+    config = AppConfig()
+    config.load_from_args(args)
+    return config
+```
+
+### 2. Controller Setup
+```python
+# core/main.py
+async def run_controller(
+    config: AppConfig,
+    initial_user_action: Action,
+    sid: str | None = None,
+    runtime: Runtime | None = None,
+    agent: Agent | None = None,
+    headless_mode: bool = True,
+):
+    """Initialize and run agent controller"""
+    # Create components
+    sid = sid or generate_sid(config)
+    runtime = runtime or create_runtime(config, sid, headless_mode)
+    await runtime.connect()
+    
+    agent = agent or create_agent(runtime, config)
+    controller, initial_state = create_controller(
+        agent,
+        runtime,
+        config,
+        headless_mode
+    )
+    
+    # Setup event handling
+    event_stream = runtime.event_stream
+    event_stream.subscribe(
+        EventStreamSubscriber.MAIN,
+        on_event,
+        sid
+    )
+    
+    # Start processing
+    await run_agent_until_done(
+        controller,
+        runtime,
+        end_states=[
+            AgentState.FINISHED,
+            AgentState.REJECTED,
+            AgentState.ERROR,
+            AgentState.PAUSED,
+            AgentState.STOPPED,
+        ]
+    )
+```
+
+## Component Dependencies
+
+```plaintext
+┌─ Configuration ─────┐
+│  - AppConfig       │
+│  - Settings        │
+└────────┬───────────┘
+         │
+         ▼
+┌─ Event Stream ─────┐
+│  - EventStream     │
+│  - FileStore       │
+└────────┬───────────┘
+         │
+         ▼
+┌─ Runtime ──────────┐
+│  - RuntimeClass    │
+│  - Plugins         │
+└────────┬───────────┘
+         │
+         ▼
+┌─ Agent ────────────┐
+│  - AgentClass      │
+│  - LLM Config      │
+│  - PromptManager   │
+└────────┬───────────┘
+         │
+         ▼
+┌─ Controller ───────┐
+│  - AgentController │
+│  - State          │
+└──────────────────┘
+```
+
+## Key Initialization Points
+
+### 1. Session ID Generation
+```python
+def generate_sid(config: AppConfig, session_name: str | None = None) -> str:
+    """Generate unique session ID"""
+    session_name = session_name or str(uuid.uuid4())
+    jwt_secret = config.jwt_secret
+    
+    hash_str = hashlib.sha256(
+        f'{session_name}{jwt_secret}'.encode('utf-8')
+    ).hexdigest()
+    
+    return f'{session_name}-{hash_str[:16]}'
+```
+
+### 2. Event Stream Setup
+```python
+class EventStream:
+    def __init__(self, sid: str, file_store: FileStore):
+        self.sid = sid
+        self.file_store = file_store
+        self.subscribers = {}
+        self.history = []
+```
+
+### 3. Runtime Connection
+```python
+class Runtime:
+    async def connect(self):
+        """Initialize runtime connection"""
+        # Setup runtime environment
+        await self._setup_environment()
+        
+        # Initialize plugins
+        for plugin in self.plugins:
+            await plugin.initialize()
+```
+
+## Best Practices
+
+1. **Configuration Management**
+   - Load configuration early
+   - Validate all settings
+   - Handle environment variables
+
+2. **Component Initialization**
+   - Follow dependency order
+   - Handle initialization errors
+   - Clean up on failure
+
+3. **State Management**
+   - Restore state when possible
+   - Handle missing state gracefully
+   - Save state on shutdown
+
+4. **Error Handling**
+   - Handle initialization errors
+   - Clean up resources on failure
+   - Log initialization issues
