@@ -1,12 +1,10 @@
 from typing import Any
 
 import httpx
-import requests
 
 from openhands.server.services.gh_types import GitHubRepository, GitHubUser
 from openhands.server.shared import SettingsStoreImpl, config, server_config
 from openhands.server.types import AppMode, GhAuthenticationError, GHUnknownException
-from openhands.utils.async_utils import call_sync_from_async
 
 
 class GitHubService:
@@ -116,10 +114,22 @@ class GitHubService:
 
     async def search_repositories(
         self, query: str, per_page: int, sort: str, order: str
-    ):
+    ) -> list[GitHubRepository]:
         url = f'{self.BASE_URL}/search/repositories'
         params = {'q': query, 'per_page': per_page, 'sort': sort, 'order': order}
-        github_headers = await self._get_github_headers()
-        return await call_sync_from_async(
-            requests.get, url, headers=github_headers, params=params
-        )
+
+        response, _ = await self._fetch_data(url, params)
+        repos = response.get('items', [])
+
+        print('resopnse repos', repos)
+
+        repos = [
+            GitHubRepository(
+                id=repo.get('id'),
+                full_name=repo.get('full_name'),
+                stargazers_count=repo.get('stargazers_count'),
+            )
+            for repo in repos
+        ]
+
+        return repos

@@ -95,7 +95,20 @@ async def search_github_repositories(
     github_user_id: str | None = Depends(get_user_id),
 ):
     client = GithubServiceImpl(github_user_id)
-    response = await client.search_repositories(query, per_page, sort, order)
-    json_response = JSONResponse(content=response.json())
-    response.close()
-    return json_response
+    try:
+        repos: list[GitHubRepository] = await client.search_repositories(
+            query, per_page, sort, order
+        )
+        return repos
+
+    except GhAuthenticationError as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=401,
+        )
+
+    except GHUnknownException as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=500,
+        )
