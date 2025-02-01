@@ -4,24 +4,14 @@ from fastapi.responses import JSONResponse
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth import get_user_id
 from openhands.server.services.github_service import GitHubService
-from openhands.server.settings import Settings, SettingsWithTokenMeta
-from openhands.server.shared import config, openhands_config
-from openhands.storage.conversation.conversation_store import ConversationStore
-from openhands.storage.settings.settings_store import SettingsStore
-from openhands.utils.async_utils import call_sync_from_async
-from openhands.utils.import_utils import get_impl
+from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
+from openhands.server.shared import SettingsStoreImpl, config
 
 app = APIRouter(prefix='/api')
 
-SettingsStoreImpl = get_impl(SettingsStore, openhands_config.settings_store_class)  # type: ignore
-ConversationStoreImpl = get_impl(
-    ConversationStore,  # type: ignore
-    openhands_config.conversation_store_class,
-)
-
 
 @app.get('/settings')
-async def load_settings(request: Request) -> SettingsWithTokenMeta | None:
+async def load_settings(request: Request) -> GETSettingsModel | None:
     try:
         settings_store = await SettingsStoreImpl.get_instance(
             config, get_user_id(request)
@@ -34,7 +24,7 @@ async def load_settings(request: Request) -> SettingsWithTokenMeta | None:
             )
 
         github_token = request.state.github_token
-        settings_with_token_data = SettingsWithTokenMeta(
+        settings_with_token_data = GETSettingsModel(
             **settings.model_dump(),
             github_token_is_set=bool(github_token),
         )
@@ -53,15 +43,18 @@ async def load_settings(request: Request) -> SettingsWithTokenMeta | None:
 @app.post('/settings')
 async def store_settings(
     request: Request,
-    settings: SettingsWithTokenMeta,
+    settings: POSTSettingsModel,
 ) -> JSONResponse:
     # Check if token is valid
     if settings.github_token:
         try:
             # We check if the token is valid by getting the user
             # If the token is invalid, this will raise an exception
-            github = GitHubService(settings.github_token)
-            await call_sync_from_async(github.get_user)
+            github = GitHubService(settings.github_token, None)
+            response = await github.get_user()
+            if response.status_code != status.HTTP_200_OK:
+                raise Exception('Invalid Github Token')
+
         except Exception as e:
             logger.warning(f'Invalid GitHub token: {e}')
             return JSONResponse(
@@ -116,7 +109,7 @@ async def store_settings(
         )
 
 
-def convert_to_settings(settings_with_token_data: SettingsWithTokenMeta) -> Settings:
+def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings:
     settings_data = settings_with_token_data.model_dump()
 
     # Filter out additional fields from `SettingsWithTokenData`
@@ -126,7 +119,8 @@ def convert_to_settings(settings_with_token_data: SettingsWithTokenMeta) -> Sett
         if key in Settings.model_fields  # Ensures only `Settings` fields are included
     }
 
-    # Convert the `llm_api_key` to a `SecretStr` instance
+    # Convert the `llm_api_key` and `github_token` to a `SecretStr` instance
     filtered_settings_data['llm_api_key'] = settings_with_token_data.llm_api_key
+    filtered_settings_data['github_token'] = settings_with_token_data.github_token
 
     return Settings(**filtered_settings_data)
