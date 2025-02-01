@@ -105,7 +105,7 @@ echo "Start Percentile: $START_PERCENTILE"
 echo "End Percentile: $END_PERCENTILE"
 
 echo "Downloading tasks.md..."
-rm -f tasks.md tasks_subset.md
+rm -f tasks.md
 wget https://github.com/TheAgentCompany/TheAgentCompany/releases/download/${VERSION}/tasks.md
 
 total_lines=$(cat tasks.md | grep "ghcr.io/theagentcompany" | wc -l)
@@ -121,7 +121,8 @@ end_line=$(echo "scale=0; $total_lines * $END_PERCENTILE / 100" | bc)
 echo "Using tasks No. $start_line to $end_line (inclusive) out of 1-175 tasks"
 
 # Create a temporary file with just the desired range
-sed -n "${start_line},${end_line}p" tasks.md > tasks_subset.md
+temp_file="tasks_${START_PERCENTILE}_${END_PERCENTILE}.md"
+sed -n "${start_line},${end_line}p" tasks.md > "$temp_file"
 
 while IFS= read -r task_image; do
     docker pull $task_image
@@ -152,8 +153,8 @@ while IFS= read -r task_image; do
     docker images "ghcr.io/all-hands-ai/runtime" -q | xargs -r docker rmi -f
     docker volume prune -f
     docker system prune -f
-done < tasks_subset.md
+done < "$temp_file"
 
-rm tasks.md tasks_subset.md
+rm tasks.md "$temp_file"
 
 echo "All evaluation completed successfully!"
