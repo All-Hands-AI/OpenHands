@@ -4,10 +4,10 @@ import React from "react";
 import posthog from "posthog-js";
 import { I18nKey } from "#/i18n/declaration";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
-import { getDefaultSettings, Settings } from "#/services/settings";
+import { getDefaultSettings } from "#/services/settings";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
 import { DangerModal } from "../confirmation-modals/danger-modal";
-import { extractSettings, saveSettingsView } from "#/utils/settings-utils";
+import { extractSettings } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
 import { ModalButton } from "../../buttons/modal-button";
 import { AdvancedOptionSwitch } from "../../inputs/advanced-option-switch";
@@ -24,6 +24,7 @@ import { RuntimeSizeSelector } from "./runtime-size-selector";
 import { useConfig } from "#/hooks/query/use-config";
 import { useCurrentSettings } from "#/context/settings-context";
 import { MEMORY_CONDENSER } from "#/utils/feature-flags";
+import { Settings } from "#/types/settings";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -93,14 +94,11 @@ export function SettingsForm({
   };
 
   const handleFormSubmission = async (formData: FormData) => {
-    const keys = Array.from(formData.keys());
-    const isUsingAdvancedOptions = keys.includes("use-advanced-options");
     const newSettings = extractSettings(formData);
 
     // Inject the condenser config from the current feature flag value
     newSettings.ENABLE_DEFAULT_CONDENSER = MEMORY_CONDENSER;
 
-    saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
     await saveUserSettings(newSettings);
     onClose();
     resetOngoingSession();

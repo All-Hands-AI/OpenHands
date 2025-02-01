@@ -2,6 +2,7 @@ import React from "react";
 import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
+import toast from "react-hot-toast";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
@@ -28,11 +29,13 @@ export function Sidebar() {
   const endSession = useEndSession();
   const user = useGitHubUser();
   const { data: config } = useConfig();
-  const { data: settings, isError: settingsError } = useSettings();
+  const {
+    data: settings,
+    error: settingsError,
+    isFetching: isFetchingSettings,
+  } = useSettings();
   const { mutateAsync: logout } = useLogout();
-
-  const { saveUserSettings, isUpToDate: settingsAreUpToDate } =
-    useCurrentSettings();
+  const { saveUserSettings } = useCurrentSettings();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
@@ -48,6 +51,16 @@ export function Sidebar() {
     }
   }, [user.isError]);
 
+  React.useEffect(() => {
+    // We don't show toast errors for settings in the global error handler
+    // because we have a special case for 404 errors
+    if (!isFetchingSettings && settingsError?.status !== 404) {
+      toast.error(
+        "Something went wrong while fetching settings. Please reload the page.",
+      );
+    }
+  }, [settingsError?.status, isFetchingSettings]);
+
   const handleEndSession = () => {
     dispatch(setCurrentAgentState(AgentState.LOADING));
     endSession();
@@ -62,8 +75,6 @@ export function Sidebar() {
     else await saveUserSettings({ unset_github_token: true });
     posthog.reset();
   };
-
-  const showSettingsModal = !settingsAreUpToDate || settingsModalIsOpen;
 
   return (
     <>
@@ -109,7 +120,7 @@ export function Sidebar() {
       {accountSettingsModalOpen && (
         <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
       )}
-      {(settingsError || showSettingsModal) && (
+      {(settingsError?.status === 404 || settingsModalIsOpen) && (
         <SettingsModal
           settings={settings}
           onClose={() => setSettingsModalIsOpen(false)}

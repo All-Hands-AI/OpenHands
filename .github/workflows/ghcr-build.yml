@@ -219,8 +219,7 @@ jobs:
             exit 1
           fi
 
-
-  # Run unit tests with the EventStream runtime Docker images as root
+  # Run unit tests with the Docker runtime Docker images as root
   test_runtime_root:
     name: RT Unit Tests (Root)
     needs: [ghcr_build_runtime]
@@ -287,7 +286,7 @@ jobs:
           image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
-          TEST_RUNTIME=eventstream \
+          TEST_RUNTIME=docker \
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
@@ -298,7 +297,7 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  # Run unit tests with the EventStream runtime Docker images as openhands user
+  # Run unit tests with the Docker runtime Docker images as openhands user
   test_runtime_oh:
     name: RT Unit Tests (openhands)
     runs-on: ubuntu-latest
@@ -364,7 +363,7 @@ jobs:
           image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
-          TEST_RUNTIME=eventstream \
+          TEST_RUNTIME=docker \
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \

@@ -5,12 +5,7 @@ from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.shared import config as shared_config
 
-FILES_TO_IGNORE = [
-    '.git/',
-    '.DS_Store',
-    'node_modules/',
-    '__pycache__/',
-]
+FILES_TO_IGNORE = ['.git/', '.DS_Store', 'node_modules/', '__pycache__/', 'lost+found/']
 
 
 def sanitize_filename(filename):

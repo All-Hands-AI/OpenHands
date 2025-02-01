@@ -134,6 +134,10 @@ class Runtime(FileEditRuntimeMixin):
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
 
     def close(self) -> None:
+        """
+        This should only be called by conversation manager or closing the session.
+        If called for instance by error handling, it could prevent recovery.
+        """
         pass
 
     @classmethod
@@ -164,8 +168,9 @@ class Runtime(FileEditRuntimeMixin):
                 # Note: json.dumps gives us nice escaping for free
                 code += f'os.environ["{key}"] = {json.dumps(value)}\n'
             code += '\n'
-            obs = self.run_ipython(IPythonRunCellAction(code))
-            self.log('debug', f'Added env vars to IPython: code={code}, obs={obs}')
+            self.run_ipython(IPythonRunCellAction(code))
+            # Note: we don't log the vars values, they're leaking info
+            logger.debug('Added env vars to IPython')
 
         # Add env vars to the Bash shell
         cmd = ''
@@ -175,7 +180,10 @@ class Runtime(FileEditRuntimeMixin):
         if not cmd:
             return
         cmd = cmd.strip()
-        logger.debug(f'Adding env var: {cmd}')
+        logger.debug(
+            'Adding env vars to bash'
+        )  # don't log the vars values, they're leaking info
+
         obs = self.run(CmdRunAction(cmd))
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(
@@ -205,7 +213,6 @@ class Runtime(FileEditRuntimeMixin):
             self.log('error', f'Unexpected error while running action: {error_message}')
             self.log('error', f'Problematic action: {str(event)}')
             self.send_error_message(err_id, error_message)
-            self.close()
             return
 
         observation._cause = event.id  # type: ignore[attr-defined]

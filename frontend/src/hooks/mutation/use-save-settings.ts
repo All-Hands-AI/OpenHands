@@ -1,10 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  DEFAULT_SETTINGS,
-  PostApiSettings,
-  PostSettings,
-} from "#/services/settings";
+import { DEFAULT_SETTINGS } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
+import { PostSettings, PostApiSettings } from "#/types/settings";
 
 const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
   const apiSettings: Partial<PostApiSettings> = {
@@ -19,6 +16,7 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
     github_token: settings.github_token,
     unset_github_token: settings.unset_github_token,
     enable_default_condenser: settings.ENABLE_DEFAULT_CONDENSER,
+    user_consents_to_analytics: settings.user_consents_to_analytics,
   };
 
   await OpenHands.saveSettings(apiSettings);
