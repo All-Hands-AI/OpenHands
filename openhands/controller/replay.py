@@ -51,7 +51,6 @@ class ReplayManager:
             self.replay_events is not None
             and self.replay_index < len(self.replay_events)
             and isinstance(self.replay_events[self.replay_index], Action)
-            and self.replay_events[self.replay_index].source != EventSource.USER
         )
 
     def should_replay(self) -> bool:
@@ -62,22 +61,14 @@ class ReplayManager:
 
         This method also moves "replay_index" to the next action, if applicable.
         """
-        print('Should replay or not?')
         if not self.replay_mode:
-            print('    No!')
             return False
 
         assert self.replay_events is not None
         while self.replay_index < len(self.replay_events) and not self._replayable():
             self.replay_index += 1
 
-        ans = self._replayable()
-        print(
-            f'    replay index = {self.replay_index}, len(events) = {len(self.replay_events)}, should replay = {ans}'
-        )
-        if ans:
-            print(f'    event = {self.replay_events[self.replay_index]}')
-        return ans
+        return self._replayable()
 
     def step(self) -> Action:
         assert self.replay_events is not None
