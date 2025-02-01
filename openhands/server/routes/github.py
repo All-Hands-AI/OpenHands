@@ -27,7 +27,7 @@ async def get_github_repositories(
         repos: list[GitHubRepository] = await client.get_repositories(
             page, per_page, sort, installation_id
         )
-        return JSONResponse(content=repos)
+        return repos
 
     except GhAuthenticationError as e:
         return JSONResponse(
@@ -49,7 +49,7 @@ async def get_github_user(
     client = GithubServiceImpl(github_user_id)
     try:
         user: GitHubUser = await client.get_user()
-        return JSONResponse(content=user)
+        return user
 
     except GhAuthenticationError as e:
         return JSONResponse(
@@ -71,7 +71,7 @@ async def get_github_installation_ids(
     client = GithubServiceImpl(github_user_id)
     try:
         installations_ids: list[int] = await client.get_installation_ids()
-        return JSONResponse(content=installations_ids)
+        return installations_ids
 
     except GhAuthenticationError as e:
         return JSONResponse(

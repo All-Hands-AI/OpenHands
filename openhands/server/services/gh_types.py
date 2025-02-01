@@ -1,8 +1,7 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 
-@dataclass
-class GitHubUser:
+class GitHubUser(BaseModel):
     id: int
     login: str
     avatar_url: str
@@ -11,8 +10,7 @@ class GitHubUser:
     email: str | None = None
 
 
-@dataclass
-class GitHubRepository:
+class GitHubRepository(BaseModel):
     id: int
     full_name: str
     stargazers_count: int | None = None
