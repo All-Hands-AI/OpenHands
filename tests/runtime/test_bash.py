@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 from conftest import (
+    TEST_IN_CI,
     _close_test_runtime,
     _load_runtime,
 )
@@ -489,7 +490,7 @@ def test_git_operation(runtime_cls):
         obs = _run_cmd_action(runtime, 'echo "hello" > test_file.txt')
         assert obs.exit_code == 0
 
-        if runtime_cls != LocalRuntime:
+        if runtime_cls != LocalRuntime or TEST_IN_CI:
             obs = _run_cmd_action(
                 runtime,
                 'git config --file ./.git_config user.name "openhands" && git config --file ./.git_config user.email "openhands@all-hands.dev"',
