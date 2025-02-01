@@ -6,6 +6,7 @@ import socketio
 
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
+from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
 from openhands.core.const.guide_url import TROUBLESHOOTING_URL
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
@@ -37,6 +38,7 @@ class Session:
     loop: asyncio.AbstractEventLoop
     config: AppConfig
     file_store: FileStore
+    user_id: str | None
 
     def __init__(
         self,
@@ -44,6 +46,7 @@ class Session:
         config: AppConfig,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
+        user_id: str | None = None,
     ):
         self.sid = sid
         self.sio = sio
@@ -58,14 +61,22 @@ class Session:
         # Copying this means that when we update variables they are not applied to the shared global configuration!
         self.config = deepcopy(config)
         self.loop = asyncio.get_event_loop()
+        self.user_id = user_id
 
-    def close(self):
+    async def close(self):
+        if self.sio:
+            await self.sio.emit(
+                'oh_event',
+                event_to_dict(
+                    AgentStateChangedObservation('', AgentState.STOPPED.value)
+                ),
+                to=ROOM_KEY.format(sid=self.sid),
+            )
         self.is_alive = False
-        self.agent_session.close()
+        await self.agent_session.close()
 
     async def initialize_agent(
-        self,
-        settings: Settings,
+        self, settings: Settings, initial_message: MessageAction | None
     ):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
@@ -83,6 +94,9 @@ class Session:
         )
         max_iterations = settings.max_iterations or self.config.max_iterations
 
+        # This is a shallow copy of the default LLM config, so changes here will
+        # persist if we retrieve the default LLM config again when constructing
+        # the agent
         default_llm_config = self.config.get_llm_config()
         default_llm_config.model = settings.llm_model or ''
         default_llm_config.api_key = settings.llm_api_key
@@ -90,8 +104,16 @@ class Session:
 
         # TODO: override other LLM config & agent config groups (#2075)
 
-        llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
+        llm = self._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
+
+        if settings.enable_default_condenser:
+            default_condenser_config = AmortizedForgettingCondenserConfig(
+                keep_first=3, max_size=20
+            )
+            logger.info(f'Enabling default condenser: {default_condenser_config}')
+            agent_config.condenser = default_condenser_config
+
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
         github_token = None
@@ -111,13 +133,29 @@ class Session:
                 agent_configs=self.config.get_agent_configs(),
                 github_token=github_token,
                 selected_repository=selected_repository,
+                initial_message=initial_message,
             )
         except Exception as e:
-            logger.exception(f'Error creating controller: {e}')
+            logger.exception(f'Error creating agent_session: {e}')
             await self.send_error(
-                f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
+                f'Error creating agent_session. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
             return
+
+    def _create_llm(self, agent_cls: str | None) -> LLM:
+        """
+        Initialize LLM, extracted for testing.
+        """
+        return LLM(
+            config=self.config.get_llm_config_from_agent(agent_cls),
+            retry_listener=self._notify_on_llm_retry,
+        )
+
+    def _notify_on_llm_retry(self, retries: int, max: int) -> None:
+        msg_id = 'STATUS$LLM_RETRY'
+        self.queue_status_message(
+            'info', msg_id, f'Retrying LLM request, {retries} / {max}'
+        )
 
     def on_event(self, event: Event):
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
@@ -184,8 +222,8 @@ class Session:
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
-        except RuntimeError:
-            logger.error('Error sending', stack_info=True, exc_info=True)
+        except RuntimeError as e:
+            logger.error(f'Error sending data to websocket: {str(e)}')
             self.is_alive = False
             return False
 
@@ -197,7 +235,6 @@ class Session:
         """Sends a status message to the client."""
         if msg_type == 'error':
             await self.agent_session.stop_agent_loop_for_error()
-
         await self.send(
             {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
         )

@@ -1,9 +1,9 @@
 import React from "react";
 import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
-import { useAuth } from "#/context/auth-context";
+import posthog from "posthog-js";
+import toast from "react-hot-toast";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
-import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { DocsButton } from "#/components/shared/buttons/docs-button";
@@ -12,7 +12,7 @@ import { SettingsButton } from "#/components/shared/buttons/settings-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { AccountSettingsModal } from "#/components/shared/modals/account-settings/account-settings-modal";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
-import { useSettingsUpToDate } from "#/context/settings-up-to-date-context";
+import { useCurrentSettings } from "#/context/settings-context";
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
@@ -21,15 +21,21 @@ import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
 import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
+import { useLogout } from "#/hooks/mutation/use-logout";
+import { useConfig } from "#/hooks/query/use-config";
 
 export function Sidebar() {
   const dispatch = useDispatch();
   const endSession = useEndSession();
   const user = useGitHubUser();
-  const { data: isAuthed } = useIsAuthed();
-  const { logout } = useAuth();
-  const { data: settings, isError: settingsIsError } = useSettings();
-  const { isUpToDate: settingsAreUpToDate } = useSettingsUpToDate();
+  const { data: config } = useConfig();
+  const {
+    data: settings,
+    error: settingsError,
+    isFetching: isFetchingSettings,
+  } = useSettings();
+  const { mutateAsync: logout } = useLogout();
+  const { saveUserSettings } = useCurrentSettings();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
@@ -45,21 +51,30 @@ export function Sidebar() {
     }
   }, [user.isError]);
 
+  React.useEffect(() => {
+    // We don't show toast errors for settings in the global error handler
+    // because we have a special case for 404 errors
+    if (!isFetchingSettings && settingsError?.status !== 404) {
+      toast.error(
+        "Something went wrong while fetching settings. Please reload the page.",
+      );
+    }
+  }, [settingsError?.status, isFetchingSettings]);
+
   const handleEndSession = () => {
     dispatch(setCurrentAgentState(AgentState.LOADING));
     endSession();
   };
 
   const handleAccountSettingsModalClose = () => {
-    // If the user closes the modal without connecting to GitHub,
-    // we need to log them out to clear the invalid token from the
-    // local storage
-    if (user.isError) logout();
     setAccountSettingsModalOpen(false);
   };
 
-  const showSettingsModal =
-    isAuthed && (!settingsAreUpToDate || settingsModalIsOpen);
+  const handleLogout = async () => {
+    if (config?.APP_MODE === "saas") await logout();
+    else await saveUserSettings({ unset_github_token: true });
+    posthog.reset();
+  };
 
   return (
     <>
@@ -72,7 +87,7 @@ export function Sidebar() {
           <ExitProjectButton onClick={handleEndSession} />
           {MULTI_CONVERSATION_UI && (
             <TooltipButton
-              data-testid="toggle-conversation-panel"
+              testId="toggle-conversation-panel"
               tooltip="Conversations"
               ariaLabel="Conversations"
               onClick={() => setConversationPanelIsOpen((prev) => !prev)}
@@ -87,7 +102,7 @@ export function Sidebar() {
               user={
                 user.data ? { avatar_url: user.data.avatar_url } : undefined
               }
-              onLogout={logout}
+              onLogout={handleLogout}
               onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
             />
           )}
@@ -105,13 +120,12 @@ export function Sidebar() {
       {accountSettingsModalOpen && (
         <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
       )}
-      {settingsIsError ||
-        (showSettingsModal && (
-          <SettingsModal
-            settings={settings}
-            onClose={() => setSettingsModalIsOpen(false)}
-          />
-        ))}
+      {(settingsError?.status === 404 || settingsModalIsOpen) && (
+        <SettingsModal
+          settings={settings}
+          onClose={() => setSettingsModalIsOpen(false)}
+        />
+      )}
     </>
   );
 }

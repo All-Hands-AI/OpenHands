@@ -3,7 +3,7 @@ import os
 import time
 import warnings
 from functools import partial
-from typing import Any
+from typing import Any, Callable
 
 import requests
 
@@ -70,6 +70,15 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-5-haiku-20241022',
     'gpt-4o-mini',
     'gpt-4o',
+    'o1-2024-12-17',
+]
+
+REASONING_EFFORT_SUPPORTED_MODELS = [
+    'o1-2024-12-17',
+]
+
+MODELS_WITHOUT_STOP_WORDS = [
+    'o1-mini',
 ]
 
 
@@ -84,6 +93,7 @@ class LLM(RetryMixin, DebugMixin):
         self,
         config: LLMConfig,
         metrics: Metrics | None = None,
+        retry_listener: Callable[[int, int], None] | None = None,
     ):
         """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
 
@@ -101,7 +111,7 @@ class LLM(RetryMixin, DebugMixin):
         self.config: LLMConfig = copy.deepcopy(config)
 
         self.model_info: ModelInfo | None = None
-
+        self.retry_listener = retry_listener
         if self.config.log_completions:
             if self.config.log_completions_folder is None:
                 raise RuntimeError(
@@ -131,7 +141,9 @@ class LLM(RetryMixin, DebugMixin):
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
-            api_key=self.config.api_key,
+            api_key=self.config.api_key.get_secret_value()
+            if self.config.api_key
+            else None,
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
@@ -140,6 +152,12 @@ class LLM(RetryMixin, DebugMixin):
             temperature=self.config.temperature,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
+            # add reasoning_effort, only if the model is supported
+            **(
+                {'reasoning_effort': self.config.reasoning_effort}
+                if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
+                else {}
+            ),
         )
 
         self._completion_unwrapped = self._completion
@@ -150,6 +168,7 @@ class LLM(RetryMixin, DebugMixin):
             retry_min_wait=self.config.retry_min_wait,
             retry_max_wait=self.config.retry_max_wait,
             retry_multiplier=self.config.retry_multiplier,
+            retry_listener=self.retry_listener,
         )
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
@@ -185,7 +204,8 @@ class LLM(RetryMixin, DebugMixin):
                     messages, kwargs['tools']
                 )
                 kwargs['messages'] = messages
-                kwargs['stop'] = STOP_WORDS
+                if self.config.model not in MODELS_WITHOUT_STOP_WORDS:
+                    kwargs['stop'] = STOP_WORDS
                 mock_fncall_tools = kwargs.pop('tools')
 
             # if we have no messages, something went very wrong
@@ -303,7 +323,9 @@ class LLM(RetryMixin, DebugMixin):
             # GET {base_url}/v1/model/info with litellm_model_id as path param
             response = requests.get(
                 f'{self.config.base_url}/v1/model/info',
-                headers={'Authorization': f'Bearer {self.config.api_key}'},
+                headers={
+                    'Authorization': f'Bearer {self.config.api_key.get_secret_value() if self.config.api_key else None}'
+                },
             )
             resp_json = response.json()
             if 'data' not in resp_json:
@@ -588,17 +610,16 @@ class LLM(RetryMixin, DebugMixin):
             logger.debug(f'Using custom cost per token: {cost_per_token}')
             extra_kwargs['custom_cost_per_token'] = cost_per_token
 
-        try:
-            # try directly get response_cost from response
-            _hidden_params = getattr(response, '_hidden_params', {})
-            cost = _hidden_params.get('response_cost', None)
-            if cost is None:
-                cost = float(
-                    _hidden_params.get('additional_headers', {}).get(
-                        'llm_provider-x-litellm-response-cost', 0.0
-                    )
-                )
+        # try directly get response_cost from response
+        _hidden_params = getattr(response, '_hidden_params', {})
+        cost = _hidden_params.get('additional_headers', {}).get(
+            'llm_provider-x-litellm-response-cost', None
+        )
+        if cost is not None:
+            cost = float(cost)
+            logger.debug(f'Got response_cost from response: {cost}')
 
+        try:
             if cost is None:
                 try:
                     cost = litellm_completion_cost(

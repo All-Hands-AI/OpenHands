@@ -8,10 +8,12 @@ import litellm
 from litellm.exceptions import (
     BadRequestError,
     ContextWindowExceededError,
+    OpenAIError,
     RateLimitError,
 )
 
 from openhands.controller.agent import Agent
+from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
@@ -41,6 +43,7 @@ from openhands.events.action import (
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
+    AgentCondensationObservation,
     AgentDelegateObservation,
     AgentStateChangedObservation,
     ErrorObservation,
@@ -90,6 +93,7 @@ class AgentController:
         is_delegate: bool = False,
         headless_mode: bool = True,
         status_callback: Callable | None = None,
+        replay_events: list[Event] | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -108,16 +112,21 @@ class AgentController:
             is_delegate: Whether this controller is a delegate.
             headless_mode: Whether the agent is run in headless mode.
             status_callback: Optional callback function to handle status updates.
+            replay_events: A list of logs to replay.
         """
         self.id = sid
         self.agent = agent
         self.headless_mode = headless_mode
+        self.is_delegate = is_delegate
 
-        # subscribe to the event stream
+        # the event stream must be set before maybe subscribing to it
         self.event_stream = event_stream
-        self.event_stream.subscribe(
-            EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
-        )
+
+        # subscribe to the event stream if this is not a delegate
+        if not self.is_delegate:
+            self.event_stream.subscribe(
+                EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
+            )
 
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
@@ -134,6 +143,9 @@ class AgentController:
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
         self.status_callback = status_callback
+
+        # replay-related
+        self._replay_manager = ReplayManager(replay_events)
 
     async def close(self) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -165,7 +177,11 @@ class AgentController:
         )
 
         # unsubscribe from the event stream
-        self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER, self.id)
+        # only the root parent controller subscribes to the event stream
+        if not self.is_delegate:
+            self.event_stream.unsubscribe(
+                EventStreamSubscriber.AGENT_CONTROLLER, self.id
+            )
         self._closed = True
 
     def log(self, level: str, message: str, extra: dict | None = None) -> None:
@@ -219,15 +235,34 @@ class AgentController:
                 f'report this error to the developers. Your session ID is {self.id}. '
                 f'Error type: {e.__class__.__name__}'
             )
-            if isinstance(e, litellm.AuthenticationError) or isinstance(
-                e, litellm.BadRequestError
+            if (
+                isinstance(e, litellm.AuthenticationError)
+                or isinstance(e, litellm.BadRequestError)
+                or isinstance(e, RateLimitError)
             ):
                 reported = e
             await self._react_to_exception(reported)
 
     def should_step(self, event: Event) -> bool:
+        """
+        Whether the agent should take a step based on an event. In general,
+        the agent should take a step if it receives a message from the user,
+        or observes something in the environment (after acting).
+        """
+        # it might be the delegate's day in the sun
+        if self.delegate is not None:
+            return False
+
         if isinstance(event, Action):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                return True
+            if (
+                isinstance(event, MessageAction)
+                and self.get_agent_state() != AgentState.AWAITING_USER_INPUT
+            ):
+                # TODO: this is fragile, but how else to check if eligible?
+                return True
+            if isinstance(event, AgentDelegateAction):
                 return True
             return False
         if isinstance(event, Observation):
@@ -244,11 +279,34 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
+
+        # If we have a delegate that is not finished or errored, forward events to it
+        if self.delegate is not None:
+            delegate_state = self.delegate.get_agent_state()
+            if delegate_state not in (
+                AgentState.FINISHED,
+                AgentState.ERROR,
+                AgentState.REJECTED,
+            ):
+                # Forward the event to delegate and skip parent processing
+                asyncio.get_event_loop().run_until_complete(
+                    self.delegate._on_event(event)
+                )
+                return
+            else:
+                # delegate is done or errored, so end it
+                self.end_delegate()
+                return
+
+        # continue parent processing only if there's no active delegate
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
 
     async def _on_event(self, event: Event) -> None:
         if hasattr(event, 'hidden') and event.hidden:
             return
+
+        # Give others a little chance
+        await asyncio.sleep(0.01)
 
         # if the event is not filtered out, add it to the history
         if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
@@ -263,17 +321,22 @@ class AgentController:
             self.step()
 
     async def _handle_action(self, action: Action) -> None:
-        """Handles actions from the event stream.
-
-        Args:
-            action (Action): The action to handle.
-        """
+        """Handles an Action from the agent or delegate."""
         if isinstance(action, ChangeAgentStateAction):
             await self.set_agent_state_to(action.agent_state)  # type: ignore
         elif isinstance(action, MessageAction):
             await self._handle_message_action(action)
         elif isinstance(action, AgentDelegateAction):
             await self.start_delegate(action)
+            assert self.delegate is not None
+            # Post a MessageAction with the task for the delegate
+            if 'task' in action.inputs:
+                self.event_stream.add_event(
+                    MessageAction(content='TASK: ' + action.inputs['task']),
+                    EventSource.USER,
+                )
+                await self.delegate.set_agent_state_to(AgentState.RUNNING)
+            return
 
         elif isinstance(action, AgentFinishAction):
             self.state.outputs = action.outputs
@@ -442,10 +505,6 @@ class AgentController:
             EventSource.ENVIRONMENT,
         )
 
-        if new_state == AgentState.INIT and self.state.resume_state:
-            await self.set_agent_state_to(self.state.resume_state)
-            self.state.resume_state = None
-
     def get_agent_state(self) -> AgentState:
         """Returns the current state of the agent.
 
@@ -473,7 +532,7 @@ class AgentController:
         agent_cls: Type[Agent] = Agent.get_cls(action.agent)
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
-        llm = LLM(config=llm_config)
+        llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
         delegate_agent = agent_cls(llm=llm, config=agent_config)
         state = State(
             inputs=action.inputs or {},
@@ -491,7 +550,7 @@ class AgentController:
             f'start delegate, creating agent {delegate_agent.name} using LLM {llm}',
         )
 
-        self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER, self.id)
+        # Create the delegate with is_delegate=True so it does NOT subscribe directly
         self.delegate = AgentController(
             sid=self.id + '-delegate',
             agent=delegate_agent,
@@ -504,7 +563,57 @@ class AgentController:
             is_delegate=True,
             headless_mode=self.headless_mode,
         )
-        await self.delegate.set_agent_state_to(AgentState.RUNNING)
+
+    def end_delegate(self) -> None:
+        """Ends the currently active delegate (e.g., if it is finished or errored)
+        so that this controller can resume normal operation.
+        """
+        if self.delegate is None:
+            return
+
+        delegate_state = self.delegate.get_agent_state()
+
+        # update iteration that is shared across agents
+        self.state.iteration = self.delegate.state.iteration
+
+        # close the delegate controller before adding new events
+        asyncio.get_event_loop().run_until_complete(self.delegate.close())
+
+        if delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
+            # retrieve delegate result
+            delegate_outputs = (
+                self.delegate.state.outputs if self.delegate.state else {}
+            )
+
+            # prepare delegate result observation
+            # TODO: replace this with AI-generated summary (#2395)
+            formatted_output = ', '.join(
+                f'{key}: {value}' for key, value in delegate_outputs.items()
+            )
+            content = (
+                f'{self.delegate.agent.name} finishes task with {formatted_output}'
+            )
+
+            # emit the delegate result observation
+            obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+            self.event_stream.add_event(obs, EventSource.AGENT)
+        else:
+            # delegate state is ERROR
+            # emit AgentDelegateObservation with error content
+            delegate_outputs = (
+                self.delegate.state.outputs if self.delegate.state else {}
+            )
+            content = (
+                f'{self.delegate.agent.name} encountered an error during execution.'
+            )
+
+            # emit the delegate result observation
+            obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+            self.event_stream.add_event(obs, EventSource.AGENT)
+
+        # unset delegate so parent can resume normal handling
+        self.delegate = None
+        self.delegateAction = None
 
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
@@ -512,14 +621,6 @@ class AgentController:
             return
 
         if self._pending_action:
-            return
-
-        if self.delegate is not None:
-            assert self.delegate != self
-            # TODO this conditional will always be false, because the parent controllers are unsubscribed
-            # remove if it's still useless when delegation is reworked
-            if self.delegate.get_agent_state() != AgentState.PAUSED:
-                await self._delegate_step()
             return
 
         self.log(
@@ -551,42 +652,57 @@ class AgentController:
 
         self.update_state_before_step()
         action: Action = NullAction()
-        try:
-            action = self.agent.step(self.state)
-            if action is None:
-                raise LLMNoActionError('No action was returned')
-        except (
-            LLMMalformedActionError,
-            LLMNoActionError,
-            LLMResponseError,
-            FunctionCallValidationError,
-            FunctionCallNotExistsError,
-        ) as e:
-            self.event_stream.add_event(
-                ErrorObservation(
-                    content=str(e),
-                ),
-                EventSource.AGENT,
-            )
-            return
-        except (ContextWindowExceededError, BadRequestError) as e:
-            # FIXME: this is a hack until a litellm fix is confirmed
-            # Check if this is a nested context window error
-            error_str = str(e).lower()
-            if (
-                'contextwindowexceedederror' in error_str
-                or 'prompt is too long' in error_str
-                or isinstance(e, ContextWindowExceededError)
-            ):
-                # When context window is exceeded, keep roughly half of agent interactions
-                self.state.history = self._apply_conversation_window(self.state.history)
 
-                # Save the ID of the first event in our truncated history for future reloading
-                if self.state.history:
-                    self.state.start_id = self.state.history[0].id
-                # Don't add error event - let the agent retry with reduced context
+        if self._replay_manager.should_replay():
+            # in replay mode, we don't let the agent to proceed
+            # instead, we replay the action from the replay trajectory
+            action = self._replay_manager.step()
+        else:
+            try:
+                action = self.agent.step(self.state)
+                if action is None:
+                    raise LLMNoActionError('No action was returned')
+            except (
+                LLMMalformedActionError,
+                LLMNoActionError,
+                LLMResponseError,
+                FunctionCallValidationError,
+                FunctionCallNotExistsError,
+            ) as e:
+                self.event_stream.add_event(
+                    ErrorObservation(
+                        content=str(e),
+                    ),
+                    EventSource.AGENT,
+                )
                 return
-            raise
+            except (ContextWindowExceededError, BadRequestError, OpenAIError) as e:
+                # FIXME: this is a hack until a litellm fix is confirmed
+                # Check if this is a nested context window error
+                error_str = str(e).lower()
+                if (
+                    'contextwindowexceedederror' in error_str
+                    or 'prompt is too long' in error_str
+                    or isinstance(e, ContextWindowExceededError)
+                ):
+                    # When context window is exceeded, keep roughly half of agent interactions
+                    self.state.history = self._apply_conversation_window(
+                        self.state.history
+                    )
+
+                    # Save the ID of the first event in our truncated history for future reloading
+                    if self.state.history:
+                        self.state.start_id = self.state.history[0].id
+
+                    # Add an error event to trigger another step by the agent
+                    self.event_stream.add_event(
+                        AgentCondensationObservation(
+                            content='Trimming prompt to meet context window limitations'
+                        ),
+                        EventSource.AGENT,
+                    )
+                    return
+                raise e
 
         if action.runnable:
             if self.state.confirmation_mode and (
@@ -611,67 +727,12 @@ class AgentController:
         log_level = 'info' if LOG_ALL_EVENTS else 'debug'
         self.log(log_level, str(action), extra={'msg_type': 'ACTION'})
 
-    async def _delegate_step(self) -> None:
-        """Executes a single step of the delegate agent."""
-        await self.delegate._step()  # type: ignore[union-attr]
-        assert self.delegate is not None
-        delegate_state = self.delegate.get_agent_state()
-        self.log('debug', f'Delegate state: {delegate_state}')
-        if delegate_state == AgentState.ERROR:
-            # update iteration that shall be shared across agents
-            self.state.iteration = self.delegate.state.iteration
-
-            # emit AgentDelegateObservation to mark delegate termination due to error
-            delegate_outputs = (
-                self.delegate.state.outputs if self.delegate.state else {}
+    def _notify_on_llm_retry(self, retries: int, max: int) -> None:
+        if self.status_callback is not None:
+            msg_id = 'STATUS$LLM_RETRY'
+            self.status_callback(
+                'info', msg_id, f'Retrying LLM request, {retries} / {max}'
             )
-            content = (
-                f'{self.delegate.agent.name} encountered an error during execution.'
-            )
-            obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
-            self.event_stream.add_event(obs, EventSource.AGENT)
-
-            # close the delegate upon error
-            await self.delegate.close()
-
-            # resubscribe parent when delegate is finished
-            self.event_stream.subscribe(
-                EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
-            )
-            self.delegate = None
-            self.delegateAction = None
-
-        elif delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
-            self.log('debug', 'Delegate agent has finished execution')
-            # retrieve delegate result
-            outputs = self.delegate.state.outputs if self.delegate.state else {}
-
-            # update iteration that shall be shared across agents
-            self.state.iteration = self.delegate.state.iteration
-
-            # close delegate controller: we must close the delegate controller before adding new events
-            await self.delegate.close()
-
-            # resubscribe parent when delegate is finished
-            self.event_stream.subscribe(
-                EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
-            )
-
-            # update delegate result observation
-            # TODO: replace this with AI-generated summary (#2395)
-            formatted_output = ', '.join(
-                f'{key}: {value}' for key, value in outputs.items()
-            )
-            content = (
-                f'{self.delegate.agent.name} finishes task with {formatted_output}'
-            )
-            obs = AgentDelegateObservation(outputs=outputs, content=content)
-
-            # clean up delegate status
-            self.delegate = None
-            self.delegateAction = None
-            self.event_stream.add_event(obs, EventSource.AGENT)
-        return
 
     async def _handle_traffic_control(
         self, limit_type: str, current_value: float, max_value: float

@@ -109,9 +109,6 @@ async def test_async_completion_with_user_cancellation(cancel_delay):
         print(f'Cancel requested: {is_set}')
         return is_set
 
-    config = load_app_config()
-    config.on_cancel_requested_fn = mock_on_cancel_requested
-
     async def mock_acompletion(*args, **kwargs):
         print('Starting mock_acompletion')
         for i in range(20):  # Increased iterations for longer running task
@@ -152,13 +149,6 @@ async def test_async_completion_with_user_cancellation(cancel_delay):
 @pytest.mark.parametrize('cancel_after_chunks', [1, 3, 5, 7, 9])
 async def test_async_streaming_completion_with_user_cancellation(cancel_after_chunks):
     cancel_requested = False
-
-    async def mock_on_cancel_requested():
-        nonlocal cancel_requested
-        return cancel_requested
-
-    config = load_app_config()
-    config.on_cancel_requested_fn = mock_on_cancel_requested
 
     test_messages = [
         'This is ',

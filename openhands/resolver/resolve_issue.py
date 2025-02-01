@@ -14,12 +14,7 @@ from termcolor import colored
 
 import openhands
 from openhands.controller.state.state import State
-from openhands.core.config import (
-    AgentConfig,
-    AppConfig,
-    LLMConfig,
-    SandboxConfig,
-)
+from openhands.core.config import AgentConfig, AppConfig, LLMConfig, SandboxConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
@@ -123,7 +118,7 @@ async def complete_runtime(
     git_patch = None
     while n_retries < 5:
         action = CmdRunAction(command=f'git diff --no-color --cached {base_commit}')
-        action.timeout = 600 + 100 * n_retries
+        action.set_hard_timeout(600 + 100 * n_retries)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -153,7 +148,7 @@ async def process_issue(
     max_iterations: int,
     llm_config: LLMConfig,
     output_dir: str,
-    runtime_container_image: str,
+    runtime_container_image: str | None,
     prompt_template: str,
     issue_handler: IssueHandlerInterface,
     repo_instruction: str | None = None,
@@ -306,13 +301,12 @@ async def resolve_issue(
     max_iterations: int,
     output_dir: str,
     llm_config: LLMConfig,
-    runtime_container_image: str,
+    runtime_container_image: str | None,
     prompt_template: str,
     issue_type: str,
     repo_instruction: str | None,
     issue_number: int,
     comment_id: int | None,
-    target_branch: str | None = None,
     reset_logger: bool = False,
 ) -> None:
     """Resolve a single github issue.
@@ -331,7 +325,7 @@ async def resolve_issue(
         repo_instruction: Repository instruction to use.
         issue_number: Issue number to resolve.
         comment_id: Optional ID of a specific comment to focus on.
-        target_branch: Optional target branch to create PR against (for PRs).
+
         reset_logger: Whether to reset the logger for multiprocessing.
     """
     issue_handler = issue_handler_factory(issue_type, owner, repo, token, llm_config)
@@ -429,9 +423,9 @@ async def resolve_issue(
     try:
         # checkout to pr branch if needed
         if issue_type == 'pr':
-            branch_to_use = target_branch if target_branch else issue.head_branch
+            branch_to_use = issue.head_branch
             logger.info(
-                f'Checking out to PR branch {target_branch} for issue {issue.number}'
+                f'Checking out to PR branch {branch_to_use} for issue {issue.number}'
             )
 
             if not branch_to_use:
@@ -450,10 +444,6 @@ async def resolve_issue(
                 checkout_cmd,
                 cwd=repo_dir,
             )
-
-            # Update issue's base_branch if using custom target branch
-            if target_branch:
-                issue.base_branch = target_branch
 
             base_commit = (
                 subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
@@ -578,16 +568,15 @@ def main():
         help='Type of issue to resolve, either open issue or pr comments.',
     )
     parser.add_argument(
-        '--target-branch',
-        type=str,
-        default=None,
-        help="Target branch to pull and create PR against (for PRs). If not specified, uses the PR's base branch.",
+        '--is-experimental',
+        type=lambda x: x.lower() == 'true',
+        help='Whether to run in experimental mode.',
     )
 
     my_args = parser.parse_args()
 
     runtime_container_image = my_args.runtime_container_image
-    if runtime_container_image is None:
+    if runtime_container_image is None and not my_args.is_experimental:
         runtime_container_image = (
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
@@ -601,9 +590,10 @@ def main():
     if not token:
         raise ValueError('Github token is required.')
 
+    api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(
         model=my_args.llm_model or os.environ['LLM_MODEL'],
-        api_key=my_args.llm_api_key or os.environ['LLM_API_KEY'],
+        api_key=str(api_key) if api_key else None,
         base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
     )
 
@@ -643,7 +633,6 @@ def main():
             repo_instruction=repo_instruction,
             issue_number=my_args.issue_number,
             comment_id=my_args.comment_id,
-            target_branch=my_args.target_branch,
         )
     )
 

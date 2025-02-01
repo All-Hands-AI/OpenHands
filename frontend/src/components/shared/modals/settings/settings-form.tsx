@@ -2,12 +2,12 @@ import { useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import React from "react";
 import posthog from "posthog-js";
+import { I18nKey } from "#/i18n/declaration";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
-import { getDefaultSettings, Settings } from "#/services/settings";
+import { getDefaultSettings } from "#/services/settings";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
 import { DangerModal } from "../confirmation-modals/danger-modal";
-import { I18nKey } from "#/i18n/declaration";
-import { extractSettings, saveSettingsView } from "#/utils/settings-utils";
+import { extractSettings } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
 import { ModalButton } from "../../buttons/modal-button";
 import { AdvancedOptionSwitch } from "../../inputs/advanced-option-switch";
@@ -19,10 +19,12 @@ import { CustomModelInput } from "../../inputs/custom-model-input";
 import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
-import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
 import { RuntimeSizeSelector } from "./runtime-size-selector";
 import { useConfig } from "#/hooks/query/use-config";
+import { useCurrentSettings } from "#/context/settings-context";
+import { MEMORY_CONDENSER } from "#/utils/feature-flags";
+import { Settings } from "#/types/settings";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -41,7 +43,7 @@ export function SettingsForm({
   securityAnalyzers,
   onClose,
 }: SettingsFormProps) {
-  const { mutateAsync: saveSettings } = useSaveSettings();
+  const { saveUserSettings } = useCurrentSettings();
   const endSession = useEndSession();
   const { data: config } = useConfig();
 
@@ -64,12 +66,14 @@ export function SettingsForm({
       const isUsingConfirmationMode = !!settings.CONFIRMATION_MODE;
       const isUsingBaseUrl = !!settings.LLM_BASE_URL;
       const isUsingCustomModel = !!settings.LLM_MODEL && !isKnownModel;
+      const isUsingDefaultCondenser = !!settings.ENABLE_DEFAULT_CONDENSER;
 
       return (
         isUsingSecurityAnalyzer ||
         isUsingConfirmationMode ||
         isUsingBaseUrl ||
-        isUsingCustomModel
+        isUsingCustomModel ||
+        isUsingDefaultCondenser
       );
     }
 
@@ -90,12 +94,13 @@ export function SettingsForm({
   };
 
   const handleFormSubmission = async (formData: FormData) => {
-    const keys = Array.from(formData.keys());
-    const isUsingAdvancedOptions = keys.includes("use-advanced-options");
     const newSettings = extractSettings(formData);
 
-    saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
-    await saveSettings(newSettings, { onSuccess: onClose });
+    // Inject the condenser config from the current feature flag value
+    newSettings.ENABLE_DEFAULT_CONDENSER = MEMORY_CONDENSER;
+
+    await saveUserSettings(newSettings);
+    onClose();
     resetOngoingSession();
 
     posthog.capture("settings_saved", {
@@ -107,7 +112,8 @@ export function SettingsForm({
   };
 
   const handleConfirmResetSettings = async () => {
-    await saveSettings(getDefaultSettings(), { onSuccess: onClose });
+    await saveUserSettings(getDefaultSettings());
+    onClose();
     resetOngoingSession();
     posthog.capture("settings_reset");
   };
@@ -169,7 +175,7 @@ export function SettingsForm({
 
           <APIKeyInput
             isDisabled={!!disabled}
-            isSet={settings.LLM_API_KEY === "SET"}
+            isSet={settings.LLM_API_KEY === "**********"}
           />
 
           {showAdvancedOptions && (
@@ -204,20 +210,21 @@ export function SettingsForm({
         <div className="flex flex-col gap-2">
           <div className="flex gap-2">
             <ModalButton
+              testId="save-settings-button"
               disabled={disabled}
               type="submit"
-              text={t(I18nKey.SETTINGS_FORM$SAVE_LABEL)}
+              text={t(I18nKey.BUTTON$SAVE)}
               className="bg-[#4465DB] w-full"
             />
             <ModalButton
-              text={t(I18nKey.SETTINGS_FORM$CLOSE_LABEL)}
+              text={t(I18nKey.BUTTON$CLOSE)}
               className="bg-[#737373] w-full"
               onClick={onClose}
             />
           </div>
           <ModalButton
             disabled={disabled}
-            text={t(I18nKey.SETTINGS_FORM$RESET_TO_DEFAULTS_LABEL)}
+            text={t(I18nKey.BUTTON$RESET_TO_DEFAULTS)}
             variant="text-like"
             className="text-danger self-start"
             onClick={() => {
@@ -231,17 +238,15 @@ export function SettingsForm({
         <ModalBackdrop>
           <DangerModal
             testId="reset-defaults-modal"
-            title={t(I18nKey.SETTINGS_FORM$ARE_YOU_SURE_LABEL)}
-            description={t(
-              I18nKey.SETTINGS_FORM$ALL_INFORMATION_WILL_BE_DELETED_MESSAGE,
-            )}
+            title={t(I18nKey.MODAL$CONFIRM_RESET_TITLE)}
+            description={t(I18nKey.MODAL$CONFIRM_RESET_MESSAGE)}
             buttons={{
               danger: {
-                text: t(I18nKey.SETTINGS_FORM$RESET_TO_DEFAULTS_LABEL),
+                text: t(I18nKey.BUTTON$RESET_TO_DEFAULTS),
                 onClick: handleConfirmResetSettings,
               },
               cancel: {
-                text: t(I18nKey.SETTINGS_FORM$CANCEL_LABEL),
+                text: t(I18nKey.BUTTON$CANCEL),
                 onClick: () => setConfirmResetDefaultsModalOpen(false),
               },
             }}
@@ -251,17 +256,15 @@ export function SettingsForm({
       {confirmEndSessionModalOpen && (
         <ModalBackdrop>
           <DangerModal
-            title={t(I18nKey.SETTINGS_FORM$END_SESSION_LABEL)}
-            description={t(
-              I18nKey.SETTINGS_FORM$CHANGING_WORKSPACE_WARNING_MESSAGE,
-            )}
+            title={t(I18nKey.MODAL$END_SESSION_TITLE)}
+            description={t(I18nKey.MODAL$END_SESSION_MESSAGE)}
             buttons={{
               danger: {
-                text: t(I18nKey.SETTINGS_FORM$END_SESSION_LABEL),
+                text: t(I18nKey.BUTTON$END_SESSION),
                 onClick: handleConfirmEndSession,
               },
               cancel: {
-                text: t(I18nKey.SETTINGS_FORM$CANCEL_LABEL),
+                text: t(I18nKey.BUTTON$CANCEL),
                 onClick: () => setConfirmEndSessionModalOpen(false),
               },
             }}
