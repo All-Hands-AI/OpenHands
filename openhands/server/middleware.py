@@ -188,14 +188,5 @@ class GitHubTokenMiddleware(SessionMiddlewareInterface):
         self.app = app
 
     async def __call__(self, request: Request, call_next: Callable):
-        settings_store = await shared.SettingsStoreImpl.get_instance(
-            shared.config, get_user_id(request)
-        )
-        settings = await settings_store.load()
-
-        if settings and settings.github_token:
-            request.state.github_token = settings.github_token.get_secret_value()
-        else:
-            request.state.github_token = None
-
+        request.state.github_user_id = get_user_id(request)
         return await call_next(request)
