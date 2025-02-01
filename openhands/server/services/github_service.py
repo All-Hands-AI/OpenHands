@@ -15,6 +15,10 @@ class GitHubService:
         self.token = ''
 
     async def _get_github_headers(self):
+        """
+        Retrieve the GH Token from settings store to construct the headers
+        """
+
         if self.user_id:
             settings_store = await SettingsStoreImpl.get_instance(config, self.user_id)
 
