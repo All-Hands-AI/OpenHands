@@ -46,6 +46,36 @@ def test_simple_replay(temp_dir, runtime_cls, run_as_openhands):
     _close_test_runtime(runtime)
 
 
+def test_simple_gui_replay(temp_dir, runtime_cls, run_as_openhands):
+    """
+    A simple replay test that involves simple terminal operations and edits
+    (writing a Vue.js App), using the default agent
+
+    Note:
+    1. This trajectory is exported from GUI mode, meaning it has extra
+    environmental actions that don't appear in headless mode's trajectories
+    2. In GUI mode, agents typically don't finish; rather, they wait for the next
+    task from the user, so this exported trajectory ends with awaiting_user_input
+    """
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+
+    config = _get_config('basic_gui_mode')
+
+    state: State | None = asyncio.run(
+        run_controller(
+            config=config,
+            initial_user_action=NullAction(),
+            runtime=runtime,
+            # exit on message, otherwise this would be stuck on waiting for user input
+            exit_on_message=True,
+        )
+    )
+
+    assert state.agent_state == AgentState.FINISHED
+
+    _close_test_runtime(runtime)
+
+
 def test_replay_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
     """
     Replay requires a consistent initial state to start with, otherwise it might

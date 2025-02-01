@@ -2,6 +2,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, EventSource
+from openhands.events.observation.empty import NullObservation
 
 
 class ReplayManager:
@@ -16,7 +17,18 @@ class ReplayManager:
     initial state of the trajectory.
     """
 
-    def __init__(self, replay_events: list[Event] | None):
+    def __init__(self, events: list[Event] | None):
+        replay_events = []
+        for event in events or []:
+            if event.source == EventSource.ENVIRONMENT:
+                # ignore ENVIRONMENT events as they are not issued by
+                # the user or agent, and should not be replayed
+                continue
+            if isinstance(event, NullObservation):
+                # ignore NullObservation
+                continue
+            replay_events.append(event)
+
         if replay_events:
             logger.info(f'Replay events loaded, events length = {len(replay_events)}')
             for index in range(len(replay_events) - 1):
@@ -50,14 +62,22 @@ class ReplayManager:
 
         This method also moves "replay_index" to the next action, if applicable.
         """
+        print('Should replay or not?')
         if not self.replay_mode:
+            print('    No!')
             return False
 
         assert self.replay_events is not None
         while self.replay_index < len(self.replay_events) and not self._replayable():
             self.replay_index += 1
 
-        return self._replayable()
+        ans = self._replayable()
+        print(
+            f'    replay index = {self.replay_index}, len(events) = {len(self.replay_events)}, should replay = {ans}'
+        )
+        if ans:
+            print(f'    event = {self.replay_events[self.replay_index]}')
+        return ans
 
     def step(self) -> Action:
         assert self.replay_events is not None
