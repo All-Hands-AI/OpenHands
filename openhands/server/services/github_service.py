@@ -45,15 +45,15 @@ class GitHubService:
     ) -> tuple[Any, dict]:
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    url, headers=self._get_github_headers(), params=params
-                )
+                github_headers = await self._get_github_headers()
+                response = await client.get(url, headers=github_headers, params=params)
                 if server_config.app_mode == AppMode.SAAS and self._has_token_expired(
                     response.status_code
                 ):
                     await self._get_latest_token()
+                    github_headers = await self._get_github_headers()
                     response = await client.get(
-                        url, headers=self._get_github_headers(), params=params
+                        url, headers=github_headers, params=params
                     )
 
                 response.raise_for_status()
@@ -123,6 +123,7 @@ class GitHubService:
     ):
         url = f'{self.BASE_URL}/search/repositories'
         params = {'q': query, 'per_page': per_page, 'sort': sort, 'order': order}
+        github_headers = await self._get_github_headers()
         return await call_sync_from_async(
-            requests.get, url, headers=self._get_github_headers(), params=params
+            requests.get, url, headers=github_headers, params=params
         )

@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
+from openhands.server.auth import get_user_id
 from openhands.server.services.gh_types import GitHubRepository, GitHubUser
 from openhands.server.services.github_service import GitHubService
 from openhands.server.shared import server_config
@@ -8,17 +9,6 @@ from openhands.server.types import GhAuthenticationError, GHUnknownException
 from openhands.utils.import_utils import get_impl
 
 app = APIRouter(prefix='/api/github')
-
-
-def require_user_id(request: Request):
-    github_user = get_github_user(request)
-    if not github_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Missing GitHub token',
-        )
-
-    return github_user
 
 
 GithubServiceImpl = get_impl(GitHubService, server_config.github_service_class)
@@ -30,7 +20,7 @@ async def get_github_repositories(
     per_page: int = 10,
     sort: str = 'pushed',
     installation_id: int | None = None,
-    github_user_id: str | None = Depends(require_user_id),
+    github_user_id: str | None = Depends(get_user_id),
 ):
     client = GithubServiceImpl(github_user_id)
     try:
@@ -54,7 +44,7 @@ async def get_github_repositories(
 
 @app.get('/user')
 async def get_github_user(
-    github_user_id: str | None = Depends(require_user_id),
+    github_user_id: str | None = Depends(get_user_id),
 ):
     client = GithubServiceImpl(github_user_id)
     try:
@@ -76,7 +66,7 @@ async def get_github_user(
 
 @app.get('/installations')
 async def get_github_installation_ids(
-    github_user_id: str | None = Depends(require_user_id),
+    github_user_id: str | None = Depends(get_user_id),
 ):
     client = GithubServiceImpl(github_user_id)
     try:
@@ -102,7 +92,7 @@ async def search_github_repositories(
     per_page: int = 5,
     sort: str = 'stars',
     order: str = 'desc',
-    github_user_id: str | None = Depends(require_user_id),
+    github_user_id: str | None = Depends(get_user_id),
 ):
     client = GithubServiceImpl(github_user_id)
     response = await client.search_repositories(query, per_page, sort, order)

@@ -23,10 +23,9 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
                 content={'error': 'Settings not found'},
             )
 
-        github_token = request.state.github_token
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(),
-            github_token_is_set=bool(github_token),
+            github_token_is_set=bool(settings.github_token),
         )
         settings_with_token_data.llm_api_key = settings.llm_api_key
 
@@ -46,6 +45,7 @@ async def store_settings(
     settings: POSTSettingsModel,
 ) -> JSONResponse:
     # Check if token is valid
+
     if settings.github_token:
         try:
             # We check if the token is valid by getting the user
