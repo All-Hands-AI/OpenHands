@@ -2,7 +2,7 @@ import httpx
 import requests
 from fastapi.responses import JSONResponse
 
-from openhands.server.shared import server_config
+from openhands.server.shared import SettingsStoreImpl, config, server_config
 from openhands.server.types import AppMode
 from openhands.utils.async_utils import call_sync_from_async
 
@@ -10,11 +10,19 @@ from openhands.utils.async_utils import call_sync_from_async
 class GitHubService:
     BASE_URL = 'https://api.github.com'
 
-    def __init__(self, token: str, user_id: str | None):
-        self.token = token
+    def __init__(self, user_id: str | None):
         self.user_id = user_id
+        self.token = ''
 
-    def _get_github_headers(self):
+    async def _get_github_headers(self):
+        if self.user_id:
+            settings_store = await SettingsStoreImpl.get_instance(config, self.user_id)
+
+            settings = await settings_store.load()
+
+            if settings and settings.github_token:
+                self.token = settings.github_token
+
         return {
             'Authorization': f'Bearer {self.token}',
             'Accept': 'application/vnd.github.v3+json',
@@ -56,6 +64,10 @@ class GitHubService:
     async def get_user(self):
         url = f'{self.BASE_URL}/user'
         return await self._fetch_data(url)
+
+    async def validate_user(self, token):
+        self.token = token
+        return self.get_user()
 
     async def get_repositories(
         self, page: int, per_page: int, sort: str, installation_id: int | None
