@@ -12,7 +12,10 @@ from litellm import (
     ModelResponse,
 )
 
-from openhands.core.exceptions import FunctionCallNotExistsError
+from openhands.core.exceptions import (
+    FunctionCallNotExistsError,
+    FunctionCallValidationError,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
@@ -32,6 +35,7 @@ from openhands.events.tool import ToolCallMetadata
 _BASH_DESCRIPTION = """Execute a bash command in the terminal.
 * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.
 * Interact with running process: If a bash command returns exit code `-1`, this means the process is not yet finished. By setting `is_input` to `true`, the assistant can interact with the running process and send empty `command` to retrieve any additional logs, or send additional text (set `command` to the text) to STDIN of the running process, or send command like `C-c` (Ctrl+C), `C-d` (Ctrl+D), `C-z` (Ctrl+Z) to interrupt the process.
+* One command at a time: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&&` or `;` to chain them together.
 """
 
 CmdRunTool = ChatCompletionToolParam(
@@ -44,7 +48,7 @@ CmdRunTool = ChatCompletionToolParam(
             'properties': {
                 'command': {
                     'type': 'string',
-                    'description': 'The bash command to execute. Can be empty string to view additional logs when previous exit code is `-1`. Can be `C-c` (Ctrl+C) to interrupt the currently running process.',
+                    'description': 'The bash command to execute. Can be empty string to view additional logs when previous exit code is `-1`. Can be `C-c` (Ctrl+C) to interrupt the currently running process. Note: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&&` or `;` to chain them together.',
                 },
                 'is_input': {
                     'type': 'string',
@@ -80,7 +84,7 @@ IPythonTool = ChatCompletionToolParam(
     ),
 )
 
-_FILE_EDIT_DESCRIPTION = """Edit a file.
+_FILE_EDIT_DESCRIPTION = """Edit a file in plain-text format.
 * The assistant can edit files by specifying the file path and providing a draft of the new file content.
 * The draft content doesn't need to be exactly the same as the existing file; the assistant may skip unchanged lines using comments like `# unchanged` to indicate unchanged sections.
 * IMPORTANT: For large files (e.g., > 300 lines), specify the range of lines to edit using `start` and `end` (1-indexed, inclusive). The range should be smaller than 300 lines.
@@ -216,7 +220,7 @@ LLMBasedFileEditTool = ChatCompletionToolParam(
     ),
 )
 
-_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating and editing files
+_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating and editing files in plain-text format
 * State is persistent across command calls and discussions with the user
 * If `path` is a file, `view` displays the result of applying `cat -n`. If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep
 * The `create` command cannot be used if the specified `path` already exists as a file
@@ -493,15 +497,19 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     f'Failed to parse tool call arguments: {tool_call.function.arguments}'
                 ) from e
             if tool_call.function.name == 'execute_bash':
-                # this is an LLM error: add empty command to avoid breaking the tool call
                 if 'command' not in arguments:
-                    arguments['command'] = ''
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "command" in tool call {tool_call.function.name}'
+                    )
                 # convert is_input to boolean
-                if 'is_input' in arguments:
-                    arguments['is_input'] = arguments['is_input'] == 'true'
-                action = CmdRunAction(**arguments)
+                is_input = arguments.get('is_input', 'false') == 'true'
+                action = CmdRunAction(command=arguments['command'], is_input=is_input)
             elif tool_call.function.name == 'execute_ipython_cell':
-                action = IPythonRunCellAction(**arguments)
+                if 'code' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "code" in tool call {tool_call.function.name}'
+                    )
+                action = IPythonRunCellAction(code=arguments['code'])
             elif tool_call.function.name == 'delegate_to_browsing_agent':
                 action = AgentDelegateAction(
                     agent='BrowsingAgent',
@@ -510,8 +518,30 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             elif tool_call.function.name == 'finish':
                 action = AgentFinishAction()
             elif tool_call.function.name == 'edit_file':
-                action = FileEditAction(**arguments)
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+                if 'content' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "content" in tool call {tool_call.function.name}'
+                    )
+                action = FileEditAction(
+                    path=arguments['path'],
+                    content=arguments['content'],
+                    start=arguments.get('start', 1),
+                    end=arguments.get('end', -1),
+                )
             elif tool_call.function.name == 'str_replace_editor':
+                if 'command' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "command" in tool call {tool_call.function.name}'
+                    )
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+
                 # We implement this in agent_skills, which can be used via Jupyter
                 # convert tool_call.function.arguments to kwargs that can be passed to file_editor
                 code = f'print(file_editor(**{arguments}))'
@@ -533,8 +563,16 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         impl_source=FileEditSource.OH_ACI,
                     )
             elif tool_call.function.name == 'browser':
+                if 'code' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "code" in tool call {tool_call.function.name}'
+                    )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
             elif tool_call.function.name == 'web_read':
+                if 'url' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "url" in tool call {tool_call.function.name}'
+                    )
                 action = BrowseURLAction(url=arguments['url'])
             else:
                 raise FunctionCallNotExistsError(

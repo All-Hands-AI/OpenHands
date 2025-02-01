@@ -33,8 +33,6 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => {
     localStorage.setItem("FEATURE_MULTI_CONVERSATION_UI", "true");
-    localStorage.setItem("analytics-consent", "true");
-    localStorage.setItem("SETTINGS_VERSION", "5");
   });
 });
 

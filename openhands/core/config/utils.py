@@ -9,7 +9,7 @@ from uuid import uuid4
 
 import toml
 from dotenv import load_dotenv
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, SecretStr, ValidationError
 
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
@@ -192,7 +192,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                                     custom_fields[k] = v
                             merged_llm_dict = generic_llm_fields.copy()
                             merged_llm_dict.update(custom_fields)
-                            
+
                             custom_llm_config = LLMConfig(**merged_llm_dict)
                             cfg.set_llm_config(custom_llm_config, nested_key)
 
@@ -287,8 +287,10 @@ def finalize_config(cfg: AppConfig):
         pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
 
     if not cfg.jwt_secret:
-        cfg.jwt_secret = get_or_create_jwt_secret(
-            get_file_store(cfg.file_store, cfg.file_store_path)
+        cfg.jwt_secret = SecretStr(
+            get_or_create_jwt_secret(
+                get_file_store(cfg.file_store, cfg.file_store_path)
+            )
         )
 
 

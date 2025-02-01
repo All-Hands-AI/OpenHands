@@ -4,8 +4,7 @@ import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
-import { FeedbackActions } from "../feedback/feedback-actions";
-import { ExportActions } from "../export/export-actions";
+import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
 import { addUserMessage } from "#/state/chat-slice";
@@ -155,15 +154,13 @@ export function ChatInterface() {
 
       <div className="flex flex-col gap-[6px] px-4 pb-4">
         <div className="flex justify-between relative">
-          <FeedbackActions
+          <TrajectoryActions
             onPositiveFeedback={() =>
               onClickShareFeedbackActionButton("positive")
             }
             onNegativeFeedback={() =>
               onClickShareFeedbackActionButton("negative")
             }
-          />
-          <ExportActions
             onExportTrajectory={() => onClickExportTrajectoryButton()}
           />
 
@@ -183,8 +180,7 @@ export function ChatInterface() {
           onStop={handleStop}
           isDisabled={
             curAgentState === AgentState.LOADING ||
-            curAgentState === AgentState.AWAITING_USER_CONFIRMATION ||
-            curAgentState === AgentState.RATE_LIMITED
+            curAgentState === AgentState.AWAITING_USER_CONFIRMATION
           }
           mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
           value={messageToSend ?? undefined}
