@@ -58,6 +58,7 @@ describe("frontend/routes/_oh", () => {
   it("should render and capture the user's consent if oss mode", async () => {
     const user = userEvent.setup();
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     const handleCaptureConsentSpy = vi.spyOn(
       CaptureConsent,
       "handleCaptureConsent",
@@ -67,6 +68,11 @@ describe("frontend/routes/_oh", () => {
       APP_MODE: "oss",
       GITHUB_CLIENT_ID: "test-id",
       POSTHOG_CLIENT_KEY: "test-key",
+    });
+
+    // @ts-expect-error - We only care about the user_consents_to_analytics field
+    getSettingsSpy.mockResolvedValue({
+      user_consents_to_analytics: null,
     });
 
     renderWithProviders(<RouteStub />);
