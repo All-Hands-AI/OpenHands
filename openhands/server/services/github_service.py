@@ -21,13 +21,10 @@ class GitHubService:
         Retrieve the GH Token from settings store to construct the headers
         """
 
-        if self.user_id:
-            settings_store = await SettingsStoreImpl.get_instance(config, self.user_id)
-
-            settings = await settings_store.load()
-
-            if settings and settings.github_token:
-                self.token = settings.github_token
+        settings_store = await SettingsStoreImpl.get_instance(config, self.user_id)
+        settings = await settings_store.load()
+        if settings and settings.github_token:
+            self.token = settings.github_token.get_secret_value()
 
         return {
             'Authorization': f'Bearer {self.token}',
@@ -57,12 +54,11 @@ class GitHubService:
                     )
 
                 response.raise_for_status()
-
                 headers = {}
                 if 'Link' in response.headers:
                     headers['Link'] = response.headers['Link']
 
-                return await response.json(), headers
+                return response.json(), headers
 
         except httpx.HTTPStatusError:
             raise GhAuthenticationError('Invalid Github token')
