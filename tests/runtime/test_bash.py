@@ -489,6 +489,14 @@ def test_git_operation(runtime_cls):
         obs = _run_cmd_action(runtime, 'echo "hello" > test_file.txt')
         assert obs.exit_code == 0
 
+        if runtime_cls != LocalRuntime:
+            obs = _run_cmd_action(
+                runtime,
+                'git config --file ./.git_config user.name "openhands" && git config --file ./.git_config user.email "openhands@all-hands.dev"',
+            )
+            assert obs.exit_code == 0
+
+        # git add
         # git add
         obs = _run_cmd_action(runtime, 'git add test_file.txt')
         assert obs.exit_code == 0
