@@ -1,21 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
+from openhands.server.services.gh_types import GitHubRepository, GitHubUser
 from openhands.server.services.github_service import GitHubService
-from openhands.server.shared import SettingsStoreImpl, config, server_config
+from openhands.server.shared import server_config
+from openhands.server.types import GhAuthenticationError, GHUnknownException
 from openhands.utils.import_utils import get_impl
 
 app = APIRouter(prefix='/api/github')
-
-
-async def get_user_token(user_id: str):
-    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-    settings = await settings_store.load()
-
-    if settings and settings.github_token:
-        return settings.github_token.get_secret_value()
-
-    return ''
 
 
 def require_user_id(request: Request):
@@ -41,7 +33,23 @@ async def get_github_repositories(
     github_user_id: str | None = Depends(require_user_id),
 ):
     client = GithubServiceImpl(github_user_id)
-    return await client.get_repositories(page, per_page, sort, installation_id)
+    try:
+        repos: list[GitHubRepository] = await client.get_repositories(
+            page, per_page, sort, installation_id
+        )
+        return JSONResponse(content=repos)
+
+    except GhAuthenticationError as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=401,
+        )
+
+    except GHUnknownException as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=500,
+        )
 
 
 @app.get('/user')
@@ -49,7 +57,21 @@ async def get_github_user(
     github_user_id: str | None = Depends(require_user_id),
 ):
     client = GithubServiceImpl(github_user_id)
-    return await client.get_user()
+    try:
+        user: GitHubUser = await client.get_user()
+        return JSONResponse(content=user)
+
+    except GhAuthenticationError as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=401,
+        )
+
+    except GHUnknownException as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=500,
+        )
 
 
 @app.get('/installations')
@@ -57,8 +79,21 @@ async def get_github_installation_ids(
     github_user_id: str | None = Depends(require_user_id),
 ):
     client = GithubServiceImpl(github_user_id)
-    installations_ids = await client.get_installation_ids()
-    return JSONResponse(content=installations_ids)
+    try:
+        installations_ids: list[int] = await client.get_installation_ids()
+        return JSONResponse(content=installations_ids)
+
+    except GhAuthenticationError as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=401,
+        )
+
+    except GHUnknownException as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=500,
+        )
 
 
 @app.get('/search/repositories')
