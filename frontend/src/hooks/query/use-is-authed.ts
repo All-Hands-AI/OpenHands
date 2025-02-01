@@ -16,5 +16,8 @@ export const useIsAuthed = () => {
     enabled: !!appMode,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: false,
+    meta: {
+      disableToast: true,
+    },
   });
 };
