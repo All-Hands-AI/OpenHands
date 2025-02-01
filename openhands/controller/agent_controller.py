@@ -213,6 +213,17 @@ class AgentController:
             err_id = ''
             if isinstance(e, litellm.AuthenticationError):
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
+            elif isinstance(
+                e,
+                (
+                    litellm.ServiceUnavailableError,
+                    litellm.APIConnectionError,
+                    litellm.APIError,
+                ),
+            ):
+                err_id = 'STATUS$ERROR_LLM_SERVICE_UNAVAILABLE'
+            elif isinstance(e, litellm.InternalServerError):
+                err_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR'
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
                 return
