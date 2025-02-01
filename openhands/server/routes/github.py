@@ -41,9 +41,7 @@ async def get_github_repositories(
     github_user_id: str | None = Depends(require_user_id),
 ):
     client = GithubServiceImpl(github_user_id)
-    return await client.fetch_response(
-        'get_repositories', page, per_page, sort, installation_id
-    )
+    return await client.get_repositories(page, per_page, sort, installation_id)
 
 
 @app.get('/user')
@@ -51,7 +49,7 @@ async def get_github_user(
     github_user_id: str | None = Depends(require_user_id),
 ):
     client = GithubServiceImpl(github_user_id)
-    return await client.fetch_response('get_user')
+    return await client.get_user()
 
 
 @app.get('/installations')
