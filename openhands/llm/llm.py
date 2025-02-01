@@ -27,7 +27,6 @@ from litellm.exceptions import (
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
 
-from openhands.core.exceptions import CloudFlareBlockageError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.llm.debug_mixin import DebugMixin
@@ -218,99 +217,86 @@ class LLM(RetryMixin, DebugMixin):
             # log the entire LLM prompt
             self.log_prompt(messages)
 
-            if self.is_caching_prompt_active():
-                # Anthropic-specific prompt caching
-                if 'claude-3' in self.config.model:
-                    kwargs['extra_headers'] = {
-                        'anthropic-beta': 'prompt-caching-2024-07-31',
-                    }
-
             # set litellm modify_params to the configured value
             # True by default to allow litellm to do transformations like adding a default message, when a message is empty
             # NOTE: this setting is global; unlike drop_params, it cannot be overridden in the litellm completion partial
             litellm.modify_params = self.config.modify_params
 
-            try:
-                # Record start time for latency measurement
-                start_time = time.time()
-                # we don't support streaming here, thus we get a ModelResponse
-                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+            # Record start time for latency measurement
+            start_time = time.time()
 
-                # Calculate and record latency
-                latency = time.time() - start_time
-                response_id = resp.get('id', 'unknown')
-                self.metrics.add_response_latency(latency, response_id)
+            # we don't support streaming here, thus we get a ModelResponse
+            resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
-                non_fncall_response = copy.deepcopy(resp)
+            # Calculate and record latency
+            latency = time.time() - start_time
+            response_id = resp.get('id', 'unknown')
+            self.metrics.add_response_latency(latency, response_id)
+
+            non_fncall_response = copy.deepcopy(resp)
+            if mock_function_calling:
+                assert len(resp.choices) == 1
+                assert mock_fncall_tools is not None
+                non_fncall_response_message = resp.choices[0].message
+                fn_call_messages_with_response = (
+                    convert_non_fncall_messages_to_fncall_messages(
+                        messages + [non_fncall_response_message], mock_fncall_tools
+                    )
+                )
+                fn_call_response_message = fn_call_messages_with_response[-1]
+                if not isinstance(fn_call_response_message, LiteLLMMessage):
+                    fn_call_response_message = LiteLLMMessage(
+                        **fn_call_response_message
+                    )
+                resp.choices[0].message = fn_call_response_message
+
+            message_back: str = resp['choices'][0]['message']['content'] or ''
+            tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
+                'message'
+            ].get('tool_calls', [])
+            if tool_calls:
+                for tool_call in tool_calls:
+                    fn_name = tool_call.function.name
+                    fn_args = tool_call.function.arguments
+                    message_back += f'\nFunction call: {fn_name}({fn_args})'
+
+            # log the LLM response
+            self.log_response(message_back)
+
+            # post-process the response first to calculate cost
+            cost = self._post_completion(resp)
+
+            # log for evals or other scripts that need the raw completion
+            if self.config.log_completions:
+                assert self.config.log_completions_folder is not None
+                log_file = os.path.join(
+                    self.config.log_completions_folder,
+                    # use the metric model name (for draft editor)
+                    f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
+                )
+
+                # set up the dict to be logged
+                _d = {
+                    'messages': messages,
+                    'response': resp,
+                    'args': args,
+                    'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
+                    'timestamp': time.time(),
+                    'cost': cost,
+                }
+
+                # if non-native function calling, save messages/response separately
                 if mock_function_calling:
-                    assert len(resp.choices) == 1
-                    assert mock_fncall_tools is not None
-                    non_fncall_response_message = resp.choices[0].message
-                    fn_call_messages_with_response = (
-                        convert_non_fncall_messages_to_fncall_messages(
-                            messages + [non_fncall_response_message], mock_fncall_tools
-                        )
-                    )
-                    fn_call_response_message = fn_call_messages_with_response[-1]
-                    if not isinstance(fn_call_response_message, LiteLLMMessage):
-                        fn_call_response_message = LiteLLMMessage(
-                            **fn_call_response_message
-                        )
-                    resp.choices[0].message = fn_call_response_message
+                    # Overwrite response as non-fncall to be consistent with messages
+                    _d['response'] = non_fncall_response
 
-                message_back: str = resp['choices'][0]['message']['content'] or ''
-                tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
-                    'message'
-                ].get('tool_calls', [])
-                if tool_calls:
-                    for tool_call in tool_calls:
-                        fn_name = tool_call.function.name
-                        fn_args = tool_call.function.arguments
-                        message_back += f'\nFunction call: {fn_name}({fn_args})'
+                    # Save fncall_messages/response separately
+                    _d['fncall_messages'] = original_fncall_messages
+                    _d['fncall_response'] = resp
+                with open(log_file, 'w') as f:
+                    f.write(json.dumps(_d))
 
-                # log the LLM response
-                self.log_response(message_back)
-
-                # post-process the response first to calculate cost
-                cost = self._post_completion(resp)
-
-                # log for evals or other scripts that need the raw completion
-                if self.config.log_completions:
-                    assert self.config.log_completions_folder is not None
-                    log_file = os.path.join(
-                        self.config.log_completions_folder,
-                        # use the metric model name (for draft editor)
-                        f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
-                    )
-
-                    # set up the dict to be logged
-                    _d = {
-                        'messages': messages,
-                        'response': resp,
-                        'args': args,
-                        'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
-                        'timestamp': time.time(),
-                        'cost': cost,
-                    }
-
-                    # if non-native function calling, save messages/response separately
-                    if mock_function_calling:
-                        # Overwrite response as non-fncall to be consistent with messages
-                        _d['response'] = non_fncall_response
-
-                        # Save fncall_messages/response separately
-                        _d['fncall_messages'] = original_fncall_messages
-                        _d['fncall_response'] = resp
-                    with open(log_file, 'w') as f:
-                        f.write(json.dumps(_d))
-
-                return resp
-            except APIError as e:
-                if 'Attention Required! | Cloudflare' in str(e):
-                    raise CloudFlareBlockageError(
-                        'Request blocked by CloudFlare'
-                    ) from e
-                raise
+            return resp
 
         self._completion = wrapper
 
@@ -414,6 +400,25 @@ class LLM(RetryMixin, DebugMixin):
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
+        # Initialize function calling capability
+        # Check if model name is in our supported list
+        model_name_supported = (
+            self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
+            or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
+            or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
+        )
+
+        # Handle native_tool_calling user-defined configuration
+        if self.config.native_tool_calling is None:
+            self._function_calling_active = model_name_supported
+        elif self.config.native_tool_calling is False:
+            self._function_calling_active = False
+        else:
+            # try to enable native tool calling if supported by the model
+            self._function_calling_active = litellm.supports_function_calling(
+                model=self.config.model
+            )
+
     def vision_is_active(self) -> bool:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
@@ -455,24 +460,11 @@ class LLM(RetryMixin, DebugMixin):
         )
 
     def is_function_calling_active(self) -> bool:
-        # Check if model name is in our supported list
-        model_name_supported = (
-            self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
-            or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
-        )
+        """Returns whether function calling is supported and enabled for this LLM instance.
 
-        # Handle native_tool_calling user-defined configuration
-        if self.config.native_tool_calling is None:
-            return model_name_supported
-        elif self.config.native_tool_calling is False:
-            return False
-        else:
-            # try to enable native tool calling if supported by the model
-            supports_fn_call = litellm.supports_function_calling(
-                model=self.config.model
-            )
-            return supports_fn_call
+        The result is cached during initialization for performance.
+        """
+        return self._function_calling_active
 
     def _post_completion(self, response: ModelResponse) -> float:
         """Post-process the completion response.
