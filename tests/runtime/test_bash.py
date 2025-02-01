@@ -227,6 +227,8 @@ def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
         assert obs.exit_code == 0
         if run_as_openhands:
             assert 'openhands' in obs.content
+        elif runtime_cls == LocalRuntime:
+            assert 'root' not in obs.content and 'openhands' not in obs.content
         else:
             assert 'root' in obs.content
         assert 'test' in obs.content
@@ -491,6 +493,8 @@ def test_git_operation(runtime_cls):
         assert obs.exit_code == 0
 
         if runtime_cls != LocalRuntime or TEST_IN_CI:
+            # set git config author in CI only, not on local machine
+            logger.info('Setting git config author')
             obs = _run_cmd_action(
                 runtime,
                 'git config --file ./.git_config user.name "openhands" && git config --file ./.git_config user.email "openhands@all-hands.dev"',
