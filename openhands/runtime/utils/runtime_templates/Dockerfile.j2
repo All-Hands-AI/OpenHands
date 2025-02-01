@@ -16,8 +16,13 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         wget curl sudo apt-utils git jq tmux \
-        {%- if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) -%}
-        libgl1 \
+        {%- if 'ubuntu' in base_image %}
+            build-essential g++-10 python3-dev ca-certificates \
+            {%- if base_image.endswith(':latest') or base_image.endswith(':24.04') %}
+            libgl1 \
+            {%- else %}
+            libgl1-mesa-glx \
+            {% endif -%}
         {%- else %}
         libgl1-mesa-glx \
         {% endif -%}
