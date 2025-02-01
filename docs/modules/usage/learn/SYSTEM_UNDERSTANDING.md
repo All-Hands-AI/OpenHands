@@ -1,6 +1,6 @@
 # OpenHands System Understanding Guide
 
-This guide provides a detailed explanation of OpenHands' internal workings, focusing on exact function calls, component interactions, and system flow.
+This guide provides a detailed explanation of OpenHands' runtime behavior and component interactions. For system initialization and startup, see [INITIALIZATION_SEQUENCE.md](INITIALIZATION_SEQUENCE.md). For a complete overview, start with [SYSTEM_GUIDE.md](SYSTEM_GUIDE.md).
 
 ## System Initialization and Startup Flow
 
@@ -241,6 +241,8 @@ class Event:
             'metadata': self.metadata,
             'timestamp': self.timestamp.isoformat()
         }
+```
+
 ### 5. Agent System
 ```python
 # File: openhands/controller/agent.py
@@ -417,449 +419,204 @@ class Memory:
         return data
 ```
 
-## Key System Flows
+## System Interaction Map
 
-### 1. Request Processing Flow
+The following diagram shows how all systems interact in a complete flow, from request to response:
+
 ```plaintext
-Client Request
-    ↓
-FastAPI Router (server/routes)
-    ↓
-Session Manager (server/session/manager.py)
-    ↓
-Session (server/session/session.py)
-    ↓
-Event Stream (events/stream.py)
-    ↓
-Agent Processing (controller/agent.py)
-    ↓
-LLM Generation (llm/llm.py)
-    ↓
-Action Creation (events/action.py)
-    ↓
-Runtime Execution (runtime/base.py)
-    ↓
-Result Return
+┌─ FastAPI Service Layer ─────────────────────────────────────────────────┐
+│                                                                         │
+│  HTTP Request                                                           │
+│      │                                                                  │
+│      ▼                                                                  │
+│  FastAPI Router (server/routes/conversation.py)                         │
+│      │                                                                  │
+└──────┼─────────────────────────────────────────────────────────────────┘
+       │
+┌──────▼─ Core Component Layer ───────────────────────────────────────────┐
+│      │                                                                  │
+│      ▼                                                                  │
+│  SessionManager.get_or_create_session()                                 │
+│      │                                                                  │
+│      ▼                                                                  │
+│  Session.process_request()                                              │
+│      │                                                                  │
+│      ▼                                                                  │
+│  Event Creation                                                         │
+│      │                                                                  │
+│      ▼                                                                  │
+│  EventStream.emit() ─────────┐                                         │
+│      │                       │                                          │
+│      │                       ▼                                          │
+│      │                   Observers                                      │
+│      │                       │                                          │
+│      │                       ▼                                          │
+│      │               Memory.store() ◄─────────────┐                     │
+│      │                   │                        │                     │
+│      │                   ▼                        │                     │
+│      │               Update Indexes               │                     │
+│      │                   │                        │                     │
+│      │                   ▼                        │                     │
+│      │               Update Cache                 │                     │
+│      │                   │                        │                     │
+│      │                   ▼                        │                     │
+│      │           Generate StorageEvent            │                     │
+│      │                   │                        │                     │
+│      ▼                   │                        │                     │
+│  Agent.handle_event() ◄──┘                        │                     │
+│      │                                            │                     │
+│      ▼                                            │                     │
+│  Update Agent State                               │                     │
+│      │                                            │                     │
+│      ▼                                            │                     │
+│  Generate Prompt                                  │                     │
+│      │                                            │                     │
+│      ▼                                            │                     │
+│  LLM Processing                                   │                     │
+│      │                                            │                     │
+│      ▼                                            │                     │
+│  Create Action                                    │                     │
+│      │                                            │                     │
+│      ▼                                            │                     │
+│  Runtime.execute()                                │                     │
+│      │                                            │                     │
+│      ▼                                            │                     │
+│  Validate Action                                  │                     │
+│      │                                            │                     │
+│      ▼                                            │                     │
+│  Execute Capability                               │                     │
+│      │                                            │                     │
+│      ▼                                            │                     │
+│  Generate Observation                             │                     │
+│      │                                            │                     │
+│      ▼                                            │                     │
+│  EventStream.emit() ────────────────────────────►─┘                     │
+│      │                                                                  │
+│      ▼                                                                  │
+│  Update Session State                                                   │
+│      │                                                                  │
+└──────┼─────────────────────────────────────────────────────────────────┘
+       │
+┌──────▼─ Response Layer ──────────────────────────────────────────────────┐
+│      │                                                                   │
+│      ▼                                                                   │
+│  Format Response                                                         │
+│      │                                                                   │
+│      ▼                                                                   │
+│  HTTP Response                                                           │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 2. Event Processing Flow
-```plaintext
-Event Created (events/event.py)
-    ↓
-Event Stream (events/stream.py)
-    ↓
-Event Preprocessing
-    ↓
-Event History Update
-    ↓
-Subscriber Notification
-    ↓
-Event Storage
-    ↓
-Handler Processing
-    ↓
-State Update
-```
+Key System Integration Points:
 
-### 3. Agent Processing Flow
-```plaintext
-State Update (controller/state.py)
-    ↓
-Agent Step (controller/agent.py)
-    ↓
-Prompt Creation
-    ↓
-Context Collection
-    ↓
-LLM Processing (llm/llm.py)
-    ↓
-Response Parsing
-    ↓
-Action Generation
-    ↓
-Runtime Execution
-```
+1. **Service Layer → Core Components**
+   ```python
+   # FastAPI route handler
+   @router.post("/conversation/{session_id}/message")
+   async def handle_message(session_id: str, message: Message):
+       # Get or create session through SessionManager
+       session = await session_manager.get_or_create_session(session_id)
+       
+       # Process message in session context
+       return await session.process_message(message)
+   ```
 
-### 4. Runtime Execution Flow
-```plaintext
-Action Received (events/action.py)
-    ↓
-Action Validation
-    ↓
-Capability Check
-    ↓
-Handler Selection
-    ↓
-Plugin Processing
-    ↓
-Command Execution
-    ↓
-Result Processing
-    ↓
-Observation Return
-```
+2. **Event Stream → Memory Integration**
+   ```python
+   class EventStream:
+       async def emit(self, event: Event):
+           # Store event in memory
+           await self.memory.store(
+               f"event:{event.id}",
+               event,
+               metadata={'type': 'event'}
+           )
+           
+           # Notify observers
+           await self._notify_observers(event)
+           
+           # Update session state
+           await self.session.update_state(event)
+   ```
 
-Remember:
-- All components communicate through events
-- State is managed by sessions
-- Actions are executed by runtime
-- Memory persists information
-- Plugins extend functionality
+3. **Agent → Runtime Integration**
+   ```python
+   class Agent:
+       async def handle_event(self, event: Event):
+           # Update agent state
+           self.state.update(event)
+           
+           # Generate action through LLM
+           action = await self._generate_action(event)
+           
+           # Execute action through runtime
+           observation = await self.runtime.execute(action)
+           
+           # Process observation
+           await self.event_stream.emit(observation)
+   ```
 
-    
-    # 3. Register routes
-    setup_routes()
+4. **Runtime → Event Stream Integration**
+   ```python
+   class Runtime:
+       async def execute(self, action: Action):
+           # Validate action
+           if not self._validate_action(action):
+               return ErrorObservation("Invalid action")
+           
+           # Execute capability
+           result = await self._execute_capability(action)
+           
+           # Generate observation
+           observation = Observation(result)
+           
+           # Emit through event stream
+           await self.event_stream.emit(observation)
+           
+           return observation
+   ```
 
-# Core service initialization flow:
-# 1. Load configuration
-# 2. Initialize storage systems
-# 3. Setup LLM clients
-# 4. Initialize event system
-# 5. Setup runtime environment
-```
+5. **Memory → Event Stream Integration**
+   ```python
+   class Memory:
+       async def store(self, key: str, value: Any, metadata: dict = None):
+           # Store data
+           await self._store_data(key, value)
+           
+           # Update indexes
+           await self._update_indexes(key, metadata)
+           
+           # Generate storage event
+           event = StorageEvent(key, value, metadata)
+           
+           # Emit through event stream
+           await self.event_stream.emit(event)
+   ```
 
-### 2. Session Creation Flow
-```python
-# When a new session starts:
+Each system maintains its own state but communicates changes through the EventStream:
 
-1. Client connects → create_session()
-2. Session initializes:
-   - Creates EventStream
-   - Initializes Runtime
-   - Sets up Agents
-   - Configures Memory
-   - Establishes WebSocket
+1. **Session State**
+   - Manages conversation context
+   - Tracks active components
+   - Coordinates system interactions
 
-# Key components loaded during session creation:
-- Event System: Handles all communication
-- Runtime: Manages execution environment
-- Agents: Process user interactions
-- Memory: Manages state and history
-```
+2. **Event Stream State**
+   - Manages event flow
+   - Tracks subscribers
+   - Handles event history
 
-## Core System Components
+3. **Agent State**
+   - Maintains conversation memory
+   - Tracks processing context
+   - Manages LLM state
 
-### 1. Event System (Central Nervous System)
-```python
-# openhands/events/stream.py
-class EventStream:
-    """Core communication system"""
-    def __init__(self, sid: str):
-        self.subscribers = {}  # Event handlers
-        self.history = []     # Event history
-        
-    async def emit(self, event: Event):
-        """Event flow:
-        1. Event created
-        2. Preprocessed
-        3. Distributed to subscribers
-        4. Stored in history
-        """
+4. **Runtime State**
+   - Tracks active capabilities
+   - Manages resources
+   - Handles execution state
 
-# Event Flow Example:
-User Input → Event Created → Agents Process → 
-Runtime Executes → Results Return → UI Updates
-```
-
-### 2. Runtime System (Execution Environment)
-```python
-# openhands/runtime/base.py
-class Runtime:
-    """Execution environment"""
-    
-    def __init__(self):
-        self.plugins = []     # Available plugins
-        self.capabilities = [] # Supported operations
-        
-    async def execute(self, action: Action):
-        """Execution flow:
-        1. Validate action
-        2. Check capabilities
-        3. Execute operation
-        4. Return result
-        """
-
-# Runtime Responsibilities:
-1. Execute commands
-2. Manage resources
-3. Handle file operations
-4. Control browser actions
-5. Manage system state
-```
-
-### 3. Agent System (Processing Units)
-```python
-# openhands/controller/agent.py
-class Agent:
-    """Base agent implementation"""
-    
-    def __init__(self, llm: LLM, config: Config):
-        self.llm = llm           # Language model
-        self.config = config     # Configuration
-        self.state = None        # Current state
-        
-    async def step(self, state: State) -> Action:
-        """Processing flow:
-        1. Receive state
-        2. Process information
-        3. Generate action
-        4. Return response
-        """
-
-# Agent Registration System:
-@classmethod
-def register(cls, name: str, agent_cls: Type['Agent']):
-    """Register new agent type"""
-    cls._registry[name] = agent_cls
-```
-
-## Key Data Flows
-
-### 1. Request Processing Flow
-```plaintext
-1. Client Request
-   ↓
-2. FastAPI Router
-   ↓
-3. Session Manager
-   ↓
-4. Event Stream
-   ↓
-5. Agent Processing
-   ↓
-6. Runtime Execution
-   ↓
-7. Response Return
-```
-
-### 2. Agent Processing Flow
-```plaintext
-1. Event Received
-   ↓
-2. State Updated
-   ↓
-3. Agent Step
-   ↓
-4. LLM Processing
-   ↓
-5. Action Generation
-   ↓
-6. Runtime Execution
-   ↓
-7. Result Return
-```
-
-### 3. Runtime Execution Flow
-```plaintext
-1. Action Received
-   ↓
-2. Capability Check
-   ↓
-3. Plugin Selection
-   ↓
-4. Command Execution
-   ↓
-5. Result Processing
-   ↓
-6. Response Return
-```
-
-## Core Registries and Discovery
-
-### 1. Agent Registry
-```python
-# How agents are discovered and registered:
-class Agent:
-    _registry: Dict[str, Type['Agent']] = {}
-    
-    @classmethod
-    def register(cls, name: str, agent_cls: Type['Agent']):
-        cls._registry[name] = agent_cls
-        
-    @classmethod
-    def get_agent(cls, name: str) -> Type['Agent']:
-        return cls._registry[name]
-```
-
-### 2. Runtime Registry
-```python
-# How runtime capabilities are registered:
-class Runtime:
-    _capabilities: Dict[str, Callable] = {}
-    
-    @classmethod
-    def register_capability(cls, name: str, handler: Callable):
-        cls._capabilities[name] = handler
-        
-    def has_capability(self, name: str) -> bool:
-        return name in self._capabilities
-```
-
-### 3. Plugin Registry
-```python
-# How plugins are discovered and loaded:
-class PluginManager:
-    def discover_plugins(self):
-        """Plugin discovery flow:
-        1. Scan plugin directories
-        2. Load plugin metadata
-        3. Initialize plugins
-        4. Register capabilities
-        """
-```
-
-## State Management
-
-### 1. Session State
-```python
-class Session:
-    """Manages session state"""
-    def __init__(self):
-        self.event_stream = EventStream()
-        self.runtime = Runtime()
-        self.agents = {}
-        self.memory = Memory()
-        self.state = {}
-```
-
-### 2. Agent State
-```python
-class AgentState:
-    """Manages agent state"""
-    def __init__(self):
-        self.conversation = []    # Conversation history
-        self.memory = {}         # Agent memory
-        self.context = {}        # Current context
-        self.variables = {}      # State variables
-```
-
-### 3. Runtime State
-```python
-class RuntimeState:
-    """Manages runtime state"""
-    def __init__(self):
-        self.environment = {}    # Environment variables
-        self.resources = {}      # Active resources
-        self.capabilities = {}   # Available capabilities
-        self.plugins = {}        # Active plugins
-```
-
-## Configuration System
-
-### 1. Configuration Loading
-```python
-# How configuration is loaded and applied:
-def load_config():
-    """Configuration loading flow:
-    1. Load default config
-    2. Load environment variables
-    3. Load config file
-    4. Merge configurations
-    5. Validate settings
-    """
-```
-
-### 2. Configuration Hierarchy
-```plaintext
-1. Default Configuration
-   ↓
-2. Environment Variables
-   ↓
-3. Config File
-   ↓
-4. Runtime Overrides
-```
-
-## Common Extension Points
-
-### 1. Adding New Agent
-```python
-# Key points for agent integration:
-1. Inherit from Agent base class
-2. Implement step() method
-3. Register agent type
-4. Configure agent behavior
-```
-
-### 2. Adding New Capability
-```python
-# Key points for capability integration:
-1. Define capability interface
-2. Implement handler
-3. Register with runtime
-4. Add security checks
-```
-
-### 3. Adding New Plugin
-```python
-# Key points for plugin integration:
-1. Create plugin class
-2. Define metadata
-3. Implement interfaces
-4. Register plugin
-```
-
-## Debugging and Development
-
-### 1. Debug Points
-```python
-# Key points for debugging:
-1. Event Stream: Track event flow
-2. Agent Processing: Monitor state changes
-3. Runtime Execution: Track actions
-4. Plugin Operations: Monitor plugin behavior
-```
-
-### 2. Development Flow
-```python
-# Common development tasks:
-1. Modify Agent Behavior
-   - Update step() method
-   - Adjust state handling
-   - Modify action generation
-
-2. Extend Runtime
-   - Add new capabilities
-   - Modify execution flow
-   - Add resource handling
-
-3. Add Features
-   - Register new components
-   - Integrate with existing flow
-   - Add configuration options
-```
-
-## System Interactions
-
-### 1. Component Communication
-```plaintext
-Events → Primary communication method
-State → Shared information
-Actions → Operation requests
-Results → Operation outcomes
-```
-
-### 2. Data Flow
-```plaintext
-1. User Input
-   → Event Creation
-   → Agent Processing
-   → Runtime Execution
-   → Result Generation
-   → State Update
-   → Response Return
-```
-
-This guide focuses on helping you understand:
-1. How the system initializes and operates
-2. How components interact
-3. Where to find key functionality
-4. How to modify behavior
-5. Where to add extensions
-
-Remember:
-- Events drive the system
-- Agents process information
-- Runtime executes actions
-- State maintains context
-- Configuration controls behavior
+5. **Memory State**
+   - Manages data persistence
+   - Maintains indexes
+   - Handles caching
