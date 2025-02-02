@@ -170,6 +170,37 @@ const sidebars: SidebarsConfig = {
           ],
         },
         {
+          type: 'category',
+          label: 'Learn',
+          items: [
+            {
+              type: 'doc',
+              label: 'Backend Design',
+              id: 'usage/learn/1-backend-system-design',
+            },
+            {
+              type: 'doc',
+              label: 'Backend Initialization',
+              id: 'usage/learn/2-backend-init-flow',
+            },
+            {
+              type: 'doc',
+              label: 'Backend Interaction',
+              id: 'usage/learn/3-interaction-flow',
+            },
+            {
+              type: 'doc',
+              label: 'Knowledge Management',
+              id: 'usage/learn/4-knowledge-management',
+            },
+            {
+              type: 'doc',
+              label: 'State Management',
+              id: 'usage/learn/5-state-management',
+            },
+          ],
+        },
+        {
           type: 'doc',
           label: 'Debugging',
           id: 'usage/how-to/debugging',
