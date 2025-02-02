@@ -1,6 +1,7 @@
 import { HiVolumeUp, HiVolumeOff } from "react-icons/hi";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import ThumbsUpIcon from "#/icons/thumbs-up.svg?react";
 import ThumbDownIcon from "#/icons/thumbs-down.svg?react";
 import ExportIcon from "#/icons/export.svg?react";
@@ -24,12 +25,17 @@ export function TrajectoryActions({
   const soundEnabled = settings?.ENABLE_SOUND_NOTIFICATIONS ?? true;
 
   const toggleSound = async () => {
-    await saveUserSettings({
-      ...settings,
-      ENABLE_SOUND_NOTIFICATIONS: !soundEnabled,
-    });
-    // Invalidate settings query to trigger a refetch
-    queryClient.invalidateQueries({ queryKey: ["settings"] });
+    try {
+      await saveUserSettings({
+        ...settings,
+        ENABLE_SOUND_NOTIFICATIONS: !soundEnabled,
+      });
+      // Invalidate settings query to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+    } catch (error) {
+      console.error("Failed to save sound settings:", error);
+      toast.error(t("Failed to save sound settings. Please try again."));
+    }
   };
   return (
     <div data-testid="feedback-actions" className="flex gap-1">
