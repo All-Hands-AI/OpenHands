@@ -72,7 +72,7 @@ export function AgentStatusBar() {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
       if (notificationStates.includes(curAgentState)) {
         const message = t(AGENT_STATUS_MAP[curAgentState].message);
-        notify(message, {
+        notify(t(AGENT_STATUS_MAP[curAgentState].message), {
           body: t(`Agent state changed to ${curAgentState}`),
           playSound: true,
         });

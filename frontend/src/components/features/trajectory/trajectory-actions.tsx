@@ -67,6 +67,7 @@ export function TrajectoryActions({
         }
         tooltip={t(
           soundEnabled ? "BUTTON$DISABLE_SOUND" : "BUTTON$ENABLE_SOUND",
+          { playSound: false },
         )}
       />
     </div>
