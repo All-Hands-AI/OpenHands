@@ -1,8 +1,12 @@
-let originalTitle = document.title;
+let originalTitle = "";
 let titleInterval: number | undefined;
+
+const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
 
 export const browserTab = {
   startNotification(message: string) {
+    if (!isBrowser) return;
+
     // Store original title if not already stored
     if (!originalTitle) {
       originalTitle = document.title;
@@ -28,11 +32,15 @@ export const browserTab = {
   },
 
   stopNotification() {
+    if (!isBrowser) return;
+
     if (titleInterval) {
       window.clearInterval(titleInterval);
       titleInterval = undefined;
     }
-    document.title = originalTitle;
+    if (originalTitle) {
+      document.title = originalTitle;
+    }
 
     // Reset favicon
     const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
