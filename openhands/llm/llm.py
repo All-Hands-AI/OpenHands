@@ -226,9 +226,6 @@ class LLM(RetryMixin, DebugMixin):
                 )
 
             # log the entire LLM prompt
-            print('##### LLM call message #####')
-            print(messages)
-            print('############################')
             self.log_prompt(messages)
 
             # set litellm modify_params to the configured value
