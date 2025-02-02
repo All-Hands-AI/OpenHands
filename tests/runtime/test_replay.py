@@ -10,6 +10,8 @@ from openhands.core.config.config_utils import OH_DEFAULT_AGENT
 from openhands.core.main import run_controller
 from openhands.core.schema.agent import AgentState
 from openhands.events.action.empty import NullAction
+from openhands.events.action.message import MessageAction
+from openhands.events.event import EventSource
 from openhands.events.observation.commands import CmdOutputObservation
 
 
@@ -135,11 +137,16 @@ def test_replay_basic_interactions(temp_dir, runtime_cls, run_as_openhands):
     # all user messages appear in the history, so that after a replay (assuming
     # the trajectory doesn't end with `finish` action), LLM knows about all the
     # context and can continue
-    for user_message in [
+    user_messages = [
         "what's 1+1?",
         "No, I mean by Goldbach's conjecture!",
         'Finish please',
-    ]:
-        assert user_message in str(state.history)
+    ]
+    i = 0
+    for event in state.history:
+        if isinstance(event, MessageAction) and event._source == EventSource.USER:
+            assert event.message == user_messages[i]
+            i += 1
+    assert i == len(user_messages)
 
     _close_test_runtime(runtime)
