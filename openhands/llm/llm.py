@@ -216,9 +216,6 @@ class LLM(RetryMixin, DebugMixin):
                 )
 
             # log the entire LLM prompt
-            print('##### LLM call message #####')
-            print(messages)
-            print('############################')
             self.log_prompt(messages)
 
             if self.is_caching_prompt_active():
