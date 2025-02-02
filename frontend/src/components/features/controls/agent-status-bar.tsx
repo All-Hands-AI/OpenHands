@@ -10,6 +10,7 @@ import {
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
 import { useNotification } from "#/hooks/useNotification";
+import { browserTab } from "#/utils/browser-tab";
 
 const notificationStates = [
   AgentState.AWAITING_USER_INPUT,
@@ -49,16 +50,35 @@ export function AgentStatusBar() {
     updateStatusMessage();
   }, [curStatusMessage.id]);
 
+  // Handle window focus/blur
+  React.useEffect(() => {
+    const handleFocus = () => {
+      browserTab.stopNotification();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      browserTab.stopNotification();
+    };
+  }, []);
+
   React.useEffect(() => {
     if (status === WsClientProviderStatus.DISCONNECTED) {
       setStatusMessage("Connecting...");
     } else {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
       if (notificationStates.includes(curAgentState)) {
-        notify(t(AGENT_STATUS_MAP[curAgentState].message), {
+        const message = t(AGENT_STATUS_MAP[curAgentState].message);
+        notify(message, {
           body: t(`Agent state changed to ${curAgentState}`),
           playSound: true,
         });
+
+        // Update browser tab if window is not focused
+        if (!document.hasFocus()) {
+          browserTab.startNotification(message);
+        }
       }
     }
   }, [curAgentState, notify, t]);
