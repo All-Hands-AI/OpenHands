@@ -437,8 +437,11 @@ class AgentController:
                     self.state.iteration + self._initial_max_iterations
                 )
 
+            # Add the message to the event stream
+            self.event_stream.add_event(action, EventSource.USER)
+
             # Handle first user message to trigger prompt extensions
-            if not self._first_user_message_received and self.prompt_manager:
+            if not self._first_user_message_received and self.prompt_manager and self.agent.config.enable_prompt_extensions:
                 self._first_user_message_received = True
                 # Create a Message object from the action content
                 msg = Message(
