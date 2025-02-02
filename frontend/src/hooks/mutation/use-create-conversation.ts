@@ -3,14 +3,12 @@ import { useNavigate } from "react-router";
 import posthog from "posthog-js";
 import { useDispatch, useSelector } from "react-redux";
 import OpenHands from "#/api/open-hands";
-import { setInitialQuery } from "#/state/initial-query-slice";
+import { setInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
-import { useAuth } from "#/context/auth-context";
 
 export const useCreateConversation = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { gitHubToken } = useAuth();
   const queryClient = useQueryClient();
 
   const { selectedRepository, files, importedProjectZip, replayJson } = useSelector(
@@ -18,7 +16,7 @@ export const useCreateConversation = () => {
   );
 
   return useMutation({
-    mutationFn: (variables: { q?: string }) => {
+    mutationFn: async (variables: { q?: string }) => {
       if (
         !variables.q?.trim() &&
         !selectedRepository &&
@@ -29,10 +27,12 @@ export const useCreateConversation = () => {
         throw new Error("No query provided");
       }
 
-      if (variables.q) dispatch(setInitialQuery(variables.q));
+      if (variables.q) dispatch(setInitialPrompt(variables.q));
+
       return OpenHands.createConversation(
-        gitHubToken || undefined,
         selectedRepository || undefined,
+        variables.q,
+        files,
         replayJson || undefined,
       );
     },

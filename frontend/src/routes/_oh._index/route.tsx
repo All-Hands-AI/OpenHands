@@ -11,7 +11,6 @@ import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
-import { useAuth } from "#/context/auth-context";
 import { ImportProjectSuggestionBox } from "../../components/features/suggestions/import-project-suggestion-box";
 import { ReplaySuggestionBox } from "../../components/features/suggestions/replay-suggestion-box";
 import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
@@ -21,7 +20,6 @@ import { convertFileToText } from "#/utils/convert-file-to-text";
 
 function Home() {
   const { t } = useTranslation();
-  const { gitHubToken } = useAuth();
   const dispatch = useDispatch();
   const formRef = React.useRef<HTMLFormElement>(null);
 
@@ -29,7 +27,6 @@ function Home() {
   const { data: user } = useGitHubUser();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
-    gitHubToken,
     appMode: config?.APP_MODE || null,
     gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   });

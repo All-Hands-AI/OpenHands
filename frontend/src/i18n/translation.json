@@ -3845,6 +3845,9 @@
         "es": "Hubo un error al conectar con el entorno de ejecución. Por favor, actualice la página.",
         "tr": "Çalışma zamanına bağlanırken bir hata oluştu. Lütfen sayfayı yenileyin."
     },
+    "STATUS$LLM_RETRY": {
+        "en": "Retrying LLM request"
+    },
     "AGENT_ERROR$BAD_ACTION": {
         "en": "Agent tried to execute a malformed action.",
         "zh-CN": "错误的操作",
@@ -4535,5 +4538,8 @@
         "fr": "Que voulez-vous construire ?",
         "tr": "Ne inşa etmek istiyorsun?",
         "de": "Was möchten Sie erstellen?"
+    },
+    "SETTINGS_FORM$ENABLE_DEFAULT_CONDENSER_SWITCH_LABEL": {
+        "en": "Enable Memory Condenser"
     }
 }

@@ -35,6 +35,7 @@ from openhands.utils.async_utils import call_async_from_sync
 FAKE_RESPONSES = {
     'CodeActAgent': fake_user_response,
     'DelegatorAgent': fake_user_response,
+    'VisualBrowsingAgent': fake_user_response,
 }
 
 

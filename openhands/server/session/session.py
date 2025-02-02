@@ -6,6 +6,7 @@ import socketio
 
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
+from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
 from openhands.core.const.guide_url import TROUBLESHOOTING_URL
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
@@ -75,7 +76,10 @@ class Session:
         await self.agent_session.close()
 
     async def initialize_agent(
-        self, settings: Settings, initial_user_msg: str | None, replay_json: str | None
+        self,
+        settings: Settings,
+        initial_message: MessageAction | None,
+        replay_json: str | None,
     ):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
@@ -103,8 +107,16 @@ class Session:
 
         # TODO: override other LLM config & agent config groups (#2075)
 
-        llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
+        llm = self._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
+
+        if settings.enable_default_condenser:
+            default_condenser_config = AmortizedForgettingCondenserConfig(
+                keep_first=3, max_size=20
+            )
+            logger.info(f'Enabling default condenser: {default_condenser_config}')
+            agent_config.condenser = default_condenser_config
+
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
         github_token = None
@@ -124,7 +136,7 @@ class Session:
                 agent_configs=self.config.get_agent_configs(),
                 github_token=github_token,
                 selected_repository=selected_repository,
-                initial_user_msg=initial_user_msg,
+                initial_message=initial_message,
                 replay_json=replay_json,
             )
         except Exception as e:
@@ -133,6 +145,21 @@ class Session:
                 f'Error creating agent_session. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
             return
+
+    def _create_llm(self, agent_cls: str | None) -> LLM:
+        """
+        Initialize LLM, extracted for testing.
+        """
+        return LLM(
+            config=self.config.get_llm_config_from_agent(agent_cls),
+            retry_listener=self._notify_on_llm_retry,
+        )
+
+    def _notify_on_llm_retry(self, retries: int, max: int) -> None:
+        msg_id = 'STATUS$LLM_RETRY'
+        self.queue_status_message(
+            'info', msg_id, f'Retrying LLM request, {retries} / {max}'
+        )
 
     def on_event(self, event: Event):
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
@@ -212,7 +239,6 @@ class Session:
         """Sends a status message to the client."""
         if msg_type == 'error':
             await self.agent_session.stop_agent_loop_for_error()
-
         await self.send(
             {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
         )
