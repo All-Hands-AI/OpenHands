@@ -267,7 +267,9 @@ def pre_login(
             obs: BrowserOutputObservation = runtime.run_action(browser_action)
             logger.debug(obs, extra={'msg_type': 'OBSERVATION'})
             if save_screenshots:
-                image_data = base64.b64decode(obs.screenshot)
+                image_data = base64.b64decode(
+                    obs.screenshot.replace('data:image/png;base64,', '')
+                )
                 with open(os.path.join(directory, f'{image_id}.png'), 'wb') as file:
                     file.write(image_data)
                     image_id += 1

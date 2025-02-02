@@ -150,13 +150,17 @@ def run_solver(
         os.makedirs(screenshots_dir, exist_ok=True)
         for image_id, obs in enumerate(state.history):
             if isinstance(obs, BrowserOutputObservation):
-                image_data = base64.b64decode(obs.screenshot)
+                image_data = base64.b64decode(
+                    obs.screenshot.replace('data:image/png;base64,', '')
+                )
                 with open(
                     os.path.join(screenshots_dir, f'{image_id}.png'), 'wb'
                 ) as file:
                     file.write(image_data)
                 if obs.set_of_marks:
-                    som_image_data = base64.b64decode(obs.set_of_marks)
+                    som_image_data = base64.b64decode(
+                        obs.set_of_marks.replace('data:image/png;base64,', '')
+                    )
                     with open(
                         os.path.join(screenshots_dir, f'{image_id}_som.png'), 'wb'
                     ) as file:
