@@ -1,8 +1,8 @@
-# OpenHands Memory System and Knowledge Extraction Tutorial
+# OpenHands Knowledge Management and Self-Improvement Guide
 
-This tutorial explains how OpenHands actually implements its memory system and knowledge extraction capabilities, based on the real codebase.
+OpenHands implements its memory system and knowledge extraction capabilities.
 
-## Memory System Overview
+## OpenHands Knowledge Management Overview
 
 OpenHands implements a sophisticated memory and knowledge extraction system through three main components:
 
@@ -19,6 +19,82 @@ OpenHands implements a sophisticated memory and knowledge extraction system thro
    - Vector-based knowledge storage
    - Cross-session persistence
    - Knowledge retrieval
+
+
+### 1. Memory Architecture
+```plaintext
+OpenHands Memory System
+│
+├── Short-Term Memory (Event History)
+│   ├── Active Context
+│   │   - Current conversation state
+│   │   - Recent events
+│   │   - Active preferences
+│   │
+│   └── Event Filtering
+│       - Important event retention
+│       - Noise reduction
+│       - Context window management
+│
+├── Memory Condensation
+│   ├── LLM Summarization
+│   │   - Event chunk summarization
+│   │   - Context compression
+│   │   - Key information extraction
+│   │
+│   └── Condensation Strategies
+│       - Amortized forgetting
+│       - Attention-based
+│       - Observation masking
+│
+└── Long-Term Memory (Vector Store)
+    ├── Persistent Storage
+    │   - ChromaDB backend
+    │   - Session-based organization
+    │   - Event embeddings
+    │
+    └── Knowledge Retrieval
+        - Semantic search
+        - Relevance scoring
+        - Context matching
+```
+
+
+## Knowledge Flow in OpenHands
+
+1. **Event Processing**
+   ```plaintext
+   User Input/System Event
+          ↓
+   Event Stream
+          ↓
+   Condenser System (Knowledge Extraction)
+          ↓
+   Long-Term Memory (Storage)
+   ```
+
+2. **Knowledge Retrieval**
+   ```plaintext
+   Query/Context
+          ↓
+   Vector Search
+          ↓
+   Relevant Knowledge
+          ↓
+   Agent Processing
+   ```
+
+3. **Knowledge Accumulation**
+   ```plaintext
+   New Events
+          ↓
+   Rolling Condenser
+          ↓
+   Updated Knowledge Summary
+          ↓
+   Vector Storage Update
+   ```
+
 
 ## Knowledge Extraction System
 
@@ -115,6 +191,7 @@ class RollingCondenser(Condenser, ABC):
         return results
 ```
 
+
 ## Knowledge Storage and Retrieval
 
 ### 1. Vector-Based Storage
@@ -157,134 +234,11 @@ class LongTermMemory:
         self._add_document(doc)
 ```
 
-## Knowledge Flow in OpenHands
 
-1. **Event Processing**
-   ```plaintext
-   User Input/System Event
-          ↓
-   Event Stream
-          ↓
-   Condenser System (Knowledge Extraction)
-          ↓
-   Long-Term Memory (Storage)
-   ```
 
-2. **Knowledge Retrieval**
-   ```plaintext
-   Query/Context
-          ↓
-   Vector Search
-          ↓
-   Relevant Knowledge
-          ↓
-   Agent Processing
-   ```
-
-3. **Knowledge Accumulation**
-   ```plaintext
-   New Events
-          ↓
-   Rolling Condenser
-          ↓
-   Updated Knowledge Summary
-          ↓
-   Vector Storage Update
-   ```
-
-## Using the Knowledge System
-
-### 1. Setting Up Condensers
+#### Event Storage and Retrieval
 ```python
-# Configure condenser
-config = LLMSummarizingCondenserConfig(
-    llm_config=llm_config
-)
 
-# Create condenser
-condenser = LLMSummarizingCondenser.from_config(config)
-```
-
-### 2. Processing Events
-```python
-# In your agent
-class YourAgent(Agent):
-    async def step(self, state: State) -> Action:
-        # Get condensed knowledge
-        condensed = self.condenser.condensed_history(state)
-        
-        # Use in context
-        context = {
-            'history': condensed,
-            'current_state': state
-        }
-        
-        # Generate response
-        response = await self.llm.generate(
-            prompt=self._create_prompt(state),
-            context=context
-        )
-        
-        return self._create_action(response)
-```
-
-### 3. Accessing Stored Knowledge
-```python
-# Search knowledge
-results = memory.search(
-    query="relevant context",
-    k=10  # number of results
-)
-
-# Use in processing
-context = {
-    'knowledge': results,
-    'current_input': current_event
-}
-```
-
-## Best Practices
-
-1. **Knowledge Extraction**
-   - Use appropriate condenser for your needs
-   - Monitor condensation quality
-   - Track metadata for debugging
-
-2. **Storage Management**
-   - Regular cleanup of old sessions
-   - Monitor vector store size
-   - Validate stored knowledge
-
-3. **Performance**
-   - Use batch processing when possible
-   - Cache frequent queries
-   - Monitor embedding performance
-
-4. **Knowledge Quality**
-   - Validate extracted knowledge
-   - Update outdated information
-   - Track knowledge confidence
-OpenHands Memory Architecture
-│
-├── Short-Term Memory (Event History)
-│   ├── Implementation: EventStream
-│   ├── Location: openhands/events/stream.py
-│   └── Purpose: Maintain current conversation context
-│
-├── Memory Condenser
-│   ├── Implementation: Various Condensers
-│   ├── Location: openhands/memory/condenser/
-│   └── Purpose: Summarize and compress history
-│
-└── Long-Term Memory
-    ├── Implementation: ChromaDB + Vector Store
-    ├── Location: openhands/memory/memory.py
-    └── Purpose: Persistent knowledge storage
-```
-
-## 1. Short-Term Memory (Event Stream)
-
-```python
 # File: openhands/events/stream.py
 
 class EventStream:
@@ -307,52 +261,9 @@ class EventStream:
                 await subscriber.handle_event(event)
             except Exception as e:
                 logger.error(f"Subscriber error: {e}")
-```
 
-## 2. Memory Condenser System
 
-OpenHands provides multiple condensation strategies:
 
-### LLM Summarizing Condenser
-```python
-# File: openhands/memory/condenser/impl/llm_summarizing_condenser.py
-
-class LLMSummarizingCondenser(Condenser):
-    """Uses LLM to summarize event sequences"""
-    
-    def __init__(self, llm: LLM):
-        self.llm = llm
-        super().__init__()
-        
-    def condense(self, events: list[Event]) -> list[Event]:
-        # Convert events to text
-        events_text = '\n'.join(
-            f'{e.timestamp}: {e.message}'
-            for e in events
-        )
-        
-        # Generate summary
-        resp = self.llm.completion(
-            messages=[{
-                'content': f'Please summarize these events:\n{events_text}',
-                'role': 'user'
-            }]
-        )
-        
-        # Create summary event
-        return [AgentCondensationObservation(
-            resp.choices[0].message.content
-        )]
-```
-
-### Other Condensers
-- AmortizedForgettingCondenser: Gradually forgets old events
-- LLMAttentionCondenser: Uses attention mechanisms
-- ObservationMaskingCondenser: Masks irrelevant details
-
-## 3. Long-Term Memory System
-
-```python
 # File: openhands/memory/memory.py
 
 class LongTermMemory:
@@ -411,6 +322,7 @@ class LongTermMemory:
         return [r.get_text() for r in retriever.retrieve(query)]
 ```
 
+
 ## Cross-Session Knowledge Sharing
 
 OpenHands implements cross-session knowledge sharing through:
@@ -460,121 +372,6 @@ class EventStream:
         await self._notify_subscribers(event)
 ```
 
-## Using the Memory System
 
-### 1. Accessing Previous Knowledge
-```python
-# In your agent implementation
-class YourAgent(Agent):
-    async def step(self, state: State) -> Action:
-        # Get current input
-        current_input = state.get_latest_input()
-        
-        # Search relevant knowledge
-        relevant_knowledge = await self.memory.search(
-            current_input.message
-        )
-        
-        # Use knowledge in context
-        context = {
-            'history': state.history,
-            'knowledge': relevant_knowledge
-        }
-        
-        # Generate response
-        response = await self.llm.generate(
-            prompt=self._create_prompt(current_input),
-            context=context
-        )
-        
-        return self._create_action(response)
-```
 
-### 2. Storing New Knowledge
-```python
-# When processing events
-async def process_event(event: Event):
-    # Store in memory
-    await memory.add_event(event)
-    
-    # Process event
-    if is_learning_opportunity(event):
-        # Extract knowledge
-        knowledge = extract_knowledge(event)
-        
-        # Store as document
-        doc = create_document(knowledge)
-        await memory._add_document(doc)
-```
 
-### 3. Managing Memory
-```python
-# Regular cleanup
-async def cleanup_memory():
-    # Find old sessions
-    old_sessions = find_old_sessions()
-    
-    for session in old_sessions:
-        # Archive important knowledge
-        knowledge = extract_important_knowledge(session)
-        await archive_knowledge(knowledge)
-        
-        # Clean up session
-        await cleanup_session(session)
-```
-
-## Best Practices
-
-1. **Memory Usage**
-   - Monitor memory size
-   - Clean up old sessions
-   - Archive important knowledge
-
-2. **Knowledge Quality**
-   - Validate before storage
-   - Remove duplicates
-   - Update outdated information
-
-3. **Performance**
-   - Use appropriate batch sizes
-   - Index important fields
-   - Cache frequent queries
-
-4. **Privacy**
-   - Don't store sensitive data
-   - Implement access controls
-   - Allow data deletion
-
-## Current Limitations
-
-1. **Storage**
-   - Session-based storage only
-   - No cross-user sharing
-   - Limited categorization
-
-2. **Retrieval**
-   - Basic similarity search
-   - No complex querying
-   - Limited context understanding
-
-3. **Learning**
-   - No active learning
-   - Basic pattern recognition
-   - Limited preference tracking
-
-## Future Improvements
-
-1. **Enhanced Storage**
-   - Global knowledge base
-   - Better categorization
-   - Improved metadata
-
-2. **Smart Retrieval**
-   - Context-aware search
-   - Multi-modal queries
-   - Relevance ranking
-
-3. **Active Learning**
-   - Continuous improvement
-   - Pattern learning
-   - Preference adaptation
