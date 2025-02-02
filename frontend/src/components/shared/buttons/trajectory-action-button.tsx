@@ -1,4 +1,4 @@
-import { ActionTooltip } from "../action-tooltip";
+import { TooltipWrapper } from "../tooltip-wrapper";
 
 interface TrajectoryActionButtonProps {
   testId?: string;
@@ -25,7 +25,7 @@ export function TrajectoryActionButton({
   );
 
   if (tooltip) {
-    return <ActionTooltip content={tooltip}>{button}</ActionTooltip>;
+    return <TooltipWrapper content={tooltip}>{button}</TooltipWrapper>;
   }
 
   return button;
