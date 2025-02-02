@@ -17,6 +17,8 @@ def get_action_execution_server_startup_command(
     app_config: AppConfig,
     python_prefix: list[str] = DEFAULT_PYTHON_PREFIX,
     use_nice_for_root: bool = True,
+    override_user_id: int | None = None,
+    override_username: str | None = None,
 ):
     sandbox_config = app_config.sandbox
 
@@ -32,7 +34,13 @@ def get_action_execution_server_startup_command(
             '--browsergym-eval-env'
         ] + sandbox_config.browsergym_eval_env.split(' ')
 
-    is_root = not app_config.run_as_openhands
+    username = override_username or (
+        'openhands' if app_config.run_as_openhands else 'root'
+    )
+    user_id = override_user_id or (
+        sandbox_config.user_id if app_config.run_as_openhands else 0
+    )
+    is_root = bool(username == 'root')
 
     base_cmd = [
         *python_prefix,
@@ -45,9 +53,9 @@ def get_action_execution_server_startup_command(
         app_config.workspace_mount_path_in_sandbox,
         *plugin_args,
         '--username',
-        'openhands' if app_config.run_as_openhands else 'root',
+        username,
         '--user-id',
-        str(sandbox_config.user_id),
+        str(user_id),
         *browsergym_args,
     ]
 

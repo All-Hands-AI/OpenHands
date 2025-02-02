@@ -17,16 +17,12 @@ from openhands.events.observation import (
 # For eval environments, tests need to run with poetry install
 # ============================================================================================================================
 
-PY3_FOR_TESTING = '/openhands/micromamba/bin/micromamba run -n openhands python3'
-
 
 def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     # Test browse
-    action_cmd = CmdRunAction(
-        command=f'{PY3_FOR_TESTING} -m http.server 8000 > server.log 2>&1 &'
-    )
+    action_cmd = CmdRunAction(command='python3 -m http.server 8000 > server.log 2>&1 &')
     logger.info(action_cmd, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action_cmd)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})

@@ -29,7 +29,7 @@ def has_miniwob():
     reason='Requires browsergym-miniwob package to be installed',
 )
 def test_browsergym_eval_env(runtime_cls, temp_dir):
-    runtime = _load_runtime(
+    runtime, config = _load_runtime(
         temp_dir,
         runtime_cls=runtime_cls,
         run_as_openhands=False,  # need root permission to access file
