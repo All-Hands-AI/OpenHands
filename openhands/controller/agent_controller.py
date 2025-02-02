@@ -167,7 +167,8 @@ class AgentController:
             raise ValueError(f'Could not find file for module {agent_module.__name__}')
         prompt_dir = os.path.join(os.path.dirname(agent_module_file), 'prompts')
 
-        self.prompt_manager = PromptManager(
+        # Get prompt manager from agent to allow specialized implementations
+        self.prompt_manager = agent.get_prompt_manager(
             microagent_dir=microagent_dir,
             prompt_dir=prompt_dir,
             disabled_microagents=agent.config.disabled_microagents,
