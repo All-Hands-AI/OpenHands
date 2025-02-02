@@ -15,11 +15,12 @@ export const useNotification = () => {
   const notify = useCallback(
     async (
       title: string,
-      options?: NotificationOptions,
+      options?: NotificationOptions & { playSound?: boolean },
     ): Promise<Notification | undefined> => {
       if (typeof window === "undefined") return undefined;
 
-      if (settings?.ENABLE_SOUND_NOTIFICATIONS && audioRef.current) {
+      // Only play sound if explicitly requested and enabled in settings
+      if (options?.playSound && settings?.ENABLE_SOUND_NOTIFICATIONS && audioRef.current) {
         // Reset and play sound
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(() => {
@@ -32,7 +33,9 @@ export const useNotification = () => {
       }
 
       if (Notification.permission === "granted") {
-        return new Notification(title, options);
+        // Remove playSound from options before passing to Notification
+        const { playSound, ...notificationOptions } = options || {};
+        return new Notification(title, notificationOptions);
       }
 
       return undefined;

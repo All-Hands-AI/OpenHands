@@ -57,6 +57,7 @@ export function AgentStatusBar() {
       if (notificationStates.includes(curAgentState)) {
         notify(t(AGENT_STATUS_MAP[curAgentState].message), {
           body: t(`Agent state changed to ${curAgentState}`),
+          playSound: true,
         });
       }
     }
