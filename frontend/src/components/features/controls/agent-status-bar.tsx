@@ -9,12 +9,20 @@ import {
   useWsClient,
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
+import { useNotification } from "#/hooks/useNotification";
+
+const notificationStates = [
+  AgentState.AWAITING_USER_INPUT,
+  AgentState.FINISHED,
+  AgentState.AWAITING_USER_CONFIRMATION,
+];
 
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const { curStatusMessage } = useSelector((state: RootState) => state.status);
   const { status } = useWsClient();
+  const { notify } = useNotification();
 
   const [statusMessage, setStatusMessage] = React.useState<string>("");
 
@@ -46,8 +54,13 @@ export function AgentStatusBar() {
       setStatusMessage("Connecting...");
     } else {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
+      if (notificationStates.includes(curAgentState)) {
+        notify(t(AGENT_STATUS_MAP[curAgentState].message), {
+          body: t(`Agent state changed to ${curAgentState}`),
+        });
+      }
     }
-  }, [curAgentState]);
+  }, [curAgentState, notify, t]);
 
   return (
     <div className="flex flex-col items-center">

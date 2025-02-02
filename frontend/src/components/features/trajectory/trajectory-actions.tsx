@@ -1,4 +1,6 @@
 import { HiVolumeUp, HiVolumeOff } from "react-icons/hi";
+import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import ThumbsUpIcon from "#/icons/thumbs-up.svg?react";
 import ThumbDownIcon from "#/icons/thumbs-down.svg?react";
 import ExportIcon from "#/icons/export.svg?react";
@@ -16,8 +18,9 @@ export function TrajectoryActions({
   onNegativeFeedback,
   onExportTrajectory,
 }: TrajectoryActionsProps) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { settings, saveUserSettings } = useCurrentSettings();
-  // Ensure settings is defined before accessing properties
   const soundEnabled = settings?.ENABLE_SOUND_NOTIFICATIONS ?? true;
 
   const toggleSound = async () => {
@@ -25,6 +28,8 @@ export function TrajectoryActions({
       ...settings,
       ENABLE_SOUND_NOTIFICATIONS: !soundEnabled,
     });
+    // Invalidate settings query to trigger a refetch
+    queryClient.invalidateQueries({ queryKey: ["settings"] });
   };
   return (
     <div data-testid="feedback-actions" className="flex gap-1">
@@ -49,6 +54,7 @@ export function TrajectoryActions({
         icon={
           soundEnabled ? <HiVolumeUp size={15} /> : <HiVolumeOff size={15} />
         }
+        tooltip={t(soundEnabled ? "BUTTON$DISABLE_SOUND" : "BUTTON$ENABLE_SOUND")}
       />
     </div>
   );
