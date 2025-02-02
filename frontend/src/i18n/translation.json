@@ -4544,7 +4544,7 @@
         "tr": "Ses bildirimlerini devre dışı bırak",
         "ja": "サウンド通知を無効にする"
     },
-    "Mark this solution as helpful": {
+    "BUTTON$MARK_HELPFUL": {
         "en": "Mark this solution as helpful",
         "zh-CN": "标记此解决方案有帮助",
         "zh-TW": "標記此解決方案有幫助",
@@ -4559,7 +4559,7 @@
         "tr": "Bu çözümü yararlı olarak işaretle",
         "ja": "このソリューションが役立つと評価"
     },
-    "Mark this solution as not helpful": {
+    "BUTTON$MARK_NOT_HELPFUL": {
         "en": "Mark this solution as not helpful",
         "zh-CN": "标记此解决方案没有帮助",
         "zh-TW": "標記此解決方案沒有幫助",
@@ -4574,7 +4574,7 @@
         "tr": "Bu çözümü yararlı değil olarak işaretle",
         "ja": "このソリューションが役立たないと評価"
     },
-    "Export conversation": {
+    "BUTTON$EXPORT_CONVERSATION": {
         "en": "Export conversation",
         "zh-CN": "导出对话",
         "zh-TW": "導出對話",

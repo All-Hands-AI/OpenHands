@@ -1,7 +1,8 @@
 let originalTitle = "";
 let titleInterval: number | undefined;
 
-const isBrowser = typeof window !== "undefined" && typeof document !== "undefined";
+const isBrowser =
+  typeof window !== "undefined" && typeof document !== "undefined";
 
 export const browserTab = {
   startNotification(message: string) {
@@ -19,11 +20,14 @@ export const browserTab = {
 
     // Alternate between original title and notification message
     titleInterval = window.setInterval(() => {
-      document.title = document.title === originalTitle ? message : originalTitle;
+      document.title =
+        document.title === originalTitle ? message : originalTitle;
     }, 1000);
 
     // Set favicon to indicate notification
-    const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+    const favicon = document.querySelector(
+      'link[rel="icon"]',
+    ) as HTMLLinkElement;
     if (favicon) {
       favicon.href = favicon.href.includes("?notification")
         ? favicon.href
@@ -43,7 +47,9 @@ export const browserTab = {
     }
 
     // Reset favicon
-    const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+    const favicon = document.querySelector(
+      'link[rel="icon"]',
+    ) as HTMLLinkElement;
     if (favicon) {
       favicon.href = favicon.href.replace("?notification", "");
     }

@@ -20,7 +20,11 @@ export const useNotification = () => {
       if (typeof window === "undefined") return undefined;
 
       // Only play sound if explicitly requested and enabled in settings
-      if (options?.playSound && settings?.ENABLE_SOUND_NOTIFICATIONS && audioRef.current) {
+      if (
+        options?.playSound &&
+        settings?.ENABLE_SOUND_NOTIFICATIONS &&
+        audioRef.current
+      ) {
         // Reset and play sound
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(() => {

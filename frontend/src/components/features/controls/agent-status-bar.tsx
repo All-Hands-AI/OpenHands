@@ -52,7 +52,7 @@ export function AgentStatusBar() {
 
   // Handle window focus/blur
   React.useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return undefined;
 
     const handleFocus = () => {
       browserTab.stopNotification();
