@@ -227,7 +227,7 @@ if __name__ == '__main__':
     agent_config: AgentConfig | None = None
     agent_config = AgentConfig(
         enable_som_visual_browsing=True,
-        disabled_microagents=['github'],
+        enable_prompt_extensions=False,
     )
     ############################################
 
