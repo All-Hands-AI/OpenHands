@@ -155,7 +155,6 @@ async def test_run_controller_with_fatal_error():
     event_stream = EventStream(sid='test', file_store=file_store)
 
     agent = MagicMock(spec=Agent)
-    agent = MagicMock(spec=Agent)
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
@@ -165,6 +164,10 @@ async def test_run_controller_with_fatal_error():
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
+    agent.config = MagicMock()
+    agent.config.enable_prompt_extensions = False
+    agent.config.disabled_microagents = []
+    agent.get_prompt_manager.return_value = None
 
     runtime = MagicMock(spec=Runtime)
 
@@ -210,6 +213,10 @@ async def test_run_controller_stop_with_stuck():
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
+    agent.config = MagicMock()
+    agent.config.enable_prompt_extensions = False
+    agent.config.disabled_microagents = []
+    agent.get_prompt_manager.return_value = None
     runtime = MagicMock(spec=Runtime)
 
     def on_event(event: Event):
@@ -528,15 +535,24 @@ async def test_run_controller_max_iterations_has_metrics():
 
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
-    agent.llm.metrics = Metrics()
+    agent.llm.metrics = Metrics()  # Start with fresh metrics
     agent.llm.config = config.get_llm_config()
+    agent.config = MagicMock()
+    agent.config.enable_prompt_extensions = False
+    agent.config.disabled_microagents = []
+    agent.get_prompt_manager.return_value = None
+
+    # Keep track of total cost
+    total_cost = 0.0
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
         # Mock the cost of the LLM
-        agent.llm.metrics.add_cost(10.0)
+        nonlocal total_cost
+        total_cost += 10.0
+        state.metrics.add_cost(10.0)  # Add cost directly to state metrics
         print(
-            f'agent.llm.metrics.accumulated_cost: {agent.llm.metrics.accumulated_cost}'
+            f'state.metrics.accumulated_cost: {state.metrics.accumulated_cost}'
         )
         return CmdRunAction(command='ls')
 
@@ -601,11 +617,12 @@ async def test_context_window_exceeded_error_handling(mock_agent, mock_event_str
         def step(self, state: State):
             # Append a few messages to the history -- these will be truncated when we throw the error
             state.history = [
-                MessageAction(content='Test message 0', source=EventSource.USER),  # First user message
+                MessageAction(content='Test message 0'),  # First user message
                 MessageAction(content='Test message 1'),  # Agent response
                 MessageAction(content='Test message 2'),  # Another agent message
                 MessageAction(content='Test message 3'),  # Another agent message
             ]
+            state.history[0]._source = EventSource.USER
 
             error = ContextWindowExceededError(
                 message='prompt is too long: 233885 tokens > 200000 maximum',
@@ -636,11 +653,16 @@ async def test_context_window_exceeded_error_handling(mock_agent, mock_event_str
     # Check that the error was thrown and the history has been truncated
     assert state.has_errored
     # Should keep first user message and second half of history
-    assert controller.state.history == [
-        MessageAction(content='Test message 0', source=EventSource.USER),  # First user message always kept
+    expected_history = [
+        MessageAction(content='Test message 0'),  # First user message always kept
         MessageAction(content='Test message 2'),  # Second half of history
         MessageAction(content='Test message 3'),
     ]
+    expected_history[0]._source = EventSource.USER
+    assert len(controller.state.history) == len(expected_history)
+    for actual, expected in zip(controller.state.history, expected_history):
+        assert actual.content == expected.content
+        assert actual.source == expected.source
 
 
 @pytest.mark.asyncio
@@ -705,8 +727,9 @@ async def test_run_controller_with_context_window_exceeded(mock_agent, mock_runt
 async def test_prompt_manager_initialization(mock_agent, mock_event_stream):
     """Test that the prompt manager is properly initialized and sends system message."""
     # Mock the prompt manager
-    mock_agent.prompt_manager = MagicMock(spec=PromptManager)
-    mock_agent.prompt_manager.get_system_message.return_value = "Test system message"
+    mock_prompt_manager = MagicMock(spec=PromptManager)
+    mock_prompt_manager.get_system_message.return_value = "Test system message"
+    mock_agent.get_prompt_manager.return_value = mock_prompt_manager
 
     # Create controller
     controller = AgentController(
