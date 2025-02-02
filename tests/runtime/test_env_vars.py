@@ -85,10 +85,11 @@ def test_env_vars_added_by_config(temp_dir, runtime_cls):
 
 def test_docker_runtime_env_vars_persist_after_restart(temp_dir):
     from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+
     runtime = _load_runtime(temp_dir, DockerRuntime)
 
     # Add a test environment variable
-    runtime.add_env_vars({"GITHUB_TOKEN": "test_token"})
+    runtime.add_env_vars({'GITHUB_TOKEN': 'test_token'})
 
     # Verify the variable is set in current session
     obs = runtime.run_action(CmdRunAction(command='echo $GITHUB_TOKEN'))
@@ -96,7 +97,9 @@ def test_docker_runtime_env_vars_persist_after_restart(temp_dir):
     assert obs.content.strip().split('\r\n')[0].strip() == 'test_token'
 
     # Verify the variable is added to .bashrc
-    obs = runtime.run_action(CmdRunAction(command='grep "^export GITHUB_TOKEN=" ~/.bashrc'))
+    obs = runtime.run_action(
+        CmdRunAction(command='grep "^export GITHUB_TOKEN=" ~/.bashrc')
+    )
     assert obs.exit_code == 0
     assert 'export GITHUB_TOKEN=' in obs.content
 
