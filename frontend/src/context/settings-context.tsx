@@ -52,11 +52,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     [saveUserSettings, userSettings],
   );
 
-  return (
-    <SettingsContext.Provider value={value}>
-      {children}
-    </SettingsContext.Provider>
-  );
+  return <SettingsContext value={value}>{children}</SettingsContext>;
 }
 
 export function useCurrentSettings() {

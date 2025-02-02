@@ -22,7 +22,7 @@ export function AgentControlBar() {
   };
 
   return (
-    <div className="flex justify-between items-center gap-4">
+    <div className="flex justify-between items-center gap-20">
       <ActionButton
         isDisabled={
           curAgentState !== AgentState.RUNNING &&
