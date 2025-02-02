@@ -101,7 +101,11 @@ class Message(BaseModel):
             # See discussion here for details: https://github.com/BerriAI/litellm/issues/6422#issuecomment-2438765472
             if self.role == 'tool' and item.cache_prompt:
                 role_tool_with_prompt_caching = True
-                d.pop('cache_control')
+                if isinstance(d, dict):
+                    d.pop('cache_control')
+                elif isinstance(d, list):
+                    for d_item in d:
+                        d_item.pop('cache_control')
             if isinstance(item, TextContent):
                 content.append(d)
             elif isinstance(item, ImageContent) and self.vision_enabled:

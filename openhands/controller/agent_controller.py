@@ -235,8 +235,10 @@ class AgentController:
                 f'report this error to the developers. Your session ID is {self.id}. '
                 f'Error type: {e.__class__.__name__}'
             )
-            if isinstance(e, litellm.AuthenticationError) or isinstance(
-                e, litellm.BadRequestError
+            if (
+                isinstance(e, litellm.AuthenticationError)
+                or isinstance(e, litellm.BadRequestError)
+                or isinstance(e, RateLimitError)
             ):
                 reported = e
             await self._react_to_exception(reported)
@@ -530,7 +532,7 @@ class AgentController:
         agent_cls: Type[Agent] = Agent.get_cls(action.agent)
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
-        llm = LLM(config=llm_config)
+        llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
         delegate_agent = agent_cls(llm=llm, config=agent_config)
         state = State(
             inputs=action.inputs or {},
@@ -724,6 +726,13 @@ class AgentController:
 
         log_level = 'info' if LOG_ALL_EVENTS else 'debug'
         self.log(log_level, str(action), extra={'msg_type': 'ACTION'})
+
+    def _notify_on_llm_retry(self, retries: int, max: int) -> None:
+        if self.status_callback is not None:
+            msg_id = 'STATUS$LLM_RETRY'
+            self.status_callback(
+                'info', msg_id, f'Retrying LLM request, {retries} / {max}'
+            )
 
     async def _handle_traffic_control(
         self, limit_type: str, current_value: float, max_value: float
