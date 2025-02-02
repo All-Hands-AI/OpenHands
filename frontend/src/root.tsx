@@ -11,8 +11,6 @@ import "./index.css";
 import React from "react";
 import { Toaster } from "react-hot-toast";
 
-import { AgentStateNotifier } from "./components/AgentStateNotifier";
-
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -38,10 +36,5 @@ export const meta: MetaFunction = () => [
 ];
 
 export default function App() {
-  return (
-    <>
-      <AgentStateNotifier />
-      <Outlet />
-    </>
-  );
+  return <Outlet />;
 }
