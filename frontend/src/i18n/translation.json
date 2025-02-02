@@ -4574,6 +4574,36 @@
         "tr": "Bu çözümü yararlı değil olarak işaretle",
         "ja": "このソリューションが役立たないと評価"
     },
+    "Sound notifications enabled": {
+        "en": "Sound notifications enabled",
+        "zh-CN": "声音通知已启用",
+        "zh-TW": "聲音通知已啟用",
+        "de": "Tonbenachrichtigungen aktiviert",
+        "ko-KR": "소리 알림이 활성화되었습니다",
+        "no": "Lydvarsler aktivert",
+        "it": "Notifiche sonore abilitate",
+        "pt": "Notificações sonoras ativadas",
+        "es": "Notificaciones sonoras habilitadas",
+        "ar": "تم تمكين التنبيهات الصوتية",
+        "fr": "Notifications sonores activées",
+        "tr": "Ses bildirimleri etkinleştirildi",
+        "ja": "サウンド通知が有効になりました"
+    },
+    "Sound notifications disabled": {
+        "en": "Sound notifications disabled",
+        "zh-CN": "声音通知已禁用",
+        "zh-TW": "聲音通知已禁用",
+        "de": "Tonbenachrichtigungen deaktiviert",
+        "ko-KR": "소리 알림이 비활성화되었습니다",
+        "no": "Lydvarsler deaktivert",
+        "it": "Notifiche sonore disabilitate",
+        "pt": "Notificações sonoras desativadas",
+        "es": "Notificaciones sonoras deshabilitadas",
+        "ar": "تم تعطيل التنبيهات الصوتية",
+        "fr": "Notifications sonores désactivées",
+        "tr": "Ses bildirimleri devre dışı bırakıldı",
+        "ja": "サウンド通知が無効になりました"
+    },
     "BUTTON$EXPORT_CONVERSATION": {
         "en": "Export conversation",
         "zh-CN": "导出对话",

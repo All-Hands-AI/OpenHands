@@ -19,11 +19,16 @@ export const useNotification = () => {
     ): Promise<Notification | undefined> => {
       if (typeof window === "undefined") return undefined;
 
-      // Only play sound if explicitly requested and enabled in settings
+      // Only play sound if:
+      // 1. Explicitly requested
+      // 2. Sound notifications are enabled
+      // 3. Audio is available
+      // 4. Not a settings change notification (don't play when toggling sound)
       if (
         options?.playSound &&
         settings?.ENABLE_SOUND_NOTIFICATIONS &&
-        audioRef.current
+        audioRef.current &&
+        !title.includes("sound")
       ) {
         // Reset and play sound
         audioRef.current.currentTime = 0;
