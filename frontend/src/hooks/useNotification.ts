@@ -4,7 +4,7 @@ import { useCurrentSettings } from "../context/settings-context";
 
 export const useNotification = () => {
   const { settings } = useCurrentSettings();
-  const audioRef = useRef<HTMLAudioElement>();
+  const audioRef = useRef<HTMLAudioElement | undefined>(undefined);
 
   // Initialize audio only in browser environment
   if (typeof window !== "undefined" && !audioRef.current) {
