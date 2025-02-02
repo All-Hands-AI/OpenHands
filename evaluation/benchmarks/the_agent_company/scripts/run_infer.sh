@@ -56,6 +56,14 @@ while [[ $# -gt 0 ]]; do
             VERSION="$2"
             shift 2
             ;;
+        --start-percentile)
+            START_PERCENTILE="$2"
+            shift 2
+            ;;
+        --end-percentile)
+            END_PERCENTILE="$2"
+            shift 2
+            ;;
         *)
             echo "Unknown argument: $1"
             exit 1
@@ -69,15 +77,52 @@ if [[ ! "$OUTPUTS_PATH" = /* ]]; then
     OUTPUTS_PATH="$(cd "$(dirname "$OUTPUTS_PATH")" 2>/dev/null && pwd)/$(basename "$OUTPUTS_PATH")"
 fi
 
+: "${START_PERCENTILE:=0}"  # Default to 0 percentile (first line)
+: "${END_PERCENTILE:=100}"  # Default to 100 percentile (last line)
+
+# Validate percentile ranges if provided
+if ! [[ "$START_PERCENTILE" =~ ^[0-9]+$ ]] || ! [[ "$END_PERCENTILE" =~ ^[0-9]+$ ]]; then
+    echo "Error: Percentiles must be integers"
+    exit 1
+fi
+
+if [ "$START_PERCENTILE" -ge "$END_PERCENTILE" ]; then
+    echo "Error: Start percentile must be less than end percentile"
+    exit 1
+fi
+
+if [ "$START_PERCENTILE" -lt 0 ] || [ "$END_PERCENTILE" -gt 100 ]; then
+    echo "Error: Percentiles must be between 0 and 100"
+    exit 1
+fi
+
 echo "Using agent LLM config: $AGENT_LLM_CONFIG"
 echo "Using environment LLM config: $ENV_LLM_CONFIG"
 echo "Outputs path: $OUTPUTS_PATH"
 echo "Server hostname: $SERVER_HOSTNAME"
 echo "Version: $VERSION"
+echo "Start Percentile: $START_PERCENTILE"
+echo "End Percentile: $END_PERCENTILE"
 
 echo "Downloading tasks.md..."
 rm -f tasks.md
 wget https://github.com/TheAgentCompany/TheAgentCompany/releases/download/${VERSION}/tasks.md
+
+total_lines=$(cat tasks.md | grep "ghcr.io/theagentcompany" | wc -l)
+if [ "$total_lines" -ne 175 ]; then
+    echo "Error: Expected 175 tasks in tasks.md but found $total_lines lines"
+    exit 1
+fi
+
+# Calculate line numbers based on percentiles
+start_line=$(echo "scale=0; ($total_lines * $START_PERCENTILE / 100) + 1" | bc)
+end_line=$(echo "scale=0; $total_lines * $END_PERCENTILE / 100" | bc)
+
+echo "Using tasks No. $start_line to $end_line (inclusive) out of 1-175 tasks"
+
+# Create a temporary file with just the desired range
+temp_file="tasks_${START_PERCENTILE}_${END_PERCENTILE}.md"
+sed -n "${start_line},${end_line}p" tasks.md > "$temp_file"
 
 while IFS= read -r task_image; do
     docker pull $task_image
@@ -108,8 +153,8 @@ while IFS= read -r task_image; do
     docker images "ghcr.io/all-hands-ai/runtime" -q | xargs -r docker rmi -f
     docker volume prune -f
     docker system prune -f
-done < tasks.md
+done < "$temp_file"
 
-rm tasks.md
+rm tasks.md "$temp_file"
 
 echo "All evaluation completed successfully!"
