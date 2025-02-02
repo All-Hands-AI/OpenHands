@@ -3,7 +3,7 @@
 import { defineConfig, loadEnv } from "vite";
 import viteTsconfigPaths from "vite-tsconfig-paths";
 import svgr from "vite-plugin-svgr";
-import react from "@vitejs/plugin-react";
+import { reactRouter } from "@react-router/dev/vite";
 import { configDefaults } from "vitest/config";
 
 export default defineConfig(({ mode }) => {
@@ -24,12 +24,11 @@ export default defineConfig(({ mode }) => {
   const FE_PORT = Number.parseInt(VITE_FRONTEND_PORT, 10);
 
   return {
-    base: '/',
     plugins: [
-      !process.env.VITEST && react(),
+      !process.env.VITEST && reactRouter(),
       viteTsconfigPaths(),
       svgr(),
-    ].filter(Boolean),
+    ],
     server: {
       port: FE_PORT,
       proxy: {
@@ -66,26 +65,6 @@ export default defineConfig(({ mode }) => {
         reportsDirectory: "coverage",
         include: ["src/**/*.{ts,tsx}"],
       },
-    },
-    build: {
-      modulePreload: { polyfill: true },
-      target: 'esnext',
-      minify: 'esbuild',
-      outDir: 'build',
-      rollupOptions: {
-        output: {
-          format: 'es',
-          chunkFileNames: 'assets/[name]-[hash].js',
-          entryFileNames: 'assets/[name]-[hash].js',
-          assetFileNames: 'assets/[name]-[hash].[ext]'
-        }
-      }
-    },
-    optimizeDeps: {
-      include: ['react', 'react-dom', 'react-router', 'react-router-dom'],
-      esbuildOptions: {
-        target: 'esnext'
-      }
     },
   };
 });

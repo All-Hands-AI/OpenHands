@@ -43,15 +43,14 @@
     "sirv-cli": "^3.0.0",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^2.6.0",
-    "use-sound": "^4.0.3",
     "vite": "^6.0.11",
     "web-vitals": "^3.5.2",
     "ws": "^8.18.0"
   },
   "scripts": {
-    "dev": "npm run make-i18n && cross-env VITE_MOCK_API=false vite",
-    "dev:mock": "npm run make-i18n && cross-env VITE_MOCK_API=true vite",
-    "build": "npm run make-i18n && tsc && vite build",
+    "dev": "npm run make-i18n && cross-env VITE_MOCK_API=false react-router dev",
+    "dev:mock": "npm run make-i18n && cross-env VITE_MOCK_API=true react-router dev",
+    "build": "npm run make-i18n && tsc && react-router build",
     "start": "npx sirv-cli build/ --single",
     "test": "vitest run",
     "test:e2e": "playwright test",
@@ -120,7 +119,7 @@
   },
   "packageManager": "npm@10.5.0",
   "volta": {
-    "node": "20.11.1"
+    "node": "18.20.1"
   },
   "msw": {
     "workerDirectory": [
