@@ -73,6 +73,16 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'o1-2024-12-17',
 ]
 
+# visual browsing tool supported models
+# This flag is needed since gpt-4o and gpt-4o-mini do not allow passing image_urls with role='tool'
+VISUAL_BROWSING_TOOL_SUPPORTED_MODELS = [
+    'claude-3-5-sonnet',
+    'claude-3-5-sonnet-20240620',
+    'claude-3-5-sonnet-20241022',
+    'o1-2024-12-17',
+]
+
+
 REASONING_EFFORT_SUPPORTED_MODELS = [
     'o1-2024-12-17',
 ]
@@ -465,6 +475,15 @@ class LLM(RetryMixin, DebugMixin):
         The result is cached during initialization for performance.
         """
         return self._function_calling_active
+
+    def is_visual_browser_tool_active(self) -> bool:
+        return (
+            self.config.model in VISUAL_BROWSING_TOOL_SUPPORTED_MODELS
+            or self.config.model.split('/')[-1] in VISUAL_BROWSING_TOOL_SUPPORTED_MODELS
+            or any(
+                m in self.config.model for m in VISUAL_BROWSING_TOOL_SUPPORTED_MODELS
+            )
+        )
 
     def _post_completion(self, response: ModelResponse) -> float:
         """Post-process the completion response.
