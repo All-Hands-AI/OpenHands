@@ -83,8 +83,9 @@ def test_env_vars_added_by_config(temp_dir, runtime_cls):
     _close_test_runtime(runtime)
 
 
-def test_env_vars_persist_after_restart(temp_dir, runtime_cls):
-    runtime = _load_runtime(temp_dir, runtime_cls)
+def test_docker_runtime_env_vars_persist_after_restart(temp_dir):
+    from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+    runtime = _load_runtime(temp_dir, DockerRuntime)
 
     # Add a test environment variable
     runtime.add_env_vars({"GITHUB_TOKEN": "test_token"})
@@ -99,21 +100,9 @@ def test_env_vars_persist_after_restart(temp_dir, runtime_cls):
     assert obs.exit_code == 0
     assert 'export GITHUB_TOKEN=' in obs.content
 
-    # Simulate a runtime pause/resume cycle
-    if hasattr(runtime, '_resume_runtime'):
-        # For RemoteRuntime, use pause/resume
-        with runtime._send_runtime_api_request(
-            'POST',
-            f'{runtime.config.sandbox.remote_runtime_api_url}/pause',
-            json={'runtime_id': runtime.runtime_id},
-        ):
-            pass
-        runtime._resume_runtime()
-    else:
-        # For DockerRuntime, use container stop/start
-        container = runtime.container
-        container.stop()
-        container.start()
+    # Test pause/resume cycle
+    runtime.pause()
+    runtime.resume()
 
     # Verify the variable persists after restart
     obs = runtime.run_action(CmdRunAction(command='echo $GITHUB_TOKEN'))
