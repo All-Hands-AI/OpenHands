@@ -47,6 +47,10 @@ def mock_agent():
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
+    agent.config = MagicMock()
+    agent.config.enable_prompt_extensions = False
+    agent.config.disabled_microagents = []
+    agent.get_prompt_manager.return_value = None
     return agent
 
 
