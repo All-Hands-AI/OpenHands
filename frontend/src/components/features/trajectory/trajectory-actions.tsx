@@ -35,14 +35,6 @@ export function TrajectoryActions({
       await queryClient.invalidateQueries({ queryKey: ["settings"] });
       // Immediately update the local state to avoid flicker
       queryClient.setQueryData(["settings"], newSettings);
-      // Show success message
-      toast.success(
-        t(
-          !soundEnabled
-            ? "Sound notifications enabled"
-            : "Sound notifications disabled",
-        ),
-      );
     } catch (error) {
       toast.error(t("Failed to save sound settings. Please try again."));
     }

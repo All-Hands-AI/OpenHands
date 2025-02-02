@@ -4574,7 +4574,7 @@
         "tr": "Bu çözümü yararlı değil olarak işaretle",
         "ja": "このソリューションが役立たないと評価"
     },
-    "Sound notifications enabled": {
+    "NOTIFICATION$SOUND_ENABLED": {
         "en": "Sound notifications enabled",
         "zh-CN": "声音通知已启用",
         "zh-TW": "聲音通知已啟用",
@@ -4589,7 +4589,7 @@
         "tr": "Ses bildirimleri etkinleştirildi",
         "ja": "サウンド通知が有効になりました"
     },
-    "Sound notifications disabled": {
+    "NOTIFICATION$SOUND_DISABLED": {
         "en": "Sound notifications disabled",
         "zh-CN": "声音通知已禁用",
         "zh-TW": "聲音通知已禁用",
