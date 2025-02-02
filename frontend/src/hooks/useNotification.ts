@@ -12,25 +12,33 @@ export const useNotification = () => {
     audioRef.current.volume = 0.5;
   }
 
-  const notify = useCallback(async (title: string, options?: NotificationOptions) => {
-    if (typeof window === "undefined") return;
+  const notify = useCallback(
+    async (
+      title: string,
+      options?: NotificationOptions,
+    ): Promise<Notification | undefined> => {
+      if (typeof window === "undefined") return undefined;
 
-    if (settings?.ENABLE_SOUND_NOTIFICATIONS && audioRef.current) {
-      // Reset and play sound
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {
-        // Ignore autoplay errors
-      });
-    }
+      if (settings?.ENABLE_SOUND_NOTIFICATIONS && audioRef.current) {
+        // Reset and play sound
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {
+          // Ignore autoplay errors
+        });
+      }
 
-    if (Notification.permission === "default") {
-      await Notification.requestPermission();
-    }
+      if (Notification.permission === "default") {
+        await Notification.requestPermission();
+      }
 
-    if (Notification.permission === "granted") {
-      return new Notification(title, options);
-    }
-  }, [settings?.ENABLE_SOUND_NOTIFICATIONS]);
+      if (Notification.permission === "granted") {
+        return new Notification(title, options);
+      }
+
+      return undefined;
+    },
+    [settings?.ENABLE_SOUND_NOTIFICATIONS],
+  );
 
   return { notify };
 };

@@ -33,7 +33,6 @@ export function TrajectoryActions({
       // Invalidate settings query to trigger a refetch
       queryClient.invalidateQueries({ queryKey: ["settings"] });
     } catch (error) {
-      console.error("Failed to save sound settings:", error);
       toast.error(t("Failed to save sound settings. Please try again."));
     }
   };
@@ -60,7 +59,9 @@ export function TrajectoryActions({
         icon={
           soundEnabled ? <HiVolumeUp size={15} /> : <HiVolumeOff size={15} />
         }
-        tooltip={t(soundEnabled ? "BUTTON$DISABLE_SOUND" : "BUTTON$ENABLE_SOUND")}
+        tooltip={t(
+          soundEnabled ? "BUTTON$DISABLE_SOUND" : "BUTTON$ENABLE_SOUND",
+        )}
       />
     </div>
   );
