@@ -1,4 +1,4 @@
-import { TooltipWrapper } from "../tooltip-wrapper";
+import { Tooltip } from "@nextui-org/react";
 
 interface TrajectoryActionButtonProps {
   testId?: string;
@@ -25,7 +25,11 @@ export function TrajectoryActionButton({
   );
 
   if (tooltip) {
-    return <TooltipWrapper content={tooltip}>{button}</TooltipWrapper>;
+    return (
+      <Tooltip content={tooltip} closeDelay={100}>
+        {button}
+      </Tooltip>
+    );
   }
 
   return button;
