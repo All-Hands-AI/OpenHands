@@ -19,3 +19,4 @@ jobs:
           close-issue-message: 'This issue was closed because it has been stalled for over 30 days with no activity.'
           close-pr-message: 'This PR was closed because it has been stalled for over 30 days with no activity.'
           days-before-close: 7
+          operations-per-run: 150
