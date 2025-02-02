@@ -176,27 +176,27 @@ const sidebars: SidebarsConfig = {
             {
               type: 'doc',
               label: 'Backend Design',
-              id: 'usage/learn/1-backend-system-design',
+              id: 'usage/learn/backend-system-design',
             },
             {
               type: 'doc',
               label: 'Backend Initialization',
-              id: 'usage/learn/2-backend-init-flow',
+              id: 'usage/learn/backend-init-flow',
             },
             {
               type: 'doc',
               label: 'Backend Interaction',
-              id: 'usage/learn/3-interaction-flow',
+              id: 'usage/learn/interaction-flow',
             },
             {
               type: 'doc',
               label: 'Knowledge Management',
-              id: 'usage/learn/4-knowledge-management',
+              id: 'usage/learn/knowledge-management',
             },
             {
               type: 'doc',
               label: 'State Management',
-              id: 'usage/learn/5-state-management',
+              id: 'usage/learn/state-management',
             },
           ],
         },
