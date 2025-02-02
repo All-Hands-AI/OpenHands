@@ -4543,5 +4543,50 @@
         "fr": "Désactiver les notifications sonores",
         "tr": "Ses bildirimlerini devre dışı bırak",
         "ja": "サウンド通知を無効にする"
+    },
+    "Mark this solution as helpful": {
+        "en": "Mark this solution as helpful",
+        "zh-CN": "标记此解决方案有帮助",
+        "zh-TW": "標記此解決方案有幫助",
+        "de": "Diese Lösung als hilfreich markieren",
+        "ko-KR": "이 해결책이 도움이 되었다고 표시",
+        "no": "Marker denne løsningen som nyttig",
+        "it": "Segna questa soluzione come utile",
+        "pt": "Marcar esta solução como útil",
+        "es": "Marcar esta solución como útil",
+        "ar": "وضع علامة على هذا الحل كمفيد",
+        "fr": "Marquer cette solution comme utile",
+        "tr": "Bu çözümü yararlı olarak işaretle",
+        "ja": "このソリューションが役立つと評価"
+    },
+    "Mark this solution as not helpful": {
+        "en": "Mark this solution as not helpful",
+        "zh-CN": "标记此解决方案没有帮助",
+        "zh-TW": "標記此解決方案沒有幫助",
+        "de": "Diese Lösung als nicht hilfreich markieren",
+        "ko-KR": "이 해결책이 도움이 되지 않았다고 표시",
+        "no": "Marker denne løsningen som ikke nyttig",
+        "it": "Segna questa soluzione come non utile",
+        "pt": "Marcar esta solução como não útil",
+        "es": "Marcar esta solución como no útil",
+        "ar": "وضع علامة على هذا الحل كغير مفيد",
+        "fr": "Marquer cette solution comme non utile",
+        "tr": "Bu çözümü yararlı değil olarak işaretle",
+        "ja": "このソリューションが役立たないと評価"
+    },
+    "Export conversation": {
+        "en": "Export conversation",
+        "zh-CN": "导出对话",
+        "zh-TW": "導出對話",
+        "de": "Konversation exportieren",
+        "ko-KR": "대화 내보내기",
+        "no": "Eksporter samtale",
+        "it": "Esporta conversazione",
+        "pt": "Exportar conversa",
+        "es": "Exportar conversación",
+        "ar": "تصدير المحادثة",
+        "fr": "Exporter la conversation",
+        "tr": "Konuşmayı dışa aktar",
+        "ja": "会話をエクスポート"
     }
 }

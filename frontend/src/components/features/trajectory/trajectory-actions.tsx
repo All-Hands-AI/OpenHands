@@ -42,16 +42,19 @@ export function TrajectoryActions({
         testId="positive-feedback"
         onClick={onPositiveFeedback}
         icon={<ThumbsUpIcon width={15} height={15} />}
+        tooltip={t("Mark this solution as helpful")}
       />
       <TrajectoryActionButton
         testId="negative-feedback"
         onClick={onNegativeFeedback}
         icon={<ThumbDownIcon width={15} height={15} />}
+        tooltip={t("Mark this solution as not helpful")}
       />
       <TrajectoryActionButton
         testId="export-trajectory"
         onClick={onExportTrajectory}
         icon={<ExportIcon width={15} height={15} />}
+        tooltip={t("Export conversation")}
       />
       <TrajectoryActionButton
         testId="sound-toggle"
