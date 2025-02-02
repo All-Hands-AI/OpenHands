@@ -78,7 +78,9 @@ def test_get_messages(codeact_agent: CodeActAgent):
         Mock(history=history, max_iterations=5, iteration=0, extra_data={})
     )
 
-    assert len(messages) == 5  # Initial user message, agent message, user message, agent message, last user message
+    assert (
+        len(messages) == 5
+    )  # Initial user message, agent message, user message, agent message, last user message
     assert messages[0].role == 'user'
     assert messages[0].content[0].text.endswith('Initial user message')
     # we add cache breakpoint to the last 3 user messages
@@ -113,9 +115,7 @@ def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
 
     # Check that only the last two user messages have cache_prompt=True
     cached_user_messages = [
-        msg
-        for msg in messages
-        if msg.role == 'user' and msg.content[0].cache_prompt
+        msg for msg in messages if msg.role == 'user' and msg.content[0].cache_prompt
     ]
     assert (
         len(cached_user_messages) == 3

@@ -510,7 +510,7 @@ def test_step_with_no_pending_actions(mock_state: State):
     config.enable_prompt_extensions = False
     agent = CodeActAgent(llm=llm, config=config)
     agent.prompt_manager = Mock()
-    agent.prompt_manager.get_system_message.return_value = "System message"
+    agent.prompt_manager.get_system_message.return_value = 'System message'
     agent.prompt_manager.add_examples_to_initial_message = Mock()
 
     # Test step with no pending actions
@@ -538,7 +538,7 @@ def test_mismatched_tool_call_events(mock_state: State):
 
     agent = CodeActAgent(llm=llm, config=AgentConfig())
     agent.prompt_manager = Mock()
-    agent.prompt_manager.get_system_message.return_value = "System message"
+    agent.prompt_manager.get_system_message.return_value = 'System message'
     agent.prompt_manager.add_examples_to_initial_message = Mock()
 
     tool_call_metadata = Mock(

@@ -1,5 +1,5 @@
 import asyncio
-from unittest.mock import ANY, AsyncMock, MagicMock, call
+from unittest.mock import ANY, AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
@@ -552,9 +552,7 @@ async def test_run_controller_max_iterations_has_metrics():
         nonlocal total_cost
         total_cost += 10.0
         state.metrics.add_cost(10.0)  # Add cost directly to state metrics
-        print(
-            f'state.metrics.accumulated_cost: {state.metrics.accumulated_cost}'
-        )
+        print(f'state.metrics.accumulated_cost: {state.metrics.accumulated_cost}')
         return CmdRunAction(command='ls')
 
     agent.step = agent_step_fn
@@ -729,7 +727,7 @@ async def test_prompt_manager_initialization(mock_agent, mock_event_stream):
     """Test that the prompt manager is properly initialized and sends system message."""
     # Mock the prompt manager
     mock_prompt_manager = MagicMock(spec=PromptManager)
-    mock_prompt_manager.get_system_message.return_value = "Test system message"
+    mock_prompt_manager.get_system_message.return_value = 'Test system message'
     mock_agent.get_prompt_manager.return_value = mock_prompt_manager
 
     # Create controller
@@ -744,7 +742,7 @@ async def test_prompt_manager_initialization(mock_agent, mock_event_stream):
 
     # Verify that system message was sent
     mock_event_stream.add_event.assert_called_with(
-        SystemMessageAction(content="Test system message"),
+        SystemMessageAction(content='Test system message'),
         EventSource.AGENT,
     )
 
@@ -757,19 +755,22 @@ async def test_prompt_manager_extensions(mock_agent, mock_event_stream):
     # Mock the prompt manager and enable extensions
     mock_agent.config.enable_prompt_extensions = True
     mock_prompt_manager = MagicMock(spec=PromptManager)
-    mock_prompt_manager.get_system_message.return_value = "Test system message"
+    mock_prompt_manager.get_system_message.return_value = 'Test system message'
 
     # Mock the prompt extension methods
     def add_examples(msg):
-        msg.content[0].text = "Examples added: " + msg.content[0].text
+        msg.content[0].text = 'Examples added: ' + msg.content[0].text
+
     mock_prompt_manager.add_examples_to_initial_message.side_effect = add_examples
 
     def add_info(msg):
-        msg.content[0].text = "Info added: " + msg.content[0].text
+        msg.content[0].text = 'Info added: ' + msg.content[0].text
+
     mock_prompt_manager.add_info_to_initial_message.side_effect = add_info
 
     def enhance(msg):
-        msg.content[0].text = "Enhanced: " + msg.content[0].text
+        msg.content[0].text = 'Enhanced: ' + msg.content[0].text
+
     mock_prompt_manager.enhance_message.side_effect = enhance
 
     mock_agent.get_prompt_manager.return_value = mock_prompt_manager
@@ -785,7 +786,7 @@ async def test_prompt_manager_extensions(mock_agent, mock_event_stream):
     )
 
     # Send a user message
-    message_action = MessageAction(content="Test message")
+    message_action = MessageAction(content='Test message')
     message_action._source = EventSource.USER
     await controller._on_event(message_action)
 
@@ -794,15 +795,16 @@ async def test_prompt_manager_extensions(mock_agent, mock_event_stream):
 
     # Verify that system message was added
     assert any(
-        isinstance(args[0], SystemMessageAction) and args[0].content == "Test system message"
+        isinstance(args[0], SystemMessageAction)
+        and args[0].content == 'Test system message'
         for args, _ in actual_calls
     )
 
     # Verify that prompt extensions were added
     expected_extensions = [
-        ("Examples added: Test message", "examples"),
-        ("Info added: Examples added: Test message", "info"),
-        ("Enhanced: Info added: Examples added: Test message", "enhance"),
+        ('Examples added: Test message', 'examples'),
+        ('Info added: Examples added: Test message', 'info'),
+        ('Enhanced: Info added: Examples added: Test message', 'enhance'),
     ]
     for content, ext_type in expected_extensions:
         assert any(
@@ -810,9 +812,7 @@ async def test_prompt_manager_extensions(mock_agent, mock_event_stream):
             and args[0].content == content
             and args[0].extension_type == ext_type
             for args, _ in actual_calls
-        ), f"Missing extension: {ext_type}"
-
-
+        ), f'Missing extension: {ext_type}'
 
     await controller.close()
 
@@ -823,7 +823,7 @@ async def test_prompt_manager_extensions_disabled(mock_agent, mock_event_stream)
     # Mock the prompt manager but disable extensions
     mock_agent.config.enable_prompt_extensions = False
     mock_prompt_manager = MagicMock(spec=PromptManager)
-    mock_prompt_manager.get_system_message.return_value = "Test system message"
+    mock_prompt_manager.get_system_message.return_value = 'Test system message'
     mock_agent.get_prompt_manager.return_value = mock_prompt_manager
 
     # Create controller
@@ -837,7 +837,7 @@ async def test_prompt_manager_extensions_disabled(mock_agent, mock_event_stream)
     )
 
     # Send a user message
-    message_action = MessageAction(content="Test message")
+    message_action = MessageAction(content='Test message')
     message_action._source = EventSource.USER
     await controller._on_event(message_action)
 
@@ -846,14 +846,14 @@ async def test_prompt_manager_extensions_disabled(mock_agent, mock_event_stream)
 
     # Verify that system message was added
     assert any(
-        isinstance(args[0], SystemMessageAction) and args[0].content == "Test system message"
+        isinstance(args[0], SystemMessageAction)
+        and args[0].content == 'Test system message'
         for args, _ in actual_calls
     )
 
     # Verify that no prompt extensions were added
     assert not any(
-        isinstance(args[0], PromptExtensionAction)
-        for args, _ in actual_calls
+        isinstance(args[0], PromptExtensionAction) for args, _ in actual_calls
     )
 
     # Verify that extension methods were not called
@@ -869,7 +869,7 @@ async def test_prompt_manager_extensions_delegate(mock_agent, mock_event_stream)
     """Test that prompt extensions are not added for delegate controllers."""
     # Mock the prompt manager
     mock_prompt_manager = MagicMock(spec=PromptManager)
-    mock_prompt_manager.get_system_message.return_value = "Test system message"
+    mock_prompt_manager.get_system_message.return_value = 'Test system message'
     mock_agent.get_prompt_manager.return_value = mock_prompt_manager
 
     # Create delegate controller
@@ -884,7 +884,7 @@ async def test_prompt_manager_extensions_delegate(mock_agent, mock_event_stream)
     )
 
     # Send a user message
-    message_action = MessageAction(content="Test message")
+    message_action = MessageAction(content='Test message')
     message_action._source = EventSource.USER
     await controller._on_event(message_action)
 
@@ -892,8 +892,8 @@ async def test_prompt_manager_extensions_delegate(mock_agent, mock_event_stream)
     actual_calls = mock_event_stream.add_event.call_args_list
 
     # Verify that only the original message was added (plus state changes)
-    print("Message action:", message_action)
-    print("Actual calls:", actual_calls)
+    print('Message action:', message_action)
+    print('Actual calls:', actual_calls)
     assert any(
         args[0] == message_action and args[1] == EventSource.USER
         for args, _ in actual_calls
@@ -901,7 +901,8 @@ async def test_prompt_manager_extensions_delegate(mock_agent, mock_event_stream)
 
     # Verify that no system message or prompt extensions were added
     assert not any(
-        isinstance(args[0], SystemMessageAction) or isinstance(args[0], PromptExtensionAction)
+        isinstance(args[0], SystemMessageAction)
+        or isinstance(args[0], PromptExtensionAction)
         for args, _ in actual_calls
     )
 
@@ -943,7 +944,7 @@ async def test_prompt_manager_delegate_initialization(mock_agent, mock_event_str
     """Test that system message is not sent for delegate controllers."""
     # Mock the prompt manager
     mock_agent.prompt_manager = MagicMock(spec=PromptManager)
-    mock_agent.prompt_manager.get_system_message.return_value = "Test system message"
+    mock_agent.prompt_manager.get_system_message.return_value = 'Test system message'
 
     # Create controller with is_delegate=True
     controller = AgentController(

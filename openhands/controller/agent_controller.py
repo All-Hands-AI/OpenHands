@@ -57,7 +57,6 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
-from openhands.utils.prompt import PromptManager
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -441,7 +440,11 @@ class AgentController:
             self.event_stream.add_event(action, EventSource.USER)
 
             # Handle first user message to trigger prompt extensions
-            if not self._first_user_message_received and self.prompt_manager and self.agent.config.enable_prompt_extensions:
+            if (
+                not self._first_user_message_received
+                and self.prompt_manager
+                and self.agent.config.enable_prompt_extensions
+            ):
                 self._first_user_message_received = True
                 # Create a Message object from the action content
                 msg = Message(
@@ -1121,7 +1124,10 @@ class AgentController:
         if first_user_msg:
             self.state.start_id = first_user_msg.id
             # Make sure start_id is not greater than truncation_id
-            if self.state.truncation_id is not None and self.state.start_id > self.state.truncation_id:
+            if (
+                self.state.truncation_id is not None
+                and self.state.start_id > self.state.truncation_id
+            ):
                 self.state.truncation_id = self.state.start_id
 
         return kept_events
