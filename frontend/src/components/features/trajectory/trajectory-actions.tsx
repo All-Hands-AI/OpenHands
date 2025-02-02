@@ -26,12 +26,15 @@ export function TrajectoryActions({
 
   const toggleSound = async () => {
     try {
-      await saveUserSettings({
+      const newSettings = {
         ...settings,
         ENABLE_SOUND_NOTIFICATIONS: !soundEnabled,
-      });
-      // Invalidate settings query to trigger a refetch
-      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      };
+      await saveUserSettings(newSettings);
+      // Wait for the settings to be saved before invalidating
+      await queryClient.invalidateQueries({ queryKey: ["settings"] });
+      // Immediately update the local state to avoid flicker
+      queryClient.setQueryData(["settings"], newSettings);
     } catch (error) {
       toast.error(t("Failed to save sound settings. Please try again."));
     }

@@ -31,8 +31,9 @@ export const useSettings = () => {
     queryKey: ["settings"],
     queryFn: getSettingsQueryFn,
     initialData: DEFAULT_SETTINGS,
-    staleTime: 0,
-    retry: false,
+    staleTime: 1000, // Consider data fresh for 1 second
+    retry: 1, // Retry failed requests once
+    refetchOnWindowFocus: false, // Don't refetch on window focus
     meta: {
       disableToast: true,
     },
