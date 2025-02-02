@@ -140,7 +140,7 @@ while IFS= read -r task_image; do
         continue
     fi
 
-    export PYTHONPATH=evaluation/benchmarks/the_agent_company:\$PYTHONPATH && \
+    export PYTHONPATH=$(pwd):\$PYTHONPATH && \
         poetry run python evaluation/benchmarks/the_agent_company/run_infer.py \
             --agent-llm-config "$AGENT_LLM_CONFIG" \
             --env-llm-config "$ENV_LLM_CONFIG" \
