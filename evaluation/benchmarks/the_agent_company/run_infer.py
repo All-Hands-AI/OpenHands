@@ -155,6 +155,12 @@ def run_solver(
                     os.path.join(screenshots_dir, f'{image_id}.png'), 'wb'
                 ) as file:
                     file.write(image_data)
+                if obs.set_of_marks:
+                    som_image_data = base64.b64decode(obs.set_of_marks)
+                    with open(
+                        os.path.join(screenshots_dir, f'{image_id}_som.png'), 'wb'
+                    ) as file:
+                        file.write(som_image_data)
 
     if save_final_state:
         os.makedirs(state_dir, exist_ok=True)
