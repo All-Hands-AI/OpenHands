@@ -163,6 +163,7 @@ class LLM(RetryMixin, DebugMixin):
             temperature=self.config.temperature,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
+            seed=self.config.seed,
             # add reasoning_effort, only if the model is supported
             **(
                 {'reasoning_effort': self.config.reasoning_effort}
