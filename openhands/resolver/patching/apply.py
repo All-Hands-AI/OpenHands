@@ -94,12 +94,17 @@ def apply_diff(diff, text, reverse=False, use_patch=False):
                     hunk=hunk,
                 )
             if lines[old - 1] != line:
-                raise HunkApplyException(
-                    'context line {n}, "{line}" does not match "{sl}"'.format(
-                        n=old, line=line, sl=lines[old - 1]
-                    ),
-                    hunk=hunk,
-                )
+                # Try to normalize whitespace by replacing multiple spaces with a single space
+                # This helps with patches that have different indentation levels
+                normalized_line = ' '.join(line.split())
+                normalized_source = ' '.join(lines[old - 1].split())
+                if normalized_line != normalized_source:
+                    raise HunkApplyException(
+                        'context line {n}, "{line}" does not match "{sl}"'.format(
+                            n=old, line=line, sl=lines[old - 1]
+                        ),
+                        hunk=hunk,
+                    )
 
     # for calculating the old line
     r = 0
