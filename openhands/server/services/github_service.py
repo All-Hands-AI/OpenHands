@@ -9,10 +9,10 @@ from openhands.server.types import AppMode, GhAuthenticationError, GHUnknownExce
 
 class GitHubService:
     BASE_URL = 'https://api.github.com'
+    token: str = ''
 
     def __init__(self, user_id: str | None):
         self.user_id = user_id
-        self.token = ''
 
     async def _get_github_headers(self):
         """
