@@ -1,8 +1,9 @@
 from unittest.mock import MagicMock, patch
 
 from openhands.core.config import LLMConfig
-from openhands.resolver.github_issue import ReviewThread
-from openhands.resolver.issue_definitions import IssueHandler, PRHandler
+from openhands.resolver.gitlab import GitlabIssueHandler, GitlabPRHandler
+from openhands.resolver.issue import ReviewThread
+from openhands.resolver.issue_definitions import ServiceContext, ServiceContextPR
 
 
 def test_get_converted_issues_initializes_review_comments():
@@ -11,7 +12,7 @@ def test_get_converted_issues_initializes_review_comments():
         # Mock the response for issues
         mock_issues_response = MagicMock()
         mock_issues_response.json.return_value = [
-            {'number': 1, 'title': 'Test Issue', 'body': 'Test Body'}
+            {'iid': 1, 'title': 'Test Issue', 'description': 'Test Body'}
         ]
         # Mock the response for comments
         mock_comments_response = MagicMock()
@@ -27,7 +28,9 @@ def test_get_converted_issues_initializes_review_comments():
 
         # Create an instance of IssueHandler
         llm_config = LLMConfig(model='test', api_key='test')
-        handler = IssueHandler('test-owner', 'test-repo', 'test-token', llm_config)
+        handler = ServiceContext(
+            GitlabIssueHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        )
 
         # Get converted issues
         issues = handler.get_converted_issues(issue_numbers=[1])
@@ -52,12 +55,11 @@ def test_get_converted_issues_handles_empty_body():
         # Mock the response for issues
         mock_issues_response = MagicMock()
         mock_issues_response.json.return_value = [
-            {'number': 1, 'title': 'Test Issue', 'body': None}
+            {'iid': 1, 'title': 'Test Issue', 'description': None}
         ]
         # Mock the response for comments
         mock_comments_response = MagicMock()
         mock_comments_response.json.return_value = []
-
         # Set up the mock to return different responses
         mock_get.side_effect = [
             mock_issues_response,
@@ -67,7 +69,9 @@ def test_get_converted_issues_handles_empty_body():
 
         # Create an instance of IssueHandler
         llm_config = LLMConfig(model='test', api_key='test')
-        handler = IssueHandler('test-owner', 'test-repo', 'test-token', llm_config)
+        handler = ServiceContext(
+            GitlabIssueHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        )
 
         # Get converted issues
         issues = handler.get_converted_issues(issue_numbers=[1])
@@ -95,29 +99,27 @@ def test_pr_handler_get_converted_issues_with_comments():
         mock_prs_response = MagicMock()
         mock_prs_response.json.return_value = [
             {
-                'number': 1,
+                'iid': 1,
                 'title': 'Test PR',
-                'body': 'Test Body fixes #1',
-                'head': {'ref': 'test-branch'},
+                'description': 'Test Body fixes #1',
+                'source_branch': 'test-branch',
             }
         ]
 
         # Mock the response for PR comments
         mock_comments_response = MagicMock()
         mock_comments_response.json.return_value = [
-            {'body': 'First comment'},
-            {'body': 'Second comment'},
+            {'body': 'First comment', 'resolvable': True, 'system': False},
+            {'body': 'Second comment', 'resolvable': True, 'system': False},
         ]
 
         # Mock the response for PR metadata (GraphQL)
         mock_graphql_response = MagicMock()
         mock_graphql_response.json.return_value = {
             'data': {
-                'repository': {
-                    'pullRequest': {
-                        'closingIssuesReferences': {'edges': []},
-                        'reviews': {'nodes': []},
-                        'reviewThreads': {'edges': []},
+                'project': {
+                    'mergeRequest': {
+                        'discussions': {'edges': []},
                     }
                 }
             }
@@ -131,14 +133,15 @@ def test_pr_handler_get_converted_issues_with_comments():
         # Mock the response for fetching the external issue referenced in PR body
         mock_external_issue_response = MagicMock()
         mock_external_issue_response.json.return_value = {
-            'body': 'This is additional context from an externally referenced issue.'
+            'description': 'This is additional context from an externally referenced issue.'
         }
 
         mock_get.side_effect = [
             mock_prs_response,  # First call for PRs
             mock_empty_response,  # Second call for PRs (empty page)
-            mock_comments_response,  # Third call for PR comments
-            mock_empty_response,  # Fourth call for PR comments (empty page)
+            mock_empty_response,  # Third call for related issues
+            mock_comments_response,  # Fourth call for PR comments
+            mock_empty_response,  # Fifth call for PR comments (empty page)
             mock_external_issue_response,  # Mock response for the external issue reference #1
         ]
 
@@ -148,7 +151,9 @@ def test_pr_handler_get_converted_issues_with_comments():
 
             # Create an instance of PRHandler
             llm_config = LLMConfig(model='test', api_key='test')
-            handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+            handler = ServiceContextPR(
+                GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+            )
 
             # Get converted issues
             prs = handler.get_converted_issues(issue_numbers=[1])
@@ -177,18 +182,20 @@ def test_get_issue_comments_with_specific_comment_id():
         # Mock the response for comments
         mock_comments_response = MagicMock()
         mock_comments_response.json.return_value = [
-            {'id': 123, 'body': 'First comment'},
-            {'id': 456, 'body': 'Second comment'},
+            {'id': 123, 'body': 'First comment', 'resolvable': True, 'system': False},
+            {'id': 456, 'body': 'Second comment', 'resolvable': True, 'system': False},
         ]
 
         mock_get.return_value = mock_comments_response
 
         # Create an instance of IssueHandler
         llm_config = LLMConfig(model='test', api_key='test')
-        handler = IssueHandler('test-owner', 'test-repo', 'test-token', llm_config)
+        handler = ServiceContext(
+            GitlabIssueHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        )
 
         # Get comments with a specific comment_id
-        specific_comment = handler._get_issue_comments(issue_number=1, comment_id=123)
+        specific_comment = handler.get_issue_comments(issue_number=1, comment_id=123)
 
         # Verify only the specific comment is returned
         assert specific_comment == ['First comment']
@@ -204,45 +211,48 @@ def test_pr_handler_get_converted_issues_with_specific_thread_comment():
         mock_prs_response = MagicMock()
         mock_prs_response.json.return_value = [
             {
-                'number': 1,
+                'iid': 1,
                 'title': 'Test PR',
-                'body': 'Test Body',
-                'head': {'ref': 'test-branch'},
+                'description': 'Test Body',
+                'source_branch': 'test-branch',
             }
         ]
 
         # Mock the response for PR comments
         mock_comments_response = MagicMock()
         mock_comments_response.json.return_value = [
-            {'body': 'First comment', 'id': 123},
-            {'body': 'Second comment', 'id': 124},
+            {'body': 'First comment', 'id': 123, 'resolvable': True, 'system': False},
+            {'body': 'Second comment', 'id': 124, 'resolvable': True, 'system': False},
         ]
 
         # Mock the response for PR metadata (GraphQL)
         mock_graphql_response = MagicMock()
         mock_graphql_response.json.return_value = {
             'data': {
-                'repository': {
-                    'pullRequest': {
-                        'closingIssuesReferences': {'edges': []},
-                        'reviews': {'nodes': []},
-                        'reviewThreads': {
+                'project': {
+                    'mergeRequest': {
+                        'discussions': {
                             'edges': [
                                 {
                                     'node': {
                                         'id': 'review-thread-1',
-                                        'isResolved': False,
-                                        'comments': {
+                                        'resolved': False,
+                                        'resolvable': True,
+                                        'notes': {
                                             'nodes': [
                                                 {
-                                                    'fullDatabaseId': 121,
+                                                    'id': 'GID/121',
                                                     'body': 'Specific review comment',
-                                                    'path': 'file1.txt',
+                                                    'position': {
+                                                        'filePath': 'file1.txt',
+                                                    },
                                                 },
                                                 {
-                                                    'fullDatabaseId': 456,
+                                                    'id': 'GID/456',
                                                     'body': 'Another review comment',
-                                                    'path': 'file2.txt',
+                                                    'position': {
+                                                        'filePath': 'file2.txt',
+                                                    },
                                                 },
                                             ]
                                         },
@@ -263,8 +273,9 @@ def test_pr_handler_get_converted_issues_with_specific_thread_comment():
         mock_get.side_effect = [
             mock_prs_response,  # First call for PRs
             mock_empty_response,  # Second call for PRs (empty page)
-            mock_comments_response,  # Third call for PR comments
-            mock_empty_response,  # Fourth call for PR comments (empty page)
+            mock_empty_response,  # Third call for related issues
+            mock_comments_response,  # Fourth call for PR comments
+            mock_empty_response,  # Fifth call for PR comments (empty page)
         ]
 
         # Mock the post request for GraphQL
@@ -273,7 +284,9 @@ def test_pr_handler_get_converted_issues_with_specific_thread_comment():
 
             # Create an instance of PRHandler
             llm_config = LLMConfig(model='test', api_key='test')
-            handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+            handler = ServiceContextPR(
+                GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+            )
 
             # Get converted issues
             prs = handler.get_converted_issues(
@@ -285,7 +298,7 @@ def test_pr_handler_get_converted_issues_with_specific_thread_comment():
 
             # Verify that thread_comments are set correctly
             assert prs[0].thread_comments == ['First comment']
-            assert prs[0].review_comments == []
+            assert prs[0].review_comments is None
             assert prs[0].review_threads == []
 
             # Verify other fields are set correctly
@@ -307,45 +320,58 @@ def test_pr_handler_get_converted_issues_with_specific_review_thread_comment():
         mock_prs_response = MagicMock()
         mock_prs_response.json.return_value = [
             {
-                'number': 1,
+                'iid': 1,
                 'title': 'Test PR',
-                'body': 'Test Body',
-                'head': {'ref': 'test-branch'},
+                'description': 'Test Body',
+                'source_branch': 'test-branch',
             }
         ]
 
         # Mock the response for PR comments
         mock_comments_response = MagicMock()
         mock_comments_response.json.return_value = [
-            {'body': 'First comment', 'id': 120},
-            {'body': 'Second comment', 'id': 124},
+            {
+                'description': 'First comment',
+                'id': 120,
+                'resolvable': True,
+                'system': False,
+            },
+            {
+                'description': 'Second comment',
+                'id': 124,
+                'resolvable': True,
+                'system': False,
+            },
         ]
 
         # Mock the response for PR metadata (GraphQL)
         mock_graphql_response = MagicMock()
         mock_graphql_response.json.return_value = {
             'data': {
-                'repository': {
-                    'pullRequest': {
-                        'closingIssuesReferences': {'edges': []},
-                        'reviews': {'nodes': []},
-                        'reviewThreads': {
+                'project': {
+                    'mergeRequest': {
+                        'discussions': {
                             'edges': [
                                 {
                                     'node': {
                                         'id': 'review-thread-1',
-                                        'isResolved': False,
-                                        'comments': {
+                                        'resolved': False,
+                                        'resolvable': True,
+                                        'notes': {
                                             'nodes': [
                                                 {
-                                                    'fullDatabaseId': specific_comment_id,
+                                                    'id': f'GID/{specific_comment_id}',
                                                     'body': 'Specific review comment',
-                                                    'path': 'file1.txt',
+                                                    'position': {
+                                                        'filePath': 'file1.txt',
+                                                    },
                                                 },
                                                 {
-                                                    'fullDatabaseId': 456,
+                                                    'id': 'GID/456',
                                                     'body': 'Another review comment',
-                                                    'path': 'file1.txt',
+                                                    'position': {
+                                                        'filePath': 'file1.txt',
+                                                    },
                                                 },
                                             ]
                                         },
@@ -366,8 +392,9 @@ def test_pr_handler_get_converted_issues_with_specific_review_thread_comment():
         mock_get.side_effect = [
             mock_prs_response,  # First call for PRs
             mock_empty_response,  # Second call for PRs (empty page)
-            mock_comments_response,  # Third call for PR comments
-            mock_empty_response,  # Fourth call for PR comments (empty page)
+            mock_empty_response,  # Third call for related issues
+            mock_comments_response,  # Fourth call for PR comments
+            mock_empty_response,  # Fifth call for PR comments (empty page)
         ]
 
         # Mock the post request for GraphQL
@@ -376,7 +403,9 @@ def test_pr_handler_get_converted_issues_with_specific_review_thread_comment():
 
             # Create an instance of PRHandler
             llm_config = LLMConfig(model='test', api_key='test')
-            handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+            handler = ServiceContextPR(
+                GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+            )
 
             # Get converted issues
             prs = handler.get_converted_issues(
@@ -388,7 +417,7 @@ def test_pr_handler_get_converted_issues_with_specific_review_thread_comment():
 
             # Verify that thread_comments are set correctly
             assert prs[0].thread_comments is None
-            assert prs[0].review_comments == []
+            assert prs[0].review_comments is None
             assert len(prs[0].review_threads) == 1
             assert isinstance(prs[0].review_threads[0], ReviewThread)
             assert (
@@ -416,45 +445,58 @@ def test_pr_handler_get_converted_issues_with_specific_comment_and_issue_refs():
         mock_prs_response = MagicMock()
         mock_prs_response.json.return_value = [
             {
-                'number': 1,
+                'iid': 1,
                 'title': 'Test PR fixes #3',
-                'body': 'Test Body',
-                'head': {'ref': 'test-branch'},
+                'description': 'Test Body',
+                'source_branch': 'test-branch',
             }
         ]
 
         # Mock the response for PR comments
         mock_comments_response = MagicMock()
         mock_comments_response.json.return_value = [
-            {'body': 'First comment', 'id': 120},
-            {'body': 'Second comment', 'id': 124},
+            {
+                'description': 'First comment',
+                'id': 120,
+                'resolvable': True,
+                'system': False,
+            },
+            {
+                'description': 'Second comment',
+                'id': 124,
+                'resolvable': True,
+                'system': False,
+            },
         ]
 
         # Mock the response for PR metadata (GraphQL)
         mock_graphql_response = MagicMock()
         mock_graphql_response.json.return_value = {
             'data': {
-                'repository': {
-                    'pullRequest': {
-                        'closingIssuesReferences': {'edges': []},
-                        'reviews': {'nodes': []},
-                        'reviewThreads': {
+                'project': {
+                    'mergeRequest': {
+                        'discussions': {
                             'edges': [
                                 {
                                     'node': {
                                         'id': 'review-thread-1',
-                                        'isResolved': False,
-                                        'comments': {
+                                        'resolved': False,
+                                        'resolvable': True,
+                                        'notes': {
                                             'nodes': [
                                                 {
-                                                    'fullDatabaseId': specific_comment_id,
+                                                    'id': f'GID/{specific_comment_id}',
                                                     'body': 'Specific review comment that references #6',
-                                                    'path': 'file1.txt',
+                                                    'position': {
+                                                        'filePath': 'file1.txt',
+                                                    },
                                                 },
                                                 {
-                                                    'fullDatabaseId': 456,
+                                                    'id': 'GID/456',
                                                     'body': 'Another review comment referencing #7',
-                                                    'path': 'file2.txt',
+                                                    'position': {
+                                                        'filePath': 'file2.txt',
+                                                    },
                                                 },
                                             ]
                                         },
@@ -475,20 +517,21 @@ def test_pr_handler_get_converted_issues_with_specific_comment_and_issue_refs():
         # Mock the response for fetching the external issue referenced in PR body
         mock_external_issue_response_in_body = MagicMock()
         mock_external_issue_response_in_body.json.return_value = {
-            'body': 'External context #1.'
+            'description': 'External context #1.'
         }
 
         # Mock the response for fetching the external issue referenced in review thread
         mock_external_issue_response_review_thread = MagicMock()
         mock_external_issue_response_review_thread.json.return_value = {
-            'body': 'External context #2.'
+            'description': 'External context #2.'
         }
 
         mock_get.side_effect = [
             mock_prs_response,  # First call for PRs
             mock_empty_response,  # Second call for PRs (empty page)
-            mock_comments_response,  # Third call for PR comments
-            mock_empty_response,  # Fourth call for PR comments (empty page)
+            mock_empty_response,  # Third call for related issues
+            mock_comments_response,  # Fourth call for PR comments
+            mock_empty_response,  # Fifth call for PR comments (empty page)
             mock_external_issue_response_in_body,
             mock_external_issue_response_review_thread,
         ]
@@ -499,7 +542,9 @@ def test_pr_handler_get_converted_issues_with_specific_comment_and_issue_refs():
 
             # Create an instance of PRHandler
             llm_config = LLMConfig(model='test', api_key='test')
-            handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+            handler = ServiceContextPR(
+                GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+            )
 
             # Get converted issues
             prs = handler.get_converted_issues(
@@ -511,7 +556,7 @@ def test_pr_handler_get_converted_issues_with_specific_comment_and_issue_refs():
 
             # Verify that thread_comments are set correctly
             assert prs[0].thread_comments is None
-            assert prs[0].review_comments == []
+            assert prs[0].review_comments is None
             assert len(prs[0].review_threads) == 1
             assert isinstance(prs[0].review_threads[0], ReviewThread)
             assert (
@@ -539,29 +584,35 @@ def test_pr_handler_get_converted_issues_with_duplicate_issue_refs():
         mock_prs_response = MagicMock()
         mock_prs_response.json.return_value = [
             {
-                'number': 1,
+                'iid': 1,
                 'title': 'Test PR',
-                'body': 'Test Body fixes #1',
-                'head': {'ref': 'test-branch'},
+                'description': 'Test Body fixes #1',
+                'source_branch': 'test-branch',
             }
         ]
 
         # Mock the response for PR comments
         mock_comments_response = MagicMock()
         mock_comments_response.json.return_value = [
-            {'body': 'First comment addressing #1'},
-            {'body': 'Second comment addressing #2'},
+            {
+                'body': 'First comment addressing #1',
+                'resolvable': True,
+                'system': False,
+            },
+            {
+                'body': 'Second comment addressing #2',
+                'resolvable': True,
+                'system': False,
+            },
         ]
 
         # Mock the response for PR metadata (GraphQL)
         mock_graphql_response = MagicMock()
         mock_graphql_response.json.return_value = {
             'data': {
-                'repository': {
-                    'pullRequest': {
-                        'closingIssuesReferences': {'edges': []},
-                        'reviews': {'nodes': []},
-                        'reviewThreads': {'edges': []},
+                'project': {
+                    'mergeRequest': {
+                        'discussions': {'edges': []},
                     }
                 }
             }
@@ -575,20 +626,21 @@ def test_pr_handler_get_converted_issues_with_duplicate_issue_refs():
         # Mock the response for fetching the external issue referenced in PR body
         mock_external_issue_response_in_body = MagicMock()
         mock_external_issue_response_in_body.json.return_value = {
-            'body': 'External context #1.'
+            'description': 'External context #1.'
         }
 
         # Mock the response for fetching the external issue referenced in review thread
         mock_external_issue_response_in_comment = MagicMock()
         mock_external_issue_response_in_comment.json.return_value = {
-            'body': 'External context #2.'
+            'description': 'External context #2.'
         }
 
         mock_get.side_effect = [
             mock_prs_response,  # First call for PRs
             mock_empty_response,  # Second call for PRs (empty page)
-            mock_comments_response,  # Third call for PR comments
-            mock_empty_response,  # Fourth call for PR comments (empty page)
+            mock_empty_response,  # Third call for related issues
+            mock_comments_response,  # Fourth call for PR comments
+            mock_empty_response,  # Fifth call for PR comments (empty page)
             mock_external_issue_response_in_body,  # Mock response for the external issue reference #1
             mock_external_issue_response_in_comment,
         ]
@@ -599,7 +651,9 @@ def test_pr_handler_get_converted_issues_with_duplicate_issue_refs():
 
             # Create an instance of PRHandler
             llm_config = LLMConfig(model='test', api_key='test')
-            handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+            handler = ServiceContextPR(
+                GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+            )
 
             # Get converted issues
             prs = handler.get_converted_issues(issue_numbers=[1])
