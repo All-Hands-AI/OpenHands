@@ -58,13 +58,13 @@ export function SettingsDropdown({
       {dropdownIsOpen && (
         <div
           data-testid="dropdown"
-          className="absolute bg-[#454545] border border-[#717888] border-t-0 w-full rounded-b-xl"
+          className="absolute bg-[#454545] border border-[#717888] top-[calc(100%+0.25rem)] w-full rounded-xl max-h-60 overflow-y-auto"
         >
           {dropdownOptions.map((option) => (
             <div
               key={option.value}
               data-testid="dropdown-option"
-              className="p-2 cursor-pointer hover:bg-[#717888] last:rounded-b-xl"
+              className="p-2 cursor-pointer hover:bg-[#717888] first:rounded-t-xl last:rounded-b-xl"
               onMouseDown={() => handleSelectOption(option)}
             >
               {option.label}
