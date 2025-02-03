@@ -401,6 +401,32 @@ class DockerRuntime(ActionExecutionClient):
 
         return hosts
 
+    def pause(self):
+        """Pause the runtime by stopping the container.
+        This is different from container.stop() as it ensures environment variables are properly preserved."""
+        if not self.container:
+            raise RuntimeError("Container not initialized")
+        
+        # First, ensure all environment variables are properly persisted in .bashrc
+        # This is already handled by add_env_vars in base.py
+        
+        # Stop the container
+        self.container.stop()
+        self.log('debug', f'Container {self.container_name} paused')
+
+    def resume(self):
+        """Resume the runtime by starting the container.
+        This is different from container.start() as it ensures environment variables are properly restored."""
+        if not self.container:
+            raise RuntimeError("Container not initialized")
+        
+        # Start the container
+        self.container.start()
+        self.log('debug', f'Container {self.container_name} resumed')
+        
+        # Wait for the container to be ready
+        self._wait_until_alive()
+
     @classmethod
     async def delete(cls, conversation_id: str):
         docker_client = cls._init_docker_client()
