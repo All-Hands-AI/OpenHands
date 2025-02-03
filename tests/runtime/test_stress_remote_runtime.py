@@ -249,20 +249,20 @@ def test_stress_remote_runtime_eval(n_eval_workers: int = 64):
 def test_stress_remote_runtime_long_output_with_soft_and_hard_timeout():
     """Stress test for the remote runtime."""
     config = get_config()
-    runtime = create_runtime(config, headless_mode=True)
-    call_async_from_sync(runtime.connect)
-
-    _time_for_test = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-
-    action = CmdRunAction(
-        command='sudo apt-get update && sudo apt-get install -y stress-ng'
-    )
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.exit_code == 0
 
     try:
+        runtime = create_runtime(config, headless_mode=True)
+        call_async_from_sync(runtime.connect)
+        _time_for_test = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
+        action = CmdRunAction(
+            command='sudo apt-get update && sudo apt-get install -y stress-ng'
+        )
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.exit_code == 0
+
         # Run a command that generates long output multiple times
         for i in range(10):
             start_time = time.time()

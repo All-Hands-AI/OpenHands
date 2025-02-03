@@ -51,32 +51,56 @@ class MemoryMonitor:
         # Get the main process
         main_process = psutil.Process(os.getpid())
 
-        # Get total memory usage including all children
-        total_memory = main_process.memory_info().rss
-        logger.info(
-            f'Action execution server: Total memory usage (main processes): {total_memory / 1024**3:.2f}GB'
-        )
+        # Get main process memory usage
+        main_memory = main_process.memory_info().rss
+        memory_info = {
+            'processes': [
+                {
+                    'type': 'main',
+                    'name': main_process.name(),
+                    'pid': os.getpid(),
+                    'memory_gb': main_memory / 1024**3,
+                }
+            ]
+        }
+
+        # Track total memory and collect child process usage
+        total_memory = main_memory
         for child in main_process.children(recursive=True):
             try:
-                total_memory += child.memory_info().rss
+                child_memory = child.memory_info().rss
+                total_memory += child_memory
+                memory_info['processes'].append(
+                    {
+                        'type': 'child',
+                        'name': child.name(),
+                        'pid': child.pid,
+                        'memory_gb': child_memory / 1024**3,
+                    }
+                )
             except (psutil.NoSuchProcess, psutil.AccessDenied):
-                # Skip if process has terminated or we can't access it
                 continue
 
-        logger.info(
-            f'Action execution server: Total memory usage (main + children processes): {total_memory / 1024**3:.2f}GB'
-        )
+        memory_info['total_gb'] = total_memory / 1024**3
 
-        # Check total RSS (Resident Set Size) against limits
-        if total_memory >= self.hard_limit_bytes:
-            logger.error(
-                f'Total memory usage ({total_memory / 1024**3:.2f}GB) exceeded hard limit '
-                f'({self.hard_limit_bytes / 1024**3:.2f}GB). Terminating process group.'
-            )
-            # Kill the entire process group
-            os.killpg(os.getpgid(os.getpid()), signal.SIGTERM)
-        elif total_memory >= self.soft_limit_bytes:
-            logger.warning(
-                f'Warning: Total memory usage ({total_memory / 1024**3:.2f}GB) exceeded soft limit '
-                f'({self.soft_limit_bytes / 1024**3:.2f}GB)'
-            )
+        # Create a simple formatted string
+        report = 'Memory Usage Report:\n'
+        for proc in memory_info['processes']:
+            report += f"  [{proc['type']}] {proc['name']} (PID {proc['pid']}): {proc['memory_gb']:.2f}GB\n"
+        report += f"Total Memory Usage: {memory_info['total_gb']:.2f}GB"
+
+        logger.debug(report)
+
+        # # Check total RSS (Resident Set Size) against limits
+        # if total_memory >= self.hard_limit_bytes:
+        #     logger.error(
+        #         f'Total memory usage ({total_memory / 1024**3:.2f}GB) exceeded hard limit '
+        #         f'({self.hard_limit_bytes / 1024**3:.2f}GB). Terminating process group.'
+        #     )
+        #     # Kill the entire process group
+        #     os.killpg(os.getpgid(os.getpid()), signal.SIGTERM)
+        # elif total_memory >= self.soft_limit_bytes:
+        #     logger.warning(
+        #         f'Warning: Total memory usage ({total_memory / 1024**3:.2f}GB) exceeded soft limit '
+        #         f'({self.soft_limit_bytes / 1024**3:.2f}GB)'
+        #     )

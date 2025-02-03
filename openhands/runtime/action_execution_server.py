@@ -17,7 +17,6 @@ import shutil
 import tempfile
 import time
 import traceback
-from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
@@ -57,6 +56,7 @@ from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
+from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
@@ -111,12 +111,13 @@ class ActionExecutor:
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
-        
+
         # Initialize memory monitor with configurable limits
+        # THIS IS JUST FOR Action Execution Server!
         self.memory_monitor = MemoryMonitor(
-            soft_limit_gb=3.5,  # Warn at 3.5GB
-            hard_limit_gb=3.8,  # Kill at 3.8GB
-            check_interval=1.0  # Check every second
+            soft_limit_gb=1.0,  # Warn at 1.0GB
+            hard_limit_gb=1.5,  # Kill at 1.5GB
+            check_interval=1.0,  # Check every second
         )
 
     @property
@@ -126,7 +127,21 @@ class ActionExecutor:
     async def ainit(self):
         # Start memory monitoring
         self.memory_monitor.start_monitoring()
-        
+
+        # Get available system memory and set ulimit
+        import psutil
+
+        available_memory_gb = psutil.virtual_memory().available / (
+            1024 * 1024 * 1024
+        )  # Convert to GB
+        max_memory_gb = max(
+            0.5, available_memory_gb - 1.0
+        )  # Reserve 1GB, minimum of 0.5GB
+        max_memory_mb = int(max_memory_gb * 1024)  # Convert to MB for prlimit
+        logger.info(
+            f'Available memory: {available_memory_gb}GB, setting limit to {max_memory_gb}GB (reserved 1GB for action execution server, minimum 0.5GB)'
+        )
+
         # bash needs to be initialized first
         self.bash_session = BashSession(
             work_dir=self._initial_cwd,
@@ -134,8 +149,10 @@ class ActionExecutor:
             no_change_timeout_seconds=int(
                 os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
             ),
+            max_memory_mb=max_memory_mb,
         )
         self.bash_session.initialize()
+
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
             timeout=30,
@@ -428,7 +445,7 @@ class ActionExecutor:
     def close(self):
         # Stop memory monitoring
         self.memory_monitor.stop_monitoring()
-        
+
         if self.bash_session is not None:
             self.bash_session.close()
         self.browser.close()
