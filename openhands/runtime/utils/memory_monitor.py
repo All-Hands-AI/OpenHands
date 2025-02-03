@@ -1,20 +1,24 @@
 """Memory monitoring utilities for the runtime."""
 
 import os
-import psutil
 import resource
 import signal
 from typing import Optional
+
+import psutil
+
+from openhands.core.logger import openhands_logger as logger
+
 
 class MemoryMonitor:
     def __init__(
         self,
         soft_limit_gb: float = 3.5,
         hard_limit_gb: float = 3.8,
-        check_interval: float = 1.0
+        check_interval: float = 1.0,
     ):
         """Initialize memory monitor with configurable limits.
-        
+
         Args:
             soft_limit_gb: Soft memory limit in GB. When exceeded, a warning is logged.
             hard_limit_gb: Hard memory limit in GB. When exceeded, process is killed.
@@ -29,10 +33,9 @@ class MemoryMonitor:
         """Start monitoring memory usage."""
         # Set resource limits
         resource.setrlimit(
-            resource.RLIMIT_AS,
-            (self.hard_limit_bytes, self.hard_limit_bytes)
+            resource.RLIMIT_AS, (self.hard_limit_bytes, self.hard_limit_bytes)
         )
-        
+
         # Set up signal handler for timer
         signal.signal(signal.SIGALRM, self._check_memory)
         signal.setitimer(signal.ITIMER_REAL, self.check_interval, self.check_interval)
@@ -47,14 +50,20 @@ class MemoryMonitor:
         """Check current memory usage and take action if limits are exceeded."""
         process = psutil.Process(os.getpid())
         memory_info = process.memory_info()
-        
+        logger.info(
+            f'Action execution server: Memory usage: {memory_info.rss / 1024**3:.2f}GB'
+        )
         # Check RSS (Resident Set Size) - actual memory used
         if memory_info.rss >= self.hard_limit_bytes:
             # Log error and kill the process
-            print(f"Memory usage ({memory_info.rss / 1024**3:.2f}GB) exceeded hard limit "
-                  f"({self.hard_limit_bytes / 1024**3:.2f}GB). Terminating process.")
+            logger.error(
+                f'Memory usage ({memory_info.rss / 1024**3:.2f}GB) exceeded hard limit '
+                f'({self.hard_limit_bytes / 1024**3:.2f}GB). Terminating process.'
+            )
             os.kill(os.getpid(), signal.SIGTERM)
         elif memory_info.rss >= self.soft_limit_bytes:
             # Log warning
-            print(f"Warning: Memory usage ({memory_info.rss / 1024**3:.2f}GB) exceeded soft limit "
-                  f"({self.soft_limit_bytes / 1024**3:.2f}GB)")
+            logger.warning(
+                f'Warning: Memory usage ({memory_info.rss / 1024**3:.2f}GB) exceeded soft limit '
+                f'({self.soft_limit_bytes / 1024**3:.2f}GB)'
+            )
