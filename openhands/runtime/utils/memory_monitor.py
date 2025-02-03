@@ -48,22 +48,35 @@ class MemoryMonitor:
 
     def _check_memory(self, signum, frame):
         """Check current memory usage and take action if limits are exceeded."""
-        process = psutil.Process(os.getpid())
-        memory_info = process.memory_info()
+        # Get the main process
+        main_process = psutil.Process(os.getpid())
+
+        # Get total memory usage including all children
+        total_memory = main_process.memory_info().rss
         logger.info(
-            f'Action execution server: Memory usage: {memory_info.rss / 1024**3:.2f}GB'
+            f'Action execution server: Total memory usage (main processes): {total_memory / 1024**3:.2f}GB'
         )
-        # Check RSS (Resident Set Size) - actual memory used
-        if memory_info.rss >= self.hard_limit_bytes:
-            # Log error and kill the process
+        for child in main_process.children(recursive=True):
+            try:
+                total_memory += child.memory_info().rss
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                # Skip if process has terminated or we can't access it
+                continue
+
+        logger.info(
+            f'Action execution server: Total memory usage (main + children processes): {total_memory / 1024**3:.2f}GB'
+        )
+
+        # Check total RSS (Resident Set Size) against limits
+        if total_memory >= self.hard_limit_bytes:
             logger.error(
-                f'Memory usage ({memory_info.rss / 1024**3:.2f}GB) exceeded hard limit '
-                f'({self.hard_limit_bytes / 1024**3:.2f}GB). Terminating process.'
+                f'Total memory usage ({total_memory / 1024**3:.2f}GB) exceeded hard limit '
+                f'({self.hard_limit_bytes / 1024**3:.2f}GB). Terminating process group.'
             )
-            os.kill(os.getpid(), signal.SIGTERM)
-        elif memory_info.rss >= self.soft_limit_bytes:
-            # Log warning
+            # Kill the entire process group
+            os.killpg(os.getpgid(os.getpid()), signal.SIGTERM)
+        elif total_memory >= self.soft_limit_bytes:
             logger.warning(
-                f'Warning: Memory usage ({memory_info.rss / 1024**3:.2f}GB) exceeded soft limit '
+                f'Warning: Total memory usage ({total_memory / 1024**3:.2f}GB) exceeded soft limit '
                 f'({self.soft_limit_bytes / 1024**3:.2f}GB)'
             )
