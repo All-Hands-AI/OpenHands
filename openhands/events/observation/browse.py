@@ -12,9 +12,11 @@ class BrowserOutputObservation(Observation):
 
     url: str
     trigger_by_action: str
-    screenshot: str = field(repr=False)  # don't show in repr
+    screenshot: str = field(repr=False, default='')  # don't show in repr
+    set_of_marks: str = field(default='', repr=False)  # don't show in repr
     error: bool = False
     observation: str = ObservationType.BROWSE
+    goal_image_urls: list = field(default_factory=list)
     # do not include in the memory
     open_pages_urls: list = field(default_factory=list)
     active_page_index: int = -1

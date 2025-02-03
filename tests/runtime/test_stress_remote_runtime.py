@@ -1,4 +1,4 @@
-"""Stress tests for the remote runtime.
+"""Bash-related tests for the DockerRuntime, which connects to the ActionExecutor running in the sandbox.
 
 Example usage:
 

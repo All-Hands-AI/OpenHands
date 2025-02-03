@@ -8,10 +8,12 @@ import litellm
 from litellm.exceptions import (
     BadRequestError,
     ContextWindowExceededError,
+    OpenAIError,
     RateLimitError,
 )
 
 from openhands.controller.agent import Agent
+from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
@@ -41,6 +43,7 @@ from openhands.events.action import (
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
+    AgentCondensationObservation,
     AgentDelegateObservation,
     AgentStateChangedObservation,
     ErrorObservation,
@@ -90,6 +93,7 @@ class AgentController:
         is_delegate: bool = False,
         headless_mode: bool = True,
         status_callback: Callable | None = None,
+        replay_events: list[Event] | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -108,6 +112,7 @@ class AgentController:
             is_delegate: Whether this controller is a delegate.
             headless_mode: Whether the agent is run in headless mode.
             status_callback: Optional callback function to handle status updates.
+            replay_events: A list of logs to replay.
         """
         self.id = sid
         self.agent = agent
@@ -138,6 +143,9 @@ class AgentController:
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
         self.status_callback = status_callback
+
+        # replay-related
+        self._replay_manager = ReplayManager(replay_events)
 
     async def close(self) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -227,13 +235,20 @@ class AgentController:
                 f'report this error to the developers. Your session ID is {self.id}. '
                 f'Error type: {e.__class__.__name__}'
             )
-            if isinstance(e, litellm.AuthenticationError) or isinstance(
-                e, litellm.BadRequestError
+            if (
+                isinstance(e, litellm.AuthenticationError)
+                or isinstance(e, litellm.BadRequestError)
+                or isinstance(e, RateLimitError)
             ):
                 reported = e
             await self._react_to_exception(reported)
 
     def should_step(self, event: Event) -> bool:
+        """
+        Whether the agent should take a step based on an event. In general,
+        the agent should take a step if it receives a message from the user,
+        or observes something in the environment (after acting).
+        """
         # it might be the delegate's day in the sun
         if self.delegate is not None:
             return False
@@ -490,10 +505,6 @@ class AgentController:
             EventSource.ENVIRONMENT,
         )
 
-        if new_state == AgentState.INIT and self.state.resume_state:
-            await self.set_agent_state_to(self.state.resume_state)
-            self.state.resume_state = None
-
     def get_agent_state(self) -> AgentState:
         """Returns the current state of the agent.
 
@@ -521,7 +532,7 @@ class AgentController:
         agent_cls: Type[Agent] = Agent.get_cls(action.agent)
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
-        llm = LLM(config=llm_config)
+        llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
         delegate_agent = agent_cls(llm=llm, config=agent_config)
         state = State(
             inputs=action.inputs or {},
@@ -641,42 +652,58 @@ class AgentController:
 
         self.update_state_before_step()
         action: Action = NullAction()
-        try:
-            action = self.agent.step(self.state)
-            if action is None:
-                raise LLMNoActionError('No action was returned')
-        except (
-            LLMMalformedActionError,
-            LLMNoActionError,
-            LLMResponseError,
-            FunctionCallValidationError,
-            FunctionCallNotExistsError,
-        ) as e:
-            self.event_stream.add_event(
-                ErrorObservation(
-                    content=str(e),
-                ),
-                EventSource.AGENT,
-            )
-            return
-        except (ContextWindowExceededError, BadRequestError) as e:
-            # FIXME: this is a hack until a litellm fix is confirmed
-            # Check if this is a nested context window error
-            error_str = str(e).lower()
-            if (
-                'contextwindowexceedederror' in error_str
-                or 'prompt is too long' in error_str
-                or isinstance(e, ContextWindowExceededError)
-            ):
-                # When context window is exceeded, keep roughly half of agent interactions
-                self.state.history = self._apply_conversation_window(self.state.history)
 
-                # Save the ID of the first event in our truncated history for future reloading
-                if self.state.history:
-                    self.state.start_id = self.state.history[0].id
-                # Don't add error event - let the agent retry with reduced context
+        if self._replay_manager.should_replay():
+            # in replay mode, we don't let the agent to proceed
+            # instead, we replay the action from the replay trajectory
+            action = self._replay_manager.step()
+        else:
+            try:
+                action = self.agent.step(self.state)
+                if action is None:
+                    raise LLMNoActionError('No action was returned')
+                action._source = EventSource.AGENT  # type: ignore [attr-defined]
+            except (
+                LLMMalformedActionError,
+                LLMNoActionError,
+                LLMResponseError,
+                FunctionCallValidationError,
+                FunctionCallNotExistsError,
+            ) as e:
+                self.event_stream.add_event(
+                    ErrorObservation(
+                        content=str(e),
+                    ),
+                    EventSource.AGENT,
+                )
                 return
-            raise
+            except (ContextWindowExceededError, BadRequestError, OpenAIError) as e:
+                # FIXME: this is a hack until a litellm fix is confirmed
+                # Check if this is a nested context window error
+                error_str = str(e).lower()
+                if (
+                    'contextwindowexceedederror' in error_str
+                    or 'prompt is too long' in error_str
+                    or isinstance(e, ContextWindowExceededError)
+                ):
+                    # When context window is exceeded, keep roughly half of agent interactions
+                    self.state.history = self._apply_conversation_window(
+                        self.state.history
+                    )
+
+                    # Save the ID of the first event in our truncated history for future reloading
+                    if self.state.history:
+                        self.state.start_id = self.state.history[0].id
+
+                    # Add an error event to trigger another step by the agent
+                    self.event_stream.add_event(
+                        AgentCondensationObservation(
+                            content='Trimming prompt to meet context window limitations'
+                        ),
+                        EventSource.AGENT,
+                    )
+                    return
+                raise e
 
         if action.runnable:
             if self.state.confirmation_mode and (
@@ -694,12 +721,19 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-            self.event_stream.add_event(action, EventSource.AGENT)
+            self.event_stream.add_event(action, action._source)  # type: ignore [attr-defined]
 
         await self.update_state_after_step()
 
         log_level = 'info' if LOG_ALL_EVENTS else 'debug'
         self.log(log_level, str(action), extra={'msg_type': 'ACTION'})
+
+    def _notify_on_llm_retry(self, retries: int, max: int) -> None:
+        if self.status_callback is not None:
+            msg_id = 'STATUS$LLM_RETRY'
+            self.status_callback(
+                'info', msg_id, f'Retrying LLM request, {retries} / {max}'
+            )
 
     async def _handle_traffic_control(
         self, limit_type: str, current_value: float, max_value: float

@@ -71,7 +71,7 @@ def process_git_patch(patch):
     return patch
 
 
-def get_config(instance: pd.Series) -> AppConfig:
+def get_config(metadata: EvalMetadata, instance: pd.Series) -> AppConfig:
     # We use a different instance image for the each instance of swe-bench eval
     base_container_image = get_instance_docker_image(instance['instance_id'])
     logger.info(
@@ -132,7 +132,7 @@ def process_instance(
     else:
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
-    config = get_config(instance)
+    config = get_config(metadata, instance)
     instance_id = instance.instance_id
     model_patch = instance['model_patch']
     test_spec: TestSpec = instance['test_spec']

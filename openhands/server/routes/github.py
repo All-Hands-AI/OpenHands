@@ -1,21 +1,17 @@
-import requests
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
-from openhands.server.shared import openhands_config
-from openhands.utils.async_utils import call_sync_from_async
+from openhands.server.auth import get_user_id
+from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
+from openhands.server.services.github_service import GitHubService
+from openhands.server.shared import server_config
+from openhands.server.types import GhAuthenticationError, GHUnknownException
+from openhands.utils.import_utils import get_impl
 
 app = APIRouter(prefix='/api/github')
 
 
-def require_github_token(request: Request):
-    github_token = request.headers.get('X-GitHub-Token')
-    if not github_token:
-        raise HTTPException(
-            status_code=400,
-            detail='Missing X-GitHub-Token header',
-        )
-    return github_token
+GithubServiceImpl = get_impl(GitHubService, server_config.github_service_class)
 
 
 @app.get('/repositories')
@@ -24,92 +20,70 @@ async def get_github_repositories(
     per_page: int = 10,
     sort: str = 'pushed',
     installation_id: int | None = None,
-    github_token: str = Depends(require_github_token),
+    github_user_id: str | None = Depends(get_user_id),
 ):
-    openhands_config.verify_github_repo_list(installation_id)
-
-    # Add query parameters
-    params: dict[str, str] = {
-        'page': str(page),
-        'per_page': str(per_page),
-    }
-    # Construct the GitHub API URL
-    if installation_id:
-        github_api_url = (
-            f'https://api.github.com/user/installations/{installation_id}/repositories'
-        )
-    else:
-        github_api_url = 'https://api.github.com/user/repos'
-        params['sort'] = sort
-
-    # Set the authorization header with the GitHub token
-    headers = generate_github_headers(github_token)
-
-    # Fetch repositories from GitHub
+    client = GithubServiceImpl(github_user_id)
     try:
-        response = await call_sync_from_async(
-            requests.get, github_api_url, headers=headers, params=params
+        repos: list[GitHubRepository] = await client.get_repositories(
+            page, per_page, sort, installation_id
         )
-        response.raise_for_status()  # Raise an error for HTTP codes >= 400
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(
-            status_code=response.status_code if response else 500,
-            detail=f'Error fetching repositories: {str(e)}',
+        return repos
+
+    except GhAuthenticationError as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=401,
         )
 
-    # Create response with the JSON content
-    json_response = JSONResponse(content=response.json())
-    response.close()
-
-    # Forward the Link header if it exists
-    if 'Link' in response.headers:
-        json_response.headers['Link'] = response.headers['Link']
-
-    return json_response
+    except GHUnknownException as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=500,
+        )
 
 
 @app.get('/user')
-async def get_github_user(github_token: str = Depends(require_github_token)):
-    headers = generate_github_headers(github_token)
+async def get_github_user(
+    github_user_id: str | None = Depends(get_user_id),
+):
+    client = GithubServiceImpl(github_user_id)
     try:
-        response = await call_sync_from_async(
-            requests.get, 'https://api.github.com/user', headers=headers
-        )
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(
-            status_code=response.status_code if response else 500,
-            detail=f'Error fetching user: {str(e)}',
+        user: GitHubUser = await client.get_user()
+        return user
+
+    except GhAuthenticationError as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=401,
         )
 
-    json_response = JSONResponse(content=response.json())
-    response.close()
-
-    return json_response
+    except GHUnknownException as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=500,
+        )
 
 
 @app.get('/installations')
 async def get_github_installation_ids(
-    github_token: str = Depends(require_github_token),
+    github_user_id: str | None = Depends(get_user_id),
 ):
-    headers = generate_github_headers(github_token)
+    client = GithubServiceImpl(github_user_id)
     try:
-        response = await call_sync_from_async(
-            requests.get, 'https://api.github.com/user/installations', headers=headers
-        )
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(
-            status_code=response.status_code if response else 500,
-            detail=f'Error fetching installations: {str(e)}',
+        installations_ids: list[int] = await client.get_installation_ids()
+        return installations_ids
+
+    except GhAuthenticationError as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=401,
         )
 
-    data = response.json()
-    ids = [installation['id'] for installation in data['installations']]
-    json_response = JSONResponse(content=ids)
-    response.close()
-
-    return json_response
+    except GHUnknownException as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=500,
+        )
 
 
 @app.get('/search/repositories')
@@ -118,38 +92,23 @@ async def search_github_repositories(
     per_page: int = 5,
     sort: str = 'stars',
     order: str = 'desc',
-    github_token: str = Depends(require_github_token),
+    github_user_id: str | None = Depends(get_user_id),
 ):
-    headers = generate_github_headers(github_token)
-    params = {
-        'q': query,
-        'per_page': per_page,
-        'sort': sort,
-        'order': order,
-    }
-
+    client = GithubServiceImpl(github_user_id)
     try:
-        response = await call_sync_from_async(
-            requests.get,
-            'https://api.github.com/search/repositories',
-            headers=headers,
-            params=params,
+        repos: list[GitHubRepository] = await client.search_repositories(
+            query, per_page, sort, order
         )
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(
-            status_code=response.status_code if response else 500,
-            detail=f'Error searching repositories: {str(e)}',
+        return repos
+
+    except GhAuthenticationError as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=401,
         )
 
-    json_response = JSONResponse(content=response.json())
-    response.close()
-
-    return json_response
-
-
-def generate_github_headers(token: str) -> dict[str, str]:
-    return {
-        'Authorization': f'Bearer {token}',
-        'Accept': 'application/vnd.github.v3+json',
-    }
+    except GHUnknownException as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=500,
+        )
