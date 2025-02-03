@@ -220,6 +220,7 @@ class LLM(RetryMixin, DebugMixin):
             # handle conversion of to non-function calling messages if needed
             original_fncall_messages = copy.deepcopy(messages)
             mock_fncall_tools = None
+            # if the agent or caller has defined tools, and we mock via prompting, convert the messages
             if mock_function_calling and 'tools' in kwargs:
                 messages = convert_fncall_messages_to_non_fncall_messages(
                     messages, kwargs['tools']
@@ -257,9 +258,10 @@ class LLM(RetryMixin, DebugMixin):
             self.metrics.add_response_latency(latency, response_id)
 
             non_fncall_response = copy.deepcopy(resp)
-            if mock_function_calling:
+
+            # if we mocked function calling, and we have tools, convert the response back to function calling format
+            if mock_function_calling and mock_fncall_tools is not None:
                 assert len(resp.choices) == 1
-                assert mock_fncall_tools is not None
                 non_fncall_response_message = resp.choices[0].message
                 fn_call_messages_with_response = (
                     convert_non_fncall_messages_to_fncall_messages(
