@@ -109,6 +109,34 @@ The main interface consists of several key components:
 - **Settings Button**: A gear icon that opens the settings modal, allowing you to adjust your configuration at any time.
 - **Workspace Panel**: Displays the files and folders in your workspace, allowing you to navigate and view files, or the agent's past commands or web browsing history.
 
+### App Browser Feature
+
+The App Browser is a powerful feature that allows the AI assistant to interact with frontend applications:
+
+- **Purpose**: Enables the AI to view, navigate, and interact with web-based user interfaces, making it capable of testing and debugging frontend applications.
+- **Capabilities**:
+  - **Navigation**: The AI can browse web pages and navigate through different sections of the application.
+  - **Interaction**: Supports clicking buttons, filling forms, and other common web interactions.
+  - **Visual Feedback**: The AI can see and interpret the application's interface, helping with UI-related tasks.
+  - **Testing**: Facilitates automated testing of frontend applications by allowing the AI to simulate user interactions.
+
+#### Using the App Browser
+
+1. **Accessing the Browser**:
+   - The browser view appears in the workspace panel when the AI is interacting with web applications.
+   - You can see the current page and the AI's interactions in real-time.
+
+2. **Common Use Cases**:
+   - Testing frontend applications
+   - Debugging UI issues
+   - Automating web-based workflows
+   - Validating user interface changes
+
+3. **Browser Controls**:
+   - The AI automatically handles navigation and interaction
+   - You can observe the AI's actions in the browser view
+   - The chat interface allows you to guide the AI's interactions with the application
+
 ### Interacting with the AI
 
 1. Type your question, request, or task description in the input box.

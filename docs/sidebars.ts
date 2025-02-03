@@ -69,6 +69,11 @@ const sidebars: SidebarsConfig = {
           label: 'Github Actions',
           id: 'usage/how-to/github-action',
         },
+        {
+          type: 'doc',
+          label: 'App Browser',
+          id: 'usage/how-to/app-browser',
+        },
       ],
     },
     {
