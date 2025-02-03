@@ -121,7 +121,6 @@ class GitHubService:
         response, _ = await self._fetch_data(url, params)
         repos = response.get('items', [])
 
-        print('resopnse repos', repos)
 
         repos = [
             GitHubRepository(
