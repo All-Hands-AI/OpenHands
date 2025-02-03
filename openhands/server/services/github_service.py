@@ -2,7 +2,7 @@ from typing import Any
 
 import httpx
 
-from openhands.server.services.gh_types import GitHubRepository, GitHubUser
+from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
 from openhands.server.shared import SettingsStoreImpl, config, server_config
 from openhands.server.types import AppMode, GhAuthenticationError, GHUnknownException
 
@@ -120,7 +120,6 @@ class GitHubService:
 
         response, _ = await self._fetch_data(url, params)
         repos = response.get('items', [])
-
 
         repos = [
             GitHubRepository(
