@@ -1,5 +1,6 @@
 import httpx
 import requests
+from fastapi import Response
 from fastapi.responses import JSONResponse
 
 from openhands.server.shared import server_config
