@@ -131,7 +131,7 @@ function SettingsScreen() {
                 testId="github-token-help-anchor"
                 text="Get your token"
                 linkText="here"
-                href="https://docs.all-hands.dev/modules/usage/llms"
+                href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
               />
             </>
           )}
