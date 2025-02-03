@@ -3816,6 +3816,9 @@
         "es": "Hubo un error al conectar con el entorno de ejecución. Por favor, actualice la página.",
         "tr": "Çalışma zamanına bağlanırken bir hata oluştu. Lütfen sayfayı yenileyin."
     },
+    "STATUS$LLM_RETRY": {
+        "en": "Retrying LLM request"
+    },
     "AGENT_ERROR$BAD_ACTION": {
         "en": "Agent tried to execute a malformed action.",
         "zh-CN": "错误的操作",

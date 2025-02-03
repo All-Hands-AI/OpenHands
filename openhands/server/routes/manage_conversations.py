@@ -10,10 +10,14 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.events.stream import EventStreamSubscriber
 from openhands.runtime import get_runtime_cls
-from openhands.server.auth import get_user_id
-from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
+from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.shared import config, conversation_manager
+from openhands.server.shared import (
+    ConversationStoreImpl,
+    SettingsStoreImpl,
+    config,
+    conversation_manager,
+)
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_info import ConversationInfo
 from openhands.storage.data_models.conversation_info_result_set import (
@@ -32,7 +36,6 @@ UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 
 class InitSessionRequest(BaseModel):
-    github_token: str | None = None
     selected_repository: str | None = None
     initial_user_msg: str | None = None
     image_urls: list[str] | None = None
@@ -127,7 +130,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     """
     logger.info('Initializing new conversation')
     user_id = get_user_id(request)
-    github_token = getattr(request.state, 'github_token', '') or data.github_token
+    github_token = get_github_token(request)
     selected_repository = data.selected_repository
     initial_user_msg = data.initial_user_msg
     image_urls = data.image_urls or []

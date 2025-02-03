@@ -163,7 +163,7 @@ Les options de configuration de base sont définies dans la section `[core]` du 
 
 - `runtime`
   - Type : `str`
-  - Valeur par défaut : `"eventstream"`
+  - Valeur par défaut : `"docker"`
   - Description : Environnement d'exécution
 
 - `default_agent`
