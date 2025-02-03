@@ -197,7 +197,7 @@ class LLM(RetryMixin, DebugMixin):
             from openhands.core.utils import json
 
             messages: list[dict[str, Any]] | dict[str, Any] = []
-            mock_function_calling = kwargs.pop('mock_function_calling', False)
+            mock_function_calling = self.is_function_calling_active()
 
             # some callers might send the model and messages directly
             # litellm allows positional args, like completion(model, messages, **kwargs)
@@ -216,19 +216,20 @@ class LLM(RetryMixin, DebugMixin):
 
             # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]
+
+            # handle conversion of to non-function calling messages if needed
             original_fncall_messages = copy.deepcopy(messages)
             mock_fncall_tools = None
-            if mock_function_calling:
-                assert (
-                    'tools' in kwargs
-                ), "'tools' must be in kwargs when mock_function_calling is True"
+            if mock_function_calling and 'tools' in kwargs:
                 messages = convert_fncall_messages_to_non_fncall_messages(
                     messages, kwargs['tools']
                 )
                 kwargs['messages'] = messages
-                if self.config.model not in MODELS_WITHOUT_STOP_WORDS:
-                    kwargs['stop'] = STOP_WORDS
                 mock_fncall_tools = kwargs.pop('tools')
+
+            # add stop words if the model supports it
+            if self.config.model not in MODELS_WITHOUT_STOP_WORDS:
+                kwargs['stop'] = STOP_WORDS
 
             # if we have no messages, something went very wrong
             if not messages:

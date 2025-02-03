@@ -90,15 +90,7 @@ class CodeActAgent(Agent):
         self.pending_actions: deque[Action] = deque()
         self.reset()
 
-        self.mock_function_calling = False
-        if not self.llm.is_function_calling_active():
-            logger.info(
-                f'Function calling not enabled for model {self.llm.config.model}. '
-                'Mocking function calling via prompting.'
-            )
-            self.mock_function_calling = True
-
-        # Function calling mode
+        # Retrieve the enabled tools
         self.tools = codeact_function_calling.get_tools(
             codeact_enable_browsing=self.config.codeact_enable_browsing,
             codeact_enable_jupyter=self.config.codeact_enable_jupyter,
@@ -397,8 +389,6 @@ class CodeActAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
-        if self.mock_function_calling:
-            params['mock_function_calling'] = True
         response = self.llm.completion(**params)
         actions = codeact_function_calling.response_to_actions(response)
         for action in actions:
