@@ -15,7 +15,7 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
     try:
         user_id = get_user_id(request)
         settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
+            config, user_id
         )
         settings = await settings_store.load()
         if not settings:
