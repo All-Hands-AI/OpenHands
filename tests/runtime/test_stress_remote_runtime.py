@@ -411,7 +411,9 @@ def test_stress_runtime_resource_limits():
         # Run stress tests multiple times
         for i in range(3):
             logger.info(f'Running stress test iteration {i}')
-            action = CmdRunAction(command='stress-ng --all 1 -t 1m')
+            action = CmdRunAction(
+                command='stress-ng --cpu 1 --vm 5 --timeout 1m --metrics'
+            )
             action.set_hard_timeout(120)
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
