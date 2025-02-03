@@ -22,7 +22,7 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
                 content={'error': 'Settings not found'},
             )
 
-        token_is_set = bool(user_id) or (request.state.github_token)
+        token_is_set = bool(user_id) or bool(request.state.github_token)
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(),
             github_token_is_set=token_is_set,
