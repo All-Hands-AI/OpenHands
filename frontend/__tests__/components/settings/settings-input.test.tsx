@@ -21,4 +21,23 @@ describe("SettingsInput", () => {
 
     expect(screen.getByText(/optional/i)).toBeInTheDocument();
   });
+
+  it("should disable the input if isDisabled is true", async () => {
+    const { rerender } = render(
+      <SettingsInput testId="test-input" label="Test Input" type="text" />,
+    );
+
+    expect(screen.getByTestId("test-input")).toBeEnabled();
+
+    rerender(
+      <SettingsInput
+        testId="test-input"
+        label="Test Input"
+        type="text"
+        isDisabled
+      />,
+    );
+
+    expect(screen.getByTestId("test-input")).toBeDisabled();
+  });
 });

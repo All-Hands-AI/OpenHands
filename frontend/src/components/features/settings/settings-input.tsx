@@ -6,6 +6,7 @@ interface SettingsInputProps {
   label: string;
   type: React.HTMLInputTypeAttribute;
   showOptionalTag?: boolean;
+  isDisabled?: boolean;
   className?: string;
 }
 
@@ -14,6 +15,7 @@ export function SettingsInput({
   label,
   type,
   showOptionalTag,
+  isDisabled,
   className,
 }: SettingsInputProps) {
   return (
@@ -24,8 +26,12 @@ export function SettingsInput({
       </div>
       <input
         data-testid={testId}
+        disabled={isDisabled}
         type={type}
-        className="bg-[#454545] border border-[#717888] h-10 w-full rounded p-2"
+        className={cn(
+          "bg-[#454545] border border-[#717888] h-10 w-full rounded p-2",
+          "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
+        )}
       />
     </label>
   );

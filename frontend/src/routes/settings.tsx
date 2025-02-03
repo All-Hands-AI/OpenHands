@@ -14,6 +14,8 @@ function SettingsScreen() {
   const [llmConfigMode, setLlmConfigMode] = React.useState<
     "basic" | "advanced"
   >("basic");
+  const [confirmationModeIsEnabled, setConfirmationModeIsEnabled] =
+    React.useState(false);
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
@@ -174,12 +176,14 @@ function SettingsScreen() {
               label="Security Analyzer"
               type="text"
               className="w-[680px]"
+              isDisabled={!confirmationModeIsEnabled}
               showOptionalTag
             />
           )}
           {llmConfigMode === "advanced" && (
             <SettingsSwitch
               testId="enable-confirmation-mode-switch"
+              onToggle={setConfirmationModeIsEnabled}
               showOptionalTag
             >
               Enable confirmation mode

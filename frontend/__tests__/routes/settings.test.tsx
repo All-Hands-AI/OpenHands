@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, test, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent, { UserEvent } from "@testing-library/user-event";
 import OpenHands from "#/api/open-hands";
@@ -193,6 +193,25 @@ describe("Settings Screen", () => {
 
         await toggleAdvancedSettings(user);
         screen.getByTestId("runtime-settings-input");
+      });
+
+      test("security analyzer input should only be enabled if the confirmation mode is toggled", async () => {
+        const user = userEvent.setup();
+        renderSettingsScreen();
+
+        await toggleAdvancedSettings(user);
+
+        const securityAnalyzerInput = screen.getByTestId(
+          "security-analyzer-input",
+        );
+        expect(securityAnalyzerInput).toBeDisabled();
+
+        const confirmationModeSwitch = screen.getByTestId(
+          "enable-confirmation-mode-switch",
+        );
+        await user.click(confirmationModeSwitch);
+
+        expect(securityAnalyzerInput).toBeEnabled();
       });
     });
   });
