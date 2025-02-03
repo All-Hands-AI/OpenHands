@@ -8,9 +8,9 @@ from openhands.server.middleware import (
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
     RateLimitMiddleware,
+    SetGitHubUserMiddleware,
 )
 from openhands.server.static import SPAStaticFiles
-from workspace.deploy.app.server.middleware import SetGitHubUserMiddleware
 
 base_app.mount(
     '/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist'
