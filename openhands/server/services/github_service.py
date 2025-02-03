@@ -72,7 +72,7 @@ class GitHubService:
         url = f'{self.BASE_URL}/user/installations'
         response = await self._fetch_data(url)
         data = response.json()
-        if not isinstance(data, dict):  # Ensure data is a dictionary
+        if not isinstance(data, dict):
             return []
 
         installations = data.get('installations', [])
