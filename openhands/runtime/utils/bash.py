@@ -175,24 +175,28 @@ class BashSession:
         work_dir: str,
         username: str | None = None,
         no_change_timeout_seconds: int = 30,
+        max_memory_mb: int = 4 * 1024,  # 4GB
     ):
         self.NO_CHANGE_TIMEOUT_SECONDS = no_change_timeout_seconds
         self.work_dir = work_dir
         self.username = username
         self._initialized = False
+        self.max_memory_mb = max_memory_mb
 
     def initialize(self):
         self.server = libtmux.Server()
-        window_command = '/bin/bash'
+        window_command = f'prlimit --as={self.max_memory_mb * 1024 * 1024} /bin/bash'
         if self.username:
             # This starts a non-login (new) shell for the given user
-            window_command = f'su {self.username} -'
+            # Note: prlimit will apply to the bash process after su
+            window_command = (
+                f'prlimit --as={self.max_memory_mb * 1024 * 1024} su {self.username} -'
+            )
 
+        logger.debug(f'Initializing bash session with command: {window_command}')
         session_name = f'openhands-{self.username}-{uuid.uuid4()}'
         self.session = self.server.new_session(
             session_name=session_name,
-            window_name='bash',
-            window_command=window_command,
             start_directory=self.work_dir,
             kill_session=True,
             x=1000,
@@ -206,6 +210,7 @@ class BashSession:
         # We need to create a new pane because the initial pane's history limit is (default) 2000
         _initial_window = self.session.attached_window
         self.window = self.session.new_window(
+            window_name='bash',
             window_shell=window_command,
             start_directory=self.work_dir,
         )
