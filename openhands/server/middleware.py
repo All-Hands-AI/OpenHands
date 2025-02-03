@@ -194,7 +194,7 @@ class GitHubTokenMiddleware(SessionMiddlewareInterface):
         settings = await settings_store.load()
 
         # TODO: To avoid checks like this we should re-add the abilty to have completely different middleware in SAAS as in OSS
-        if not hasattr(request.state, "github_token"):
+        if not hasattr(request.state, 'github_token'):
             if settings and settings.github_token:
                 request.state.github_token = settings.github_token.get_secret_value()
             else:
