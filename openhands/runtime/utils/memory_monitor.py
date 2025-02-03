@@ -83,24 +83,17 @@ class MemoryMonitor:
 
         memory_info['total_gb'] = total_memory / 1024**3
 
+        # Get system-wide memory usage percentage
+        system_memory_percent = psutil.virtual_memory().percent
+
+        # Only create and log report if system memory usage is high (>80%)
         # Create a simple formatted string
         report = 'Memory Usage Report:\n'
         for proc in memory_info['processes']:
             report += f"  [{proc['type']}] {proc['name']} (PID {proc['pid']}): {proc['memory_gb']:.2f}GB\n"
         report += f"Total Memory Usage: {memory_info['total_gb']:.2f}GB"
+        report += f'\nSystem Memory Usage: {system_memory_percent:.1f}%'
 
+        if system_memory_percent > 80:
+            logger.info(f'(High memory usage): {memory_info}')
         logger.debug(report)
-
-        # # Check total RSS (Resident Set Size) against limits
-        # if total_memory >= self.hard_limit_bytes:
-        #     logger.error(
-        #         f'Total memory usage ({total_memory / 1024**3:.2f}GB) exceeded hard limit '
-        #         f'({self.hard_limit_bytes / 1024**3:.2f}GB). Terminating process group.'
-        #     )
-        #     # Kill the entire process group
-        #     os.killpg(os.getpgid(os.getpid()), signal.SIGTERM)
-        # elif total_memory >= self.soft_limit_bytes:
-        #     logger.warning(
-        #         f'Warning: Total memory usage ({total_memory / 1024**3:.2f}GB) exceeded soft limit '
-        #         f'({self.soft_limit_bytes / 1024**3:.2f}GB)'
-        #     )
