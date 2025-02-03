@@ -18,7 +18,6 @@ from litellm import Message as LiteLLMMessage
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
-    APIError,
     RateLimitError,
 )
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
