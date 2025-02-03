@@ -1,11 +1,13 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
-import { describe, expect, it, test, vi } from "vitest";
+import { afterEach, describe, expect, it, test, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent, { UserEvent } from "@testing-library/user-event";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
 import SettingsScreen from "#/routes/settings";
+import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
+import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 
 describe("Settings Screen", () => {
   const RouterStub = createRoutesStub([
@@ -25,6 +27,10 @@ describe("Settings Screen", () => {
         </AuthProvider>
       ),
     });
+
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
 
   it("should render", async () => {
     renderSettingsScreen();
@@ -213,6 +219,47 @@ describe("Settings Screen", () => {
 
         expect(securityAnalyzerInput).toBeEnabled();
       });
+    });
+
+    describe("Network Requests", () => {
+      it("should have advanced settings enabled if the user previously had them enabled", async () => {
+        const hasAdvancedSettingsSetSpy = vi.spyOn(
+          AdvancedSettingsUtlls,
+          "hasAdvancedSettingsSet",
+        );
+        hasAdvancedSettingsSetSpy.mockReturnValue(true);
+
+        renderSettingsScreen();
+
+        const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+        expect(advancedSwitch).toBeChecked();
+
+        const llmCustomInput = screen.getByTestId("llm-custom-model-input");
+        expect(llmCustomInput).toBeInTheDocument();
+      });
+
+      it.skip("should have the values set if the user previously had them set", async () => {
+        const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+        getSettingsSpy.mockResolvedValue({
+          ...MOCK_DEFAULT_USER_SETTINGS,
+          language: "no",
+        });
+
+        renderSettingsScreen();
+
+        await waitFor(() => {
+          const languageInput = screen.getByTestId("language-input");
+          expect(languageInput).toHaveValue("Norsk");
+        });
+      });
+
+      it.todo(
+        "should save the settings when the 'Save Changes' button is clicked",
+      );
+
+      it.todo(
+        "should reset the settings when the 'Reset to defaults' button is clicked",
+      );
     });
   });
 });

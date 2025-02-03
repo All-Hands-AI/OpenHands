@@ -7,30 +7,22 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { HelpLink } from "#/components/features/settings/help-link";
 import { SettingsDropdown } from "#/components/features/settings/settings-dropdown";
 import { AvailableLanguages } from "#/i18n";
-import { Settings } from "#/types/settings";
-import { DEFAULT_SETTINGS } from "#/services/settings";
-
-const hasAdvancedSettingsSet = (settings: Settings) =>
-  settings.CONFIRMATION_MODE ||
-  settings.LLM_BASE_URL ||
-  settings.AGENT !== DEFAULT_SETTINGS.AGENT ||
-  settings.REMOTE_RUNTIME_RESOURCE_FACTOR !==
-    DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR ||
-  settings.SECURITY_ANALYZER;
+import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 
 function SettingsScreen() {
   const { data: config } = useConfig();
   const { data: settings } = useSettings();
 
-  const [llmConfigMode, setLlmConfigMode] = React.useState<
-    "basic" | "advanced"
-  >("basic");
-  const [confirmationModeIsEnabled, setConfirmationModeIsEnabled] =
-    React.useState(false);
-
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
+  const isAdvancedSettingsSet = hasAdvancedSettingsSet(settings);
+
+  const [llmConfigMode, setLlmConfigMode] = React.useState<
+    "basic" | "advanced"
+  >(isAdvancedSettingsSet ? "advanced" : "basic");
+  const [confirmationModeIsEnabled, setConfirmationModeIsEnabled] =
+    React.useState(false);
 
   return (
     <main className="bg-[#24272E] border border-[#454545] h-full rounded-xl">
@@ -95,6 +87,7 @@ function SettingsScreen() {
             </h2>
             <SettingsSwitch
               testId="advanced-settings-switch"
+              defaultIsToggled={isAdvancedSettingsSet}
               onToggle={(isToggled) =>
                 setLlmConfigMode(isToggled ? "advanced" : "basic")
               }
