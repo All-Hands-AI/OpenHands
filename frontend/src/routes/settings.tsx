@@ -6,6 +6,17 @@ import { useConfig } from "#/hooks/query/use-config";
 import { useSettings } from "#/hooks/query/use-settings";
 import { HelpLink } from "#/components/features/settings/help-link";
 import { SettingsDropdown } from "#/components/features/settings/settings-dropdown";
+import { AvailableLanguages } from "#/i18n";
+import { Settings } from "#/types/settings";
+import { DEFAULT_SETTINGS } from "#/services/settings";
+
+const hasAdvancedSettingsSet = (settings: Settings) =>
+  settings.CONFIRMATION_MODE ||
+  settings.LLM_BASE_URL ||
+  settings.AGENT !== DEFAULT_SETTINGS.AGENT ||
+  settings.REMOTE_RUNTIME_RESOURCE_FACTOR !==
+    DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR ||
+  settings.SECURITY_ANALYZER;
 
 function SettingsScreen() {
   const { data: config } = useConfig();
@@ -19,6 +30,7 @@ function SettingsScreen() {
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
+  const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
 
   return (
     <main className="bg-[#24272E] border border-[#454545] h-full rounded-xl">
@@ -60,33 +72,20 @@ function SettingsScreen() {
             </BrandButton>
           )}
 
-          <SettingsInput
+          <SettingsDropdown
             testId="language-input"
             label="Language"
-            type="text"
-            className="w-[680px]"
-            showOptionalTag
-          />
-
-          <SettingsDropdown
-            testId="timezone-dropdown"
-            label="Timezone"
-            options={[
-              { label: "UTC", value: "utc" },
-              { label: "PST", value: "pst" },
-              { label: "EST", value: "est" },
-              { label: "CST", value: "cst" },
-              { label: "MST", value: "mst" },
-              { label: "AKST", value: "akst" },
-              { label: "HST", value: "hst" },
-              { label: "CET", value: "cet" },
-              { label: "EET", value: "eet" },
-            ]}
+            options={AvailableLanguages}
+            defaultValue={settings?.LANGUAGE}
             showOptionalTag
             className="w-[680px]"
           />
 
-          <SettingsSwitch testId="enable-analytics-switch" showOptionalTag>
+          <SettingsSwitch
+            testId="enable-analytics-switch"
+            showOptionalTag
+            defaultIsToggled={!!isAnalyticsEnabled}
+          >
             Enable analytics
           </SettingsSwitch>
 

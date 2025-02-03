@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SettingsDropdown } from "#/components/features/settings/settings-dropdown";
@@ -224,5 +224,52 @@ describe("SettingsDropdown", () => {
 
     expect(noOptionsFound).toBeInTheDocument();
     expect(noOptionsFound).toHaveTextContent("No options found");
+  });
+
+  it("should call onOptionSelect with the value when an option is selected", async () => {
+    const user = userEvent.setup();
+    const options = [
+      { label: "Option 1", value: "option1" },
+      { label: "Option 2", value: "option2" },
+      { label: "Option 3", value: "option3" },
+    ];
+    const onOptionSelectMock = vi.fn();
+
+    render(
+      <SettingsDropdown
+        testId="test-dropdown"
+        label="Test Dropdown"
+        options={options}
+        onOptionSelect={onOptionSelectMock}
+      />,
+    );
+
+    const input = screen.getByTestId("test-dropdown");
+    await user.click(input);
+
+    const option1 = screen.getByText("Option 1");
+    await user.click(option1);
+
+    expect(onOptionSelectMock).toHaveBeenCalledWith("option1");
+  });
+
+  it("should set the default value of the input to the selected option", async () => {
+    const options = [
+      { label: "Option 1", value: "option1" },
+      { label: "Option 2", value: "option2" },
+      { label: "Option 3", value: "option3" },
+    ];
+
+    render(
+      <SettingsDropdown
+        testId="test-dropdown"
+        label="Test Dropdown"
+        options={options}
+        defaultValue="option3"
+      />,
+    );
+
+    const input = screen.getByTestId("test-dropdown");
+    expect(input).toHaveValue("Option 3");
   });
 });

@@ -6,6 +6,8 @@ interface SettingsDropdownProps {
   testId?: string;
   label: string;
   options: { label: string; value: string }[];
+  onOptionSelect?: (value: string) => void;
+  defaultValue?: string;
   showOptionalTag?: boolean;
   className?: string;
 }
@@ -14,11 +16,19 @@ export function SettingsDropdown({
   testId,
   label,
   options,
+  onOptionSelect,
+  defaultValue,
   showOptionalTag,
   className,
 }: SettingsDropdownProps) {
+  const defaultLabel = options.find(
+    (option) => option.value === defaultValue,
+  )?.label;
+
   const [dropdownIsOpen, setDropdownIsOpen] = React.useState(false);
-  const [selectedOption, setSelectedOption] = React.useState("");
+  const [selectedOption, setSelectedOption] = React.useState(
+    defaultLabel || "",
+  );
   const [dropdownOptions, setDropdownOptions] = React.useState(options);
 
   const handleInputChange = (value: string) => {
@@ -30,6 +40,7 @@ export function SettingsDropdown({
   };
 
   const handleSelectOption = (option: { label: string; value: string }) => {
+    onOptionSelect?.(option.value);
     setSelectedOption(option.label);
     setDropdownIsOpen(false);
     setDropdownOptions(options);
@@ -58,7 +69,7 @@ export function SettingsDropdown({
       {dropdownIsOpen && (
         <div
           data-testid="dropdown"
-          className="absolute bg-[#454545] border border-[#717888] top-[calc(100%+0.25rem)] w-full rounded-xl max-h-60 overflow-y-auto"
+          className="absolute bg-[#454545] border border-[#717888] top-[calc(100%+0.25rem)] w-full rounded-xl max-h-60 overflow-y-auto z-10"
         >
           {dropdownOptions.map((option) => (
             <div
