@@ -1,4 +1,4 @@
-"""Edit-related tests for the EventStreamRuntime."""
+"""Edit-related tests for the DockerRuntime."""
 
 import os
 
