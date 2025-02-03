@@ -313,13 +313,22 @@ class AgentSession:
         try:
             restored_state = State.restore_from_session(self.sid, self.file_store)
             logger.debug(f'Restored state from session, sid: {self.sid}')
+
+            # Set start_id to 0 since we want to include all events from the beginning
+            restored_state.start_id = 0
+            # Set end_id to -1 to indicate we want to include all events up to the latest
+            restored_state.end_id = -1
+            # Set truncation_id to -1 since we haven't truncated anything yet
+            restored_state.truncation_id = -1
+
+            return restored_state
         except Exception as e:
             if self.event_stream.get_latest_event_id() > 0:
                 # if we have events, we should have a state
                 logger.warning(f'State could not be restored: {e}')
             else:
                 logger.debug('No events found, no state to restore')
-        return restored_state
+            return None
 
     def get_state(self) -> AgentState | None:
         controller = self.controller

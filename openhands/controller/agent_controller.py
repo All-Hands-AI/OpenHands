@@ -1,6 +1,7 @@
 import asyncio
 import copy
 import os
+import sys
 import traceback
 from typing import Callable, ClassVar, Type
 
@@ -12,6 +13,7 @@ from litellm.exceptions import (
     RateLimitError,
 )
 
+import openhands
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State, TrafficControlState
@@ -27,6 +29,7 @@ from openhands.core.exceptions import (
 )
 from openhands.core.logger import LOG_ALL_EVENTS
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.message import Message, TextContent
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
@@ -40,6 +43,8 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
     NullAction,
+    PromptExtensionAction,
+    SystemMessageAction,
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
@@ -146,6 +151,35 @@ class AgentController:
 
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
+
+        # prompt manager and first user message tracking
+        microagent_dir = None
+        if agent.config.enable_prompt_extensions:
+            microagent_dir = os.path.join(
+                os.path.dirname(os.path.dirname(openhands.__file__)),
+                'microagents',
+            )
+
+        agent_module = sys.modules[agent.__class__.__module__]
+        agent_module_file = getattr(agent_module, '__file__', None)
+        if agent_module_file is None:
+            raise ValueError(f'Could not find file for module {agent_module.__name__}')
+        prompt_dir = os.path.join(os.path.dirname(agent_module_file), 'prompts')
+
+        # Get prompt manager from agent to allow specialized implementations
+        self.prompt_manager = agent.get_prompt_manager(
+            microagent_dir=microagent_dir,
+            prompt_dir=prompt_dir,
+            disabled_microagents=agent.config.disabled_microagents,
+        )
+        self._first_user_message_received = False
+
+        # Send system message at initialization
+        if not self.is_delegate and self.prompt_manager:
+            self.event_stream.add_event(
+                SystemMessageAction(content=self.prompt_manager.get_system_message()),
+                EventSource.AGENT,
+            )
 
     async def close(self) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -401,11 +435,58 @@ class AgentController:
                 self.state.max_iterations = (
                     self.state.iteration + self._initial_max_iterations
                 )
-                if (
-                    self.state.traffic_control_state == TrafficControlState.THROTTLING
-                    or self.state.traffic_control_state == TrafficControlState.PAUSED
-                ):
-                    self.state.traffic_control_state = TrafficControlState.NORMAL
+
+            # Add the message to the event stream
+            self.event_stream.add_event(action, EventSource.USER)
+
+            # Handle first user message to trigger prompt extensions
+            if (
+                not self._first_user_message_received
+                and self.prompt_manager
+                and self.agent.config.enable_prompt_extensions
+            ):
+                self._first_user_message_received = True
+                # Create a Message object from the action content
+                msg = Message(
+                    role='user',
+                    content=[TextContent(text=action.content)],
+                )
+
+                # Add examples to initial message
+                self.prompt_manager.add_examples_to_initial_message(msg)
+                if msg.content[0].text != action.content:
+                    self.event_stream.add_event(
+                        PromptExtensionAction(
+                            content=msg.content[0].text, extension_type='examples'
+                        ),
+                        EventSource.AGENT,
+                    )
+
+                # Add info to initial message
+                self.prompt_manager.add_info_to_initial_message(msg)
+                if msg.content[0].text != action.content:
+                    self.event_stream.add_event(
+                        PromptExtensionAction(
+                            content=msg.content[0].text, extension_type='info'
+                        ),
+                        EventSource.AGENT,
+                    )
+
+                # Enhance message
+                self.prompt_manager.enhance_message(msg)
+                if msg.content[0].text != action.content:
+                    self.event_stream.add_event(
+                        PromptExtensionAction(
+                            content=msg.content[0].text, extension_type='enhance'
+                        ),
+                        EventSource.AGENT,
+                    )
+
+            if (
+                self.state.traffic_control_state == TrafficControlState.THROTTLING
+                or self.state.traffic_control_state == TrafficControlState.PAUSED
+            ):
+                self.state.traffic_control_state = TrafficControlState.NORMAL
                 self.log(
                     'debug',
                     f'Extended max iterations to {self.state.max_iterations} after user message',
@@ -574,7 +655,8 @@ class AgentController:
         delegate_state = self.delegate.get_agent_state()
 
         # update iteration that is shared across agents
-        self.state.iteration = self.delegate.state.iteration
+        # Add 1 to account for the parent's step that initiated delegation
+        self.state.iteration = self.delegate.state.iteration + 1
 
         # close the delegate controller before adding new events
         asyncio.get_event_loop().run_until_complete(self.delegate.close())
@@ -760,6 +842,10 @@ class AgentController:
             else:
                 current_str = f'{current_value:.2f}'
                 max_str = f'{max_value:.2f}'
+
+            # Sync metrics before handling the error
+            await self.update_state_after_step()
+            self.state.metrics.merge(self.state.local_metrics)
 
             if self.headless_mode:
                 e = RuntimeError(
@@ -1038,6 +1124,12 @@ class AgentController:
         # start_id points to first user message
         if first_user_msg:
             self.state.start_id = first_user_msg.id
+            # Make sure start_id is not greater than truncation_id
+            if (
+                self.state.truncation_id is not None
+                and self.state.start_id > self.state.truncation_id
+            ):
+                self.state.truncation_id = self.state.start_id
 
         return kept_events
 
