@@ -18,6 +18,8 @@ class ServerConfig(ServerConfigInterface):
     )
     conversation_manager_class: str = 'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
 
+    github_service_class: str = 'openhands.server.services.github_service.GitHubService'
+
     def verify_config(self):
         if self.config_cls:
             raise ValueError('Unexpected config path provided')
