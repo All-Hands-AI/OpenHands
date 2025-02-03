@@ -4,6 +4,7 @@ import { StyledSwitchComponent } from "./styled-switch-component";
 
 interface SettingsSwitchProps {
   testId?: string;
+  name?: string;
   showOptionalTag?: boolean;
   onToggle?: (value: boolean) => void;
   defaultIsToggled?: boolean;
@@ -12,6 +13,7 @@ interface SettingsSwitchProps {
 export function SettingsSwitch({
   children,
   testId,
+  name,
   showOptionalTag,
   onToggle,
   defaultIsToggled,
@@ -28,6 +30,7 @@ export function SettingsSwitch({
       <input
         hidden
         data-testid={testId}
+        name={name}
         type="checkbox"
         onChange={(e) => handleToggle(e.target.checked)}
         defaultChecked={defaultIsToggled}

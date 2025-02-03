@@ -3,6 +3,7 @@ import { OptionalTag } from "./optional-tag";
 
 interface SettingsInputProps {
   testId?: string;
+  name?: string;
   label: string;
   type: React.HTMLInputTypeAttribute;
   defaultValue?: string;
@@ -14,6 +15,7 @@ interface SettingsInputProps {
 
 export function SettingsInput({
   testId,
+  name,
   label,
   type,
   defaultValue,
@@ -30,6 +32,7 @@ export function SettingsInput({
       </div>
       <input
         data-testid={testId}
+        name={name}
         disabled={isDisabled}
         type={type}
         defaultValue={defaultValue}

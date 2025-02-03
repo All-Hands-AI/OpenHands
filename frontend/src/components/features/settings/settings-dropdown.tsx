@@ -4,6 +4,7 @@ import { cn } from "#/utils/utils";
 
 interface SettingsDropdownProps {
   testId?: string;
+  name?: string;
   label: string;
   options: { label: string; value: string }[];
   onOptionSelect?: (value: string) => void;
@@ -14,6 +15,7 @@ interface SettingsDropdownProps {
 
 export function SettingsDropdown({
   testId,
+  name,
   label,
   options,
   onOptionSelect,
@@ -59,6 +61,7 @@ export function SettingsDropdown({
         </div>
         <input
           data-testid={testId}
+          name={name}
           type="text"
           className="bg-[#454545] border border-[#717888] h-10 w-full rounded p-2"
           value={selectedOption}

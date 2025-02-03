@@ -5,9 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent, { UserEvent } from "@testing-library/user-event";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
-import SettingsScreen, { clientLoader } from "#/routes/settings";
+import SettingsScreen, { clientLoader, clientAction } from "#/routes/settings";
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
+import { PostApiSettings } from "#/types/settings";
 
 describe("Settings Screen", () => {
   const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
@@ -15,6 +16,8 @@ describe("Settings Screen", () => {
   const RouterStub = createRoutesStub([
     {
       loader: clientLoader,
+      // @ts-expect-error - action's and clientAction's aren't considered the same type
+      action: clientAction,
       Component: SettingsScreen,
       HydrateFallback: () => <div>Hydrating...</div>,
       path: "/settings",
@@ -261,32 +264,76 @@ describe("Settings Screen", () => {
         });
         renderSettingsScreen();
 
-        await waitFor(() => {
-          expect(screen.getByTestId("language-input")).toHaveValue("Norsk");
-          expect(
-            screen.getByText("Disconnect from GitHub"),
-          ).toBeInTheDocument();
-          expect(screen.getByTestId("enable-analytics-switch")).toBeChecked();
-          expect(screen.getByTestId("base-url-input")).toHaveValue(
-            "https://test.com",
-          );
-          expect(screen.getByTestId("llm-custom-model-input")).toHaveValue(
-            "anthropic/claude-3-5-sonnet-20241022",
-          );
-          expect(screen.getByTestId("agent-input")).toHaveValue("test-agent");
+        const languageInput = await screen.findByTestId("language-input");
+        const disconnectButton = screen.getByText("Disconnect from GitHub");
+        const analyticsSwitch = await screen.findByTestId(
+          "enable-analytics-switch",
+        );
+        const baseUrlInput = await screen.findByTestId("base-url-input");
+        const llmCustomModelInput = await screen.findByTestId(
+          "llm-custom-model-input",
+        );
+        const agentInput = await screen.findByTestId("agent-input");
+        const confirmationModeSwitch = await screen.findByTestId(
+          "enable-confirmation-mode-switch",
+        );
+        const securityAnalyzerInput = await screen.findByTestId(
+          "security-analyzer-input",
+        );
 
-          expect(
-            screen.getByTestId("enable-confirmation-mode-switch"),
-          ).toBeChecked();
-          expect(screen.getByTestId("security-analyzer-input")).toHaveValue(
-            "test-security-analyzer",
-          );
-        });
+        expect(languageInput).toHaveValue("Norsk");
+        expect(disconnectButton).toBeInTheDocument();
+        expect(analyticsSwitch).toBeChecked();
+        expect(baseUrlInput).toHaveValue("https://test.com");
+        expect(llmCustomModelInput).toHaveValue(
+          "anthropic/claude-3-5-sonnet-20241022",
+        );
+        expect(agentInput).toHaveValue("test-agent");
+
+        expect(confirmationModeSwitch).toBeChecked();
+        expect(securityAnalyzerInput).toHaveValue("test-security-analyzer");
       });
 
       it.todo(
-        "should save the settings when the 'Save Changes' button is clicked",
+        "should disable the 'Save Changes' button if the settings are unchanged",
       );
+
+      it.todo(
+        "should disable the 'Reset to defaults' button if the settings are unchanged",
+      );
+
+      it("should save the settings when the 'Save Changes' button is clicked", async () => {
+        const user = userEvent.setup();
+        const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+        getSettingsSpy.mockResolvedValue({
+          ...MOCK_DEFAULT_USER_SETTINGS,
+        });
+
+        renderSettingsScreen();
+
+        const languageInput = await screen.findByTestId("language-input");
+        await user.click(languageInput);
+
+        const norskOption = await screen.findByText("Norsk");
+        await user.click(norskOption);
+
+        expect(languageInput).toHaveValue("Norsk");
+
+        const saveButton = screen.getByText("Save Changes");
+        await user.click(saveButton);
+
+        const MOCK_COPY: Partial<PostApiSettings> = {
+          ...MOCK_DEFAULT_USER_SETTINGS,
+        };
+        delete MOCK_COPY.github_token_is_set;
+        delete MOCK_COPY.confirmation_mode;
+
+        expect(saveSettingsSpy).toHaveBeenCalledWith({
+          ...MOCK_COPY,
+          github_token: "",
+          language: "no",
+        });
+      });
 
       it.todo(
         "should reset the settings when the 'Reset to defaults' button is clicked",
