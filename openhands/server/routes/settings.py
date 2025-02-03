@@ -13,6 +13,7 @@ app = APIRouter(prefix='/api')
 @app.get('/settings')
 async def load_settings(request: Request) -> GETSettingsModel | None:
     try:
+        user_id = get_user_id(request)
         settings_store = await SettingsStoreImpl.get_instance(
             config, get_user_id(request)
         )
@@ -23,10 +24,10 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
                 content={'error': 'Settings not found'},
             )
 
-        github_user_id = request.state.github_user_id
+        token_is_set = bool(request.state.github_token) or bool(user_id)
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(),
-            github_token_is_set=bool(github_user_id),
+            github_token_is_set=token_is_set,
         )
         settings_with_token_data.llm_api_key = settings.llm_api_key
 
