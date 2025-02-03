@@ -2571,6 +2571,21 @@
         "no": "+ Importer prosjekt",
         "tr": "Proje içe aktar"
     },
+    "LANDING$REPLAY": {
+        "en": "+ Replay Trajectory",
+        "ja": "+ Replay Trajectory",
+        "zh-CN": "+ Replay Trajectory",
+        "zh-TW": "+ Replay Trajectory",
+        "ko-KR": "+ Replay Trajectory",
+        "fr": "+ Replay Trajectory",
+        "es": "+ Replay Trajectory",
+        "de": "+ Replay Trajectory",
+        "it": "+ Replay Trajectory",
+        "pt": "+ Replay Trajectory",
+        "ar": "+ Replay Trajectory",
+        "no": "+ Replay Trajectory",
+        "tr": "+ Replay Trajectory"
+    },
     "LANDING$UPLOAD_ZIP": {
         "en": "Upload a .zip",
         "ja": ".zipファイルをアップロード",
@@ -2585,6 +2600,20 @@
         "ar": "تحميل ملف .zip",
         "no": "Last opp en .zip",
         "tr": "ZIP yükle"
+    },
+    "LANDING$UPLOAD_TRAJECTORY": {
+        "en": "Upload a .json",
+        "zh-CN": "Upload a .json",
+        "zh-TW": "Upload a .json",
+        "ko-KR": "Upload a .json",
+        "fr": "Upload a .json",
+        "es": "Upload a .json",
+        "de": "Upload a .json",
+        "it": "Upload a .json",
+        "pt": "Upload a .json",
+        "ar": "Upload a .json",
+        "no": "Upload a .json",
+        "tr": "Upload a .json"
     },
     "LANDING$RECENT_CONVERSATION": {
         "en": "jump back to your most recent conversation",

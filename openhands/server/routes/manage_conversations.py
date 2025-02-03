@@ -39,6 +39,7 @@ class InitSessionRequest(BaseModel):
     selected_repository: str | None = None
     initial_user_msg: str | None = None
     image_urls: list[str] | None = None
+    replay_json: str | None = None
 
 
 async def _create_new_conversation(
@@ -47,6 +48,7 @@ async def _create_new_conversation(
     selected_repository: str | None,
     initial_user_msg: str | None,
     image_urls: list[str] | None,
+    replay_json: str | None,
 ):
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
@@ -107,7 +109,11 @@ async def _create_new_conversation(
             image_urls=image_urls or [],
         )
     event_stream = await conversation_manager.maybe_start_agent_loop(
-        conversation_id, conversation_init_data, user_id, initial_message_action
+        conversation_id,
+        conversation_init_data,
+        user_id,
+        initial_message_action,
+        replay_json,
     )
     try:
         event_stream.subscribe(
@@ -134,6 +140,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     selected_repository = data.selected_repository
     initial_user_msg = data.initial_user_msg
     image_urls = data.image_urls or []
+    replay_json = data.replay_json
 
     try:
         # Create conversation with initial message
@@ -143,6 +150,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             selected_repository,
             initial_user_msg,
             image_urls,
+            replay_json,
         )
 
         return JSONResponse(
