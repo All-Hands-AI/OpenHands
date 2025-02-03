@@ -35,7 +35,24 @@ class Settings(BaseModel):
         if context and context.get('expose_secrets', False):
             return llm_api_key.get_secret_value()
 
-        return pydantic_encoder(llm_api_key)
+        return pydantic_encoder(llm_api_key) if llm_api_key is not None else None
+
+    @field_serializer('github_token')
+    def github_token_serializer(
+        self, github_token: SecretStr | None, info: SerializationInfo
+    ):
+        """Custom serializer for the GitHub token.
+
+        To serialize the token instead of ********, set expose_secrets to True in the serialization context.
+        """
+        if github_token is None:
+            return None
+
+        context = info.context
+        if context and context.get('expose_secrets', False):
+            return github_token.get_secret_value()
+
+        return pydantic_encoder(github_token)
 
     @field_serializer('github_token')
     def github_token_serializer(
