@@ -1,9 +1,9 @@
 import { DEFAULT_SETTINGS } from "#/services/settings";
-import { Settings } from "#/types/settings";
+import { ApiSettings } from "#/types/settings";
 
-export const hasAdvancedSettingsSet = (settings: Settings): boolean =>
-  !!settings.LLM_BASE_URL ||
-  settings.AGENT !== DEFAULT_SETTINGS.AGENT ||
-  settings.REMOTE_RUNTIME_RESOURCE_FACTOR !==
+export const hasAdvancedSettingsSet = (settings: ApiSettings): boolean =>
+  !!settings.llm_base_url ||
+  settings.agent !== DEFAULT_SETTINGS.AGENT ||
+  settings.remote_runtime_resource_factor !==
     DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR ||
-  !!settings.SECURITY_ANALYZER;
+  !!settings.security_analyzer;

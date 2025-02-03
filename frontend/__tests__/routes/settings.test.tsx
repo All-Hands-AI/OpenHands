@@ -1,18 +1,22 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
-import { afterEach, describe, expect, it, test, vi } from "vitest";
+import { describe, expect, it, test, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent, { UserEvent } from "@testing-library/user-event";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
-import SettingsScreen from "#/routes/settings";
+import SettingsScreen, { clientLoader } from "#/routes/settings";
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 
 describe("Settings Screen", () => {
+  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+
   const RouterStub = createRoutesStub([
     {
+      loader: clientLoader,
       Component: SettingsScreen,
+      HydrateFallback: () => <div>Hydrating...</div>,
       path: "/settings",
     },
   ]);
@@ -28,33 +32,32 @@ describe("Settings Screen", () => {
       ),
     });
 
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
-
   it("should render", async () => {
     renderSettingsScreen();
 
-    screen.getByText("Account Settings");
-    screen.getByText("LLM Settings");
-    screen.getByText("Reset to defaults");
-    screen.getByText("Save Changes");
+    await waitFor(() => {
+      screen.getByText("Account Settings");
+      screen.getByText("LLM Settings");
+      screen.getByText("Reset to defaults");
+      screen.getByText("Save Changes");
+    });
   });
 
   describe("Account Settings", () => {
-    it("should render the account settings", () => {
+    it("should render the account settings", async () => {
       renderSettingsScreen();
 
-      screen.getByTestId("github-token-input");
-      screen.getByTestId("github-token-help-anchor");
-      screen.getByTestId("language-input");
-      screen.getByTestId("enable-analytics-switch");
+      await waitFor(() => {
+        screen.getByTestId("github-token-input");
+        screen.getByTestId("github-token-help-anchor");
+        screen.getByTestId("language-input");
+        screen.getByTestId("enable-analytics-switch");
+      });
     });
 
     it("should not render a 'Disconnect from GitHub' button if the GitHub token is not set", async () => {
-      const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
-      // @ts-expect-error - we don't care about the return value except for the github_token_is_set property
       getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
         github_token_is_set: false,
       });
 
@@ -65,9 +68,8 @@ describe("Settings Screen", () => {
     });
 
     it("should render a 'Disconnect from GitHub' button if the GitHub token is set", async () => {
-      const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
-      // @ts-expect-error - we don't care about the return value except for the github_token_is_set property
       getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
         github_token_is_set: true,
       });
 
@@ -78,7 +80,7 @@ describe("Settings Screen", () => {
     it("should render the 'Configure GitHub Repositories' button if SaaS mode", async () => {
       const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
       getConfigSpy.mockResolvedValue({
-        APP_MODE: "saas",
+        APP_MODE: "oss",
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
       });
@@ -89,7 +91,7 @@ describe("Settings Screen", () => {
       expect(button).not.toBeInTheDocument();
 
       getConfigSpy.mockResolvedValue({
-        APP_MODE: "oss",
+        APP_MODE: "saas",
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
       });
@@ -122,11 +124,13 @@ describe("Settings Screen", () => {
     it("should render the basic LLM settings by default", async () => {
       renderSettingsScreen();
 
-      screen.getByTestId("advanced-settings-switch");
-      screen.getByTestId("llm-provider-input");
-      screen.getByTestId("llm-model-input");
-      screen.getByTestId("llm-api-key-input");
-      screen.getByTestId("llm-api-key-help-anchor");
+      await waitFor(() => {
+        screen.getByTestId("advanced-settings-switch");
+        screen.getByTestId("llm-provider-input");
+        screen.getByTestId("llm-model-input");
+        screen.getByTestId("llm-api-key-input");
+        screen.getByTestId("llm-api-key-help-anchor");
+      });
     });
 
     it("should render the advanced LLM settings if the advanced switch is toggled", async () => {
@@ -146,7 +150,9 @@ describe("Settings Screen", () => {
         screen.queryByTestId("enable-confirmation-mode-switch"),
       ).not.toBeInTheDocument();
 
-      const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+      const advancedSwitch = await screen.findByTestId(
+        "advanced-settings-switch",
+      );
       await user.click(advancedSwitch);
 
       // Should render the advanced settings
@@ -166,7 +172,9 @@ describe("Settings Screen", () => {
 
     describe("Advanced LLM Settings", () => {
       const toggleAdvancedSettings = async (user: UserEvent) => {
-        const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+        const advancedSwitch = await screen.findByTestId(
+          "advanced-settings-switch",
+        );
         await user.click(advancedSwitch);
       };
 
@@ -231,25 +239,48 @@ describe("Settings Screen", () => {
 
         renderSettingsScreen();
 
-        const advancedSwitch = screen.getByTestId("advanced-settings-switch");
-        expect(advancedSwitch).toBeChecked();
+        await waitFor(() => {
+          const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+          expect(advancedSwitch).toBeChecked();
 
-        const llmCustomInput = screen.getByTestId("llm-custom-model-input");
-        expect(llmCustomInput).toBeInTheDocument();
+          const llmCustomInput = screen.getByTestId("llm-custom-model-input");
+          expect(llmCustomInput).toBeInTheDocument();
+        });
       });
 
-      it.skip("should have the values set if the user previously had them set", async () => {
-        const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+      it("should have the values set if the user previously had them set", async () => {
         getSettingsSpy.mockResolvedValue({
           ...MOCK_DEFAULT_USER_SETTINGS,
           language: "no",
+          github_token_is_set: true,
+          user_consents_to_analytics: true,
+          llm_base_url: "https://test.com",
+          llm_model: "anthropic/claude-3-5-sonnet-20241022",
+          agent: "test-agent",
+          security_analyzer: "test-security-analyzer",
         });
-
         renderSettingsScreen();
 
         await waitFor(() => {
-          const languageInput = screen.getByTestId("language-input");
-          expect(languageInput).toHaveValue("Norsk");
+          expect(screen.getByTestId("language-input")).toHaveValue("Norsk");
+          expect(
+            screen.getByText("Disconnect from GitHub"),
+          ).toBeInTheDocument();
+          expect(screen.getByTestId("enable-analytics-switch")).toBeChecked();
+          expect(screen.getByTestId("base-url-input")).toHaveValue(
+            "https://test.com",
+          );
+          expect(screen.getByTestId("llm-custom-model-input")).toHaveValue(
+            "anthropic/claude-3-5-sonnet-20241022",
+          );
+          expect(screen.getByTestId("agent-input")).toHaveValue("test-agent");
+
+          expect(
+            screen.getByTestId("enable-confirmation-mode-switch"),
+          ).toBeChecked();
+          expect(screen.getByTestId("security-analyzer-input")).toHaveValue(
+            "test-security-analyzer",
+          );
         });
       });
 

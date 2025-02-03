@@ -56,4 +56,17 @@ describe("SettingsInput", () => {
       "Test Placeholder",
     );
   });
+
+  it("should set a default value on the input", async () => {
+    render(
+      <SettingsInput
+        testId="test-input"
+        label="Test Input"
+        type="text"
+        defaultValue="Test Value"
+      />,
+    );
+
+    expect(screen.getByTestId("test-input")).toHaveValue("Test Value");
+  });
 });
