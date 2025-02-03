@@ -311,10 +311,7 @@ class CodeActAgent(Agent):
                 and len(obs.set_of_marks) > 0
                 and self.config.enable_som_visual_browsing
                 and self.llm.vision_is_active()
-                and (
-                    self.mock_function_calling
-                    or self.llm.is_visual_browser_tool_active()
-                )
+                and self.llm.is_visual_browser_tool_active()
             ):
                 text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
                 message = Message(
