@@ -5,10 +5,10 @@ from openhands.server.listen_socket import sio
 from openhands.server.middleware import (
     AttachConversationMiddleware,
     CacheControlMiddleware,
+    GitHubTokenMiddleware,
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
     RateLimitMiddleware,
-    GitHubTokenMiddleware,
 )
 from openhands.server.static import SPAStaticFiles
 
