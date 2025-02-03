@@ -21,6 +21,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
+import psutil
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -113,10 +114,19 @@ class ActionExecutor:
         self._initialized = False
 
         # Initialize memory monitor with configurable limits
-        # THIS IS JUST FOR Action Execution Server!
+        # Get available system memory
+        total_memory_gb = psutil.virtual_memory().total / (
+            1024 * 1024 * 1024
+        )  # Convert to GB
+        self.max_memory_gb = int(max(0.5, total_memory_gb - 1.0))
+        # Reserve 1GB as head room, minimum of 0.5GB, maximum of 4GB
+        logger.info(
+            f'Total memory: {total_memory_gb}GB, setting limit to {self.max_memory_gb}GB (reserved 1GB for action execution server, minimum 0.5GB)'
+        )
+
         self.memory_monitor = MemoryMonitor(
-            soft_limit_gb=1.0,  # Warn at 1.0GB
-            hard_limit_gb=1.5,  # Kill at 1.5GB
+            soft_limit_gb=max(0.5, self.max_memory_gb - 0.5),
+            hard_limit_gb=self.max_memory_gb,
             check_interval=1.0,  # Check every second
         )
 
@@ -128,20 +138,6 @@ class ActionExecutor:
         # Start memory monitoring
         self.memory_monitor.start_monitoring()
 
-        # Get available system memory and set ulimit
-        import psutil
-
-        available_memory_gb = psutil.virtual_memory().available / (
-            1024 * 1024 * 1024
-        )  # Convert to GB
-        max_memory_gb = max(
-            0.5, available_memory_gb - 1.0
-        )  # Reserve 1GB, minimum of 0.5GB
-        max_memory_mb = int(max_memory_gb * 1024)  # Convert to MB for prlimit
-        logger.info(
-            f'Available memory: {available_memory_gb}GB, setting limit to {max_memory_gb}GB (reserved 1GB for action execution server, minimum 0.5GB)'
-        )
-
         # bash needs to be initialized first
         self.bash_session = BashSession(
             work_dir=self._initial_cwd,
@@ -149,7 +145,7 @@ class ActionExecutor:
             no_change_timeout_seconds=int(
                 os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
             ),
-            max_memory_mb=max_memory_mb,
+            max_memory_mb=self.max_memory_gb * 1024,
         )
         self.bash_session.initialize()
 
