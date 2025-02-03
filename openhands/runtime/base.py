@@ -195,7 +195,7 @@ class Runtime(FileEditRuntimeMixin):
 
         # Add to .bashrc for persistence
         bashrc_cmd = bashrc_cmd.strip()
-        logger.debug(f'Adding env var to .bashrc: {bashrc_cmd}')
+        logger.debug(f'Adding env var to .bashrc: {env_vars.keys()}')
         obs = self.run(CmdRunAction(bashrc_cmd))
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(
