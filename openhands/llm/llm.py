@@ -197,7 +197,7 @@ class LLM(RetryMixin, DebugMixin):
             from openhands.core.utils import json
 
             messages: list[dict[str, Any]] | dict[str, Any] = []
-            mock_function_calling = self.is_function_calling_active()
+            mock_function_calling = not self.is_function_calling_active()
 
             # some callers might send the model and messages directly
             # litellm allows positional args, like completion(model, messages, **kwargs)
