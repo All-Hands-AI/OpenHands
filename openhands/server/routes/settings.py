@@ -46,14 +46,13 @@ async def store_settings(
     settings: POSTSettingsModel,
 ) -> JSONResponse:
     # Check if token is valid
+
     if settings.github_token:
         try:
             # We check if the token is valid by getting the user
             # If the token is invalid, this will raise an exception
-            github = GitHubService(settings.github_token, None)
-            response = await github.get_user()
-            if response.status_code != status.HTTP_200_OK:
-                raise Exception('Invalid Github Token')
+            github = GitHubService(None)
+            await github.validate_user(settings.github_token)
 
         except Exception as e:
             logger.warning(f'Invalid GitHub token: {e}')
