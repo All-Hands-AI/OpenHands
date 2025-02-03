@@ -17,6 +17,7 @@ import shutil
 import tempfile
 import time
 import traceback
+from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
@@ -110,12 +111,22 @@ class ActionExecutor:
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
+        
+        # Initialize memory monitor with configurable limits
+        self.memory_monitor = MemoryMonitor(
+            soft_limit_gb=3.5,  # Warn at 3.5GB
+            hard_limit_gb=3.8,  # Kill at 3.8GB
+            check_interval=1.0  # Check every second
+        )
 
     @property
     def initial_cwd(self):
         return self._initial_cwd
 
     async def ainit(self):
+        # Start memory monitoring
+        self.memory_monitor.start_monitoring()
+        
         # bash needs to be initialized first
         self.bash_session = BashSession(
             work_dir=self._initial_cwd,
@@ -415,6 +426,9 @@ class ActionExecutor:
         return await browse(action, self.browser)
 
     def close(self):
+        # Stop memory monitoring
+        self.memory_monitor.stop_monitoring()
+        
         if self.bash_session is not None:
             self.bash_session.close()
         self.browser.close()
