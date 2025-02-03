@@ -19,6 +19,7 @@ const getSettingsQueryFn = async () => {
     REMOTE_RUNTIME_RESOURCE_FACTOR: apiSettings.remote_runtime_resource_factor,
     GITHUB_TOKEN_IS_SET: apiSettings.github_token_is_set,
     ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
+    ENABLE_SOUND_NOTIFICATIONS: apiSettings.enable_sound_notifications,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
   };
 };
@@ -30,8 +31,9 @@ export const useSettings = () => {
     queryKey: ["settings"],
     queryFn: getSettingsQueryFn,
     initialData: DEFAULT_SETTINGS,
-    staleTime: 0,
-    retry: false,
+    staleTime: 1000, // Consider data fresh for 1 second
+    retry: 1, // Retry failed requests once
+    refetchOnWindowFocus: false, // Don't refetch on window focus
     meta: {
       disableToast: true,
     },
