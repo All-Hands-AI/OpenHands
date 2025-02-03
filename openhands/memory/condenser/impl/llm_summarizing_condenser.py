@@ -15,7 +15,7 @@ class LLMSummarizingCondenser(RollingCondenser):
     and newly forgotten events.
     """
 
-    def __init__(self, llm: LLM, max_size: int = 100, keep_first: int = 0):
+    def __init__(self, llm: LLM, max_size: int = 100, keep_first: int = 1):
         if keep_first >= max_size // 2:
             raise ValueError(
                 f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
