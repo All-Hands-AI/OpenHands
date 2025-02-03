@@ -26,7 +26,7 @@ class GitHubService:
     async def _get_latest_token(self):
         pass
 
-    async def _fetch_data(self, url: str, params: dict | None = None):
+    async def _fetch_data(self, url: str, params: dict | None = None) -> Response:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
