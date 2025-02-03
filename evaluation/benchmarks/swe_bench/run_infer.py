@@ -60,7 +60,7 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
 def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     # Prepare instruction
-
+    pass2pass_tests = json.loads(instance['PASS_TO_PASS'])
     # Instruction based on Anthropic's official trajectory
     # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
     instruction = (
@@ -80,6 +80,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         '3. Edit the sourcecode of the repo to resolve the issue\n'
         '4. Rerun your reproduce script and confirm that the error is fixed!\n'
         '5. Think about edgecases and make sure your fix handles them as well\n'
+        f'6. Please make sure these existing tests passed after your changes: {", ".join(pass2pass_tests)}\n'
         "Your thinking should be thorough and so it's fine if it's very long.\n"
     )
 
