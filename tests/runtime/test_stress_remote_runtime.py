@@ -255,14 +255,6 @@ def test_stress_remote_runtime_long_output_with_soft_and_hard_timeout():
         call_async_from_sync(runtime.connect)
         _time_for_test = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
-        action = CmdRunAction(
-            command='sudo apt-get update && sudo apt-get install -y stress-ng'
-        )
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert obs.exit_code == 0
-
         # Run a command that generates long output multiple times
         for i in range(10):
             start_time = time.time()
@@ -372,15 +364,6 @@ def test_stress_remote_runtime_long_output_with_soft_and_hard_timeout():
             obs = runtime.run_action(CmdRunAction('ls'))
             assert obs.exit_code == 0
 
-            # run stress-ng stress tests for 1 minute
-            action = CmdRunAction(
-                command='stress-ng --cpu 4 --vm 2 --hdd 1 --fork 8 --timeout 1m --metrics'
-            )
-            action.set_hard_timeout(120)
-            logger.info(action, extra={'msg_type': 'ACTION'})
-            obs = runtime.run_action(action)
-            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-
             duration = time.time() - start_time
             iteration_stats['duration'] = duration
             logger.info(f'Completed iteration {i} in {duration:.2f} seconds')
@@ -392,5 +375,48 @@ def test_stress_remote_runtime_long_output_with_soft_and_hard_timeout():
                 ) as f:
                     json.dump(iteration_stats, f)
                     f.write('\n')
+    finally:
+        runtime.close()
+
+
+@pytest.mark.skipif(
+    TEST_IN_CI,
+    reason='This test should only be run locally, not in CI.',
+)
+def test_stress_runtime_resource_limits():
+    """Test runtime behavior under resource constraints."""
+    config = get_config()
+
+    # For Docker runtime, add resource constraints
+    if config.runtime == 'docker':
+        config.sandbox.docker_runtime_kwargs = {
+            'cpu_period': 100000,  # 100ms
+            'cpu_quota': 100000,  # Can use 100ms out of each 100ms period (1 CPU)
+            'mem_limit': '4G',  # 4 GB of memory
+        }
+
+    try:
+        runtime = create_runtime(config, headless_mode=True)
+        call_async_from_sync(runtime.connect)
+
+        # Install stress-ng
+        action = CmdRunAction(
+            command='sudo apt-get update && sudo apt-get install -y stress-ng'
+        )
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.exit_code == 0
+
+        # Run stress tests multiple times
+        for i in range(3):
+            logger.info(f'Running stress test iteration {i}')
+            action = CmdRunAction(command='stress-ng --all 1 -t 1m')
+            action.set_hard_timeout(120)
+            logger.info(action, extra={'msg_type': 'ACTION'})
+            obs = runtime.run_action(action)
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+            assert obs.exit_code in [0, -1]  # Allow for timeout
+
     finally:
         runtime.close()
