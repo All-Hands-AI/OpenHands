@@ -144,6 +144,7 @@ def get_config(
                 dataset_name=metadata.dataset,
                 instance_id=instance['instance_id'],
             ),
+            remote_runtime_enable_retries=True,
         ),
         # do not mount workspace
         workspace_base=None,
