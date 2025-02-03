@@ -226,11 +226,12 @@ class LLM(RetryMixin, DebugMixin):
                     messages, kwargs['tools']
                 )
                 kwargs['messages'] = messages
-                mock_fncall_tools = kwargs.pop('tools')
 
-            # add stop words if the model supports it
-            if self.config.model not in MODELS_WITHOUT_STOP_WORDS:
-                kwargs['stop'] = STOP_WORDS
+                # add stop words if the model supports it
+                if self.config.model not in MODELS_WITHOUT_STOP_WORDS:
+                    kwargs['stop'] = STOP_WORDS
+
+                mock_fncall_tools = kwargs.pop('tools')
 
             # if we have no messages, something went very wrong
             if not messages:
