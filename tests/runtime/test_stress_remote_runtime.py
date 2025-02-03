@@ -67,7 +67,7 @@ def get_config() -> AppConfig:
     ), 'ALLHANDS_API_KEY must be set.'
     config = AppConfig(
         run_as_openhands=False,
-        runtime='remote',
+        runtime=os.environ.get('RUNTIME', 'remote'),
         sandbox=SandboxConfig(
             base_container_image='python:3.11-bookworm',
             enable_auto_lint=True,
