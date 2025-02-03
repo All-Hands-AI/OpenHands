@@ -1,5 +1,7 @@
 import React from "react";
 import { useFetcher, useLoaderData } from "react-router";
+import toast from "react-hot-toast";
+import { isAxiosError } from "axios";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
@@ -33,25 +35,36 @@ export const clientAction = async ({ request }: Route.ClientActionArgs) => {
     DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR;
   const remoteRuntimeResourceFactor = Number(rawRemoteRuntimeResourceFactor);
 
-  await OpenHands.saveSettings({
-    github_token: formData.get("github-token-input")?.toString() || "",
-    language: languageValue,
-    user_consents_to_analytics:
-      formData.get("enable-analytics-switch")?.toString() === "on",
-    llm_model: llmModel,
-    llm_base_url: formData.get("base-url-input")?.toString(),
-    llm_api_key: formData.get("llm-api-key-input")?.toString() || null,
-    agent: formData.get("agent-input")?.toString(),
-    security_analyzer:
-      formData.get("security-analyzer-input")?.toString() || "",
-    remote_runtime_resource_factor: remoteRuntimeResourceFactor,
-    enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
-  });
+  try {
+    await OpenHands.saveSettings({
+      github_token: formData.get("github-token-input")?.toString() || "",
+      language: languageValue,
+      user_consents_to_analytics:
+        formData.get("enable-analytics-switch")?.toString() === "on",
+      llm_model: llmModel,
+      llm_base_url: formData.get("base-url-input")?.toString(),
+      llm_api_key: formData.get("llm-api-key-input")?.toString() || null,
+      agent: formData.get("agent-input")?.toString(),
+      security_analyzer:
+        formData.get("security-analyzer-input")?.toString() || "",
+      remote_runtime_resource_factor: remoteRuntimeResourceFactor,
+      enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
+    });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      const errorMessage = error.response?.data.error || error.message;
+      return { error: errorMessage };
+    }
+
+    return { error: "An error occurred while saving settings" };
+  }
+
+  return { message: "Settings saved" };
 };
 
 function SettingsScreen() {
   const { settings, config } = useLoaderData<typeof clientLoader>();
-  const settingsFetcher = useFetcher();
+  const settingsFetcher = useFetcher<typeof clientAction>();
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = settings.github_token_is_set;
@@ -63,6 +76,30 @@ function SettingsScreen() {
   >(isAdvancedSettingsSet ? "advanced" : "basic");
   const [confirmationModeIsEnabled, setConfirmationModeIsEnabled] =
     React.useState(!!settings.security_analyzer);
+
+  React.useEffect(() => {
+    if (settingsFetcher.data?.message) {
+      toast.success(settingsFetcher.data.message, {
+        position: "top-right",
+        style: {
+          background: "#454545",
+          border: "1px solid #717888",
+          color: "#fff",
+          borderRadius: "4px",
+        },
+      });
+    } else if (settingsFetcher.data?.error) {
+      toast.error(settingsFetcher.data.error, {
+        position: "top-right",
+        style: {
+          background: "#454545",
+          border: "1px solid #717888",
+          color: "#fff",
+          borderRadius: "4px",
+        },
+      });
+    }
+  }, [settingsFetcher.data]);
 
   return (
     <main className="bg-[#24272E] border border-[#454545] h-full rounded-xl">
