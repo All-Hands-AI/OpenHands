@@ -10,6 +10,7 @@ from openhands.server.middleware import (
     RateLimitMiddleware,
 )
 from openhands.server.static import SPAStaticFiles
+from workspace.deploy.app.server.middleware import SetGitHubUserMiddleware
 
 base_app.mount(
     '/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist'
@@ -28,5 +29,6 @@ base_app.add_middleware(
     rate_limiter=InMemoryRateLimiter(requests=10, seconds=1),
 )
 base_app.middleware('http')(AttachConversationMiddleware(base_app))
+base_app.middleware('http')(SetGitHubUserMiddleware())
 
 app = socketio.ASGIApp(sio, other_asgi_app=base_app)
