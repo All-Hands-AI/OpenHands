@@ -125,6 +125,7 @@ function SettingsScreen() {
             <SettingsInput
               testId="llm-custom-model-input"
               label="Custom Model"
+              placeholder="openai/gpt-4o"
               type="text"
               className="w-[680px]"
             />
@@ -133,6 +134,7 @@ function SettingsScreen() {
             <SettingsInput
               testId="base-url-input"
               label="Base URL"
+              placeholder="https://api.openai.com"
               type="text"
               className="w-[680px]"
             />

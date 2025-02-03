@@ -40,4 +40,20 @@ describe("SettingsInput", () => {
 
     expect(screen.getByTestId("test-input")).toBeDisabled();
   });
+
+  it("should set a placeholder on the input", async () => {
+    render(
+      <SettingsInput
+        testId="test-input"
+        label="Test Input"
+        type="text"
+        placeholder="Test Placeholder"
+      />,
+    );
+
+    expect(screen.getByTestId("test-input")).toHaveAttribute(
+      "placeholder",
+      "Test Placeholder",
+    );
+  });
 });

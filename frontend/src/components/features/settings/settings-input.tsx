@@ -5,6 +5,7 @@ interface SettingsInputProps {
   testId?: string;
   label: string;
   type: React.HTMLInputTypeAttribute;
+  placeholder?: string;
   showOptionalTag?: boolean;
   isDisabled?: boolean;
   className?: string;
@@ -14,6 +15,7 @@ export function SettingsInput({
   testId,
   label,
   type,
+  placeholder,
   showOptionalTag,
   isDisabled,
   className,
@@ -28,8 +30,9 @@ export function SettingsInput({
         data-testid={testId}
         disabled={isDisabled}
         type={type}
+        placeholder={placeholder}
         className={cn(
-          "bg-[#454545] border border-[#717888] h-10 w-full rounded p-2",
+          "bg-[#454545] border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
           "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
         )}
       />

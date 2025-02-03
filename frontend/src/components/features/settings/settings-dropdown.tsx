@@ -71,7 +71,9 @@ export function SettingsDropdown({
             </div>
           ))}
           {dropdownOptions.length === 0 && (
-            <div data-testid="no-options">No options found</div>
+            <div data-testid="no-options" className="p-2 italic">
+              No options found
+            </div>
           )}
         </div>
       )}
