@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field
 
 from openhands.core.config.condenser_config import CondenserConfig, NoOpCondenserConfig
-from openhands.core.config.model_routing_config import ModelRoutingConfig
 
 
 class AgentConfig(BaseModel):
@@ -19,7 +18,6 @@ class AgentConfig(BaseModel):
         enable_prompt_extensions: Whether to use prompt extensions (e.g., microagents, inject runtime info). Default is True.
         disabled_microagents: A list of microagents to disable. Default is None.
         condenser: Configuration for the memory condenser. Default is NoOpCondenserConfig.
-        enable_plan_routing: Whether to enable plan routing to reasoning models. Default is False.
     """
 
     codeact_enable_browsing: bool = Field(default=True)
@@ -34,4 +32,3 @@ class AgentConfig(BaseModel):
     disabled_microagents: list[str] | None = Field(default=None)
     condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
     enable_plan_routing: bool = Field(default=False)
-    model_routing: ModelRoutingConfig = Field(default_factory=ModelRoutingConfig)

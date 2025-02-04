@@ -162,7 +162,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     logger.openhands_logger.debug(
                         'Attempt to load model routing config from config toml'
                     )
-                    model_routing_config = ModelRoutingConfig.from_dict(value)
+                    model_routing_config = ModelRoutingConfig(**value)
                     cfg.model_routing = model_routing_config
 
                     logger.openhands_logger.debug(

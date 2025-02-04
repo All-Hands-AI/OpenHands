@@ -32,6 +32,7 @@ class Agent(ABC):
         self,
         llm: LLM,
         config: 'AgentConfig',
+        **kwargs,
     ):
         self.llm = llm
         self.config = config

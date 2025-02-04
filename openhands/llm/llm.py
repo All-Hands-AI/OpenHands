@@ -7,7 +7,7 @@ from typing import Any, Callable
 
 import requests
 
-from openhands.core.config import LLMConfig, ModelRoutingConfig
+from openhands.core.config import LLMConfig
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -111,7 +111,6 @@ class LLM(RetryMixin, DebugMixin):
         config: LLMConfig,
         metrics: Metrics | None = None,
         retry_listener: Callable[[int, int], None] | None = None,
-        model_routing_config: ModelRoutingConfig | None = None,
     ):
         """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
 
@@ -120,7 +119,6 @@ class LLM(RetryMixin, DebugMixin):
         Args:
             config: The LLM configuration.
             metrics: The metrics to use.
-            model_routing_config: The model routing configuration.
         """
         self._tried_model_info = False
         self.metrics: Metrics = (
@@ -128,7 +126,6 @@ class LLM(RetryMixin, DebugMixin):
         )
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
-        self.model_routing_config = model_routing_config
 
         self.model_info: ModelInfo | None = None
         self.retry_listener = retry_listener
@@ -202,7 +199,6 @@ class LLM(RetryMixin, DebugMixin):
 
             messages: list[dict[str, Any]] | dict[str, Any] = []
             mock_function_calling = kwargs.pop('mock_function_calling', False)
-            use_reasoning_model = kwargs.pop('use_reasoning_model', False)
 
             # some callers might send the model and messages directly
             # litellm allows positional args, like completion(model, messages, **kwargs)
@@ -234,15 +230,6 @@ class LLM(RetryMixin, DebugMixin):
                 if self.config.model not in MODELS_WITHOUT_STOP_WORDS:
                     kwargs['stop'] = STOP_WORDS
                 mock_fncall_tools = kwargs.pop('tools')
-
-            if use_reasoning_model:
-                if self.model_routing_config is None:
-                    raise ValueError(
-                        'Model routing config is required for model routing.'
-                    )
-
-                # Replace the model with the reasoning model
-                kwargs['model'] = self.model_routing_config.reasoning_model
 
             # if we have no messages, something went very wrong
             if not messages:
@@ -693,7 +680,7 @@ class LLM(RetryMixin, DebugMixin):
             return f'LLM(model={self.config.model}, api_version={self.config.api_version}, base_url={self.config.base_url})'
         elif self.config.base_url:
             return f'LLM(model={self.config.model}, base_url={self.config.base_url})'
-        return f'LLM(model={self.config.model},reasoning_model={self.model_routing_config.reasoning_model if self.model_routing_config else None})'
+        return f'LLM(model={self.config.model})'
 
     def __repr__(self):
         return str(self)

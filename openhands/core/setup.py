@@ -60,10 +60,18 @@ def create_agent(runtime: Runtime, config: AppConfig) -> Agent:
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
+    routing_llms_config = config.routing_llms
     model_routing_config = config.model_routing
+    routing_llms = {}
+    for config_name, routing_llm_config in routing_llms_config.items():
+        routing_llms[config_name] = LLM(
+            config=routing_llm_config,
+        )
     agent = agent_cls(
-        llm=LLM(config=llm_config, model_routing_config=model_routing_config),
+        llm=LLM(config=llm_config),
         config=agent_config,
+        model_routing_config=model_routing_config,
+        routing_llms=routing_llms,
     )
     if agent.prompt_manager:
         microagents = runtime.get_microagents_from_selected_repo(None)

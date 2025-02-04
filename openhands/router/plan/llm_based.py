@@ -1,6 +1,4 @@
-import copy
-
-from openhands.core.config import LLMConfig
+from openhands.core.config import ModelRoutingConfig
 from openhands.llm.llm import LLM
 from openhands.router.base import BaseRouter
 from openhands.router.plan.prompts import (
@@ -14,15 +12,22 @@ class LLMBasedPlanRouter(BaseRouter):
     Router that routes the prompt that is judged by a LLM as complex and requires a step-by-step plan.
     """
 
-    JUDGE_MODEL = 'gpt-4o'
+    def __init__(
+        self,
+        llm: LLM,
+        routing_llms: dict[str, LLM],
+        model_routing_config: ModelRoutingConfig,
+    ):
+        super().__init__(llm, routing_llms, model_routing_config)
 
-    def __init__(self, llm_config: LLMConfig):
-        super().__init__()
+        self._validate_model_routing_config(model_routing_config, routing_llms)
 
-        judge_llm_config = copy.deepcopy(llm_config)
-        self.judge_llm = LLM(judge_llm_config)
+        self.judge_llm = routing_llms[model_routing_config.judge_llm_config_name]
+        self.reasoning_llm = routing_llms[
+            model_routing_config.reasoning_llm_config_name
+        ]
 
-    def should_route_to_custom_model(self, prompt: str) -> bool:
+    def should_route_to(self, prompt: str) -> LLM:
         messages = [
             {
                 'role': 'system',
@@ -38,6 +43,26 @@ class LLMBasedPlanRouter(BaseRouter):
 
         response = self.judge_llm.completion(
             messages=messages,
-            model=self.JUDGE_MODEL,
         )
-        return int(response['choices'][0]['message']['content'].strip()) == 1
+        if int(response['choices'][0]['message']['content'].strip()) == 1:
+            return self.reasoning_llm
+        return self.llm
+
+    def _validate_model_routing_config(
+        self, model_routing_config: ModelRoutingConfig, routing_llms: dict[str, LLM]
+    ):
+        if (
+            not model_routing_config.judge_llm_config_name
+            or not model_routing_config.reasoning_llm_config_name
+        ):
+            raise ValueError(
+                'Judge LLM and Reasoning LLM config names must be provided'
+            )
+        if model_routing_config.judge_llm_config_name not in routing_llms:
+            raise ValueError(
+                f'Judge LLM config {model_routing_config.judge_llm_config_name} not found'
+            )
+        if model_routing_config.reasoning_llm_config_name not in routing_llms:
+            raise ValueError(
+                f'Reasoning LLM config {model_routing_config.reasoning_llm_config_name} not found'
+            )
