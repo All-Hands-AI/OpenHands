@@ -71,6 +71,8 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'gpt-4o-mini',
     'gpt-4o',
     'o1-2024-12-17',
+    'o3-mini-2025-01-31',
+    'o3-mini',
 ]
 
 # visual browsing tool supported models
@@ -85,6 +87,9 @@ VISUAL_BROWSING_TOOL_SUPPORTED_MODELS = [
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
     'o1-2024-12-17',
+    'o1',
+    'o3-mini-2025-01-31',
+    'o3-mini',
 ]
 
 MODELS_WITHOUT_STOP_WORDS = [
@@ -149,6 +154,18 @@ class LLM(RetryMixin, DebugMixin):
             self.tokenizer = None
 
         # set up the completion function
+        kwargs: dict[str, Any] = {
+            'temperature': self.config.temperature,
+        }
+        if (
+            self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
+            or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
+        ):
+            kwargs['reasoning_effort'] = self.config.reasoning_effort
+            kwargs.pop(
+                'temperature'
+            )  # temperature is not supported for reasoning models
+
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
@@ -158,17 +175,11 @@ class LLM(RetryMixin, DebugMixin):
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens,
+            max_completion_tokens=self.config.max_output_tokens,
             timeout=self.config.timeout,
-            temperature=self.config.temperature,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
-            # add reasoning_effort, only if the model is supported
-            **(
-                {'reasoning_effort': self.config.reasoning_effort}
-                if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
-                else {}
-            ),
+            **kwargs,
         )
 
         self._completion_unwrapped = self._completion

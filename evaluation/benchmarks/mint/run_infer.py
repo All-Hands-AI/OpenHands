@@ -113,6 +113,7 @@ def get_config(
             enable_auto_lint=True,
             use_host_network=False,
             runtime_extra_deps=f'$OH_INTERPRETER_PATH -m pip install {" ".join(MINT_DEPENDENCIES)}',
+            remote_runtime_enable_retries=True,
         ),
         # do not mount workspace
         workspace_base=None,
