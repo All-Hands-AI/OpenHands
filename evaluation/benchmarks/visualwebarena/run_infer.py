@@ -79,6 +79,7 @@ def get_config(
                 'VWA_HOMEPAGE': f'{base_url}:4399',
             },
             timeout=300,
+            remote_runtime_enable_retries=True,
         ),
         # do not mount workspace
         workspace_base=None,

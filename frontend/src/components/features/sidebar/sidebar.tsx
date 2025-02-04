@@ -32,6 +32,7 @@ export function Sidebar() {
   const {
     data: settings,
     error: settingsError,
+    isError: settingsIsError,
     isFetching: isFetchingSettings,
   } = useSettings();
   const { mutateAsync: logout } = useLogout();
@@ -54,12 +55,16 @@ export function Sidebar() {
   React.useEffect(() => {
     // We don't show toast errors for settings in the global error handler
     // because we have a special case for 404 errors
-    if (!isFetchingSettings && settingsError?.status !== 404) {
+    if (
+      !isFetchingSettings &&
+      settingsIsError &&
+      settingsError?.status !== 404
+    ) {
       toast.error(
         "Something went wrong while fetching settings. Please reload the page.",
       );
     }
-  }, [settingsError?.status, isFetchingSettings]);
+  }, [settingsError?.status, settingsError, isFetchingSettings]);
 
   const handleEndSession = () => {
     dispatch(setCurrentAgentState(AgentState.LOADING));
