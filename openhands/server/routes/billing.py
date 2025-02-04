@@ -53,4 +53,4 @@ async def get_session_status(session_id: str) -> GetSessionStatusResponse:
 async def callback(request: Request):
     # TODO: This should redirect back into the app.
     # It could present a problem in dev mode as we need to determine which url / port is required
-    return RedirectResponse("https://localhost:3001") 
+    return RedirectResponse("http://localhost:3001") 

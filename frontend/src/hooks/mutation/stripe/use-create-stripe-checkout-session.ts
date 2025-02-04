@@ -3,6 +3,10 @@ import OpenHands from "#/api/open-hands";
 
 export const useCreateStripeCheckoutSession = () =>
   useMutation({
-    mutationFn: (variables: { amount: number }) =>
-      OpenHands.createCheckoutSession(variables.amount),
+    mutationFn: async (variables: { amount: number }) => {
+      const redirectUrl = await OpenHands.createCheckoutSession(
+        variables.amount,
+      );
+      window.location.href = redirectUrl;
+    },
   });

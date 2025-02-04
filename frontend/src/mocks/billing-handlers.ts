@@ -9,7 +9,7 @@ const PRICES: Record<number, string> = {
   "50": "price_1Qk2qwK5Ces1YVhfSbLbgNYg",
   "100": "price_1Qk2mZK5Ces1YVhfu8XNJuxU",
 };
-console.log("TRACE:billing-handlers.ts");
+
 export const STRIPE_BILLING_HANDLERS = [
   http.get("/api/billing/credits", () => HttpResponse.json({ credits: "100" })),
 
@@ -46,7 +46,7 @@ export const STRIPE_BILLING_HANDLERS = [
           "http://localhost:3001/api/billing/callback?canceled=true&session_id={CHECKOUT_SESSION_ID}",
       });
 
-      if (session.url) return HttpResponse.redirect(session.url, 303);
+      if (session.url) return HttpResponse.json({ redirect_url: session.url });
     }
 
     return HttpResponse.json({ message: "Invalid request" }, { status: 400 });
