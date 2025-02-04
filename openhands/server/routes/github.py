@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 
 from openhands.server.auth import get_user_id
 from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
-from openhands.server.shared import GithubServiceImpl
+from openhands.server.services.github_service import GithubServiceImpl
 from openhands.server.types import GhAuthenticationError, GHUnknownException
 
 app = APIRouter(prefix='/api/github')

@@ -7,6 +7,7 @@ from openhands.server.auth import get_github_token
 from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
 from openhands.server.shared import SettingsStoreImpl, config, server_config
 from openhands.server.types import AppMode, GhAuthenticationError, GHUnknownException
+from openhands.utils.import_utils import get_impl
 
 
 class GitHubService:
@@ -137,3 +138,6 @@ class GitHubService:
     @classmethod
     def get_gh_token(cls, request: Request) -> str | None:
         return get_github_token(request)
+
+
+GithubServiceImpl = get_impl(GitHubService, server_config.github_service_class)
