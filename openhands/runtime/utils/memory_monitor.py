@@ -84,15 +84,17 @@ class MemoryMonitor:
         memory_info['total_gb'] = total_memory / 1024**3
 
         # Get system-wide memory usage percentage
-        system_memory_percent = psutil.virtual_memory().percent
+        system_memory_total = psutil.virtual_memory().total / 1024**3
+        system_memory_used = psutil.virtual_memory().used / 1024**3
+        system_memory_percent = system_memory_used / system_memory_total * 100
 
         # Only create and log report if system memory usage is high (>80%)
         # Create a simple formatted string
         report = 'Memory Usage Report:\n'
         for proc in memory_info['processes']:
             report += f"  [{proc['type']}] {proc['name']} (PID {proc['pid']}): {proc['memory_gb']:.2f}GB\n"
-        report += f"Total Memory Usage: {memory_info['total_gb']:.2f}GB"
-        report += f'\nSystem Memory Usage: {system_memory_percent:.1f}%'
+        report += f"Total Memory Usage (by action execution server): {memory_info['total_gb']:.2f}GB\n"
+        report += f'Total Memory Usage (by system): {system_memory_used:.2f} / {system_memory_total:.2f}GB ({system_memory_percent:.1f}%)'
 
         if system_memory_percent > 80:
             logger.info(f'(High memory usage): {memory_info}')

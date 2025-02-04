@@ -123,6 +123,11 @@ class ActionExecutor:
         logger.info(
             f'Total memory: {total_memory_gb}GB, setting limit to {self.max_memory_gb}GB (reserved 1GB for action execution server, minimum 0.5GB)'
         )
+        if _override_max_memory_gb := os.environ.get('RUNTIME_MAX_MEMORY_GB', None):
+            self.max_memory_gb = int(_override_max_memory_gb)
+            logger.info(
+                f'Setting max memory to {self.max_memory_gb}GB (override by RUNTIME_MAX_MEMORY_GB environment variable)'
+            )
 
         self.memory_monitor = MemoryMonitor(
             soft_limit_gb=max(0.5, self.max_memory_gb - 0.5),

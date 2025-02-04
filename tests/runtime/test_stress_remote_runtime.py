@@ -379,6 +379,11 @@ def test_stress_runtime_resource_limits():
             'cpu_period': 100000,  # 100ms
             'cpu_quota': 100000,  # Can use 100ms out of each 100ms period (1 CPU)
             'mem_limit': '4G',  # 4 GB of memory
+            'memswap_limit': '0',  # No swap
+            'mem_swappiness': 0,  # Disable swapping
+        }
+        config.sandbox.runtime_startup_env_vars = {
+            'MAX_MEMORY_GB': '4',
         }
 
     try:
@@ -394,17 +399,14 @@ def test_stress_runtime_resource_limits():
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
 
-        # Run stress tests multiple times
-        for i in range(3):
-            logger.info(f'Running stress test iteration {i}')
-            action = CmdRunAction(
-                command='stress-ng --cpu 1 --vm 5 --timeout 1m --metrics'
-            )
-            action.set_hard_timeout(120)
-            logger.info(action, extra={'msg_type': 'ACTION'})
-            obs = runtime.run_action(action)
-            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-            assert obs.exit_code in [0, -1]  # Allow for timeout
+        action = CmdRunAction(
+            command='stress-ng --cpu 1 --vm 10 --timeout 1m --metrics'
+        )
+        action.set_hard_timeout(120)
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.exit_code in [0, -1]  # Allow for timeout
 
     finally:
         runtime.close()
