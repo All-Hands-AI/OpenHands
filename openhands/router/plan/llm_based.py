@@ -12,6 +12,8 @@ class LLMBasedPlanRouter(BaseRouter):
     Router that routes the prompt that is judged by a LLM as complex and requires a step-by-step plan.
     """
 
+    NUM_TURNS_GAP = 5
+
     def __init__(
         self,
         llm: LLM,
@@ -26,8 +28,15 @@ class LLMBasedPlanRouter(BaseRouter):
         self.reasoning_llm = routing_llms[
             model_routing_config.reasoning_llm_config_name
         ]
+        self.routed_turns: list[int] = []
+        self.cur_turn_num = 0
 
     def should_route_to(self, prompt: str) -> LLM:
+        self.cur_turn_num += 1
+
+        if self.cur_turn_num - max(self.routed_turns, default=0) < self.NUM_TURNS_GAP:
+            return self.llm
+
         messages = [
             {
                 'role': 'system',
@@ -44,7 +53,10 @@ class LLMBasedPlanRouter(BaseRouter):
         response = self.judge_llm.completion(
             messages=messages,
         )
-        if int(response['choices'][0]['message']['content'].strip()) == 1:
+        should_route = int(response['choices'][0]['message']['content'].strip()) == 1
+
+        if should_route:
+            self.routed_turns.append(self.cur_turn_num)
             return self.reasoning_llm
         return self.llm
 
