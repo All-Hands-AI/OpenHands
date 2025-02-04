@@ -56,12 +56,6 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 
 
 def get_config() -> AppConfig:
-    assert (
-        os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL') is not None
-    ), 'SANDBOX_REMOTE_RUNTIME_API_URL must be set.'
-    assert (
-        os.environ.get('ALLHANDS_API_KEY') is not None
-    ), 'ALLHANDS_API_KEY must be set.'
     config = AppConfig(
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'remote'),
@@ -72,7 +66,9 @@ def get_config() -> AppConfig:
             # large enough timeout, since some testcases take very long to run
             timeout=300,
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
-            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+            remote_runtime_api_url=os.environ.get(
+                'SANDBOX_REMOTE_RUNTIME_API_URL', None
+            ),
             keep_runtime_alive=False,
             remote_runtime_resource_factor=1,
         ),
