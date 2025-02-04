@@ -28,9 +28,7 @@ export function SettingsDropdown({
   )?.label;
 
   const [dropdownIsOpen, setDropdownIsOpen] = React.useState(false);
-  const [selectedOption, setSelectedOption] = React.useState(
-    defaultLabel || "",
-  );
+  const [selectedOption, setSelectedOption] = React.useState("");
   const [dropdownOptions, setDropdownOptions] = React.useState(options);
 
   const handleInputChange = (value: string) => {
@@ -64,7 +62,7 @@ export function SettingsDropdown({
           name={name}
           type="text"
           className="bg-[#454545] border border-[#717888] h-10 w-full rounded p-2"
-          value={selectedOption}
+          value={selectedOption || defaultLabel}
           onChange={(e) => handleInputChange(e.target.value)}
         />
       </label>

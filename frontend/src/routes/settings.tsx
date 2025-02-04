@@ -38,7 +38,7 @@ const displaySuccessToast = (message: string) => {
 };
 
 function SettingsScreen() {
-  const { data: settings } = useSettings();
+  const { data: settings, isFetching } = useSettings();
   const { data: config } = useConfig();
   const { mutateAsync: saveSettings } = useSaveSettings();
 
@@ -92,6 +92,10 @@ function SettingsScreen() {
       displayErrorToast("An error occurred while saving settings");
     }
   };
+
+  if (isFetching) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <main className="bg-[#24272E] border border-[#454545] h-full rounded-xl">

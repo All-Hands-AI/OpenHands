@@ -179,8 +179,10 @@ export const handlers = [
     return HttpResponse.json(config);
   }),
   http.get("/api/settings", async () => {
+    await delay();
     const settings: ApiSettings = {
       ...MOCK_USER_PREFERENCES.settings,
+      language: "no",
     };
     // @ts-expect-error - mock types
     if (settings.github_token) settings.github_token_is_set = true;

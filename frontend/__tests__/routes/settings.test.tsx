@@ -20,16 +20,18 @@ describe("Settings Screen", () => {
     },
   ]);
 
-  const renderSettingsScreen = () =>
-    render(<RouterStub initialEntries={["/settings"]} />, {
+  const renderSettingsScreen = () => {
+    const queryClient = new QueryClient();
+    return render(<RouterStub initialEntries={["/settings"]} />, {
       wrapper: ({ children }) => (
         <AuthProvider>
-          <QueryClientProvider client={new QueryClient()}>
+          <QueryClientProvider client={queryClient}>
             {children}
           </QueryClientProvider>
         </AuthProvider>
       ),
     });
+  };
 
   it("should render", async () => {
     renderSettingsScreen();
@@ -76,7 +78,7 @@ describe("Settings Screen", () => {
       await screen.findByText("Disconnect from GitHub");
     });
 
-    it("should render the 'Configure GitHub Repositories' button if SaaS mode", async () => {
+    it("should not render the 'Configure GitHub Repositories' button if OSS mode", async () => {
       const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
       getConfigSpy.mockResolvedValue({
         APP_MODE: "oss",
@@ -84,18 +86,21 @@ describe("Settings Screen", () => {
         POSTHOG_CLIENT_KEY: "456",
       });
 
-      const { rerender } = renderSettingsScreen();
+      renderSettingsScreen();
 
       const button = screen.queryByText("Configure GitHub Repositories");
       expect(button).not.toBeInTheDocument();
+    });
 
+    it("should render the 'Configure GitHub Repositories' button if SaaS mode", async () => {
+      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
       getConfigSpy.mockResolvedValue({
         APP_MODE: "saas",
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
       });
 
-      rerender(<RouterStub initialEntries={["/settings"]} />);
+      renderSettingsScreen();
       await screen.findByText("Configure GitHub Repositories");
     });
 
@@ -258,36 +263,29 @@ describe("Settings Screen", () => {
           agent: "test-agent",
           security_analyzer: "test-security-analyzer",
         });
+
         renderSettingsScreen();
 
-        const languageInput = await screen.findByTestId("language-input");
-        const disconnectButton = screen.getByText("Disconnect from GitHub");
-        const analyticsSwitch = await screen.findByTestId(
-          "enable-analytics-switch",
-        );
-        const baseUrlInput = await screen.findByTestId("base-url-input");
-        const llmCustomModelInput = await screen.findByTestId(
-          "llm-custom-model-input",
-        );
-        const agentInput = await screen.findByTestId("agent-input");
-        const confirmationModeSwitch = await screen.findByTestId(
-          "enable-confirmation-mode-switch",
-        );
-        const securityAnalyzerInput = await screen.findByTestId(
-          "security-analyzer-input",
-        );
-
-        expect(languageInput).toHaveValue("Norsk");
-        expect(disconnectButton).toBeInTheDocument();
-        expect(analyticsSwitch).toBeChecked();
-        expect(baseUrlInput).toHaveValue("https://test.com");
-        expect(llmCustomModelInput).toHaveValue(
-          "anthropic/claude-3-5-sonnet-20241022",
-        );
-        expect(agentInput).toHaveValue("test-agent");
-
-        expect(confirmationModeSwitch).toBeChecked();
-        expect(securityAnalyzerInput).toHaveValue("test-security-analyzer");
+        await waitFor(() => {
+          expect(screen.getByTestId("language-input")).toHaveValue("Norsk");
+          expect(
+            screen.getByText("Disconnect from GitHub"),
+          ).toBeInTheDocument();
+          expect(screen.getByTestId("enable-analytics-switch")).toBeChecked();
+          expect(screen.getByTestId("base-url-input")).toHaveValue(
+            "https://test.com",
+          );
+          expect(screen.getByTestId("llm-custom-model-input")).toHaveValue(
+            "anthropic/claude-3-5-sonnet-20241022",
+          );
+          expect(screen.getByTestId("agent-input")).toHaveValue("test-agent");
+          expect(
+            screen.getByTestId("enable-confirmation-mode-switch"),
+          ).toBeChecked();
+          expect(screen.getByTestId("security-analyzer-input")).toHaveValue(
+            "test-security-analyzer",
+          );
+        });
       });
 
       it.todo(
