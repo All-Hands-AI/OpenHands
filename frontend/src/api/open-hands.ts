@@ -282,6 +282,7 @@ class OpenHands {
     return data.redirect_url;
   }
 
+  // TODO: This should probably be removed from the API now that we are using the stripe hosted UI
   static async checkSessionStatus(
     sessionId: string,
   ): Promise<GetStripePaymentStatusResponse> {
