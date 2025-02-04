@@ -72,6 +72,13 @@ def init_loop_image():
         run_command("sudo apt-get install -y btrfs-progs")
         run_command(f"sudo truncate -s 10G {safe_loop_img}")
 
+        # Format
+        loop_dev = run_command("losetup -f", capture_output=True)
+        safe_loop_dev = shlex.quote(loop_dev)
+        run_command(f"sudo losetup {safe_loop_dev} {safe_loop_img}")
+        run_command(f"sudo mkfs.btrfs -f {safe_loop_dev}")
+        run_command(f"sudo losetup -d {safe_loop_dev}")
+
 def configure_docker(enable):
     changed = False
     file_path = "/etc/docker/daemon.json"
@@ -105,8 +112,13 @@ def mount_btrfs_storage():
         print("Mounting Btrfs storage...")
         loop_dev = run_command("losetup -f", capture_output=True)
         safe_loop_dev = shlex.quote(loop_dev)
+        # Detach all existing loop devices (may also reference a deleted .img file)
+        run_command("""
+for dev in $(losetup | grep "/var/lib/docker-snapshots.img" | awk '{print $1}'); do
+    sudo losetup -d "$dev"
+done
+""")
         run_command(f"sudo losetup {safe_loop_dev} {safe_loop_img}")
-        run_command(f"sudo mkfs.btrfs -f {safe_loop_dev}")
         os.makedirs("/var/lib/docker", exist_ok=True)
         run_command(f"sudo mount {safe_loop_dev} /var/lib/docker")
     else:
@@ -116,7 +128,7 @@ def is_mounted():
     return bool(run_command('mount | grep "/var/lib/docker type btrfs"', capture_output=True, throw_error=False))
 
 def docker_restart(enabled):
-    print("Restarting Docker daemon")
+    print("Stopping docker daemon")
 
     # Stop
     run_command("sudo pkill dockerd || true")
@@ -126,7 +138,8 @@ def docker_restart(enabled):
         mount_btrfs_storage()
 
     # Start
-    run_command("sudo dockerd --pidfile=/var/run/docker.pid > /dev/null 2>&1 &")
+    print("Starting docker daemon")
+    run_command("sudo nohup dockerd --pidfile=/var/run/docker.pid > /dev/null 2>&1 &")
 
 def restart_container(container_id):
     if not container_id: raise ValueError("Missing container_id")
