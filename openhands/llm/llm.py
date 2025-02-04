@@ -492,7 +492,7 @@ class LLM(RetryMixin, DebugMixin):
         """
         return self._function_calling_active
 
-    def is_visual_browser_tool_active(self) -> bool:
+    def is_visual_browser_tool_supported(self) -> bool:
         return (
             self.config.model in VISUAL_BROWSING_TOOL_SUPPORTED_MODELS
             or self.config.model.split('/')[-1] in VISUAL_BROWSING_TOOL_SUPPORTED_MODELS
