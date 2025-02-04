@@ -44,7 +44,7 @@ class LLMSummarizingCondenserConfig(BaseModel):
         ..., description='Configuration for the LLM to use for condensing.'
     )
     keep_first: int = Field(
-        default=0,
+        default=1,
         description='The number of initial events to condense.',
         ge=0,
     )
