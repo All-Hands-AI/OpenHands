@@ -9,11 +9,11 @@ const PRICES: Record<number, string> = {
   "50": "price_1Qk2qwK5Ces1YVhfSbLbgNYg",
   "100": "price_1Qk2mZK5Ces1YVhfu8XNJuxU",
 };
-
+console.log("TRACE:billing-handlers.ts");
 export const STRIPE_BILLING_HANDLERS = [
-  http.get("/api/credits", () => HttpResponse.json({ credits: 100 })),
+  http.get("/api/billing/credits", () => HttpResponse.json({ credits: "100" })),
 
-  http.post("/api/create-checkout-session", async ({ request }) => {
+  http.post("/api/billing/create-checkout-session", async ({ request }) => {
     const body = await request.json();
 
     if (body && typeof body === "object" && body.amount) {
@@ -41,9 +41,9 @@ export const STRIPE_BILLING_HANDLERS = [
           },
         },
         success_url:
-          "http://localhost:3001/billing?success=true&session_id={CHECKOUT_SESSION_ID}",
+          "http://localhost:3001/api/billing/callback?success=true&session_id={CHECKOUT_SESSION_ID}",
         cancel_url:
-          "http://localhost:3001/billing?canceled=true&session_id={CHECKOUT_SESSION_ID}",
+          "http://localhost:3001/api/billing/callback?canceled=true&session_id={CHECKOUT_SESSION_ID}",
       });
 
       if (session.url) return HttpResponse.redirect(session.url, 303);
@@ -52,7 +52,7 @@ export const STRIPE_BILLING_HANDLERS = [
     return HttpResponse.json({ message: "Invalid request" }, { status: 400 });
   }),
 
-  http.get("/api/session-status", async ({ request }) => {
+  http.get("/api/billing/session-status", async ({ request }) => {
     const url = new URL(request.url);
     const sessionId = url.searchParams.get("session_id")?.toString();
 

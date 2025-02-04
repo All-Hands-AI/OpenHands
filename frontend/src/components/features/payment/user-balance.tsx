@@ -1,5 +1,5 @@
 interface UserBalanceProps {
-  balance: number;
+  balance: string;
   isLoading: boolean;
   onTopUp: () => void;
 }
@@ -20,7 +20,9 @@ export function UserBalance({ balance, isLoading, onTopUp }: UserBalanceProps) {
         )}
         {isLoading && <span className="text-xs font-semibold">Loading...</span>}
       </div>
-      <span data-testid="current-balance">${balance.toFixed(2)}</span>
+      <span data-testid="current-balance">
+        ${parseFloat(balance).toFixed(2)}
+      </span>
     </div>
   );
 }

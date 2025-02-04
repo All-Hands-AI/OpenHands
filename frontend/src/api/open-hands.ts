@@ -273,7 +273,7 @@ class OpenHands {
   }
 
   static async createCheckoutSession(amount: number): Promise<void> {
-    await openHands.post("/api/create-checkout-session", {
+    await openHands.post("/api/billing/create-checkout-session", {
       amount,
     });
   }
@@ -282,7 +282,7 @@ class OpenHands {
     sessionId: string,
   ): Promise<GetStripePaymentStatusResponse> {
     const response = await openHands.get<GetStripePaymentStatusResponse>(
-      "/api/session-status",
+      "/api/billing/session-status",
       {
         params: { session_id: sessionId },
       },
@@ -291,8 +291,10 @@ class OpenHands {
     return response.data;
   }
 
-  static async getBalance(): Promise<number> {
-    const { data } = await openHands.get<{ credits: number }>("/api/credits");
+  static async getBalance(): Promise<string> {
+    const { data } = await openHands.get<{ credits: string }>(
+      "/api/billing/credits",
+    );
     return data.credits;
   }
 
