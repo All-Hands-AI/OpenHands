@@ -9,6 +9,7 @@ export type Settings = {
   REMOTE_RUNTIME_RESOURCE_FACTOR: number;
   GITHUB_TOKEN_IS_SET: boolean;
   ENABLE_DEFAULT_CONDENSER: boolean;
+  USER_CONSENTS_TO_ANALYTICS: boolean | null;
 };
 
 export type ApiSettings = {
@@ -22,14 +23,17 @@ export type ApiSettings = {
   remote_runtime_resource_factor: number;
   github_token_is_set: boolean;
   enable_default_condenser: boolean;
+  user_consents_to_analytics: boolean | null;
 };
 
 export type PostSettings = Settings & {
   github_token: string;
   unset_github_token: boolean;
+  user_consents_to_analytics: boolean | null;
 };
 
 export type PostApiSettings = ApiSettings & {
   github_token: string;
   unset_github_token: boolean;
+  user_consents_to_analytics: boolean | null;
 };
