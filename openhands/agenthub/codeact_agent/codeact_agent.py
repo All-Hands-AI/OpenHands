@@ -421,13 +421,12 @@ class CodeActAgent(Agent):
 
         # check if model routing is needed
         if self.router:
-            if self.active_llm is None:
-                messages = self._get_messages(state)
-                formatted_trajectory = format_trajectory(messages)
-                self.active_llm = self.router.should_route_to(formatted_trajectory)
+            messages = self._get_messages(state)
+            formatted_trajectory = format_trajectory(messages)
+            self.active_llm = self.router.should_route_to(formatted_trajectory)
 
-                if self.active_llm != self.llm:
-                    logger.warning(f'🧭 Routing to custom model: {self.active_llm}')
+            if self.active_llm != self.llm:
+                logger.warning(f'🧭 Routing to custom model: {self.active_llm}')
         else:
             self.active_llm = self.llm
 

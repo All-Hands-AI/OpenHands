@@ -158,16 +158,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                                 continue
                             llm_group_ids.add(nested_key)
                             cfg.set_llm_config(llm_config, nested_key)
-                elif key is not None and key.lower() == 'model_routing':
-                    logger.openhands_logger.debug(
-                        'Attempt to load model routing config from config toml'
-                    )
-                    model_routing_config = ModelRoutingConfig(**value)
-                    cfg.model_routing = model_routing_config
-
-                    logger.openhands_logger.debug(
-                        'Attempt to load default LLM config from config toml'
-                    )
 
                     # Extract generic LLM fields, which are not nested LLM configs
                     generic_llm_fields = {}
@@ -199,13 +189,22 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
 
                             custom_llm_config = LLMConfig(**merged_llm_dict)
                             cfg.set_llm_config(custom_llm_config, nested_key)
-
                 elif key is not None and key.lower() == 'security':
                     logger.openhands_logger.debug(
                         'Attempt to load security config from config toml'
                     )
                     security_config = SecurityConfig(**value)
                     cfg.security = security_config
+                elif key is not None and key.lower() == 'model_routing':
+                    logger.openhands_logger.debug(
+                        'Attempt to load model routing config from config toml'
+                    )
+                    model_routing_config = ModelRoutingConfig(**value)
+                    cfg.model_routing = model_routing_config
+
+                    logger.openhands_logger.debug(
+                        'Attempt to load default LLM config from config toml'
+                    )
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.openhands_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'
