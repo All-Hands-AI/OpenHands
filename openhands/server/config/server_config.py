@@ -1,6 +1,9 @@
 import os
 
+from fastapi import Request
+
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.auth import get_github_token
 from openhands.server.types import AppMode, ServerConfigInterface
 from openhands.utils.import_utils import get_impl
 
@@ -32,6 +35,10 @@ class ServerConfig(ServerConfigInterface):
         }
 
         return config
+
+    @classmethod
+    def get_gh_token(request: Request):
+        return get_github_token(request)
 
 
 def load_server_config():
