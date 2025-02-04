@@ -293,7 +293,16 @@ llm_config = 'gpt3'
 [model_routing]
 
 # The reasoning model to use for plan generation
-reasoning_model = "o1-preview-2024-09-12"
+reasoning_llm_config_name = 'reasoning_model'
+judge_llm_config_name = 'judge_model'
+
+[llm.judge_model]
+model = "gpt-4o"
+api_key = ""
+
+[llm.reasoning_model]
+model = "o1"
+api_key = ""
 
 #################################### Eval ####################################
 # Configuration for the evaluation, please refer to the specific evaluation
