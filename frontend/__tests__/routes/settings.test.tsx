@@ -260,8 +260,8 @@ describe("Settings Screen", () => {
           user_consents_to_analytics: true,
           llm_base_url: "https://test.com",
           llm_model: "anthropic/claude-3-5-sonnet-20241022",
-          agent: "test-agent",
-          security_analyzer: "test-security-analyzer",
+          agent: "CoActAgent",
+          security_analyzer: "mock-invariant",
         });
 
         renderSettingsScreen();
@@ -278,12 +278,12 @@ describe("Settings Screen", () => {
           expect(screen.getByTestId("llm-custom-model-input")).toHaveValue(
             "anthropic/claude-3-5-sonnet-20241022",
           );
-          expect(screen.getByTestId("agent-input")).toHaveValue("test-agent");
+          expect(screen.getByTestId("agent-input")).toHaveValue("CoActAgent");
           expect(
             screen.getByTestId("enable-confirmation-mode-switch"),
           ).toBeChecked();
           expect(screen.getByTestId("security-analyzer-input")).toHaveValue(
-            "test-security-analyzer",
+            "mock-invariant",
           );
         });
       });

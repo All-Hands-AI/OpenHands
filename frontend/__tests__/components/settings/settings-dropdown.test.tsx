@@ -272,4 +272,18 @@ describe("SettingsDropdown", () => {
     const input = screen.getByTestId("test-dropdown");
     expect(input).toHaveValue("Option 3");
   });
+
+  it("should disable the input field if isDisabled is true", async () => {
+    render(
+      <SettingsDropdown
+        testId="test-dropdown"
+        label="Test Dropdown"
+        options={[]}
+        isDisabled
+      />,
+    );
+
+    const input = screen.getByTestId("test-dropdown");
+    expect(input).toBeDisabled();
+  });
 });

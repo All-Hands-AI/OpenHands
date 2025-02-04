@@ -12,6 +12,7 @@ import { DEFAULT_SETTINGS } from "#/services/settings";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 
 const displayErrorToast = (error: string) => {
   toast.error(error, {
@@ -40,6 +41,7 @@ const displaySuccessToast = (message: string) => {
 function SettingsScreen() {
   const { data: settings, isFetching } = useSettings();
   const { data: config } = useConfig();
+  const { data: resources } = useAIConfigOptions();
   const { mutateAsync: saveSettings } = useSaveSettings();
 
   const isSaas = config?.APP_MODE === "saas";
@@ -228,12 +230,17 @@ function SettingsScreen() {
           />
 
           {llmConfigMode === "advanced" && (
-            <SettingsInput
+            <SettingsDropdown
               testId="agent-input"
               name="agent-input"
               label="Agent"
+              options={
+                resources?.agents.map((agent) => ({
+                  label: agent,
+                  value: agent,
+                })) || []
+              }
               defaultValue={settings.AGENT}
-              type="text"
               className="w-[680px]"
             />
           )}
@@ -249,12 +256,17 @@ function SettingsScreen() {
           )}
 
           {llmConfigMode === "advanced" && (
-            <SettingsInput
+            <SettingsDropdown
               testId="security-analyzer-input"
               name="security-analyzer-input"
               label="Security Analyzer"
+              options={
+                resources?.securityAnalyzers.map((analyzer) => ({
+                  label: analyzer,
+                  value: analyzer,
+                })) || []
+              }
               defaultValue={settings.SECURITY_ANALYZER}
-              type="text"
               className="w-[680px]"
               isDisabled={!confirmationModeIsEnabled}
               showOptionalTag

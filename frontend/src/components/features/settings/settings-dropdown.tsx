@@ -9,6 +9,7 @@ interface SettingsDropdownProps {
   options: { label: string; value: string }[];
   onOptionSelect?: (value: string) => void;
   defaultValue?: string;
+  isDisabled?: boolean;
   showOptionalTag?: boolean;
   className?: string;
 }
@@ -20,6 +21,7 @@ export function SettingsDropdown({
   options,
   onOptionSelect,
   defaultValue,
+  isDisabled,
   showOptionalTag,
   className,
 }: SettingsDropdownProps) {
@@ -60,8 +62,12 @@ export function SettingsDropdown({
         <input
           data-testid={testId}
           name={name}
+          disabled={isDisabled}
           type="text"
-          className="bg-[#454545] border border-[#717888] h-10 w-full rounded p-2"
+          className={cn(
+            "bg-[#454545] border border-[#717888] h-10 w-full rounded p-2",
+            "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
+          )}
           value={selectedOption || defaultLabel}
           onChange={(e) => handleInputChange(e.target.value)}
         />
