@@ -8,6 +8,7 @@ interface SettingsDropdownProps {
   label: string;
   options: { label: string; value: string }[];
   onOptionSelect?: (value: string) => void;
+  placeholder?: string;
   defaultValue?: string;
   isDisabled?: boolean;
   showOptionalTag?: boolean;
@@ -20,6 +21,7 @@ export function SettingsDropdown({
   label,
   options,
   onOptionSelect,
+  placeholder,
   defaultValue,
   isDisabled,
   showOptionalTag,
@@ -30,7 +32,7 @@ export function SettingsDropdown({
   )?.label;
 
   const [dropdownIsOpen, setDropdownIsOpen] = React.useState(false);
-  const [selectedOption, setSelectedOption] = React.useState("");
+  const [selectedOption, setSelectedOption] = React.useState<string>();
   const [dropdownOptions, setDropdownOptions] = React.useState(options);
 
   const handleInputChange = (value: string) => {
@@ -49,11 +51,11 @@ export function SettingsDropdown({
   };
 
   return (
-    <div className="relative w-fit">
+    <div className={cn("relative w-fit", className)}>
       <label
         onFocus={() => setDropdownIsOpen(true)}
         onBlur={() => setDropdownIsOpen(false)}
-        className={cn("flex flex-col gap-2.5 w-full", className)}
+        className="flex flex-col gap-2.5 w-full"
       >
         <div className="flex items-center gap-1">
           <span className="text-sm">{label}</span>
@@ -63,12 +65,14 @@ export function SettingsDropdown({
           data-testid={testId}
           name={name}
           disabled={isDisabled}
+          placeholder={placeholder}
           type="text"
           className={cn(
-            "bg-[#454545] border border-[#717888] h-10 w-full rounded p-2",
+            "bg-[#454545] border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
             "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
           )}
-          value={selectedOption || defaultLabel}
+          defaultValue={defaultLabel}
+          value={selectedOption}
           onChange={(e) => handleInputChange(e.target.value)}
         />
       </label>

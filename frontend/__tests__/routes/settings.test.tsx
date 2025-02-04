@@ -174,6 +174,29 @@ describe("Settings Screen", () => {
       screen.getByTestId("enable-confirmation-mode-switch");
     });
 
+    describe("Basic Model Selector", () => {
+      it("should set the provider and model", async () => {
+        getSettingsSpy.mockResolvedValue({
+          ...MOCK_DEFAULT_USER_SETTINGS,
+          llm_model: "anthropic/claude-3-5-sonnet-20241022",
+        });
+
+        renderSettingsScreen();
+
+        await waitFor(() => {
+          const providerInput = screen.getByTestId("llm-provider-input");
+          const modelInput = screen.getByTestId("llm-model-input");
+
+          expect(providerInput).toHaveValue("Anthropic");
+          expect(modelInput).toHaveValue("claude-3-5-sonnet-20241022");
+        });
+      });
+
+      it.todo("should change the model values if the provider is changed");
+
+      it.todo("should clear the model values if the provider is cleared");
+    });
+
     describe("Advanced LLM Settings", () => {
       const toggleAdvancedSettings = async (user: UserEvent) => {
         const advancedSwitch = await screen.findByTestId(
@@ -327,6 +350,55 @@ describe("Settings Screen", () => {
           llm_api_key: undefined,
           github_token: "",
           language: "no",
+        });
+
+        saveSettingsSpy.mockClear();
+      });
+
+      it("should properly save basic LLM model settings", async () => {
+        const user = userEvent.setup();
+        const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+        getSettingsSpy.mockResolvedValue({
+          ...MOCK_DEFAULT_USER_SETTINGS,
+        });
+
+        renderSettingsScreen();
+
+        // disable advanced mode
+        const advancedSwitch = await screen.findByTestId(
+          "advanced-settings-switch",
+        );
+        await user.click(advancedSwitch);
+
+        const providerInput = await screen.findByTestId("llm-provider-input");
+        await user.click(providerInput);
+
+        const openaiOption = await screen.findByText("OpenAI");
+        await user.click(openaiOption);
+
+        const modelInput = await screen.findByTestId("llm-model-input");
+        await user.click(modelInput);
+
+        const gpt4Option = await screen.findByText("gpt-4o");
+        await user.click(gpt4Option);
+
+        const saveButton = screen.getByText("Save Changes");
+        await user.click(saveButton);
+
+        const mockCopy: Partial<PostApiSettings> = {
+          ...MOCK_DEFAULT_USER_SETTINGS,
+        };
+        delete mockCopy.github_token_is_set;
+        delete mockCopy.unset_github_token;
+
+        expect(saveSettingsSpy).toHaveBeenCalledWith({
+          ...mockCopy,
+          llm_model: "openai/gpt-4o",
+          // keys aren't present in basic mode
+          github_token: "",
+          confirmation_mode: undefined,
+          llm_api_key: undefined,
+          llm_base_url: undefined,
         });
       });
 

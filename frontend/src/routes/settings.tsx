@@ -13,6 +13,8 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { useConfig } from "#/hooks/query/use-config";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
+import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
+import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 
 const displayErrorToast = (error: string) => {
   toast.error(error, {
@@ -49,6 +51,10 @@ function SettingsScreen() {
   const isAnalyticsEnabled = settings.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = hasAdvancedSettingsSet(settings);
 
+  const modelsAndProviders = organizeModelsAndProviders(
+    resources?.models || [],
+  );
+
   const [llmConfigMode, setLlmConfigMode] = React.useState<
     "basic" | "advanced"
   >(isAdvancedSettingsSet ? "advanced" : "basic");
@@ -61,7 +67,10 @@ function SettingsScreen() {
       ({ label }) => label === languageLabel,
     )?.value;
 
-    const llmModel = formData.get("llm-custom-model-input")?.toString();
+    const llmProvider = formData.get("llm-provider-input")?.toString();
+    const llmModel = formData.get("llm-model-input")?.toString();
+    const fullLlmModel = `${llmProvider}/${llmModel}`.toLowerCase();
+    const customLlmModel = formData.get("llm-custom-model-input")?.toString();
 
     const rawRemoteRuntimeResourceFactor =
       formData.get("runtime-settings-input")?.toString() ||
@@ -74,7 +83,7 @@ function SettingsScreen() {
         LANGUAGE: languageValue,
         user_consents_to_analytics:
           formData.get("enable-analytics-switch")?.toString() === "on",
-        LLM_MODEL: llmModel,
+        LLM_MODEL: customLlmModel || fullLlmModel,
         LLM_BASE_URL: formData.get("base-url-input")?.toString(),
         LLM_API_KEY: formData.get("llm-api-key-input")?.toString(),
         AGENT: formData.get("agent-input")?.toString(),
@@ -175,20 +184,10 @@ function SettingsScreen() {
           </div>
 
           {llmConfigMode === "basic" && (
-            <div className="flex w-[680px] justify-between gap-[46px]">
-              <SettingsInput
-                testId="llm-provider-input"
-                label="LLM Provider"
-                type="text"
-                className="flex grow"
-              />
-              <SettingsInput
-                testId="llm-model-input"
-                label="LLM Model"
-                type="text"
-                className="flex grow"
-              />
-            </div>
+            <ModelSelector
+              models={modelsAndProviders}
+              currentModel={settings.LLM_MODEL}
+            />
           )}
 
           {llmConfigMode === "advanced" && (

@@ -286,4 +286,18 @@ describe("SettingsDropdown", () => {
     const input = screen.getByTestId("test-dropdown");
     expect(input).toBeDisabled();
   });
+
+  it("should set a placeholder text", () => {
+    render(
+      <SettingsDropdown
+        testId="test-dropdown"
+        label="Test Dropdown"
+        options={[]}
+        placeholder="Select an option"
+      />,
+    );
+
+    const input = screen.getByTestId("test-dropdown");
+    expect(input).toHaveAttribute("placeholder", "Select an option");
+  });
 });
