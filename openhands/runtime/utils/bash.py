@@ -324,11 +324,16 @@ class BashSession:
             num_lines = len(raw_command_output.splitlines())
             metadata.prefix = f'[Previous command outputs are truncated. Showing the last {num_lines} lines of the output below.]\n'
 
-        metadata.suffix = (
-            f'\n[The command completed with exit code {metadata.exit_code}.]'
-            if not is_special_key
-            else f'\n[The command completed with exit code {metadata.exit_code}. CTRL+{command[-1].upper()} was sent.]'
-        )
+        # Handle special case for Ctrl+C (SIGINT)
+        if is_special_key and command == 'C-c':
+            metadata.exit_code = 130  # Standard Unix exit code for SIGINT
+            metadata.suffix = f'\n[The command was interrupted by CTRL+C (exit code {metadata.exit_code})]'
+        else:
+            metadata.suffix = (
+                f'\n[The command completed with exit code {metadata.exit_code}.]'
+                if not is_special_key
+                else f'\n[The command completed with exit code {metadata.exit_code}. CTRL+{command[-1].upper()} was sent.]'
+            )
         command_output = self._get_command_output(
             command,
             raw_command_output,
