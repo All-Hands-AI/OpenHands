@@ -11,7 +11,7 @@ from openhands.events.action.message import MessageAction
 from openhands.events.stream import EventStreamSubscriber
 from openhands.runtime import get_runtime_cls
 from openhands.server.auth import get_user_id
-from openhands.server.services.github_service import GithubServiceImpl
+from openhands.server.routes.github import GithubServiceImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
