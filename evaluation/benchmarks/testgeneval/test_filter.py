@@ -179,7 +179,6 @@ def filter_passing_tests(
     # Parse test results using appropriate parser
     parser = MAP_REPO_TO_PARSER.get(repo, parse_log_pytest)
     test_results = parser(test_output)
-
     # Get passing and failing tests
     passing_tests = []
     failing_tests = []
@@ -207,7 +206,7 @@ def filter_passing_tests(
             # Check if the method name is in passing_tests or if any passing_test is in the method name
             if not (
                 any(method_full_name in failing_test for failing_test in failing_tests)
-                and any(
+                and not any(
                     failing_test in method_full_name for failing_test in failing_tests
                 )
             ):

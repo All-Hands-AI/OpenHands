@@ -13,7 +13,10 @@ from datasets import load_dataset
 
 import openhands.agenthub
 from evaluation.benchmarks.testgeneval.constants import MAP_REPO_VERSION_TO_SPECS
-from evaluation.benchmarks.testgeneval.prompt import CODEACT_TESTGEN_PROMPT
+from evaluation.benchmarks.testgeneval.prompt import (
+    CODEACT_TESTGEN_PROMPT,
+    CODEACT_TESTGEN_PROMPT_ITERATE,
+)
 from evaluation.benchmarks.testgeneval.utils import get_test_directives
 from evaluation.utils.shared import (
     EvalException,
@@ -82,14 +85,24 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     )
 
     # Testing general agents
-    instruction = CODEACT_TESTGEN_PROMPT.format(
-        code_file=os.path.join('/testbed', instance.code_file),
-        test_file=os.path.join('/testbed', instance.test_file),
-        coverage_command=coverage_command,
-        code_src=cut_file,
-        imports='\n'.join(instance.local_imports),
-        workspace_dir_name=_get_swebench_workspace_dir_name(instance),
-    )
+    if instance['full_pred'] is not None:
+        instruction = CODEACT_TESTGEN_PROMPT_ITERATE.format(
+            code_file=os.path.join('/testbed', instance.code_file),
+            test_file=os.path.join('/testbed', instance.test_file),
+            coverage_command=coverage_command,
+            code_src=cut_file,
+            imports='\n'.join(instance.local_imports),
+            workspace_dir_name=_get_swebench_workspace_dir_name(instance),
+        )
+    else:
+        instruction = CODEACT_TESTGEN_PROMPT.format(
+            code_file=os.path.join('/testbed', instance.code_file),
+            test_file=os.path.join('/testbed', instance.test_file),
+            coverage_command=coverage_command,
+            code_src=cut_file,
+            imports='\n'.join(instance.local_imports),
+            workspace_dir_name=_get_swebench_workspace_dir_name(instance),
+        )
 
     if RUN_WITH_BROWSING:
         instruction += (
@@ -98,7 +111,6 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             '</IMPORTANT!>\n'
         )
 
-    print(instruction)
     return instruction
 
 
@@ -130,7 +142,7 @@ def get_config(
     metadata: EvalMetadata,
 ) -> AppConfig:
     # We use a different instance image for the each instance of TestGenEval
-    base_container_image = get_instance_docker_image(instance['instance_id'])
+    base_container_image = get_instance_docker_image(instance['instance_id_swebench'])
     logger.info(
         f'Using instance container image: {base_container_image}. '
         f'Please make sure this image exists. '
@@ -190,9 +202,11 @@ def initialize_runtime(
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     obs: CmdOutputObservation
 
+    instance['instance_id'] = instance['instance_id_swebench']
+
     # Set instance id
     action = CmdRunAction(
-        command=f"""echo 'export SWE_INSTANCE_ID={instance['instance_id']}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc"""
+        command=f"""echo 'export SWE_INSTANCE_ID={instance['instance_id_swebench']}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc"""
     )
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -224,6 +238,7 @@ def initialize_runtime(
     )
 
     swe_instance_json_name = 'swe-bench-instance.json'
+    swe_prediction = 'test_suite.py'
     with tempfile.TemporaryDirectory() as temp_dir:
         # Construct the full path for the desired file name within the temporary directory
         temp_file_path = os.path.join(temp_dir, swe_instance_json_name)
@@ -238,6 +253,34 @@ def initialize_runtime(
 
         # Copy the file to the desired location
         runtime.copy_to(temp_file_path, '/swe_util/eval_data/instances/')
+
+        if instance['full_pred'] is not None:
+            temp_file_path_pred = os.path.join(temp_dir, swe_prediction)
+            with open(temp_file_path_pred, 'w') as f:
+                f.write(instance['full_pred'])
+
+            runtime.copy_to(temp_file_path_pred, '/tmp')
+
+            # Copy the file to the desired location
+            action = CmdRunAction(
+                command=f"cp /tmp/test_suite.py /testbed/{instance['test_file']}"
+            )
+            action.set_hard_timeout(600)
+            logger.info(action, extra={'msg_type': 'ACTION'})
+            obs = runtime.run_action(action)
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+            assert_and_raise(
+                obs.exit_code == 0, f'Failed to copy test file: {str(obs)}'
+            )
+
+            action = CmdRunAction(
+                command='git -C /testbed add . && git -C /testbed commit -m "Add test file"'
+            )
+            action.set_hard_timeout(600)
+            logger.info(action, extra={'msg_type': 'ACTION'})
+            obs = runtime.run_action(action)
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+            assert_and_raise(obs.exit_code == 0, f'Failed to cat ~/.bashrc: {str(obs)}')
 
     # inject the instance swe entry
     runtime.copy_to(
@@ -440,7 +483,7 @@ def process_instance(
     return output
 
 
-def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
+def prepare_dataset_pre(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
     file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.toml')
     if os.path.exists(file_path):
         with open(file_path, 'r') as file:
@@ -452,7 +495,13 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
                 )
                 subset = dataset[dataset[filter_column].isin(selected_ids)]
                 logger.info(f'Retained {subset.shape[0]} tasks after filtering')
+
+                subset['instance_id_swebench'] = subset['instance_id']
+                subset['instance_id'] = subset['id']
                 return subset
+
+    dataset['instance_id_swebench'] = dataset['instance_id']
+    dataset['instance_id'] = dataset['id']
     return dataset
 
 
@@ -470,13 +519,36 @@ if __name__ == '__main__':
         default='test',
         help='split to evaluate on',
     )
+    parser.add_argument(
+        '--testfile_start',
+        action='store_true',
+        help='Whether to start from the 0 shot test file',
+    )
+
+    parser.add_argument(
+        '--zero_shot_path',
+        type=str,
+        help='Path to the zero shot test file predictions',
+    )
     args, _ = parser.parse_known_args()
+
+    if args.testfile_start and not args.zero_shot_path:
+        raise ValueError(
+            'If you want to start from the 0 shot test file, you must provide the path to the zero shot test file predictions'
+        )
+
+    preds_map = {}
+    if args.testfile_start:
+        with open(args.zero_shot_path, 'r') as f:
+            for line in f:
+                pred = json.loads(line)
+                preds_map[pred['id']] = pred['preds']['full'][0]
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenHands's repo
     dataset = load_dataset(args.dataset, split=args.split)
     logger.info(f'Loaded dataset {args.dataset} with split {args.split}')
-    testgeneval_filepairs = filter_dataset(dataset.to_pandas(), 'id')
+    testgeneval_filepairs = prepare_dataset_pre(dataset.to_pandas(), 'id')
 
     llm_config = None
     if args.llm_config:
@@ -507,6 +579,13 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(testgeneval_filepairs, output_file, args.eval_n_limit)
 
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
-    )
+    if not instances.empty:
+        instances['full_pred'] = (
+            instances['instance_id']
+            .map(preds_map)
+            .apply(lambda x: x if pd.notna(x) else None)
+        )
+
+        run_evaluation(
+            instances, metadata, output_file, args.eval_num_workers, process_instance
+        )

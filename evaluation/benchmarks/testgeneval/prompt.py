@@ -71,6 +71,44 @@ Below is the **complete code snippet** to test:
 <END_OF_CODE>
 
 NOTE: if you are testing django, you must use from django.test import SimpleTestCase and class based tests (i.e. class TestSomething(SimpleTestCase)).
+NOTE: if there is an error executing tests you MUST fix it before exiting. DO NOT install new packages.
+NOTE: if outputting a revised test suite REPLACE {test_file} with the revised suite
+
+**Output the final test suite** (20+ tests) for {test_file} in a single code block, no extra commentary.
+"""
+
+CODEACT_TESTGEN_PROMPT_ITERATE = """
+Your goal is to improve the test suite at {test_file} to achieve **broad-coverage** of the code below.
+
+First run the test suite.
+
+If no tests run, then remove {test_file} and create {test_file} with a new suite.
+
+Otherwise, improve it aiming to improve code coverage.
+
+IMPORTANT REQUIREMENTS:
+1. Use the following commands to check coverage (RUN THIS FIRST):
+   <execute_bash> {coverage_command} </execute_bash>
+   <execute_bash> coverage report -m --include {code_file} </execute_bash>
+   If lines remain uncovered, add new tests targeting them specifically.
+2. **No external help or resources**—use only the snippet below.
+3. **Focus on breadth over depth**: cover all major functions, classes, and code paths early to minimize coverage iterations.
+4. Each test function must use `assert` to verify behavior.
+5. Include only necessary imports (standard library or local).
+6. Do **not** modify other test files in the repository. No `main()` or other non-test code.
+7. Produce **at least 20 test functions**; if coverage is lacking, add more tests rather than removing or changing existing ones.
+8. When you're satisfied with coverage, finalize by running:
+   <execute_bash> exit </execute_bash>
+
+Below is the **complete code snippet** to test:
+
+<START_OF_CODE>
+{code_src}
+<END_OF_CODE>
+
+NOTE: if you are testing django, you must use from django.test import SimpleTestCase and class based tests (i.e. class TestSomething(SimpleTestCase)).
+NOTE: if there is an error executing tests you MUST fix it before exiting. DO NOT install new packages.
+NOTE: if outputting a revised test suite REPLACE {test_file} with the revised suite
 
 **Output the final test suite** (20+ tests) for {test_file} in a single code block, no extra commentary.
 """

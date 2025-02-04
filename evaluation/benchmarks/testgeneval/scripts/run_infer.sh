@@ -12,6 +12,7 @@ NUM_WORKERS=$6
 DATASET=$7
 SPLIT=$8
 N_RUNS=$9
+ZERO_SHOT_PATH=${10}  # New argument for zero-shot path
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -98,7 +99,11 @@ function run_eval() {
     COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
   fi
 
-  # Run the command
+  if [ -n "$ZERO_SHOT_PATH" ]; then
+    echo "ZERO_SHOT_PATH: $ZERO_SHOT_PATH"
+    COMMAND="$COMMAND --testfile_start --zero_shot_path $ZERO_SHOT_PATH"
+  fi
+
   eval $COMMAND
 }
 

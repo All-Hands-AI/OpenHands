@@ -1,5 +1,4 @@
 import json
-import re
 from pathlib import Path
 from typing import cast
 
@@ -7,7 +6,6 @@ from datasets import Dataset, load_dataset
 
 from evaluation.benchmarks.testgeneval.constants import (
     KEY_INSTANCE_ID,
-    NON_TEST_EXTS,
     TestGenEvalInstance,
 )
 
@@ -26,12 +24,7 @@ def get_test_directives(instance: TestGenEvalInstance) -> list:
         return ['test.py']
 
     # Get test directives from test patch and remove non-test files
-    diff_pat = r'diff --git a/.* b/(.*)'
-    test_patch = instance['test_patch']
-    directives = re.findall(diff_pat, test_patch)
-    directives = [
-        d for d in directives if not any(d.endswith(ext) for ext in NON_TEST_EXTS)
-    ]
+    directives = [f"/testbed/{instance['test_file']}"]
 
     # For Django tests, remove extension + "tests/" prefix and convert slashes to dots (module referencing)
     if instance['repo'] == 'django/django':

@@ -54,10 +54,10 @@ logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
 
 def get_config(instance: pd.Series) -> AppConfig:
-    base_container_image = get_instance_docker_image(instance['instance_id'])
+    base_container_image = get_instance_docker_image(instance['instance_id_swebench'])
     assert (
         base_container_image
-    ), f"Invalid container image for instance {instance['instance_id']}."
+    ), f"Invalid container image for instance {instance['instance_id_swebench']}."
     logger.info(f'Using instance container image: {base_container_image}.')
     return AppConfig(
         run_as_openhands=False,
@@ -121,14 +121,14 @@ def run_tests(runtime, instance, test_script, log_file='/tmp/test_output.log'):
 
     assert isinstance(obs, CmdOutputObservation), 'Failed to start test script.'
     pid = obs.content.split()[-1].strip()
-    logger.info(f'[{instance.id}] Test process started with PID: {pid}')
+    logger.info(f'[{instance.instance_id}] Test process started with PID: {pid}')
 
     start_time = time.time()
     timeout = 1800
     while True:
         elapsed_time = time.time() - start_time
         if elapsed_time > timeout:
-            logger.info(f'[{instance.id}] Test process timed out.')
+            logger.info(f'[{instance.instance_id}] Test process timed out.')
             instance['test_result']['report']['test_timeout'] = True
             break
 
@@ -138,7 +138,7 @@ def run_tests(runtime, instance, test_script, log_file='/tmp/test_output.log'):
             isinstance(check_obs, CmdOutputObservation)
             and check_obs.content.split()[-1].strip() == '1'
         ):
-            logger.info(f'[{instance.id}] Test process completed.')
+            logger.info(f'[{instance.instance_id}] Test process completed.')
             break
         time.sleep(30)
 
@@ -158,14 +158,14 @@ def run_mutation_testing(
 
     assert isinstance(obs, CmdOutputObservation), 'Failed to start test script.'
     pid = obs.content.split()[-1].strip()
-    logger.info(f'[{instance.id}] Mutation process started with PID: {pid}')
+    logger.info(f'[{instance.instance_id}] Mutation process started with PID: {pid}')
 
     start_time = time.time()
     timeout = 4000
     while True:
         elapsed_time = time.time() - start_time
         if elapsed_time > timeout:
-            logger.info(f'[{instance.id}] Mutation process timed out.')
+            logger.info(f'[{instance.instance_id}] Mutation process timed out.')
             instance['test_result']['report']['mutation_timeout'] = True
             break
 
@@ -175,7 +175,7 @@ def run_mutation_testing(
             isinstance(check_obs, CmdOutputObservation)
             and check_obs.content.split()[-1].strip() == '1'
         ):
-            logger.info(f'[{instance.id}] Mutation process completed.')
+            logger.info(f'[{instance.instance_id}] Mutation process completed.')
             break
         time.sleep(30)
 
@@ -294,12 +294,12 @@ def process_instance(
             log_dir is not None
         ), "Can't reset logger without a provided log directory."
         os.makedirs(log_dir, exist_ok=True)
-        reset_logger_for_multiprocessing(logger, instance.id, log_dir)
+        reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
     else:
-        logger.info(f'Starting evaluation for instance {instance.id}.')
+        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     config = get_config(instance)
-    id = instance.id
+    id = instance.instance_id
     logger.info(f'Starting evaluation for instance {id}.')
 
     instance['test_result']['id'] = id
@@ -433,9 +433,9 @@ def process_instance(
             instance_id=instance.instance_id, test_result=instance['test_result']
         )
     except Exception as e:
-        logger.error(f'Error processing instance {instance.id}: {e}')
+        logger.error(f'Error processing instance {instance.instance_id}: {e}')
         raise RuntimeError(
-            instance.id,
+            instance.instance_id,
             'Unexpected output...',
             logger,
         )
@@ -532,13 +532,10 @@ if __name__ == '__main__':
             'Input file must contain test_suite column OR test_result column with test_suite field.'
         )
 
-    if 'id' not in predictions.columns and ('id' in predictions['instance'].iloc(0)):
-        raise ValueError(
-            'Input file must contain id column OR instance column with id field.'
+    if 'instance_id_swebench' not in predictions.columns:
+        predictions['instance_id_swebench'] = predictions['instance'].apply(
+            lambda x: x['instance_id_swebench']
         )
-
-    if 'id' not in predictions.columns:
-        predictions['id'] = predictions['instance'].apply(lambda x: x['id'])
 
     if 'instance_id' not in predictions.columns and (
         'instance_id' in predictions['instance'].iloc(0)
@@ -557,15 +554,11 @@ if __name__ == '__main__':
             lambda x: x['test_suite']
         )
 
-    assert len(predictions['id'].unique()) == len(
-        predictions
-    ), 'id column must be unique.'
-
     assert len(predictions['instance_id'].unique()) == len(
         predictions
     ), 'instance_id column must be unique.'
 
-    assert {'id', 'test_suite', 'instance_id'}.issubset(
+    assert {'instance_id_swebench', 'test_suite', 'instance_id'}.issubset(
         set(predictions.columns)
     ), 'Input file must contain id, instance_id and test_suite columns.'
 

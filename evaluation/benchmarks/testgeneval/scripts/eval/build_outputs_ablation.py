@@ -84,15 +84,14 @@ def parse_json_files(root_dir, output_dir, metadata_objs):
                                         tool_call_dict = eval(
                                             tool_call['function']['arguments']
                                         )
-                                        if i == 0:
-                                            test_suite = tool_call_dict['file_text']
-                                            break
 
                                         if (
                                             tool_call_dict is not None
                                             and tool_call_dict != {}
                                         ):
                                             command = tool_call_dict['command']
+                                            if command == 'create':
+                                                test_suite = tool_call_dict['file_text']
                                             if (
                                                 command != 'str_replace'
                                                 and command != 'insert'
