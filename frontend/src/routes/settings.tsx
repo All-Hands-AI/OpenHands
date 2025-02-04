@@ -8,10 +8,10 @@ import { HelpLink } from "#/components/features/settings/help-link";
 import { SettingsDropdown } from "#/components/features/settings/settings-dropdown";
 import { AvailableLanguages } from "#/i18n";
 import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
-import OpenHands from "#/api/open-hands";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useConfig } from "#/hooks/query/use-config";
+import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 
 const displayErrorToast = (error: string) => {
   toast.error(error, {
@@ -40,6 +40,7 @@ const displaySuccessToast = (message: string) => {
 function SettingsScreen() {
   const { data: settings } = useSettings();
   const { data: config } = useConfig();
+  const { mutateAsync: saveSettings } = useSaveSettings();
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = settings.GITHUB_TOKEN_IS_SET;
@@ -66,19 +67,19 @@ function SettingsScreen() {
     const remoteRuntimeResourceFactor = Number(rawRemoteRuntimeResourceFactor);
 
     try {
-      await OpenHands.saveSettings({
+      await saveSettings({
         github_token: formData.get("github-token-input")?.toString() || "",
-        language: languageValue,
+        LANGUAGE: languageValue,
         user_consents_to_analytics:
           formData.get("enable-analytics-switch")?.toString() === "on",
-        llm_model: llmModel,
-        llm_base_url: formData.get("base-url-input")?.toString(),
-        llm_api_key: formData.get("llm-api-key-input")?.toString() || null,
-        agent: formData.get("agent-input")?.toString(),
-        security_analyzer:
+        LLM_MODEL: llmModel,
+        LLM_BASE_URL: formData.get("base-url-input")?.toString(),
+        LLM_API_KEY: formData.get("llm-api-key-input")?.toString(),
+        AGENT: formData.get("agent-input")?.toString(),
+        SECURITY_ANALYZER:
           formData.get("security-analyzer-input")?.toString() || "",
-        remote_runtime_resource_factor: remoteRuntimeResourceFactor,
-        enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
+        REMOTE_RUNTIME_RESOURCE_FACTOR: remoteRuntimeResourceFactor,
+        ENABLE_DEFAULT_CONDENSER: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
       });
 
       displaySuccessToast("Settings saved");

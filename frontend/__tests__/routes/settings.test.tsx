@@ -326,6 +326,7 @@ describe("Settings Screen", () => {
 
         expect(saveSettingsSpy).toHaveBeenCalledWith({
           ...MOCK_COPY,
+          llm_api_key: undefined,
           github_token: "",
           language: "no",
         });
