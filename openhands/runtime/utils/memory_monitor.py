@@ -52,7 +52,7 @@ class MemoryMonitor:
         main_process = psutil.Process(os.getpid())
 
         # Get main process memory usage
-        main_memory = main_process.memory_info().rss
+        main_memory = main_process.memory_full_info().pss
         memory_info = {
             'processes': [
                 {
@@ -68,7 +68,7 @@ class MemoryMonitor:
         total_memory = main_memory
         for child in main_process.children(recursive=True):
             try:
-                child_memory = child.memory_info().rss
+                child_memory = child.memory_full_info().pss
                 total_memory += child_memory
                 memory_info['processes'].append(
                     {
@@ -78,7 +78,7 @@ class MemoryMonitor:
                         'memory_gb': child_memory / 1024**3,
                     }
                 )
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 continue
 
         memory_info['total_gb'] = total_memory / 1024**3
