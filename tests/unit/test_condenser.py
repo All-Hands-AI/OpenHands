@@ -17,9 +17,9 @@ from openhands.core.config.llm_config import LLMConfig
 from openhands.events.event import Event, EventSource
 from openhands.events.observation.observation import Observation
 from openhands.llm import LLM
-from openhands.memory.condenser import (
+from openhands.memory.condenser import Condenser
+from openhands.memory.condenser.impl import (
     AmortizedForgettingCondenser,
-    Condenser,
     ImportantEventSelection,
     LLMAttentionCondenser,
     LLMSummarizingCondenser,

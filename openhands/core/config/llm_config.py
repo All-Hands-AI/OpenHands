@@ -85,7 +85,7 @@ class LLMConfig(BaseModel):
     log_completions_folder: str = Field(default=os.path.join(LOG_DIR, 'completions'))
     custom_tokenizer: str | None = Field(default=None)
     native_tool_calling: bool | None = Field(default=None)
-    reasoning_effort: str | None = Field(default=None)
+    reasoning_effort: str | None = Field(default='high')
 
     model_config = {'extra': 'forbid'}
 
