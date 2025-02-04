@@ -1,18 +1,18 @@
 import { describe, expect, it, test } from "vitest";
 import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
-import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
+import { DEFAULT_SETTINGS } from "#/services/settings";
 
 describe("hasAdvancedSettingsSet", () => {
   it("should return false by default", () => {
-    expect(hasAdvancedSettingsSet(MOCK_DEFAULT_USER_SETTINGS)).toBe(false);
+    expect(hasAdvancedSettingsSet(DEFAULT_SETTINGS)).toBe(false);
   });
 
   describe("should be true if", () => {
     test("LLM_BASE_URL is set", () => {
       expect(
         hasAdvancedSettingsSet({
-          ...MOCK_DEFAULT_USER_SETTINGS,
-          llm_base_url: "test",
+          ...DEFAULT_SETTINGS,
+          LLM_BASE_URL: "test",
         }),
       ).toBe(true);
     });
@@ -20,8 +20,8 @@ describe("hasAdvancedSettingsSet", () => {
     test("AGENT is not default value", () => {
       expect(
         hasAdvancedSettingsSet({
-          ...MOCK_DEFAULT_USER_SETTINGS,
-          agent: "test",
+          ...DEFAULT_SETTINGS,
+          AGENT: "test",
         }),
       ).toBe(true);
     });
@@ -29,8 +29,8 @@ describe("hasAdvancedSettingsSet", () => {
     test("REMOTE_RUNTIME_RESOURCE_FACTOR is not default value", () => {
       expect(
         hasAdvancedSettingsSet({
-          ...MOCK_DEFAULT_USER_SETTINGS,
-          remote_runtime_resource_factor: 999,
+          ...DEFAULT_SETTINGS,
+          REMOTE_RUNTIME_RESOURCE_FACTOR: 999,
         }),
       ).toBe(true);
     });
@@ -38,8 +38,8 @@ describe("hasAdvancedSettingsSet", () => {
     test("SECURITY_ANALYZER is set", () => {
       expect(
         hasAdvancedSettingsSet({
-          ...MOCK_DEFAULT_USER_SETTINGS,
-          security_analyzer: "test",
+          ...DEFAULT_SETTINGS,
+          SECURITY_ANALYZER: "test",
         }),
       ).toBe(true);
     });

@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent, { UserEvent } from "@testing-library/user-event";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
-import SettingsScreen, { clientLoader, clientAction } from "#/routes/settings";
+import SettingsScreen from "#/routes/settings";
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { PostApiSettings } from "#/types/settings";
@@ -15,11 +15,7 @@ describe("Settings Screen", () => {
 
   const RouterStub = createRoutesStub([
     {
-      loader: clientLoader,
-      // @ts-expect-error - action's and clientAction's aren't considered the same type
-      action: clientAction,
       Component: SettingsScreen,
-      HydrateFallback: () => <div>Hydrating...</div>,
       path: "/settings",
     },
   ]);

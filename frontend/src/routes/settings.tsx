@@ -1,5 +1,4 @@
 import React from "react";
-import { useFetcher, useLoaderData } from "react-router";
 import toast from "react-hot-toast";
 import { isAxiosError } from "axios";
 import { BrandButton } from "#/components/features/settings/brand-button";
@@ -10,100 +9,92 @@ import { SettingsDropdown } from "#/components/features/settings/settings-dropdo
 import { AvailableLanguages } from "#/i18n";
 import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import OpenHands from "#/api/open-hands";
-import { Route } from "./+types/settings";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+import { useSettings } from "#/hooks/query/use-settings";
+import { useConfig } from "#/hooks/query/use-config";
 
-export const clientLoader = async () => {
-  const settings = await OpenHands.getSettings();
-  const config = await OpenHands.getConfig();
-
-  return { settings, config };
+const displayErrorToast = (error: string) => {
+  toast.error(error, {
+    position: "top-right",
+    style: {
+      background: "#454545",
+      border: "1px solid #717888",
+      color: "#fff",
+      borderRadius: "4px",
+    },
+  });
 };
 
-export const clientAction = async ({ request }: Route.ClientActionArgs) => {
-  const formData = await request.formData();
-
-  const languageLabel = formData.get("language-input")?.toString();
-  const languageValue = AvailableLanguages.find(
-    ({ label }) => label === languageLabel,
-  )?.value;
-
-  const llmModel = formData.get("llm-custom-model-input")?.toString();
-
-  const rawRemoteRuntimeResourceFactor =
-    formData.get("runtime-settings-input")?.toString() ||
-    DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR;
-  const remoteRuntimeResourceFactor = Number(rawRemoteRuntimeResourceFactor);
-
-  try {
-    await OpenHands.saveSettings({
-      github_token: formData.get("github-token-input")?.toString() || "",
-      language: languageValue,
-      user_consents_to_analytics:
-        formData.get("enable-analytics-switch")?.toString() === "on",
-      llm_model: llmModel,
-      llm_base_url: formData.get("base-url-input")?.toString(),
-      llm_api_key: formData.get("llm-api-key-input")?.toString() || null,
-      agent: formData.get("agent-input")?.toString(),
-      security_analyzer:
-        formData.get("security-analyzer-input")?.toString() || "",
-      remote_runtime_resource_factor: remoteRuntimeResourceFactor,
-      enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
-    });
-  } catch (error) {
-    if (isAxiosError(error)) {
-      const errorMessage = error.response?.data.error || error.message;
-      return { error: errorMessage };
-    }
-
-    return { error: "An error occurred while saving settings" };
-  }
-
-  return { message: "Settings saved" };
+const displaySuccessToast = (message: string) => {
+  toast.success(message, {
+    position: "top-right",
+    style: {
+      background: "#454545",
+      border: "1px solid #717888",
+      color: "#fff",
+      borderRadius: "4px",
+    },
+  });
 };
 
 function SettingsScreen() {
-  const { settings, config } = useLoaderData<typeof clientLoader>();
-  const settingsFetcher = useFetcher<typeof clientAction>();
+  const { data: settings } = useSettings();
+  const { data: config } = useConfig();
 
   const isSaas = config?.APP_MODE === "saas";
-  const isGitHubTokenSet = settings.github_token_is_set;
-  const isAnalyticsEnabled = settings.user_consents_to_analytics;
+  const isGitHubTokenSet = settings.GITHUB_TOKEN_IS_SET;
+  const isAnalyticsEnabled = settings.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = hasAdvancedSettingsSet(settings);
 
   const [llmConfigMode, setLlmConfigMode] = React.useState<
     "basic" | "advanced"
   >(isAdvancedSettingsSet ? "advanced" : "basic");
   const [confirmationModeIsEnabled, setConfirmationModeIsEnabled] =
-    React.useState(!!settings.security_analyzer);
+    React.useState(!!settings.SECURITY_ANALYZER);
 
-  React.useEffect(() => {
-    if (settingsFetcher.data?.message) {
-      toast.success(settingsFetcher.data.message, {
-        position: "top-right",
-        style: {
-          background: "#454545",
-          border: "1px solid #717888",
-          color: "#fff",
-          borderRadius: "4px",
-        },
+  const formAction = async (formData: FormData) => {
+    const languageLabel = formData.get("language-input")?.toString();
+    const languageValue = AvailableLanguages.find(
+      ({ label }) => label === languageLabel,
+    )?.value;
+
+    const llmModel = formData.get("llm-custom-model-input")?.toString();
+
+    const rawRemoteRuntimeResourceFactor =
+      formData.get("runtime-settings-input")?.toString() ||
+      DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR;
+    const remoteRuntimeResourceFactor = Number(rawRemoteRuntimeResourceFactor);
+
+    try {
+      await OpenHands.saveSettings({
+        github_token: formData.get("github-token-input")?.toString() || "",
+        language: languageValue,
+        user_consents_to_analytics:
+          formData.get("enable-analytics-switch")?.toString() === "on",
+        llm_model: llmModel,
+        llm_base_url: formData.get("base-url-input")?.toString(),
+        llm_api_key: formData.get("llm-api-key-input")?.toString() || null,
+        agent: formData.get("agent-input")?.toString(),
+        security_analyzer:
+          formData.get("security-analyzer-input")?.toString() || "",
+        remote_runtime_resource_factor: remoteRuntimeResourceFactor,
+        enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
       });
-    } else if (settingsFetcher.data?.error) {
-      toast.error(settingsFetcher.data.error, {
-        position: "top-right",
-        style: {
-          background: "#454545",
-          border: "1px solid #717888",
-          color: "#fff",
-          borderRadius: "4px",
-        },
-      });
+
+      displaySuccessToast("Settings saved");
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const errorMessage = error.response?.data.error || error.message;
+        displayErrorToast(errorMessage);
+      }
+
+      displayErrorToast("An error occurred while saving settings");
     }
-  }, [settingsFetcher.data]);
+  };
 
   return (
     <main className="bg-[#24272E] border border-[#454545] h-full rounded-xl">
-      <settingsFetcher.Form method="POST" className="flex flex-col h-full">
+      <form action={formAction} className="flex flex-col h-full">
         <header className="text-sm leading-6 px-3 py-1.5 border-b border-b-[#454545]">
           Settings
         </header>
@@ -147,7 +138,7 @@ function SettingsScreen() {
             name="language-input"
             label="Language"
             options={AvailableLanguages}
-            defaultValue={settings.language}
+            defaultValue={settings.LANGUAGE}
             showOptionalTag
             className="w-[680px]"
           />
@@ -198,7 +189,7 @@ function SettingsScreen() {
               testId="llm-custom-model-input"
               name="llm-custom-model-input"
               label="Custom Model"
-              defaultValue={settings.llm_model}
+              defaultValue={settings.LLM_MODEL}
               placeholder="anthropic/claude-3-5-sonnet-20241022"
               type="text"
               className="w-[680px]"
@@ -209,7 +200,7 @@ function SettingsScreen() {
               testId="base-url-input"
               name="base-url-input"
               label="Base URL"
-              defaultValue={settings.llm_base_url}
+              defaultValue={settings.LLM_BASE_URL}
               placeholder="https://api.openai.com"
               type="text"
               className="w-[680px]"
@@ -236,7 +227,7 @@ function SettingsScreen() {
               testId="agent-input"
               name="agent-input"
               label="Agent"
-              defaultValue={settings.agent}
+              defaultValue={settings.AGENT}
               type="text"
               className="w-[680px]"
             />
@@ -257,7 +248,7 @@ function SettingsScreen() {
               testId="security-analyzer-input"
               name="security-analyzer-input"
               label="Security Analyzer"
-              defaultValue={settings.security_analyzer}
+              defaultValue={settings.SECURITY_ANALYZER}
               type="text"
               className="w-[680px]"
               isDisabled={!confirmationModeIsEnabled}
@@ -268,7 +259,7 @@ function SettingsScreen() {
             <SettingsSwitch
               testId="enable-confirmation-mode-switch"
               onToggle={setConfirmationModeIsEnabled}
-              defaultIsToggled={!!settings.security_analyzer}
+              defaultIsToggled={!!settings.SECURITY_ANALYZER}
               showOptionalTag
             >
               Enable confirmation mode
@@ -284,7 +275,7 @@ function SettingsScreen() {
             Save Changes
           </BrandButton>
         </footer>
-      </settingsFetcher.Form>
+      </form>
     </main>
   );
 }
