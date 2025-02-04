@@ -369,7 +369,7 @@ def test_stress_remote_runtime_long_output_with_soft_and_hard_timeout():
     TEST_IN_CI,
     reason='This test should only be run locally, not in CI.',
 )
-def test_stress_runtime_resource_limits():
+def test_stress_runtime_memory_limits():
     """Test runtime behavior under resource constraints."""
     config = get_config()
 
@@ -381,9 +381,10 @@ def test_stress_runtime_resource_limits():
             'mem_limit': '4G',  # 4 GB of memory
             'memswap_limit': '0',  # No swap
             'mem_swappiness': 0,  # Disable swapping
+            'oom_kill_disable': False,  # Enable OOM killer
         }
         config.sandbox.runtime_startup_env_vars = {
-            'MAX_MEMORY_GB': '4',
+            'RUNTIME_MAX_MEMORY_GB': '4',
         }
 
     try:
@@ -400,13 +401,14 @@ def test_stress_runtime_resource_limits():
         assert obs.exit_code == 0
 
         action = CmdRunAction(
-            command='stress-ng --cpu 1 --vm 10 --timeout 1m --metrics'
+            command='stress-ng --vm 1 --vm-bytes 5G --timeout 1m --metrics'
         )
         action.set_hard_timeout(120)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert obs.exit_code in [0, -1]  # Allow for timeout
+        assert 'aborted early, out of system resources' in obs.content
+        assert obs.exit_code == 3  # OOM killed!
 
     finally:
         runtime.close()
