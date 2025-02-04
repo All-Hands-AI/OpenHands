@@ -14,8 +14,14 @@ from openhands.events.observation import (
 from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
-from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
-from openhands.server.shared import config, conversation_manager, openhands_config, sio
+from openhands.server.shared import (
+    ConversationStoreImpl,
+    SettingsStoreImpl,
+    config,
+    conversation_manager,
+    server_config,
+    sio,
+)
 from openhands.server.types import AppMode
 
 
@@ -30,7 +36,7 @@ async def connect(connection_id: str, environ, auth):
         raise ConnectionRefusedError('No conversation_id in query params')
 
     user_id = None
-    if openhands_config.app_mode != AppMode.OSS:
+    if server_config.app_mode != AppMode.OSS:
         cookies_str = environ.get('HTTP_COOKIE', '')
         cookies = dict(cookie.split('=', 1) for cookie in cookies_str.split('; '))
         signed_token = cookies.get('github_auth', '')

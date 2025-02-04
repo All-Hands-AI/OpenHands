@@ -51,6 +51,7 @@ class SandboxConfig(BaseModel):
     timeout: int = Field(default=120)
     remote_runtime_init_timeout: int = Field(default=180)
     remote_runtime_api_timeout: int = Field(default=10)
+    remote_runtime_enable_retries: bool = Field(default=False)
     enable_auto_lint: bool = Field(
         default=False  # once enabled, OpenHands would lint files after editing
     )

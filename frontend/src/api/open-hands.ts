@@ -322,7 +322,7 @@ class OpenHands {
     query: string,
     per_page = 5,
   ): Promise<GitHubRepository[]> {
-    const response = await openHands.get<{ items: GitHubRepository[] }>(
+    const response = await openHands.get<GitHubRepository[]>(
       "/api/github/search/repositories",
       {
         params: {
@@ -332,7 +332,7 @@ class OpenHands {
       },
     );
 
-    return response.data.items;
+    return response.data;
   }
 
   static async getTrajectory(

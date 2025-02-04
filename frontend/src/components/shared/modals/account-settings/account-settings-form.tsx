@@ -23,28 +23,22 @@ import { PostSettings } from "#/types/settings";
 
 interface AccountSettingsFormProps {
   onClose: () => void;
-  selectedLanguage: string;
-  gitHubError: boolean;
-  analyticsConsent: string | null;
 }
 
-export function AccountSettingsForm({
-  onClose,
-  selectedLanguage,
-  gitHubError,
-  analyticsConsent,
-}: AccountSettingsFormProps) {
+export function AccountSettingsForm({ onClose }: AccountSettingsFormProps) {
   const { t } = useTranslation();
-  const user = useGitHubUser();
+  const { isError: isGitHubError, data: gitHubData } = useGitHubUser();
   const { data: config } = useConfig();
   const { saveUserSettings, settings } = useCurrentSettings();
-  const { data: balance } = useBalance(user.data?.login ?? "");
+  const { data: balance } = useBalance(gitHubData?.login ?? "");
   const { mutate: createPaymentSession, isPending: isGettingClientSecret } =
     useCreateStripeCheckoutSession();
 
   const [showPaymentOptions, setShowPaymentOptions] = React.useState(false);
 
   const githubTokenIsSet = !!settings?.GITHUB_TOKEN_IS_SET;
+  const analyticsConsentValue = !!settings?.USER_CONSENTS_TO_ANALYTICS;
+  const selectedLanguage = settings?.LANGUAGE || "en";
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -55,6 +49,7 @@ export function AccountSettingsForm({
     const analytics = formData.get("analytics")?.toString() === "on";
 
     const newSettings: Partial<PostSettings> = {};
+    newSettings.user_consents_to_analytics = analytics;
 
     if (ghToken) newSettings.github_token = ghToken;
 
@@ -68,11 +63,11 @@ export function AccountSettingsForm({
       if (languageKey) newSettings.LANGUAGE = languageKey;
     }
 
-    await saveUserSettings(newSettings);
-
-    handleCaptureConsent(analytics);
-    const ANALYTICS = analytics.toString();
-    localStorage.setItem("analytics-consent", ANALYTICS);
+    await saveUserSettings(newSettings, {
+      onSuccess: () => {
+        handleCaptureConsent(analytics);
+      },
+    });
 
     onClose();
   };
@@ -142,12 +137,12 @@ export function AccountSettingsForm({
               )}
             </>
           )}
-          {gitHubError && (
+          {isGitHubError && (
             <p className="text-danger text-xs">
               {t(I18nKey.GITHUB$TOKEN_INVALID)}
             </p>
           )}
-          {githubTokenIsSet && !gitHubError && (
+          {githubTokenIsSet && !isGitHubError && (
             <ModalButton
               testId="disconnect-github"
               variant="text-like"
@@ -160,9 +155,10 @@ export function AccountSettingsForm({
 
         <label className="flex gap-2 items-center self-start">
           <input
+            data-testid="analytics-consent"
             name="analytics"
             type="checkbox"
-            defaultChecked={analyticsConsent === "true"}
+            defaultChecked={analyticsConsentValue}
           />
           {t(I18nKey.ANALYTICS$ENABLE)}
         </label>
