@@ -12,7 +12,6 @@ poetry run pytest -vvxss tests/runtime/test_stress_remote_runtime.py
 """
 
 import asyncio
-import json
 import os
 import tempfile
 import time
@@ -54,8 +53,6 @@ from openhands.utils.async_utils import call_async_from_sync
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
 }
-
-SAVE_PERF_DEBUG = os.environ.get('SAVE_PERF_DEBUG', 'false').lower() in ['true', '1']
 
 
 def get_config() -> AppConfig:
@@ -368,13 +365,6 @@ def test_stress_remote_runtime_long_output_with_soft_and_hard_timeout():
             iteration_stats['duration'] = duration
             logger.info(f'Completed iteration {i} in {duration:.2f} seconds')
 
-            # Save stats to JSONL file
-            if SAVE_PERF_DEBUG:
-                with open(
-                    f'terminal_perf_analysis_result_{_time_for_test}.jsonl', 'a'
-                ) as f:
-                    json.dump(iteration_stats, f)
-                    f.write('\n')
     finally:
         runtime.close()
 
