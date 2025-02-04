@@ -90,15 +90,7 @@ class CodeActAgent(Agent):
         self.pending_actions: deque[Action] = deque()
         self.reset()
 
-        self.mock_function_calling = False
-        if not self.llm.is_function_calling_active():
-            logger.info(
-                f'Function calling not enabled for model {self.llm.config.model}. '
-                'Mocking function calling via prompting.'
-            )
-            self.mock_function_calling = True
-
-        # Function calling mode
+        # Retrieve the enabled tools
         self.tools = codeact_function_calling.get_tools(
             codeact_enable_browsing=self.config.codeact_enable_browsing,
             codeact_enable_jupyter=self.config.codeact_enable_jupyter,
@@ -311,10 +303,7 @@ class CodeActAgent(Agent):
                 and len(obs.set_of_marks) > 0
                 and self.config.enable_som_visual_browsing
                 and self.llm.vision_is_active()
-                and (
-                    self.mock_function_calling
-                    or self.llm.is_visual_browser_tool_active()
-                )
+                and self.llm.is_visual_browser_tool_supported()
             ):
                 text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
                 message = Message(
@@ -400,8 +389,6 @@ class CodeActAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
-        if self.mock_function_calling:
-            params['mock_function_calling'] = True
         response = self.llm.completion(**params)
         actions = codeact_function_calling.response_to_actions(response)
         for action in actions:
