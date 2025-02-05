@@ -383,9 +383,9 @@ def test_stress_runtime_memory_limits():
             'mem_swappiness': 0,  # Disable swapping
             'oom_kill_disable': False,  # Enable OOM killer
         }
-        config.sandbox.runtime_startup_env_vars = {
-            'RUNTIME_MAX_MEMORY_GB': '4',
-        }
+    config.sandbox.runtime_startup_env_vars = {
+        'RUNTIME_MAX_MEMORY_GB': '3',
+    }
 
     try:
         runtime = create_runtime(config, headless_mode=True)
@@ -401,7 +401,7 @@ def test_stress_runtime_memory_limits():
         assert obs.exit_code == 0
 
         action = CmdRunAction(
-            command='stress-ng --vm 1 --vm-bytes 5G --timeout 1m --metrics'
+            command='stress-ng --vm 1 --vm-bytes 4G --timeout 1m --metrics'
         )
         action.set_hard_timeout(120)
         logger.info(action, extra={'msg_type': 'ACTION'})
