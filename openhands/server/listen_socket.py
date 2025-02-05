@@ -14,14 +14,9 @@ from openhands.events.observation import (
 from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
-from openhands.server.shared import (
-    ConversationStoreImpl,
-    SettingsStoreImpl,
-    config,
-    conversation_manager,
-    server_config,
-    sio,
-)
+from openhands.server.shared import ConversationStoreImpl, conversation_manager, sio
+from openhands.server.config_init import config, server_config
+from openhands.server.settings_store import SettingsStoreImpl
 from openhands.server.types import AppMode
 
 
