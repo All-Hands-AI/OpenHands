@@ -94,7 +94,7 @@ export function AccountSettingsForm({ onClose }: AccountSettingsFormProps) {
               {t(I18nKey.GITHUB$CONFIGURE_REPOS)}
             </a>
           )}
-          {balance && (
+          {config?.APP_MODE === "saas" && balance && (
             <UserBalance
               balance={balance}
               isLoading={isGettingClientSecret}

@@ -580,18 +580,18 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.36.11"
+version = "1.36.12"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "boto3-1.36.11-py3-none-any.whl", hash = "sha256:641dd772eac111d9443258f0f5491c57c2af47bddae94a8d32de19edb5bf7b1c"},
-    {file = "boto3-1.36.11.tar.gz", hash = "sha256:b40fbf2c0f22e55b67df95475a68bb72be5169097180a875726b6b884339ac8b"},
+    {file = "boto3-1.36.12-py3-none-any.whl", hash = "sha256:32cdf0967287f3ec25a9dc09df0d29cb86b8900c3e0546a63d672775d8127abf"},
+    {file = "boto3-1.36.12.tar.gz", hash = "sha256:287d84f49bba3255a17b374578127d42b6251e72f55914a62e0ad9ca78c0954b"},
 ]
 
 [package.dependencies]
-botocore = ">=1.36.11,<1.37.0"
+botocore = ">=1.36.12,<1.37.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.11.0,<0.12.0"
 
@@ -600,14 +600,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.36.11"
+version = "1.36.12"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "botocore-1.36.11-py3-none-any.whl", hash = "sha256:82c5660027f696608d0e55feb08c146c11c7ebeba7615961c7765dcf6009a00d"},
-    {file = "botocore-1.36.11.tar.gz", hash = "sha256:c919be883f95b9e0c3021429a365d40cd7944b8345a07af30dc8d891ceefe07a"},
+    {file = "botocore-1.36.12-py3-none-any.whl", hash = "sha256:5ae1ed362c8ed908a6ced8cdd12b21e2196c100bc79f9e95c9c1fc7f9ea74f5a"},
+    {file = "botocore-1.36.12.tar.gz", hash = "sha256:86ed88beb4f244c96529435c868d3940073c2774116f0023fb7691f6e7053bd9"},
 ]
 
 [package.dependencies]
@@ -4072,14 +4072,14 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.60.0"
+version = "1.60.2"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 groups = ["main"]
 files = [
-    {file = "litellm-1.60.0-py3-none-any.whl", hash = "sha256:e8284f5cc74ae1aed77516cdfbb2db3746d50c4ba055fb21358e6e25aea25a15"},
-    {file = "litellm-1.60.0.tar.gz", hash = "sha256:45e3d9d7c19c02b7a1adf1c86102395fc667ebf35f72033e490e8f6fae7d0f8e"},
+    {file = "litellm-1.60.2-py3-none-any.whl", hash = "sha256:1cb08cda04bf8c5ef3e690171a779979e4b16a5e3a24cd8dc1f198e7f198d5c4"},
+    {file = "litellm-1.60.2.tar.gz", hash = "sha256:a8170584fcfd6f5175201d869e61ccd8a40ffe3264fc5e53c5b805ddf8a6e05a"},
 ]
 
 [package.dependencies]
@@ -4089,7 +4089,7 @@ httpx = ">=0.23.0,<0.28.0"
 importlib-metadata = ">=6.8.0"
 jinja2 = ">=3.1.2,<4.0.0"
 jsonschema = ">=4.22.0,<5.0.0"
-openai = ">=1.55.3"
+openai = ">=1.61.0"
 pydantic = ">=2.0.0,<3.0.0"
 python-dotenv = ">=0.2.0"
 tiktoken = ">=0.7.0"
@@ -4980,13 +4980,13 @@ type = ["mypy (==1.11.2)"]
 
 [[package]]
 name = "modal"
-version = "0.73.8"
+version = "0.73.12"
 description = "Python client library for Modal"
 optional = false
 python-versions = ">=3.9"
 groups = ["main", "evaluation"]
 files = [
-    {file = "modal-0.73.8-py3-none-any.whl", hash = "sha256:06e93e9e3d3ea2711ac36063af7bd208773001226d5e2cdf50fbd9f44c18b4d8"},
+    {file = "modal-0.73.12-py3-none-any.whl", hash = "sha256:9eecbb36d53fa29c59a2f9d463a835d0c3eb0889c8b34447a4b26d85290140a6"},
 ]
 
 [package.dependencies]
@@ -8191,14 +8191,14 @@ files = [
 
 [[package]]
 name = "runloop-api-client"
-version = "0.18.0"
+version = "0.19.0"
 description = "The official Python library for the runloop API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "runloop_api_client-0.18.0-py3-none-any.whl", hash = "sha256:3c987638d240bae4021be3cb374468f89a63190e53cdb2bc2851a58bf26312ca"},
-    {file = "runloop_api_client-0.18.0.tar.gz", hash = "sha256:0412f7c6acea2969563b106942bc30a3b9d877e5d7b926021f50e6e5dcb1b9f7"},
+    {file = "runloop_api_client-0.19.0-py3-none-any.whl", hash = "sha256:e7ed5ca3067f19dbf41e38f112bdb58317f23725d0a379e7ab8e5d8d137e7a54"},
+    {file = "runloop_api_client-0.19.0.tar.gz", hash = "sha256:62b3cc3137902c5380cbe74a77fe4631ded38700911ef3f08ba1a423835554e4"},
 ]
 
 [package.dependencies]
@@ -10569,4 +10569,8 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
+<<<<<<< HEAD
 content-hash = "a0f2ab97b6ff69886212025eb4cc414abcb54ffe1f26b14eedb4b7579bd75925"
+=======
+content-hash = "41b54f52d12ebf5a1cdaad9d1fa992f0debf47d5276a7c2a5d7a9644b1875570"
+>>>>>>> main
