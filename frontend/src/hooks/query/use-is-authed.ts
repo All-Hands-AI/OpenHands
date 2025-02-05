@@ -5,16 +5,19 @@ import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";
 
 export const useIsAuthed = () => {
-  const { gitHubToken } = useAuth();
+  const { githubTokenIsSet } = useAuth();
   const { data: config } = useConfig();
 
   const appMode = React.useMemo(() => config?.APP_MODE, [config]);
 
   return useQuery({
-    queryKey: ["user", "authenticated", gitHubToken, appMode],
+    queryKey: ["user", "authenticated", githubTokenIsSet, appMode],
     queryFn: () => OpenHands.authenticate(appMode!),
     enabled: !!appMode,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: false,
+    meta: {
+      disableToast: true,
+    },
   });
 };

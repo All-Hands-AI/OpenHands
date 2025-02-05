@@ -5,7 +5,7 @@ const sidebars: SidebarsConfig = {
   docsSidebar: [
     {
       type: 'doc',
-      label: 'Installation',
+      label: 'Running OpenHands',
       id: 'usage/installation',
     },
     {

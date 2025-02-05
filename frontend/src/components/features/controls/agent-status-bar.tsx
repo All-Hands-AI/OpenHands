@@ -43,7 +43,7 @@ export function AgentStatusBar() {
 
   React.useEffect(() => {
     if (status === WsClientProviderStatus.DISCONNECTED) {
-      setStatusMessage("Trying to reconnect...");
+      setStatusMessage("Connecting...");
     } else {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
     }

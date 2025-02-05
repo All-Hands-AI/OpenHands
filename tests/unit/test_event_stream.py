@@ -3,10 +3,12 @@ import json
 import pytest
 from pytest import TempPathFactory
 
+from openhands.core.schema.observation import ObservationType
 from openhands.events import EventSource, EventStream
 from openhands.events.action import (
     NullAction,
 )
+from openhands.events.action.message import MessageAction
 from openhands.events.observation import NullObservation
 from openhands.storage import get_file_store
 
@@ -72,16 +74,28 @@ def test_get_matching_events_type_filter(temp_dir: str):
     event_stream.add_event(NullAction(), EventSource.AGENT)
     event_stream.add_event(NullObservation('test'), EventSource.AGENT)
     event_stream.add_event(NullAction(), EventSource.AGENT)
+    event_stream.add_event(MessageAction(content='test'), EventSource.AGENT)
 
     # Filter by NullAction
-    events = event_stream.get_matching_events(event_type='NullAction')
+    events = event_stream.get_matching_events(event_types=(NullAction,))
     assert len(events) == 2
-    assert all(e['action'] == 'null' for e in events)
+    assert all(isinstance(e, NullAction) for e in events)
 
     # Filter by NullObservation
-    events = event_stream.get_matching_events(event_type='NullObservation')
+    events = event_stream.get_matching_events(event_types=(NullObservation,))
     assert len(events) == 1
-    assert events[0]['observation'] == 'null'
+    assert (
+        isinstance(events[0], NullObservation)
+        and events[0].observation == ObservationType.NULL
+    )
+
+    # Filter by NullAction and MessageAction
+    events = event_stream.get_matching_events(event_types=(NullAction, MessageAction))
+    assert len(events) == 3
+
+    # Filter in reverse
+    events = event_stream.get_matching_events(reverse=True, limit=1)
+    assert isinstance(events[0], MessageAction) and events[0].content == 'test'
 
 
 def test_get_matching_events_query_search(temp_dir: str):
@@ -116,12 +130,17 @@ def test_get_matching_events_source_filter(temp_dir: str):
     # Filter by AGENT source
     events = event_stream.get_matching_events(source='agent')
     assert len(events) == 2
-    assert all(e['source'] == 'agent' for e in events)
+    assert all(
+        isinstance(e, NullObservation) and e.source == EventSource.AGENT for e in events
+    )
 
     # Filter by ENVIRONMENT source
     events = event_stream.get_matching_events(source='environment')
     assert len(events) == 1
-    assert events[0]['source'] == 'environment'
+    assert (
+        isinstance(events[0], NullObservation)
+        and events[0].source == EventSource.ENVIRONMENT
+    )
 
 
 def test_get_matching_events_pagination(temp_dir: str):
@@ -139,13 +158,13 @@ def test_get_matching_events_pagination(temp_dir: str):
     # Test start_id
     events = event_stream.get_matching_events(start_id=2)
     assert len(events) == 3
-    assert events[0]['content'] == 'test2'
+    assert isinstance(events[0], NullObservation) and events[0].content == 'test2'
 
     # Test combination of start_id and limit
     events = event_stream.get_matching_events(start_id=1, limit=2)
     assert len(events) == 2
-    assert events[0]['content'] == 'test1'
-    assert events[1]['content'] == 'test2'
+    assert isinstance(events[0], NullObservation) and events[0].content == 'test1'
+    assert isinstance(events[1], NullObservation) and events[1].content == 'test2'
 
 
 def test_get_matching_events_limit_validation(temp_dir: str):
