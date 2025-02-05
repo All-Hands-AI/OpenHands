@@ -66,3 +66,42 @@ def test_container_not_stopped_when_keep_runtime_alive_true(
 
     # Assert
     mock_stop_containers.assert_not_called()
+
+
+def test_memory_limit_enforcement(mock_docker_client, config, event_stream):
+    """Test that memory limits are enforced correctly in the Docker runtime.
+    
+    This test verifies that:
+    1. A process that exceeds a low memory limit gets killed
+    2. The same process runs successfully with a higher memory limit
+    """
+    # Test with low memory limit (128MB)
+    config.sandbox.memory_limit = "128m"
+    runtime_low_mem = DockerRuntime(config, event_stream, sid='test-low-mem')
+    
+    # Python script that will consume memory
+    memory_hog_script = """
+import numpy as np
+import time
+
+# Allocate a 256MB array (should exceed our 128MB limit)
+data = np.zeros((256 * 1024 * 1024,), dtype=np.uint8)
+time.sleep(1)  # Keep the array in memory
+print("Memory allocation successful")
+"""
+    
+    # Execute with low memory limit - should fail
+    result_low = runtime_low_mem.execute_python(memory_hog_script)
+    assert "MemoryError" in result_low.error or "Killed" in result_low.error, \
+        "Process should have been killed or raised MemoryError with low memory limit"
+    
+    # Test with high memory limit (512MB)
+    config.sandbox.memory_limit = "512m"
+    runtime_high_mem = DockerRuntime(config, event_stream, sid='test-high-mem')
+    
+    # Execute with high memory limit - should succeed
+    result_high = runtime_high_mem.execute_python(memory_hog_script)
+    assert result_high.error is None, \
+        "Process should have completed successfully with high memory limit"
+    assert "Memory allocation successful" in result_high.output, \
+        "Process should have completed memory allocation successfully"
