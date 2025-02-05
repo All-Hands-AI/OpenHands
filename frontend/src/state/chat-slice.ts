@@ -95,16 +95,18 @@ export const chatSlice = createSlice({
       }
       const translationID = `ACTION_MESSAGE$${actionID.toUpperCase()}`;
       let text = "";
+      let filePath: string | undefined;
       if (actionID === "run") {
         text = `Command:\n\`${action.payload.args.command}\``;
       } else if (actionID === "run_ipython") {
         text = `\`\`\`\n${action.payload.args.code}\n\`\`\``;
-      } else if (actionID === "write") {
+      } else if (actionID === "write" || actionID === "edit") {
         let { content } = action.payload.args;
         if (content.length > MAX_CONTENT_LENGTH) {
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
         text = `${action.payload.args.path}\n${content}`;
+        filePath = action.payload.args.path;
       } else if (actionID === "browse") {
         text = `Browsing ${action.payload.args.url}`;
       }
@@ -123,6 +125,7 @@ export const chatSlice = createSlice({
         content: text,
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        filePath,
       };
       state.messages.push(message);
     },
@@ -168,6 +171,7 @@ export const chatSlice = createSlice({
       } else if (observationID === "read" || observationID === "edit") {
         const { content } = observation.payload;
         causeMessage.content = `\`\`\`${observationID === "edit" ? "diff" : "python"}\n${content}\n\`\`\``; // Content is already truncated by the ACI
+        causeMessage.filePath = observation.payload.extras.path;
       } else if (observationID === "browse") {
         let content = `**URL:** ${observation.payload.extras.url}\n`;
         if (observation.payload.extras.error) {
