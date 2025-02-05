@@ -210,13 +210,17 @@ class RemoteRuntime(ActionExecutionClient):
             plugins=self.plugins,
             app_config=self.config,
         )
+        environment = {
+            'DEBUG': 'true'
+            if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
+            else {},
+        }
+        environment.update(self.config.sandbox.runtime_startup_env_vars)
         start_request = {
             'image': self.container_image,
             'command': command,
             'working_dir': '/openhands/code/',
-            'environment': {'DEBUG': 'true'}
-            if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
-            else {},
+            'environment': environment,
             'session_id': self.sid,
             'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
         }
