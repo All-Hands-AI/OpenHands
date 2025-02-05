@@ -1,5 +1,8 @@
+import gc
 import json
+import os
 
+import psutil
 import pytest
 from pytest import TempPathFactory
 
@@ -204,10 +207,6 @@ def test_memory_usage_file_operations(temp_dir: str):
     This test verifies that memory usage during file operations is reasonable
     and that memory is properly cleaned up after operations complete.
     """
-    import gc
-    import os
-
-    import psutil
 
     def get_memory_mb():
         """Get current memory usage in MB"""
