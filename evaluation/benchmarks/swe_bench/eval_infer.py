@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 import tempfile
 import time
 from functools import partial
@@ -30,6 +31,7 @@ from openhands.core.config import (
     SandboxConfig,
     get_parser,
 )
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime
 from openhands.events.action import CmdRunAction
@@ -412,6 +414,21 @@ if __name__ == '__main__':
         with open(metadata_filepath, 'r') as metadata_file:
             data = metadata_file.read()
             metadata = EvalMetadata.model_validate_json(data)
+    else:
+        # Initialize with a dummy metadata when file doesn't exist
+        metadata = EvalMetadata(
+            agent_class='dummy_agent',  # Placeholder agent class
+            llm_config=LLMConfig(model='dummy_model'),  # Minimal LLM config
+            max_iterations=1,  # Minimal iterations
+            eval_output_dir=os.path.dirname(
+                args.input_file
+            ),  # Use input file dir as output dir
+            start_time=time.strftime('%Y-%m-%d %H:%M:%S'),  # Current time
+            git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+            .decode('utf-8')
+            .strip(),  # Current commit
+            dataset=args.dataset,  # Dataset name from args
+        )
 
     # The evaluation harness constrains the signature of `process_instance_func` but we need to
     # pass extra information. Build a new function object to avoid issues with multiprocessing.

@@ -46,9 +46,8 @@ describe("ConversationCard", () => {
     const expectedDate = `${formatTimeDelta(new Date("2021-10-01T12:00:00Z"))} ago`;
 
     const card = screen.getByTestId("conversation-card");
-    const title = within(card).getByTestId("conversation-card-title");
 
-    expect(title).toHaveValue("Conversation 1");
+    within(card).getByText("Conversation 1");
     within(card).getByText(expectedDate);
   });
 
@@ -165,10 +164,8 @@ describe("ConversationCard", () => {
       />,
     );
 
-    const title = screen.getByTestId("conversation-card-title");
-    expect(title).toBeDisabled();
-
     await clickOnEditButton(user);
+    const title = screen.getByTestId("conversation-card-title");
 
     expect(title).toBeEnabled();
     expect(screen.queryByTestId("context-menu")).not.toBeInTheDocument();
@@ -181,7 +178,6 @@ describe("ConversationCard", () => {
 
     expect(onChangeTitle).toHaveBeenCalledWith("New Conversation Name");
     expect(title).toHaveValue("New Conversation Name");
-    expect(title).toBeDisabled();
   });
 
   it("should reset title and not call onChangeTitle when the title is empty", async () => {
@@ -208,7 +204,27 @@ describe("ConversationCard", () => {
     expect(title).toHaveValue("Conversation 1");
   });
 
-  test("clicking the title should not trigger the onClick handler", async () => {
+  test("clicking the title should trigger the onClick handler", async () => {
+    const user = userEvent.setup();
+    render(
+      <ConversationCard
+        onClick={onClick}
+        onDelete={onDelete}
+        isActive
+        onChangeTitle={onChangeTitle}
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    const title = screen.getByTestId("conversation-card-title");
+    await user.click(title);
+
+    expect(onClick).toHaveBeenCalled();
+  });
+
+  test("clicking the title should not trigger the onClick handler if edit mode", async () => {
     const user = userEvent.setup();
     render(
       <ConversationCard
@@ -220,6 +236,8 @@ describe("ConversationCard", () => {
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
+
+    await clickOnEditButton(user);
 
     const title = screen.getByTestId("conversation-card-title");
     await user.click(title);
