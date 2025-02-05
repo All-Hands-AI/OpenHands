@@ -96,7 +96,10 @@ export function updateStatusWhenErrorMessagePresent(data: ErrorArg | unknown) {
     handleStatusMessage({
       type: "error" as const,
       message: data.message,
+      content: data.message,
       id: msgId,
+      sender: "assistant",
+      timestamp: new Date().toISOString(),
     });
   }
 }

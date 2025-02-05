@@ -194,15 +194,22 @@ export const chatSlice = createSlice({
 
     addErrorMessage(
       state: SliceState,
-      action: PayloadAction<{ id?: string; message: string }>,
+      action: PayloadAction<{
+        id?: string;
+        message: string;
+        content: string;
+        type: "error";
+        sender: "assistant";
+        timestamp: string;
+      }>,
     ) {
-      const { id, message } = action.payload;
+      const { id, content, type, sender, timestamp } = action.payload;
       const errorMessage: ErrorMessage = {
         translationID: id,
-        content: message,
-        type: "error",
-        sender: "assistant",
-        timestamp: new Date().toISOString(),
+        content,
+        type,
+        sender,
+        timestamp,
         id,
       };
       state.messages.push(errorMessage);
