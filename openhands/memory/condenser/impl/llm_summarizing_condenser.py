@@ -76,7 +76,7 @@ INTENT: Fix float precision overflow"""
 
         prompt + '\n\n'
 
-        prompt += summary_event.message if summary_event.message else ''
+        prompt += ('\n' + summary_event.message + '\n') if summary_event.message else ''
 
         prompt + '\n\n'
 
