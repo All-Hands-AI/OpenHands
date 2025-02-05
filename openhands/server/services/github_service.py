@@ -1,7 +1,9 @@
 from typing import Any
 
 import httpx
+from fastapi import Request
 
+from openhands.server.auth import get_github_token
 from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
 from openhands.server.shared import SettingsStoreImpl, config, server_config
 from openhands.server.types import AppMode, GhAuthenticationError, GHUnknownException
@@ -131,3 +133,7 @@ class GitHubService:
         ]
 
         return repos
+
+    @classmethod
+    def get_gh_token(cls, request: Request) -> str | None:
+        return get_github_token(request)
