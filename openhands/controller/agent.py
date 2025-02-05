@@ -114,8 +114,8 @@ class Agent(ABC):
 
     def get_prompt_manager(
         self,
+        prompt_dir: str,
         microagent_dir: str | None = None,
-        prompt_dir: str | None = None,
         disabled_microagents: list[str] | None = None,
     ) -> 'PromptManager':
         """Get a prompt manager instance for this agent.
@@ -123,8 +123,8 @@ class Agent(ABC):
         This method can be overridden by subclasses to return a specialized prompt manager.
 
         Args:
-            microagent_dir: Directory containing microagent prompts
             prompt_dir: Directory containing agent-specific prompts
+            microagent_dir: Directory containing microagent prompts
             disabled_microagents: List of microagents to disable
 
         Returns:
@@ -133,7 +133,7 @@ class Agent(ABC):
         from openhands.utils.prompt import PromptManager
 
         return PromptManager(
-            microagent_dir=microagent_dir,
             prompt_dir=prompt_dir,
+            microagent_dir=microagent_dir,
             disabled_microagents=disabled_microagents,
         )

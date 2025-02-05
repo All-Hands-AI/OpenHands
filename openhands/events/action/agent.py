@@ -113,4 +113,4 @@ class PromptExtensionAction(Action):
 
     @property
     def message(self) -> str:
-        return f'Prompt extension ({self.extension_type}): {self.content}'
+        return f'Prompt extension (type: {self.extension_type})'

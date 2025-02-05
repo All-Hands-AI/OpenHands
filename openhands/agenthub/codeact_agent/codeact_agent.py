@@ -233,9 +233,7 @@ class CodeActAgent(Agent):
             return [
                 Message(
                     role='assistant',
-                    content=[
-                        TextContent(text=f'[{action.extension_type}] {action.content}')
-                    ],
+                    content=[TextContent(text=action.content)],
                 )
             ]
         return []
