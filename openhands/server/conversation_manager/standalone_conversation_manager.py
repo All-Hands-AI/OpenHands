@@ -243,14 +243,8 @@ class StandaloneConversationManager(ConversationManager):
         await asyncio.sleep(1)
 
         print('updating token')
-        sid = self._local_connection_id_to_session_id.get(connection_id)
-        print(f'found sid: {sid}')
-        if not sid:
-            raise RuntimeError(f'no_connected_session:{connection_id}')
-
-        print('getting session')
-        session = self._local_agent_loops_by_sid.get(sid)
-        print(f'found session for sid: {sid}')
+        session = self._local_agent_loops_by_sid.get(connection_id)
+        print(f'found session for sid: {connection_id}')
         if session:
             try:
                 await session.update_token()
