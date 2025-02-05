@@ -3,6 +3,7 @@ import { ChatMessage } from "#/components/features/chat/chat-message";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { ImageCarousel } from "../images/image-carousel";
 import { ExpandableMessage } from "./expandable-message";
+import { useFiles } from "#/context/files";
 
 interface MessagesProps {
   messages: Message[];
@@ -10,8 +11,14 @@ interface MessagesProps {
 }
 
 export const Messages: React.FC<MessagesProps> = React.memo(
-  ({ messages, isAwaitingUserConfirmation }) =>
-    messages.map((message, index) => {
+  ({ messages, isAwaitingUserConfirmation }) => {
+    const { setSelectedPath } = useFiles();
+
+    const handleJumpToFile = (filePath: string) => {
+      setSelectedPath(filePath);
+    };
+
+    return messages.map((message, index) => {
       const shouldShowConfirmationButtons =
         messages.length - 1 === index &&
         message.sender === "assistant" &&
@@ -25,6 +32,8 @@ export const Messages: React.FC<MessagesProps> = React.memo(
               id={message.translationID}
               message={message.content}
               success={message.success}
+              filePath={message.filePath}
+              onJumpToFile={handleJumpToFile}
             />
             {shouldShowConfirmationButtons && <ConfirmationButtons />}
           </div>
@@ -43,7 +52,8 @@ export const Messages: React.FC<MessagesProps> = React.memo(
           {shouldShowConfirmationButtons && <ConfirmationButtons />}
         </ChatMessage>
       );
-    }),
+    });
+  }
 );
 
 Messages.displayName = "Messages";
