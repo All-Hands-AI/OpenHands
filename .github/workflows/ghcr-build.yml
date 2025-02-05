@@ -39,6 +39,17 @@ jobs:
     outputs:
       hash_from_app_image: ${{ steps.get_hash_in_app_image.outputs.hash_from_app_image }}
     steps:
+      - name: Check initial disk space
+        run: |
+          echo "=== Initial Disk Space Overview ==="
+          df -h
+          echo
+          echo "=== Initial Docker Space Usage ==="
+          docker system df
+          echo
+          echo "=== Largest Files/Directories ==="
+          sudo du -h / 2>/dev/null | sort -rh | head -n 20
+
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up QEMU
@@ -62,6 +73,27 @@ jobs:
         if: "github.event.pull_request.head.repo.fork"
         run: |
           ./containers/build.sh -i openhands -o ${{ github.repository_owner }} --load
+
+      - name: Check disk space after build
+        run: |
+          echo "=== Disk Space After Build ==="
+          df -h
+          echo
+          echo "=== Docker Space Usage After Build ==="
+          docker system df
+          echo
+          echo "=== Largest Files/Directories ==="
+          sudo du -h / 2>/dev/null | sort -rh | head -n 20
+
+      - name: Clean up Docker resources
+        run: |
+          echo "=== Cleaning up Docker resources ==="
+          docker system prune -af --volumes
+          docker builder prune -af
+          echo
+          echo "=== Docker Space Usage After Cleanup ==="
+          docker system df
+
       - name: Get hash in App Image
         id: get_hash_in_app_image
         run: |
@@ -74,6 +106,26 @@ jobs:
           hash_from_app_image=$(cat docker-outputs.txt | grep "Hash for docker build directory" | awk -F "): " '{print $2}' | uniq | head -n1)
           echo "hash_from_app_image=$hash_from_app_image" >> $GITHUB_OUTPUT
           echo "Hash from app image: $hash_from_app_image"
+
+      - name: Check disk space after hash verification
+        run: |
+          echo "=== Disk Space After Hash Verification ==="
+          df -h
+          echo
+          echo "=== Docker Space Usage After Hash Verification ==="
+          docker system df
+          echo
+          echo "=== Largest Files/Directories ==="
+          sudo du -h / 2>/dev/null | sort -rh | head -n 20
+
+      - name: Clean up Docker resources after hash verification
+        run: |
+          echo "=== Cleaning up Docker resources ==="
+          docker system prune -af --volumes
+          docker builder prune -af
+          echo
+          echo "=== Docker Space Usage After Cleanup ==="
+          docker system df
 
   # Builds the runtime Docker images
   ghcr_build_runtime:
