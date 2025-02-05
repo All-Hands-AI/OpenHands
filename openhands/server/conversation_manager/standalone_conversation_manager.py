@@ -252,7 +252,10 @@ class StandaloneConversationManager(ConversationManager):
         session = self._local_agent_loops_by_sid.get(sid)
         print(f'found session for sid: {sid}')
         if session:
-            await session.update_token()
+            try:
+                await session.update_token()
+            except Exception as e:
+                print(f'error updating token: {str(e)}')
 
     async def disconnect_from_session(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)
