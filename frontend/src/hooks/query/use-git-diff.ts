@@ -5,12 +5,10 @@ import { useConversation } from "#/context/conversation-context";
 export function useGitDiff(filePath: string | null) {
   const { conversationId } = useConversation();
 
-  return useQuery(
-    ["gitDiff", conversationId, filePath],
-    () => OpenHands.getGitDiff(conversationId, filePath!),
-    {
-      enabled: !!conversationId && !!filePath,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-    },
-  );
+  return useQuery({
+    queryKey: ["gitDiff", conversationId, filePath],
+    queryFn: () => OpenHands.getGitDiff(conversationId, filePath!),
+    enabled: !!conversationId && !!filePath,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 }

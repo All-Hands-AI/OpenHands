@@ -8,6 +8,7 @@ import {
 } from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsEventType } from "#/types/core/base";
+import { Message } from "#/types/message";
 
 type SliceState = { messages: Message[] };
 

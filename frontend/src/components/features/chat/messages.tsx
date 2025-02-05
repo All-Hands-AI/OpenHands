@@ -3,6 +3,7 @@ import { ChatMessage } from "#/components/features/chat/chat-message";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { ImageCarousel } from "../images/image-carousel";
 import { ExpandableMessage } from "./expandable-message";
+import { Message } from "#/types/message";
 import { useFiles } from "#/context/files";
 
 interface MessagesProps {

@@ -68,7 +68,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
             <div className="overflow-auto flex-grow min-h-0">
               <div style={{ display: !isOpen ? "none" : "block" }}>
                 <ExplorerTree files={paths || []} />
-                {gitDiff && <GitDiffViewer diff={gitDiff} />}
+                {gitDiff && <GitDiffViewer diff={gitDiff.toString()} />}
               </div>
             </div>
           )}
