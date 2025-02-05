@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 from conftest import (
-    TEST_IN_CI,
     _close_test_runtime,
     _load_runtime,
 )
@@ -464,6 +463,14 @@ def test_git_operation(runtime_cls):
         if runtime_cls != LocalRuntime:
             obs = _run_cmd_action(runtime, 'sudo chown -R openhands:root .')
             assert obs.exit_code == 0
+        else:
+            # cd into a temp directory
+            obs = _run_cmd_action(
+                runtime,
+                'mkdir -p /tmp/openhands-test-dir && cd /tmp/openhands-test-dir',
+            )
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+            assert obs.exit_code == 0
 
         # check the ownership of the current directory
         obs = _run_cmd_action(runtime, 'ls -alh .')
@@ -492,7 +499,7 @@ def test_git_operation(runtime_cls):
         obs = _run_cmd_action(runtime, 'echo "hello" > test_file.txt')
         assert obs.exit_code == 0
 
-        if runtime_cls != LocalRuntime or TEST_IN_CI:
+        if runtime_cls == LocalRuntime:
             # set git config author in CI only, not on local machine
             logger.info('Setting git config author')
             obs = _run_cmd_action(
