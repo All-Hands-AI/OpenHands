@@ -223,9 +223,12 @@ class Session:
         await self._send(data)
 
     async def update_token(self):
+        print('updating token in sessions')
         gh_client = GithubImpl(self.user_id)
         token = await gh_client.get_user_token()
-        self.agent_session.update_token(token)
+        if token:
+            print(f'retrieved user token {token[0:5]}')
+        self.agent_session.update_token('this is a dummy test token')
 
     async def _send(self, data: dict[str, object]) -> bool:
         try:

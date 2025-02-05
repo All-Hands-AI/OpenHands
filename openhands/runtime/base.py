@@ -134,6 +134,8 @@ class Runtime(FileEditRuntimeMixin):
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
 
     def attach_github_token(self, token) -> None:
+        print('attaching token via runtime')
+
         cmd = f'export GITHUB_TOKEN={json.dumps(token)};'
         obs = self.run(CmdRunAction(cmd))
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:

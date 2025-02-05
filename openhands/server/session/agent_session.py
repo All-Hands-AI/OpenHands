@@ -335,6 +335,7 @@ class AgentSession:
         return None
 
     def update_token(self, token):
+        print('agent session updating token')
         if self.runtime:
             self.runtime.attach_github_token(token)
             self.event_stream.set_secrets(
