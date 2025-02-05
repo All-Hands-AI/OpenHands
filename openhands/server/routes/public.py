@@ -3,6 +3,7 @@ import warnings
 import requests
 
 from openhands.security.options import SecurityAnalyzers
+from openhands.server.shared import conversation_manager
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -113,3 +114,11 @@ async def get_config():
     """
 
     return server_config.get_config()
+
+
+@app.post('/refresh-runtime')
+async def refresh_gh_token_in_runtime(connection_id: str):
+    try:
+        await conversation_manager.update_token(connection_id)
+    except Exception:
+        pass
