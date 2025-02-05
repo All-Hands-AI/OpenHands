@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
-import { describe, expect, it, test, vi } from "vitest";
+import { afterEach, describe, expect, it, test, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent, { UserEvent } from "@testing-library/user-event";
 import OpenHands from "#/api/open-hands";
@@ -12,6 +12,18 @@ import { PostApiSettings } from "#/types/settings";
 
 describe("Settings Screen", () => {
   const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+  const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+
+  const { handleLogoutMock } = vi.hoisted(() => ({
+    handleLogoutMock: vi.fn(),
+  }));
+  vi.mock("#/hooks/use-app-logout", () => ({
+    useAppLogout: vi.fn().mockReturnValue({ handleLogout: handleLogoutMock }),
+  }));
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
   const RouterStub = createRoutesStub([
     {
@@ -76,6 +88,22 @@ describe("Settings Screen", () => {
 
       renderSettingsScreen();
       await screen.findByText("Disconnect from GitHub");
+    });
+
+    it("should logout the user when the 'Disconnect from GitHub' button is clicked", async () => {
+      const user = userEvent.setup();
+
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        github_token_is_set: true,
+      });
+
+      renderSettingsScreen();
+
+      const button = await screen.findByText("Disconnect from GitHub");
+      await user.click(button);
+
+      expect(handleLogoutMock).toHaveBeenCalled();
     });
 
     it("should not render the 'Configure GitHub Repositories' button if OSS mode", async () => {
@@ -256,155 +284,173 @@ describe("Settings Screen", () => {
       });
     });
 
-    describe("Network Requests", () => {
-      it("should have advanced settings enabled if the user previously had them enabled", async () => {
-        const hasAdvancedSettingsSetSpy = vi.spyOn(
-          AdvancedSettingsUtlls,
-          "hasAdvancedSettingsSet",
+    it("should have advanced settings enabled if the user previously had them enabled", async () => {
+      const hasAdvancedSettingsSetSpy = vi.spyOn(
+        AdvancedSettingsUtlls,
+        "hasAdvancedSettingsSet",
+      );
+      hasAdvancedSettingsSetSpy.mockReturnValue(true);
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+        expect(advancedSwitch).toBeChecked();
+
+        const llmCustomInput = screen.getByTestId("llm-custom-model-input");
+        expect(llmCustomInput).toBeInTheDocument();
+      });
+    });
+
+    it("should have the values set if the user previously had them set", async () => {
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        language: "no",
+        github_token_is_set: true,
+        user_consents_to_analytics: true,
+        llm_base_url: "https://test.com",
+        llm_model: "anthropic/claude-3-5-sonnet-20241022",
+        agent: "CoActAgent",
+        security_analyzer: "mock-invariant",
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("language-input")).toHaveValue("Norsk");
+        expect(screen.getByText("Disconnect from GitHub")).toBeInTheDocument();
+        expect(screen.getByTestId("enable-analytics-switch")).toBeChecked();
+        expect(screen.getByTestId("base-url-input")).toHaveValue(
+          "https://test.com",
         );
-        hasAdvancedSettingsSetSpy.mockReturnValue(true);
-
-        renderSettingsScreen();
-
-        await waitFor(() => {
-          const advancedSwitch = screen.getByTestId("advanced-settings-switch");
-          expect(advancedSwitch).toBeChecked();
-
-          const llmCustomInput = screen.getByTestId("llm-custom-model-input");
-          expect(llmCustomInput).toBeInTheDocument();
-        });
-      });
-
-      it("should have the values set if the user previously had them set", async () => {
-        getSettingsSpy.mockResolvedValue({
-          ...MOCK_DEFAULT_USER_SETTINGS,
-          language: "no",
-          github_token_is_set: true,
-          user_consents_to_analytics: true,
-          llm_base_url: "https://test.com",
-          llm_model: "anthropic/claude-3-5-sonnet-20241022",
-          agent: "CoActAgent",
-          security_analyzer: "mock-invariant",
-        });
-
-        renderSettingsScreen();
-
-        await waitFor(() => {
-          expect(screen.getByTestId("language-input")).toHaveValue("Norsk");
-          expect(
-            screen.getByText("Disconnect from GitHub"),
-          ).toBeInTheDocument();
-          expect(screen.getByTestId("enable-analytics-switch")).toBeChecked();
-          expect(screen.getByTestId("base-url-input")).toHaveValue(
-            "https://test.com",
-          );
-          expect(screen.getByTestId("llm-custom-model-input")).toHaveValue(
-            "anthropic/claude-3-5-sonnet-20241022",
-          );
-          expect(screen.getByTestId("agent-input")).toHaveValue("CoActAgent");
-          expect(
-            screen.getByTestId("enable-confirmation-mode-switch"),
-          ).toBeChecked();
-          expect(screen.getByTestId("security-analyzer-input")).toHaveValue(
-            "mock-invariant",
-          );
-        });
-      });
-
-      it.todo(
-        "should disable the 'Save Changes' button if the settings are unchanged",
-      );
-
-      it.todo(
-        "should disable the 'Reset to defaults' button if the settings are unchanged",
-      );
-
-      it("should save the settings when the 'Save Changes' button is clicked", async () => {
-        const user = userEvent.setup();
-        const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
-        getSettingsSpy.mockResolvedValue({
-          ...MOCK_DEFAULT_USER_SETTINGS,
-        });
-
-        renderSettingsScreen();
-
-        const languageInput = await screen.findByTestId("language-input");
-        await user.click(languageInput);
-
-        const norskOption = await screen.findByText("Norsk");
-        await user.click(norskOption);
-
-        expect(languageInput).toHaveValue("Norsk");
-
-        const saveButton = screen.getByText("Save Changes");
-        await user.click(saveButton);
-
-        const MOCK_COPY: Partial<PostApiSettings> = {
-          ...MOCK_DEFAULT_USER_SETTINGS,
-        };
-        delete MOCK_COPY.github_token_is_set;
-        delete MOCK_COPY.confirmation_mode;
-
-        expect(saveSettingsSpy).toHaveBeenCalledWith({
-          ...MOCK_COPY,
-          llm_api_key: undefined,
-          github_token: "",
-          language: "no",
-        });
-
-        saveSettingsSpy.mockClear();
-      });
-
-      it("should properly save basic LLM model settings", async () => {
-        const user = userEvent.setup();
-        const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
-        getSettingsSpy.mockResolvedValue({
-          ...MOCK_DEFAULT_USER_SETTINGS,
-        });
-
-        renderSettingsScreen();
-
-        // disable advanced mode
-        const advancedSwitch = await screen.findByTestId(
-          "advanced-settings-switch",
+        expect(screen.getByTestId("llm-custom-model-input")).toHaveValue(
+          "anthropic/claude-3-5-sonnet-20241022",
         );
-        await user.click(advancedSwitch);
+        expect(screen.getByTestId("agent-input")).toHaveValue("CoActAgent");
+        expect(
+          screen.getByTestId("enable-confirmation-mode-switch"),
+        ).toBeChecked();
+        expect(screen.getByTestId("security-analyzer-input")).toHaveValue(
+          "mock-invariant",
+        );
+      });
+    });
 
-        const providerInput = await screen.findByTestId("llm-provider-input");
-        await user.click(providerInput);
+    it.todo(
+      "should disable the 'Save Changes' button if the settings are unchanged",
+    );
 
-        const openaiOption = await screen.findByText("OpenAI");
-        await user.click(openaiOption);
+    it.todo(
+      "should disable the 'Reset to defaults' button if the settings are unchanged",
+    );
 
-        const modelInput = await screen.findByTestId("llm-model-input");
-        await user.click(modelInput);
-
-        const gpt4Option = await screen.findByText("gpt-4o");
-        await user.click(gpt4Option);
-
-        const saveButton = screen.getByText("Save Changes");
-        await user.click(saveButton);
-
-        const mockCopy: Partial<PostApiSettings> = {
-          ...MOCK_DEFAULT_USER_SETTINGS,
-        };
-        delete mockCopy.github_token_is_set;
-        delete mockCopy.unset_github_token;
-
-        expect(saveSettingsSpy).toHaveBeenCalledWith({
-          ...mockCopy,
-          llm_model: "openai/gpt-4o",
-          // keys aren't present in basic mode
-          github_token: "",
-          confirmation_mode: undefined,
-          llm_api_key: undefined,
-          llm_base_url: undefined,
-        });
+    it("should save the settings when the 'Save Changes' button is clicked", async () => {
+      const user = userEvent.setup();
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
       });
 
-      it.todo(
-        "should reset the settings when the 'Reset to defaults' button is clicked",
+      renderSettingsScreen();
+
+      const languageInput = await screen.findByTestId("language-input");
+      await user.click(languageInput);
+
+      const norskOption = await screen.findByText("Norsk");
+      await user.click(norskOption);
+
+      expect(languageInput).toHaveValue("Norsk");
+
+      const saveButton = screen.getByText("Save Changes");
+      await user.click(saveButton);
+
+      const MOCK_COPY: Partial<PostApiSettings> = {
+        ...MOCK_DEFAULT_USER_SETTINGS,
+      };
+      delete MOCK_COPY.github_token_is_set;
+      delete MOCK_COPY.confirmation_mode;
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith({
+        ...MOCK_COPY,
+        llm_api_key: undefined,
+        github_token: "",
+        language: "no",
+      });
+    });
+
+    it("should properly save basic LLM model settings", async () => {
+      const user = userEvent.setup();
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+      });
+
+      renderSettingsScreen();
+
+      // disable advanced mode
+      const advancedSwitch = await screen.findByTestId(
+        "advanced-settings-switch",
       );
+      await user.click(advancedSwitch);
+
+      const providerInput = await screen.findByTestId("llm-provider-input");
+      await user.click(providerInput);
+
+      const openaiOption = await screen.findByText("OpenAI");
+      await user.click(openaiOption);
+
+      const modelInput = await screen.findByTestId("llm-model-input");
+      await user.click(modelInput);
+
+      const gpt4Option = await screen.findByText("gpt-4o");
+      await user.click(gpt4Option);
+
+      const saveButton = screen.getByText("Save Changes");
+      await user.click(saveButton);
+
+      const mockCopy: Partial<PostApiSettings> = {
+        ...MOCK_DEFAULT_USER_SETTINGS,
+      };
+      delete mockCopy.github_token_is_set;
+      delete mockCopy.unset_github_token;
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith({
+        ...mockCopy,
+        llm_model: "openai/gpt-4o",
+        // keys aren't present in basic mode
+        github_token: "",
+        confirmation_mode: undefined,
+        llm_api_key: undefined,
+        llm_base_url: undefined,
+      });
+    });
+
+    it("should reset the settings when the 'Reset to defaults' button is clicked", async () => {
+      const user = userEvent.setup();
+      getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
+
+      renderSettingsScreen();
+
+      const languageInput = await screen.findByTestId("language-input");
+      await user.click(languageInput);
+
+      const norskOption = await screen.findByText("Norsk");
+      await user.click(norskOption);
+
+      expect(languageInput).toHaveValue("Norsk");
+
+      const resetButton = screen.getByText("Reset to defaults");
+      await user.click(resetButton);
+
+      const mockCopy: Partial<PostApiSettings> = {
+        ...MOCK_DEFAULT_USER_SETTINGS,
+      };
+      delete mockCopy.github_token_is_set;
+      delete mockCopy.unset_github_token;
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith({
+        ...mockCopy,
+        github_token: undefined, // not set
+        llm_api_key: undefined, // not set
+      });
     });
   });
 });

@@ -15,6 +15,7 @@ import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
+import { useAppLogout } from "#/hooks/use-app-logout";
 
 const displayErrorToast = (error: string) => {
   toast.error(error, {
@@ -45,6 +46,7 @@ function SettingsScreen() {
   const { data: config } = useConfig();
   const { data: resources } = useAIConfigOptions();
   const { mutateAsync: saveSettings } = useSaveSettings();
+  const { handleLogout } = useAppLogout();
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = settings.GITHUB_TOKEN_IS_SET;
@@ -144,7 +146,11 @@ function SettingsScreen() {
           )}
 
           {isGitHubTokenSet && (
-            <BrandButton type="button" variant="secondary">
+            <BrandButton
+              type="button"
+              variant="secondary"
+              onClick={handleLogout}
+            >
               Disconnect from GitHub
             </BrandButton>
           )}
@@ -284,7 +290,17 @@ function SettingsScreen() {
         </div>
 
         <footer className="flex gap-6 p-6 justify-end border-t border-t-[#454545]">
-          <BrandButton type="button" variant="secondary">
+          <BrandButton
+            type="button"
+            variant="secondary"
+            onClick={() =>
+              saveSettings({
+                ...DEFAULT_SETTINGS,
+                user_consents_to_analytics:
+                  DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
+              })
+            }
+          >
             Reset to defaults
           </BrandButton>
           <BrandButton type="submit" variant="primary">

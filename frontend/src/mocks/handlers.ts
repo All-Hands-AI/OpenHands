@@ -292,4 +292,6 @@ export const handlers = [
 
     return HttpResponse.json(null, { status: 404 });
   }),
+
+  http.post("/api/logout", () => HttpResponse.json(null, { status: 200 })),
 ];
