@@ -240,6 +240,9 @@ class StandaloneConversationManager(ConversationManager):
         raise RuntimeError(f'no_connected_session:{connection_id}:{sid}')
 
     async def update_token(self, connection_id: str):
+        await asyncio.sleep(1)
+
+        print('updating token')
         sid = self._local_connection_id_to_session_id.get(connection_id)
         if not sid:
             raise RuntimeError(f'no_connected_session:{connection_id}')
