@@ -2,7 +2,6 @@
 
 import os
 import shutil
-import tempfile
 import time
 from pathlib import Path
 
@@ -448,12 +447,12 @@ def test_copy_from_directory(temp_dir, runtime_cls):
         _close_test_runtime(runtime)
 
 
-def test_git_operation(runtime_cls):
+def test_git_operation(temp_dir, runtime_cls):
     # do not mount workspace, since workspace mount by tests will be owned by root
     # while the user_id we get via os.getuid() is different from root
     # which causes permission issues
     runtime, config = _load_runtime(
-        temp_dir=None,
+        temp_dir=temp_dir,
         use_workspace=False,
         runtime_cls=runtime_cls,
         # Need to use non-root user to expose issues
@@ -466,15 +465,6 @@ def test_git_operation(runtime_cls):
             obs = _run_cmd_action(runtime, 'sudo chown -R openhands:root .')
             assert obs.exit_code == 0
             tmp_dir = None
-        else:
-            # cd into a temp directory
-            tmp_dir = tempfile.mkdtemp()
-            obs = _run_cmd_action(
-                runtime,
-                f'cd {tmp_dir}',
-            )
-            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-            assert obs.exit_code == 0
 
         # check the ownership of the current directory
         obs = _run_cmd_action(runtime, 'ls -alh .')
