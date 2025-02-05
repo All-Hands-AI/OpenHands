@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
@@ -13,6 +13,7 @@ import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
 import { OpenVSCodeButton } from "#/components/shared/buttons/open-vscode-button";
 import { GitDiffViewer } from "./git-diff-viewer";
 import { useFiles } from "#/context/files";
+import { useGitDiff } from "#/hooks/query/use-git-diff";
 
 interface FileExplorerProps {
   isOpen: boolean;
@@ -23,12 +24,12 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
   const { t } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const { selectedPath } = useFiles();
-  const [gitDiff, setGitDiff] = useState<string | null>(null);
 
   const { data: paths, refetch, error } = useListFiles();
   const { data: vscodeUrl } = useVSCodeUrl({
     enabled: !RUNTIME_INACTIVE_STATES.includes(curAgentState),
   });
+  const { data: gitDiff } = useGitDiff(selectedPath);
 
   const handleOpenVSCode = () => {
     if (vscodeUrl?.vscode_url) {
@@ -48,20 +49,6 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
       refetch();
     }
   };
-
-  useEffect(() => {
-    refreshWorkspace();
-  }, [curAgentState]);
-
-  useEffect(() => {
-    if (selectedPath) {
-      // TODO: Implement function to fetch git diff
-      // For now, we'll use a placeholder
-      setGitDiff("--- a/example.txt\n+++ b/example.txt\n@@ -1,3 +1,3 @@\n-Old line\n+New line\n No change");
-    } else {
-      setGitDiff(null);
-    }
-  }, [selectedPath]);
 
   return (
     <div data-testid="file-explorer" className="relative h-full">
