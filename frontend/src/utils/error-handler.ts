@@ -12,8 +12,8 @@ interface ErrorDetails {
 }
 
 export function logError({ message, source, metadata = {} }: ErrorDetails) {
-  posthog.capture("error_occurred", {
-    error_message: message,
+  const error = new Error(message);
+  posthog.captureException(error, {
     error_source: source || "unknown",
     ...metadata,
   });

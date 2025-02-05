@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import os
-
 from typing import Any
+
 from pydantic import BaseModel, Field, SecretStr
 
 from openhands.core.logger import LOG_DIR
@@ -85,7 +85,7 @@ class LLMConfig(BaseModel):
     log_completions_folder: str = Field(default=os.path.join(LOG_DIR, 'completions'))
     custom_tokenizer: str | None = Field(default=None)
     native_tool_calling: bool | None = Field(default=None)
-    
+
     model_config = {'extra': 'forbid'}
 
     def model_post_init(self, __context: Any):

@@ -7,7 +7,7 @@ import * as Actions from "#/services/actions";
 // Mock dependencies
 vi.mock("posthog-js", () => ({
   default: {
-    capture: vi.fn(),
+    captureException: vi.fn(),
   },
 }));
 
@@ -39,8 +39,7 @@ describe("Error Handler", () => {
 
       logError(error);
 
-      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
-        error_message: "Test error",
+      expect(posthog.captureException).toHaveBeenCalledWith(new Error("Test error"), {
         error_source: "test",
       });
     });
@@ -57,8 +56,7 @@ describe("Error Handler", () => {
 
       logError(error);
 
-      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
-        error_message: "Test error",
+      expect(posthog.captureException).toHaveBeenCalledWith(new Error("Test error"), {
         error_source: "test",
         extra: "info",
         details: { foo: "bar" },
@@ -76,8 +74,7 @@ describe("Error Handler", () => {
       showErrorToast(error);
 
       // Verify PostHog logging
-      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
-        error_message: "Toast error",
+      expect(posthog.captureException).toHaveBeenCalledWith(new Error("Toast error"), {
         error_source: "toast-test",
       });
 
@@ -94,8 +91,7 @@ describe("Error Handler", () => {
 
       showErrorToast(error);
 
-      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
-        error_message: "Toast error",
+      expect(posthog.captureException).toHaveBeenCalledWith(new Error("Toast error"), {
         error_source: "toast-test",
         context: "testing",
       });
@@ -109,8 +105,7 @@ describe("Error Handler", () => {
         metadata: { id: "error.agent" },
       });
 
-      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
-        error_message: "Agent error",
+      expect(posthog.captureException).toHaveBeenCalledWith(new Error("Agent error"), {
         error_source: "agent-status",
         id: "error.agent",
       });
@@ -122,8 +117,7 @@ describe("Error Handler", () => {
         metadata: { error: "connection failed" },
       });
 
-      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
-        error_message: "VSCode error",
+      expect(posthog.captureException).toHaveBeenCalledWith(new Error("VSCode error"), {
         error_source: "vscode",
         error: "connection failed",
       });
@@ -135,8 +129,7 @@ describe("Error Handler", () => {
         metadata: { error_code: 500, details: "Internal error" },
       });
 
-      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
-        error_message: "Server error",
+      expect(posthog.captureException).toHaveBeenCalledWith(new Error("Server error"), {
         error_source: "server",
         error_code: 500,
         details: "Internal error",
@@ -151,8 +144,7 @@ describe("Error Handler", () => {
         metadata: { queryKey: ["users", "123"] },
       });
 
-      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
-        error_message: "Query failed",
+      expect(posthog.captureException).toHaveBeenCalledWith(new Error("Query failed"), {
         error_source: "query",
         queryKey: ["users", "123"],
       });
@@ -165,8 +157,7 @@ describe("Error Handler", () => {
         metadata: { error },
       });
 
-      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
-        error_message: "Mutation failed",
+      expect(posthog.captureException).toHaveBeenCalledWith(new Error("Mutation failed"), {
         error_source: "mutation",
         error,
       });
@@ -180,8 +171,7 @@ describe("Error Handler", () => {
         metadata: { conversationId: "123", error },
       });
 
-      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
-        error_message: "Feedback submission failed",
+      expect(posthog.captureException).toHaveBeenCalledWith(new Error("Feedback submission failed"), {
         error_source: "feedback",
         conversationId: "123",
         error,
@@ -200,8 +190,7 @@ describe("Error Handler", () => {
       showChatError(error);
 
       // Verify PostHog logging
-      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
-        error_message: "Chat error",
+      expect(posthog.captureException).toHaveBeenCalledWith(new Error("Chat error"), {
         error_source: "chat-test",
       });
 
@@ -227,8 +216,7 @@ describe("Error Handler", () => {
 
       showChatError(error);
 
-      expect(posthog.capture).toHaveBeenCalledWith("error_occurred", {
-        error_message: "Chat error",
+      expect(posthog.captureException).toHaveBeenCalledWith(new Error("Chat error"), {
         error_source: "chat-test",
         context: "chat testing",
         severity: "high",
