@@ -96,7 +96,3 @@ sandbox_user_id="1001"
 ### 端口使用错误
 
 如果您遇到端口被占用或不可用的错误提示，可以尝试先用`docker ps`命令列出所有运行中的 Docker 容器，然后使用`docker rm`命令删除相关容器，最后再重新执行```make run```命令。
-
-## 讨论
-
-对于其他问题或疑问，请加入 [Slack](https://join.slack.com/t/openhands-ai/shared_invite/zt-2wkh4pklz-w~h_DVDtEe9H5kyQlcNxVw) 或 [Discord](https://discord.gg/ESHStjSjD4) 提问！
