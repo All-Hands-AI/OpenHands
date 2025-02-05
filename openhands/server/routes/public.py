@@ -124,9 +124,7 @@ async def refresh_gh_token_in_runtime(
     background_tasks: BackgroundTasks,
 ):
     try:
-        await conversation_manager.update_token(connection_id)
         background_tasks.add_task(conversation_manager.update_token, connection_id)
-
         return JSONResponse(status_code=200, content={'message': 'updating'})
     except Exception:
-        pass
+        return JSONResponse(status_code=400, content={'message': 'updating'})
