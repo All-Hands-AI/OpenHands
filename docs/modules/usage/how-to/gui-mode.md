@@ -111,31 +111,30 @@ The main interface consists of several key components:
 
 ### App Browser Feature
 
-The App Browser is a powerful feature that allows the AI assistant to interact with frontend applications:
+The App Browser is a feature that allows you to monitor and verify the AI agent's web interactions:
 
-- **Purpose**: Enables the AI to view, navigate, and interact with web-based user interfaces, making it capable of testing and debugging frontend applications.
+- **Purpose**: Enables human users to see and verify that the AI agent is correctly implementing web-based tasks and interactions.
 - **Capabilities**:
-  - **Navigation**: The AI can browse web pages and navigate through different sections of the application.
-  - **Interaction**: Supports clicking buttons, filling forms, and other common web interactions.
-  - **Visual Feedback**: The AI can see and interpret the application's interface, helping with UI-related tasks.
-  - **Testing**: Facilitates automated testing of frontend applications by allowing the AI to simulate user interactions.
+  - **Real-time Monitoring**: Watch the agent's web interactions as they happen
+  - **Visual Verification**: See exactly what the agent sees when interacting with web pages
+  - **Quality Assurance**: Verify that the agent is performing the correct actions on web pages
 
 #### Using the App Browser
 
 1. **Accessing the Browser**:
-   - The browser view appears in the workspace panel when the AI is interacting with web applications.
-   - You can see the current page and the AI's interactions in real-time.
+   - The browser view appears in the workspace panel when the agent is performing web interactions
+   - You can see the current page and the agent's actions in real-time
 
 2. **Common Use Cases**:
-   - Testing frontend applications
-   - Debugging UI issues
-   - Automating web-based workflows
-   - Validating user interface changes
+   - Verifying that the agent is interacting with the correct web elements
+   - Monitoring web automation tasks for accuracy
+   - Ensuring web-based tasks are being executed as intended
+   - Debugging issues when web interactions aren't working as expected
 
 3. **Browser Controls**:
-   - The AI automatically handles navigation and interaction
-   - You can observe the AI's actions in the browser view
-   - The chat interface allows you to guide the AI's interactions with the application
+   - The browser panel shows live screenshots of web pages the agent is interacting with
+   - You can see the current URL and page state
+   - The chat interface allows you to guide or correct the agent if needed
 
 ### Interacting with the AI
 
