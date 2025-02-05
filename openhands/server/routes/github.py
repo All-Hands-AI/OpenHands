@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth import get_user_id
 from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
 from openhands.server.services.github_service import GitHubService
@@ -29,16 +30,24 @@ async def get_github_repositories(
         return repos
 
     except GhAuthenticationError as e:
+        logger.error("Couldn't search GitHub repositories")
+        logger.error(e)
         return JSONResponse(
             content=str(e),
             status_code=401,
         )
 
     except GHUnknownException as e:
+        logger.error("Couldn't search GitHub repositories")
+        logger.error(e)
         return JSONResponse(
             content=str(e),
             status_code=500,
         )
+    except Exception as e:
+        logger.error("Couldn't get GitHub repositories")
+        logger.error(e)
+        raise
 
 
 @app.get('/user')
@@ -51,16 +60,24 @@ async def get_github_user(
         return user
 
     except GhAuthenticationError as e:
+        logger.error("Couldn't get GitHub user")
+        logger.error(e)
         return JSONResponse(
             content=str(e),
             status_code=401,
         )
 
     except GHUnknownException as e:
+        logger.error("Couldn't get GitHub user")
+        logger.error(e)
         return JSONResponse(
             content=str(e),
             status_code=500,
         )
+    except Exception as e:
+        logger.error("Couldn't get GitHub repositories")
+        logger.error(e)
+        raise
 
 
 @app.get('/installations')
@@ -73,16 +90,24 @@ async def get_github_installation_ids(
         return installations_ids
 
     except GhAuthenticationError as e:
+        logger.error("Couldn't get GitHub installations")
+        logger.error(e)
         return JSONResponse(
             content=str(e),
             status_code=401,
         )
 
     except GHUnknownException as e:
+        logger.error("Couldn't get GitHub installations")
+        logger.error(e)
         return JSONResponse(
             content=str(e),
             status_code=500,
         )
+    except Exception as e:
+        logger.error("Couldn't get GitHub repositories")
+        logger.error(e)
+        raise
 
 
 @app.get('/search/repositories')
@@ -101,13 +126,21 @@ async def search_github_repositories(
         return repos
 
     except GhAuthenticationError as e:
+        logger.error("Couldn't search GitHub repositories")
+        logger.error(e)
         return JSONResponse(
             content=str(e),
             status_code=401,
         )
 
     except GHUnknownException as e:
+        logger.error("Couldn't search GitHub repositories")
+        logger.error(e)
         return JSONResponse(
             content=str(e),
             status_code=500,
         )
+    except Exception as e:
+        logger.error("Couldn't get GitHub repositories")
+        logger.error(e)
+        raise
