@@ -210,13 +210,17 @@ class RemoteRuntime(ActionExecutionClient):
             plugins=self.plugins,
             app_config=self.config,
         )
+        environment = {
+            'DEBUG': 'true'
+            if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
+            else {},
+        }
+        environment.update(self.config.sandbox.runtime_startup_env_vars)
         start_request = {
             'image': self.container_image,
             'command': command,
             'working_dir': '/openhands/code/',
-            'environment': {'DEBUG': 'true'}
-            if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
-            else {},
+            'environment': environment,
             'session_id': self.sid,
             'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
         }
@@ -291,7 +295,8 @@ class RemoteRuntime(ActionExecutionClient):
             stop=tenacity.stop_after_delay(
                 self.config.sandbox.remote_runtime_init_timeout
             )
-            | stop_if_should_exit() | self._stop_if_closed,
+            | stop_if_should_exit()
+            | self._stop_if_closed,
             reraise=True,
             retry=tenacity.retry_if_exception_type(AgentRuntimeNotReadyError),
             wait=tenacity.wait_fixed(2),
@@ -394,10 +399,14 @@ class RemoteRuntime(ActionExecutionClient):
 
         retry_decorator = tenacity.retry(
             retry=tenacity.retry_if_exception_type(ConnectionError),
-            stop=tenacity.stop_after_attempt(3) | stop_if_should_exit() | self._stop_if_closed,
+            stop=tenacity.stop_after_attempt(3)
+            | stop_if_should_exit()
+            | self._stop_if_closed,
             wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
         )
-        return retry_decorator(self._send_action_server_request_impl)(method, url, **kwargs)
+        return retry_decorator(self._send_action_server_request_impl)(
+            method, url, **kwargs
+        )
 
     def _send_action_server_request_impl(self, method, url, **kwargs):
         try:
@@ -430,6 +439,6 @@ class RemoteRuntime(ActionExecutionClient):
                     ) from e
             else:
                 raise e
-            
+
     def _stop_if_closed(self, retry_state: tenacity.RetryCallState) -> bool:
         return self._runtime_closed
