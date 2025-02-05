@@ -52,7 +52,6 @@ class FileEditObservation(Observation):
     and cached to improve performance.
     """
 
-    content: str
     path: str
     prev_exist: bool
     old_content: str
@@ -172,7 +171,7 @@ class FileEditObservation(Observation):
             result.append(f'[end of {op_type} {i+1} / {len(edit_groups)}]')
 
         # Cache the result
-        self._diff_cache = '\n'.join(result) + '\n'
+        self._diff_cache = '\n'.join(result)
         return self._diff_cache
 
     def __str__(self) -> str:
@@ -187,4 +186,4 @@ class FileEditObservation(Observation):
             return f'[New file {self.path} is created with the provided content.]\n'
 
         # Use cached diff if available, otherwise compute it
-        return self.visualize_diff()
+        return self.visualize_diff().rstrip() + '\n'
