@@ -3,6 +3,7 @@ from typing import Any
 import httpx
 from fastapi import Request
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth import get_github_token
 from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
 from openhands.server.shared import SettingsStoreImpl, config, server_config
@@ -60,11 +61,20 @@ class GitHubService:
 
                 return response.json(), headers
 
-        except httpx.HTTPStatusError:
+        except httpx.HTTPStatusError as e:
+            logger.error('Error calling GitHub')
+            logger.error(e)
             raise GhAuthenticationError('Invalid Github token')
 
-        except httpx.HTTPError:
+        except httpx.HTTPError as e:
+            logger.error('Error calling GitHub')
+            logger.error(e)
             raise GHUnknownException('Unknown error')
+
+        except Exception as e:
+            logger.error('Error calling GitHub')
+            logger.error(e)
+            raise
 
     async def get_user(self) -> GitHubUser:
         url = f'{self.BASE_URL}/user'
