@@ -149,8 +149,8 @@ class StandaloneConversationManager(ConversationManager):
                     self._close_session(sid) for sid in self._local_agent_loops_by_sid
                 )
                 return
-            except Exception as e:
-                logger.error(f'error_cleaning_stale')
+            except Exception:
+                logger.error('error_cleaning_stale')
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
     async def get_running_agent_loops(
@@ -238,6 +238,15 @@ class StandaloneConversationManager(ConversationManager):
             return
 
         raise RuntimeError(f'no_connected_session:{connection_id}:{sid}')
+
+    def update_token(self, connection_id: str):
+        sid = self._local_connection_id_to_session_id.get(connection_id)
+        if not sid:
+            raise RuntimeError(f'no_connected_session:{connection_id}')
+
+        session = self._local_agent_loops_by_sid.get(sid)
+        if session:
+            session.update_token()
 
     async def disconnect_from_session(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)

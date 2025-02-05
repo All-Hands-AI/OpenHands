@@ -215,6 +215,10 @@ class Session:
             return
         await self._send(data)
 
+    def update_token(self):
+        token = ''
+        self.agent_session.update_token(token)
+
     async def _send(self, data: dict[str, object]) -> bool:
         try:
             if not self.is_alive:

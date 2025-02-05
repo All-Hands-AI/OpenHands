@@ -196,10 +196,14 @@ class AgentSession:
         env_vars = (
             {
                 'GITHUB_TOKEN': github_token,
+                'SESSION_ID': self.sid,  # Ensure Session ID is always set
             }
             if github_token
-            else None
+            else {
+                'SESSION_ID': self.sid,  # Ensure Session ID is always set
+            }
         )
+
         self.runtime = runtime_cls(
             config=config,
             event_stream=self.event_stream,
@@ -329,3 +333,12 @@ class AgentSession:
             # If 5 minutes have elapsed and we still don't have a controller, something has gone wrong
             return AgentState.ERROR
         return None
+
+    def update_token(self, token):
+        if self.runtime:
+            self.runtime.attach_github_token(token)
+            self.event_stream.set_secrets(
+                {
+                    'github_token': token,
+                }
+            )

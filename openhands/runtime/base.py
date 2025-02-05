@@ -133,6 +133,12 @@ class Runtime(FileEditRuntimeMixin):
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
 
+    def attach_github_token(self, token) -> None:
+        cmd = f'export GITHUB_TOKEN={json.dumps(token)};'
+        obs = self.run(CmdRunAction(cmd))
+        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+            raise RuntimeError(f'Failed to update gh token: {obs.content}')
+
     def close(self) -> None:
         """
         This should only be called by conversation manager or closing the session.

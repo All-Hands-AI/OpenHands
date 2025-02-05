@@ -78,6 +78,10 @@ class ConversationManager(ABC):
         """Send data to an event stream."""
 
     @abstractmethod
+    def update_token(self, connection_id: str):
+        """Update/refresh the runtime gh token"""
+
+    @abstractmethod
     async def disconnect_from_session(self, connection_id: str):
         """Disconnect from a session."""
 
