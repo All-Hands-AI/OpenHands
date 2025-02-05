@@ -512,7 +512,10 @@ def test_git_operation(runtime_cls):
             )
             assert obs.exit_code == 0
 
-        # git add
+            # Set up git config
+            obs = _run_cmd_action(runtime, 'git config --file ./.git_config')
+            assert obs.exit_code == 0
+
         # git add
         obs = _run_cmd_action(runtime, 'git add test_file.txt')
         assert obs.exit_code == 0
