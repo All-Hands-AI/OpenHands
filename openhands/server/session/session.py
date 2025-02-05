@@ -23,13 +23,19 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
-from openhands.server.services.github_service_impl import GithubServiceImpl
+from openhands.server.config.server_config import load_server_config
+from openhands.server.services.github_service import GitHubService
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
+from openhands.utils.import_utils import get_impl
 
 ROOM_KEY = 'room:{sid}'
+
+
+server_config = load_server_config()
+GithubImpl = get_impl(GitHubService, server_config.github_service_class)
 
 
 class Session:
@@ -217,7 +223,7 @@ class Session:
         await self._send(data)
 
     async def update_token(self):
-        gh_client = GithubServiceImpl(self.user_id)
+        gh_client = GithubImpl(self.user_id)
         token = await gh_client.get_user_token()
         self.agent_session.update_token(token)
 

@@ -11,11 +11,14 @@ from openhands.events.action.message import MessageAction
 from openhands.events.stream import EventStreamSubscriber
 from openhands.runtime import get_runtime_cls
 from openhands.server.auth import get_user_id
-from openhands.server.services.github_service_impl import GithubServiceImpl
+from openhands.server.config_init import (
+    ConversationStoreImpl,
+    SettingsStoreImpl,
+    config,
+)
+from openhands.server.routes.github import GithubServiceImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.shared import ConversationStoreImpl, conversation_manager
-from openhands.server.config_init import config
-from openhands.server.settings_store import SettingsStoreImpl
+from openhands.server.shared import conversation_manager
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_info import ConversationInfo
 from openhands.storage.data_models.conversation_info_result_set import (

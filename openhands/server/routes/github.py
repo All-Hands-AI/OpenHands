@@ -4,11 +4,13 @@ from fastapi.responses import JSONResponse
 from openhands.server.auth import get_user_id
 from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
 from openhands.server.services.github_service import GitHubService
-from openhands.server.services.github_service_impl import GithubServiceImpl
-from openhands.server.shared import conversation_manager
+from openhands.server.shared import conversation_manager, server_config
 from openhands.server.types import GhAuthenticationError, GHUnknownException
+from openhands.utils.import_utils import get_impl
 
 app = APIRouter(prefix='/api/github')
+
+GithubServiceImpl = get_impl(GitHubService, server_config.github_service_class)
 
 
 @app.get('/repositories')
