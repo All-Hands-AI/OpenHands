@@ -9,7 +9,7 @@ from uuid import uuid4
 
 import toml
 from dotenv import load_dotenv
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, SecretStr, ValidationError
 
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
@@ -287,8 +287,10 @@ def finalize_config(cfg: AppConfig):
         pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
 
     if not cfg.jwt_secret:
-        cfg.jwt_secret = get_or_create_jwt_secret(
-            get_file_store(cfg.file_store, cfg.file_store_path)
+        cfg.jwt_secret = SecretStr(
+            get_or_create_jwt_secret(
+                get_file_store(cfg.file_store, cfg.file_store_path)
+            )
         )
 
 

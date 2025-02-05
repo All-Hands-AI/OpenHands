@@ -6,10 +6,6 @@ class AgentState(str, Enum):
     """The agent is loading.
     """
 
-    INIT = 'init'
-    """The agent is initialized.
-    """
-
     RUNNING = 'running'
     """The agent is running.
     """

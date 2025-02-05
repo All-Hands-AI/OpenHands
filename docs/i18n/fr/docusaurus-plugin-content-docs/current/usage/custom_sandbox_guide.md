@@ -95,7 +95,3 @@ sandbox_user_id="1001"
 ### Erreurs de port d'utilisation
 
 Si vous voyez un message d'erreur indiquant que le port est utilisé ou indisponible, essayez de supprimer toutes les containers docker en cours d'exécution (exécutez `docker ps` et `docker rm` des containers concernés) puis ré-exécutez ```make run```
-
-## Discuter
-
-Pour d'autres problèmes ou questions rejoignez le [Slack](https://join.slack.com/t/openhands-ai/shared_invite/zt-2wkh4pklz-w~h_DVDtEe9H5kyQlcNxVw) ou le [Discord](https://discord.gg/ESHStjSjD4) et demandez!

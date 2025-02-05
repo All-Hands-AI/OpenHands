@@ -1,14 +1,14 @@
-interface FeedbackActionButtonProps {
+interface TrajectoryActionButtonProps {
   testId?: string;
   onClick: () => void;
   icon: React.ReactNode;
 }
 
-export function FeedbackActionButton({
+export function TrajectoryActionButton({
   testId,
   onClick,
   icon,
-}: FeedbackActionButtonProps) {
+}: TrajectoryActionButtonProps) {
   return (
     <button
       type="button"
