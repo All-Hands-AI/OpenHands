@@ -390,7 +390,7 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _send_action_server_request(self, method, url, **kwargs):
         if not self.config.sandbox.remote_runtime_enable_retries:
-            return self._send_action_server_request(method, url, **kwargs)
+            return self._send_action_server_request_impl(method, url, **kwargs)
 
         retry_decorator = tenacity.retry(
             retry=tenacity.retry_if_exception_type(ConnectionError),

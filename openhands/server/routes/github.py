@@ -10,7 +10,6 @@ from openhands.utils.import_utils import get_impl
 
 app = APIRouter(prefix='/api/github')
 
-
 GithubServiceImpl = get_impl(GitHubService, server_config.github_service_class)
 
 
