@@ -1,48 +1,51 @@
-export interface ActionMessage {
-  id: number;
-
-  // Either 'agent' or 'user'
-  source: "agent" | "user";
-
-  // The action to be taken
-  action: string;
-
-  // The arguments for the action
-  args: Record<string, string>;
-
-  // A friendly message that can be put in the chat log
-  message: string;
-
-  // The timestamp of the message
-  timestamp: string;
-}
-
-export interface ObservationMessage {
-  // The type of observation
-  observation: string;
-
-  id: number;
-  cause: number;
-
-  // The observed data
+export interface BaseMessage {
+  sender: "user" | "assistant";
   content: string;
-
-  extras: {
-    metadata: Record<string, unknown>;
-    error_id: string;
-    [key: string]: string | Record<string, unknown>;
-  };
-
-  // A friendly message that can be put in the chat log
-  message: string;
-
-  // The timestamp of the message
+  imageUrls?: string[];
   timestamp: string;
+  pending?: boolean;
+  translationID?: string;
+  eventID?: string;
+  success?: boolean;
+  filePath?: string;
 }
 
-export interface StatusMessage {
-  status_update: true;
-  type: string;
-  id?: string;
-  message: string;
+export interface ChatMessage extends BaseMessage {
+  type?: undefined;
 }
+
+export interface ThoughtMessage extends BaseMessage {
+  type: "thought";
+}
+
+export interface ActionMessage extends BaseMessage {
+  type: "action";
+  args: Record<string, unknown>;
+}
+
+export interface ErrorMessage extends BaseMessage {
+  type: "error";
+  id?: string;
+}
+
+export interface ObservationMessage extends BaseMessage {
+  type: "observation";
+  observation: string;
+  extras: Record<string, unknown>;
+}
+
+export interface StatusMessage extends BaseMessage {
+  type: "status" | "info" | "error";
+  id?: string;
+  message?: string;
+}
+
+export type Message =
+  | ChatMessage
+  | ThoughtMessage
+  | ActionMessage
+  | ErrorMessage
+  | ObservationMessage
+  | StatusMessage;
+
+export type AnyMessage = Message;
