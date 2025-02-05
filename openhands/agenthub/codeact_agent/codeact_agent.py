@@ -432,20 +432,7 @@ class CodeActAgent(Agent):
             - Messages from the same role are combined to prevent consecutive same-role messages
             - For Anthropic models, specific messages are cached according to their documentation
         """
-        if not self.prompt_manager:
-            raise Exception('Prompt Manager not instantiated.')
-
-        messages: list[Message] = [
-            Message(
-                role='system',
-                content=[
-                    TextContent(
-                        text=self.prompt_manager.get_system_message(),
-                        cache_prompt=self.llm.is_caching_prompt_active(),
-                    )
-                ],
-            )
-        ]
+        messages: list[Message] = []
 
         pending_tool_call_action_messages: dict[str, Message] = {}
         tool_call_id_to_message: dict[str, Message] = {}
@@ -453,7 +440,6 @@ class CodeActAgent(Agent):
         # Condense the events from the state.
         events = self.condenser.condensed_history(state)
 
-        is_first_message_handled = False
         for event in events:
             # create a regular message from an event
             if isinstance(event, Action):
@@ -497,19 +483,6 @@ class CodeActAgent(Agent):
 
             for msg in messages_to_add:
                 if msg:
-                    if msg.role == 'user' and not is_first_message_handled:
-                        is_first_message_handled = True
-                        # compose the first user message with examples
-                        self.prompt_manager.add_examples_to_initial_message(msg)
-
-                        # and/or repo/runtime info
-                        if self.config.enable_prompt_extensions:
-                            self.prompt_manager.add_info_to_initial_message(msg)
-
-                    # enhance the user message with additional context based on keywords matched
-                    if msg.role == 'user':
-                        self.prompt_manager.enhance_message(msg)
-
                     messages.append(msg)
 
         if self.llm.is_caching_prompt_active():
