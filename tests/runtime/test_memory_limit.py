@@ -1,6 +1,7 @@
 import pytest
 from openhands.core.config import AppConfig
 from openhands.events import EventStream
+from openhands.events.action import CmdRunAction
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 
 
@@ -42,10 +43,12 @@ print("Memory allocation successful")
 """
     
     # Execute with low memory limit - should fail
-    result_low = runtime_low_mem.execute(
-        "python",
-        input=memory_hog_script,
-        timeout=30
+    result_low = runtime_low_mem.run(
+        CmdRunAction(
+            command="python",
+            input=memory_hog_script,
+            timeout=30
+        )
     )
     assert result_low.error is not None and \
            ("MemoryError" in result_low.error or "Killed" in result_low.error or result_low.exit_code != 0), \
@@ -62,10 +65,12 @@ print("Memory allocation successful")
     runtime_high_mem.connect()
     
     # Execute with high memory limit - should succeed
-    result_high = runtime_high_mem.execute(
-        "python",
-        input=memory_hog_script,
-        timeout=30
+    result_high = runtime_high_mem.run(
+        CmdRunAction(
+            command="python",
+            input=memory_hog_script,
+            timeout=30
+        )
     )
     assert result_high.error is None and result_high.exit_code == 0, \
         "Process should have completed successfully with high memory limit"
