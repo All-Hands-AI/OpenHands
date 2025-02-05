@@ -49,6 +49,11 @@ class FileEditObservation(Observation):
     observation: str = ObservationType.EDIT
     impl_source: FileEditSource = FileEditSource.LLM_BASED_EDIT
     formatted_output_and_error: str = ''
+    _diff_cache: str | None = None  # Cache for the diff visualization
+
+    def __post_init__(self):
+        # Set content to a placeholder - we'll compute it lazily
+        self.content = "[File edit observation - diff will be computed when needed]"
 
     @property
     def message(self) -> str:
@@ -107,9 +112,15 @@ class FileEditObservation(Observation):
             n_context_lines: The number of lines of context to show before and after the changes.
             change_applied: Whether the changes are applied to the file. If true, the file have been modified. If not, the file is not modified (due to linting errors).
         """
-        if change_applied and self.content.strip() == '':
-            # diff patch is empty
-            return '(no changes detected. Please make sure your edits changes the content of the existing file.)\n'
+        # Use cached diff if available
+        if self._diff_cache is not None:
+            return self._diff_cache
+
+        # Check if there are any changes
+        if change_applied and self.old_content == self.new_content:
+            # No changes detected
+            self._diff_cache = '(no changes detected. Please make sure your edits changes the content of the existing file.)\n'
+            return self._diff_cache
 
         edit_groups = self.get_edit_groups(n_context_lines=n_context_lines)
 
@@ -129,18 +140,20 @@ class FileEditObservation(Observation):
             result.append(f'(content after {op_type})')
             result.extend(cur_edit_group['after_edits'])
             result.append(f'[end of {op_type} {i+1} / {len(edit_groups)}]')
-        return '\n'.join(result)
+        
+        # Cache the result
+        self._diff_cache = '\n'.join(result)
+        return self._diff_cache
 
     def __str__(self) -> str:
         if self.impl_source == FileEditSource.OH_ACI:
             return self.formatted_output_and_error
 
-        ret = ''
         if not self.prev_exist:
             assert (
                 self.old_content == ''
             ), 'old_content should be empty if the file is new (prev_exist=False).'
-            ret += f'[New file {self.path} is created with the provided content.]\n'
-            return ret.rstrip() + '\n'
-        ret += self.visualize_diff()
-        return ret.rstrip() + '\n'
+            return f'[New file {self.path} is created with the provided content.]\n'
+
+        # Use cached diff if available, otherwise compute it
+        return self.visualize_diff().rstrip() + '\n'
