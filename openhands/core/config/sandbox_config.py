@@ -68,7 +68,7 @@ class SandboxConfig(BaseModel):
     enable_gpu: bool = Field(default=False)
     memory_limit: str | None = Field(
         default=None,
-        description="Memory limit for the runtime container (e.g. '2g' for 2GB, '512m' for 512MB). None means no limit."
+        description="Memory limit for the runtime container (e.g. '2g' for 2GB, '512m' for 512MB). None means no limit.",
     )
     docker_runtime_kwargs: str | None = Field(default=None)
 
