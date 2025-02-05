@@ -528,7 +528,7 @@ def test_send_pull_request_target_branch_with_fork(
     ]
 
     # Call the function with fork_owner and target_branch
-    result = send_pull_request(
+    pr_url = send_pull_request(
         github_issue=mock_github_issue,
         github_token='test-token',
         github_username='test-user',
@@ -538,22 +538,32 @@ def test_send_pull_request_target_branch_with_fork(
         target_branch=target_branch,
     )
 
+    # Verify the PR URL
+    assert pr_url == 'https://github.com/test-owner/test-repo/pull/1'
+
     # Assert API calls
     assert mock_get.call_count == 2
-    
+
     # Verify target branch was checked in original repo, not fork
     target_branch_check = mock_get.call_args_list[1]
-    assert target_branch_check[0][0] == f'https://api.github.com/repos/test-owner/test-repo/branches/{target_branch}'
+    assert (
+        target_branch_check[0][0]
+        == f'https://api.github.com/repos/test-owner/test-repo/branches/{target_branch}'
+    )
 
     # Check PR creation
     mock_post.assert_called_once()
     post_data = mock_post.call_args[1]['json']
     assert post_data['base'] == target_branch  # PR should target the specified branch
-    assert post_data['head'] == 'openhands-fix-issue-42'  # Branch name should be standard
+    assert (
+        post_data['head'] == 'openhands-fix-issue-42'
+    )  # Branch name should be standard
 
     # Check that push was to fork
     push_call = mock_run.call_args_list[1]
-    assert f'https://test-user:test-token@github.com/{fork_owner}/test-repo.git' in str(push_call)
+    assert f'https://test-user:test-token@github.com/{fork_owner}/test-repo.git' in str(
+        push_call
+    )
 
 
 @patch('subprocess.run')
@@ -584,7 +594,7 @@ def test_send_pull_request_target_branch_with_additional_message(
     ]
 
     # Call the function with target_branch and additional_message
-    result = send_pull_request(
+    pr_url = send_pull_request(
         github_issue=mock_github_issue,
         github_token='test-token',
         github_username='test-user',
@@ -593,6 +603,9 @@ def test_send_pull_request_target_branch_with_additional_message(
         target_branch=target_branch,
         additional_message=additional_message,
     )
+
+    # Verify the PR URL
+    assert pr_url == 'https://github.com/test-owner/test-repo/pull/1'
 
     # Assert API calls
     assert mock_get.call_count == 2
