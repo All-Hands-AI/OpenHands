@@ -1,0 +1,19 @@
+name: 'Disk Space Debug'
+description: 'Print disk space usage information'
+runs:
+  using: "composite"
+  steps:
+    - name: Check disk space
+      shell: bash
+      run: |
+        echo "=== Disk Space Overview ==="
+        df -h
+        echo
+        echo "=== Largest Directories ==="
+        sudo du -h / 2>/dev/null | sort -rh | head -n 20
+        echo
+        echo "=== Docker Space Usage ==="
+        docker system df || true
+        echo
+        echo "=== Largest Files ==="
+        sudo find / -type f -exec du -h {} + 2>/dev/null | sort -rh | head -n 20

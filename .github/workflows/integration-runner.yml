@@ -64,8 +64,19 @@ jobs:
           echo "base_url = \"$LLM_BASE_URL\"" >> config.toml
           echo "temperature = 0.0" >> config.toml
 
+      - name: Check disk space before build
+        uses: ./.github/actions/disk-space
+
       - name: Build environment
         run: make build
+
+      - name: Clean up Docker resources after build
+        run: |
+          docker system prune -af
+          docker volume prune -f
+
+      - name: Check disk space after build
+        uses: ./.github/actions/disk-space
 
       - name: Run integration test evaluation for Haiku
         env:
@@ -80,6 +91,14 @@ jobs:
           cat $REPORT_FILE_HAIKU >> $GITHUB_ENV
           echo >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
+
+      - name: Clean up Docker resources after Haiku test
+        run: |
+          docker system prune -af
+          docker volume prune -f
+
+      - name: Check disk space after Haiku test
+        uses: ./.github/actions/disk-space
 
       - name: Wait a little bit
         run: sleep 10
