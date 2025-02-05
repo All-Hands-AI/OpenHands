@@ -273,6 +273,7 @@ class DockerRuntime(ActionExecutionClient):
                     if self.config.sandbox.enable_gpu
                     else None
                 ),
+                mem_limit=self.config.sandbox.memory_limit,
                 **(self.config.sandbox.docker_runtime_kwargs or {}),
             )
             self.log('debug', f'Container started. Server url: {self.api_url}')
