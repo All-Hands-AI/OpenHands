@@ -4,54 +4,59 @@ import {
   addUserMessage,
   addErrorMessage,
 } from "#/state/chat-slice";
-import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
+import {
+  appendSecurityAnalyzerInput,
+  ActionSecurityRisk,
+} from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
 import store from "#/store";
-import ActionType from "#/types/action-type";
+
 import {
   ActionMessage,
   ObservationMessage,
   StatusMessage,
 } from "#/types/message";
+import { OpenHandsEventType } from "#/types/core/base";
+
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
 
 const messageActions = {
-  [ActionType.BROWSE]: (message: ActionMessage) => {
-    if (!message.args.thought && message.message) {
-      store.dispatch(addAssistantMessage(message.message));
+  browse: (message: ActionMessage) => {
+    if (!message.args.thought && message.args.message) {
+      store.dispatch(addAssistantMessage(message.args.message as string));
     }
   },
-  [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
-    if (!message.args.thought && message.message) {
-      store.dispatch(addAssistantMessage(message.message));
+  browse_interactive: (message: ActionMessage) => {
+    if (!message.args.thought && message.args.message) {
+      store.dispatch(addAssistantMessage(message.args.message as string));
     }
   },
-  [ActionType.WRITE]: (message: ActionMessage) => {
+  write: (message: ActionMessage) => {
     const { path, content } = message.args;
     store.dispatch(setActiveFilepath(path));
     store.dispatch(setCode(content));
   },
-  [ActionType.MESSAGE]: (message: ActionMessage) => {
-    if (message.source === "user") {
+  message: (message: ActionMessage) => {
+    if (message.args.source === "user") {
       store.dispatch(
         addUserMessage({
-          content: message.args.content,
+          content: message.args.content as string,
           imageUrls:
             typeof message.args.image_urls === "string"
-              ? [message.args.image_urls]
-              : message.args.image_urls,
+              ? [message.args.image_urls as string]
+              : (message.args.image_urls as string[]),
           timestamp: message.timestamp,
           pending: false,
         }),
       );
     } else {
-      store.dispatch(addAssistantMessage(message.args.content));
+      store.dispatch(addAssistantMessage(message.args.content as string));
     }
   },
-  [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
+  run_ipython: (message: ActionMessage) => {
     if (message.args.confirmation_state !== "rejected") {
       store.dispatch(appendJupyterInput(message.args.code));
     }
@@ -63,26 +68,75 @@ export function handleActionMessage(message: ActionMessage) {
     return;
   }
 
-  if (message.action === ActionType.RUN) {
-    store.dispatch(appendInput(message.args.command));
+  if (message.args.action === "run") {
+    store.dispatch(appendInput(message.args.command as string));
   }
 
-  if ("args" in message && "security_risk" in message.args) {
+  if ("security_risk" in message.args) {
     store.dispatch(appendSecurityAnalyzerInput(message));
   }
 
-  if (message.source === "agent") {
-    if (message.args && message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
+  if (message.args.source === "agent") {
+    if (message.args.thought) {
+      store.dispatch(addAssistantMessage(message.args.thought as string));
     }
-    // Need to convert ActionMessage to RejectAction
-    // @ts-expect-error TODO: fix
-    store.dispatch(addAssistantAction(message));
+    const actionType = message.args.action as OpenHandsEventType;
+    const basePayload = {
+      source: "agent" as const,
+      id: parseInt(message.eventID || "0", 10),
+      message: (message.args.message as string) || "",
+      timestamp: new Date().toISOString(),
+    };
+
+    switch (actionType) {
+      case "reject":
+        store.dispatch(
+          addAssistantAction({
+            ...basePayload,
+            action: "reject",
+            args: { thought: (message.args.thought as string) || "" },
+          }),
+        );
+        break;
+      case "message":
+        store.dispatch(
+          addAssistantAction({
+            ...basePayload,
+            action: "message",
+            args: {
+              thought: (message.args.thought as string) || "",
+              image_urls: [],
+              wait_for_response: false,
+            },
+          }),
+        );
+        break;
+      case "run":
+        store.dispatch(
+          addAssistantAction({
+            ...basePayload,
+            action: "run",
+            args: {
+              command: (message.args.command as string) || "",
+              security_risk:
+                (message.args.security_risk as ActionSecurityRisk) ||
+                ActionSecurityRisk.UNKNOWN,
+              confirmation_state: "awaiting_confirmation",
+              thought: (message.args.thought as string) || "",
+            },
+          }),
+        );
+        break;
+      default:
+        // For other action types, we'll need to handle them specifically
+        // For now, we'll skip dispatching if the action type isn't handled
+        break;
+    }
   }
 
-  if (message.action in messageActions) {
-    const actionFn =
-      messageActions[message.action as keyof typeof messageActions];
+  const actionType = message.args.action as keyof typeof messageActions;
+  if (actionType in messageActions) {
+    const actionFn = messageActions[actionType];
     actionFn(message);
   }
 }

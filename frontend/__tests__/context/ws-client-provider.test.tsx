@@ -23,8 +23,10 @@ describe("Propagate error message", () => {
 
     expect(addErrorMessageSpy).toHaveBeenCalledWith({
       message,
-      status_update: true,
-      type: 'error'
+      content: message,
+      type: 'error',
+      sender: 'assistant',
+      timestamp: expect.any(String)
      });
   });
 
@@ -35,9 +37,11 @@ describe("Propagate error message", () => {
 
     expect(addErrorMessageSpy).toHaveBeenCalledWith({
       message,
+      content: message,
       id: '..id..',
-      status_update: true,
-      type: 'error'
+      type: 'error',
+      sender: 'assistant',
+      timestamp: expect.any(String)
      });
   });
 });
