@@ -173,6 +173,10 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
     store.dispatch(
       addErrorMessage({
         message: "Unknown message type received",
+        content: "Unknown message type received",
+        type: "error",
+        sender: "assistant",
+        timestamp: new Date().toISOString(),
       }),
     );
   }
