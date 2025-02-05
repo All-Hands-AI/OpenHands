@@ -170,7 +170,9 @@ export const chatSlice = createSlice({
         causeMessage.content = content; // Observation content includes the action
       } else if (observationID === "read" || observationID === "edit") {
         const { content } = observation.payload;
-        causeMessage.content = `\`\`\`${observationID === "edit" ? "diff" : "python"}\n${content}\n\`\`\``; // Content is already truncated by the ACI
+        causeMessage.content = `\`\`\`${
+          observationID === "edit" ? "diff" : "python"
+        }\n${content}\n\`\`\``; // Content is already truncated by the ACI
         causeMessage.filePath = observation.payload.extras.path;
       } else if (observationID === "browse") {
         let content = `**URL:** ${observation.payload.extras.url}\n`;

@@ -53,7 +53,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
         </ChatMessage>
       );
     });
-  }
+  },
 );
 
 Messages.displayName = "Messages";

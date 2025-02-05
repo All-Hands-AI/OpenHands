@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
-import { useConversation } from "#/context/conversation";
+import { useConversation } from "#/context/conversation-context";
 
 export function useGitDiff(filePath: string | null) {
   const { conversationId } = useConversation();
@@ -11,6 +11,6 @@ export function useGitDiff(filePath: string | null) {
     {
       enabled: !!conversationId && !!filePath,
       staleTime: 1000 * 60 * 5, // 5 minutes
-    }
+    },
   );
 }
