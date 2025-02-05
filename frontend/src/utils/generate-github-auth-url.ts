@@ -8,5 +8,5 @@ export const generateGitHubAuthUrl = (clientId: string, requestUrl: URL) => {
   const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
   const baseUrl = `${requestUrl.origin}`.replace("https://", "").replace("http://", "")
   const scope = "openid email profile";
-  return `https://auth.${baseUrl}./realms/allhands/protocol/openid-connect/auth?client_id=github&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&state=some-state-value&nonce=222`;
+  return `https://auth.${baseUrl}/realms/allhands/protocol/openid-connect/auth?client_id=github&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&state=some-state-value&nonce=222`;
 };
