@@ -16,15 +16,20 @@ class GitHubService:
     def __init__(self, user_id: str | None):
         self.user_id = user_id
 
+    async def get_user_token(self) -> str:
+        settings_store = await SettingsStoreImpl.get_instance(config, self.user_id)
+        settings = await settings_store.load()
+        if settings and settings.github_token:
+            return settings.github_token.get_secret_value()
+
+        return ''
+
     async def _get_github_headers(self):
         """
         Retrieve the GH Token from settings store to construct the headers
         """
 
-        settings_store = await SettingsStoreImpl.get_instance(config, self.user_id)
-        settings = await settings_store.load()
-        if settings and settings.github_token:
-            self.token = settings.github_token.get_secret_value()
+        self.token = await self.get_user_token()
 
         return {
             'Authorization': f'Bearer {self.token}',

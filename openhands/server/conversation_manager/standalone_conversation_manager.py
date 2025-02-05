@@ -239,14 +239,14 @@ class StandaloneConversationManager(ConversationManager):
 
         raise RuntimeError(f'no_connected_session:{connection_id}:{sid}')
 
-    def update_token(self, connection_id: str):
+    async def update_token(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.get(connection_id)
         if not sid:
             raise RuntimeError(f'no_connected_session:{connection_id}')
 
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
-            session.update_token()
+            await session.update_token()
 
     async def disconnect_from_session(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)

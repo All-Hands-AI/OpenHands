@@ -23,6 +23,7 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
+from openhands.server.routes.github import GithubServiceImpl
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.settings import Settings
@@ -215,8 +216,9 @@ class Session:
             return
         await self._send(data)
 
-    def update_token(self):
-        token = ''
+    async def update_token(self):
+        gh_client = GithubServiceImpl(self.user_id)
+        token = await gh_client.get_user_token()
         self.agent_session.update_token(token)
 
     async def _send(self, data: dict[str, object]) -> bool:

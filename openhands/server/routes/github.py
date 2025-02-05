@@ -114,8 +114,8 @@ async def search_github_repositories(
 
 
 @app.post('/refresh-runtime')
-def refresh_gh_token_in_runtime(connection_id: str):
+async def refresh_gh_token_in_runtime(connection_id: str):
     try:
-        conversation_manager.update_token(connection_id)
+        await conversation_manager.update_token(connection_id)
     except Exception:
         pass
