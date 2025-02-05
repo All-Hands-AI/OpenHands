@@ -1,3 +1,20 @@
+"""File operations module for agent skills.
+
+DEPRECATED: This module is deprecated and will be removed in version 0.22.0.
+Please migrate to the function calling interface.
+See https://docs.all-hands.dev/usage/migration/agent-skills-to-function-calls for details.
+"""
+
+import warnings
+
+warnings.warn(
+    "The file_ops module is deprecated and will be removed in version 0.22.0. "
+    "Please migrate to the function calling interface. "
+    "See https://docs.all-hands.dev/usage/migration/agent-skills-to-function-calls for details.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 from openhands.runtime.plugins.agent_skills.file_ops import file_ops
 from openhands.runtime.plugins.agent_skills.utils.dependency import import_functions
 
