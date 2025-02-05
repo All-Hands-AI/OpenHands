@@ -9,6 +9,7 @@ import SettingsScreen from "#/routes/settings";
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { PostApiSettings } from "#/types/settings";
+import * as ConsentHandlers from "#/utils/handle-capture-consent";
 
 describe("Settings Screen", () => {
   const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
@@ -451,6 +452,42 @@ describe("Settings Screen", () => {
         github_token: undefined, // not set
         llm_api_key: undefined, // not set
       });
+    });
+
+    it("should call handleCaptureConsent with true if the save is successful", async () => {
+      const user = userEvent.setup();
+      const handleCaptureConsentSpy = vi.spyOn(
+        ConsentHandlers,
+        "handleCaptureConsent",
+      );
+      renderSettingsScreen();
+
+      const analyticsConsentInput = await screen.findByTestId(
+        "enable-analytics-switch",
+      );
+
+      expect(analyticsConsentInput).not.toBeChecked();
+      await user.click(analyticsConsentInput);
+      expect(analyticsConsentInput).toBeChecked();
+
+      const saveButton = screen.getByText("Save Changes");
+      await user.click(saveButton);
+
+      expect(handleCaptureConsentSpy).toHaveBeenCalledWith(true);
+    });
+
+    it("should call handleCaptureConsent with false if the save is successful", async () => {
+      const user = userEvent.setup();
+      const handleCaptureConsentSpy = vi.spyOn(
+        ConsentHandlers,
+        "handleCaptureConsent",
+      );
+      renderSettingsScreen();
+
+      const saveButton = await screen.findByText("Save Changes");
+      await user.click(saveButton);
+
+      expect(handleCaptureConsentSpy).toHaveBeenCalledWith(false);
     });
   });
 });

@@ -16,6 +16,7 @@ import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { useAppLogout } from "#/hooks/use-app-logout";
+import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 
 const displayErrorToast = (error: string) => {
   toast.error(error, {
@@ -79,12 +80,14 @@ function SettingsScreen() {
       DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR;
     const remoteRuntimeResourceFactor = Number(rawRemoteRuntimeResourceFactor);
 
+    const userConsentsToAnalytics =
+      formData.get("enable-analytics-switch")?.toString() === "on";
+
     try {
       await saveSettings({
         github_token: formData.get("github-token-input")?.toString() || "",
         LANGUAGE: languageValue,
-        user_consents_to_analytics:
-          formData.get("enable-analytics-switch")?.toString() === "on",
+        user_consents_to_analytics: userConsentsToAnalytics,
         LLM_MODEL: customLlmModel || fullLlmModel,
         LLM_BASE_URL: formData.get("base-url-input")?.toString(),
         LLM_API_KEY: formData.get("llm-api-key-input")?.toString(),
@@ -94,6 +97,8 @@ function SettingsScreen() {
         REMOTE_RUNTIME_RESOURCE_FACTOR: remoteRuntimeResourceFactor,
         ENABLE_DEFAULT_CONDENSER: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
       });
+
+      handleCaptureConsent(userConsentsToAnalytics);
 
       displaySuccessToast("Settings saved");
     } catch (error) {
