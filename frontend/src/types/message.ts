@@ -31,7 +31,7 @@ export interface ObservationMessage extends BaseMessage {
 }
 
 export interface StatusMessage extends BaseMessage {
-  type: "status" | "info";
+  type: "status" | "info" | "error";
   id?: string;
   message?: string;
 }

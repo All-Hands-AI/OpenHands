@@ -151,7 +151,12 @@ export function handleStatusMessage(message: StatusMessage) {
   } else if (message.type === "error") {
     store.dispatch(
       addErrorMessage({
-        ...message,
+        id: message.id,
+        message: message.message || message.content || "Unknown error",
+        content: message.message || message.content || "Unknown error",
+        type: "error",
+        sender: "assistant",
+        timestamp: new Date().toISOString(),
       }),
     );
   }
