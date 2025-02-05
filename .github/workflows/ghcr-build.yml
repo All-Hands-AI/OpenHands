@@ -85,11 +85,15 @@ jobs:
           echo "=== Largest Files/Directories ==="
           sudo du -h / 2>/dev/null | sort -rh | head -n 20
 
-      - name: Clean up Docker resources
+      - name: Clean up unused Docker resources
         run: |
-          echo "=== Cleaning up Docker resources ==="
-          docker system prune -af --volumes
-          docker builder prune -af
+          echo "=== Cleaning up unused Docker resources ==="
+          # Remove only dangling images (untagged)
+          docker image prune -f
+          # Remove containers that have exited more than 1 hour ago
+          docker container prune -f --filter "until=1h"
+          # Remove only unused volumes
+          docker volume prune -f
           echo
           echo "=== Docker Space Usage After Cleanup ==="
           docker system df
@@ -118,11 +122,15 @@ jobs:
           echo "=== Largest Files/Directories ==="
           sudo du -h / 2>/dev/null | sort -rh | head -n 20
 
-      - name: Clean up Docker resources after hash verification
+      - name: Clean up unused Docker resources after hash verification
         run: |
-          echo "=== Cleaning up Docker resources ==="
-          docker system prune -af --volumes
-          docker builder prune -af
+          echo "=== Cleaning up unused Docker resources ==="
+          # Remove only dangling images (untagged)
+          docker image prune -f
+          # Remove containers that have exited more than 1 hour ago
+          docker container prune -f --filter "until=1h"
+          # Remove only unused volumes
+          docker volume prune -f
           echo
           echo "=== Docker Space Usage After Cleanup ==="
           docker system df
