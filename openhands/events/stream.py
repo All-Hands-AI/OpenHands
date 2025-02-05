@@ -120,9 +120,7 @@ class EventStream:
             for callback_id in callback_ids:
                 self._clean_up_subscriber(subscriber_id, callback_id)
 
-        # Clear history and queue
-        if hasattr(self, 'state') and hasattr(self.state, 'history'):
-            self.state.history.clear()
+        # Clear queue
         while not self._queue.empty():
             self._queue.get()
 
