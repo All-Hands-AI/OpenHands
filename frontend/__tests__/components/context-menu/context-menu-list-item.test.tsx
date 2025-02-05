@@ -5,7 +5,10 @@ import { ContextMenuListItem } from "#/components/features/context-menu/context-
 
 describe("ContextMenuListItem", () => {
   it("should render the component with the children", () => {
-    render(<ContextMenuListItem onClick={vi.fn}>Test</ContextMenuListItem>);
+    const onClickMock = vi.fn();
+    render(
+      <ContextMenuListItem onClick={onClickMock}>Test</ContextMenuListItem>,
+    );
 
     expect(screen.getByTestId("context-menu-list-item")).toBeInTheDocument();
     expect(screen.getByText("Test")).toBeInTheDocument();

@@ -29,7 +29,7 @@ def _patch_store():
                 'title': 'Some Conversation',
                 'selected_repository': 'foobar',
                 'conversation_id': 'some_conversation_id',
-                'github_user_id': 12345,
+                'github_user_id': '12345',
                 'created_at': '2025-01-01T00:00:00',
                 'last_updated_at': '2025-01-01T00:01:00',
             }
@@ -40,7 +40,7 @@ def _patch_store():
         MagicMock(return_value=file_store),
     ):
         with patch(
-            'openhands.server.routes.manage_conversations.session_manager.file_store',
+            'openhands.server.routes.manage_conversations.conversation_manager.file_store',
             file_store,
         ):
             yield

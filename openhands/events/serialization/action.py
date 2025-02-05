@@ -74,7 +74,8 @@ def action_from_dict(action: dict) -> Action:
     try:
         decoded_action = action_class(**args)
         if 'timeout' in action:
-            decoded_action.timeout = action['timeout']
+            blocking = args.get('blocking', False)
+            decoded_action.set_hard_timeout(action['timeout'], blocking=blocking)
 
         # Set timestamp if it was provided
         if timestamp:

@@ -71,6 +71,7 @@ def get_config(
                 'MAP': f'{base_url}:3000',
                 'HOMEPAGE': f'{base_url}:4399',
             },
+            remote_runtime_enable_retries=True,
         ),
         # do not mount workspace
         workspace_base=None,
@@ -78,7 +79,7 @@ def get_config(
     )
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
-    agent_config.use_microagents = False
+    agent_config.enable_prompt_extensions = False
     return config
 
 

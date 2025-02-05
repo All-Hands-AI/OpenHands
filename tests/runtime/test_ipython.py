@@ -52,7 +52,7 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.content.strip() == (
         'Hello, `World`!\n'
-        '[Jupyter current working directory: /openhands/workspace]\n'
+        '[Jupyter current working directory: /workspace]\n'
         '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]'
     )
 
@@ -73,7 +73,7 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
 
     assert obs.content == ''
     # event stream runtime will always use absolute path
-    assert obs.path == '/openhands/workspace/hello.sh'
+    assert obs.path == '/workspace/hello.sh'
 
     # Test read file (file should exist)
     action_read = FileReadAction(path='hello.sh')
@@ -85,7 +85,7 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     assert obs.content == 'echo "Hello, World!"\n'
-    assert obs.path == '/openhands/workspace/hello.sh'
+    assert obs.path == '/workspace/hello.sh'
 
     # clean up
     action = CmdRunAction(command='rm -rf hello.sh')
@@ -188,7 +188,7 @@ def test_ipython_simple(temp_dir, runtime_cls):
         obs.content.strip()
         == (
             '1\n'
-            '[Jupyter current working directory: /openhands/workspace]\n'
+            '[Jupyter current working directory: /workspace]\n'
             '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]'
         ).strip()
     )
@@ -224,7 +224,7 @@ def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
     # import should not error out
     assert obs.content.strip() == (
         '[Code executed successfully with no output]\n'
-        '[Jupyter current working directory: /openhands/workspace]\n'
+        '[Jupyter current working directory: /workspace]\n'
         '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]'
     )
 
@@ -273,16 +273,16 @@ def test_ipython_file_editor_permissions_as_openhands(temp_dir, runtime_cls):
     # Try to use file editor in openhands sandbox directory - should work
     test_code = """
 # Create file
-print(file_editor(command='create', path='/openhands/workspace/test.txt', file_text='Line 1\\nLine 2\\nLine 3'))
+print(file_editor(command='create', path='/workspace/test.txt', file_text='Line 1\\nLine 2\\nLine 3'))
 
 # View file
-print(file_editor(command='view', path='/openhands/workspace/test.txt'))
+print(file_editor(command='view', path='/workspace/test.txt'))
 
 # Edit file
-print(file_editor(command='str_replace', path='/openhands/workspace/test.txt', old_str='Line 2', new_str='New Line 2'))
+print(file_editor(command='str_replace', path='/workspace/test.txt', old_str='Line 2', new_str='New Line 2'))
 
 # Undo edit
-print(file_editor(command='undo_edit', path='/openhands/workspace/test.txt'))
+print(file_editor(command='undo_edit', path='/workspace/test.txt'))
 """
     action = IPythonRunCellAction(code=test_code)
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -297,7 +297,7 @@ print(file_editor(command='undo_edit', path='/openhands/workspace/test.txt'))
     assert 'undone successfully' in obs.content
 
     # Clean up
-    action = CmdRunAction(command='rm -f /openhands/workspace/test.txt')
+    action = CmdRunAction(command='rm -f /workspace/test.txt')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -314,7 +314,7 @@ print(file_editor(command='undo_edit', path='/openhands/workspace/test.txt'))
 
 def test_file_read_and_edit_via_oh_aci(runtime_cls, run_as_openhands):
     runtime = _load_runtime(None, runtime_cls, run_as_openhands)
-    sandbox_dir = '/openhands/workspace'
+    sandbox_dir = '/workspace'
 
     actions = [
         {

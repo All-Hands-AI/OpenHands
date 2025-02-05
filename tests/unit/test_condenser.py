@@ -17,9 +17,9 @@ from openhands.core.config.llm_config import LLMConfig
 from openhands.events.event import Event, EventSource
 from openhands.events.observation.observation import Observation
 from openhands.llm import LLM
-from openhands.memory.condenser import (
+from openhands.memory.condenser import Condenser
+from openhands.memory.condenser.impl import (
     AmortizedForgettingCondenser,
-    Condenser,
     ImportantEventSelection,
     LLMAttentionCondenser,
     LLMSummarizingCondenser,
@@ -226,7 +226,7 @@ def test_llm_condenser_from_config():
 
     assert isinstance(condenser, LLMSummarizingCondenser)
     assert condenser.llm.config.model == 'gpt-4o'
-    assert condenser.llm.config.api_key == 'test_key'
+    assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
 
 
 def test_llm_condenser(mock_llm, mock_state):
@@ -381,7 +381,7 @@ def test_llm_attention_condenser_from_config():
 
     assert isinstance(condenser, LLMAttentionCondenser)
     assert condenser.llm.config.model == 'gpt-4o'
-    assert condenser.llm.config.api_key == 'test_key'
+    assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
 

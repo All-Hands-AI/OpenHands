@@ -1,4 +1,4 @@
-"""Bash-related tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
+"""Bash-related tests for the DockerRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import asyncio
 import os
@@ -92,14 +92,14 @@ def initialize_runtime(
     obs: CmdOutputObservation
 
     action = CmdRunAction(command="""export USER=$(whoami); echo USER=${USER} """)
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to export USER: {str(obs)}')
 
     action = CmdRunAction(command='mkdir -p /dummy_dir')
-    action.timeout = 600
+    action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})

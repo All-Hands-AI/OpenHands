@@ -14,7 +14,7 @@ class SessionMiddlewareInterface(Protocol):
     pass
 
 
-class OpenhandsConfigInterface(ABC):
+class ServerConfigInterface(ABC):
     CONFIG_PATH: ClassVar[str | None]
     APP_MODE: ClassVar[AppMode]
     POSTHOG_CLIENT_KEY: ClassVar[str]
@@ -27,11 +27,30 @@ class OpenhandsConfigInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def verify_github_repo_list(self, installation_id: int | None) -> None:
-        """Verify that repo list is being called via user's profile or Github App installations."""
-        raise NotImplementedError
-
-    @abstractmethod
     async def get_config(self) -> dict[str, str]:
         """Configure attributes for frontend"""
         raise NotImplementedError
+
+
+class MissingSettingsError(ValueError):
+    """Raised when settings are missing or not found."""
+
+    pass
+
+
+class LLMAuthenticationError(ValueError):
+    """Raised when there is an issue with LLM authentication."""
+
+    pass
+
+
+class GhAuthenticationError(ValueError):
+    """Raised when there is an issue with LLM authentication."""
+
+    pass
+
+
+class GHUnknownException(ValueError):
+    """Raised when there is an issue with LLM authentication."""
+
+    pass

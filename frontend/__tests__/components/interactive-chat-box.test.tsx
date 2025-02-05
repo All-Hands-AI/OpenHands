@@ -157,7 +157,7 @@ describe("InteractiveChatBox", () => {
     expect(onChange).not.toHaveBeenCalledWith("");
 
     // Submit the message with image
-    const submitButton = screen.getByRole("button", { name: "Send" });
+    const submitButton = screen.getByRole("button", { name: "BUTTON$SEND" });
     await user.click(submitButton);
 
     // Verify onSubmit was called with the message and image

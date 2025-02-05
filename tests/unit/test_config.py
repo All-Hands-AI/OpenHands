@@ -63,7 +63,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
 
     assert config.workspace_base == '/repos/openhands/workspace'
     assert isinstance(config.get_llm_config(), LLMConfig)
-    assert config.get_llm_config().api_key == 'sk-proj-rgMV0...'
+    assert config.get_llm_config().api_key.get_secret_value() == 'sk-proj-rgMV0...'
     assert config.get_llm_config().model == 'gpt-4o'
     assert isinstance(config.get_agent_config(), AgentConfig)
     assert isinstance(config.get_agent_config().memory_max_threads, int)
@@ -83,7 +83,7 @@ def test_load_from_old_style_env(monkeypatch, default_config):
 
     load_from_env(default_config, os.environ)
 
-    assert default_config.get_llm_config().api_key == 'test-api-key'
+    assert default_config.get_llm_config().api_key.get_secret_value() == 'test-api-key'
     assert default_config.get_agent_config().memory_enabled is True
     assert default_config.default_agent == 'BrowsingAgent'
     assert default_config.workspace_base == '/opt/files/workspace'
@@ -126,7 +126,7 @@ default_agent = "TestAgent"
     # default llm & agent configs
     assert default_config.default_agent == 'TestAgent'
     assert default_config.get_llm_config().model == 'test-model'
-    assert default_config.get_llm_config().api_key == 'toml-api-key'
+    assert default_config.get_llm_config().api_key.get_secret_value() == 'toml-api-key'
     assert default_config.get_agent_config().memory_enabled is True
 
     # undefined agent config inherits default ones
@@ -291,7 +291,7 @@ sandbox_user_id = 1001
     assert default_config.get_llm_config().model == 'test-model'
     assert default_config.get_llm_config('llm').model == 'test-model'
     assert default_config.get_llm_config_from_agent().model == 'test-model'
-    assert default_config.get_llm_config().api_key == 'env-api-key'
+    assert default_config.get_llm_config().api_key.get_secret_value() == 'env-api-key'
 
     # after we set workspace_base to 'UNDEFINED' in the environment,
     # workspace_base should be set to that
@@ -336,7 +336,7 @@ user_id = 1001
     assert default_config.workspace_mount_path is None
 
     # before load_from_env, values are set to the values from the toml file
-    assert default_config.get_llm_config().api_key == 'toml-api-key'
+    assert default_config.get_llm_config().api_key.get_secret_value() == 'toml-api-key'
     assert default_config.sandbox.timeout == 500
     assert default_config.sandbox.user_id == 1001
 
@@ -345,7 +345,7 @@ user_id = 1001
     # values from env override values from toml
     assert os.environ.get('LLM_MODEL') is None
     assert default_config.get_llm_config().model == 'test-model'
-    assert default_config.get_llm_config().api_key == 'env-api-key'
+    assert default_config.get_llm_config().api_key.get_secret_value() == 'env-api-key'
 
     assert default_config.sandbox.timeout == 1000
     assert default_config.sandbox.user_id == 1002
@@ -412,7 +412,7 @@ def test_security_config_from_dict():
     # Test with all fields
     config_dict = {'confirmation_mode': True, 'security_analyzer': 'some_analyzer'}
 
-    security_config = SecurityConfig.from_dict(config_dict)
+    security_config = SecurityConfig(**config_dict)
 
     # Verify all fields are correctly set
     assert security_config.confirmation_mode is True
@@ -560,10 +560,7 @@ invalid_field_in_sandbox = "test"
         assert 'Cannot parse [llm] config from toml' in log_content
         assert 'values have not been applied' in log_content
         # Error: LLMConfig.__init__() got an unexpected keyword argume
-        assert (
-            'Error: LLMConfig.__init__() got an unexpected keyword argume'
-            in log_content
-        )
+        assert 'Error: 1 validation error for LLMConfig' in log_content
         assert 'invalid_field' in log_content
 
         # invalid [sandbox] config
@@ -635,12 +632,14 @@ def test_api_keys_repr_str():
         aws_access_key_id='my_access_key',
         aws_secret_access_key='my_secret_key',
     )
-    assert "api_key='******'" in repr(llm_config)
-    assert "aws_access_key_id='******'" in repr(llm_config)
-    assert "aws_secret_access_key='******'" in repr(llm_config)
-    assert "api_key='******'" in str(llm_config)
-    assert "aws_access_key_id='******'" in str(llm_config)
-    assert "aws_secret_access_key='******'" in str(llm_config)
+
+    # Check that no secret keys are emitted in representations of the config object
+    assert 'my_api_key' not in repr(llm_config)
+    assert 'my_api_key' not in str(llm_config)
+    assert 'my_access_key' not in repr(llm_config)
+    assert 'my_access_key' not in str(llm_config)
+    assert 'my_secret_key' not in repr(llm_config)
+    assert 'my_secret_key' not in str(llm_config)
 
     # Check that no other attrs in LLMConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
@@ -652,7 +651,7 @@ def test_api_keys_repr_str():
         'output_cost_per_token',
         'custom_tokenizer',
     ]
-    for attr_name in dir(LLMConfig):
+    for attr_name in LLMConfig.model_fields.keys():
         if (
             not attr_name.startswith('__')
             and attr_name not in known_key_token_attrs_llm
@@ -667,7 +666,7 @@ def test_api_keys_repr_str():
     # Test AgentConfig
     # No attrs in AgentConfig have 'key' or 'token' in their name
     agent_config = AgentConfig(memory_enabled=True, memory_max_threads=4)
-    for attr_name in dir(AgentConfig):
+    for attr_name in AgentConfig.model_fields.keys():
         if not attr_name.startswith('__'):
             assert (
                 'key' not in attr_name.lower()
@@ -686,16 +685,16 @@ def test_api_keys_repr_str():
         modal_api_token_secret='my_modal_api_token_secret',
         runloop_api_key='my_runloop_api_key',
     )
-    assert "e2b_api_key='******'" in repr(app_config)
-    assert "e2b_api_key='******'" in str(app_config)
-    assert "jwt_secret='******'" in repr(app_config)
-    assert "jwt_secret='******'" in str(app_config)
-    assert "modal_api_token_id='******'" in repr(app_config)
-    assert "modal_api_token_id='******'" in str(app_config)
-    assert "modal_api_token_secret='******'" in repr(app_config)
-    assert "modal_api_token_secret='******'" in str(app_config)
-    assert "runloop_api_key='******'" in repr(app_config)
-    assert "runloop_api_key='******'" in str(app_config)
+    assert 'my_e2b_api_key' not in repr(app_config)
+    assert 'my_e2b_api_key' not in str(app_config)
+    assert 'my_jwt_secret' not in repr(app_config)
+    assert 'my_jwt_secret' not in str(app_config)
+    assert 'my_modal_api_token_id' not in repr(app_config)
+    assert 'my_modal_api_token_id' not in str(app_config)
+    assert 'my_modal_api_token_secret' not in repr(app_config)
+    assert 'my_modal_api_token_secret' not in str(app_config)
+    assert 'my_runloop_api_key' not in repr(app_config)
+    assert 'my_runloop_api_key' not in str(app_config)
 
     # Check that no other attrs in AppConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
@@ -705,7 +704,7 @@ def test_api_keys_repr_str():
         'modal_api_token_secret',
         'runloop_api_key',
     ]
-    for attr_name in dir(AppConfig):
+    for attr_name in AppConfig.model_fields.keys():
         if (
             not attr_name.startswith('__')
             and attr_name not in known_key_token_attrs_app

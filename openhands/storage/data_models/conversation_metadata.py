@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 @dataclass
 class ConversationMetadata:
     conversation_id: str
-    github_user_id: int
+    github_user_id: str | None
     selected_repository: str | None
     title: str | None = None
     last_updated_at: datetime | None = None

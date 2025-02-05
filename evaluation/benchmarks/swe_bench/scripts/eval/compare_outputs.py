@@ -15,11 +15,25 @@ parser.add_argument(
     action='store_true',
     help='Show visualization paths for failed instances',
 )
+parser.add_argument(
+    '--only-x-instances',
+    action='store_true',
+    help='Only show instances that are ran by X',
+)
 args = parser.parse_args()
 
 df1 = pd.read_json(args.input_file_1, orient='records', lines=True)
 df2 = pd.read_json(args.input_file_2, orient='records', lines=True)
 
+if args.only_x_instances:
+    instance_ids_1 = set(df1['instance_id'].tolist())
+    print(
+        f'Before removing instances not in X={args.input_file_1}: Y={df2.shape[0]} instances'
+    )
+    df2 = df2[df2['instance_id'].isin(instance_ids_1)]
+    print(
+        f'After removing instances not in X={args.input_file_1}: Y={df2.shape[0]} instances'
+    )
 
 # Get the intersection of the instance_ids
 df = pd.merge(df1, df2, on='instance_id', how='inner')
@@ -86,7 +100,7 @@ repo_diffs = []
 for repo in all_repos:
     x_count = len(x_only_by_repo.get(repo, []))
     y_count = len(y_only_by_repo.get(repo, []))
-    diff = abs(x_count - y_count)
+    diff = y_count - x_count
     repo_diffs.append((repo, diff))
 
 # Sort by diff (descending) and then by repo name
@@ -106,7 +120,13 @@ for repo, diff in repo_diffs:
     repo_color = 'red' if is_significant else 'yellow'
 
     print(f"\n{colored(repo, repo_color, attrs=['bold'])}:")
-    print(colored(f'Difference: {diff} instances!', repo_color, attrs=['bold']))
+    print(
+        colored(
+            f'Difference: {diff} instances! (Larger diff = Y better)',
+            repo_color,
+            attrs=['bold'],
+        )
+    )
     print(colored(f'X resolved but Y failed: ({len(x_instances)} instances)', 'green'))
     if x_instances:
         print('  ' + str(x_instances))

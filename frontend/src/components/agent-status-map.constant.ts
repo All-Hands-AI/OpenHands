@@ -23,7 +23,7 @@ export const AGENT_STATUS_MAP: {
   },
   [AgentState.AWAITING_USER_INPUT]: {
     message: I18nKey.CHAT_INTERFACE$AGENT_AWAITING_USER_INPUT_MESSAGE,
-    indicator: IndicatorColor.ORANGE,
+    indicator: IndicatorColor.BLUE,
   },
   [AgentState.PAUSED]: {
     message: I18nKey.CHAT_INTERFACE$AGENT_PAUSED_MESSAGE,

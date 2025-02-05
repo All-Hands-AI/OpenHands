@@ -11,6 +11,7 @@ from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
+from openhands.core.schema import ActionType
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -89,15 +90,7 @@ class CodeActAgent(Agent):
         self.pending_actions: deque[Action] = deque()
         self.reset()
 
-        self.mock_function_calling = False
-        if not self.llm.is_function_calling_active():
-            logger.info(
-                f'Function calling not enabled for model {self.llm.config.model}. '
-                'Mocking function calling via prompting.'
-            )
-            self.mock_function_calling = True
-
-        # Function calling mode
+        # Retrieve the enabled tools
         self.tools = codeact_function_calling.get_tools(
             codeact_enable_browsing=self.config.codeact_enable_browsing,
             codeact_enable_jupyter=self.config.codeact_enable_jupyter,
@@ -111,7 +104,7 @@ class CodeActAgent(Agent):
                 os.path.dirname(os.path.dirname(openhands.__file__)),
                 'microagents',
             )
-            if self.config.use_microagents
+            if self.config.enable_prompt_extensions
             else None,
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
             disabled_microagents=self.config.disabled_microagents,
@@ -277,16 +270,11 @@ class CodeActAgent(Agent):
             # if it doesn't have tool call metadata, it was triggered by a user action
             if obs.tool_call_metadata is None:
                 text = truncate_content(
-                    f'\nObserved result of command executed by user:\n{obs.content}',
+                    f'\nObserved result of command executed by user:\n{obs.to_agent_observation()}',
                     max_message_chars,
                 )
             else:
-                text = truncate_content(
-                    obs.content
-                    + f'\n[Python Interpreter: {obs.metadata.py_interpreter_path}]',
-                    max_message_chars,
-                )
-            text += f'\n[Command finished with exit code {obs.exit_code}]'
+                text = truncate_content(obs.to_agent_observation(), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
@@ -309,10 +297,27 @@ class CodeActAgent(Agent):
             )  # Content is already truncated by openhands-aci
         elif isinstance(obs, BrowserOutputObservation):
             text = obs.get_agent_obs_text()
-            message = Message(
-                role='user',
-                content=[TextContent(text=text)],
-            )
+            if (
+                obs.trigger_by_action == ActionType.BROWSE_INTERACTIVE
+                and obs.set_of_marks is not None
+                and len(obs.set_of_marks) > 0
+                and self.config.enable_som_visual_browsing
+                and self.llm.vision_is_active()
+                and self.llm.is_visual_browser_tool_supported()
+            ):
+                text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
+                message = Message(
+                    role='user',
+                    content=[
+                        TextContent(text=text),
+                        ImageContent(image_urls=[obs.set_of_marks]),
+                    ],
+                )
+            else:
+                message = Message(
+                    role='user',
+                    content=[TextContent(text=text)],
+                )
         elif isinstance(obs, AgentDelegateObservation):
             text = truncate_content(
                 obs.outputs['content'] if 'content' in obs.outputs else '',
@@ -384,8 +389,6 @@ class CodeActAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
-        if self.mock_function_calling:
-            params['mock_function_calling'] = True
         response = self.llm.completion(**params)
         actions = codeact_function_calling.response_to_actions(response)
         for action in actions:
@@ -438,15 +441,6 @@ class CodeActAgent(Agent):
                 ],
             )
         ]
-        example_message = self.prompt_manager.get_example_user_message()
-        if example_message:
-            messages.append(
-                Message(
-                    role='user',
-                    content=[TextContent(text=example_message)],
-                    cache_prompt=self.llm.is_caching_prompt_active(),
-                )
-            )
 
         pending_tool_call_action_messages: dict[str, Message] = {}
         tool_call_id_to_message: dict[str, Message] = {}
@@ -454,6 +448,7 @@ class CodeActAgent(Agent):
         # Condense the events from the state.
         events = self.condenser.condensed_history(state)
 
+        is_first_message_handled = False
         for event in events:
             # create a regular message from an event
             if isinstance(event, Action):
@@ -495,11 +490,22 @@ class CodeActAgent(Agent):
             for response_id in _response_ids_to_remove:
                 pending_tool_call_action_messages.pop(response_id)
 
-            for message in messages_to_add:
-                if message:
-                    if message.role == 'user':
-                        self.prompt_manager.enhance_message(message)
-                    messages.append(message)
+            for msg in messages_to_add:
+                if msg:
+                    if msg.role == 'user' and not is_first_message_handled:
+                        is_first_message_handled = True
+                        # compose the first user message with examples
+                        self.prompt_manager.add_examples_to_initial_message(msg)
+
+                        # and/or repo/runtime info
+                        if self.config.enable_prompt_extensions:
+                            self.prompt_manager.add_info_to_initial_message(msg)
+
+                    # enhance the user message with additional context based on keywords matched
+                    if msg.role == 'user':
+                        self.prompt_manager.enhance_message(msg)
+
+                    messages.append(msg)
 
         if self.llm.is_caching_prompt_active():
             # NOTE: this is only needed for anthropic
@@ -507,7 +513,7 @@ class CodeActAgent(Agent):
             # https://github.com/anthropics/anthropic-quickstarts/blob/8f734fd08c425c6ec91ddd613af04ff87d70c5a0/computer-use-demo/computer_use_demo/loop.py#L241-L262
             breakpoints_remaining = 3  # remaining 1 for system/tool
             for message in reversed(messages):
-                if message.role == 'user' or message.role == 'tool':
+                if message.role in ('user', 'tool'):
                     if breakpoints_remaining > 0:
                         message.content[
                             -1

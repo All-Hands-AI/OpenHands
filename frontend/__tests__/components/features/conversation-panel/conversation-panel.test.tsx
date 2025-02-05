@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   QueryClientProvider,
@@ -7,10 +7,12 @@ import {
 } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
+import React from "react";
 import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
 import { clickOnEditButton } from "./utils";
+import { queryClientConfig } from "#/query-client-config";
 
 describe("ConversationPanel", () => {
   const onCloseMock = vi.fn();
@@ -71,7 +73,7 @@ describe("ConversationPanel", () => {
 
     renderConversationPanel();
 
-    const emptyState = await screen.findByText("No conversations found");
+    const emptyState = await screen.findByText("CONVERSATION$NO_CONVERSATIONS");
     expect(emptyState).toBeInTheDocument();
   });
 
@@ -177,9 +179,10 @@ describe("ConversationPanel", () => {
     const user = userEvent.setup();
     renderConversationPanel();
     const cards = await screen.findAllByTestId("conversation-card");
-    const title = within(cards[0]).getByTestId("conversation-card-title");
 
-    await clickOnEditButton(user);
+    const card = cards[0];
+    await clickOnEditButton(user, card);
+    const title = within(card).getByTestId("conversation-card-title");
 
     await user.clear(title);
     await user.type(title, "Conversation 1 Renamed");
@@ -200,7 +203,10 @@ describe("ConversationPanel", () => {
     const user = userEvent.setup();
     renderConversationPanel();
     const cards = await screen.findAllByTestId("conversation-card");
-    const title = within(cards[0]).getByTestId("conversation-card-title");
+
+    const card = cards[0];
+    await clickOnEditButton(user, card);
+    const title = within(card).getByTestId("conversation-card-title");
 
     await user.click(title);
     await user.tab();
@@ -225,10 +231,53 @@ describe("ConversationPanel", () => {
   it("should call onClose after clicking a card", async () => {
     renderConversationPanel();
     const cards = await screen.findAllByTestId("conversation-card");
-    const firstCard = cards[0];
+    const firstCard = cards[1];
 
     await userEvent.click(firstCard);
 
     expect(onCloseMock).toHaveBeenCalledOnce();
+  });
+
+  it("should refetch data on rerenders", async () => {
+    // We need to simulate the toggling of the component to test the refetching
+    function PanelWithToggle() {
+      const [isOpen, setIsOpen] = React.useState(true);
+      return (
+        <>
+          <button type="button" onClick={() => setIsOpen((prev) => !prev)}>
+            Toggle
+          </button>
+          {isOpen && <ConversationPanel onClose={onCloseMock} />}
+        </>
+      );
+    }
+
+    const MyRouterStub = createRoutesStub([
+      {
+        Component: PanelWithToggle,
+        path: "/",
+      },
+    ]);
+
+    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    render(<MyRouterStub />, {
+      wrapper: ({ children }) => (
+        <AuthProvider>
+          <QueryClientProvider client={new QueryClient(queryClientConfig)}>
+            {children}
+          </QueryClientProvider>
+        </AuthProvider>
+      ),
+    });
+
+    await waitFor(() => expect(getUserConversationsSpy).toHaveBeenCalledOnce());
+
+    const button = screen.getByText("Toggle");
+    await userEvent.click(button);
+    await userEvent.click(button);
+
+    await waitFor(() =>
+      expect(getUserConversationsSpy).toHaveBeenCalledTimes(2),
+    );
   });
 });
