@@ -324,4 +324,16 @@ class OpenHands {
   }
 }
 
+  static async getGitDiff(
+    conversationId: string,
+    filePath: string
+  ): Promise<string> {
+    const url = `/api/conversations/${conversationId}/git-diff`;
+    const { data } = await openHands.get<{ diff: string }>(url, {
+      params: { file: filePath },
+    });
+    return data.diff;
+  }
+}
+
 export default OpenHands;
