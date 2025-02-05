@@ -54,6 +54,14 @@ class LLMSummarizingCondenserConfig(BaseModel):
     llm_config: LLMConfig = Field(
         ..., description='Configuration for the LLM to use for condensing.'
     )
+    keep_first: int = Field(
+        default=1,
+        description='The number of initial events to condense.',
+        ge=0,
+    )
+    max_size: int = Field(
+        default=10, description='Maximum number of events to keep.', ge=1
+    )
 
 
 class AmortizedForgettingCondenserConfig(BaseModel):
