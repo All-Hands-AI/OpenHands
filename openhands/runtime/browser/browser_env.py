@@ -207,22 +207,51 @@ class BrowserEnv:
             logger.debug(f'Browser env is not alive. Response ID: {response_id}')
 
     def close(self):
-        if not self.process.is_alive():
-            return
         try:
-            self.agent_side.send(('SHUTDOWN', None))
-            self.process.join(5)  # Wait for the process to terminate
+            # Always try to send shutdown signal if process is alive
             if self.process.is_alive():
-                logger.error(
-                    'Browser process did not terminate, forcefully terminating...'
-                )
-                self.process.terminate()
-                self.process.join(5)  # Wait for the process to terminate
-                if self.process.is_alive():
-                    self.process.kill()
+                try:
+                    self.agent_side.send(('SHUTDOWN', None))
                     self.process.join(5)  # Wait for the process to terminate
-            self.agent_side.close()
-            self.browser_side.close()
+                except Exception:
+                    pass
+
+                # Force terminate if still alive
+                if self.process.is_alive():
+                    logger.error(
+                        'Browser process did not terminate, forcefully terminating...'
+                    )
+                    try:
+                        self.process.terminate()
+                        self.process.join(5)  # Wait for the process to terminate
+                    except Exception:
+                        pass
+
+                    # Force kill if still alive
+                    if self.process.is_alive():
+                        try:
+                            self.process.kill()
+                            self.process.join(5)  # Wait for the process to terminate
+                        except Exception:
+                            pass
+
+            # Always try to close pipes, even if process is not alive
+            try:
+                self.agent_side.close()
+            except Exception:
+                pass
+            try:
+                self.browser_side.close()
+            except Exception:
+                pass
+
+            # Ensure process is terminated
+            if self.process.is_alive():
+                logger.error('Failed to terminate browser process')
+                try:
+                    self.process.kill()  # Final attempt
+                except Exception:
+                    pass
         except Exception as e:
             logger.error(f'Encountered an error when closing browser env: {e}')
 
