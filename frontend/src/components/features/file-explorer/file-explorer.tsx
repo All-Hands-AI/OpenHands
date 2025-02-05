@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
@@ -11,6 +11,8 @@ import { cn } from "#/utils/utils";
 import { FileExplorerHeader } from "./file-explorer-header";
 import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
 import { OpenVSCodeButton } from "#/components/shared/buttons/open-vscode-button";
+import { GitDiffViewer } from "./git-diff-viewer";
+import { useFiles } from "#/context/files";
 
 interface FileExplorerProps {
   isOpen: boolean;
@@ -19,8 +21,9 @@ interface FileExplorerProps {
 
 export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
   const { t } = useTranslation();
-
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { selectedPath } = useFiles();
+  const [gitDiff, setGitDiff] = useState<string | null>(null);
 
   const { data: paths, refetch, error } = useListFiles();
   const { data: vscodeUrl } = useVSCodeUrl({
@@ -46,9 +49,19 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     refreshWorkspace();
   }, [curAgentState]);
+
+  useEffect(() => {
+    if (selectedPath) {
+      // TODO: Implement function to fetch git diff
+      // For now, we'll use a placeholder
+      setGitDiff("--- a/example.txt\n+++ b/example.txt\n@@ -1,3 +1,3 @@\n-Old line\n+New line\n No change");
+    } else {
+      setGitDiff(null);
+    }
+  }, [selectedPath]);
 
   return (
     <div data-testid="file-explorer" className="relative h-full">
@@ -68,6 +81,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
             <div className="overflow-auto flex-grow min-h-0">
               <div style={{ display: !isOpen ? "none" : "block" }}>
                 <ExplorerTree files={paths || []} />
+                {gitDiff && <GitDiffViewer diff={gitDiff} />}
               </div>
             </div>
           )}
