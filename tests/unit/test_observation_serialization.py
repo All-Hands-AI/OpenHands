@@ -1,6 +1,8 @@
+from openhands.events.event import FileEditSource
 from openhands.events.observation import (
     CmdOutputMetadata,
     CmdOutputObservation,
+    FileEditObservation,
     Observation,
 )
 from openhands.events.serialization import (
@@ -146,3 +148,39 @@ def test_legacy_serialization():
     assert event_dict['extras']['metadata']['pid'] == 3
     assert event_dict['extras']['command'] == 'ls -l'
     assert event_dict['extras']['hidden'] is False
+
+
+def test_file_edit_observation_content():
+    """Test that FileEditObservation correctly handles the content attribute."""
+    # Test creating a new file
+    obs = FileEditObservation(
+        content='[File edit observation - diff will be computed when needed]',
+        path='test.txt',
+        prev_exist=False,
+        old_content='',
+        new_content='new content',
+        impl_source=FileEditSource.LLM_BASED_EDIT,
+    )
+    # Content should be set in __post_init__
+    assert obs.content == '[File edit observation - diff will be computed when needed]'
+    assert str(obs) == '[New file test.txt is created with the provided content.]\n'
+
+    # Test editing an existing file
+    obs = FileEditObservation(
+        content='[File edit observation - diff will be computed when needed]',
+        path='test.txt',
+        prev_exist=True,
+        old_content='old content',
+        new_content='new content',
+        impl_source=FileEditSource.LLM_BASED_EDIT,
+    )
+    # Content should be set in __post_init__
+    assert obs.content == '[File edit observation - diff will be computed when needed]'
+    # Calling str() should compute the diff
+    result = str(obs)
+    assert '[Existing file test.txt is edited with 1 changes.]' in result
+    assert '(content before edit)' in result
+    assert '(content after edit)' in result
+    # The diff should be cached
+    assert obs._diff_cache is not None
+    assert obs._diff_cache == result.rstrip() + '\n'
