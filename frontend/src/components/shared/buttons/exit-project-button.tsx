@@ -14,7 +14,7 @@ export function ExitProjectButton({ onClick }: ExitProjectButtonProps) {
   const startNewProject = t(I18nKey.PROJECT$START_NEW);
 
   // Only show the button in the conversations page
-  if (!location.pathname.includes("/conversations")) return null;
+  if (!location.pathname.startsWith("/conversations")) return null;
 
   return (
     <TooltipButton
