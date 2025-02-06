@@ -55,7 +55,7 @@ export function GitHubRepositorySelector({
   const emptyContent = t(I18nKey.GITHUB$NO_RESULTS);
 
   return (
-    (<Autocomplete
+    <Autocomplete
       data-testid="github-repo-selector"
       name="repo"
       aria-label="GitHub Repository"
@@ -82,7 +82,7 @@ export function GitHubRepositorySelector({
       {config?.APP_MODE === "saas" &&
         config?.APP_SLUG &&
         ((
-          (<AutocompleteItem key="install">
+          <AutocompleteItem key="install">
             <a
               href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
               target="_blank"
@@ -91,7 +91,7 @@ export function GitHubRepositorySelector({
             >
               {t(I18nKey.GITHUB$ADD_MORE_REPOS)}
             </a>
-          </AutocompleteItem>) // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          </AutocompleteItem> // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ) as any)}
       {userRepositories.length > 0 && (
         <AutocompleteSection showDivider title={t(I18nKey.GITHUB$YOUR_REPOS)}>
@@ -126,6 +126,6 @@ export function GitHubRepositorySelector({
           ))}
         </AutocompleteSection>
       )}
-    </Autocomplete>)
+    </Autocomplete>
   );
 }
