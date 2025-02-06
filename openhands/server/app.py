@@ -51,4 +51,6 @@ app.include_router(conversation_api_router)
 app.include_router(manage_conversation_api_router)
 app.include_router(settings_router)
 app.include_router(github_api_router)
+# TODO for example
+# app.include_router(gitlab_api_router)
 app.include_router(trajectory_router)
