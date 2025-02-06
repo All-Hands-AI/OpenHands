@@ -102,6 +102,8 @@ class CodeActAgent(Agent):
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {self.condenser}')
 
+
+
     def get_action_message(
         self,
         action: Action,
