@@ -15,7 +15,7 @@ from openhands.events.observation import CmdOutputObservation
 
 def test_env_vars_os_environ(temp_dir, runtime_cls, run_as_openhands):
     with patch.dict(os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}):
-        runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+        runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
         obs: CmdOutputObservation = runtime.run_action(CmdRunAction(command='env'))
         print(obs)
@@ -33,7 +33,7 @@ def test_env_vars_os_environ(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_env_vars_runtime_operations(temp_dir, runtime_cls):
-    runtime = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
 
     # Test adding single env var
     runtime.add_env_vars({'QUUX': 'abc"def'})
@@ -68,7 +68,7 @@ def test_env_vars_runtime_operations(temp_dir, runtime_cls):
 
 
 def test_env_vars_added_by_config(temp_dir, runtime_cls):
-    runtime = _load_runtime(
+    runtime, config = _load_runtime(
         temp_dir,
         runtime_cls,
         runtime_startup_env_vars={'ADDED_ENV_VAR': 'added_value'},
@@ -86,7 +86,7 @@ def test_env_vars_added_by_config(temp_dir, runtime_cls):
 def test_docker_runtime_env_vars_persist_after_restart(temp_dir):
     from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 
-    runtime = _load_runtime(temp_dir, DockerRuntime)
+    runtime, config = _load_runtime(temp_dir, DockerRuntime)
 
     # Add a test environment variable
     runtime.add_env_vars({'GITHUB_TOKEN': 'test_token'})
