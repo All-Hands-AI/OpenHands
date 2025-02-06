@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
-import { I18nKey } from "#/i18n/declaration";
 
 // Mock react-i18next
 vi.mock("react-i18next", () => ({
