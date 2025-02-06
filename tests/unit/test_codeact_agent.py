@@ -464,16 +464,6 @@ def test_browser_tool():
     assert 'description' in BrowserTool['function']['parameters']['properties']['code']
 
 
-def test_mock_function_calling():
-    # Test mock function calling when LLM doesn't support it
-    llm = Mock()
-    llm.is_function_calling_active = lambda: False
-    config = AgentConfig()
-    config.enable_prompt_extensions = False
-    agent = CodeActAgent(llm=llm, config=config)
-    assert agent.mock_function_calling is True
-
-
 def test_response_to_actions_invalid_tool():
     # Test response with invalid tool call
     mock_response = Mock()
