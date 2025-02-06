@@ -152,27 +152,17 @@ class AgentController:
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
 
-        # prompt manager and first user message tracking
-        microagent_dir = None
-        if agent.config.enable_prompt_extensions:
-            microagent_dir = os.path.join(
-                os.path.dirname(os.path.dirname(openhands.__file__)),
-                'microagents',
-            )
-
-        # Get prompt manager from agent to allow specialized implementations
-        self.prompt_manager = agent.get_prompt_manager(
-            microagent_dir=microagent_dir,
-            disabled_microagents=agent.config.disabled_microagents,
-        )
+        # First user message tracking
         self._first_user_message_received = False
 
-        # Send system message at initialization
-        if not self.is_delegate and self.prompt_manager:
-            self.event_stream.add_event(
-                SystemMessageAction(content=self.prompt_manager.get_system_message()),
-                EventSource.AGENT,
-            )
+        # Send system message at initialization if the agent provides one
+        if not self.is_delegate and hasattr(agent, 'get_system_message'):
+            system_message = agent.get_system_message()
+            if system_message:
+                self.event_stream.add_event(
+                    SystemMessageAction(content=system_message),
+                    EventSource.AGENT,
+                )
 
     async def close(self) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
