@@ -79,23 +79,22 @@ def test_get_messages(codeact_agent: CodeActAgent):
     )
 
     assert (
-        len(messages) == 6
-    )  # System, initial user + user message, agent message, last user message
-    assert messages[0].content[0].cache_prompt  # system message
-    assert messages[1].role == 'user'
-    assert messages[1].content[0].text.endswith('Initial user message')
+        len(messages) == 5
+    )  # Initial user message, agent message, user message, agent message, last user message
+    assert messages[0].role == 'user'
+    assert messages[0].content[0].text.endswith('Initial user message')
     # we add cache breakpoint to the last 3 user messages
-    assert messages[1].content[0].cache_prompt
+    assert messages[0].content[0].cache_prompt
 
-    assert messages[3].role == 'user'
-    assert messages[3].content[0].text == ('Hello, agent!')
-    assert messages[3].content[0].cache_prompt
-    assert messages[4].role == 'assistant'
-    assert messages[4].content[0].text == 'Hello, user!'
-    assert not messages[4].content[0].cache_prompt
-    assert messages[5].role == 'user'
-    assert messages[5].content[0].text.startswith('Laaaaaaaast!')
-    assert messages[5].content[0].cache_prompt
+    assert messages[2].role == 'user'
+    assert messages[2].content[0].text == ('Hello, agent!')
+    assert messages[2].content[0].cache_prompt
+    assert messages[3].role == 'assistant'
+    assert messages[3].content[0].text == 'Hello, user!'
+    assert not messages[3].content[0].cache_prompt
+    assert messages[4].role == 'user'
+    assert messages[4].content[0].text.startswith('Laaaaaaaast!')
+    assert messages[4].content[0].cache_prompt
 
 
 def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
@@ -116,15 +115,48 @@ def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
 
     # Check that only the last two user messages have cache_prompt=True
     cached_user_messages = [
-        msg
-        for msg in messages
-        if msg.role in ('user', 'system') and msg.content[0].cache_prompt
+        msg for msg in messages if msg.role == 'user' and msg.content[0].cache_prompt
     ]
     assert (
-        len(cached_user_messages) == 4
-    )  # Including the initial system+user + 2 last user message
+        len(cached_user_messages) == 3
+    )  # Including the initial user message + 2 last user messages
 
     # Verify that these are indeed the last two user messages (from start)
-    assert cached_user_messages[0].content[0].text.startswith('You are OpenHands agent')
+    assert cached_user_messages[0].content[0].text.startswith('User message 0')
+    assert cached_user_messages[1].content[0].text.startswith('User message 1')
     assert cached_user_messages[2].content[0].text.startswith('User message 1')
-    assert cached_user_messages[3].content[0].text.startswith('User message 1')
+
+
+def test_prompt_caching_headers(codeact_agent: CodeActAgent):
+    history = list()
+    # Setup
+    msg1 = MessageAction('Hello, agent!')
+    msg1._source = 'user'
+    history.append(msg1)
+    msg2 = MessageAction('Hello, user!')
+    msg2._source = 'agent'
+    history.append(msg2)
+
+    mock_state = Mock()
+    mock_state.history = history
+    mock_state.max_iterations = 5
+    mock_state.iteration = 0
+    mock_state.extra_data = {}
+
+    codeact_agent.reset()
+
+    # Create a mock for litellm_completion
+    def check_headers(**kwargs):
+        assert 'extra_headers' in kwargs
+        assert 'anthropic-beta' in kwargs['extra_headers']
+        assert kwargs['extra_headers']['anthropic-beta'] == 'prompt-caching-2024-07-31'
+        return ModelResponse(
+            choices=[{'message': {'content': 'Hello! How can I assist you today?'}}]
+        )
+
+    codeact_agent.llm._completion_unwrapped = check_headers
+    result = codeact_agent.step(mock_state)
+
+    # Assert
+    assert isinstance(result, MessageAction)
+    assert result.content == 'Hello! How can I assist you today?'
