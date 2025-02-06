@@ -84,33 +84,38 @@ export function Sidebar() {
   return (
     <>
       <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
-        <nav className="flex flex-row md:flex-col items-center gap-[18px]">
-          <div className="w-[34px] h-[34px] flex items-center justify-center mb-7">
-            <AllHandsLogoButton onClick={handleEndSession} />
+        <nav className="flex flex-row md:flex-col items-center justify-between h-full">
+          <div className="flex flex-col items-center gap-[26px]">
+            <div className="flex items-center justify-center">
+              <AllHandsLogoButton onClick={handleEndSession} />
+            </div>
+            <ExitProjectButton onClick={handleEndSession} />
+            {MULTI_CONVERSATION_UI && (
+              <TooltipButton
+                testId="toggle-conversation-panel"
+                tooltip="Conversations"
+                ariaLabel="Conversations"
+                onClick={() => setConversationPanelIsOpen((prev) => !prev)}
+              >
+                <FaListUl size={22} />
+              </TooltipButton>
+            )}
+            <DocsButton />
           </div>
-          {user.isLoading && <LoadingSpinner size="small" />}
-          <ExitProjectButton onClick={handleEndSession} />
-          {MULTI_CONVERSATION_UI && (
-            <TooltipButton
-              testId="toggle-conversation-panel"
-              tooltip="Conversations"
-              ariaLabel="Conversations"
-              onClick={() => setConversationPanelIsOpen((prev) => !prev)}
-            >
-              <FaListUl size={22} />
-            </TooltipButton>
-          )}
-          <DocsButton />
-          <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
-          {!user.isLoading && (
-            <UserActions
-              user={
-                user.data ? { avatar_url: user.data.avatar_url } : undefined
-              }
-              onLogout={handleLogout}
-              onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
-            />
-          )}
+
+          <div className="flex flex-col items-center gap-[26px] mb-4">
+            <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
+            {!user.isLoading && (
+              <UserActions
+                user={
+                  user.data ? { avatar_url: user.data.avatar_url } : undefined
+                }
+                onLogout={handleLogout}
+                onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
+              />
+            )}
+            {user.isLoading && <LoadingSpinner size="small" />}
+          </div>
         </nav>
 
         {conversationPanelIsOpen && (
