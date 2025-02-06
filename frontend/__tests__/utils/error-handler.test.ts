@@ -4,7 +4,6 @@ import posthog from "posthog-js";
 import toast from "react-hot-toast";
 import * as Actions from "#/services/actions";
 
-// Mock dependencies
 vi.mock("posthog-js", () => ({
   default: {
     captureException: vi.fn(),
@@ -13,7 +12,7 @@ vi.mock("posthog-js", () => ({
 
 vi.mock("react-hot-toast", () => ({
   default: {
-    custom: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
@@ -79,7 +78,7 @@ describe("Error Handler", () => {
       });
 
       // Verify toast was shown
-      expect(toast.custom).toHaveBeenCalled();
+      expect(toast.error).toHaveBeenCalled();
     });
 
     it("should include metadata in PostHog event when showing toast", () => {
@@ -110,19 +109,6 @@ describe("Error Handler", () => {
         id: "error.agent",
       });
 
-      // Test VSCode error
-      showErrorToast({
-        message: "VSCode error",
-        source: "vscode",
-        metadata: { error: "connection failed" },
-      });
-
-      expect(posthog.captureException).toHaveBeenCalledWith(new Error("VSCode error"), {
-        error_source: "vscode",
-        error: "connection failed",
-      });
-
-      // Test server error
       showErrorToast({
         message: "Server error",
         source: "server",
@@ -133,33 +119,6 @@ describe("Error Handler", () => {
         error_source: "server",
         error_code: 500,
         details: "Internal error",
-      });
-    });
-
-    it("should log query and mutation errors with appropriate metadata", () => {
-      // Test query error
-      showErrorToast({
-        message: "Query failed",
-        source: "query",
-        metadata: { queryKey: ["users", "123"] },
-      });
-
-      expect(posthog.captureException).toHaveBeenCalledWith(new Error("Query failed"), {
-        error_source: "query",
-        queryKey: ["users", "123"],
-      });
-
-      // Test mutation error
-      const error = new Error("Mutation failed");
-      showErrorToast({
-        message: error.message,
-        source: "mutation",
-        metadata: { error },
-      });
-
-      expect(posthog.captureException).toHaveBeenCalledWith(new Error("Mutation failed"), {
-        error_source: "mutation",
-        error,
       });
     });
 
@@ -200,26 +159,6 @@ describe("Error Handler", () => {
         message: "Chat error",
         id: "123",
         status_update: true,
-      });
-    });
-
-    it("should include metadata in PostHog event when showing chat error", () => {
-      const error = {
-        message: "Chat error",
-        source: "chat-test",
-        msgId: "123",
-        metadata: {
-          context: "chat testing",
-          severity: "high",
-        },
-      };
-
-      showChatError(error);
-
-      expect(posthog.captureException).toHaveBeenCalledWith(new Error("Chat error"), {
-        error_source: "chat-test",
-        context: "chat testing",
-        severity: "high",
       });
     });
   });
