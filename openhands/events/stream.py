@@ -120,6 +120,10 @@ class EventStream:
             for callback_id in callback_ids:
                 self._clean_up_subscriber(subscriber_id, callback_id)
 
+        # Clear queue
+        while not self._queue.empty():
+            self._queue.get()
+
     def _clean_up_subscriber(self, subscriber_id: str, callback_id: str):
         if subscriber_id not in self._subscribers:
             logger.warning(f'Subscriber not found during cleanup: {subscriber_id}')

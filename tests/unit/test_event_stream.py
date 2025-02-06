@@ -1,15 +1,29 @@
+import gc
 import json
+import os
 
+import psutil
 import pytest
 from pytest import TempPathFactory
 
-from openhands.core.schema.observation import ObservationType
+from openhands.core.schema import ActionType, ObservationType
 from openhands.events import EventSource, EventStream
 from openhands.events.action import (
     NullAction,
 )
+from openhands.events.action.files import (
+    FileEditAction,
+    FileReadAction,
+    FileWriteAction,
+)
 from openhands.events.action.message import MessageAction
+from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation import NullObservation
+from openhands.events.observation.files import (
+    FileEditObservation,
+    FileReadObservation,
+    FileWriteObservation,
+)
 from openhands.storage import get_file_store
 
 
@@ -185,3 +199,103 @@ def test_get_matching_events_limit_validation(temp_dir: str):
     assert len(events) == 1
     events = event_stream.get_matching_events(limit=100)
     assert len(events) == 1
+
+
+def test_memory_usage_file_operations(temp_dir: str):
+    """Test memory usage during file operations in EventStream.
+
+    This test verifies that memory usage during file operations is reasonable
+    and that memory is properly cleaned up after operations complete.
+    """
+
+    def get_memory_mb():
+        """Get current memory usage in MB"""
+        process = psutil.Process(os.getpid())
+        return process.memory_info().rss / 1024 / 1024
+
+    # Create a test file with 100kb content
+    test_file = os.path.join(temp_dir, 'test_file.txt')
+    test_content = 'x' * (100 * 1024)  # 100kb of data
+    with open(test_file, 'w') as f:
+        f.write(test_content)
+
+    # Initialize FileStore and EventStream
+    file_store = get_file_store('local', temp_dir)
+
+    # Record initial memory usage
+    gc.collect()
+    initial_memory = get_memory_mb()
+    max_memory_increase = 0
+
+    # Perform operations 20 times
+    for i in range(20):
+        event_stream = EventStream('test_session', file_store)
+
+        # 1. Read file
+        read_action = FileReadAction(
+            path=test_file,
+            start=0,
+            end=-1,
+            thought='Reading file',
+            action=ActionType.READ,
+            impl_source=FileReadSource.DEFAULT,
+        )
+        event_stream.add_event(read_action, EventSource.AGENT)
+
+        read_obs = FileReadObservation(
+            path=test_file, impl_source=FileReadSource.DEFAULT, content=test_content
+        )
+        event_stream.add_event(read_obs, EventSource.ENVIRONMENT)
+
+        # 2. Write file
+        write_action = FileWriteAction(
+            path=test_file,
+            content=test_content,
+            start=0,
+            end=-1,
+            thought='Writing file',
+            action=ActionType.WRITE,
+        )
+        event_stream.add_event(write_action, EventSource.AGENT)
+
+        write_obs = FileWriteObservation(path=test_file, content=test_content)
+        event_stream.add_event(write_obs, EventSource.ENVIRONMENT)
+
+        # 3. Edit file
+        edit_action = FileEditAction(
+            path=test_file,
+            content=test_content,
+            start=1,
+            end=-1,
+            thought='Editing file',
+            action=ActionType.EDIT,
+            impl_source=FileEditSource.LLM_BASED_EDIT,
+        )
+        event_stream.add_event(edit_action, EventSource.AGENT)
+
+        edit_obs = FileEditObservation(
+            path=test_file,
+            prev_exist=True,
+            old_content=test_content,
+            new_content=test_content,
+            impl_source=FileEditSource.LLM_BASED_EDIT,
+            content=test_content,
+        )
+        event_stream.add_event(edit_obs, EventSource.ENVIRONMENT)
+
+        # Close event stream and force garbage collection
+        event_stream.close()
+        gc.collect()
+
+        # Check memory usage
+        current_memory = get_memory_mb()
+        memory_increase = current_memory - initial_memory
+        max_memory_increase = max(max_memory_increase, memory_increase)
+
+    # Clean up
+    os.remove(test_file)
+
+    # Memory increase should be reasonable (less than 50MB after 20 iterations)
+    assert (
+        max_memory_increase < 50
+    ), f'Memory increase of {max_memory_increase:.1f}MB exceeds limit of 50MB'
