@@ -221,9 +221,9 @@ class Runtime(FileEditRuntimeMixin):
         assert event.timeout is not None
         try:
             if isinstance(event, CmdRunAction):
-                print('found event action', event.action)
-                if '$GITHUB_TOKEN' in event.action:
-                    print('token required by action', event.action)
+                print('found event action', event.command)
+                if '$GITHUB_TOKEN' in event.command:
+                    print('token required by action', event.command)
                     await call_sync_from_async(
                         self.run,
                         CmdRunAction(
