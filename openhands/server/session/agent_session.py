@@ -15,6 +15,7 @@ from openhands.events.stream import EventStream
 from openhands.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
+from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
@@ -47,6 +48,7 @@ class AgentSession:
         sid: str,
         file_store: FileStore,
         status_callback: Optional[Callable] = None,
+        user_id: str | None = None,
     ):
         """Initializes a new instance of the Session class
 
@@ -59,6 +61,7 @@ class AgentSession:
         self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
         self._status_callback = status_callback
+        self.user_id = user_id
 
     async def start(
         self,
@@ -200,15 +203,28 @@ class AgentSession:
             if github_token
             else None
         )
-        self.runtime = runtime_cls(
-            config=config,
-            event_stream=self.event_stream,
-            sid=self.sid,
-            plugins=agent.sandbox_plugins,
-            status_callback=self._status_callback,
-            headless_mode=False,
-            env_vars=env_vars,
-        )
+
+        if runtime_cls == RemoteRuntime:
+            self.runtime = runtime_cls(
+                config=config,
+                event_stream=self.event_stream,
+                sid=self.sid,
+                plugins=agent.sandbox_plugins,
+                status_callback=self._status_callback,
+                headless_mode=False,
+                env_vars=env_vars,
+                user_id=self.user_id,  # Pass user id
+            )
+        else:
+            self.runtime = runtime_cls(
+                config=config,
+                event_stream=self.event_stream,
+                sid=self.sid,
+                plugins=agent.sandbox_plugins,
+                status_callback=self._status_callback,
+                headless_mode=False,
+                env_vars=env_vars,
+            )
 
         # FIXME: this sleep is a terrible hack.
         # This is to give the websocket a second to connect, so that
