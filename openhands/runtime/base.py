@@ -220,6 +220,17 @@ class Runtime(FileEditRuntimeMixin):
             event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
         assert event.timeout is not None
         try:
+            if isinstance(event, CmdRunAction):
+                print('found event action', event.action)
+                if '$GITHUB_TOKEN' in event.action:
+                    print('token required by action', event.action)
+                    await call_sync_from_async(
+                        self.run,
+                        CmdRunAction(
+                            "export UNTESTED_GITHUB_TOKEN='this is a dummy token'"
+                        ),
+                    )
+
             observation: Observation = await call_sync_from_async(
                 self.run_action, event
             )
