@@ -84,23 +84,27 @@ function SettingsScreen() {
       formData.get("enable-analytics-switch")?.toString() === "on";
 
     try {
-      await saveSettings({
-        github_token: formData.get("github-token-input")?.toString() || "",
-        LANGUAGE: languageValue,
-        user_consents_to_analytics: userConsentsToAnalytics,
-        LLM_MODEL: customLlmModel || fullLlmModel,
-        LLM_BASE_URL: formData.get("base-url-input")?.toString(),
-        LLM_API_KEY: formData.get("llm-api-key-input")?.toString(),
-        AGENT: formData.get("agent-input")?.toString(),
-        SECURITY_ANALYZER:
-          formData.get("security-analyzer-input")?.toString() || "",
-        REMOTE_RUNTIME_RESOURCE_FACTOR: remoteRuntimeResourceFactor,
-        ENABLE_DEFAULT_CONDENSER: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
-      });
-
-      handleCaptureConsent(userConsentsToAnalytics);
-
-      displaySuccessToast("Settings saved");
+      await saveSettings(
+        {
+          github_token: formData.get("github-token-input")?.toString() || "",
+          LANGUAGE: languageValue,
+          user_consents_to_analytics: userConsentsToAnalytics,
+          LLM_MODEL: customLlmModel || fullLlmModel,
+          LLM_BASE_URL: formData.get("base-url-input")?.toString(),
+          LLM_API_KEY: formData.get("llm-api-key-input")?.toString(),
+          AGENT: formData.get("agent-input")?.toString(),
+          SECURITY_ANALYZER:
+            formData.get("security-analyzer-input")?.toString() || "",
+          REMOTE_RUNTIME_RESOURCE_FACTOR: remoteRuntimeResourceFactor,
+          ENABLE_DEFAULT_CONDENSER: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
+        },
+        {
+          onSuccess: () => {
+            handleCaptureConsent(userConsentsToAnalytics);
+            displaySuccessToast("Settings saved");
+          },
+        },
+      );
     } catch (error) {
       if (isAxiosError(error)) {
         const errorMessage = error.response?.data.error || error.message;
@@ -299,11 +303,16 @@ function SettingsScreen() {
             type="button"
             variant="secondary"
             onClick={() =>
-              saveSettings({
-                ...DEFAULT_SETTINGS,
-                user_consents_to_analytics:
-                  DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
-              })
+              saveSettings(
+                {
+                  ...DEFAULT_SETTINGS,
+                  user_consents_to_analytics:
+                    DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
+                },
+                {
+                  onSuccess: () => displaySuccessToast("Settings reset"),
+                },
+              )
             }
           >
             Reset to defaults
