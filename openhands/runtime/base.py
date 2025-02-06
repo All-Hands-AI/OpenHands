@@ -48,6 +48,7 @@ from openhands.runtime.plugins import (
     VSCodeRequirement,
 )
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
+from openhands.server.routes.github import GithubServiceImpl
 from openhands.utils.async_utils import call_sync_from_async
 
 STATUS_MESSAGES = {
@@ -93,6 +94,7 @@ class Runtime(FileEditRuntimeMixin):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
+        user_id: str | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
@@ -124,6 +126,8 @@ class Runtime(FileEditRuntimeMixin):
         FileEditRuntimeMixin.__init__(
             self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
         )
+
+        self.user_id = user_id
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -212,6 +216,15 @@ class Runtime(FileEditRuntimeMixin):
             event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
         assert event.timeout is not None
         try:
+            if isinstance(event, CmdRunAction):
+                if '$GITHUB_TOKEN' in event.command and self.user_id:
+                    gh_client = GithubServiceImpl(self.user_id)
+                    token = await call_sync_from_async(gh_client.get_user_token)
+                    if token:
+                        export_cmd = CmdRunAction(f"export GITHUB_TOKEN='{token}'")
+                        print(f'exporting github token {token[0:5]}')
+                        await call_sync_from_async(self.run_action, export_cmd)
+
             observation: Observation = await call_sync_from_async(
                 self.run_action, event
             )

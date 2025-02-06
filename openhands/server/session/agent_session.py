@@ -47,6 +47,7 @@ class AgentSession:
         sid: str,
         file_store: FileStore,
         status_callback: Optional[Callable] = None,
+        user_id: str | None = None,
     ):
         """Initializes a new instance of the Session class
 
@@ -59,6 +60,7 @@ class AgentSession:
         self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
         self._status_callback = status_callback
+        self.user_id = user_id
 
     async def start(
         self,
@@ -208,6 +210,7 @@ class AgentSession:
             status_callback=self._status_callback,
             headless_mode=False,
             env_vars=env_vars,
+            user_id=self.user_id,
         )
 
         # FIXME: this sleep is a terrible hack.
