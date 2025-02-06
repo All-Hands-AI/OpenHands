@@ -96,6 +96,7 @@ class Runtime(FileEditRuntimeMixin):
         headless_mode: bool = False,
         user_id: str | None = None,
     ):
+        print(f'establishing user_id {user_id}')
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(
