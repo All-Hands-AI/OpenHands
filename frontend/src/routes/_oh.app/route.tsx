@@ -164,9 +164,7 @@ function AppContent() {
                   },
                 ]}
               >
-                <FilesProvider>
-                  <Outlet />
-                </FilesProvider>
+                <Outlet />
               </Container>
             }
             secondChild={
@@ -189,23 +187,25 @@ function AppContent() {
 
   return (
     <WsClientProvider conversationId={conversationId}>
-      <EventHandler>
-        <div data-testid="app-route" className="flex flex-col h-full gap-3">
-          <div className="flex h-full overflow-auto">{renderMain()}</div>
+      <FilesProvider>
+        <EventHandler>
+          <div data-testid="app-route" className="flex flex-col h-full gap-3">
+            <div className="flex h-full overflow-auto">{renderMain()}</div>
 
-          <Controls
-            setSecurityOpen={onSecurityModalOpen}
-            showSecurityLock={!!settings?.SECURITY_ANALYZER}
-          />
-          {settings && (
-            <Security
-              isOpen={securityModalIsOpen}
-              onOpenChange={onSecurityModalOpenChange}
-              securityAnalyzer={settings.SECURITY_ANALYZER}
+            <Controls
+              setSecurityOpen={onSecurityModalOpen}
+              showSecurityLock={!!settings?.SECURITY_ANALYZER}
             />
-          )}
-        </div>
-      </EventHandler>
+            {settings && (
+              <Security
+                isOpen={securityModalIsOpen}
+                onOpenChange={onSecurityModalOpenChange}
+                securityAnalyzer={settings.SECURITY_ANALYZER}
+              />
+            )}
+          </div>
+        </EventHandler>
+      </FilesProvider>
     </WsClientProvider>
   );
 }
