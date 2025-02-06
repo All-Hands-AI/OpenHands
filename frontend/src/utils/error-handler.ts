@@ -1,7 +1,6 @@
 import posthog from "posthog-js";
 import toast from "react-hot-toast";
 import { jsx as _jsx } from "react/jsx-runtime";
-import { ErrorToast } from "#/components/shared/error-toast";
 import { handleStatusMessage } from "#/services/actions";
 
 interface ErrorDetails {
@@ -25,9 +24,7 @@ export function showErrorToast({
   metadata = {},
 }: ErrorDetails) {
   trackError({ message, source, metadata });
-  toast.custom((t: { id: string }) =>
-    _jsx(ErrorToast, { id: t.id, error: message }),
-  );
+  toast.error(message)
 }
 
 export function showChatError({
