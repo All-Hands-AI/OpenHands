@@ -1,7 +1,6 @@
 """Bash-related tests for the DockerRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import os
-import shutil
 import time
 from pathlib import Path
 
@@ -464,7 +463,6 @@ def test_git_operation(temp_dir, runtime_cls):
         if runtime_cls != LocalRuntime:
             obs = _run_cmd_action(runtime, 'sudo chown -R openhands:root .')
             assert obs.exit_code == 0
-            tmp_dir = None
 
         # check the ownership of the current directory
         obs = _run_cmd_action(runtime, 'ls -alh .')
@@ -520,8 +518,6 @@ def test_git_operation(temp_dir, runtime_cls):
         obs = _run_cmd_action(runtime, 'git commit -m "test commit"')
         assert obs.exit_code == 0
     finally:
-        if tmp_dir:
-            shutil.rmtree(tmp_dir)
         _close_test_runtime(runtime)
 
 
