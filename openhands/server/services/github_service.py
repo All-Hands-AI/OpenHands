@@ -4,9 +4,13 @@ import httpx
 from fastapi import Request
 
 from openhands.server.auth import get_github_token
+from openhands.server.config.config_init import config, server_config
 from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
-from openhands.server.shared import SettingsStoreImpl, config, server_config
 from openhands.server.types import AppMode, GhAuthenticationError, GHUnknownException
+from openhands.storage.settings.settings_store import SettingsStore
+from openhands.utils.import_utils import get_impl
+
+SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)  # type: ignore
 
 
 class GitHubService:
