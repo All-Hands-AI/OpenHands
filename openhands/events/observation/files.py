@@ -61,10 +61,6 @@ class FileEditObservation(Observation):
     formatted_output_and_error: str = ''
     _diff_cache: str | None = None  # Cache for the diff visualization
 
-    def __post_init__(self):
-        """Initialize the observation with a placeholder content."""
-        self.content = '[File edit observation - diff will be computed when needed]'
-
     @property
     def message(self) -> str:
         """Get a human-readable message describing the file edit operation."""
