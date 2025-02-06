@@ -17,4 +17,5 @@ export default [
   ]),
 
   route("oauth/github/callback", "routes/oauth.github.callback.tsx"),
+  route("billing", "routes/billing-redirect.tsx"),
 ] satisfies RouteConfig;
