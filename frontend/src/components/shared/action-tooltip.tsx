@@ -1,4 +1,4 @@
-import { Tooltip } from "@nextui-org/react";
+import { Tooltip } from "@heroui/react";
 import { useTranslation } from "react-i18next";
 import ConfirmIcon from "#/assets/confirm";
 import RejectIcon from "#/assets/reject";

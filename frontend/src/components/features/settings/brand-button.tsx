@@ -1,4 +1,4 @@
-import { cn } from "@nextui-org/react";
+import { cn } from "#/utils/utils";
 
 interface BrandButtonProps {
   variant: "primary" | "secondary";
