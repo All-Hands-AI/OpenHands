@@ -15,6 +15,8 @@ interface ExpandableMessageProps {
   message: string;
   type: string;
   success?: boolean;
+  filePath?: string;
+  onJumpToFile?: (filePath: string) => void;
 }
 
 export function ExpandableMessage({
@@ -22,6 +24,8 @@ export function ExpandableMessage({
   message,
   type,
   success,
+  filePath,
+  onJumpToFile,
 }: ExpandableMessageProps) {
   const { t, i18n } = useTranslation();
   const [showDetails, setShowDetails] = useState(true);
@@ -37,6 +41,12 @@ export function ExpandableMessage({
   }, [id, message, i18n.language]);
 
   const statusIconClasses = "h-4 w-4 ml-2 inline";
+
+  const handleJumpToFile = () => {
+    if (filePath && onJumpToFile) {
+      onJumpToFile(filePath);
+    }
+  };
 
   return (
     <div
@@ -77,21 +87,32 @@ export function ExpandableMessage({
                 )}
               </button>
             </span>
-            {type === "action" && success !== undefined && (
-              <span className="flex-shrink-0">
-                {success ? (
-                  <CheckCircle
-                    data-testid="status-icon"
-                    className={cn(statusIconClasses, "fill-success")}
-                  />
-                ) : (
-                  <XCircle
-                    data-testid="status-icon"
-                    className={cn(statusIconClasses, "fill-danger")}
-                  />
-                )}
-              </span>
-            )}
+            <div className="flex items-center">
+              {type === "action" && filePath && onJumpToFile && (
+                <button
+                  type="button"
+                  onClick={handleJumpToFile}
+                  className="text-primary-500 hover:text-primary-600 mr-2"
+                >
+                  {t("JUMP_TO_FILE")}
+                </button>
+              )}
+              {type === "action" && success !== undefined && (
+                <span className="flex-shrink-0">
+                  {success ? (
+                    <CheckCircle
+                      data-testid="status-icon"
+                      className={cn(statusIconClasses, "fill-success")}
+                    />
+                  ) : (
+                    <XCircle
+                      data-testid="status-icon"
+                      className={cn(statusIconClasses, "fill-danger")}
+                    />
+                  )}
+                </span>
+              )}
+            </div>
           </div>
         )}
         {showDetails && (

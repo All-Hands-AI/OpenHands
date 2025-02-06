@@ -322,6 +322,17 @@ class OpenHands {
   static async logout(): Promise<void> {
     await openHands.post("/api/logout");
   }
+
+  static async getGitDiff(
+    conversationId: string,
+    filePath: string,
+  ): Promise<string> {
+    const url = `/api/conversations/${conversationId}/git-diff`;
+    const { data } = await openHands.get<{ diff: string }>(url, {
+      params: { file: filePath },
+    });
+    return data.diff;
+  }
 }
 
 export default OpenHands;

@@ -11,6 +11,9 @@ import { cn } from "#/utils/utils";
 import { FileExplorerHeader } from "./file-explorer-header";
 import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
 import { OpenVSCodeButton } from "#/components/shared/buttons/open-vscode-button";
+import { GitDiffViewer } from "./git-diff-viewer";
+import { useFiles } from "#/context/files";
+import { useGitDiff } from "#/hooks/query/use-git-diff";
 
 interface FileExplorerProps {
   isOpen: boolean;
@@ -19,13 +22,14 @@ interface FileExplorerProps {
 
 export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
   const { t } = useTranslation();
-
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { selectedPath } = useFiles();
 
   const { data: paths, refetch, error } = useListFiles();
   const { data: vscodeUrl } = useVSCodeUrl({
     enabled: !RUNTIME_INACTIVE_STATES.includes(curAgentState),
   });
+  const { data: gitDiff } = useGitDiff(selectedPath);
 
   const handleOpenVSCode = () => {
     if (vscodeUrl?.vscode_url) {
@@ -46,10 +50,6 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
     }
   };
 
-  React.useEffect(() => {
-    refreshWorkspace();
-  }, [curAgentState]);
-
   return (
     <div data-testid="file-explorer" className="relative h-full">
       <div
@@ -68,6 +68,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
             <div className="overflow-auto flex-grow min-h-0">
               <div style={{ display: !isOpen ? "none" : "block" }}>
                 <ExplorerTree files={paths || []} />
+                {gitDiff && <GitDiffViewer diff={gitDiff.toString()} />}
               </div>
             </div>
           )}

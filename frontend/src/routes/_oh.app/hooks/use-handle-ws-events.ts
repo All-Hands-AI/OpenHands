@@ -58,6 +58,10 @@ export const useHandleWSEvents = () => {
         addErrorMessage({
           id: event.extras?.error_id,
           message: event.message,
+          content: event.message,
+          type: "error",
+          sender: "assistant",
+          timestamp: new Date().toISOString(),
         }),
       );
     }

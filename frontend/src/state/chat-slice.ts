@@ -8,6 +8,7 @@ import {
 } from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsEventType } from "#/types/core/base";
+import { Message, ActionMessage, ErrorMessage } from "#/types/message";
 
 type SliceState = { messages: Message[] };
 
@@ -95,16 +96,21 @@ export const chatSlice = createSlice({
       }
       const translationID = `ACTION_MESSAGE$${actionID.toUpperCase()}`;
       let text = "";
+      let filePath: string | undefined;
       if (actionID === "run") {
         text = `Command:\n\`${action.payload.args.command}\``;
       } else if (actionID === "run_ipython") {
         text = `\`\`\`\n${action.payload.args.code}\n\`\`\``;
-      } else if (actionID === "write") {
-        let { content } = action.payload.args;
-        if (content.length > MAX_CONTENT_LENGTH) {
-          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+      } else if (actionID === "write" || actionID === "edit") {
+        let content = "";
+        if ("content" in action.payload.args) {
+          content = action.payload.args.content;
+          if (content.length > MAX_CONTENT_LENGTH) {
+            content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+          }
         }
         text = `${action.payload.args.path}\n${content}`;
+        filePath = action.payload.args.path;
       } else if (actionID === "browse") {
         text = `Browsing ${action.payload.args.url}`;
       }
@@ -115,14 +121,16 @@ export const chatSlice = createSlice({
           text += `\n\n${getRiskText(action.payload.args.security_risk as unknown as ActionSecurityRisk)}`;
         }
       }
-      const message: Message = {
+      const message: ActionMessage = {
         type: "action",
         sender: "assistant",
         translationID,
-        eventID: action.payload.id,
+        eventID: action.payload.id.toString(),
         content: text,
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        filePath,
+        args: action.payload.args,
       };
       state.messages.push(message);
     },
@@ -138,8 +146,8 @@ export const chatSlice = createSlice({
       const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
       const causeID = observation.payload.cause;
       const causeMessage = state.messages.find(
-        (message) => message.eventID === causeID,
-      );
+        (message) => message.eventID === causeID.toString(),
+      ) as ActionMessage | undefined;
       if (!causeMessage) {
         return;
       }
@@ -167,7 +175,10 @@ export const chatSlice = createSlice({
         causeMessage.content = content; // Observation content includes the action
       } else if (observationID === "read" || observationID === "edit") {
         const { content } = observation.payload;
-        causeMessage.content = `\`\`\`${observationID === "edit" ? "diff" : "python"}\n${content}\n\`\`\``; // Content is already truncated by the ACI
+        causeMessage.content = `\`\`\`${
+          observationID === "edit" ? "diff" : "python"
+        }\n${content}\n\`\`\``; // Content is already truncated by the ACI
+        causeMessage.filePath = observation.payload.extras.path;
       } else if (observationID === "browse") {
         let content = `**URL:** ${observation.payload.extras.url}\n`;
         if (observation.payload.extras.error) {
@@ -183,16 +194,25 @@ export const chatSlice = createSlice({
 
     addErrorMessage(
       state: SliceState,
-      action: PayloadAction<{ id?: string; message: string }>,
+      action: PayloadAction<{
+        id?: string;
+        message: string;
+        content: string;
+        type: "error";
+        sender: "assistant";
+        timestamp: string;
+      }>,
     ) {
-      const { id, message } = action.payload;
-      state.messages.push({
+      const { id, content, type, sender, timestamp } = action.payload;
+      const errorMessage: ErrorMessage = {
         translationID: id,
-        content: message,
-        type: "error",
-        sender: "assistant",
-        timestamp: new Date().toISOString(),
-      });
+        content,
+        type,
+        sender,
+        timestamp,
+        id,
+      };
+      state.messages.push(errorMessage);
     },
 
     clearMessages(state: SliceState) {

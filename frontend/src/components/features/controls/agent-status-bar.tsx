@@ -26,7 +26,7 @@ export function AgentStatusBar() {
         message = t(curStatusMessage.id.trim()) || message;
       }
     }
-    if (curStatusMessage?.type === "error") {
+    if (curStatusMessage?.type === "error" && message) {
       toast.error(message);
       return;
     }

@@ -7,6 +7,7 @@ import { SUGGESTIONS } from "#/utils/suggestions";
 import * as ChatSlice from "#/state/chat-slice";
 import { WsClientProviderStatus } from "#/context/ws-client-provider";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
+import { Message } from "#/types/message";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const renderChatInterface = (messages: Message[]) =>

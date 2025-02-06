@@ -50,7 +50,9 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.EDIT:
       break; // We don't display the default message for these observations
     default:
-      store.dispatch(addAssistantMessage(message.message));
+      if (message.content) {
+        store.dispatch(addAssistantMessage(message.content));
+      }
       break;
   }
   if (!message.extras?.hidden) {
@@ -59,6 +61,9 @@ export function handleObservationMessage(message: ObservationMessage) {
     const baseObservation = {
       ...message,
       source: "agent" as const,
+      cause: parseInt(message.eventID || "0", 10),
+      id: parseInt(message.eventID || "0", 10),
+      message: message.content,
     };
 
     switch (observation) {
@@ -80,7 +85,8 @@ export function handleObservationMessage(message: ObservationMessage) {
             observation: "run" as const,
             extras: {
               command: String(message.extras.command || ""),
-              metadata: message.extras.metadata,
+              metadata:
+                (message.extras.metadata as Record<string, unknown>) || {},
               hidden: Boolean(message.extras.hidden),
             },
           }),
@@ -170,7 +176,7 @@ export function handleObservationMessage(message: ObservationMessage) {
             observation: "error" as const,
             source: "user" as const,
             extras: {
-              error_id: message.extras.error_id,
+              error_id: String(message.extras.error_id || ""),
             },
           }),
         );

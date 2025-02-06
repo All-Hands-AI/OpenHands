@@ -2,10 +2,12 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { StatusMessage } from "#/types/message";
 
 const initialStatusMessage: StatusMessage = {
-  status_update: true,
   type: "info",
   id: "",
   message: "",
+  sender: "assistant",
+  content: "",
+  timestamp: new Date().toISOString(),
 };
 
 export const statusSlice = createSlice({
