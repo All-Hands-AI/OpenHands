@@ -71,7 +71,7 @@ def process_git_patch(patch):
     return patch
 
 
-def get_config(instance: pd.Series) -> AppConfig:
+def get_config(metadata: EvalMetadata, instance: pd.Series) -> AppConfig:
     # We use a different instance image for the each instance of swe-bench eval
     base_container_image = get_instance_docker_image(instance['instance_id'])
     logger.info(
@@ -132,7 +132,7 @@ def process_instance(
     else:
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
-    config = get_config(instance)
+    config = get_config(metadata, instance)
     instance_id = instance.instance_id
     model_patch = instance['model_patch']
     test_spec: TestSpec = instance['test_spec']
@@ -412,6 +412,17 @@ if __name__ == '__main__':
         with open(metadata_filepath, 'r') as metadata_file:
             data = metadata_file.read()
             metadata = EvalMetadata.model_validate_json(data)
+    else:
+        # Initialize with a dummy metadata when file doesn't exist
+        metadata = EvalMetadata(
+            agent_class="dummy_agent",  # Placeholder agent class
+            llm_config=LLMConfig(model="dummy_model"),  # Minimal LLM config
+            max_iterations=1,  # Minimal iterations
+            eval_output_dir=os.path.dirname(args.input_file),  # Use input file dir as output dir
+            start_time=time.strftime('%Y-%m-%d %H:%M:%S'),  # Current time
+            git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8').strip(),  # Current commit
+            dataset=args.dataset  # Dataset name from args
+        )
 
     # The evaluation harness constrains the signature of `process_instance_func` but we need to
     # pass extra information. Build a new function object to avoid issues with multiprocessing.

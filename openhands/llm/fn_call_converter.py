@@ -42,6 +42,7 @@ Reminder:
 - Only call one function at a time
 - You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after.
 - If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls
+</IMPORTANT>
 """
 
 STOP_WORDS = ['</function']
@@ -199,7 +200,6 @@ Review the changes and make sure they are as expected. Edit the file again if ne
 ASSISTANT:
 Running the updated file:
 <function=execute_bash>
-<parameter=command>
 <parameter=command>
 python3 app.py > server.log 2>&1 &
 </parameter>

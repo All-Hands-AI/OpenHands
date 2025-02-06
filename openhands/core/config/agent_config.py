@@ -21,12 +21,13 @@ class AgentConfig(BaseModel):
     """
 
     codeact_enable_browsing: bool = Field(default=True)
+    enable_som_visual_browsing: bool = Field(default=False)
     codeact_enable_llm_editor: bool = Field(default=False)
     codeact_enable_jupyter: bool = Field(default=True)
     micro_agent_name: str | None = Field(default=None)
     memory_enabled: bool = Field(default=False)
     memory_max_threads: int = Field(default=3)
     llm_config: str | None = Field(default=None)
-    enable_prompt_extensions: bool = Field(default=False)
+    enable_prompt_extensions: bool = Field(default=True)
     disabled_microagents: list[str] | None = Field(default=None)
     condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
