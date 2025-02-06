@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { logError, showErrorToast, showChatError } from "#/utils/error-handler";
+import { trackError, showErrorToast, showChatError } from "#/utils/error-handler";
 import posthog from "posthog-js";
 import toast from "react-hot-toast";
 import * as Actions from "#/services/actions";
@@ -30,14 +30,14 @@ describe("Error Handler", () => {
     vi.clearAllMocks();
   });
 
-  describe("logError", () => {
-    it("should log error to PostHog with basic info", () => {
+  describe("trackError", () => {
+    it("should send error to PostHog with basic info", () => {
       const error = {
         message: "Test error",
         source: "test",
       };
 
-      logError(error);
+      trackError(error);
 
       expect(posthog.captureException).toHaveBeenCalledWith(new Error("Test error"), {
         error_source: "test",
@@ -54,7 +54,7 @@ describe("Error Handler", () => {
         },
       };
 
-      logError(error);
+      trackError(error);
 
       expect(posthog.captureException).toHaveBeenCalledWith(new Error("Test error"), {
         error_source: "test",

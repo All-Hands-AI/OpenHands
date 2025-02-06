@@ -11,7 +11,7 @@ interface ErrorDetails {
   msgId?: string;
 }
 
-export function logError({ message, source, metadata = {} }: ErrorDetails) {
+export function trackError({ message, source, metadata = {} }: ErrorDetails) {
   const error = new Error(message);
   posthog.captureException(error, {
     error_source: source || "unknown",
@@ -24,7 +24,7 @@ export function showErrorToast({
   source,
   metadata = {},
 }: ErrorDetails) {
-  logError({ message, source, metadata });
+  trackError({ message, source, metadata });
   toast.custom((t: { id: string }) =>
     _jsx(ErrorToast, { id: t.id, error: message }),
   );
@@ -36,7 +36,7 @@ export function showChatError({
   metadata = {},
   msgId,
 }: ErrorDetails) {
-  logError({ message, source, metadata });
+  trackError({ message, source, metadata });
   handleStatusMessage({
     type: "error",
     message,
