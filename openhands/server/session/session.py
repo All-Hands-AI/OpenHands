@@ -50,7 +50,6 @@ class Session:
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,
     ):
-        print('got user_id in session', user_id)
         self.sid = sid
         self.sio = sio
         self.last_active_ts = int(time.time())

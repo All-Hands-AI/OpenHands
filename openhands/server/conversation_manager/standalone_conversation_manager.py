@@ -190,7 +190,6 @@ class StandaloneConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
     ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}')
-        print(f'starting with user_id: {user_id}')
         session: Session | None = None
         if not await self.is_agent_loop_running(sid):
             logger.info(f'start_agent_loop:{sid}')

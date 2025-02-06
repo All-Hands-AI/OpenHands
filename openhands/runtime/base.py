@@ -96,7 +96,6 @@ class Runtime(FileEditRuntimeMixin):
         headless_mode: bool = False,
         user_id: str | None = None,
     ):
-        print(f'establishing user_id {user_id}')
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(
@@ -223,7 +222,6 @@ class Runtime(FileEditRuntimeMixin):
                     token = await gh_client.get_latest_token()
                     if token:
                         export_cmd = CmdRunAction(f"export GITHUB_TOKEN='{token}'")
-                        print(f'exporting github token {token[0:5]}')
                         await call_sync_from_async(self.run_action, export_cmd)
 
             observation: Observation = await call_sync_from_async(
