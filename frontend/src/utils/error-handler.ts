@@ -1,7 +1,5 @@
 import posthog from "posthog-js";
 import toast from "react-hot-toast";
-import { jsx as _jsx } from "react/jsx-runtime";
-import { ErrorToast } from "#/components/shared/error-toast";
 import { handleStatusMessage } from "#/services/actions";
 
 interface ErrorDetails {
@@ -11,7 +9,7 @@ interface ErrorDetails {
   msgId?: string;
 }
 
-export function logError({ message, source, metadata = {} }: ErrorDetails) {
+export function trackError({ message, source, metadata = {} }: ErrorDetails) {
   const error = new Error(message);
   posthog.captureException(error, {
     error_source: source || "unknown",
@@ -24,10 +22,8 @@ export function showErrorToast({
   source,
   metadata = {},
 }: ErrorDetails) {
-  logError({ message, source, metadata });
-  toast.custom((t: { id: string }) =>
-    _jsx(ErrorToast, { id: t.id, error: message }),
-  );
+  trackError({ message, source, metadata });
+  toast.error(message);
 }
 
 export function showChatError({
@@ -36,7 +32,7 @@ export function showChatError({
   metadata = {},
   msgId,
 }: ErrorDetails) {
-  logError({ message, source, metadata });
+  trackError({ message, source, metadata });
   handleStatusMessage({
     type: "error",
     message,

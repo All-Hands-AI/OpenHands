@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { handleStatusMessage } from "#/services/actions";
 import store from "#/store";
-import { logError } from "#/utils/error-handler";
+import { trackError } from "#/utils/error-handler";
 
 // Mock dependencies
 vi.mock("#/utils/error-handler", () => ({
-  logError: vi.fn(),
+  trackError: vi.fn(),
 }));
 
 vi.mock("#/store", () => ({
@@ -45,7 +45,7 @@ describe("Actions Service", () => {
 
       handleStatusMessage(message);
 
-      expect(logError).toHaveBeenCalledWith({
+      expect(trackError).toHaveBeenCalledWith({
         message: "Runtime connection failed",
         source: "chat",
         metadata: { msgId: "runtime.connection.failed" },
