@@ -159,6 +159,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             llm_group_ids.add(nested_key)
                             cfg.set_llm_config(llm_config, nested_key)
 
+                    logger.openhands_logger.debug(
+                        'Attempt to load default LLM config from config toml'
+                    )
                     # Extract generic LLM fields, which are not nested LLM configs
                     generic_llm_fields = {}
                     for k, v in value.items():
@@ -201,10 +204,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     )
                     model_routing_config = ModelRoutingConfig(**value)
                     cfg.model_routing = model_routing_config
-
-                    logger.openhands_logger.debug(
-                        'Attempt to load default LLM config from config toml'
-                    )
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.openhands_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'
