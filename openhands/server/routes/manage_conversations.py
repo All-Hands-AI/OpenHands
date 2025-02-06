@@ -38,6 +38,7 @@ UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 class InitSessionRequest(BaseModel):
     selected_repository: str | None = None
+    selected_branch: str | None = None
     initial_user_msg: str | None = None
     image_urls: list[str] | None = None
 
@@ -46,6 +47,7 @@ async def _create_new_conversation(
     user_id: str | None,
     token: str | None,
     selected_repository: str | None,
+    selected_branch: str | None,
     initial_user_msg: str | None,
     image_urls: list[str] | None,
 ):
@@ -74,6 +76,7 @@ async def _create_new_conversation(
 
     session_init_args['github_token'] = token or ''
     session_init_args['selected_repository'] = selected_repository
+    session_init_args['selected_branch'] = selected_branch
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
@@ -133,6 +136,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     user_id = get_user_id(request)
     github_token = GithubServiceImpl.get_gh_token(request)
     selected_repository = data.selected_repository
+    selected_branch = data.selected_branch
     initial_user_msg = data.initial_user_msg
     image_urls = data.image_urls or []
 
@@ -142,6 +146,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             user_id,
             github_token,
             selected_repository,
+            selected_branch,
             initial_user_msg,
             image_urls,
         )
