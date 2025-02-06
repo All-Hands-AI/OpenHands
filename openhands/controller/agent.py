@@ -112,28 +112,22 @@ class Agent(ABC):
             raise AgentNotRegisteredError()
         return list(cls._registry.keys())
 
+    @abstractmethod
     def get_prompt_manager(
         self,
-        prompt_dir: str,
         microagent_dir: str | None = None,
         disabled_microagents: list[str] | None = None,
     ) -> 'PromptManager':
         """Get a prompt manager instance for this agent.
 
-        This method can be overridden by subclasses to return a specialized prompt manager.
+        This method should be implemented by subclasses to return a specialized prompt manager.
+        Each agent implementation should determine its own prompt_dir.
 
         Args:
-            prompt_dir: Directory containing agent-specific prompts
             microagent_dir: Directory containing microagent prompts
             disabled_microagents: List of microagents to disable
 
         Returns:
             A PromptManager instance or a subclass of PromptManager
         """
-        from openhands.utils.prompt import PromptManager
-
-        return PromptManager(
-            prompt_dir=prompt_dir,
-            microagent_dir=microagent_dir,
-            disabled_microagents=disabled_microagents,
-        )
+        pass

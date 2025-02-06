@@ -102,6 +102,32 @@ class CodeActAgent(Agent):
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {self.condenser}')
 
+    def get_prompt_manager(
+        self,
+        microagent_dir: str | None = None,
+        disabled_microagents: list[str] | None = None,
+    ) -> 'PromptManager':
+        """Get a prompt manager instance for this agent.
+
+        Args:
+            microagent_dir: Directory containing microagent prompts
+            disabled_microagents: List of microagents to disable
+
+        Returns:
+            A PromptManager instance
+        """
+        from openhands.utils.prompt import PromptManager
+        import os
+
+        # Determine the prompt_dir for CodeActAgent
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        prompt_dir = os.path.join(current_dir, 'prompts')
+
+        return PromptManager(
+            prompt_dir=prompt_dir,
+            microagent_dir=microagent_dir,
+            disabled_microagents=disabled_microagents,
+        )
 
 
     def get_action_message(

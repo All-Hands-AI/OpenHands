@@ -160,16 +160,9 @@ class AgentController:
                 'microagents',
             )
 
-        agent_module = sys.modules[agent.__class__.__module__]
-        agent_module_file = getattr(agent_module, '__file__', None)
-        if agent_module_file is None:
-            raise ValueError(f'Could not find file for module {agent_module.__name__}')
-        prompt_dir = os.path.join(os.path.dirname(agent_module_file), 'prompts')
-
         # Get prompt manager from agent to allow specialized implementations
         self.prompt_manager = agent.get_prompt_manager(
             microagent_dir=microagent_dir,
-            prompt_dir=prompt_dir,
             disabled_microagents=agent.config.disabled_microagents,
         )
         self._first_user_message_received = False
