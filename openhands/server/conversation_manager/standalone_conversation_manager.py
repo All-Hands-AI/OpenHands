@@ -264,7 +264,7 @@ class StandaloneConversationManager(ConversationManager):
                 user_id=None,
             )
             cmd = 'export GITHUB_TOKEN="this is a dummy token";'
-            action = CmdRunAction(cmd)
+            action = CmdRunAction(cmd, hidden=True)
             event_stream.add_event(action, EventSource.ENVIRONMENT)
         except Exception as e:
             print(f'error updating token: {str(e)}')
