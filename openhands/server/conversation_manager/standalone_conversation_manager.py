@@ -10,6 +10,8 @@ from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
+from openhands.events.action.commands import CmdRunAction
+from openhands.events.event import EventSource
 from openhands.events.stream import EventStream, session_exists
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
@@ -87,13 +89,17 @@ class StandaloneConversationManager(ConversationManager):
             return c
 
     async def join_conversation(
-        self, sid: str, connection_id: str, settings: Settings, user_id: str | None
+        self,
+        sid: str,
+        connection_id: str,
+        settings: Settings | None,
+        user_id: str | None,
     ):
         logger.info(f'join_conversation:{sid}:{connection_id}')
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self._local_connection_id_to_session_id[connection_id] = sid
         event_stream = await self._get_event_stream(sid)
-        if not event_stream:
+        if not event_stream and settings:
             return await self.maybe_start_agent_loop(sid, settings, user_id)
         return event_stream
 
@@ -242,14 +248,26 @@ class StandaloneConversationManager(ConversationManager):
     async def update_token(self, connection_id: str):
         await asyncio.sleep(1)
 
-        print('updating token')
-        session = self._local_agent_loops_by_sid.get(connection_id)
-        print(f'found session for sid: {connection_id}')
-        if session:
-            try:
-                await session.update_token()
-            except Exception as e:
-                print(f'error updating token: {str(e)}')
+        # print('updating token')
+        # session = self._local_agent_loops_by_sid.get(connection_id)
+        # print(f'found session for sid: {connection_id}')
+        # if session:
+        #     try:
+        # await session.update_token()
+        #     except Exception as e:
+        #         print(f'error updating token: {str(e)}')
+        try:
+            event_stream = await self.join_conversation(
+                sid=connection_id,
+                connection_id=connection_id,
+                settings=None,
+                user_id=None,
+            )
+            cmd = 'export GITHUB_TOKEN="this is a dummy token";'
+            action = CmdRunAction(cmd)
+            event_stream.add_event(action, EventSource.ENVIRONMENT)
+        except Exception as e:
+            print(f'error updating token: {str(e)}')
 
     async def disconnect_from_session(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)
