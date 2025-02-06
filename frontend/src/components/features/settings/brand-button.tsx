@@ -3,6 +3,7 @@ import { cn } from "@nextui-org/react";
 interface BrandButtonProps {
   variant: "primary" | "secondary";
   type: React.ButtonHTMLAttributes<HTMLButtonElement>["type"];
+  className?: string;
   onClick?: () => void;
 }
 
@@ -10,6 +11,7 @@ export function BrandButton({
   children,
   variant,
   type,
+  className,
   onClick,
 }: React.PropsWithChildren<BrandButtonProps>) {
   return (
@@ -22,6 +24,7 @@ export function BrandButton({
         "w-fit p-2 rounded",
         variant === "primary" && "bg-[#C9B974] text-[#0D0F11]",
         variant === "secondary" && "border border-[#C9B974] text-[#C9B974]",
+        className,
       )}
     >
       {children}

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
 import { afterEach, describe, expect, it, test, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -441,6 +441,16 @@ describe("Settings Screen", () => {
       const resetButton = screen.getByText("Reset to defaults");
       await user.click(resetButton);
 
+      expect(saveSettingsSpy).not.toHaveBeenCalled();
+
+      // show modal
+      const modal = await screen.findByTestId("reset-modal");
+      expect(modal).toBeInTheDocument();
+
+      // confirm reset
+      const confirmButton = within(modal).getByText("Reset");
+      await user.click(confirmButton);
+
       const mockCopy: Partial<PostApiSettings> = {
         ...MOCK_DEFAULT_USER_SETTINGS,
       };
@@ -452,6 +462,26 @@ describe("Settings Screen", () => {
         github_token: undefined, // not set
         llm_api_key: undefined, // not set
       });
+      expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
+    });
+
+    it("should cancel the reset when the 'Cancel' button is clicked", async () => {
+      const user = userEvent.setup();
+      getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
+
+      renderSettingsScreen();
+
+      const resetButton = await screen.findByText("Reset to defaults");
+      await user.click(resetButton);
+
+      const modal = await screen.findByTestId("reset-modal");
+      expect(modal).toBeInTheDocument();
+
+      const cancelButton = within(modal).getByText("Cancel");
+      await user.click(cancelButton);
+
+      expect(saveSettingsSpy).not.toHaveBeenCalled();
+      expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
     });
 
     it("should call handleCaptureConsent with true if the save is successful", async () => {

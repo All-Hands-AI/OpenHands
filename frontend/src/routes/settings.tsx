@@ -17,6 +17,7 @@ import { ModelSelector } from "#/components/shared/modals/settings/model-selecto
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { useAppLogout } from "#/hooks/use-app-logout";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
+import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 
 const displayErrorToast = (error: string) => {
   toast.error(error, {
@@ -63,6 +64,8 @@ function SettingsScreen() {
   >(isAdvancedSettingsSet ? "advanced" : "basic");
   const [confirmationModeIsEnabled, setConfirmationModeIsEnabled] =
     React.useState(!!settings.SECURITY_ANALYZER);
+  const [resetSettingsModalIsOpen, setResetSettingsModalIsOpen] =
+    React.useState(false);
 
   const formAction = async (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
@@ -113,6 +116,21 @@ function SettingsScreen() {
 
       displayErrorToast("An error occurred while saving settings");
     }
+  };
+
+  const handleReset = () => {
+    saveSettings(
+      {
+        ...DEFAULT_SETTINGS,
+        user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
+      },
+      {
+        onSuccess: () => {
+          displaySuccessToast("Settings reset");
+          setResetSettingsModalIsOpen(false);
+        },
+      },
+    );
   };
 
   if (isFetching) {
@@ -302,18 +320,7 @@ function SettingsScreen() {
           <BrandButton
             type="button"
             variant="secondary"
-            onClick={() =>
-              saveSettings(
-                {
-                  ...DEFAULT_SETTINGS,
-                  user_consents_to_analytics:
-                    DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
-                },
-                {
-                  onSuccess: () => displaySuccessToast("Settings reset"),
-                },
-              )
-            }
+            onClick={() => setResetSettingsModalIsOpen(true)}
           >
             Reset to defaults
           </BrandButton>
@@ -322,6 +329,40 @@ function SettingsScreen() {
           </BrandButton>
         </footer>
       </form>
+
+      {resetSettingsModalIsOpen && (
+        <ModalBackdrop>
+          <div
+            data-testid="reset-modal"
+            className="bg-root-primary p-4 rounded-xl flex flex-col gap-4"
+          >
+            <p>Are you sure you want to reset all settings?</p>
+            <div className="w-full flex gap-2">
+              <BrandButton
+                type="button"
+                variant="primary"
+                className="grow"
+                onClick={() => {
+                  handleReset();
+                }}
+              >
+                Reset
+              </BrandButton>
+
+              <BrandButton
+                type="button"
+                variant="secondary"
+                className="grow"
+                onClick={() => {
+                  setResetSettingsModalIsOpen(false);
+                }}
+              >
+                Cancel
+              </BrandButton>
+            </div>
+          </div>
+        </ModalBackdrop>
+      )}
     </main>
   );
 }
