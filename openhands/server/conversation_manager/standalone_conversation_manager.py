@@ -149,8 +149,8 @@ class StandaloneConversationManager(ConversationManager):
                     self._close_session(sid) for sid in self._local_agent_loops_by_sid
                 )
                 return
-            except Exception as e:
-                logger.error(f'error_cleaning_stale')
+            except Exception:
+                logger.error('error_cleaning_stale')
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
     async def get_running_agent_loops(
@@ -190,6 +190,7 @@ class StandaloneConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
     ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}')
+        print(f'starting with user_id: {user_id}')
         session: Session | None = None
         if not await self.is_agent_loop_running(sid):
             logger.info(f'start_agent_loop:{sid}')

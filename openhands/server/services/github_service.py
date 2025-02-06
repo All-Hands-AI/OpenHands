@@ -20,20 +20,12 @@ class GitHubService:
     def __init__(self, user_id: str | None):
         self.user_id = user_id
 
-    async def get_user_token(self):
-        settings_store = await SettingsStoreImpl.get_instance(config, self.user_id)
-        settings = await settings_store.load()
-        if settings and settings.github_token:
-            return settings.github_token.get_secret_value()
-
-        return ''
-
     async def _get_github_headers(self):
         """
         Retrieve the GH Token from settings store to construct the headers
         """
 
-        self.token = self.get_user_token()
+        self.token = await self.get_user_token()
         return {
             'Authorization': f'Bearer {self.token}',
             'Accept': 'application/vnd.github.v3+json',
@@ -42,8 +34,18 @@ class GitHubService:
     def _has_token_expired(self, status_code: int):
         return status_code == 401
 
-    async def _get_latest_token(self):
-        pass
+    async def get_latest_token(self) -> str:
+        self.token = await self.get_user_token()
+        return self.token
+
+    async def get_user_token(self) -> str:
+        settings_store = await SettingsStoreImpl.get_instance(config, self.user_id)
+        settings = await settings_store.load()
+        if settings and settings.github_token:
+            self.token = settings.github_token.get_secret_value()
+            return self.token
+
+        return ''
 
     async def _fetch_data(
         self, url: str, params: dict | None = None
@@ -55,7 +57,7 @@ class GitHubService:
                 if server_config.app_mode == AppMode.SAAS and self._has_token_expired(
                     response.status_code
                 ):
-                    await self._get_latest_token()
+                    await self.get_latest_token()
                     github_headers = await self._get_github_headers()
                     response = await client.get(
                         url, headers=github_headers, params=params

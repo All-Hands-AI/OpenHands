@@ -63,6 +63,8 @@ class AgentSession:
         self._status_callback = status_callback
         self.user_id = user_id
 
+        print('agent session userid', user_id)
+
     async def start(
         self,
         runtime_name: str,
@@ -205,6 +207,7 @@ class AgentSession:
         )
 
         if runtime_cls == RemoteRuntime:
+            print('got remote runtime')
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
