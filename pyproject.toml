@@ -102,11 +102,6 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> main
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -135,11 +130,6 @@ ignore = ["D1"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> main
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
