@@ -21,6 +21,7 @@ from openhands.core.config import (
     get_llm_config_arg,
     get_parser,
 )
+from openhands.core.config.agent_config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
@@ -34,6 +35,7 @@ def get_config(
     task_short_name: str,
     mount_path_on_host: str,
     llm_config: LLMConfig,
+    agent_config: AgentConfig,
 ) -> AppConfig:
     config = AppConfig(
         run_as_openhands=False,
@@ -58,6 +60,7 @@ def get_config(
         workspace_mount_path_in_sandbox='/outputs',
     )
     config.set_llm_config(llm_config)
+    config.set_agent_config(agent_config)
     return config
 
 
@@ -148,11 +151,21 @@ def run_solver(
         os.makedirs(screenshots_dir, exist_ok=True)
         for image_id, obs in enumerate(state.history):
             if isinstance(obs, BrowserOutputObservation):
-                image_data = base64.b64decode(obs.screenshot)
+                image_data = base64.b64decode(
+                    obs.screenshot.replace('data:image/png;base64,', '')
+                )
                 with open(
                     os.path.join(screenshots_dir, f'{image_id}.png'), 'wb'
                 ) as file:
                     file.write(image_data)
+                if obs.set_of_marks:
+                    som_image_data = base64.b64decode(
+                        obs.set_of_marks.replace('data:image/png;base64,', '')
+                    )
+                    with open(
+                        os.path.join(screenshots_dir, f'{image_id}_som.png'), 'wb'
+                    ) as file:
+                        file.write(som_image_data)
 
     if save_final_state:
         os.makedirs(state_dir, exist_ok=True)
@@ -215,6 +228,14 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
+    #### TODO: parse this from cli and toml ####
+    agent_config: AgentConfig | None = None
+    agent_config = AgentConfig(
+        enable_som_visual_browsing=True,
+        enable_prompt_extensions=False,
+    )
+    ############################################
+
     agent_llm_config: LLMConfig | None = None
     if args.agent_llm_config:
         agent_llm_config = get_llm_config_arg(args.agent_llm_config)
@@ -255,7 +276,7 @@ if __name__ == '__main__':
     else:
         temp_dir = tempfile.mkdtemp()
     config: AppConfig = get_config(
-        args.task_image_name, task_short_name, temp_dir, agent_llm_config
+        args.task_image_name, task_short_name, temp_dir, agent_llm_config, agent_config
     )
     runtime: Runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
