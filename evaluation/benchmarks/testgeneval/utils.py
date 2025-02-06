@@ -28,6 +28,7 @@ def get_test_directives(instance: TestGenEvalInstance) -> list:
 
     # For Django tests, remove extension + "tests/" prefix and convert slashes to dots (module referencing)
     if instance['repo'] == 'django/django':
+        directives = [instance['test_file']]
         directives_transformed = []
         for d in directives:
             d = d[: -len('.py')] if d.endswith('.py') else d

@@ -354,33 +354,37 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info('-' * 30)
-    logger.info('BEGIN Runtime Completion Fn')
-    logger.info('-' * 30)
-    obs: CmdOutputObservation
-    workspace_dir_name = _get_swebench_workspace_dir_name(instance)
+    try:
+        logger.info('-' * 30)
+        logger.info('BEGIN Runtime Completion Fn')
+        logger.info('-' * 30)
+        obs: CmdOutputObservation
+        workspace_dir_name = _get_swebench_workspace_dir_name(instance)
 
-    action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
-    action.set_hard_timeout(600)
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(
-        obs.exit_code == 0,
-        f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
-    )
+        action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
+        action.set_hard_timeout(600)
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert_and_raise(
+            obs.exit_code == 0,
+            f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
+        )
 
-    action = CmdRunAction(command=f'cat {instance.test_file}')
-    action.set_hard_timeout(600)
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(
-        obs.exit_code == 0,
-        f'Failed to find file: {instance.test_file} in /workspace/{workspace_dir_name}',
-    )
+        action = CmdRunAction(command=f'cat {instance.test_file}')
+        action.set_hard_timeout(600)
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert_and_raise(
+            obs.exit_code == 0,
+            f'Failed to find file: {instance.test_file} in /workspace/{workspace_dir_name}',
+        )
 
-    test_suite = obs.content.strip()
+        test_suite = obs.content.strip()
+    except Exception:
+        print('Skipping, exeception in complete_runtime')
+        test_suite = instance['full_pred'] if instance['full_pred'] is not None else ''
 
     # action = CmdRunAction(command='git add -A')
     # action.set_hard_timeout(600)
@@ -471,7 +475,7 @@ def process_instance(
 
     # Save the output
     output = EvalOutput(
-        instance_id=instance.instance_id,
+        instance_id=instance.id,
         instruction=instruction,
         instance=_preprocess_instance(instance.to_dict()),  # SWE Bench specific
         test_result=test_result,
@@ -480,6 +484,8 @@ def process_instance(
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
     )
+    print(output)
+    input()
     return output
 
 

@@ -74,7 +74,7 @@ NOTE: if you are testing django, you must use from django.test import SimpleTest
 NOTE: if there is an error executing tests you MUST fix it before exiting. DO NOT install new packages.
 NOTE: if outputting a revised test suite REPLACE {test_file} with the revised suite
 
-**Output the final test suite** (20+ tests) for {test_file} in a single code block, no extra commentary.
+**Output the final test suite** (20+ tests) for {test_file} in a single code block, no extra commentary. MAKE SURE you run the tests and ensure you can see which tests passed and failed BEFORE exiting.
 """
 
 CODEACT_TESTGEN_PROMPT_ITERATE = """
@@ -110,5 +110,5 @@ NOTE: if you are testing django, you must use from django.test import SimpleTest
 NOTE: if there is an error executing tests you MUST fix it before exiting. DO NOT install new packages.
 NOTE: if outputting a revised test suite REPLACE {test_file} with the revised suite
 
-**Output the final test suite** (20+ tests) for {test_file} in a single code block, no extra commentary.
+**Output the final test suite** (20+ tests) for {test_file} in a single code block, no extra commentary. MAKE SURE you run the tests and ensure you can see which tests passed and failed BEFORE exiting.
 """

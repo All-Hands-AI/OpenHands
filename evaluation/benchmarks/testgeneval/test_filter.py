@@ -1,3 +1,4 @@
+import ast
 import re
 from typing import List, Tuple
 
@@ -203,10 +204,10 @@ def filter_passing_tests(
             method_full_name = (
                 method_name.split('.')[-1].split('(')[0].strip().split(' ')[-1]
             )
-            # Check if the method name is in passing_tests or if any passing_test is in the method name
+            # Check if the method name is in failing_tests or if any failing_test is in the method name
             if not (
                 any(method_full_name in failing_test for failing_test in failing_tests)
-                and not any(
+                or any(
                     failing_test in method_full_name for failing_test in failing_tests
                 )
             ):
@@ -241,3 +242,84 @@ def filter_passing_tests(
         content_parts.append(func_body)
 
     return '\n\n'.join(content_parts), passing_tests, failing_tests
+
+
+def filter_tests(
+    test_content: str, test_output: str, repo: str
+) -> Tuple[str, List[str], List[str]]:
+    """
+    Filter tests using AST parsing to remove failing test functions from the test file.
+    Non-test functions (e.g. setup or helper methods) and classes (even if all test methods are failing)
+    are preserved.
+
+    If AST processing fails (for example, because the test file cannot be parsed),
+    this function falls back on the existing regex-based filtering (filter_passing_tests).
+
+    Returns:
+        Tuple containing:
+         - Modified test content (as a string) containing only passing tests.
+         - List of passing test names.
+         - List of failing test names.
+    """
+    try:
+        # Attempt to parse the test file using the AST.
+        tree = ast.parse(test_content)
+
+        # Parse test results using the appropriate parser.
+        parser = MAP_REPO_TO_PARSER.get(repo, parse_log_pytest)
+        test_results = parser(test_output)
+        passing_tests = [
+            name
+            for name, status in test_results.items()
+            if status == TestStatus.PASSED.value
+        ]
+        failing_tests = [
+            name
+            for name, status in test_results.items()
+            if status != TestStatus.PASSED.value
+        ]
+
+        # Helper function to decide if a test name should be considered failing.
+        def is_failing(name: str) -> bool:
+            for ft in failing_tests:
+                if name in ft or ft in name:
+                    return True
+            return False
+
+        new_body = []
+        for node in tree.body:
+            # For top-level function definitions, only filter those that look like tests.
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if node.name.startswith('test') and is_failing(node.name):
+                    continue
+                new_body.append(node)
+            # For classes, filter out failing test methods but preserve other methods (e.g. setup).
+            elif isinstance(node, ast.ClassDef):
+                new_class_body = []
+                for subnode in node.body:
+                    if isinstance(subnode, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        # Only consider filtering if the method is a test.
+                        qualified_name = f'{node.name}.{subnode.name}'
+                        if is_failing(subnode.name) or is_failing(qualified_name):
+                            continue
+                        new_class_body.append(subnode)
+                    else:
+                        new_class_body.append(subnode)
+                # Always include the class even if no test methods remain, as it might contain
+                # setup, teardown, or other necessary logic.
+                node.body = new_class_body
+                new_body.append(node)
+            else:
+                new_body.append(node)
+
+        tree.body = new_body
+
+        # Reconstruct the source code from the filtered AST.
+        # (Requires Python 3.9+ for ast.unparse; otherwise an exception will trigger the fallback.)
+        new_test_content = ast.unparse(tree)
+        return new_test_content, passing_tests, failing_tests
+
+    except Exception:
+        print('AST processing failed; falling back on regex-based filtering.')
+        # If AST processing fails for any reason, fall back on the original regex-based filtering.
+        return filter_passing_tests(test_content, test_output, repo)

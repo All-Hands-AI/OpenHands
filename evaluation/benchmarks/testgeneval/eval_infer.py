@@ -28,7 +28,7 @@ from evaluation.benchmarks.testgeneval.metrics import (
 )
 from evaluation.benchmarks.testgeneval.pygments_utils import tokenize_code
 from evaluation.benchmarks.testgeneval.run_infer import get_instance_docker_image
-from evaluation.benchmarks.testgeneval.test_filter import filter_passing_tests
+from evaluation.benchmarks.testgeneval.test_filter import filter_tests
 from evaluation.benchmarks.testgeneval.test_spec import (
     TestGenEvalInstance,
     TestSpec,
@@ -221,7 +221,7 @@ def grade_test_output(
         )
 
     logger.info('Calling filter unit tests')
-    filtered_content, passing_tests, failing_tests = filter_passing_tests(
+    filtered_content, passing_tests, failing_tests = filter_tests(
         test_suite, unit_test_output, test_spec.repo
     )
 
