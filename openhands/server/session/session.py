@@ -78,7 +78,10 @@ class Session:
         await self.agent_session.close()
 
     async def initialize_agent(
-        self, settings: Settings, initial_message: MessageAction | None
+        self,
+        settings: Settings,
+        initial_message: MessageAction | None,
+        replay_json: str | None,
     ):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
@@ -136,6 +139,7 @@ class Session:
                 github_token=github_token,
                 selected_repository=selected_repository,
                 initial_message=initial_message,
+                replay_json=replay_json,
             )
         except Exception as e:
             logger.exception(f'Error creating agent_session: {e}')
