@@ -154,6 +154,11 @@ export const chatSlice = createSlice({
         causeMessage.success = !ipythonObs.content
           .toLowerCase()
           .includes("error:");
+      } else if (observationID === "read" || observationID === "edit") {
+        // For read/edit operations, we consider it successful if there's content and no error
+        causeMessage.success =
+          observation.payload.content.length > 0 &&
+          !observation.payload.content.toLowerCase().includes("error:");
       }
 
       if (observationID === "run" || observationID === "run_ipython") {
