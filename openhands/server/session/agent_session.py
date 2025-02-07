@@ -204,27 +204,20 @@ class AgentSession:
             else None
         )
 
+        kwargs = {}
         if runtime_cls == RemoteRuntime:
-            self.runtime = runtime_cls(
-                config=config,
-                event_stream=self.event_stream,
-                sid=self.sid,
-                plugins=agent.sandbox_plugins,
-                status_callback=self._status_callback,
-                headless_mode=False,
-                env_vars=env_vars,
-                user_id=self.user_id,  # Pass user id
-            )
-        else:
-            self.runtime = runtime_cls(
-                config=config,
-                event_stream=self.event_stream,
-                sid=self.sid,
-                plugins=agent.sandbox_plugins,
-                status_callback=self._status_callback,
-                headless_mode=False,
-                env_vars=env_vars,
-            )
+            kwargs['user_id'] = self.user_id
+
+        self.runtime = runtime_cls(
+            config=config,
+            event_stream=self.event_stream,
+            sid=self.sid,
+            plugins=agent.sandbox_plugins,
+            status_callback=self._status_callback,
+            headless_mode=False,
+            env_vars=env_vars,
+            **kwargs,
+        )
 
         # FIXME: this sleep is a terrible hack.
         # This is to give the websocket a second to connect, so that
