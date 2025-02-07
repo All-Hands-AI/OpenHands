@@ -3,7 +3,7 @@ import os
 import socketio
 from dotenv import load_dotenv
 
-from openhands.core.config.utils import load_app_config
+from openhands.core.config import load_app_config
 from openhands.server.config.server_config import load_server_config
 from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
