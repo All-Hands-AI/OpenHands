@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { ContextMenu } from "./context-menu";
 import { ContextMenuListItem } from "./context-menu-list-item";
-import { ContextMenuSeparator } from "./context-menu-separator";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { I18nKey } from "#/i18n/declaration";
 
@@ -25,7 +24,6 @@ export function AccountSettingsContextMenu({
       ref={ref}
       className="absolute left-full -top-1 z-10"
     >
-      <ContextMenuSeparator />
       <ContextMenuListItem onClick={onLogout} isDisabled={!isLoggedIn}>
         {t(I18nKey.ACCOUNT_SETTINGS$LOGOUT)}
       </ContextMenuListItem>
