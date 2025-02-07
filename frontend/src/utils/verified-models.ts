@@ -15,7 +15,7 @@ export const VERIFIED_OPENAI_MODELS = [
   "gpt-4",
   "gpt-4-32k",
   "o1-mini",
-  "o1-preview",
+  "o1",
   "o3-mini",
   "o3-mini-2025-01-31",
 ];
