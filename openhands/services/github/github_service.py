@@ -3,10 +3,11 @@ from typing import Any
 
 import httpx
 
-from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
 from openhands.services.github.github_types import (
     GhAuthenticationError,
     GHUnknownException,
+    GitHubRepository,
+    GitHubUser,
 )
 from openhands.utils.import_utils import get_impl
 
