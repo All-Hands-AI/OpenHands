@@ -78,7 +78,7 @@ def test_load_microagents_with_trailing_slashes(
     """Test loading microagents when directory paths have trailing slashes."""
     # Create test files
     _create_test_microagents(temp_dir)
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Load microagents
         loaded_agents = runtime.get_microagents_from_selected_repo(None)
@@ -119,7 +119,7 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
     repo_dir.mkdir(parents=True)
     _create_test_microagents(str(repo_dir))
 
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Load microagents with selected repository
         loaded_agents = runtime.get_microagents_from_selected_repo(
@@ -174,7 +174,7 @@ Repository-specific test instructions.
 """
     (microagents_dir / 'repo.md').write_text(repo_agent)
 
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Load microagents
         loaded_agents = runtime.get_microagents_from_selected_repo(None)
