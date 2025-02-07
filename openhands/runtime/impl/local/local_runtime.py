@@ -128,6 +128,7 @@ class LocalRuntime(ActionExecutionClient):
 
         logger.warning(
             'Initializing LocalRuntime. WARNING: NO SANDBOX IS USED. '
+            'This is an experimental feature, please report issues to https://github.com/All-Hands-AI/OpenHands/issues. '
             '`run_as_openhands` will be ignored since the current user will be used to launch the server. '
             'We highly recommend using a sandbox (eg. DockerRuntime) unless you '
             'are running in a controlled environment.\n'
