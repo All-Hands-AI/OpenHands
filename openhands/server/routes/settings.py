@@ -3,9 +3,9 @@ from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth import get_user_id
-from openhands.server.services.github_service import GitHubService
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
+from openhands.services.github_service import GitHubService
 
 app = APIRouter(prefix='/api')
 
@@ -50,8 +50,8 @@ async def store_settings(
         try:
             # We check if the token is valid by getting the user
             # If the token is invalid, this will raise an exception
-            github = GitHubService(None)
-            await github.validate_user(settings.github_token)
+            github = GitHubService(user_id=None, token=settings.github_token)
+            await github.get_user()
 
         except Exception as e:
             logger.warning(f'Invalid GitHub token: {e}')

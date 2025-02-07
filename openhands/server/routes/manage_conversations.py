@@ -10,8 +10,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.events.stream import EventStreamSubscriber
 from openhands.runtime import get_runtime_cls
-from openhands.server.auth import get_user_id
-from openhands.server.routes.github import GithubServiceImpl
+from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -131,7 +130,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     """
     logger.info('Initializing new conversation')
     user_id = get_user_id(request)
-    github_token = GithubServiceImpl.get_gh_token(request)
+    github_token = get_github_token(request)
     selected_repository = data.selected_repository
     initial_user_msg = data.initial_user_msg
     image_urls = data.image_urls or []

@@ -1,31 +1,32 @@
+import os
 from typing import Any
 
 import httpx
-from fastapi import Request
 
-from openhands.server.auth import get_github_token
-from openhands.server.config.config_init import config, server_config
+from openhands.server.config.config_init import server_config
 from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
 from openhands.server.types import AppMode, GhAuthenticationError, GHUnknownException
-from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.import_utils import get_impl
-
-SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)  # type: ignore
 
 
 class GitHubService:
     BASE_URL = 'https://api.github.com'
-    token: str = ''
+    token = ''
 
-    def __init__(self, user_id: str | None):
+    def __init__(self, user_id: str | None = None, token: str | None = None):
         self.user_id = user_id
+
+        if token:
+            self.token = token
 
     async def _get_github_headers(self):
         """
         Retrieve the GH Token from settings store to construct the headers
         """
 
-        self.token = await self.get_user_token()
+        if not self.token and self.user_id:
+            self.token = await self.get_latest_token()
+
         return {
             'Authorization': f'Bearer {self.token}',
             'Accept': 'application/vnd.github.v3+json',
@@ -35,17 +36,7 @@ class GitHubService:
         return status_code == 401
 
     async def get_latest_token(self) -> str:
-        self.token = await self.get_user_token()
         return self.token
-
-    async def get_user_token(self) -> str:
-        settings_store = await SettingsStoreImpl.get_instance(config, self.user_id)
-        settings = await settings_store.load()
-        if settings and settings.github_token:
-            self.token = settings.github_token.get_secret_value()
-            return self.token
-
-        return ''
 
     async def _fetch_data(
         self, url: str, params: dict | None = None
@@ -144,6 +135,8 @@ class GitHubService:
 
         return repos
 
-    @classmethod
-    def get_gh_token(cls, request: Request) -> str | None:
-        return get_github_token(request)
+
+github_service_cls = os.environ.get(
+    'OPENHANDS_GITHUB_SERVICE_CLS', 'openhands.services.github_service.GitHubService'
+)
+GithubServiceImpl = get_impl(GitHubService, github_service_cls)
