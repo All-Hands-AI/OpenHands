@@ -6,14 +6,12 @@ import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { I18nKey } from "#/i18n/declaration";
 
 interface AccountSettingsContextMenuProps {
-  onClickAccountSettings: () => void;
   onLogout: () => void;
   onClose: () => void;
   isLoggedIn: boolean;
 }
 
 export function AccountSettingsContextMenu({
-  onClickAccountSettings,
   onLogout,
   onClose,
   isLoggedIn,
@@ -27,12 +25,6 @@ export function AccountSettingsContextMenu({
       ref={ref}
       className="absolute left-full -top-1 z-10"
     >
-      <ContextMenuListItem
-        testId="account-settings-button"
-        onClick={onClickAccountSettings}
-      >
-        {t(I18nKey.ACCOUNT_SETTINGS$SETTINGS)}
-      </ContextMenuListItem>
       <ContextMenuSeparator />
       <ContextMenuListItem onClick={onLogout} isDisabled={!isLoggedIn}>
         {t(I18nKey.ACCOUNT_SETTINGS$LOGOUT)}

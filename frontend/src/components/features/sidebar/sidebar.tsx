@@ -11,7 +11,6 @@ import { DocsButton } from "#/components/shared/buttons/docs-button";
 import { ExitProjectButton } from "#/components/shared/buttons/exit-project-button";
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import { AccountSettingsModal } from "#/components/shared/modals/account-settings/account-settings-modal";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { useCurrentSettings } from "#/context/settings-context";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -39,19 +38,10 @@ export function Sidebar() {
   const { mutateAsync: logout } = useLogout();
   const { saveUserSettings } = useCurrentSettings();
 
-  const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
-    React.useState(false);
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
 
   const [conversationPanelIsOpen, setConversationPanelIsOpen] =
     React.useState(false);
-
-  React.useEffect(() => {
-    // If the github token is invalid, open the account settings modal again
-    if (user.isError) {
-      setAccountSettingsModalOpen(true);
-    }
-  }, [user.isError]);
 
   React.useEffect(() => {
     // We don't show toast errors for settings in the global error handler
@@ -70,10 +60,6 @@ export function Sidebar() {
   const handleEndSession = () => {
     dispatch(setCurrentAgentState(AgentState.LOADING));
     endSession();
-  };
-
-  const handleAccountSettingsModalClose = () => {
-    setAccountSettingsModalOpen(false);
   };
 
   const handleLogout = async () => {
@@ -119,7 +105,6 @@ export function Sidebar() {
                   user.data ? { avatar_url: user.data.avatar_url } : undefined
                 }
                 onLogout={handleLogout}
-                onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
               />
             )}
             {user.isLoading && <LoadingSpinner size="small" />}
@@ -135,9 +120,6 @@ export function Sidebar() {
         )}
       </aside>
 
-      {accountSettingsModalOpen && (
-        <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
-      )}
       {(settingsError?.status === 404 || settingsModalIsOpen) && (
         <SettingsModal
           settings={settings}
