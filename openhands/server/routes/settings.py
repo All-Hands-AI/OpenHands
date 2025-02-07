@@ -5,7 +5,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth import get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
-from openhands.services.github_service import GitHubService
+from openhands.services.github.github_service import GitHubService
 
 app = APIRouter(prefix='/api')
 

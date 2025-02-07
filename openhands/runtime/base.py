@@ -48,7 +48,7 @@ from openhands.runtime.plugins import (
     VSCodeRequirement,
 )
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
-from openhands.services.github_service import GitHubService
+from openhands.services.github.github_service import GitHubService
 from openhands.utils.async_utils import call_sync_from_async
 
 STATUS_MESSAGES = {

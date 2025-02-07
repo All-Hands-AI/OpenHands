@@ -4,7 +4,10 @@ from typing import Any
 import httpx
 
 from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
-from openhands.server.types import GhAuthenticationError, GHUnknownException
+from openhands.services.github.github_types import (
+    GhAuthenticationError,
+    GHUnknownException,
+)
 from openhands.utils.import_utils import get_impl
 
 
@@ -139,6 +142,7 @@ class GitHubService:
 
 
 github_service_cls = os.environ.get(
-    'OPENHANDS_GITHUB_SERVICE_CLS', 'openhands.services.github_service.GitHubService'
+    'OPENHANDS_GITHUB_SERVICE_CLS',
+    'openhands.services.github.github_service.GitHubService',
 )
 GithubServiceImpl = get_impl(GitHubService, github_service_cls)
