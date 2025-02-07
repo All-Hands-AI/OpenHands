@@ -115,7 +115,7 @@ This is the default runtime used within OpenHands.
 
 ### Local Runtime
 
-The Local Runtime is designed for direct execution on the local machine. Currently only supports running as `root`:
+The Local Runtime is designed for direct execution on the local machine. Currently only supports running as the local user:
 
 - Runs the action_execution_server directly on the host
 - No Docker container overhead
