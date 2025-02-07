@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { I18nKey } from "#/i18n/declaration";
 import { SuggestionBox } from "#/components/features/suggestions/suggestion-box";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
@@ -23,6 +24,7 @@ export function GitHubRepositoriesSuggestionBox({
   user,
 }: GitHubRepositoriesSuggestionBoxProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -41,6 +43,8 @@ export function GitHubRepositoriesSuggestionBox({
   const handleConnectToGitHub = () => {
     if (gitHubAuthUrl) {
       window.location.href = gitHubAuthUrl;
+    } else {
+      navigate("/settings");
     }
   };
 
@@ -59,6 +63,7 @@ export function GitHubRepositoriesSuggestionBox({
           />
         ) : (
           <ModalButton
+            testId="connect-to-github"
             text={t(I18nKey.GITHUB$CONNECT)}
             icon={<GitHubLogo width={20} height={20} />}
             className="bg-[#791B80] w-full"
