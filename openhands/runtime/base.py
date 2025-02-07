@@ -48,7 +48,7 @@ from openhands.runtime.plugins import (
     VSCodeRequirement,
 )
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
-from openhands.services.github.github_service import GitHubService
+from openhands.services.github.github_service import GithubServiceImpl
 from openhands.utils.async_utils import call_sync_from_async
 
 STATUS_MESSAGES = {
@@ -218,7 +218,7 @@ class Runtime(FileEditRuntimeMixin):
         try:
             if isinstance(event, CmdRunAction):
                 if '$GITHUB_TOKEN' in event.command and self.user_id:
-                    gh_client = GitHubService(user_id=self.user_id)
+                    gh_client = GithubServiceImpl(user_id=self.user_id)
                     token = await gh_client.get_latest_token()
                     if token:
                         export_cmd = CmdRunAction(f"export GITHUB_TOKEN='{token}'")
