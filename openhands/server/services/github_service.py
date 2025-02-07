@@ -14,15 +14,15 @@ class GitHubService:
     BASE_URL = 'https://api.github.com'
     token: str = ''
 
-    def __init__(self, user_id: str | None):
-        self.user_id = user_id
+    def __init__(self, user_key: str | None):
+        self.user_key = user_key
 
     async def _get_github_headers(self):
         """
         Retrieve the GH Token from settings store to construct the headers
         """
 
-        settings_store = await SettingsStoreImpl.get_instance(config, self.user_id)
+        settings_store = await SettingsStoreImpl.get_instance(config, self.user_key)
         settings = await settings_store.load()
         if settings and settings.github_token:
             self.token = settings.github_token.get_secret_value()

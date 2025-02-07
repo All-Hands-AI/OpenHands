@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.auth import get_user_id
+from openhands.server.auth import get_keycloak_token, get_user_id
 from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
 from openhands.server.services.github_service import GitHubService
 from openhands.server.shared import server_config
@@ -21,8 +21,13 @@ async def get_github_repositories(
     sort: str = 'pushed',
     installation_id: int | None = None,
     github_user_id: str | None = Depends(get_user_id),
+    keycloak_token: str | None = Depends(get_keycloak_token),
 ):
-    client = GithubServiceImpl(github_user_id)
+    client = (
+        GithubServiceImpl(keycloak_token)
+        if keycloak_token
+        else GithubServiceImpl(github_user_id)
+    )
     try:
         repos: list[GitHubRepository] = await client.get_repositories(
             page, per_page, sort, installation_id
@@ -53,8 +58,13 @@ async def get_github_repositories(
 @app.get('/user')
 async def get_github_user(
     github_user_id: str | None = Depends(get_user_id),
+    keycloak_token: str | None = Depends(get_keycloak_token),
 ):
-    client = GithubServiceImpl(github_user_id)
+    client = (
+        GithubServiceImpl(keycloak_token)
+        if keycloak_token
+        else GithubServiceImpl(github_user_id)
+    )
     try:
         user: GitHubUser = await client.get_user()
         return user
@@ -83,8 +93,13 @@ async def get_github_user(
 @app.get('/installations')
 async def get_github_installation_ids(
     github_user_id: str | None = Depends(get_user_id),
+    keycloak_token: str | None = Depends(get_keycloak_token),
 ):
-    client = GithubServiceImpl(github_user_id)
+    client = (
+        GithubServiceImpl(keycloak_token)
+        if keycloak_token
+        else GithubServiceImpl(github_user_id)
+    )
     try:
         installations_ids: list[int] = await client.get_installation_ids()
         return installations_ids
@@ -117,8 +132,13 @@ async def search_github_repositories(
     sort: str = 'stars',
     order: str = 'desc',
     github_user_id: str | None = Depends(get_user_id),
+    keycloak_token: str | None = Depends(get_keycloak_token),
 ):
-    client = GithubServiceImpl(github_user_id)
+    client = (
+        GithubServiceImpl(keycloak_token)
+        if keycloak_token
+        else GithubServiceImpl(github_user_id)
+    )
     try:
         repos: list[GitHubRepository] = await client.search_repositories(
             query, per_page, sort, order
