@@ -89,6 +89,10 @@ describe("Settings Screen", () => {
 
       renderSettingsScreen();
       await screen.findByText("Disconnect from GitHub");
+
+      // input should not be rendered
+      const input = screen.queryByTestId("github-token-input");
+      expect(input).not.toBeInTheDocument();
     });
 
     it("should logout the user when the 'Disconnect from GitHub' button is clicked", async () => {
@@ -201,6 +205,38 @@ describe("Settings Screen", () => {
       // "Invariant" security analyzer
       screen.getByTestId("security-analyzer-input");
       screen.getByTestId("enable-confirmation-mode-switch");
+    });
+
+    it("should not render a badge if the LLM API key was not set", async () => {
+      getSettingsSpy.mockResolvedValueOnce({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        llm_api_key: null,
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        screen.getByTestId("llm-api-key-input");
+
+        const badge = screen.queryByTestId("badge");
+        expect(badge).not.toBeInTheDocument();
+      });
+    });
+
+    it("should render a set badge if the LLM API key is set", async () => {
+      getSettingsSpy.mockResolvedValueOnce({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        llm_api_key: "**********",
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        const badge = screen.getByTestId("badge");
+
+        expect(badge).toBeInTheDocument();
+        expect(badge).toHaveTextContent(/set/i);
+      });
     });
 
     describe("Basic Model Selector", () => {

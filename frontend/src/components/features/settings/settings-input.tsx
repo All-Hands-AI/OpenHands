@@ -10,6 +10,7 @@ interface SettingsInputProps {
   placeholder?: string;
   showOptionalTag?: boolean;
   isDisabled?: boolean;
+  badgeContent?: string;
   className?: string;
 }
 
@@ -22,12 +23,21 @@ export function SettingsInput({
   placeholder,
   showOptionalTag,
   isDisabled,
+  badgeContent,
   className,
 }: SettingsInputProps) {
   return (
     <label className={cn("flex flex-col gap-2.5 w-fit", className)}>
       <div className="flex items-center gap-1">
         <span className="text-sm">{label}</span>
+        {badgeContent && (
+          <span
+            data-testid="badge"
+            className="border border-[#C9B974] text-[#C9B974] rounded text-xs font-bold px-1"
+          >
+            {badgeContent}
+          </span>
+        )}
         {showOptionalTag && <OptionalTag />}
       </div>
       <input

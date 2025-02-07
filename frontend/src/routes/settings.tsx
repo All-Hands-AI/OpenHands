@@ -52,6 +52,7 @@ function SettingsScreen() {
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = settings.GITHUB_TOKEN_IS_SET;
+  const isLLMKeySet = settings.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = hasAdvancedSettingsSet(settings);
 
@@ -156,7 +157,7 @@ function SettingsScreen() {
               Configure GitHub Repositories
             </BrandButton>
           )}
-          {!isSaas && (
+          {!isSaas && !isGitHubTokenSet && (
             <>
               <SettingsInput
                 testId="github-token-input"
@@ -254,6 +255,7 @@ function SettingsScreen() {
             name="llm-api-key-input"
             label="API Key"
             type="password"
+            badgeContent={isLLMKeySet ? "SET" : undefined}
             className="w-[680px]"
           />
 
