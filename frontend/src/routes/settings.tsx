@@ -5,7 +5,6 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
 import { HelpLink } from "#/components/features/settings/help-link";
-import { SettingsDropdown } from "#/components/features/settings/settings-dropdown";
 import { AvailableLanguages } from "#/i18n";
 import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import { DEFAULT_SETTINGS } from "#/services/settings";
@@ -18,6 +17,7 @@ import { organizeModelsAndProviders } from "#/utils/organize-models-and-provider
 import { useAppLogout } from "#/hooks/use-app-logout";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
+import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 
 const displayErrorToast = (error: string) => {
   toast.error(error, {
@@ -202,14 +202,16 @@ function SettingsScreen() {
             </BrandButton>
           )}
 
-          <SettingsDropdown
+          <SettingsDropdownInput
             testId="language-input"
             name="language-input"
             label="Language"
-            options={AvailableLanguages}
-            defaultValue={settings.LANGUAGE}
-            showOptionalTag
-            className="w-[680px]"
+            items={AvailableLanguages.map((language) => ({
+              key: language.value,
+              label: language.label,
+            }))}
+            defaultSelectedKey={settings.LANGUAGE}
+            isClearable={false}
           />
 
           <SettingsSwitch
@@ -283,18 +285,18 @@ function SettingsScreen() {
           />
 
           {llmConfigMode === "advanced" && (
-            <SettingsDropdown
+            <SettingsDropdownInput
               testId="agent-input"
               name="agent-input"
               label="Agent"
-              options={
+              items={
                 resources?.agents.map((agent) => ({
+                  key: agent,
                   label: agent,
-                  value: agent,
                 })) || []
               }
-              defaultValue={settings.AGENT}
-              className="w-[680px]"
+              defaultSelectedKey={settings.AGENT}
+              isClearable={false}
             />
           )}
 
@@ -309,19 +311,19 @@ function SettingsScreen() {
           )}
 
           {llmConfigMode === "advanced" && (
-            <SettingsDropdown
+            <SettingsDropdownInput
               testId="security-analyzer-input"
               name="security-analyzer-input"
               label="Security Analyzer"
-              options={
+              isDisabled={!confirmationModeIsEnabled}
+              items={
                 resources?.securityAnalyzers.map((analyzer) => ({
+                  key: analyzer,
                   label: analyzer,
-                  value: analyzer,
                 })) || []
               }
-              defaultValue={settings.SECURITY_ANALYZER}
-              className="w-[680px]"
-              isDisabled={!confirmationModeIsEnabled}
+              defaultSelectedKey={settings.SECURITY_ANALYZER}
+              isClearable
               showOptionalTag
             />
           )}
