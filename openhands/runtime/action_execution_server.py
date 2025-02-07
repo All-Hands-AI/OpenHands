@@ -68,9 +68,6 @@ class ActionRequest(BaseModel):
 
 
 ROOT_GID = 0
-INIT_COMMANDS = [
-    'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"',
-]
 
 SESSION_API_KEY = os.environ.get('SESSION_API_KEY')
 api_key_header = APIKeyHeader(name='X-Session-API-Key', auto_error=False)
@@ -192,6 +189,11 @@ class ActionExecutor:
             )
 
     async def _init_bash_commands(self):
+        INIT_COMMANDS = [
+            'git config --file ./.git_config user.name "openhands" && git config --file ./.git_config user.email "openhands@all-hands.dev" && alias git="git --no-pager" && export GIT_CONFIG=$(pwd)/.git_config'
+            if os.environ.get('LOCAL_RUNTIME_MODE') == '1'
+            else 'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"'
+        ]
         logger.debug(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
         for command in INIT_COMMANDS:
             action = CmdRunAction(command=command)
@@ -203,7 +205,6 @@ class ActionExecutor:
                 f'Init command outputs (exit code: {obs.exit_code}): {obs.content}'
             )
             assert obs.exit_code == 0
-
         logger.debug('Bash init commands completed')
 
     async def run_action(self, action) -> Observation:

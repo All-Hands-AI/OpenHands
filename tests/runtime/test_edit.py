@@ -28,7 +28,7 @@ if __name__ == '__main__':
     reason='This test requires LLM to run.',
 )
 def test_edit_from_scratch(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         action = FileEditAction(
             content=ORGINAL,
@@ -68,7 +68,7 @@ def index():
     reason='This test requires LLM to run.',
 )
 def test_edit(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         action = FileEditAction(
             content=ORGINAL,
@@ -127,7 +127,7 @@ This is line 101 + 10
     reason='This test requires LLM to run.',
 )
 def test_edit_long_file(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         action = FileEditAction(
             content=ORIGINAL_LONG,
