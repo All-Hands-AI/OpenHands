@@ -21,7 +21,6 @@ from openhands.events.action import (
     Action,
 )
 from openhands.events.observation import (
-    ErrorObservation,
     Observation,
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
@@ -296,7 +295,7 @@ class LocalRuntime(ActionExecutionClient):
             raise AgentRuntimeDisconnectedError('Runtime not initialized')
 
         if self.server_process is None or self.server_process.poll() is not None:
-            return ErrorObservation('Server process died')
+            raise AgentRuntimeDisconnectedError('Server process died')
 
         with self.action_semaphore:
             try:
@@ -309,8 +308,6 @@ class LocalRuntime(ActionExecutionClient):
                 return observation_from_dict(response.json())
             except requests.exceptions.ConnectionError:
                 raise AgentRuntimeDisconnectedError('Server connection lost')
-            except requests.exceptions.RequestException as e:
-                return ErrorObservation(f'Failed to execute action: {e}')
 
     def close(self):
         """Stop the server process."""
