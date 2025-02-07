@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import type { Message } from "#/message";
 
 import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
 import {
