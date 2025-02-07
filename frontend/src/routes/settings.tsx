@@ -108,6 +108,7 @@ function SettingsScreen() {
           onSuccess: () => {
             handleCaptureConsent(userConsentsToAnalytics);
             displaySuccessToast("Settings saved");
+            setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
           },
         },
       );
@@ -129,14 +130,19 @@ function SettingsScreen() {
       },
       {
         onSuccess: () => {
+          handleCaptureConsent(!!DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS);
           displaySuccessToast("Settings reset");
           setResetSettingsModalIsOpen(false);
+          setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
         },
       },
     );
   };
 
   React.useEffect(() => {
+    // If settings is still loading by the time the state is set, it will always
+    // default to basic settings. This is a workaround to ensure the correct
+    // settings are displayed.
     setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
   }, [isAdvancedSettingsSet]);
 

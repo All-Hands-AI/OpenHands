@@ -10,6 +10,7 @@ import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { PostApiSettings } from "#/types/settings";
 import * as ConsentHandlers from "#/utils/handle-capture-consent";
+import { DEFAULT_SETTINGS } from "#/services/settings";
 
 describe("Settings Screen", () => {
   const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
@@ -301,6 +302,66 @@ describe("Settings Screen", () => {
         screen.getByTestId("runtime-settings-input");
       });
 
+      test("saving with no changes but having advanced enabled should hide the advanced items", async () => {
+        const user = userEvent.setup();
+        renderSettingsScreen();
+
+        await toggleAdvancedSettings(user);
+
+        const saveButton = screen.getByText("Save Changes");
+        await user.click(saveButton);
+
+        await waitFor(() => {
+          expect(
+            screen.queryByTestId("llm-custom-model-input"),
+          ).not.toBeInTheDocument();
+          expect(
+            screen.queryByTestId("base-url-input"),
+          ).not.toBeInTheDocument();
+          expect(screen.queryByTestId("agent-input")).not.toBeInTheDocument();
+          expect(
+            screen.queryByTestId("security-analyzer-input"),
+          ).not.toBeInTheDocument();
+          expect(
+            screen.queryByTestId("enable-confirmation-mode-switch"),
+          ).not.toBeInTheDocument();
+        });
+      });
+
+      test("resetting settings with no changes but having advanced enabled should hide the advanced items", async () => {
+        const user = userEvent.setup();
+        renderSettingsScreen();
+
+        await toggleAdvancedSettings(user);
+
+        const resetButton = screen.getByText("Reset to defaults");
+        await user.click(resetButton);
+
+        // show modal
+        const modal = await screen.findByTestId("reset-modal");
+        expect(modal).toBeInTheDocument();
+
+        // confirm reset
+        const confirmButton = within(modal).getByText("Reset");
+        await user.click(confirmButton);
+
+        await waitFor(() => {
+          expect(
+            screen.queryByTestId("llm-custom-model-input"),
+          ).not.toBeInTheDocument();
+          expect(
+            screen.queryByTestId("base-url-input"),
+          ).not.toBeInTheDocument();
+          expect(screen.queryByTestId("agent-input")).not.toBeInTheDocument();
+          expect(
+            screen.queryByTestId("security-analyzer-input"),
+          ).not.toBeInTheDocument();
+          expect(
+            screen.queryByTestId("enable-confirmation-mode-switch"),
+          ).not.toBeInTheDocument();
+        });
+      });
+
       test("security analyzer input should only be enabled if the confirmation mode is toggled", async () => {
         const user = userEvent.setup();
         renderSettingsScreen();
@@ -554,6 +615,26 @@ describe("Settings Screen", () => {
       await user.click(saveButton);
 
       expect(handleCaptureConsentSpy).toHaveBeenCalledWith(false);
+    });
+
+    it("should call handleCaptureConsent with defaults if the reset is successful", async () => {
+      const user = userEvent.setup();
+      const handleCaptureConsentSpy = vi.spyOn(
+        ConsentHandlers,
+        "handleCaptureConsent",
+      );
+      renderSettingsScreen();
+
+      const resetButton = await screen.findByText("Reset to defaults");
+      await user.click(resetButton);
+
+      const modal = await screen.findByTestId("reset-modal");
+      const confirmButton = within(modal).getByText("Reset");
+      await user.click(confirmButton);
+
+      expect(handleCaptureConsentSpy).toHaveBeenCalledWith(
+        DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
+      );
     });
   });
 });
