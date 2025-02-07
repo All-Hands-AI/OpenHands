@@ -3,21 +3,25 @@ from typing import Any
 
 import httpx
 
-from openhands.server.config.config_init import server_config
 from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
-from openhands.server.types import AppMode, GhAuthenticationError, GHUnknownException
+from openhands.server.types import GhAuthenticationError, GHUnknownException
 from openhands.utils.import_utils import get_impl
 
 
 class GitHubService:
     BASE_URL = 'https://api.github.com'
-    token = ''
+    token: str = ''
+    refresh: bool = False
 
-    def __init__(self, user_id: str | None = None, token: str | None = None):
+    def __init__(
+        self, user_id: str | None = None, token: str | None = None, refresh=False
+    ):
         self.user_id = user_id
 
         if token:
             self.token = token
+
+        self.refresh = refresh
 
     async def _get_github_headers(self):
         """
@@ -45,9 +49,7 @@ class GitHubService:
             async with httpx.AsyncClient() as client:
                 github_headers = await self._get_github_headers()
                 response = await client.get(url, headers=github_headers, params=params)
-                if server_config.app_mode == AppMode.SAAS and self._has_token_expired(
-                    response.status_code
-                ):
+                if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
                     github_headers = await self._get_github_headers()
                     response = await client.get(
