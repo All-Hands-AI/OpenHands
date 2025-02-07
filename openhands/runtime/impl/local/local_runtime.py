@@ -293,7 +293,7 @@ class LocalRuntime(ActionExecutionClient):
     async def execute_action(self, action: Action) -> Observation:
         """Execute an action by sending it to the server."""
         if not self._runtime_initialized:
-            return ErrorObservation('Runtime not initialized')
+            raise AgentRuntimeDisconnectedError('Runtime not initialized')
 
         if self.server_process is None or self.server_process.poll() is not None:
             return ErrorObservation('Server process died')
