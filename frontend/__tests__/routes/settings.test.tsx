@@ -357,6 +357,7 @@ describe("Settings Screen", () => {
         expect(screen.getByTestId("language-input")).toHaveValue("Norsk");
         expect(screen.getByText("Disconnect from GitHub")).toBeInTheDocument();
         expect(screen.getByTestId("enable-analytics-switch")).toBeChecked();
+        expect(screen.getByTestId("advanced-settings-switch")).toBeChecked();
         expect(screen.getByTestId("base-url-input")).toHaveValue(
           "https://test.com",
         );
@@ -456,7 +457,6 @@ describe("Settings Screen", () => {
         github_token: "",
         confirmation_mode: undefined,
         llm_api_key: undefined,
-        llm_base_url: undefined,
       });
     });
 

@@ -44,17 +44,19 @@ const displaySuccessToast = (message: string) => {
 };
 
 function SettingsScreen() {
-  const { data: settings, isFetching } = useSettings();
+  const { data: settings, isFetching, isSuccess } = useSettings();
   const { data: config } = useConfig();
   const { data: resources } = useAIConfigOptions();
   const { mutateAsync: saveSettings } = useSaveSettings();
   const { handleLogout } = useAppLogout();
 
   const isSaas = config?.APP_MODE === "saas";
-  const isGitHubTokenSet = settings.GITHUB_TOKEN_IS_SET;
-  const isLLMKeySet = settings.LLM_API_KEY === "**********";
-  const isAnalyticsEnabled = settings.USER_CONSENTS_TO_ANALYTICS;
-  const isAdvancedSettingsSet = hasAdvancedSettingsSet(settings);
+  const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
+  const isLLMKeySet = settings?.LLM_API_KEY === "**********";
+  const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
+  const isAdvancedSettingsSet = settings
+    ? hasAdvancedSettingsSet(settings)
+    : false;
 
   const modelsAndProviders = organizeModelsAndProviders(
     resources?.models || [],
@@ -64,7 +66,7 @@ function SettingsScreen() {
     "basic" | "advanced"
   >(isAdvancedSettingsSet ? "advanced" : "basic");
   const [confirmationModeIsEnabled, setConfirmationModeIsEnabled] =
-    React.useState(!!settings.SECURITY_ANALYZER);
+    React.useState(!!settings?.SECURITY_ANALYZER);
   const [resetSettingsModalIsOpen, setResetSettingsModalIsOpen] =
     React.useState(false);
 
@@ -94,7 +96,7 @@ function SettingsScreen() {
           LANGUAGE: languageValue,
           user_consents_to_analytics: userConsentsToAnalytics,
           LLM_MODEL: customLlmModel || fullLlmModel,
-          LLM_BASE_URL: formData.get("base-url-input")?.toString(),
+          LLM_BASE_URL: formData.get("base-url-input")?.toString() || "",
           LLM_API_KEY: formData.get("llm-api-key-input")?.toString(),
           AGENT: formData.get("agent-input")?.toString(),
           SECURITY_ANALYZER:
@@ -134,8 +136,16 @@ function SettingsScreen() {
     );
   };
 
+  React.useEffect(() => {
+    setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
+  }, [isAdvancedSettingsSet]);
+
   if (isFetching) {
     return <div>Loading...</div>;
+  }
+
+  if (!isSuccess) {
+    return <div>Failed to fetch settings. Please try reloading.</div>;
   }
 
   return (

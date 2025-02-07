@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import posthog from "posthog-js";
-import { DEFAULT_SETTINGS } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 
@@ -24,14 +23,11 @@ const getSettingsQueryFn = async () => {
 };
 
 export const useSettings = () => {
-  const { setGitHubTokenIsSet } = useAuth();
+  const { setGitHubTokenIsSet, githubTokenIsSet } = useAuth();
 
   const query = useQuery({
-    queryKey: ["settings"],
+    queryKey: ["settings", githubTokenIsSet],
     queryFn: getSettingsQueryFn,
-    initialData: DEFAULT_SETTINGS,
-    staleTime: 0,
-    retry: false,
     meta: {
       disableToast: true,
     },
