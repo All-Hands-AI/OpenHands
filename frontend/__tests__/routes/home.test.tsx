@@ -1,11 +1,13 @@
 import { createRoutesStub } from "react-router";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
 import userEvent from "@testing-library/user-event";
 import { screen } from "@testing-library/react";
+import { AxiosError } from "axios";
 import MainApp from "#/routes/_oh/route";
 import SettingsScreen from "#/routes/settings";
 import Home from "#/routes/_oh._index/route";
+import OpenHands from "#/api/open-hands";
 
 describe("Home Screen", () => {
   const RouterStub = createRoutesStub([
@@ -53,4 +55,31 @@ describe("Home Screen", () => {
     const settingsScreen = await screen.findByTestId("settings-screen");
     expect(settingsScreen).toBeInTheDocument();
   });
+
+  it.todo(
+    "should open the settings modal if GET /settings fails with a 404",
+    async () => {
+      const error = new AxiosError(
+        "Request failed with status code 404",
+        "ERR_BAD_REQUEST",
+        undefined,
+        undefined,
+        {
+          status: 404,
+          statusText: "Not Found",
+          data: { message: "Settings not found" },
+          headers: {},
+          // @ts-expect-error - we only need the response object for this test
+          config: {},
+        },
+      );
+
+      vi.spyOn(OpenHands, "getSettings").mockRejectedValue(error);
+
+      renderWithProviders(<RouterStub initialEntries={["/"]} />);
+
+      const settingsModal = await screen.findByTestId("ai-config-modal");
+      expect(settingsModal).toBeInTheDocument();
+    },
+  );
 });

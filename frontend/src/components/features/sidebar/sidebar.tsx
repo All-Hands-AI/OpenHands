@@ -120,7 +120,7 @@ export function Sidebar() {
         )}
       </aside>
 
-      {(settingsError?.status === 404 || settingsModalIsOpen) && (
+      {(settingsError?.status === 404 || settingsModalIsOpen) && settings && (
         <SettingsModal
           settings={settings}
           onClose={() => setSettingsModalIsOpen(false)}

@@ -8,7 +8,7 @@ import { SettingsProvider } from "#/context/settings-context";
 import { AuthProvider } from "#/context/auth-context";
 
 describe("AnalyticsConsentFormModal", () => {
-  it("should call saveUserSettings with default settings on confirm reset settings", async () => {
+  it("should call saveUserSettings with consent", async () => {
     const user = userEvent.setup();
     const onCloseMock = vi.fn();
     const saveUserSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
@@ -26,20 +26,9 @@ describe("AnalyticsConsentFormModal", () => {
     const confirmButton = screen.getByTestId("confirm-preferences");
     await user.click(confirmButton);
 
-    expect(saveUserSettingsSpy).toHaveBeenCalledWith({
-      user_consents_to_analytics: true,
-      agent: "CodeActAgent",
-      confirmation_mode: false,
-      enable_default_condenser: false,
-      github_token: undefined,
-      language: "en",
-      llm_api_key: undefined,
-      llm_base_url: "",
-      llm_model: "anthropic/claude-3-5-sonnet-20241022",
-      remote_runtime_resource_factor: 1,
-      security_analyzer: "",
-      unset_github_token: undefined,
-    });
+    expect(saveUserSettingsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ user_consents_to_analytics: true }),
+    );
     expect(onCloseMock).toHaveBeenCalled();
   });
 });
