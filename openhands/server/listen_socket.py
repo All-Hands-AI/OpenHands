@@ -2,6 +2,7 @@ from urllib.parse import parse_qs
 
 import jwt
 from pydantic import SecretStr
+from server.auth.auth_utils import keycloak_openid
 from socketio.exceptions import ConnectionRefusedError
 
 from openhands.core.logger import openhands_logger as logger
@@ -52,7 +53,10 @@ async def connect(connection_id: str, environ, auth):
             else config.jwt_secret
         )
         decoded = jwt.decode(signed_token, jwt_secret, algorithms=['HS256'])
-        user_id = decoded['github_user_id']
+        logger.info(f'Decoded cookie: {decoded}')
+        access_token = decoded['access_token']
+        user_info = keycloak_openid.userinfo(access_token)
+        user_id = user_info['github_id']
 
         logger.info(f'User {user_id} is connecting to conversation {conversation_id}')
 
