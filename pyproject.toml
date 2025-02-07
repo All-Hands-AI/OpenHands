@@ -114,6 +114,7 @@ flake8 = "*"
 build-backend = "poetry.core.masonry.api"
 requires = [
   "poetry-core",
+  "poetry>=2.0.0,<3.0.0",
 ]
 
 [tool.autopep8]
