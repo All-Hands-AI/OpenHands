@@ -23,7 +23,11 @@ class BrowserOutputCondenser(Condenser):
                 isinstance(event, BrowserOutputObservation)
                 and cnt >= self.attention_window
             ):
-                results.append(AgentCondensationObservation('<MASKED>'))
+                results.append(
+                    AgentCondensationObservation(
+                        f'Current URL: {event.url}\nContent Omitted'
+                    )
+                )
             else:
                 results.append(event)
                 if isinstance(event, BrowserOutputObservation):
