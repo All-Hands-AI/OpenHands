@@ -19,6 +19,7 @@ from openhands.server.shared import (
     conversation_manager,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
+from openhands.services.github.github_service import GithubServiceImpl
 from openhands.storage.data_models.conversation_info import ConversationInfo
 from openhands.storage.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
@@ -130,7 +131,9 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     """
     logger.info('Initializing new conversation')
     user_id = get_user_id(request)
-    github_token = get_github_token(request)
+    gh_client = GithubServiceImpl(user_id=user_id, token=get_github_token(request))
+    github_token = await gh_client.get_latest_token()
+
     selected_repository = data.selected_repository
     initial_user_msg = data.initial_user_msg
     image_urls = data.image_urls or []

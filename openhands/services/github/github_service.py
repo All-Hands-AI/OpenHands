@@ -14,17 +14,13 @@ from openhands.utils.import_utils import get_impl
 class GitHubService:
     BASE_URL = 'https://api.github.com'
     token: str = ''
-    refresh: bool = False
+    refresh = False
 
-    def __init__(
-        self, user_id: str | None = None, token: str | None = None, refresh=False
-    ):
+    def __init__(self, user_id: str | None = None, token: str | None = None):
         self.user_id = user_id
 
         if token:
             self.token = token
-
-        self.refresh = refresh
 
     async def _get_github_headers(self):
         """
