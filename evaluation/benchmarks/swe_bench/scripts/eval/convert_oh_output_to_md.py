@@ -257,6 +257,13 @@ def write_row_to_md_file(row, instance_id_to_test_result):
     else:
         report = None
 
+    test_output_file = os.path.join(
+        output_dir, 'eval_outputs', instance_id, 'test_output.txt'
+    )
+    if test_output is None and os.path.exists(test_output_file):
+        with open(test_output_file, 'r') as f:
+            test_output = f.read()
+
     with open(filepath, 'w') as f:
         f.write(f'# {instance_id} (resolved: {resolved})\n')
 
