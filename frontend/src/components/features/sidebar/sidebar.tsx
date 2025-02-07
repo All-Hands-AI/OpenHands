@@ -3,6 +3,7 @@ import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import toast from "react-hot-toast";
+import { NavLink } from "react-router";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
@@ -104,7 +105,14 @@ export function Sidebar() {
           </div>
 
           <div className="flex flex-col items-center gap-[26px] mb-4">
-            <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
+            <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                isActive ? "text-white" : "text-[#9099AC]"
+              }
+            >
+              <SettingsButton />
+            </NavLink>
             {!user.isLoading && (
               <UserActions
                 user={

@@ -138,7 +138,10 @@ function SettingsScreen() {
   }
 
   return (
-    <main className="bg-[#24272E] border border-[#454545] h-full rounded-xl">
+    <main
+      data-testid="settings-screen"
+      className="bg-[#24272E] border border-[#454545] h-full rounded-xl"
+    >
       <form action={formAction} className="flex flex-col h-full">
         <header className="text-sm leading-6 px-3 py-1.5 border-b border-b-[#454545]">
           Settings

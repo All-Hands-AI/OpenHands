@@ -4,11 +4,12 @@ import { TooltipButton } from "./tooltip-button";
 import { I18nKey } from "#/i18n/declaration";
 
 interface SettingsButtonProps {
-  onClick: () => void;
+  onClick?: () => void;
 }
 
 export function SettingsButton({ onClick }: SettingsButtonProps) {
   const { t } = useTranslation();
+
   return (
     <TooltipButton
       testId="settings-button"
@@ -16,7 +17,7 @@ export function SettingsButton({ onClick }: SettingsButtonProps) {
       ariaLabel={t(I18nKey.SETTINGS$TITLE)}
       onClick={onClick}
     >
-      <SettingsIcon width={28} height={28} className="text-white" />
+      <SettingsIcon width={28} height={28} />
     </TooltipButton>
   );
 }
