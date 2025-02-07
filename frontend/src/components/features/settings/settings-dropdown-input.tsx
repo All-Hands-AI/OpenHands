@@ -23,7 +23,7 @@ export function SettingsDropdownInput({
   isClearable,
 }: SettingsDropdownInputProps) {
   return (
-    <label className="flex flex-col gap-2.5">
+    <label className="flex flex-col gap-2.5 w-[680px]">
       <div className="flex items-center gap-1">
         <span className="text-sm">{label}</span>
         {showOptionalTag && <OptionalTag />}
@@ -36,7 +36,7 @@ export function SettingsDropdownInput({
         defaultSelectedKey={defaultSelectedKey}
         isClearable={isClearable}
         isDisabled={isDisabled}
-        className="w-[680px]"
+        className="w-full"
         classNames={{
           popoverContent: "bg-[#454545] rounded-xl border border-[#717888]",
         }}
