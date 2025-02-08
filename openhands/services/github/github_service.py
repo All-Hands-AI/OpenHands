@@ -39,7 +39,7 @@ class GitHubService:
         return status_code == 401
 
     async def get_latest_token(self) -> SecretStr:
-        return SecretStr(self.token.get_secret_value())
+        return self.token
 
     async def _fetch_data(
         self, url: str, params: dict | None = None
