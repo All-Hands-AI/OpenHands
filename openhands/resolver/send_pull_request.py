@@ -517,7 +517,6 @@ def process_single_issue(
             username=username,
             platform=platform,
             patch_dir=patched_repo_dir,
-            llm_config=llm_config,
             pr_type=pr_type,
             fork_owner=fork_owner,
             additional_message=resolver_output.result_explanation,
