@@ -131,8 +131,6 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     """
     logger.info('Initializing new conversation')
     user_id = get_user_id(request)
-    # github_token = GithubServiceImpl.get_gh_token(request)
-
     github_service = GithubServiceImpl(user_id=user_id, token=get_github_token(request))
     github_token = await github_service.get_latest_token()
 
