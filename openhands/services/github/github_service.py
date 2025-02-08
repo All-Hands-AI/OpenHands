@@ -55,7 +55,7 @@ class GitHubService:
                         url, headers=github_headers, params=params
                     )
 
-                await response.raise_for_status()
+                response.raise_for_status()
                 headers = {}
                 if 'Link' in response.headers:
                     headers['Link'] = response.headers['Link']
@@ -82,10 +82,6 @@ class GitHubService:
             name=response.get('name'),
             email=response.get('email'),
         )
-
-    async def validate_user(self, token) -> GitHubUser:
-        self.token = token
-        return await self.get_user()
 
     async def get_repositories(
         self, page: int, per_page: int, sort: str, installation_id: int | None

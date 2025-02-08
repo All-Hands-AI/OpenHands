@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import httpx
 import pytest
@@ -50,7 +50,7 @@ async def test_github_service_fetch_data():
     mock_response = AsyncMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {'login': 'test-user'}
-    mock_response.raise_for_status = AsyncMock()
+    mock_response.raise_for_status = Mock()
 
     mock_client = AsyncMock()
     mock_client.get.return_value = mock_response
@@ -70,7 +70,7 @@ async def test_github_service_fetch_data():
         # Test error handling with 401 status code
         mock_response.status_code = 401
         mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-            message='401 Unauthorized', request=AsyncMock(), response=mock_response
+            message='401 Unauthorized', request=Mock(), response=mock_response
         )
 
         # Reset the mock to test error handling
@@ -78,4 +78,4 @@ async def test_github_service_fetch_data():
         mock_client.get.return_value = mock_response
 
         with pytest.raises(GhAuthenticationError):
-            await service._fetch_data('https://api.github.com/user')
+            _ = await service._fetch_data('https://api.github.com/user')

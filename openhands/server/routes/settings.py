@@ -52,7 +52,7 @@ async def store_settings(
             # We check if the token is valid by getting the user
             # If the token is invalid, this will raise an exception
             github = GitHubService(user_id=None, token=SecretStr(settings.github_token))
-            await github.validate_user(settings.github_token)
+            await github.get_user()
 
         except Exception as e:
             logger.warning(f'Invalid GitHub token: {e}')
