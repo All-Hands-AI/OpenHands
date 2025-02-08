@@ -22,7 +22,8 @@ def convert_row_to_swebench_format(row):
     elif 'test_result' in row and 'git_patch' in row['test_result']:
         model_patch = row['test_result']['git_patch']
     else:
-        raise ValueError(f'Row {row} does not have a git_patch')
+        print(f'WARNING: Row {row} does not have a git_patch')
+        model_patch = ''
 
     return {
         'instance_id': row['instance_id'],

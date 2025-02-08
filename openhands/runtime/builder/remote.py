@@ -5,9 +5,11 @@ import time
 
 import requests
 
+from openhands.core.exceptions import AgentRuntimeBuildError
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import RuntimeBuilder
 from openhands.runtime.utils.request import send_request
+from openhands.utils.http_session import HttpSession
 from openhands.utils.shutdown_listener import (
     should_continue,
     sleep_if_should_continue,
@@ -17,13 +19,19 @@ from openhands.utils.shutdown_listener import (
 class RemoteRuntimeBuilder(RuntimeBuilder):
     """This class interacts with the remote Runtime API for building and managing container images."""
 
-    def __init__(self, api_url: str, api_key: str):
+    def __init__(self, api_url: str, api_key: str, session: HttpSession | None = None):
         self.api_url = api_url
         self.api_key = api_key
-        self.session = requests.Session()
+        self.session = session or HttpSession()
         self.session.headers.update({'X-API-Key': self.api_key})
 
-    def build(self, path: str, tags: list[str], platform: str | None = None) -> str:
+    def build(
+        self,
+        path: str,
+        tags: list[str],
+        platform: str | None = None,
+        extra_build_args: list[str] | None = None,
+    ) -> str:
         """Builds a Docker image using the Runtime API's /build endpoint."""
         # Create a tar archive of the build context
         tar_buffer = io.BytesIO()
@@ -71,7 +79,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         while should_continue():
             if time.time() - start_time > timeout:
                 logger.error('Build timed out after 30 minutes')
-                raise RuntimeError('Build timed out after 30 minutes')
+                raise AgentRuntimeBuildError('Build timed out after 30 minutes')
 
             status_response = send_request(
                 self.session,
@@ -82,7 +90,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
 
             if status_response.status_code != 200:
                 logger.error(f'Failed to get build status: {status_response.text}')
-                raise RuntimeError(
+                raise AgentRuntimeBuildError(
                     f'Failed to get build status: {status_response.text}'
                 )
 
@@ -104,12 +112,12 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
                     'error', f'Build failed with status: {status}. Build ID: {build_id}'
                 )
                 logger.error(error_message)
-                raise RuntimeError(error_message)
+                raise AgentRuntimeBuildError(error_message)
 
             # Wait before polling again
             sleep_if_should_continue(30)
 
-        raise RuntimeError('Build interrupted (likely received SIGTERM or SIGINT).')
+        raise AgentRuntimeBuildError('Build interrupted')
 
     def image_exists(self, image_name: str, pull_from_repo: bool = True) -> bool:
         """Checks if an image exists in the remote registry using the /image_exists endpoint."""
@@ -123,7 +131,9 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
 
         if response.status_code != 200:
             logger.error(f'Failed to check image existence: {response.text}')
-            raise RuntimeError(f'Failed to check image existence: {response.text}')
+            raise AgentRuntimeBuildError(
+                f'Failed to check image existence: {response.text}'
+            )
 
         result = response.json()
 

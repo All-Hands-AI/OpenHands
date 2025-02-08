@@ -1,15 +1,17 @@
+import { useTranslation } from "react-i18next";
 import DocsIcon from "#/icons/docs.svg?react";
+import { I18nKey } from "#/i18n/declaration";
+import { TooltipButton } from "./tooltip-button";
 
 export function DocsButton() {
+  const { t } = useTranslation();
   return (
-    <a
+    <TooltipButton
+      tooltip={t(I18nKey.SIDEBAR$DOCS)}
+      ariaLabel={t(I18nKey.SIDEBAR$DOCS)}
       href="https://docs.all-hands.dev"
-      aria-label="Documentation"
-      target="_blank"
-      rel="noreferrer noopener"
-      className="w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center"
     >
       <DocsIcon width={28} height={28} />
-    </a>
+    </TooltipButton>
   );
 }

@@ -1,43 +1,27 @@
-import { expect, Page, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
-const confirmSettings = async (page: Page) => {
-  const confirmPreferenceButton = page.getByRole("button", {
-    name: /confirm preferences/i,
-  });
-  await confirmPreferenceButton.click();
+test.beforeEach(async ({ page }) => {
+  await page.goto("/");
+});
 
-  const configSaveButton = page.getByRole("button", {
-    name: /save/i,
-  });
-  await configSaveButton.click();
-
-  const confirmChanges = page.getByRole("button", {
-    name: /yes, close settings/i,
-  });
-  await confirmChanges.click();
-};
-
-test("should redirect to /app after uploading a project zip", async ({
+test("should redirect to /conversations after uploading a project zip", async ({
   page,
 }) => {
-  await page.goto("/");
-
   const fileInput = page.getByLabel("Upload a .zip");
   const filePath = path.join(dirname, "fixtures/project.zip");
   await fileInput.setInputFiles(filePath);
 
-  await page.waitForURL("/app");
+  await page.waitForURL(/\/conversations\/\d+/);
 });
 
-test("should redirect to /app after selecting a repo", async ({ page }) => {
-  await page.goto("/");
-  await confirmSettings(page);
-
+test("should redirect to /conversations after selecting a repo", async ({
+  page,
+}) => {
   // enter a github token to view the repositories
   const connectToGitHubButton = page.getByRole("button", {
     name: /connect to github/i,
@@ -56,44 +40,27 @@ test("should redirect to /app after selecting a repo", async ({ page }) => {
   const repoItem = page.getByTestId("github-repo-item").first();
   await repoItem.click();
 
-  await page.waitForURL("/app");
-  expect(page.url()).toBe("http://127.0.0.1:3000/app");
+  await page.waitForURL(/\/conversations\/\d+/);
 });
 
 // FIXME: This fails because the MSW WS mocks change state too quickly,
 // missing the OPENING status where the initial query is rendered.
-test.fail(
-  "should redirect the user to /app with their initial query after selecting a project",
-  async ({ page }) => {
-    await page.goto("/");
-    await confirmSettings(page);
+test.skip("should redirect the user to /conversation with their initial query after selecting a project", async ({
+  page,
+}) => {
+  // enter query
+  const testQuery = "this is my test query";
+  const textbox = page.getByPlaceholder(/what do you want to build/i);
+  expect(textbox).not.toBeNull();
+  await textbox.fill(testQuery);
 
-    // enter query
-    const testQuery = "this is my test query";
-    const textbox = page.getByPlaceholder(/what do you want to build/i);
-    expect(textbox).not.toBeNull();
-    await textbox.fill(testQuery);
+  const fileInput = page.getByLabel("Upload a .zip");
+  const filePath = path.join(dirname, "fixtures/project.zip");
+  await fileInput.setInputFiles(filePath);
 
-    const fileInput = page.getByLabel("Upload a .zip");
-    const filePath = path.join(dirname, "fixtures/project.zip");
-    await fileInput.setInputFiles(filePath);
+  await page.waitForURL("/conversation");
 
-    await page.waitForURL("/app");
-
-    // get user message
-    const userMessage = page.getByTestId("user-message");
-    expect(await userMessage.textContent()).toBe(testQuery);
-  },
-);
-
-test("redirect to /app if token is present", async ({ page }) => {
-  await page.goto("/");
-
-  await page.evaluate(() => {
-    localStorage.setItem("token", "test");
-  });
-
-  await page.waitForURL("/app");
-
-  expect(page.url()).toBe("http://localhost:3001/app");
+  // get user message
+  const userMessage = page.getByTestId("user-message");
+  expect(await userMessage.textContent()).toBe(testQuery);
 });

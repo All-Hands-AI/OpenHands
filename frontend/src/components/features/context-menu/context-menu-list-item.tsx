@@ -1,18 +1,20 @@
 import { cn } from "#/utils/utils";
 
 interface ContextMenuListItemProps {
-  onClick: () => void;
+  testId?: string;
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   isDisabled?: boolean;
 }
 
 export function ContextMenuListItem({
   children,
+  testId,
   onClick,
   isDisabled,
 }: React.PropsWithChildren<ContextMenuListItemProps>) {
   return (
     <button
-      data-testid="context-menu-list-item"
+      data-testid={testId || "context-menu-list-item"}
       type="button"
       onClick={onClick}
       disabled={isDisabled}

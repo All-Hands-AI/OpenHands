@@ -29,6 +29,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install tmux
+        run: sudo apt-get update && sudo apt-get install -y tmux
       - name: Install poetry via pipx
         run: pipx install poetry
 
@@ -129,7 +131,7 @@ jobs:
 
       - name: Post to a Slack channel
         id: slack
-        uses: slackapi/slack-github-action@v1.27.0
+        uses: slackapi/slack-github-action@v2.0.0
         with:
           channel-id: 'C07SVQSCR6F'
           slack-message: "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}\n\nLink to summary: [here](https://github.com/${{ github.repository }}/issues/${{ github.event_name == 'pull_request' && github.event.pull_request.number || 4504 }}#issuecomment-${{ steps.create_comment.outputs.comment-id }})"

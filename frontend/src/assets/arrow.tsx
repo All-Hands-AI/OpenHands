@@ -1,6 +1,6 @@
 import React from "react";
 
-function ArrowIcon(): JSX.Element {
+function ArrowIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

@@ -37,21 +37,17 @@ export SANDBOX_TIMEOUT='300'
 
 ## Type Handling
 
-The `load_from_env` function attempts to cast environment variable values to the types specified in the dataclasses. It handles:
+The `load_from_env` function attempts to cast environment variable values to the types specified in the models. It handles:
 
 - Basic types (str, int, bool)
 - Optional types (e.g., `str | None`)
-- Nested dataclasses
+- Nested models
 
 If type casting fails, an error is logged, and the default value is retained.
 
 ## Default Values
 
-If an environment variable is not set, the default value specified in the dataclass is used.
-
-## Nested Configurations
-
-The `AppConfig` class contains nested configurations like `LLMConfig` and `AgentConfig`. The `load_from_env` function handles these by recursively processing nested dataclasses with updated prefixes.
+If an environment variable is not set, the default value specified in the model is used.
 
 ## Security Considerations
 

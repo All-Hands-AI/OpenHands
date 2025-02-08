@@ -1,4 +1,4 @@
-import { Switch } from "@nextui-org/react";
+import { Switch } from "@heroui/react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
@@ -18,9 +18,10 @@ export function AdvancedOptionSwitch({
 
   return (
     <Switch
+      data-testid="advanced-option-switch"
       isDisabled={isDisabled}
       name="use-advanced-options"
-      isSelected={showAdvancedOptions}
+      defaultSelected={showAdvancedOptions}
       onValueChange={setShowAdvancedOptions}
       classNames={{
         thumb: cn(

@@ -16,5 +16,5 @@ class ResolverOutput(BaseModel):
     metrics: dict[str, Any] | None
     success: bool
     comment_success: list[bool] | None
-    success_explanation: str
+    result_explanation: str
     error: str | None

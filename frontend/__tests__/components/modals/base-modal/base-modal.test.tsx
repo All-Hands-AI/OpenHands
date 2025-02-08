@@ -4,13 +4,21 @@ import { describe, it, vi, expect } from "vitest";
 import { BaseModal } from "#/components/shared/modals/base-modal/base-modal";
 
 describe("BaseModal", () => {
+  const onOpenChangeMock = vi.fn();
+
   it("should render if the modal is open", () => {
     const { rerender } = render(
-      <BaseModal isOpen={false} onOpenChange={vi.fn} title="Settings" />,
+      <BaseModal
+        isOpen={false}
+        onOpenChange={onOpenChangeMock}
+        title="Settings"
+      />,
     );
     expect(screen.queryByText("Settings")).not.toBeInTheDocument();
 
-    rerender(<BaseModal title="Settings" onOpenChange={vi.fn} isOpen />);
+    rerender(
+      <BaseModal title="Settings" onOpenChange={onOpenChangeMock} isOpen />,
+    );
     expect(screen.getByText("Settings")).toBeInTheDocument();
   });
 
@@ -18,7 +26,7 @@ describe("BaseModal", () => {
     render(
       <BaseModal
         isOpen
-        onOpenChange={vi.fn}
+        onOpenChange={onOpenChangeMock}
         title="Settings"
         subtitle="Subtitle"
       />,
@@ -43,7 +51,7 @@ describe("BaseModal", () => {
     render(
       <BaseModal
         isOpen
-        onOpenChange={vi.fn}
+        onOpenChange={onOpenChangeMock}
         title="Settings"
         actions={[primaryAction, secondaryAction]}
       />,
@@ -52,19 +60,14 @@ describe("BaseModal", () => {
     expect(screen.getByText("Save")).toBeInTheDocument();
     expect(screen.getByText("Cancel")).toBeInTheDocument();
 
-    await act(async () => {
-      await userEvent.click(screen.getByText("Save"));
-    });
+    await userEvent.click(screen.getByText("Save"));
     expect(onPrimaryClickMock).toHaveBeenCalledTimes(1);
 
-    await act(async () => {
-      await userEvent.click(screen.getByText("Cancel"));
-    });
+    await userEvent.click(screen.getByText("Cancel"));
     expect(onSecondaryClickMock).toHaveBeenCalledTimes(1);
   });
 
   it("should close the modal after an action is performed", async () => {
-    const onOpenChangeMock = vi.fn();
     render(
       <BaseModal
         isOpen
@@ -80,15 +83,13 @@ describe("BaseModal", () => {
       />,
     );
 
-    await act(async () => {
-      await userEvent.click(screen.getByText("Save"));
-    });
+    await userEvent.click(screen.getByText("Save"));
     expect(onOpenChangeMock).toHaveBeenCalledTimes(1);
   });
 
   it("should render children", () => {
     render(
-      <BaseModal isOpen onOpenChange={vi.fn} title="Settings">
+      <BaseModal isOpen onOpenChange={onOpenChangeMock} title="Settings">
         <div>Children</div>
       </BaseModal>,
     );
@@ -99,7 +100,7 @@ describe("BaseModal", () => {
     const { rerender } = render(
       <BaseModal
         isOpen
-        onOpenChange={vi.fn}
+        onOpenChange={onOpenChangeMock}
         title="Settings"
         actions={[
           {
@@ -116,7 +117,7 @@ describe("BaseModal", () => {
     rerender(
       <BaseModal
         isOpen
-        onOpenChange={vi.fn}
+        onOpenChange={onOpenChangeMock}
         title="Settings"
         actions={[
           {
@@ -132,7 +133,6 @@ describe("BaseModal", () => {
   });
 
   it.skip("should not close if the backdrop or escape key is pressed", () => {
-    const onOpenChangeMock = vi.fn();
     render(
       <BaseModal
         isOpen

@@ -2,8 +2,10 @@ import {
   Autocomplete,
   AutocompleteItem,
   AutocompleteSection,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import React from "react";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { mapProvider } from "#/utils/map-provider";
 import { VERIFIED_MODELS, VERIFIED_PROVIDERS } from "#/utils/verified-models";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
@@ -60,19 +62,23 @@ export function ModelSelector({
     setLitellmId(null);
   };
 
+  const { t } = useTranslation();
+
   return (
     <div data-testid="model-selector" className="flex flex-col gap-2">
       <div className="flex flex-row gap-3">
         <fieldset className="flex flex-col gap-2">
           <label htmlFor="agent" className="font-[500] text-[#A3A3A3] text-xs">
-            LLM Provider
+            {t(I18nKey.LLM$PROVIDER)}
           </label>
           <Autocomplete
+            data-testid="llm-provider"
             isRequired
+            isVirtualized={false}
             name="llm-provider"
             isDisabled={isDisabled}
-            aria-label="LLM Provider"
-            placeholder="Select a provider"
+            aria-label={t(I18nKey.LLM$PROVIDER)}
+            placeholder={t(I18nKey.LLM$SELECT_PROVIDER_PLACEHOLDER)}
             isClearable={false}
             onSelectionChange={(e) => {
               if (e?.toString()) handleChangeProvider(e.toString());
@@ -90,7 +96,11 @@ export function ModelSelector({
               {Object.keys(models)
                 .filter((provider) => VERIFIED_PROVIDERS.includes(provider))
                 .map((provider) => (
-                  <AutocompleteItem key={provider} value={provider}>
+                  <AutocompleteItem
+                    data-testid={`provider-item-${provider}`}
+                    key={provider}
+                    value={provider}
+                  >
                     {mapProvider(provider)}
                   </AutocompleteItem>
                 ))}
@@ -109,13 +119,15 @@ export function ModelSelector({
 
         <fieldset className="flex flex-col gap-2">
           <label htmlFor="agent" className="font-[500] text-[#A3A3A3] text-xs">
-            LLM Model
+            {t(I18nKey.LLM$MODEL)}
           </label>
           <Autocomplete
+            data-testid="llm-model"
             isRequired
+            isVirtualized={false}
             name="llm-model"
-            aria-label="LLM Model"
-            placeholder="Select a model"
+            aria-label={t(I18nKey.LLM$MODEL)}
+            placeholder={t(I18nKey.LLM$SELECT_MODEL_PLACEHOLDER)}
             isClearable={false}
             onSelectionChange={(e) => {
               if (e?.toString()) handleChangeModel(e.toString());
@@ -142,7 +154,11 @@ export function ModelSelector({
               {models[selectedProvider || ""]?.models
                 .filter((model) => !VERIFIED_MODELS.includes(model))
                 .map((model) => (
-                  <AutocompleteItem key={model} value={model}>
+                  <AutocompleteItem
+                    data-testid={`model-item-${model}`}
+                    key={model}
+                    value={model}
+                  >
                     {model}
                   </AutocompleteItem>
                 ))}

@@ -94,7 +94,7 @@ class State:
     end_id: int = -1
     # truncation_id tracks where to load history after context window truncation
     truncation_id: int = -1
-    almost_stuck: int = 0
+
     delegates: dict[tuple[int, int], tuple[str, str]] = field(default_factory=dict)
     # NOTE: This will never be used by the controller, but it can be used by different
     # evaluation tasks to store extra data needed to track the progress/state of the task.
@@ -118,7 +118,7 @@ class State:
             pickled = base64.b64decode(encoded)
             state = pickle.loads(pickled)
         except Exception as e:
-            logger.warning(f'Could not restore state from session: {e}')
+            logger.debug(f'Could not restore state from session: {e}')
             raise e
 
         # update state

@@ -1,9 +1,4 @@
-import {
-  settingsAreUpToDate,
-  maybeMigrateSettings,
-  LATEST_SETTINGS_VERSION,
-  Settings,
-} from "#/services/settings";
+import { Settings } from "#/types/settings";
 
 const extractBasicFormData = (formData: FormData) => {
   const provider = formData.get("llm-provider")?.toString();
@@ -49,7 +44,7 @@ const extractAdvancedFormData = (formData: FormData) => {
   };
 };
 
-const extractSettings = (formData: FormData): Partial<Settings> => {
+export const extractSettings = (formData: FormData): Partial<Settings> => {
   const { LLM_MODEL, LLM_API_KEY, AGENT, LANGUAGE } =
     extractBasicFormData(formData);
 
@@ -70,26 +65,3 @@ const extractSettings = (formData: FormData): Partial<Settings> => {
     SECURITY_ANALYZER,
   };
 };
-
-const saveSettingsView = (view: "basic" | "advanced") => {
-  localStorage.setItem(
-    "use-advanced-options",
-    view === "advanced" ? "true" : "false",
-  );
-};
-
-/**
- * Updates the settings version in local storage if the current settings are not up to date.
- * If the settings are outdated, it attempts to migrate them before updating the version.
- */
-const updateSettingsVersion = () => {
-  if (!settingsAreUpToDate()) {
-    maybeMigrateSettings();
-    localStorage.setItem(
-      "SETTINGS_VERSION",
-      LATEST_SETTINGS_VERSION.toString(),
-    );
-  }
-};
-
-export { extractSettings, saveSettingsView, updateSettingsVersion };

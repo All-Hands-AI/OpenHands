@@ -5,12 +5,34 @@ import re
 import sys
 import traceback
 from datetime import datetime
-from typing import Literal, Mapping
+from types import TracebackType
+from typing import Any, Literal, Mapping
 
+import litellm
 from termcolor import colored
 
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
 DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
+DEBUG_LLM = os.getenv('DEBUG_LLM', 'False').lower() in ['true', '1', 'yes']
+
+# Configure litellm logging based on DEBUG_LLM
+if DEBUG_LLM:
+    confirmation = input(
+        '\n⚠️ WARNING: You are enabling DEBUG_LLM which may expose sensitive information like API keys.\n'
+        'This should NEVER be enabled in production.\n'
+        "Type 'y' to confirm you understand the risks: "
+    )
+    if confirmation.lower() == 'y':
+        litellm.suppress_debug_info = False
+        litellm.set_verbose = True
+    else:
+        print('DEBUG_LLM disabled due to lack of confirmation')
+        litellm.suppress_debug_info = True
+        litellm.set_verbose = False
+else:
+    litellm.suppress_debug_info = True
+    litellm.set_verbose = False
+
 if DEBUG:
     LOG_LEVEL = 'DEBUG'
 
@@ -18,6 +40,9 @@ LOG_TO_FILE = os.getenv('LOG_TO_FILE', 'False').lower() in ['true', '1', 'yes']
 DISABLE_COLOR_PRINTING = False
 
 LOG_ALL_EVENTS = os.getenv('LOG_ALL_EVENTS', 'False').lower() in ['true', '1', 'yes']
+
+# Controls whether to stream Docker container logs
+DEBUG_RUNTIME = os.getenv('DEBUG_RUNTIME', 'False').lower() in ['true', '1', 'yes']
 
 ColorType = Literal[
     'red',
@@ -48,6 +73,14 @@ LOG_COLORS: Mapping[str, ColorType] = {
 }
 
 
+class StackInfoFilter(logging.Filter):
+    def filter(self, record):
+        if record.levelno >= logging.ERROR:
+            record.stack_info = True
+            record.exc_info = True
+        return True
+
+
 class NoColorFormatter(logging.Formatter):
     """Formatter for non-colored logging in files."""
 
@@ -61,7 +94,8 @@ class NoColorFormatter(logging.Formatter):
 
 
 def strip_ansi(s: str) -> str:
-    """
+    """Remove ANSI escape sequences (terminal color/formatting codes) from string.
+
     Removes ANSI escape sequences from str, as defined by ECMA-048 in
     http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-048.pdf
     # https://github.com/ewen-lbh/python-strip-ansi/blob/master/strip_ansi/__init__.py
@@ -136,6 +170,7 @@ class RollingLogger:
 
     def print_lines(self):
         """Display the last n log_lines in the console (not for file logging).
+
         This will create the effect of a rolling display in the console.
         """
         self.move_back()
@@ -143,18 +178,14 @@ class RollingLogger:
             self.replace_current_line(line)
 
     def move_back(self, amount=-1):
-        """
-        '\033[F'    moves the cursor up one line.
-        """
+        r"""'\033[F' moves the cursor up one line."""
         if amount == -1:
             amount = self.max_lines
         self._write('\033[F' * (self.max_lines))
         self._flush()
 
     def replace_current_line(self, line=''):
-        """
-        '\033[2K\r' clears the line and moves the cursor to the beginning of the line.
-        """
+        r"""'\033[2K\r' clears the line and moves the cursor to the beginning of the line."""
         self._write('\033[2K' + line + '\n')
         self._flush()
 
@@ -232,18 +263,21 @@ def get_file_handler(log_dir: str, log_level: int = logging.INFO):
 logging.basicConfig(level=logging.ERROR)
 
 
-def log_uncaught_exceptions(ex_cls, ex, tb):
+def log_uncaught_exceptions(
+    ex_cls: type[BaseException], ex: BaseException, tb: TracebackType | None
+) -> Any:
     """Logs uncaught exceptions along with the traceback.
 
     Args:
-        ex_cls (type): The type of the exception.
-        ex (Exception): The exception instance.
-        tb (traceback): The traceback object.
+        ex_cls: The type of the exception.
+        ex: The exception instance.
+        tb: The traceback object.
 
     Returns:
         None
     """
-    logging.error(''.join(traceback.format_tb(tb)))
+    if tb:  # Add check since tb can be None
+        logging.error(''.join(traceback.format_tb(tb)))
     logging.error('{0}: {1}'.format(ex_cls, ex))
 
 
@@ -254,6 +288,9 @@ current_log_level = logging.INFO
 if LOG_LEVEL in logging.getLevelNamesMapping():
     current_log_level = logging.getLevelNamesMapping()[LOG_LEVEL]
 openhands_logger.setLevel(current_log_level)
+
+if DEBUG:
+    openhands_logger.addFilter(StackInfoFilter())
 
 if current_log_level == logging.DEBUG:
     LOG_TO_FILE = True
@@ -283,7 +320,7 @@ logging.getLogger('LiteLLM Proxy').disabled = True
 
 
 class LlmFileHandler(logging.FileHandler):
-    """# LLM prompt and response logging"""
+    """LLM prompt and response logging."""
 
     def __init__(self, filename, mode='a', encoding='utf-8', delay=False):
         """Initializes an instance of LlmFileHandler.

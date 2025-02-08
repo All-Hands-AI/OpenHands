@@ -4,7 +4,7 @@ import { IoAlertCircle } from "react-icons/io5";
 import { useTranslation } from "react-i18next";
 import { Editor, Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
-import { Button, Select, SelectItem } from "@nextui-org/react";
+import { Button, Select, SelectItem } from "@heroui/react";
 import { useMutation } from "@tanstack/react-query";
 import { RootState } from "#/store";
 import {
@@ -24,7 +24,7 @@ import { useGetTraces } from "#/hooks/query/use-get-traces";
 
 type SectionType = "logs" | "policy" | "settings";
 
-function SecurityInvariant(): JSX.Element {
+function SecurityInvariant() {
   const { t } = useTranslation();
   const { logs } = useSelector((state: RootState) => state.securityAnalyzer);
 
@@ -122,12 +122,12 @@ function SecurityInvariant(): JSX.Element {
     [],
   );
 
-  const sections: { [key in SectionType]: JSX.Element } = {
+  const sections: Record<SectionType, React.ReactNode> = {
     logs: (
       <>
         <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
           <h2 className="text-2xl">{t(I18nKey.INVARIANT$LOG_LABEL)}</h2>
-          <Button onClick={() => exportTraces()} className="bg-neutral-700">
+          <Button onPress={() => exportTraces()} className="bg-neutral-700">
             {t(I18nKey.INVARIANT$EXPORT_TRACE_LABEL)}
           </Button>
         </div>
@@ -162,7 +162,7 @@ function SecurityInvariant(): JSX.Element {
           <h2 className="text-2xl">{t(I18nKey.INVARIANT$POLICY_LABEL)}</h2>
           <Button
             className="bg-neutral-700"
-            onClick={() => updatePolicy({ policy })}
+            onPress={() => updatePolicy({ policy })}
           >
             {t(I18nKey.INVARIANT$UPDATE_POLICY_LABEL)}
           </Button>
@@ -184,7 +184,7 @@ function SecurityInvariant(): JSX.Element {
           <h2 className="text-2xl">{t(I18nKey.INVARIANT$SETTINGS_LABEL)}</h2>
           <Button
             className="bg-neutral-700"
-            onClick={() => updateRiskSeverity({ riskSeverity: selectedRisk })}
+            onPress={() => updateRiskSeverity({ riskSeverity: selectedRisk })}
           >
             {t(I18nKey.INVARIANT$UPDATE_SETTINGS_LABEL)}
           </Button>

@@ -10,19 +10,17 @@ load_dotenv()
 from openhands.agenthub import (  # noqa: E402
     browsing_agent,
     codeact_agent,
-    codeact_swe_agent,
     delegator_agent,
     dummy_agent,
-    planner_agent,
+    visualbrowsing_agent,
 )
 
 __all__ = [
     'codeact_agent',
-    'codeact_swe_agent',
-    'planner_agent',
     'delegator_agent',
     'dummy_agent',
     'browsing_agent',
+    'visualbrowsing_agent',
 ]
 
 for agent in all_microagents.values():

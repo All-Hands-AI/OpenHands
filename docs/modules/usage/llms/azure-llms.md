@@ -18,17 +18,18 @@ docker run -it --pull=always \
     ...
 ```
 
-Then set the following in the OpenHands UI through the Settings:
+Then in the OpenHands UI Settings:
 
 :::note
 You will need your ChatGPT deployment name which can be found on the deployments page in Azure. This is referenced as
 &lt;deployment-name&gt; below.
 :::
 
-* Enable `Advanced Options`
-* `Custom Model` to azure/&lt;deployment-name&gt;
-* `Base URL` to your Azure API Base URL (e.g. `https://example-endpoint.openai.azure.com`)
-* `API Key` to your Azure API key
+1. Enable `Advanced Options`
+2. Set the following:
+   - `Custom Model` to azure/&lt;deployment-name&gt;
+   - `Base URL` to your Azure API Base URL (e.g. `https://example-endpoint.openai.azure.com`)
+   - `API Key` to your Azure API key
 
 ## Embeddings
 

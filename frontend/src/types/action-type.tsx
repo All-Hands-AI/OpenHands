@@ -33,12 +33,6 @@ enum ActionType {
   // Reject a request from user or another agent.
   REJECT = "reject",
 
-  // Adds a task to the plan.
-  ADD_TASK = "add_task",
-
-  // Updates a task in the plan.
-  MODIFY_TASK = "modify_task",
-
   // Changes the state of the agent, e.g. to paused or running
   CHANGE_AGENT_STATE = "change_agent_state",
 }

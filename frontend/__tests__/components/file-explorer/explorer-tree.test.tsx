@@ -25,10 +25,4 @@ describe.skip("ExplorerTree", () => {
     expect(screen.queryByText("folder-1-2")).toBeInTheDocument();
     // TODO: make sure children don't render
   });
-
-  it.todo("should render all children as collapsed when defaultOpen is false");
-
-  it.todo(
-    "should maintain the expanded state of child folders when closing and opening a parent folder",
-  );
 });

@@ -1,6 +1,8 @@
 import { BaseModal } from "./base-modal";
 
 interface DangerModalProps {
+  testId?: string;
+
   title: string;
   description: string;
 
@@ -10,9 +12,15 @@ interface DangerModalProps {
   };
 }
 
-export function DangerModal({ title, description, buttons }: DangerModalProps) {
+export function DangerModal({
+  testId,
+  title,
+  description,
+  buttons,
+}: DangerModalProps) {
   return (
     <BaseModal
+      testId={testId}
       title={title}
       description={description}
       buttons={[

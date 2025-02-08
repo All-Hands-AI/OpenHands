@@ -55,10 +55,10 @@ echo "USE_INSTANCE_IMAGE: $USE_INSTANCE_IMAGE"
 export RUN_WITH_BROWSING=$RUN_WITH_BROWSING
 echo "RUN_WITH_BROWSING: $RUN_WITH_BROWSING"
 
-get_agent_version
+get_openhands_version
 
 echo "AGENT: $AGENT"
-echo "AGENT_VERSION: $AGENT_VERSION"
+echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 echo "DATASET: $DATASET"
 echo "SPLIT: $SPLIT"
@@ -68,7 +68,7 @@ if [ -z "$USE_HINT_TEXT" ]; then
   export USE_HINT_TEXT=false
 fi
 echo "USE_HINT_TEXT: $USE_HINT_TEXT"
-EVAL_NOTE="$AGENT_VERSION"
+EVAL_NOTE="$OPENHANDS_VERSION"
 # if not using Hint, add -no-hint to the eval note
 if [ "$USE_HINT_TEXT" = false ]; then
   EVAL_NOTE="$EVAL_NOTE-no-hint"
@@ -108,7 +108,14 @@ if [ -z "$N_RUNS" ]; then
   echo "N_RUNS not specified, use default $N_RUNS"
 fi
 
+# Skip runs if the run number is in the SKIP_RUNS list
+# read from env variable SKIP_RUNS as a comma separated list of run numbers
+SKIP_RUNS=(${SKIP_RUNS//,/ })
 for i in $(seq 1 $N_RUNS); do
+  if [[ " ${SKIP_RUNS[@]} " =~ " $i " ]]; then
+    echo "Skipping run $i"
+    continue
+  fi
   current_eval_note="$EVAL_NOTE-run_$i"
   echo "EVAL_NOTE: $current_eval_note"
   run_eval $current_eval_note

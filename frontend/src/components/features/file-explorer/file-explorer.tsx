@@ -1,16 +1,13 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import AgentState from "#/types/agent-state";
+import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { ExplorerTree } from "#/components/features/file-explorer/explorer-tree";
 import toast from "#/utils/toast";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 import { useListFiles } from "#/hooks/query/use-list-files";
-import { FileUploadSuccessResponse } from "#/api/open-hands.types";
-import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 import { cn } from "#/utils/utils";
-import { Dropzone } from "./dropzone";
 import { FileExplorerHeader } from "./file-explorer-header";
 import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
 import { OpenVSCodeButton } from "#/components/shared/buttons/open-vscode-button";
@@ -23,75 +20,30 @@ interface FileExplorerProps {
 export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
   const { t } = useTranslation();
 
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-  const [isDragging, setIsDragging] = React.useState(false);
-
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const { data: paths, refetch, error } = useListFiles();
-  const { mutate: uploadFiles } = useUploadFiles();
-  const { refetch: getVSCodeUrl } = useVSCodeUrl();
+  const { data: vscodeUrl } = useVSCodeUrl({
+    enabled: !RUNTIME_INACTIVE_STATES.includes(curAgentState),
+  });
 
-  const selectFileInput = () => {
-    fileInputRef.current?.click(); // Trigger the file browser
-  };
-
-  const handleUploadSuccess = (data: FileUploadSuccessResponse) => {
-    const uploadedCount = data.uploaded_files.length;
-    const skippedCount = data.skipped_files.length;
-
-    if (uploadedCount > 0) {
-      toast.success(
-        `upload-success-${new Date().getTime()}`,
-        t(I18nKey.EXPLORER$UPLOAD_SUCCESS_MESSAGE, {
-          count: uploadedCount,
+  const handleOpenVSCode = () => {
+    if (vscodeUrl?.vscode_url) {
+      window.open(vscodeUrl.vscode_url, "_blank");
+    } else if (vscodeUrl?.error) {
+      toast.error(
+        `open-vscode-error-${new Date().getTime()}`,
+        t(I18nKey.EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE, {
+          error: vscodeUrl.error,
         }),
       );
     }
-
-    if (skippedCount > 0) {
-      const message = t(I18nKey.EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE, {
-        count: skippedCount,
-      });
-      toast.info(message);
-    }
-
-    if (uploadedCount === 0 && skippedCount === 0) {
-      toast.info(t(I18nKey.EXPLORER$NO_FILES_UPLOADED_MESSAGE));
-    }
-  };
-
-  const handleUploadError = (uploadError: Error) => {
-    toast.error(
-      `upload-error-${new Date().getTime()}`,
-      uploadError.message || t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
-    );
   };
 
   const refreshWorkspace = () => {
-    if (
-      curAgentState !== AgentState.LOADING &&
-      curAgentState !== AgentState.STOPPED
-    ) {
+    if (!RUNTIME_INACTIVE_STATES.includes(curAgentState)) {
       refetch();
     }
-  };
-
-  const uploadFileData = (files: FileList) => {
-    uploadFiles(
-      { files: Array.from(files) },
-      { onSuccess: handleUploadSuccess, onError: handleUploadError },
-    );
-    refreshWorkspace();
-  };
-
-  const handleDropFiles = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const { files: droppedFiles } = event.dataTransfer;
-    if (droppedFiles.length > 0) {
-      uploadFileData(droppedFiles);
-    }
-    setIsDragging(false);
   };
 
   React.useEffect(() => {
@@ -99,22 +51,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
   }, [curAgentState]);
 
   return (
-    <div
-      data-testid="file-explorer"
-      className="relative h-full"
-      onDragEnter={() => {
-        setIsDragging(true);
-      }}
-      onDragEnd={() => {
-        setIsDragging(false);
-      }}
-    >
-      {isDragging && (
-        <Dropzone
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={handleDropFiles}
-        />
-      )}
+    <div data-testid="file-explorer" className="relative h-full">
       <div
         className={cn(
           "bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col",
@@ -126,7 +63,6 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
             isOpen={isOpen}
             onToggle={onToggle}
             onRefreshWorkspace={refreshWorkspace}
-            onUploadFile={selectFileInput}
           />
           {!error && (
             <div className="overflow-auto flex-grow min-h-0">
@@ -142,11 +78,8 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
           )}
           {isOpen && (
             <OpenVSCodeButton
-              onClick={getVSCodeUrl}
-              isDisabled={
-                curAgentState === AgentState.INIT ||
-                curAgentState === AgentState.LOADING
-              }
+              onClick={handleOpenVSCode}
+              isDisabled={RUNTIME_INACTIVE_STATES.includes(curAgentState)}
             />
           )}
         </div>

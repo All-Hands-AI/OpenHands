@@ -5,11 +5,11 @@ import shutil
 import subprocess
 
 import jinja2
-import litellm
 import requests
 
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.llm.llm import LLM
 from openhands.resolver.github import GithubIssueHandler
 from openhands.resolver.io_utils import (
     load_all_resolver_outputs,
@@ -22,6 +22,12 @@ from openhands.resolver.resolver_output import ResolverOutput
 
 
 def apply_patch(repo_dir: str, patch: str) -> None:
+    """Apply a patch to a repository.
+
+    Args:
+        repo_dir: The directory containing the repository
+        patch: The patch to apply
+    """
     diffs = parse_patch(patch)
     for diff in diffs:
         if not diff.header.new_path:
@@ -114,6 +120,14 @@ def apply_patch(repo_dir: str, patch: str) -> None:
 def initialize_repo(
     output_dir: str, issue_number: int, issue_type: str, base_commit: str | None = None
 ) -> str:
+    """Initialize the repository.
+
+    Args:
+        output_dir: The output directory to write the repository to
+        issue_number: The issue number to fix
+        issue_type: The type of the issue
+        base_commit: The base commit to checkout (if issue_type is pr)
+    """
     src_dir = os.path.join(output_dir, 'repo')
     dest_dir = os.path.join(output_dir, 'patches', f'{issue_type}_{issue_number}')
 
@@ -126,6 +140,7 @@ def initialize_repo(
     shutil.copytree(src_dir, dest_dir)
     print(f'Copied repository to {dest_dir}')
 
+    # Checkout the base commit if provided
     if base_commit:
         result = subprocess.run(
             f'git -C {dest_dir} checkout {base_commit}',
@@ -141,6 +156,13 @@ def initialize_repo(
 
 
 def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
+    """Make a commit with the changes to the repository.
+
+    Args:
+        repo_dir: The directory containing the repository
+        issue: The issue to fix
+        issue_type: The type of the issue
+    """
     # Check if git username is set
     result = subprocess.run(
         f'git -C {repo_dir} config user.name',
@@ -160,6 +182,7 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
         )
         print('Git user configured as openhands')
 
+    # Add all changes to the git index
     result = subprocess.run(
         f'git -C {repo_dir} add .', shell=True, capture_output=True, text=True
     )
@@ -167,6 +190,7 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
         print(f'Error adding files: {result.stderr}')
         raise RuntimeError('Failed to add files to git')
 
+    # Check the status of the git index
     status_result = subprocess.run(
         f'git -C {repo_dir} status --porcelain',
         shell=True,
@@ -174,11 +198,15 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
         text=True,
     )
 
+    # If there are no changes, raise an error
     if not status_result.stdout.strip():
         print(f'No changes to commit for issue #{issue.number}. Skipping commit.')
         raise RuntimeError('ERROR: Openhands failed to make code changes.')
 
+    # Prepare the commit message
     commit_message = f'Fix {issue_type} #{issue.number}: {issue.title}'
+
+    # Commit the changes
     result = subprocess.run(
         ['git', '-C', repo_dir, 'commit', '-m', commit_message],
         capture_output=True,
@@ -198,7 +226,23 @@ def send_pull_request(
     fork_owner: str | None = None,
     additional_message: str | None = None,
     target_branch: str | None = None,
+    reviewer: str | None = None,
+    pr_title: str | None = None,
 ) -> str:
+    """Send a pull request to a GitHub repository.
+
+    Args:
+        github_issue: The issue to send the pull request for
+        github_token: The GitHub token to use for authentication
+        github_username: The GitHub username, if provided
+        patch_dir: The directory containing the patches to apply
+        pr_type: The type: branch (no PR created), draft or ready (regular PR created)
+        fork_owner: The owner of the fork to push changes to (if different from the original repo owner)
+        additional_message: The additional messages to post as a comment on the PR in json list format
+        target_branch: The target branch to create the pull request against (defaults to repository default branch)
+        reviewer: The GitHub username of the reviewer to assign
+        pr_title: Custom title for the pull request (optional)
+    """
     if pr_type not in ['branch', 'draft', 'ready']:
         raise ValueError(f'Invalid pr_type: {pr_type}')
 
@@ -252,7 +296,10 @@ def send_pull_request(
         print(f'Error pushing changes: {result.stderr}')
         raise RuntimeError('Failed to push changes to the remote repository')
 
-    pr_title = f'Fix issue #{issue.number}: {issue.title}'
+    # Prepare the PR data: title and body
+    final_pr_title = (
+        pr_title if pr_title else f'Fix issue #{issue.number}: {issue.title}'
+    )
     pr_body = f'This pull request fixes #{issue.number}.'
     if additional_message:
         pr_body += f'\n\n{additional_message}'
@@ -263,18 +310,54 @@ def send_pull_request(
     if pr_type == 'branch':
         url = handler.get_compare_url(branch_name)
     else:
+        # Prepare the PR for the GitHub API
         data = {
-            'title': pr_title,  # No need to escape title for GitHub API
+            'title': final_pr_title,  # No need to escape title for GitHub API
             'body': pr_body,
             'head': branch_name,
             'base': base_branch,
             'draft': pr_type == 'draft',
         }
-        url = handler.create_pull_request(data)
 
-    print(f'{pr_type} created: {url}\n\n--- Title: {pr_title}\n\n--- Body:\n{pr_body}')
+        pr_data = handler.create_pull_request(data)
+        url = pr_data['html_url']
+
+        # Request review if a reviewer was specified
+        if reviewer and pr_type != 'branch':
+            handler.request_reviewers(reviewer, pr_data['number'])
+
+    print(
+        f'{pr_type} created: {url}\n\n--- Title: {final_pr_title}\n\n--- Body:\n{pr_body}'
+    )
 
     return url
+
+
+def send_comment_msg(base_url: str, issue_number: int, token: str, msg: str):
+    """Send a comment message to a GitHub issue or pull request.
+
+    Args:
+        base_url: The base URL of the GitHub repository API
+        issue_number: The issue or pull request number
+        token: The GitHub token to use for authentication
+        msg: The message content to post as a comment
+    """
+    # Set up headers for GitHub API
+    headers = {
+        'Authorization': f'token {token}',
+        'Accept': 'application/vnd.github.v3+json',
+    }
+
+    # Post a comment on the PR
+    comment_url = f'{base_url}/issues/{issue_number}/comments'
+    comment_data = {'body': msg}
+    comment_response = requests.post(comment_url, headers=headers, json=comment_data)
+    if comment_response.status_code != 201:
+        print(
+            f'Failed to post comment: {comment_response.status_code} {comment_response.text}'
+        )
+    else:
+        print(f'Comment added to the PR: {msg}')
 
 
 def update_existing_pull_request(
@@ -303,17 +386,17 @@ def update_existing_pull_request(
         GithubIssueHandler(issue.owner, issue.repo, token, username), llm_config
     )
 
-    headers = handler.get_headers()
     base_url = handler.get_base_url()
     branch_name = issue.head_branch
 
-    # Push the changes to the existing branch
+    # Prepare the push command
     push_command = (
         f'git -C {patch_dir} push '
         f'{handler.get_authorize_url()}'
         f'{issue.owner}/{issue.repo}.git {branch_name}'
     )
 
+    # Push the changes to the existing branch
     result = subprocess.run(push_command, shell=True, capture_output=True, text=True)
     if result.returncode != 0:
         print(f'Error pushing changes: {result.stderr}')
@@ -335,6 +418,7 @@ def update_existing_pull_request(
 
                 # Summarize with LLM if provided
                 if llm_config is not None:
+                    llm = LLM(llm_config)
                     with open(
                         os.path.join(
                             os.path.dirname(__file__),
@@ -344,37 +428,28 @@ def update_existing_pull_request(
                     ) as f:
                         template = jinja2.Template(f.read())
                     prompt = template.render(comment_message=comment_message)
-                    response = litellm.completion(
-                        model=llm_config.model,
+                    response = llm.completion(
                         messages=[{'role': 'user', 'content': prompt}],
-                        api_key=llm_config.api_key,
-                        base_url=llm_config.base_url,
                     )
                     comment_message = response.choices[0].message.content.strip()
 
         except (json.JSONDecodeError, TypeError):
-            comment_message = 'New OpenHands update'
+            comment_message = f'A new OpenHands update is available, but failed to parse or summarize the changes:\n{additional_message}'
 
     # Post a comment on the PR
     if comment_message:
-        comment_url = f'{base_url}/issues/{issue.number}/comments'
-        comment_data = {'body': comment_message}
-        comment_response = requests.post(
-            comment_url, headers=headers, json=comment_data
-        )
-        if comment_response.status_code != 201:
-            print(
-                f'Failed to post comment: {comment_response.status_code} {comment_response.text}'
-            )
-        else:
-            print(f'Comment added to the PR: {comment_message}')
+        send_comment_msg(base_url, issue.number, token, comment_message)
 
     # Reply to each unresolved comment thread
     if additional_message and issue.thread_ids:
-        explanations = json.loads(additional_message)
-        for count, reply_comment in enumerate(explanations):
-            comment_id = issue.thread_ids[count]
-            handler.reply_to_comment(token, comment_id, reply_comment)
+        try:
+            explanations = json.loads(additional_message)
+            for count, reply_comment in enumerate(explanations):
+                comment_id = issue.thread_ids[count]
+                handler.reply_to_comment(token, comment_id, reply_comment)
+        except (json.JSONDecodeError, TypeError):
+            msg = f'Error occured when replying to threads; success explanations {additional_message}'
+            send_comment_msg(base_url, issue.number, token, msg)
 
     return pr_url
 
@@ -389,6 +464,8 @@ def process_single_issue(
     fork_owner: str | None,
     send_on_failure: bool,
     target_branch: str | None = None,
+    reviewer: str | None = None,
+    pr_title: str | None = None,
 ) -> None:
     if not resolver_output.success and not send_on_failure:
         print(
@@ -425,7 +502,7 @@ def process_single_issue(
             token=token,
             username=username,
             patch_dir=patched_repo_dir,
-            additional_message=resolver_output.success_explanation,
+            additional_message=resolver_output.result_explanation,
             llm_config=llm_config,
         )
     else:
@@ -434,11 +511,13 @@ def process_single_issue(
             token=token,
             username=username,
             patch_dir=patched_repo_dir,
-            pr_type=pr_type,
             llm_config=llm_config,
+            pr_type=pr_type,
             fork_owner=fork_owner,
-            additional_message=resolver_output.success_explanation,
+            additional_message=resolver_output.result_explanation,
             target_branch=target_branch,
+            reviewer=reviewer,
+            pr_title=pr_title,
         )
 
 
@@ -535,6 +614,18 @@ def main():
         default=None,
         help='Target branch to create the pull request against (defaults to repository default branch)',
     )
+    parser.add_argument(
+        '--reviewer',
+        type=str,
+        help='GitHub username of the person to request review from',
+        default=None,
+    )
+    parser.add_argument(
+        '--pr-title',
+        type=str,
+        help='Custom title for the pull request',
+        default=None,
+    )
     my_args = parser.parse_args()
 
     token = my_args.token if my_args.token else os.getenv('GITHUB_TOKEN')
@@ -544,9 +635,10 @@ def main():
         )
     username = my_args.username if my_args.username else os.getenv('GITHUB_USERNAME')
 
+    api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(
         model=my_args.llm_model or os.environ['LLM_MODEL'],
-        api_key=my_args.llm_api_key or os.environ['LLM_API_KEY'],
+        api_key=str(api_key) if api_key else None,
         base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
     )
 
@@ -582,6 +674,8 @@ def main():
             my_args.fork_owner,
             my_args.send_on_failure,
             my_args.target_branch,
+            my_args.reviewer,
+            my_args.pr_title,
         )
 
 

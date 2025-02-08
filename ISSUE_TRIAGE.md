@@ -2,8 +2,8 @@
 These are the procedures and guidelines on how issues are triaged in this repo by the maintainers.
 
 ## General
-* Most issues must be tagged with **enhancement** or **bug**
-* Issues may be tagged with what it relates to (**backend**, **frontend**, **agent quality**, etc.)
+* Most issues must be tagged with **enhancement** or **bug**.
+* Issues may be tagged with what it relates to (**backend**, **frontend**, **agent quality**, etc.).
 
 ## Severity
 * **Low**: Minor issues or affecting single user.
@@ -11,10 +11,10 @@ These are the procedures and guidelines on how issues are triaged in this repo b
 * **Critical**: Affecting all users or potential security issues.
 
 ## Effort
-* Issues may be estimated with effort required (**small effort**, **medium effort**, **large effort**)
+* Issues may be estimated with effort required (**small effort**, **medium effort**, **large effort**).
 
 ## Difficulty
-* Issues with low implementation difficulty may be tagged with **good first issue**
+* Issues with low implementation difficulty may be tagged with **good first issue**.
 
 ## Not Enough Information
 * User is asked to provide more information (logs, how to reproduce, etc.) when the issue is not clear.

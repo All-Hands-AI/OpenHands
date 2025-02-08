@@ -4,7 +4,7 @@ interface InvariantLogoIconProps {
   className?: string;
 }
 
-function InvariantLogoIcon({ className }: InvariantLogoIconProps): JSX.Element {
+function InvariantLogoIcon({ className }: InvariantLogoIconProps) {
   return (
     <svg
       width="39"

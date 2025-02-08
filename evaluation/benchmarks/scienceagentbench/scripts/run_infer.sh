@@ -26,19 +26,19 @@ if [ -z "$USE_KNOWLEDGE" ]; then
   USE_KNOWLEDGE=false
 fi
 
-get_agent_version
+get_openhands_version
 
 echo "AGENT: $AGENT"
-echo "AGENT_VERSION: $AGENT_VERSION"
+echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 
 COMMAND="poetry run python evaluation/benchmarks/scienceagentbench/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
-  --use_knowledge $USE_KNOWLEDGE \
+  --use-knowledge $USE_KNOWLEDGE \
   --max-iterations 30 \
   --eval-num-workers $NUM_WORKERS \
-  --eval-note $AGENT_VERSION" \
+  --eval-note $OPENHANDS_VERSION" \
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"

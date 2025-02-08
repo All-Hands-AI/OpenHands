@@ -21,7 +21,7 @@ if [ -z "$AGENT" ]; then
   AGENT="CodeActAgent"
 fi
 
-get_agent_version
+get_openhands_version
 
 if [ -z "$DATASET" ]; then
   echo "Dataset not specified, use default 'things'"
@@ -34,12 +34,9 @@ if [ -z "$OPENAI_API_KEY" ]; then
   exit 1
 fi
 
-# IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenHands
-# We need to track the version of Agent in the evaluation to make sure results are comparable
-AGENT_VERSION=v$(poetry run python -c "import openhands.agenthub; from openhands.controller.agent import Agent; print(Agent.get_cls('$AGENT').VERSION)")
 
 echo "AGENT: $AGENT"
-echo "AGENT_VERSION: $AGENT_VERSION"
+echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 echo "DATASET: $DATASET"
 
@@ -51,7 +48,7 @@ COMMAND="poetry run python evaluation/benchmarks/EDA/run_infer.py \
   --max-iterations 20 \
   --OPENAI_API_KEY $OPENAI_API_KEY \
   --eval-num-workers $NUM_WORKERS \
-  --eval-note ${AGENT_VERSION}_${DATASET}"
+  --eval-note ${OPENHANDS_VERSION}_${DATASET}"
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"

@@ -13,6 +13,8 @@ def mock_event_stream():
     stream = MagicMock()
     # Mock get_events to return an empty list by default
     stream.get_events.return_value = []
+    # Mock get_latest_event_id to return a valid integer
+    stream.get_latest_event_id.return_value = 0
     return stream
 
 

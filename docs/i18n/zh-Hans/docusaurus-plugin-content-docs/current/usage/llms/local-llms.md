@@ -5,13 +5,13 @@
 :::
 
 确保你已经启动并运行了 Ollama 服务器。
-详细的启动说明，请参考[这里](https://github.com/ollama/ollama)。
+有关详细的启动说明，请参考[此处](https://github.com/ollama/ollama)。
 
-本指南假设你已经使用 `ollama serve` 启动了 ollama。如果你以不同的方式运行 ollama（例如在 docker 内），则可能需要修改说明。请注意，如果你正在运行 WSL，默认的 ollama 配置会阻止来自 docker 容器的请求。请参阅[这里](#configuring-ollama-service-wsl-zh)。
+本指南假设你已经使用 `ollama serve` 启动了 ollama。如果你以不同的方式运行 ollama（例如在 docker 内），则可能需要修改说明。请注意，如果你正在运行 WSL，默认的 ollama 配置会阻止来自 docker 容器的请求。请参阅[此处](#configuring-ollama-service-wsl-zh)。
 
 ## 拉取模型
 
-Ollama 模型名称可以在[这里](https://ollama.com/library)找到。对于一个小例子，你可以使用
+Ollama 模型名称可以在[此处](https://ollama.com/library)找到。对于一个小示例，你可以使用
 `codellama:7b` 模型。更大的模型通常会有更好的表现。
 
 ```bash
@@ -31,36 +31,19 @@ starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
 ## 使用 Docker 运行 OpenHands
 
 ### 启动 OpenHands
-使用[这里](../getting-started)的说明，使用 Docker 启动 OpenHands。
+使用[此处](../getting-started)的说明使用 Docker 启动 OpenHands。
 但在运行 `docker run` 时，你需要添加一些额外的参数：
 
 ```bash
---add-host host.docker.internal:host-gateway \
--e LLM_OLLAMA_BASE_URL="http://host.docker.internal:11434" \
-```
-
-LLM_OLLAMA_BASE_URL 是可选的。如果设置了，它将用于在 UI 中显示可用的已安装模型。
-
-示例：
-
-```bash
-# 你希望 OpenHands 修改的目录。必须是绝对路径！
-export WORKSPACE_BASE=$(pwd)/workspace
-
-docker run \
-    -it \
-    --pull=always \
+docker run # ...
     --add-host host.docker.internal:host-gateway \
-    -e SANDBOX_USER_ID=$(id -u) \
     -e LLM_OLLAMA_BASE_URL="http://host.docker.internal:11434" \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -p 3000:3000 \
-    ghcr.io/all-hands-ai/openhands:main
+    # ...
 ```
 
-现在你应该可以连接到 `http://localhost:3000/` 了。
+LLM_OLLAMA_BASE_URL 是可选的。如果设置了它，它将用于在 UI 中显示
+可用的已安装模型。
+
 
 ### 配置 Web 应用程序
 
@@ -74,7 +57,7 @@ docker run \
 
 ### 从源代码构建
 
-使用 [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) 中的说明来构建 OpenHands。
+使用 [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) 中的说明构建 OpenHands。
 通过运行 `make setup-config` 确保 `config.toml` 存在，它将为你创建一个。在 `config.toml` 中，输入以下内容：
 
 ```
@@ -87,13 +70,13 @@ ollama_base_url="http://localhost:11434"
 
 ```
 
-完成！现在你可以通过 `make run` 启动 OpenHands。你现在应该可以连接到 `http://localhost:3000/` 了。
+完成！现在你可以通过 `make run` 启动 OpenHands。你现在应该能够连接到 `http://localhost:3000/`
 
 ### 配置 Web 应用程序
 
 在 OpenHands UI 中，点击左下角的设置齿轮。
 然后在 `Model` 输入框中，输入 `ollama/codellama:7b`，或者你之前拉取的模型名称。
-如果它没有出现在下拉菜单中，启用 `Advanced Settings` 并输入。请注意：你需要 `ollama list` 列出的模型名称，带有 `ollama/` 前缀。
+如果它没有出现在下拉列表中，启用 `Advanced Settings` 并输入它。请注意：你需要 `ollama list` 列出的模型名称，带有 `ollama/` 前缀。
 
 在 API Key 字段中，输入 `ollama` 或任何值，因为你不需要特定的密钥。
 
@@ -101,7 +84,7 @@ ollama_base_url="http://localhost:11434"
 
 现在你已经准备好了！
 
-## 配置 ollama 服务（WSL）{#configuring-ollama-service-wsl-zh}
+## 配置 ollama 服务（WSL） {#configuring-ollama-service-wsl-zh}
 
 WSL 中 ollama 的默认配置只服务于 localhost。这意味着你无法从 docker 容器中访问它。例如，它不能与 OpenHands 一起工作。首先让我们测试 ollama 是否正确运行。
 
@@ -115,7 +98,7 @@ curl http://localhost:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
 完成后，测试它是否允许"外部"请求，例如来自 docker 容器内部的请求。
 
 ```bash
-docker ps # 获取正在运行的 docker 容器列表，为了最准确的测试，选择 OpenHands 沙箱容器。
+docker ps # 获取正在运行的 docker 容器列表，为了最准确的测试，选择 OpenHands 沙盒容器。
 docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
 #例如 docker exec cd9cc82f7a11 curl http://host.docker.internal:11434/api/generate -d '{"model":"codellama","prompt":"hi"}'
 ```
@@ -152,7 +135,7 @@ sudo systemctl restart ollama
 
 ```bash
 ollama list # 获取已安装模型的列表
-docker ps # 获取正在运行的 docker 容器列表，为了最准确的测试，选择 OpenHands 沙箱容器。
+docker ps # 获取正在运行的 docker 容器列表，为了最准确的测试，选择 OpenHands 沙盒容器。
 docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
 ```
 
@@ -163,7 +146,7 @@ docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -
 1. 打开 LM Studio
 2. 转到 Local Server 选项卡。
 3. 点击 "Start Server" 按钮。
-4. 从下拉菜单中选择要使用的模型。
+4. 从下拉列表中选择要使用的模型。
 
 
 设置以下配置：
@@ -176,21 +159,14 @@ CUSTOM_LLM_PROVIDER="openai"
 ### Docker
 
 ```bash
-docker run \
-    -it \
-    --pull=always \
-    -e SANDBOX_USER_ID=$(id -u) \
+docker run # ...
     -e LLM_MODEL="openai/lmstudio" \
     -e LLM_BASE_URL="http://host.docker.internal:1234/v1" \
     -e CUSTOM_LLM_PROVIDER="openai" \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -p 3000:3000 \
-    ghcr.io/all-hands-ai/openhands:main
+    # ...
 ```
 
-现在你应该可以连接到 `http://localhost:3000/` 了。
+你现在应该能够连接到 `http://localhost:3000/`
 
 在开发环境中，你可以在 `config.toml` 文件中设置以下配置：
 
@@ -204,7 +180,7 @@ base_url="http://localhost:1234/v1"
 custom_llm_provider="openai"
 ```
 
-完成！现在你可以通过 `make run` 启动 OpenHands，无需 Docker。你现在应该可以连接到 `http://localhost:3000/` 了。
+完成！现在你可以通过 `make run` 启动 OpenHands，无需 Docker。你现在应该能够连接到 `http://localhost:3000/`
 
 # 注意
 

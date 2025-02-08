@@ -16,6 +16,7 @@ from openhands.resolver.utils import extract_image_urls
 # Strategy context interface
 class ServiceContextPR:
     issue_type: ClassVar[str] = 'pr'
+    default_git_patch: ClassVar[str] = 'No changes made yet'
 
     def __init__(self, strategy, llm_config: LLMConfig):
         self._strategy = strategy
@@ -31,10 +32,20 @@ class ServiceContextPR:
         return self._strategy.download_issues()
 
     def guess_success(
-        self, issue: Issue, history: list[Event]
+        self,
+        issue: Issue,
+        history: list[Event],
+        git_patch: str | None = None,
     ) -> tuple[bool, None | list[bool], str]:
-        """Guess if the issue is fixed based on the history and the issue description."""
+        """Guess if the issue is fixed based on the history, issue description and git patch.
+
+        Args:
+            issue: The issue to check
+            history: The agent's history
+            git_patch: Optional git patch showing the changes made
+        """
         last_message = history[-1].message
+
         issues_context = json.dumps(issue.closing_issues, indent=4)
         success_list = []
         explanation_list = []
@@ -44,7 +55,7 @@ class ServiceContextPR:
             for review_thread in issue.review_threads:
                 if issues_context and last_message:
                     success, explanation = self._check_review_thread(
-                        review_thread, issues_context, last_message
+                        review_thread, issues_context, last_message, git_patch
                     )
                 else:
                     success, explanation = False, 'Missing context or message'
@@ -54,7 +65,7 @@ class ServiceContextPR:
         elif issue.thread_comments:
             if issue.thread_comments and issues_context and last_message:
                 success, explanation = self._check_thread_comments(
-                    issue.thread_comments, issues_context, last_message
+                    issue.thread_comments, issues_context, last_message, git_patch
                 )
             else:
                 success, explanation = (
@@ -67,7 +78,7 @@ class ServiceContextPR:
             # Handle PRs with only review comments (no file-specific review comments or thread comments)
             if issue.review_comments and issues_context and last_message:
                 success, explanation = self._check_review_comments(
-                    issue.review_comments, issues_context, last_message
+                    issue.review_comments, issues_context, last_message, git_patch
                 )
             else:
                 success, explanation = (
@@ -212,6 +223,7 @@ class ServiceContextPR:
         review_thread: ReviewThread,
         issues_context: str,
         last_message: str,
+        git_patch: str | None = None,
     ) -> tuple[bool, str]:
         """Check if a review thread's feedback has been addressed."""
         files_context = json.dumps(review_thread.files, indent=4)
@@ -230,12 +242,17 @@ class ServiceContextPR:
             feedback=review_thread.comment,
             files_context=files_context,
             last_message=last_message,
+            git_patch=git_patch or self.default_git_patch,
         )
 
         return self._check_feedback_with_llm(prompt)
 
     def _check_thread_comments(
-        self, thread_comments: list[str], issues_context: str, last_message: str
+        self,
+        thread_comments: list[str],
+        issues_context: str,
+        last_message: str,
+        git_patch: str | None = None,
     ) -> tuple[bool, str]:
         """Check if thread comments feedback has been addressed."""
         thread_context = '\n---\n'.join(thread_comments)
@@ -252,12 +269,17 @@ class ServiceContextPR:
             issue_context=issues_context,
             thread_context=thread_context,
             last_message=last_message,
+            git_patch=git_patch or self.default_git_patch,
         )
 
         return self._check_feedback_with_llm(prompt)
 
     def _check_review_comments(
-        self, review_comments: list[str], issues_context: str, last_message: str
+        self,
+        review_comments: list[str],
+        issues_context: str,
+        last_message: str,
+        git_patch: str | None = None,
     ) -> tuple[bool, str]:
         """Check if review comments feedback has been addressed."""
         review_context = '\n---\n'.join(review_comments)
@@ -274,6 +296,7 @@ class ServiceContextPR:
             issue_context=issues_context,
             review_context=review_context,
             last_message=last_message,
+            git_patch=git_patch or self.default_git_patch,
         )
 
         return self._check_feedback_with_llm(prompt)
@@ -362,6 +385,9 @@ class ServiceContext:
     def create_pull_request(self, data=dict):
         return self._strategy.create_pull_request(data)
 
+    def request_reviewers(self, reviewer: str, pr_number: int):
+        return self._strategy.request_reviewers(reviewer, pr_number)
+
     def reply_to_comment(self, token, comment_id, reply):
         return self._strategy.reply_to_comment(token, comment_id, reply)
 
@@ -398,9 +424,15 @@ class ServiceContext:
         )
 
     def guess_success(
-        self, issue: Issue, history: list[Event]
+        self, issue: Issue, history: list[Event], git_patch: str | None = None
     ) -> tuple[bool, None | list[bool], str]:
-        """Guess if the issue is fixed based on the history and the issue description."""
+        """Guess if the issue is fixed based on the history and the issue description.
+
+        Args:
+            issue: The issue to check
+            history: The agent's history
+            git_patch: Optional git patch showing the changes made
+        """
         last_message = history[-1].message
         # Include thread comments in the prompt if they exist
         issue_context = issue.body

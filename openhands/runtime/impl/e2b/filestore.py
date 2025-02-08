@@ -5,7 +5,7 @@ class E2BFileStore(FileStore):
     def __init__(self, filesystem):
         self.filesystem = filesystem
 
-    def write(self, path: str, contents: str) -> None:
+    def write(self, path: str, contents: str | bytes) -> None:
         self.filesystem.write(path, contents)
 
     def read(self, path: str) -> str:

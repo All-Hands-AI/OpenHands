@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock, patch
 
 from openhands.core.config import LLMConfig
@@ -108,6 +109,7 @@ The changes successfully address the feedback."""
         assert success is True
         assert success_list == [True]
         assert 'successfully address' in explanation
+        assert len(json.loads(explanation)) == 1
 
 
 def test_pr_handler_guess_success_only_review_comments():

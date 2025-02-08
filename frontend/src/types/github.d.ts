@@ -16,6 +16,8 @@ interface GitHubUser {
 interface GitHubRepository {
   id: number;
   full_name: string;
+  stargazers_count?: number;
+  link_header?: string;
 }
 
 interface GitHubCommit {
@@ -26,4 +28,8 @@ interface GitHubCommit {
       date: string; // ISO 8601
     };
   };
+}
+
+interface GithubAppInstallation {
+  installations: { id: number }[];
 }
