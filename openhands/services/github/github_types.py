@@ -18,12 +18,12 @@ class GitHubRepository(BaseModel):
 
 
 class GhAuthenticationError(ValueError):
-    """Raised when there is an issue with LLM authentication."""
+    """Raised when there is an issue with GitHub authentication."""
 
     pass
 
 
 class GHUnknownException(ValueError):
-    """Raised when there is an issue with LLM authentication."""
+    """Raised when there is an issue with GitHub communcation."""
 
     pass
