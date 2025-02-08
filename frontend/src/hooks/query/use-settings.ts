@@ -34,7 +34,7 @@ export const useSettings = () => {
     initialData: DEFAULT_SETTINGS,
     staleTime: 0,
     retry: false,
-    enabled: config?.APP_MODE === "oss" || githubTokenIsSet,
+    enabled: config?.APP_MODE !== "saas" || githubTokenIsSet,
     meta: {
       disableToast: true,
     },
@@ -49,14 +49,6 @@ export const useSettings = () => {
   React.useEffect(() => {
     setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
   }, [query.data?.GITHUB_TOKEN_IS_SET, query.isFetched]);
-
-  // Return default settings if in SAAS mode and not authenticated
-  if (config?.APP_MODE === "saas" && !githubTokenIsSet) {
-    return {
-      ...query,
-      data: DEFAULT_SETTINGS,
-    };
-  }
 
   return query;
 };
