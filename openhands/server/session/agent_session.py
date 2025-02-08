@@ -115,7 +115,7 @@ class AgentSession:
         if github_token:
             self.event_stream.set_secrets(
                 {
-                    'github_token': github_token,
+                    'github_token': github_token.get_secret_value(),
                 }
             )
         if initial_message:
