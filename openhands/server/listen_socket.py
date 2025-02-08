@@ -66,7 +66,7 @@ async def connect(connection_id: str, environ, auth):
             client_id=KEYCLOAK_CLIENT_ID,
             client_secret_key=KEYCLOAK_CLIENT_SECRET,
         )
-        user_info = keycloak_openid.userinfo(access_token)
+        user_info = await keycloak_openid.a_userinfo(access_token)
         user_id = user_info['github_id']
 
         logger.info(f'User {user_id} is connecting to conversation {conversation_id}')
