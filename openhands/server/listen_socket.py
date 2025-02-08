@@ -54,7 +54,6 @@ async def connect(connection_id: str, environ, auth):
             else config.jwt_secret
         )
         decoded = jwt.decode(signed_token, jwt_secret, algorithms=['HS256'])
-        logger.info(f'Decoded cookie: {decoded}')
         access_token = decoded['access_token']
 
         KEYCLOAK_SERVER_URL = os.getenv('KEYCLOAK_SERVER_URL', '')
