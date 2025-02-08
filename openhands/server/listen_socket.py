@@ -1,8 +1,9 @@
+import os
 from urllib.parse import parse_qs
 
 import jwt
+from keycloak import KeycloakOpenID
 from pydantic import SecretStr
-from server.auth.auth_utils import keycloak_openid
 from socketio.exceptions import ConnectionRefusedError
 
 from openhands.core.logger import openhands_logger as logger
@@ -55,6 +56,17 @@ async def connect(connection_id: str, environ, auth):
         decoded = jwt.decode(signed_token, jwt_secret, algorithms=['HS256'])
         logger.info(f'Decoded cookie: {decoded}')
         access_token = decoded['access_token']
+
+        KEYCLOAK_SERVER_URL = os.getenv('KEYCLOAK_SERVER_URL', '')
+        KEYCLOAK_REALM_NAME = os.getenv('KEYCLOAK_REALM_NAME', '')
+        KEYCLOAK_CLIENT_ID = os.getenv('KEYCLOAK_CLIENT_ID', '')
+        KEYCLOAK_CLIENT_SECRET = os.getenv('KEYCLOAK_CLIENT_SECRET', '')
+        keycloak_openid = KeycloakOpenID(
+            server_url=KEYCLOAK_SERVER_URL,
+            realm_name=KEYCLOAK_REALM_NAME,
+            client_id=KEYCLOAK_CLIENT_ID,
+            client_secret_key=KEYCLOAK_CLIENT_SECRET,
+        )
         user_info = keycloak_openid.userinfo(access_token)
         user_id = user_info['github_id']
 
