@@ -34,7 +34,7 @@ export const useSettings = () => {
     initialData: DEFAULT_SETTINGS,
     staleTime: 0,
     retry: false,
-    enabled: config?.APP_MODE !== "saas" || githubTokenIsSet,
+    enabled: config?.APP_MODE === "oss" || githubTokenIsSet,
     meta: {
       disableToast: true,
     },
