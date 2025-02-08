@@ -2,6 +2,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import OpenHands from "#/api/open-hands";
+import { useAuth } from "#/context/auth-context";
 
 function OAuthGitHubCallback() {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ function OAuthGitHubCallback() {
   const code = searchParams.get("code");
   const requesterUrl = new URL(window.location.href);
   const redirectUrl = `${requesterUrl.origin}/oauth/github/callback`;
+  const { setGitHubTokenIsSet } = useAuth();
 
   const { data, isSuccess, error } = useQuery({
     queryKey: ["access_token", code, redirectUrl],
@@ -18,6 +20,7 @@ function OAuthGitHubCallback() {
 
   React.useEffect(() => {
     if (isSuccess) {
+      setGitHubTokenIsSet(true);
       navigate("/");
     }
   }, [isSuccess]);
