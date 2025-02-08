@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.auth import get_user_id
+from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
 from openhands.services.github.github_service import GitHubService
@@ -23,7 +23,7 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
                 content={'error': 'Settings not found'},
             )
 
-        token_is_set = bool(user_id) or bool(request.state.github_token)
+        token_is_set = bool(user_id) or bool(get_github_token(request))
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(),
             github_token_is_set=token_is_set,
