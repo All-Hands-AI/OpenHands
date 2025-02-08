@@ -1,4 +1,6 @@
 import pytest
+import httpx
+from unittest.mock import AsyncMock, patch
 from pydantic import SecretStr
 from openhands.services.github.github_service import GitHubService
 from openhands.services.github.github_types import GhAuthenticationError
@@ -23,7 +25,8 @@ async def test_github_service_token_handling():
 @pytest.mark.asyncio
 async def test_github_service_token_refresh():
     # Test that token refresh is only attempted when refresh=True
-    service = GitHubService(user_id=None, token=SecretStr('test-token'))
+    token = SecretStr('test-token')
+    service = GitHubService(user_id=None, token=token)
     assert not service.refresh
     
     # Test token expiry detection
@@ -31,34 +34,45 @@ async def test_github_service_token_refresh():
     assert not service._has_token_expired(200)
     assert not service._has_token_expired(404)
 
-    # Test get_latest_token returns the current token by default
+    # Test get_latest_token returns a copy of the current token
     latest_token = await service.get_latest_token()
     assert isinstance(latest_token, SecretStr)
-    assert latest_token.get_secret_value() == 'test-token'
+    assert latest_token.get_secret_value() == 'test-token'  # Compare with known value
 
 @pytest.mark.asyncio
-async def test_github_service_fetch_data(mocker):
+async def test_github_service_fetch_data():
     # Mock httpx.AsyncClient for testing API calls
-    mock_client = mocker.AsyncMock()
-    mock_response = mocker.AsyncMock()
+    mock_response = AsyncMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {'login': 'test-user'}
+    mock_response.raise_for_status = AsyncMock()
+
+    mock_client = AsyncMock()
     mock_client.get.return_value = mock_response
-    
-    mocker.patch('httpx.AsyncClient', return_value=mock_client)
+    mock_client.__aenter__.return_value = mock_client
+    mock_client.__aexit__.return_value = None
 
-    service = GitHubService(user_id=None, token=SecretStr('test-token'))
-    data = await service._fetch_data('https://api.github.com/user')
-    
-    # Verify the request was made with correct headers
-    mock_client.get.assert_called_once()
-    call_args = mock_client.get.call_args
-    headers = call_args[1]['headers']
-    assert headers['Authorization'] == 'Bearer test-token'
+    with patch('httpx.AsyncClient', return_value=mock_client):
+        service = GitHubService(user_id=None, token=SecretStr('test-token'))
+        data = await service._fetch_data('https://api.github.com/user')
+        
+        # Verify the request was made with correct headers
+        mock_client.get.assert_called_once()
+        call_args = mock_client.get.call_args
+        headers = call_args[1]['headers']
+        assert headers['Authorization'] == 'Bearer test-token'
 
-    # Test error handling
-    mock_response.status_code = 401
-    mock_response.json.return_value = {'message': 'Bad credentials'}
-    
-    with pytest.raises(GhAuthenticationError):
-        await service._fetch_data('https://api.github.com/user')
+        # Test error handling with 401 status code
+        mock_response.status_code = 401
+        mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
+            message='401 Unauthorized',
+            request=AsyncMock(),
+            response=mock_response
+        )
+
+        # Reset the mock to test error handling
+        mock_client.get.reset_mock()
+        mock_client.get.return_value = mock_response
+
+        with pytest.raises(GhAuthenticationError):
+            await service._fetch_data('https://api.github.com/user')
