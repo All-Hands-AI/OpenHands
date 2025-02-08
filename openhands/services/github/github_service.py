@@ -3,14 +3,18 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
-from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
-from openhands.server.shared import server_config
-from openhands.server.types import AppMode, GhAuthenticationError, GHUnknownException
+from openhands.services.github.github_types import (
+    GhAuthenticationError,
+    GHUnknownException,
+    GitHubRepository,
+    GitHubUser,
+)
 
 
 class GitHubService:
     BASE_URL = 'https://api.github.com'
     token: str = ''
+    refresh = False
 
     def __init__(self, user_id: str | None = None, token: SecretStr | None = None):
         self.user_id = user_id
@@ -45,9 +49,7 @@ class GitHubService:
             async with httpx.AsyncClient() as client:
                 github_headers = await self._get_github_headers()
                 response = await client.get(url, headers=github_headers, params=params)
-                if server_config.app_mode == AppMode.SAAS and self._has_token_expired(
-                    response.status_code
-                ):
+                if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
                     github_headers = await self._get_github_headers()
                     response = await client.get(
