@@ -13,7 +13,7 @@ from openhands.services.github.github_types import (
 
 class GitHubService:
     BASE_URL = 'https://api.github.com'
-    token: str = ''
+    token: SecretStr = SecretStr('')
     refresh = False
 
     def __init__(self, user_id: str | None = None, token: SecretStr | None = None):
@@ -28,11 +28,10 @@ class GitHubService:
         """
 
         if self.user_id and not self.token:
-            secret_token = await self.get_latest_token()
-            self.token = secret_token.get_secret_value()
+            self.token = await self.get_latest_token()
 
         return {
-            'Authorization': f'Bearer {self.token}',
+            'Authorization': f'Bearer {self.token.get_secret_value()}',
             'Accept': 'application/vnd.github.v3+json',
         }
 
