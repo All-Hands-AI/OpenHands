@@ -39,7 +39,7 @@ class GitHubService:
         return status_code == 401
 
     async def get_latest_token(self) -> SecretStr:
-        return SecretStr(self.token)
+        return SecretStr(self.token.get_secret_value())
 
     async def _fetch_data(
         self, url: str, params: dict | None = None
@@ -55,15 +55,17 @@ class GitHubService:
                         url, headers=github_headers, params=params
                     )
 
-                response.raise_for_status()
+                await response.raise_for_status()
                 headers = {}
                 if 'Link' in response.headers:
                     headers['Link'] = response.headers['Link']
 
                 return response.json(), headers
 
-        except httpx.HTTPStatusError:
-            raise GhAuthenticationError('Invalid Github token')
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 401:
+                raise GhAuthenticationError('Invalid Github token')
+            raise GHUnknownException('Unknown error')
 
         except httpx.HTTPError:
             raise GHUnknownException('Unknown error')
