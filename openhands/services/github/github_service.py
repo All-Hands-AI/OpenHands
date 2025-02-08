@@ -2,10 +2,11 @@ from typing import Any
 
 import httpx
 from fastapi import Request
+from pydantic import SecretStr
 
 from openhands.server.auth import get_github_token
 from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
-from openhands.server.shared import SettingsStoreImpl, config, server_config
+from openhands.server.shared import server_config
 from openhands.server.types import AppMode, GhAuthenticationError, GHUnknownException
 
 
@@ -13,18 +14,20 @@ class GitHubService:
     BASE_URL = 'https://api.github.com'
     token: str = ''
 
-    def __init__(self, user_id: str | None):
+    def __init__(self, user_id: str | None = None, token: SecretStr | None = None):
         self.user_id = user_id
+
+        if token:
+            self.token = token.get_secret_value()
 
     async def _get_github_headers(self):
         """
         Retrieve the GH Token from settings store to construct the headers
         """
 
-        settings_store = await SettingsStoreImpl.get_instance(config, self.user_id)
-        settings = await settings_store.load()
-        if settings and settings.github_token:
-            self.token = settings.github_token.get_secret_value()
+        if self.user_id and not self.token:
+            secret_token = await self.get_latest_token()
+            self.token = secret_token.get_secret_value()
 
         return {
             'Authorization': f'Bearer {self.token}',
@@ -34,8 +37,8 @@ class GitHubService:
     def _has_token_expired(self, status_code: int):
         return status_code == 401
 
-    async def _get_latest_token(self):
-        pass
+    async def get_latest_token(self) -> SecretStr:
+        return SecretStr(self.token)
 
     async def _fetch_data(
         self, url: str, params: dict | None = None
@@ -47,7 +50,7 @@ class GitHubService:
                 if server_config.app_mode == AppMode.SAAS and self._has_token_expired(
                     response.status_code
                 ):
-                    await self._get_latest_token()
+                    await self.get_latest_token()
                     github_headers = await self._get_github_headers()
                     response = await client.get(
                         url, headers=github_headers, params=params

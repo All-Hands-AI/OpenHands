@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, SecretStr
 
 from openhands.server.settings import Settings
 
@@ -9,4 +9,4 @@ class ConversationInitData(Settings):
     """
 
     github_token: str | None = Field(default=None)
-    selected_repository: str | None = Field(default=None)
+    selected_repository: SecretStr | None = Field(default=None)
