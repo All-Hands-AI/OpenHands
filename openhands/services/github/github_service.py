@@ -18,7 +18,7 @@ class GitHubService:
         if token:
             self.token = token.get_secret_value()
 
-    async def _get_github_headers(self):
+    async def _get_github_headers(self) -> dict:
         """
         Retrieve the GH Token from settings store to construct the headers
         """
@@ -32,7 +32,7 @@ class GitHubService:
             'Accept': 'application/vnd.github.v3+json',
         }
 
-    def _has_token_expired(self, status_code: int):
+    def _has_token_expired(self, status_code: int) -> bool:
         return status_code == 401
 
     async def get_latest_token(self) -> SecretStr:
