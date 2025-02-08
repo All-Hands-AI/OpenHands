@@ -29,7 +29,7 @@ export const useSettings = () => {
   const { data: config } = useConfig();
 
   const query = useQuery({
-    queryKey: ["settings", githubTokenIsSet],
+    queryKey: ["settings"],
     queryFn: getSettingsQueryFn,
     initialData: DEFAULT_SETTINGS,
     staleTime: 0,
@@ -49,6 +49,14 @@ export const useSettings = () => {
   React.useEffect(() => {
     setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
   }, [query.data?.GITHUB_TOKEN_IS_SET, query.isFetched]);
+
+  // Return default settings if in SAAS mode and not authenticated
+  if (config?.APP_MODE === "saas" && !githubTokenIsSet) {
+    return {
+      ...query,
+      data: DEFAULT_SETTINGS,
+    };
+  }
 
   return query;
 };
