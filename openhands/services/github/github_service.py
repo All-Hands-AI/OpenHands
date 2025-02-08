@@ -20,7 +20,7 @@ class GitHubService:
         self.user_id = user_id
 
         if token:
-            self.token = token.get_secret_value()
+            self.token = token
 
     async def _get_github_headers(self) -> dict:
         """
