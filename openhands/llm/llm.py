@@ -232,6 +232,9 @@ class LLM(RetryMixin, DebugMixin):
                     kwargs['stop'] = STOP_WORDS
 
                 mock_fncall_tools = kwargs.pop('tools')
+                kwargs['tool_choice'] = (
+                    'none'  # force no tool calling because we're mocking it - without it, it will cause issue with sglang
+                )
 
             # if we have no messages, something went very wrong
             if not messages:
