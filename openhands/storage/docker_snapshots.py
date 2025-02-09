@@ -90,7 +90,7 @@ def configure_docker(enable):
         data = {}
 
     if enable:
-        if data["storage-driver"] != "btrfs": changed = True
+        if data.get("storage-driver") != "btrfs": changed = True
         data["storage-driver"] = "btrfs"
     elif "storage-driver" in data:
         changed = True
