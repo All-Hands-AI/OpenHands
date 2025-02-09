@@ -29,6 +29,7 @@ from openhands.core.config import (
     get_llm_config_arg,
     parse_arguments,
 )
+from openhands.core.config.utils import get_agent_config_arg
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
@@ -60,8 +61,11 @@ def get_config(
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
-    agent_config = config.get_agent_config(metadata.agent_class)
-    agent_config.enable_prompt_extensions = False
+    if metadata.agent_config:
+        config.set_agent_config(metadata.agent_config, metadata.agent_class)
+    else:
+        agent_config = config.get_agent_config(metadata.agent_class)
+        agent_config.enable_prompt_extensions = False
     return config
 
 
@@ -305,6 +309,10 @@ if __name__ == '__main__':
     dataset = load_dataset('iFurySt/AgentBench')
     agent_bench_tests = dataset['osbench'].to_pandas()
 
+    agent_config = None
+    if args.agent_config:
+        agent_config = get_agent_config_arg(args.agent_config)
+
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
@@ -321,6 +329,7 @@ if __name__ == '__main__':
         args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
+        agent_config=agent_config,
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(agent_bench_tests, output_file, args.eval_n_limit)
