@@ -90,8 +90,8 @@ def configure_docker(enable):
         data = {}
 
     if enable:
+        if data["storage-driver"] != "btrfs": changed = True
         data["storage-driver"] = "btrfs"
-        changed = True
     elif "storage-driver" in data:
         changed = True
         del data["storage-driver"]
@@ -105,6 +105,7 @@ def configure_docker(enable):
         docker_restart(enable)
 
     elif enable and not is_mounted():
+        print("Btrfs not mounted. Restarting dockerd...")
         docker_restart(enable)
 
 def mount_btrfs_storage():
