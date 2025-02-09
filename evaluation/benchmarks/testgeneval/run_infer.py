@@ -3,6 +3,7 @@ import json
 import os
 import tempfile
 import time
+import traceback
 from typing import Any
 
 import numpy as np
@@ -361,7 +362,9 @@ def complete_runtime(
 
         test_suite = obs.content.strip()
     except Exception:
-        print('Skipping, exeception in complete_runtime')
+        # Print stack trace
+        print('Skipping, exception in complete_runtime')
+        print(traceback.format_exc())
         test_suite = instance['full_pred'] if instance['full_pred'] is not None else ''
 
     # action = CmdRunAction(command='git add -A')
@@ -462,8 +465,7 @@ def process_instance(
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
     )
-    print(output)
-    input()
+    # print(output)
     return output
 
 
