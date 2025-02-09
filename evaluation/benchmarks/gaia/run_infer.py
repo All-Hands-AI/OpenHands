@@ -67,6 +67,7 @@ def get_config(
     if metadata.agent_config:
         config.set_agent_config(metadata.agent_config, metadata.agent_class)
     else:
+        logger.info('Agent config not provided, using default settings')
         agent_config = config.get_agent_config(metadata.agent_class)
         agent_config.enable_prompt_extensions = False
     return config
