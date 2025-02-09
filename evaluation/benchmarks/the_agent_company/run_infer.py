@@ -61,7 +61,14 @@ def get_config(
         workspace_mount_path_in_sandbox='/outputs',
     )
     config.set_llm_config(llm_config)
-    config.set_agent_config(agent_config)
+    if agent_config:
+        config.set_agent_config(agent_config)
+    else:
+        logger.info('Agent config not provided, using default settings')
+        agent_config = AgentConfig(
+            enable_prompt_extensions=False,
+        )
+        config.set_agent_config(agent_config)
     return config
 
 
@@ -216,12 +223,6 @@ if __name__ == '__main__':
         type=str,
         default=None,
         help='LLM config for evaluation environment (NPC & llm-based evaluator)',
-    )
-    parser.add_argument(
-        '--agent-config',
-        type=str,
-        default=None,
-        help='OpenHands agent config',
     )
     args, _ = parser.parse_known_args()
 

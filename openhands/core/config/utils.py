@@ -492,6 +492,13 @@ def get_parser() -> argparse.ArgumentParser:
         help='Replace default LLM ([llm] section in config.toml) config with the specified LLM config, e.g. "llama3" for [llm.llama3] section in config.toml',
     )
     parser.add_argument(
+        '-l',
+        '--agent-config',
+        default=None,
+        type=str,
+        help='Replace default Agent ([agent] section in config.toml) config with the specified Agent config, e.g. "CodeAct" for [agent.CodeAct] section in config.toml',
+    )
+    parser.add_argument(
         '-n',
         '--name',
         default='',
