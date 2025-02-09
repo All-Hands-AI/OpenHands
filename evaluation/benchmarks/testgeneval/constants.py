@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 # Constants - Evaluation Log Directories
 BASE_IMAGE_BUILD_DIR = Path('logs/build_images/base')
@@ -922,7 +922,7 @@ SPECS_PYDICOM.update(
 SPECS_HUMANEVAL = {k: {'python': '3.9', 'test_cmd': 'python'} for k in ['1.0']}
 
 # Constants - Task Instance Instllation Environment
-MAP_REPO_VERSION_TO_SPECS = {
+MAP_REPO_VERSION_TO_SPECS: dict[str, dict[str, Any]] = {
     'astropy/astropy': SPECS_ASTROPY,
     'dbt-labs/dbt-core': SPECS_DBT_CORE,
     'django/django': SPECS_DJANGO,

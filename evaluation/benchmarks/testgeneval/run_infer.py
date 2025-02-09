@@ -7,7 +7,6 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-import tiktoken
 import toml
 from datasets import load_dataset
 
@@ -78,31 +77,20 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         ]
     )
 
-    MAX_TOKENS = 30_000
-
-    cut_file = truncate_prompt(
-        instance['code_src'], metadata.llm_config.model, MAX_TOKENS
-    )
-
     # Testing general agents
-    if instance['full_pred'] is not None:
-        instruction = CODEACT_TESTGEN_PROMPT_ITERATE.format(
-            code_file=os.path.join('/testbed', instance.code_file),
-            test_file=os.path.join('/testbed', instance.test_file),
-            coverage_command=coverage_command,
-            code_src=cut_file,
-            imports='\n'.join(instance.local_imports),
-            workspace_dir_name=_get_swebench_workspace_dir_name(instance),
-        )
-    else:
-        instruction = CODEACT_TESTGEN_PROMPT.format(
-            code_file=os.path.join('/testbed', instance.code_file),
-            test_file=os.path.join('/testbed', instance.test_file),
-            coverage_command=coverage_command,
-            code_src=cut_file,
-            imports='\n'.join(instance.local_imports),
-            workspace_dir_name=_get_swebench_workspace_dir_name(instance),
-        )
+    prompt_to_use = (
+        CODEACT_TESTGEN_PROMPT_ITERATE
+        if instance['full_pred'] is not None
+        else CODEACT_TESTGEN_PROMPT
+    )
+    instruction = prompt_to_use.format(
+        code_file=os.path.join('/testbed', instance.code_file),
+        test_file=os.path.join('/testbed', instance.test_file),
+        coverage_command=coverage_command,
+        code_src=instance['code_src'],
+        imports='\n'.join(instance.local_imports),
+        workspace_dir_name=_get_swebench_workspace_dir_name(instance),
+    )
 
     if RUN_WITH_BROWSING:
         instruction += (
@@ -112,16 +100,6 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         )
 
     return instruction
-
-
-def truncate_prompt(prompt, model, model_limit):
-    encoding = tiktoken.encoding_for_model(model)
-    tokenized = encoding.encode(prompt)
-    if len(tokenized) > model_limit:
-        # Truncate to the last model_limit tokens and decode back to text
-        return prompt
-    else:
-        return prompt
 
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
