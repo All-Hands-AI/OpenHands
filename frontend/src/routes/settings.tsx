@@ -311,31 +311,31 @@ function SettingsScreen() {
           )}
 
           {llmConfigMode === "advanced" && (
-            <SettingsDropdownInput
-              testId="security-analyzer-input"
-              name="security-analyzer-input"
-              label="Security Analyzer"
-              isDisabled={!confirmationModeIsEnabled}
-              items={
-                resources?.securityAnalyzers.map((analyzer) => ({
-                  key: analyzer,
-                  label: analyzer,
-                })) || []
-              }
-              defaultSelectedKey={settings.SECURITY_ANALYZER}
-              isClearable
-              showOptionalTag
-            />
-          )}
-          {llmConfigMode === "advanced" && (
             <SettingsSwitch
               testId="enable-confirmation-mode-switch"
               onToggle={setConfirmationModeIsEnabled}
               defaultIsToggled={!!settings.SECURITY_ANALYZER}
-              showOptionalTag
             >
               Enable confirmation mode
             </SettingsSwitch>
+          )}
+          {llmConfigMode === "advanced" && confirmationModeIsEnabled && (
+            <div className="peer-has-checked:hidden">
+              <SettingsDropdownInput
+                testId="security-analyzer-input"
+                name="security-analyzer-input"
+                label="Security Analyzer"
+                items={
+                  resources?.securityAnalyzers.map((analyzer) => ({
+                    key: analyzer,
+                    label: analyzer,
+                  })) || []
+                }
+                defaultSelectedKey={settings.SECURITY_ANALYZER}
+                isClearable
+                showOptionalTag
+              />
+            </div>
           )}
         </div>
 
