@@ -9,7 +9,10 @@ interface NotificationConstructor {
 }
 
 describe('sendNotification', () => {
-  let mockNotification: Mock;
+  let mockNotification: Mock & {
+    permission: NotificationPermission;
+    requestPermission: () => Promise<NotificationPermission>;
+  };
 
   beforeEach(() => {
     // Mock localStorage
@@ -20,7 +23,10 @@ describe('sendNotification', () => {
     mockNotification = vi.fn((title: string, options?: NotificationOptions) => ({
       title,
       ...options,
-    }));
+    })) as Mock & {
+      permission: NotificationPermission;
+      requestPermission: () => Promise<NotificationPermission>;
+    };
     Object.defineProperty(mockNotification, 'permission', {
       get: () => 'granted',
       configurable: true
