@@ -78,7 +78,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         '3. Edit the sourcecode of the repo to resolve the issue\n'
         '4. Rerun your reproduce script and confirm that the error is fixed!\n'
         '5. Think about edgecases, add comprehensive tests for them in your reproduce script, and run them to make sure your fix handles them as well\n'
-        '6. Find and run any tests in the repo that are related to:\n'
+        f'6. Once you are done with the initial implementation, please carefully re-read the problem description and check the difference between the current code and the base commit {instance["base_commit"]}. Do you think that the issue has been completely and comprehensively solved? Write tests to check the correctness of the solution, specifically focusing on tests that may point out any remaining problems that are not yet solved. Run all of the tests in the repo and check if any of them fail, and if they do fix the code. Repeat this process of carefully reading the problem description and current implementation, testing, and fixing any problems until you are confident that the current implementation is correct. Find and run any tests in the repo that are related to:\n'
         '   - The issue you are fixing\n'
         '   - The files you modified\n'
         '   - The functions you changed\n'
