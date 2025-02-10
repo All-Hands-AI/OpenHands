@@ -550,8 +550,9 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 else:
                     action = FileEditAction(
                         path=arguments['path'],
+                        command=arguments['command'],
                         impl_source=FileEditSource.OH_ACI,
-                        **arguments,
+                        **{k: v for k, v in arguments.items() if k != 'command'},
                     )
             elif tool_call.function.name == 'browser':
                 if 'code' not in arguments:
