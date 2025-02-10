@@ -39,6 +39,7 @@ from openhands.events.observation import (
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.microagent import (
     BaseMicroAgent,
     load_microagents_from_dir,
@@ -49,7 +50,6 @@ from openhands.runtime.plugins import (
     VSCodeRequirement,
 )
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
-from openhands.services.github.github_service import GithubServiceImpl
 from openhands.utils.async_utils import call_sync_from_async
 
 STATUS_MESSAGES = {

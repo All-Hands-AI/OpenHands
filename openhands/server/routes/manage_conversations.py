@@ -9,6 +9,7 @@ from pydantic import BaseModel, SecretStr
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.events.stream import EventStreamSubscriber
+from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.runtime import get_runtime_cls
 from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.session.conversation_init_data import ConversationInitData
@@ -19,7 +20,6 @@ from openhands.server.shared import (
     conversation_manager,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
-from openhands.services.github.github_service import GithubServiceImpl
 from openhands.storage.data_models.conversation_info import ConversationInfo
 from openhands.storage.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,

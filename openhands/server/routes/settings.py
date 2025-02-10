@@ -3,10 +3,10 @@ from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
-from openhands.services.github.github_service import GithubServiceImpl
 
 app = APIRouter(prefix='/api')
 

@@ -4,7 +4,7 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
-from openhands.services.github.github_types import (
+from openhands.integrations.github.github_types import (
     GhAuthenticationError,
     GHUnknownException,
     GitHubRepository,
