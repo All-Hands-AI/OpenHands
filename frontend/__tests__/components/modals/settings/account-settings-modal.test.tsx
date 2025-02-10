@@ -117,7 +117,6 @@ describe("AccountSettingsModal", () => {
     });
   });
 
-  /*
   it("should send an unset github token property when pressing disconnect", async () => {
     const user = userEvent.setup();
     getSettingsSpy.mockResolvedValue({
@@ -133,15 +132,15 @@ describe("AccountSettingsModal", () => {
       agent: "CodeActAgent",
       confirmation_mode: false,
       enable_default_condenser: false,
+      github_token: undefined,
       language: "en",
-      llm_base_url: null,
+      llm_base_url: "",
       llm_model: "anthropic/claude-3-5-sonnet-20241022",
       remote_runtime_resource_factor: 1,
-      security_analyzer: null,
+      security_analyzer: "",
       unset_github_token: true,
     });
   });
-  */
 
   it("should not unset the github token when changing the language", async () => {
     const user = userEvent.setup();
