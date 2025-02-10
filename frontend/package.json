@@ -45,7 +45,8 @@
     "tailwind-merge": "^3.0.1",
     "vite": "^6.1.0",
     "web-vitals": "^3.5.2",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "@headlessui/react": "^1.7.17"
   },
   "scripts": {
     "dev": "npm run make-i18n && cross-env VITE_MOCK_API=false react-router dev",
