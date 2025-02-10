@@ -78,6 +78,58 @@ def verify_api_key(api_key: str = Depends(api_key_header)):
     return api_key
 
 
+def _execute_file_editor(
+    editor: OHEditor,
+    command: str,
+    path: str,
+    file_text: str | None = None,
+    view_range: list[int] | None = None,
+    old_str: str | None = None,
+    new_str: str | None = None,
+    insert_line: int | None = None,
+    enable_linting: bool = False,
+) -> str:
+    """Execute file editor command and handle exceptions.
+
+    Args:
+        editor: The OHEditor instance
+        command: Editor command to execute
+        path: File path
+        file_text: Optional file text content
+        view_range: Optional view range tuple (start, end)
+        old_str: Optional string to replace
+        new_str: Optional replacement string
+        insert_line: Optional line number for insertion
+        enable_linting: Whether to enable linting
+
+    Returns:
+        str: Result string from the editor operation
+    """
+    result: ToolResult | None = None
+    try:
+        result = editor(
+            command=command,
+            path=path,
+            file_text=file_text,
+            view_range=view_range,
+            old_str=old_str,
+            new_str=new_str,
+            insert_line=insert_line,
+            enable_linting=enable_linting,
+        )
+    except ToolError as e:
+        result = ToolResult(error=e.message)
+
+    if result.error:
+        return f'ERROR:\n{result.error}'
+
+    if not result.output:
+        logger.warning(f'No output from file_editor for {path}')
+        return ''
+
+    return result.output
+
+
 class ActionExecutor:
     """ActionExecutor is running inside docker sandbox.
     It is responsible for executing actions received from OpenHands backend and producing observations.
@@ -241,22 +293,12 @@ class ActionExecutor:
     async def read(self, action: FileReadAction) -> Observation:
         assert self.bash_session is not None
         if action.impl_source == FileReadSource.OH_ACI:
-            result: ToolResult | None = None
-            try:
-                result = self.file_editor(
-                    command='view',
-                    path=action.path,
-                    view_range=action.view_range,
-                )
-            except ToolError as e:
-                result = ToolResult(error=e.message)
-            result_str = ''
-            if result.error:
-                result_str = f'ERROR:\n{result.error}'
-            else:
-                result_str = result.output
-                if not result_str:
-                    logger.warning(f'No output from file_editor for {action.path}')
+            result_str = _execute_file_editor(
+                self.file_editor,
+                command='view',
+                path=action.path,
+                view_range=action.view_range,
+            )
 
             return FileReadObservation(
                 content=result_str,
@@ -370,28 +412,18 @@ class ActionExecutor:
 
     async def edit(self, action: FileEditAction) -> Observation:
         assert action.impl_source == FileEditSource.OH_ACI
-        result: ToolResult | None = None
-        try:
-            result = self.file_editor(
-                command=action.command,
-                path=action.path,
-                file_text=action.file_text,
-                view_range=action.view_range,
-                old_str=action.old_str,
-                new_str=action.new_str,
-                insert_line=action.insert_line,
-                enable_linting=False,
-            )
-        except ToolError as e:
-            result = ToolResult(error=e.message)
-
-        result_str = ''
-        if result.error:
-            result_str = f'ERROR:\n{result.error}'
-        else:
-            result_str = result.output
-            if not result_str:
-                logger.warning(f'No output from file_editor for {action.path}')
+        assert action.command is not None
+        result_str = _execute_file_editor(
+            self.file_editor,
+            command=action.command,
+            path=action.path,
+            file_text=action.file_text,
+            view_range=action.view_range,
+            old_str=action.old_str,
+            new_str=action.new_str,
+            insert_line=action.insert_line,
+            enable_linting=False,
+        )
 
         return FileEditObservation(
             content=result_str,
