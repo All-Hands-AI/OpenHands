@@ -25,6 +25,7 @@ describe('sendNotification', () => {
       get: () => 'granted',
       configurable: true
     });
+    mockNotification.requestPermission = vi.fn().mockResolvedValue('granted');
 
     // Set up the window.Notification mock
     const NotificationMock = mockNotification as unknown as NotificationConstructor;
@@ -71,5 +72,27 @@ describe('sendNotification', () => {
     sendNotification('Test Title', { body: 'Test Body' });
 
     expect(mockNotification).not.toHaveBeenCalled();
+  });
+
+  it('should request permission and send notification when permission is default', async () => {
+    // Mock notifications being enabled
+    vi.mocked(Storage.prototype.getItem).mockReturnValue('true');
+
+    // Set permission to default
+    Object.defineProperty(mockNotification, 'permission', {
+      get: () => 'default',
+      configurable: true
+    });
+
+    const title = 'Test Title';
+    const options = {
+      body: 'Test Body',
+      icon: '/test-icon.png'
+    };
+
+    await sendNotification(title, options);
+
+    expect(mockNotification.requestPermission).toHaveBeenCalled();
+    expect(mockNotification).toHaveBeenCalledWith(title, options);
   });
 });
