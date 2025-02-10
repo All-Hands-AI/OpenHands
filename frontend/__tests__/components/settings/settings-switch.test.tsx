@@ -22,20 +22,22 @@ describe("SettingsSwitch", () => {
     expect(onToggleMock).toHaveBeenCalledWith(false);
   });
 
-  it("should render an optional tag if showOptionalTag is true", () => {
+  it("should render a beta tag if isBeta is true", () => {
     const { rerender } = render(
-      <SettingsSwitch testId="test-switch">Test Switch</SettingsSwitch>,
-    );
-
-    expect(screen.queryByText(/optional/i)).not.toBeInTheDocument();
-
-    rerender(
-      <SettingsSwitch testId="test-switch" showOptionalTag>
+      <SettingsSwitch testId="test-switch" onToggle={vi.fn()} isBeta={false}>
         Test Switch
       </SettingsSwitch>,
     );
 
-    expect(screen.getByText(/optional/i)).toBeInTheDocument();
+    expect(screen.queryByText(/beta/i)).not.toBeInTheDocument();
+
+    rerender(
+      <SettingsSwitch testId="test-switch" onToggle={vi.fn()} isBeta>
+        Test Switch
+      </SettingsSwitch>,
+    );
+
+    expect(screen.getByText(/beta/i)).toBeInTheDocument();
   });
 
   it("should be able to set a default toggle state", async () => {

@@ -217,7 +217,6 @@ function SettingsScreen() {
           <SettingsSwitch
             testId="enable-analytics-switch"
             name="enable-analytics-switch"
-            showOptionalTag
             defaultIsToggled={!!isAnalyticsEnabled}
           >
             Enable analytics
@@ -315,6 +314,7 @@ function SettingsScreen() {
               testId="enable-confirmation-mode-switch"
               onToggle={setConfirmationModeIsEnabled}
               defaultIsToggled={!!settings.SECURITY_ANALYZER}
+              isBeta
             >
               Enable confirmation mode
             </SettingsSwitch>

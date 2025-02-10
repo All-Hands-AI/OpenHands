@@ -1,22 +1,21 @@
 import React from "react";
-import { OptionalTag } from "./optional-tag";
 import { StyledSwitchComponent } from "./styled-switch-component";
 
 interface SettingsSwitchProps {
   testId?: string;
   name?: string;
-  showOptionalTag?: boolean;
   onToggle?: (value: boolean) => void;
   defaultIsToggled?: boolean;
+  isBeta?: boolean;
 }
 
 export function SettingsSwitch({
   children,
   testId,
   name,
-  showOptionalTag,
   onToggle,
   defaultIsToggled,
+  isBeta,
 }: React.PropsWithChildren<SettingsSwitchProps>) {
   const [isToggled, setIsToggled] = React.useState(defaultIsToggled ?? false);
 
@@ -40,7 +39,11 @@ export function SettingsSwitch({
 
       <div className="flex items-center gap-1">
         <span className="text-sm">{children}</span>
-        {showOptionalTag && <OptionalTag />}
+        {isBeta && (
+          <span className="text-[11px] leading-4 text-[#0D0F11] font-[500] tracking-tighter bg-[#C9B974] px-1 rounded-full">
+            Beta
+          </span>
+        )}
       </div>
     </label>
   );
