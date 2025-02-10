@@ -1,14 +1,16 @@
+import os
 from typing import Any
 
 import httpx
 from pydantic import SecretStr
 
-from openhands.services.github.github_types import (
+from openhands.integrations.github.github_types import (
     GhAuthenticationError,
     GHUnknownException,
     GitHubRepository,
     GitHubUser,
 )
+from openhands.utils.import_utils import get_impl
 
 
 class GitHubService:
@@ -133,3 +135,10 @@ class GitHubService:
         ]
 
         return repos
+
+
+github_service_cls = os.environ.get(
+    'OPENHANDS_GITHUB_SERVICE_CLS',
+    'openhands.integrations.github.github_service.GitHubService',
+)
+GithubServiceImpl = get_impl(GitHubService, github_service_cls)
