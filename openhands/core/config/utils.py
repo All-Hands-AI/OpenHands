@@ -192,7 +192,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                                     custom_fields[k] = v
                             merged_llm_dict = generic_llm_fields.copy()
                             merged_llm_dict.update(custom_fields)
-                            
+
                             custom_llm_config = LLMConfig(**merged_llm_dict)
                             cfg.set_llm_config(custom_llm_config, nested_key)
 

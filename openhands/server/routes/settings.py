@@ -26,14 +26,13 @@ async def load_settings(request: Request) -> Settings:
         )
         settings = await settings_store.load()
         if not settings:
-            raise ValueError('Settings not found')
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='Settings not found',
+            )
         return settings
-    except ValueError as e:
-        logger.warning(str(e))
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Settings not found',
-        )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
         raise HTTPException(
@@ -72,7 +71,7 @@ async def store_settings(
         )
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
-        return JSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Invalid token'},
+            detail='Invalid token',
         )

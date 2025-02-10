@@ -119,7 +119,7 @@ class AgentSession:
             self.event_stream.add_event(
                 MessageAction(content=initial_user_msg), EventSource.USER
             )
-            
+
         self._starting = False
 
     async def close(self):
