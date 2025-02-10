@@ -118,21 +118,24 @@ class FileEditAction(Action):
 
     def __repr__(self) -> str:
         ret = '**FileEditAction**\n'
-        ret += f'Command: {self.command}\n'
-        ret += f'Thought: {self.thought}\n'
         ret += f'Path: [{self.path}]\n'
-        if self.command in ['view', 'create', 'str_replace', 'insert']:
+        ret += f'Thought: {self.thought}\n'
+
+        if self.impl_source == FileEditSource.LLM_BASED_EDIT:
+            ret += f'Range: [L{self.start}:L{self.end}]\n'
+            ret += f'Content:\n```\n{self.content}\n```\n'
+        else:  # OH_ACI mode
+            ret += f'Command: {self.command}\n'
             if self.command == 'view' and self.view_range:
                 ret += f'View Range: {self.view_range}\n'
             elif self.command == 'create':
-                ret += f'File Text:\n```\n{self.file_text}\n```\n'
+                ret += f'Created File with Text:\n```\n{self.file_text}\n```\n'
             elif self.command == 'str_replace':
-                ret += f'Old String: {self.old_str}\n'
-                ret += f'New String: {self.new_str}\n'
+                ret += f'Old String: ```\n{self.old_str}\n```\n'
+                ret += f'New String: ```\n{self.new_str}\n```\n'
             elif self.command == 'insert':
                 ret += f'Insert Line: {self.insert_line}\n'
-                ret += f'New String: {self.new_str}\n'
-        else:
-            ret += f'Range: [L{self.start}:L{self.end}]\n'
-            ret += f'Content:\n```\n{self.content}\n```\n'
+                ret += f'New String: ```\n{self.new_str}\n```\n'
+            elif self.command == 'undo_edit':
+                ret += 'Undo Edit\n'
         return ret
