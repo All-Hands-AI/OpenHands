@@ -32,7 +32,7 @@ describe("FeedbackForm", () => {
     screen.getByLabelText(I18nKey.FEEDBACK$PRIVATE_LABEL);
     screen.getByLabelText(I18nKey.FEEDBACK$PUBLIC_LABEL);
 
-    screen.getByRole("button", { name: I18nKey.FEEDBACK$CONTRIBUTE_LABEL });
+    screen.getByRole("button", { name: I18nKey.FEEDBACK$SHARE_LABEL });
     screen.getByRole("button", { name: I18nKey.FEEDBACK$CANCEL_LABEL });
   });
 

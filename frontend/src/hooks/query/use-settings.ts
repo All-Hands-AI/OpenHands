@@ -4,6 +4,7 @@ import posthog from "posthog-js";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
+import { useConfig } from "#/hooks/query/use-config";
 
 const getSettingsQueryFn = async () => {
   const apiSettings = await OpenHands.getSettings();
@@ -19,11 +20,13 @@ const getSettingsQueryFn = async () => {
     REMOTE_RUNTIME_RESOURCE_FACTOR: apiSettings.remote_runtime_resource_factor,
     GITHUB_TOKEN_IS_SET: apiSettings.github_token_is_set,
     ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
+    USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
   };
 };
 
 export const useSettings = () => {
-  const { setGitHubTokenIsSet } = useAuth();
+  const { setGitHubTokenIsSet, githubTokenIsSet } = useAuth();
+  const { data: config } = useConfig();
 
   const query = useQuery({
     queryKey: ["settings"],
@@ -31,6 +34,10 @@ export const useSettings = () => {
     initialData: DEFAULT_SETTINGS,
     staleTime: 0,
     retry: false,
+    enabled: config?.APP_MODE !== "saas" || githubTokenIsSet,
+    meta: {
+      disableToast: true,
+    },
   });
 
   React.useEffect(() => {

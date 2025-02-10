@@ -9,6 +9,7 @@ import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useAuth } from "#/context/auth-context";
+import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -45,10 +46,9 @@ export function ErrorBoundary() {
 export default function MainApp() {
   const { githubTokenIsSet } = useAuth();
   const { data: settings } = useSettings();
+  const { migrateUserConsent } = useMigrateUserConsent();
 
-  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
-    !localStorage.getItem("analytics-consent"),
-  );
+  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
 
   const config = useConfig();
   const {
@@ -67,6 +67,22 @@ export default function MainApp() {
       i18n.changeLanguage(settings.LANGUAGE);
     }
   }, [settings?.LANGUAGE]);
+
+  React.useEffect(() => {
+    const consentFormModalIsOpen =
+      settings?.USER_CONSENTS_TO_ANALYTICS === null;
+
+    setConsentFormIsOpen(consentFormModalIsOpen);
+  }, [settings]);
+
+  React.useEffect(() => {
+    // Migrate user consent to the server if it was previously stored in localStorage
+    migrateUserConsent({
+      handleAnalyticsWasPresentInLocalStorage: () => {
+        setConsentFormIsOpen(false);
+      },
+    });
+  }, []);
 
   const userIsAuthed = !!isAuthed && !authError;
   const renderWaitlistModal =
@@ -95,7 +111,9 @@ export default function MainApp() {
 
       {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
-          onClose={() => setConsentFormIsOpen(false)}
+          onClose={() => {
+            setConsentFormIsOpen(false);
+          }}
         />
       )}
     </div>
