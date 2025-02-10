@@ -42,9 +42,10 @@ You can provide custom directions for OpenHands by following the [README for the
 Github resolver will automatically check for valid [repository secrets](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions?tool=webui#creating-secrets-for-a-repository) or [repository variables](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#creating-configuration-variables-for-a-repository) to customize its behavior.
 The customization options you can set are:
 
-| **Attribute name**               | **Type** | **Purpose**                                                                                                 | **Example**                                          |
-|----------------------------------| -------- |-------------------------------------------------------------------------------------------------------------|------------------------------------------------------|
-| `LLM_MODEL`                      | Variable | Set the LLM to use with OpenHands                                                                           | `LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"`   |
-| `OPENHANDS_MAX_ITER`             | Variable | Set max limit for agent iterations                                                                          | `OPENHANDS_MAX_ITER=10`                              |
-| `OPENHANDS_MACRO`                | Variable | Customize default macro for invoking the resolver                                                           | `OPENHANDS_MACRO=@resolveit`                         |
-| `OPENHANDS_BASE_CONTAINER_IMAGE` | Variable | Custom Sandbox ([learn more](https://docs.all-hands.dev/modules/usage/how-to/custom-sandbox-guide))         | `OPENHANDS_BASE_CONTAINER_IMAGE="custom_image"`      |
+| **Attribute name**               | **Type** | **Purpose**                                                                                         | **Example**                                        |
+| -------------------------------- | -------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `LLM_MODEL`                      | Variable | Set the LLM to use with OpenHands                                                                   | `LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"` |
+| `OPENHANDS_MAX_ITER`             | Variable | Set max limit for agent iterations                                                                  | `OPENHANDS_MAX_ITER=10`                            |
+| `OPENHANDS_MACRO`                | Variable | Customize default macro for invoking the resolver                                                   | `OPENHANDS_MACRO=@resolveit`                       |
+| `OPENHANDS_BASE_CONTAINER_IMAGE` | Variable | Custom Sandbox ([learn more](https://docs.all-hands.dev/modules/usage/how-to/custom-sandbox-guide)) | `OPENHANDS_BASE_CONTAINER_IMAGE="custom_image"`    |
+| `TARGET_BRANCH`                  | Variable | Merge to branch other than `main`                                                                   | `TARGET_BRANCH="dev"`                              |

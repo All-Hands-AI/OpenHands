@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Callable
 from zipfile import ZipFile
 
+from pydantic import SecretStr
 from requests.exceptions import ConnectionError
 
 from openhands.core.config import AppConfig, SandboxConfig
@@ -38,6 +39,7 @@ from openhands.events.observation import (
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.microagent import (
     BaseMicroAgent,
     load_microagents_from_dir,
@@ -93,6 +95,7 @@ class Runtime(FileEditRuntimeMixin):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
+        github_user_id: str | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
@@ -124,6 +127,8 @@ class Runtime(FileEditRuntimeMixin):
         FileEditRuntimeMixin.__init__(
             self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
         )
+
+        self.github_user_id = github_user_id
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -212,6 +217,16 @@ class Runtime(FileEditRuntimeMixin):
             event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
         assert event.timeout is not None
         try:
+            if isinstance(event, CmdRunAction):
+                if self.github_user_id and '$GITHUB_TOKEN' in event.command:
+                    gh_client = GithubServiceImpl(user_id=self.github_user_id)
+                    token = await gh_client.get_latest_token()
+                    if token:
+                        export_cmd = CmdRunAction(
+                            f"export GITHUB_TOKEN='{token.get_secret_value()}'"
+                        )
+                        await call_sync_from_async(self.run, export_cmd)
+
             observation: Observation = await call_sync_from_async(
                 self.run_action, event
             )
@@ -234,12 +249,12 @@ class Runtime(FileEditRuntimeMixin):
         source = event.source if event.source else EventSource.AGENT
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    def clone_repo(self, github_token: str, selected_repository: str) -> str:
+    def clone_repo(self, github_token: SecretStr, selected_repository: str) -> str:
         if not github_token or not selected_repository:
             raise ValueError(
                 'github_token and selected_repository must be provided to clone a repository'
             )
-        url = f'https://{github_token}@github.com/{selected_repository}.git'
+        url = f'https://{github_token.get_secret_value()}@github.com/{selected_repository}.git'
         dir_name = selected_repository.split('/')[1]
         # add random branch name to avoid conflicts
         random_str = ''.join(

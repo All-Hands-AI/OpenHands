@@ -1,41 +1,47 @@
+import os
 from typing import Any
 
 import httpx
-from fastapi import Request
+from pydantic import SecretStr
 
-from openhands.server.auth import get_github_token
-from openhands.server.data_models.gh_types import GitHubRepository, GitHubUser
-from openhands.server.shared import SettingsStoreImpl, config, server_config
-from openhands.server.types import AppMode, GhAuthenticationError, GHUnknownException
+from openhands.integrations.github.github_types import (
+    GhAuthenticationError,
+    GHUnknownException,
+    GitHubRepository,
+    GitHubUser,
+)
+from openhands.utils.import_utils import get_impl
 
 
 class GitHubService:
     BASE_URL = 'https://api.github.com'
-    token: str = ''
+    token: SecretStr = SecretStr('')
+    refresh = False
 
-    def __init__(self, user_id: str | None):
+    def __init__(self, user_id: str | None = None, token: SecretStr | None = None):
         self.user_id = user_id
 
-    async def _get_github_headers(self):
+        if token:
+            self.token = token
+
+    async def _get_github_headers(self) -> dict:
         """
         Retrieve the GH Token from settings store to construct the headers
         """
 
-        settings_store = await SettingsStoreImpl.get_instance(config, self.user_id)
-        settings = await settings_store.load()
-        if settings and settings.github_token:
-            self.token = settings.github_token.get_secret_value()
+        if self.user_id and not self.token:
+            self.token = await self.get_latest_token()
 
         return {
-            'Authorization': f'Bearer {self.token}',
+            'Authorization': f'Bearer {self.token.get_secret_value()}',
             'Accept': 'application/vnd.github.v3+json',
         }
 
-    def _has_token_expired(self, status_code: int):
+    def _has_token_expired(self, status_code: int) -> bool:
         return status_code == 401
 
-    async def _get_latest_token(self):
-        pass
+    async def get_latest_token(self) -> SecretStr:
+        return self.token
 
     async def _fetch_data(
         self, url: str, params: dict | None = None
@@ -44,10 +50,8 @@ class GitHubService:
             async with httpx.AsyncClient() as client:
                 github_headers = await self._get_github_headers()
                 response = await client.get(url, headers=github_headers, params=params)
-                if server_config.app_mode == AppMode.SAAS and self._has_token_expired(
-                    response.status_code
-                ):
-                    await self._get_latest_token()
+                if self.refresh and self._has_token_expired(response.status_code):
+                    await self.get_latest_token()
                     github_headers = await self._get_github_headers()
                     response = await client.get(
                         url, headers=github_headers, params=params
@@ -60,8 +64,10 @@ class GitHubService:
 
                 return response.json(), headers
 
-        except httpx.HTTPStatusError:
-            raise GhAuthenticationError('Invalid Github token')
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 401:
+                raise GhAuthenticationError('Invalid Github token')
+            raise GHUnknownException('Unknown error')
 
         except httpx.HTTPError:
             raise GHUnknownException('Unknown error')
@@ -78,10 +84,6 @@ class GitHubService:
             name=response.get('name'),
             email=response.get('email'),
         )
-
-    async def validate_user(self, token) -> GitHubUser:
-        self.token = token
-        return await self.get_user()
 
     async def get_repositories(
         self, page: int, per_page: int, sort: str, installation_id: int | None
@@ -134,6 +136,9 @@ class GitHubService:
 
         return repos
 
-    @classmethod
-    def get_gh_token(cls, request: Request) -> str | None:
-        return get_github_token(request)
+
+github_service_cls = os.environ.get(
+    'OPENHANDS_GITHUB_SERVICE_CLS',
+    'openhands.integrations.github.github_service.GitHubService',
+)
+GithubServiceImpl = get_impl(GitHubService, github_service_cls)
