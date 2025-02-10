@@ -139,6 +139,6 @@ class GitHubService:
 
 github_service_cls = os.environ.get(
     'OPENHANDS_GITHUB_SERVICE_CLS',
-    'openhands.services.github.github_service.GitHubService',
+    'openhands.integrations.github.github_service.GitHubService',
 )
 GithubServiceImpl = get_impl(GitHubService, github_service_cls)
