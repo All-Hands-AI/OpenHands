@@ -3,10 +3,10 @@ from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
-from openhands.services.github.github_service import GitHubService
 
 app = APIRouter(prefix='/api')
 
@@ -51,7 +51,9 @@ async def store_settings(
         try:
             # We check if the token is valid by getting the user
             # If the token is invalid, this will raise an exception
-            github = GitHubService(user_id=None, token=SecretStr(settings.github_token))
+            github = GithubServiceImpl(
+                user_id=None, token=SecretStr(settings.github_token)
+            )
             await github.get_user()
 
         except Exception as e:
