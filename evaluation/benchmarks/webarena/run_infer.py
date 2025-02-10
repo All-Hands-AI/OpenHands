@@ -71,6 +71,7 @@ def get_config(
                 'MAP': f'{base_url}:3000',
                 'HOMEPAGE': f'{base_url}:4399',
             },
+            remote_runtime_enable_retries=True,
         ),
         # do not mount workspace
         workspace_base=None,
