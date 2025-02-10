@@ -73,6 +73,7 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
                     # Attempt to cast the env var to type hinted in the dataclass
                     if field_type is bool:
                         cast_value = str(value).lower() in ['true', '1']
+                    # parse dicts like SANDBOX_RUNTIME_STARTUP_ENV_VARS
                     elif get_origin(field_type) is dict:
                         cast_value = literal_eval(value)
                     else:
