@@ -3,6 +3,7 @@ import React from "react";
 import posthog from "posthog-js";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
+import { useConfig } from "#/hooks/query/use-config";
 
 const getSettingsQueryFn = async () => {
   const apiSettings = await OpenHands.getSettings();
@@ -24,10 +25,12 @@ const getSettingsQueryFn = async () => {
 
 export const useSettings = () => {
   const { setGitHubTokenIsSet, githubTokenIsSet } = useAuth();
+  const { data: config } = useConfig();
 
   const query = useQuery({
     queryKey: ["settings", githubTokenIsSet],
     queryFn: getSettingsQueryFn,
+    enabled: config?.APP_MODE !== "saas" || githubTokenIsSet,
     meta: {
       disableToast: true,
     },
