@@ -12,6 +12,7 @@ from openhands.agenthub import (  # noqa: E402
     codeact_agent,
     delegator_agent,
     dummy_agent,
+    proxy_agent,
     visualbrowsing_agent,
 )
 
@@ -21,6 +22,7 @@ __all__ = [
     'dummy_agent',
     'browsing_agent',
     'visualbrowsing_agent',
+    'proxy_agent',
 ]
 
 for agent in all_microagents.values():
