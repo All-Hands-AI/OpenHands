@@ -14,7 +14,6 @@ import { ImageCarousel } from "../features/images/image-carousel";
 import { UploadImageInput } from "../features/images/upload-image-input";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { LoadingSpinner } from "./loading-spinner";
-import { Switch } from "@headlessui/react";
 
 interface TaskFormProps {
   ref: React.RefObject<HTMLFormElement | null>;
@@ -107,9 +106,11 @@ export function TaskForm({ ref }: TaskFormProps) {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-neutral-400">Estimate cost</span>
-          <Switch
-            checked={estimateCost}
-            onChange={setEstimateCost}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={estimateCost}
+            onClick={() => setEstimateCost(!estimateCost)}
             className={cn(
               "relative inline-flex h-6 w-11 items-center rounded-full",
               "transition-colors duration-200 ease-in-out",
@@ -126,7 +127,7 @@ export function TaskForm({ ref }: TaskFormProps) {
                 estimateCost ? "translate-x-6" : "translate-x-1"
               )}
             />
-          </Switch>
+          </button>
         </div>
       </form>
       <UploadImageInput
