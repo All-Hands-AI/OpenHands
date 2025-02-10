@@ -57,7 +57,6 @@ from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
-from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
@@ -126,20 +125,11 @@ class ActionExecutor:
                 f'Setting max memory to {self.max_memory_gb}GB (override by RUNTIME_MAX_MEMORY_GB environment variable)'
             )
 
-        self.memory_monitor = MemoryMonitor(
-            soft_limit_gb=max(0.5, self.max_memory_gb - 0.5),
-            hard_limit_gb=self.max_memory_gb,
-            check_interval=1.0,  # Check every second
-        )
-
     @property
     def initial_cwd(self):
         return self._initial_cwd
 
     async def ainit(self):
-        # Start memory monitoring
-        self.memory_monitor.start_monitoring()
-
         # bash needs to be initialized first
         self.bash_session = BashSession(
             work_dir=self._initial_cwd,
@@ -445,9 +435,6 @@ class ActionExecutor:
         return await browse(action, self.browser)
 
     def close(self):
-        # Stop memory monitoring
-        self.memory_monitor.stop_monitoring()
-
         if self.bash_session is not None:
             self.bash_session.close()
         self.browser.close()
