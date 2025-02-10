@@ -1,4 +1,4 @@
-"""Bash-related tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
+"""Bash-related tests for the DockerRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import os
 import time
@@ -7,14 +7,13 @@ from pathlib import Path
 import pytest
 from conftest import (
     _close_test_runtime,
-    _get_sandbox_folder,
     _load_runtime,
 )
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
-from openhands.runtime.base import Runtime
+from openhands.runtime.impl.local.local_runtime import LocalRuntime
 
 # ============================================================================================================================
 # Bash-specific tests
@@ -31,7 +30,7 @@ def _run_cmd_action(runtime, custom_command: str):
 
 
 def test_bash_command_env(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         obs = runtime.run_action(CmdRunAction(command='env'))
         assert isinstance(
@@ -43,7 +42,7 @@ def test_bash_command_env(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         action = CmdRunAction(command='python3 -m http.server 8080')
         action.set_hard_timeout(1)
@@ -64,7 +63,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 0
         assert 'Keyboard interrupt received, exiting.' in obs.content
-        assert '/workspace' in obs.metadata.working_dir
+        assert config.workspace_mount_path_in_sandbox in obs.metadata.working_dir
 
         action = CmdRunAction(command='ls')
         action.set_hard_timeout(1)
@@ -73,7 +72,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 0
         assert 'Keyboard interrupt received, exiting.' not in obs.content
-        assert '/workspace' in obs.metadata.working_dir
+        assert config.workspace_mount_path_in_sandbox in obs.metadata.working_dir
 
         # run it again!
         action = CmdRunAction(command='python3 -m http.server 8080')
@@ -89,7 +88,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_multiline_commands(temp_dir, runtime_cls):
-    runtime = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
         # single multiline command
         obs = _run_cmd_action(runtime, 'echo \\\n -e "foo"')
@@ -123,7 +122,7 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
     ]
     joined_cmds = '\n'.join(cmds)
 
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # First test that running multiple commands at once fails
         obs = _run_cmd_action(runtime, joined_cmds)
@@ -157,7 +156,7 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
 def test_complex_commands(temp_dir, runtime_cls):
     cmd = """count=0; tries=0; while [ $count -lt 3 ]; do result=$(echo "Heads"); tries=$((tries+1)); echo "Flip $tries: $result"; if [ "$result" = "Heads" ]; then count=$((count+1)); else count=0; fi; done; echo "Got 3 heads in a row after $tries flips!";"""
 
-    runtime = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
         obs = _run_cmd_action(runtime, cmd)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -170,7 +169,7 @@ def test_complex_commands(temp_dir, runtime_cls):
 
 def test_no_ps2_in_output(temp_dir, runtime_cls, run_as_openhands):
     """Test that the PS2 sign is not added to the output of a multiline command."""
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         obs = _run_cmd_action(runtime, 'echo -e "hello\nworld"')
         assert obs.exit_code == 0, 'The exit code should be 0.'
@@ -195,7 +194,7 @@ done && echo "created files"
     mv "$file" "$new_date"
 done && echo "success"
 """
-    runtime = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
         obs = _run_cmd_action(runtime, init_cmd)
         assert obs.exit_code == 0, 'The exit code should be 0.'
@@ -209,9 +208,11 @@ done && echo "success"
 
 
 def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        obs = _run_cmd_action(runtime, 'ls -l /workspace')
+        obs = _run_cmd_action(
+            runtime, f'ls -l {config.workspace_mount_path_in_sandbox}'
+        )
         assert obs.exit_code == 0
 
         obs = _run_cmd_action(runtime, 'ls -l')
@@ -225,6 +226,8 @@ def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
         assert obs.exit_code == 0
         if run_as_openhands:
             assert 'openhands' in obs.content
+        elif runtime_cls == LocalRuntime:
+            assert 'root' not in obs.content and 'openhands' not in obs.content
         else:
             assert 'root' in obs.content
         assert 'test' in obs.content
@@ -246,11 +249,13 @@ def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_run_as_user_correct_home_dir(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         obs = _run_cmd_action(runtime, 'cd ~ && pwd')
         assert obs.exit_code == 0
-        if run_as_openhands:
+        if runtime_cls == LocalRuntime:
+            assert os.getenv('HOME') in obs.content
+        elif run_as_openhands:
             assert '/home/openhands' in obs.content
         else:
             assert '/root' in obs.content
@@ -259,18 +264,18 @@ def test_run_as_user_correct_home_dir(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_multi_cmd_run_in_single_line(temp_dir, runtime_cls):
-    runtime = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
         obs = _run_cmd_action(runtime, 'pwd && ls -l')
         assert obs.exit_code == 0
-        assert '/workspace' in obs.content
+        assert config.workspace_mount_path_in_sandbox in obs.content
         assert 'total 0' in obs.content
     finally:
         _close_test_runtime(runtime)
 
 
 def test_stateful_cmd(temp_dir, runtime_cls):
-    runtime = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
         obs = _run_cmd_action(runtime, 'mkdir -p test')
         assert obs.exit_code == 0, 'The exit code should be 0.'
@@ -280,13 +285,13 @@ def test_stateful_cmd(temp_dir, runtime_cls):
 
         obs = _run_cmd_action(runtime, 'pwd')
         assert obs.exit_code == 0, 'The exit code should be 0.'
-        assert '/workspace/test' in obs.content
+        assert f'{config.workspace_mount_path_in_sandbox}/test' in obs.content
     finally:
         _close_test_runtime(runtime)
 
 
 def test_failed_cmd(temp_dir, runtime_cls):
-    runtime = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
         obs = _run_cmd_action(runtime, 'non_existing_command')
         assert obs.exit_code != 0, 'The exit code should not be 0 for a failed command.'
@@ -301,9 +306,9 @@ def _create_test_file(host_temp_dir):
 
 
 def test_copy_single_file(temp_dir, runtime_cls):
-    runtime = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
-        sandbox_dir = _get_sandbox_folder(runtime)
+        sandbox_dir = config.workspace_mount_path_in_sandbox
         sandbox_file = os.path.join(sandbox_dir, 'test_file.txt')
         _create_test_file(temp_dir)
         runtime.copy_to(os.path.join(temp_dir, 'test_file.txt'), sandbox_dir)
@@ -331,9 +336,9 @@ def _create_host_test_dir_with_files(test_dir):
 
 
 def test_copy_directory_recursively(temp_dir, runtime_cls):
-    runtime = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
 
-    sandbox_dir = _get_sandbox_folder(runtime)
+    sandbox_dir = config.workspace_mount_path_in_sandbox
     try:
         temp_dir_copy = os.path.join(temp_dir, 'test_dir')
         # We need a separate directory, since temp_dir is mounted to /workspace
@@ -360,9 +365,9 @@ def test_copy_directory_recursively(temp_dir, runtime_cls):
 
 
 def test_copy_to_non_existent_directory(temp_dir, runtime_cls):
-    runtime = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
-        sandbox_dir = _get_sandbox_folder(runtime)
+        sandbox_dir = config.workspace_mount_path_in_sandbox
         _create_test_file(temp_dir)
         runtime.copy_to(
             os.path.join(temp_dir, 'test_file.txt'), f'{sandbox_dir}/new_dir'
@@ -376,9 +381,9 @@ def test_copy_to_non_existent_directory(temp_dir, runtime_cls):
 
 
 def test_overwrite_existing_file(temp_dir, runtime_cls):
-    runtime = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
-        sandbox_dir = '/workspace'
+        sandbox_dir = config.workspace_mount_path_in_sandbox
 
         obs = _run_cmd_action(runtime, f'ls -alh {sandbox_dir}')
         assert obs.exit_code == 0
@@ -404,9 +409,9 @@ def test_overwrite_existing_file(temp_dir, runtime_cls):
 
 
 def test_copy_non_existent_file(temp_dir, runtime_cls):
-    runtime = _load_runtime(temp_dir, runtime_cls)
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
-        sandbox_dir = _get_sandbox_folder(runtime)
+        sandbox_dir = config.workspace_mount_path_in_sandbox
         with pytest.raises(FileNotFoundError):
             runtime.copy_to(
                 os.path.join(sandbox_dir, 'non_existent_file.txt'),
@@ -420,8 +425,8 @@ def test_copy_non_existent_file(temp_dir, runtime_cls):
 
 
 def test_copy_from_directory(temp_dir, runtime_cls):
-    runtime: Runtime = _load_runtime(temp_dir, runtime_cls)
-    sandbox_dir = _get_sandbox_folder(runtime)
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
+    sandbox_dir = config.workspace_mount_path_in_sandbox
     try:
         temp_dir_copy = os.path.join(temp_dir, 'test_dir')
         # We need a separate directory, since temp_dir is mounted to /workspace
@@ -441,22 +446,23 @@ def test_copy_from_directory(temp_dir, runtime_cls):
         _close_test_runtime(runtime)
 
 
-def test_git_operation(runtime_cls):
+def test_git_operation(temp_dir, runtime_cls):
     # do not mount workspace, since workspace mount by tests will be owned by root
     # while the user_id we get via os.getuid() is different from root
     # which causes permission issues
-    runtime = _load_runtime(
-        temp_dir=None,
+    runtime, config = _load_runtime(
+        temp_dir=temp_dir,
         use_workspace=False,
         runtime_cls=runtime_cls,
         # Need to use non-root user to expose issues
         run_as_openhands=True,
     )
     # this will happen if permission of runtime is not properly configured
-    # fatal: detected dubious ownership in repository at '/workspace'
+    # fatal: detected dubious ownership in repository at config.workspace_mount_path_in_sandbox
     try:
-        obs = _run_cmd_action(runtime, 'sudo chown -R openhands:root .')
-        assert obs.exit_code == 0
+        if runtime_cls != LocalRuntime:
+            obs = _run_cmd_action(runtime, 'sudo chown -R openhands:root .')
+            assert obs.exit_code == 0
 
         # check the ownership of the current directory
         obs = _run_cmd_action(runtime, 'ls -alh .')
@@ -464,6 +470,9 @@ def test_git_operation(runtime_cls):
         # drwx--S--- 2 openhands root   64 Aug  7 23:32 .
         # drwxr-xr-x 1 root      root 4.0K Aug  7 23:33 ..
         for line in obs.content.split('\n'):
+            if runtime_cls == LocalRuntime:
+                continue  # skip these checks
+
             if ' ..' in line:
                 # parent directory should be owned by root
                 assert 'root' in line
@@ -481,6 +490,19 @@ def test_git_operation(runtime_cls):
         # create a file
         obs = _run_cmd_action(runtime, 'echo "hello" > test_file.txt')
         assert obs.exit_code == 0
+
+        if runtime_cls == LocalRuntime:
+            # set git config author in CI only, not on local machine
+            logger.info('Setting git config author')
+            obs = _run_cmd_action(
+                runtime,
+                'git config --file ./.git_config user.name "openhands" && git config --file ./.git_config user.email "openhands@all-hands.dev"',
+            )
+            assert obs.exit_code == 0
+
+            # Set up git config
+            obs = _run_cmd_action(runtime, 'git config --file ./.git_config')
+            assert obs.exit_code == 0
 
         # git add
         obs = _run_cmd_action(runtime, 'git add test_file.txt')
@@ -500,7 +522,7 @@ def test_git_operation(runtime_cls):
 
 
 def test_python_version(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         obs = runtime.run_action(CmdRunAction(command='python --version'))
 
@@ -514,7 +536,7 @@ def test_python_version(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_pwd_property(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a subdirectory and verify pwd updates
         obs = _run_cmd_action(runtime, 'mkdir -p random_dir')
@@ -528,7 +550,7 @@ def test_pwd_property(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_basic_command(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Test simple command
         obs = _run_cmd_action(runtime, "echo 'hello world'")
@@ -556,7 +578,7 @@ def test_basic_command(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_interactive_command(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(
+    runtime, config = _load_runtime(
         temp_dir,
         runtime_cls,
         run_as_openhands,
@@ -592,7 +614,7 @@ EOF""")
 
 
 def test_long_output(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Generate a long output
         action = CmdRunAction('for i in $(seq 1 5000); do echo "Line $i"; done')
@@ -606,7 +628,7 @@ def test_long_output(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_long_output_exceed_history_limit(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Generate a long output
         action = CmdRunAction('for i in $(seq 1 50000); do echo "Line $i"; done')
@@ -622,7 +644,7 @@ def test_long_output_exceed_history_limit(temp_dir, runtime_cls, run_as_openhand
 
 
 def test_long_output_from_nested_directories(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create nested directories with many files
         setup_cmd = 'mkdir -p /tmp/test_dir && cd /tmp/test_dir && for i in $(seq 1 100); do mkdir -p "folder_$i"; for j in $(seq 1 100); do touch "folder_$i/file_$j.txt"; done; done'
@@ -647,7 +669,7 @@ def test_long_output_from_nested_directories(temp_dir, runtime_cls, run_as_openh
 
 
 def test_command_backslash(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a file with the content "implemented_function"
         action = CmdRunAction(
@@ -674,7 +696,7 @@ def test_command_backslash(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Start a command that produces output slowly
         action = CmdRunAction('for i in {1..5}; do echo $i; sleep 3; done')
@@ -714,7 +736,7 @@ def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
 def test_long_running_command_follow_by_execute(
     temp_dir, runtime_cls, run_as_openhands
 ):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Test command that produces output slowly
         action = CmdRunAction('for i in {1..3}; do echo $i; sleep 3; done')
@@ -755,7 +777,7 @@ def test_long_running_command_follow_by_execute(
 
 
 def test_empty_command_errors(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Test empty command without previous command
         obs = runtime.run_action(CmdRunAction(''))
@@ -768,7 +790,7 @@ def test_empty_command_errors(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_python_interactive_input(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Test Python program that asks for input - properly escaped for bash
         python_script = """name = input('Enter your name: '); age = input('Enter your age: '); print(f'Hello {name}, you are {age} years old')"""
@@ -798,7 +820,7 @@ def test_python_interactive_input(temp_dir, runtime_cls, run_as_openhands):
 def test_python_interactive_input_without_set_input(
     temp_dir, runtime_cls, run_as_openhands
 ):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Test Python program that asks for input - properly escaped for bash
         python_script = """name = input('Enter your name: '); age = input('Enter your age: '); print(f'Hello {name}, you are {age} years old')"""
@@ -837,7 +859,7 @@ def test_python_interactive_input_without_set_input(
 def test_stress_long_output_with_soft_and_hard_timeout(
     temp_dir, runtime_cls, run_as_openhands
 ):
-    runtime = _load_runtime(
+    runtime, config = _load_runtime(
         temp_dir,
         runtime_cls,
         run_as_openhands,
@@ -925,7 +947,7 @@ def test_stress_long_output_with_soft_and_hard_timeout(
 
 
 def test_bash_remove_prefix(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # create a git repo
         action = CmdRunAction(

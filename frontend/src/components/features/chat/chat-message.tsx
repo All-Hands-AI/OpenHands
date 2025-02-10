@@ -58,7 +58,7 @@ export function ChatMessage({
         mode={isCopy ? "copied" : "copy"}
       />
       <Markdown
-        className="text-sm overflow-auto"
+        className="text-sm overflow-auto break-words"
         components={{
           code,
           ul,
