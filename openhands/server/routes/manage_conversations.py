@@ -4,7 +4,7 @@ from typing import Callable
 
 from fastapi import APIRouter, Body, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
@@ -44,7 +44,7 @@ class InitSessionRequest(BaseModel):
 
 async def _create_new_conversation(
     user_id: str | None,
-    token: str | None,
+    token: SecretStr | None,
     selected_repository: str | None,
     initial_user_msg: str | None,
     image_urls: list[str] | None,
@@ -72,7 +72,7 @@ async def _create_new_conversation(
         logger.warn('Settings not present, not starting conversation')
         raise MissingSettingsError('Settings not found')
 
-    session_init_args['github_token'] = token or ''
+    session_init_args['github_token'] = token or SecretStr('')
     session_init_args['selected_repository'] = selected_repository
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')

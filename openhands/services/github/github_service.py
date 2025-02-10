@@ -2,6 +2,7 @@ import os
 from typing import Any
 
 import httpx
+from pydantic import SecretStr
 
 from openhands.services.github.github_types import (
     GhAuthenticationError,
@@ -14,32 +15,32 @@ from openhands.utils.import_utils import get_impl
 
 class GitHubService:
     BASE_URL = 'https://api.github.com'
-    token: str = ''
+    token: SecretStr = SecretStr('')
     refresh = False
 
-    def __init__(self, user_id: str | None = None, token: str | None = None):
+    def __init__(self, user_id: str | None = None, token: SecretStr | None = None):
         self.user_id = user_id
 
         if token:
             self.token = token
 
-    async def _get_github_headers(self):
+    async def _get_github_headers(self) -> dict:
         """
         Retrieve the GH Token from settings store to construct the headers
         """
 
-        if not self.token and self.user_id:
+        if self.user_id and not self.token:
             self.token = await self.get_latest_token()
 
         return {
-            'Authorization': f'Bearer {self.token}',
+            'Authorization': f'Bearer {self.token.get_secret_value()}',
             'Accept': 'application/vnd.github.v3+json',
         }
 
-    def _has_token_expired(self, status_code: int):
+    def _has_token_expired(self, status_code: int) -> bool:
         return status_code == 401
 
-    async def get_latest_token(self) -> str:
+    async def get_latest_token(self) -> SecretStr:
         return self.token
 
     async def _fetch_data(
@@ -63,8 +64,10 @@ class GitHubService:
 
                 return response.json(), headers
 
-        except httpx.HTTPStatusError:
-            raise GhAuthenticationError('Invalid Github token')
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 401:
+                raise GhAuthenticationError('Invalid Github token')
+            raise GHUnknownException('Unknown error')
 
         except httpx.HTTPError:
             raise GHUnknownException('Unknown error')
@@ -81,10 +84,6 @@ class GitHubService:
             name=response.get('name'),
             email=response.get('email'),
         )
-
-    async def validate_user(self, token) -> GitHubUser:
-        self.token = token
-        return await self.get_user()
 
     async def get_repositories(
         self, page: int, per_page: int, sort: str, installation_id: int | None

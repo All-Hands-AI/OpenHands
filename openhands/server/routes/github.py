@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
+from pydantic import SecretStr
 
 from openhands.server.auth import get_github_token, get_user_id
 from openhands.services.github.github_service import GithubServiceImpl
@@ -20,7 +21,7 @@ async def get_github_repositories(
     sort: str = 'pushed',
     installation_id: int | None = None,
     github_user_id: str | None = Depends(get_user_id),
-    github_user_token: str | None = Depends(get_github_token),
+    github_user_token: SecretStr | None = Depends(get_github_token),
 ):
     client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
     try:
@@ -45,7 +46,7 @@ async def get_github_repositories(
 @app.get('/user')
 async def get_github_user(
     github_user_id: str | None = Depends(get_user_id),
-    github_user_token: str | None = Depends(get_github_token),
+    github_user_token: SecretStr | None = Depends(get_github_token),
 ):
     client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
     try:
@@ -68,7 +69,7 @@ async def get_github_user(
 @app.get('/installations')
 async def get_github_installation_ids(
     github_user_id: str | None = Depends(get_user_id),
-    github_user_token: str | None = Depends(get_github_token),
+    github_user_token: SecretStr | None = Depends(get_github_token),
 ):
     client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
     try:
@@ -95,7 +96,7 @@ async def search_github_repositories(
     sort: str = 'stars',
     order: str = 'desc',
     github_user_id: str | None = Depends(get_user_id),
-    github_user_token: str | None = Depends(get_github_token),
+    github_user_token: SecretStr | None = Depends(get_github_token),
 ):
     client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
     try:
