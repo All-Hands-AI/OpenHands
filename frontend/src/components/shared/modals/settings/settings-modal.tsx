@@ -4,14 +4,13 @@ import { I18nKey } from "#/i18n/declaration";
 import { LoadingSpinner } from "../../loading-spinner";
 import { ModalBackdrop } from "../modal-backdrop";
 import { SettingsForm } from "./settings-form";
-import { Settings } from "#/types/settings";
+import { DEFAULT_SETTINGS } from "#/services/settings";
 
 interface SettingsModalProps {
-  settings: Settings;
   onClose: () => void;
 }
 
-export function SettingsModal({ onClose, settings }: SettingsModalProps) {
+export function SettingsModal({ onClose }: SettingsModalProps) {
   const aiConfigOptions = useAIConfigOptions();
   const { t } = useTranslation();
 
@@ -19,7 +18,7 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
     <ModalBackdrop onClose={onClose}>
       <div
         data-testid="ai-config-modal"
-        className="bg-root-primary min-w-[384px] max-w-[700px] p-6 rounded-xl flex flex-col gap-2"
+        className="bg-root-primary min-w-[384px] p-6 rounded-xl flex flex-col gap-2"
       >
         {aiConfigOptions.error && (
           <p className="text-danger text-xs">{aiConfigOptions.error.message}</p>
@@ -30,7 +29,6 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
         <p className="text-xs text-[#A3A3A3]">
           {t(I18nKey.SETTINGS$DESCRIPTION)}
         </p>
-        <p className="text-xs text-danger">{t(I18nKey.SETTINGS$WARNING)}</p>
         {aiConfigOptions.isLoading && (
           <div className="flex justify-center">
             <LoadingSpinner size="small" />
@@ -38,7 +36,7 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
         )}
         {aiConfigOptions.data && (
           <SettingsForm
-            settings={settings}
+            settings={DEFAULT_SETTINGS}
             models={aiConfigOptions.data?.models}
             agents={aiConfigOptions.data?.agents}
             securityAnalyzers={aiConfigOptions.data?.securityAnalyzers}

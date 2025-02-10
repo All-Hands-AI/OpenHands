@@ -1,10 +1,20 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { BrandButton } from "#/components/features/settings/brand-button";
 
 describe("BrandButton", () => {
   const onClickMock = vi.fn();
+
+  it("should set a test id", () => {
+    render(
+      <BrandButton testId="brand-button" type="button" variant="primary">
+        Test Button
+      </BrandButton>,
+    );
+
+    expect(screen.getByTestId("brand-button")).toBeInTheDocument();
+  });
 
   it("should call onClick when clicked", async () => {
     const user = userEvent.setup();

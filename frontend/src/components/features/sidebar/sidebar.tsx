@@ -30,7 +30,6 @@ export function Sidebar() {
   const user = useGitHubUser();
   const { data: config } = useConfig();
   const {
-    data: settings,
     error: settingsError,
     isError: settingsIsError,
     isFetching: isFetchingSettings,
@@ -54,6 +53,8 @@ export function Sidebar() {
       toast.error(
         "Something went wrong while fetching settings. Please reload the page.",
       );
+    } else if (settingsError?.status === 404) {
+      setSettingsModalIsOpen(true);
     }
   }, [settingsError?.status, settingsError, isFetchingSettings]);
 
@@ -120,11 +121,8 @@ export function Sidebar() {
         )}
       </aside>
 
-      {(settingsError?.status === 404 || settingsModalIsOpen) && settings && (
-        <SettingsModal
-          settings={settings}
-          onClose={() => setSettingsModalIsOpen(false)}
-        />
+      {settingsModalIsOpen && (
+        <SettingsModal onClose={() => setSettingsModalIsOpen(false)} />
       )}
     </>
   );

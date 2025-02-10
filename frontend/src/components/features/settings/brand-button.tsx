@@ -1,6 +1,7 @@
 import { cn } from "#/utils/utils";
 
 interface BrandButtonProps {
+  testId?: string;
   variant: "primary" | "secondary";
   type: React.ButtonHTMLAttributes<HTMLButtonElement>["type"];
   className?: string;
@@ -8,6 +9,7 @@ interface BrandButtonProps {
 }
 
 export function BrandButton({
+  testId,
   children,
   variant,
   type,
@@ -16,6 +18,7 @@ export function BrandButton({
 }: React.PropsWithChildren<BrandButtonProps>) {
   return (
     <button
+      data-testid={testId}
       // The type is alreadt passed as a prop to the button component
       // eslint-disable-next-line react/button-has-type
       type={type}

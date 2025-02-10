@@ -1,4 +1,4 @@
-import { useLocation } from "react-router";
+import { Link, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import React from "react";
 import posthog from "posthog-js";
@@ -25,6 +25,7 @@ import { useConfig } from "#/hooks/query/use-config";
 import { useCurrentSettings } from "#/context/settings-context";
 import { MEMORY_CONDENSER } from "#/utils/feature-flags";
 import { Settings } from "#/types/settings";
+import { BrandButton } from "#/components/features/settings/brand-button";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -145,6 +146,15 @@ export function SettingsForm({
         onSubmit={handleSubmit}
       >
         <div className="flex flex-col gap-2">
+          <Link to="/settings" onClick={onClose}>
+            <BrandButton
+              testId="advanced-settings-button"
+              type="button"
+              variant="secondary"
+            >
+              Advanced Settings
+            </BrandButton>
+          </Link>
           <AdvancedOptionSwitch
             isDisabled={!!disabled}
             showAdvancedOptions={showAdvancedOptions}

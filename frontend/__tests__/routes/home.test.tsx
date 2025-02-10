@@ -56,9 +56,8 @@ describe("Home Screen", () => {
     expect(settingsScreen).toBeInTheDocument();
   });
 
-  it.todo(
-    "should open the settings modal if GET /settings fails with a 404",
-    async () => {
+  describe("Settings 404", () => {
+    it("should open the settings modal if GET /settings fails with a 404", async () => {
       const error = new AxiosError(
         "Request failed with status code 404",
         "ERR_BAD_REQUEST",
@@ -80,6 +79,43 @@ describe("Home Screen", () => {
 
       const settingsModal = await screen.findByTestId("ai-config-modal");
       expect(settingsModal).toBeInTheDocument();
-    },
-  );
+    });
+
+    // We don't return default settings if there is a 404, so the settings screen errors]
+    // after navigating to it
+    it.skip("should navigate to the settings screen when clicking the advanced settings button", async () => {
+      const error = new AxiosError(
+        "Request failed with status code 404",
+        "ERR_BAD_REQUEST",
+        undefined,
+        undefined,
+        {
+          status: 404,
+          statusText: "Not Found",
+          data: { message: "Settings not found" },
+          headers: {},
+          // @ts-expect-error - we only need the response object for this test
+          config: {},
+        },
+      );
+
+      vi.spyOn(OpenHands, "getSettings").mockRejectedValue(error);
+
+      const user = userEvent.setup();
+      renderWithProviders(<RouterStub initialEntries={["/"]} />);
+
+      const settingsModal = await screen.findByTestId("ai-config-modal");
+      expect(settingsModal).toBeInTheDocument();
+
+      const advancedSettingsButton = await screen.findByTestId(
+        "advanced-settings-button",
+      );
+      await user.click(advancedSettingsButton);
+
+      expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
+
+      const settingsScreen = await screen.findByTestId("settings-screen");
+      expect(settingsScreen).toBeInTheDocument();
+    });
+  });
 });
