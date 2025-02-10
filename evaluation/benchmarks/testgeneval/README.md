@@ -4,7 +4,12 @@ This folder contains the evaluation harness for the TestGenEval benchmark, which
 
 ## Setup Environment and LLM Configuration
 
-Please follow the instructions [here](../../README.md#setup) to set up your local development environment and configure your LLM.
+1. Follow the instructions [here](../../README.md#setup) to set up your local development environment and configure your LLM.
+
+2. Install the TestGenEval dependencies:
+```bash
+poetry install --with testgeneval
+```
 
 ## Run Inference
 
