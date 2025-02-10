@@ -55,7 +55,7 @@ class ActionExecutionClient(Runtime):
         status_callback: Any | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
-        user_id: str | None = None,
+        github_user_id: str | None = None,
     ):
         self.session = HttpSession()
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
@@ -71,7 +71,7 @@ class ActionExecutionClient(Runtime):
             status_callback,
             attach_to_existing,
             headless_mode,
-            user_id,
+            github_user_id,
         )
 
     @abstractmethod

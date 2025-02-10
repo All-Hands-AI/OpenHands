@@ -50,7 +50,7 @@ class AgentSession:
         sid: str,
         file_store: FileStore,
         status_callback: Optional[Callable] = None,
-        user_id: str | None = None,
+        github_user_id: str | None = None,
     ):
         """Initializes a new instance of the Session class
 
@@ -63,7 +63,7 @@ class AgentSession:
         self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
         self._status_callback = status_callback
-        self.user_id = user_id
+        self.github_user_id = github_user_id
 
     async def start(
         self,
@@ -208,7 +208,7 @@ class AgentSession:
 
         kwargs = {}
         if runtime_cls == RemoteRuntime:
-            kwargs['user_id'] = self.user_id
+            kwargs['github_user_id'] = self.github_user_id
 
         self.runtime = runtime_cls(
             config=config,
