@@ -156,6 +156,36 @@ describe("Settings Screen", () => {
         expect(helpAnchor).not.toBeInTheDocument();
       });
     });
+
+    it.skip("should not reset LLM Provider and Model if GitHub token is invalid", async () => {
+      const user = userEvent.setup();
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        github_token_is_set: false,
+        llm_model: "anthropic/claude-3-5-sonnet-20241022",
+      });
+      saveSettingsSpy.mockRejectedValueOnce(new Error("Invalid GitHub token"));
+
+      renderSettingsScreen();
+
+      let llmProviderInput = await screen.findByTestId("llm-provider-input");
+      let llmModelInput = await screen.findByTestId("llm-model-input");
+
+      expect(llmProviderInput).toHaveValue("Anthropic");
+      expect(llmModelInput).toHaveValue("claude-3-5-sonnet-20241022");
+
+      const input = await screen.findByTestId("github-token-input");
+      await user.type(input, "invalid-token");
+
+      const saveButton = screen.getByText("Save Changes");
+      await user.click(saveButton);
+
+      llmProviderInput = await screen.findByTestId("llm-provider-input");
+      llmModelInput = await screen.findByTestId("llm-model-input");
+
+      expect(llmProviderInput).toHaveValue("Anthropic");
+      expect(llmModelInput).toHaveValue("claude-3-5-sonnet-20241022");
+    });
   });
 
   describe("LLM Settings", () => {
