@@ -189,6 +189,9 @@ async def process_issue(
         shutil.rmtree(workspace_base)
     shutil.copytree(os.path.join(output_dir, 'repo'), workspace_base)
 
+    # This code looks unnecessary because these are default values in the config class
+    # they're set by default if nothing else overrides them
+    # FIXME we should remove them here
     local_runtime_url = os.getenv('LOCAL_RUNTIME_URL', 'http://localhost')
     user_id = os.getuid() if hasattr(os, 'getuid') else 1000
     if user_id == 0:
