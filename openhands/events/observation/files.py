@@ -53,12 +53,11 @@ class FileEditObservation(Observation):
     """
 
     path: str
-    prev_exist: bool
-    old_content: str
-    new_content: str
+    prev_exist: bool = False
+    old_content: str | None = None
+    new_content: str | None = None
     observation: str = ObservationType.EDIT
     impl_source: FileEditSource = FileEditSource.LLM_BASED_EDIT
-    formatted_output_and_error: str = ''
     _diff_cache: str | None = None  # Cache for the diff visualization
 
     @property
@@ -75,6 +74,8 @@ class FileEditObservation(Observation):
         Returns:
             A list of edit groups, where each group contains before/after edits.
         """
+        if self.old_content is None or self.new_content is None:
+            return []
         old_lines = self.old_content.split('\n')
         new_lines = self.new_content.split('\n')
         # Borrowed from difflib.unified_diff to directly parse into structured format
@@ -173,7 +174,7 @@ class FileEditObservation(Observation):
     def __str__(self) -> str:
         """Get a string representation of the file edit observation."""
         if self.impl_source == FileEditSource.OH_ACI:
-            return self.formatted_output_and_error
+            return self.content
 
         if not self.prev_exist:
             assert (

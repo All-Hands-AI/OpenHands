@@ -277,20 +277,6 @@ StrReplaceEditorTool = ChatCompletionToolParam(
     ),
 )
 
-def translate_str_replace_editor_to_edit_action(tool_call_result):
-    return FileEditAction(
-        path=tool_call_result['path'],
-        command=tool_call_result['command'],
-        file_text=tool_call_result.get('file_text'),
-        old_str=tool_call_result.get('old_str'),
-        new_str=tool_call_result.get('new_str'),
-        insert_line=tool_call_result.get('insert_line'),
-        view_range=tool_call_result.get('view_range'),
-        content=tool_call_result.get('content'),
-        start=tool_call_result.get('start', 1),
-        end=tool_call_result.get('end', -1)
-    )
-
 
 _WEB_DESCRIPTION = """Read (convert to markdown) content from a webpage. You should prefer using the `web_read` tool over the `browser` tool, but do use the `browser` tool if you need to interact with a webpage (e.g., click a button, fill out a form, etc.).
 
@@ -566,15 +552,14 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 if arguments['command'] == 'view':
                     action = FileReadAction(
                         path=arguments['path'],
-                        translated_ipython_code=code,
                         impl_source=FileReadSource.OH_ACI,
+                        view_range=arguments.get('view_range', None),
                     )
                 else:
                     action = FileEditAction(
                         path=arguments['path'],
-                        content='',  # dummy value -- we don't need it
-                        translated_ipython_code=code,
                         impl_source=FileEditSource.OH_ACI,
+                        **arguments,
                     )
             elif tool_call.function.name == 'browser':
                 if 'code' not in arguments:

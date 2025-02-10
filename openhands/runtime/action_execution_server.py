@@ -9,10 +9,8 @@ import argparse
 import asyncio
 import base64
 import io
-import json
 import mimetypes
 import os
-import re
 import shutil
 import tempfile
 import time
@@ -25,7 +23,9 @@ from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import APIKeyHeader
-from openhands_aci.utils.diff import get_diff
+from openhands_aci.editor.editor import OHEditor
+from openhands_aci.editor.exceptions import ToolError
+from openhands_aci.editor.results import ToolResult
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
@@ -51,7 +51,6 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     Observation,
 )
-from openhands_aci.editor import file_editor
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
@@ -105,6 +104,7 @@ class ActionExecutor:
         self.bash_session: BashSession | None = None
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
+        self.file_editor = OHEditor()
         self.browser = BrowserEnv(browsergym_eval_env)
         self.start_time = time.time()
         self.last_execution_time = self.start_time
@@ -223,65 +223,6 @@ class ActionExecutor:
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             obs.content = obs.content.rstrip()
-            matches = re.findall(
-                r'<oh_aci_output_[0-9a-f]{32}>(.*?)</oh_aci_output_[0-9a-f]{32}>',
-                obs.content,
-                re.DOTALL,
-            )
-            if matches:
-                results: list[str] = []
-                if len(matches) == 1:
-                    # Use specific actions/observations types
-                    match = matches[0]
-                    try:
-                        result_dict = json.loads(match)
-                        if result_dict.get('path'):  # Successful output
-                            if (
-                                result_dict['new_content'] is not None
-                            ):  # File edit commands
-                                diff = get_diff(
-                                    old_contents=result_dict['old_content']
-                                    or '',  # old_content is None when file is created
-                                    new_contents=result_dict['new_content'],
-                                    filepath=result_dict['path'],
-                                )
-                                return FileEditObservation(
-                                    content=diff,
-                                    path=result_dict['path'],
-                                    old_content=result_dict['old_content'],
-                                    new_content=result_dict['new_content'],
-                                    prev_exist=result_dict['prev_exist'],
-                                    impl_source=FileEditSource.OH_ACI,
-                                    formatted_output_and_error=result_dict[
-                                        'formatted_output_and_error'
-                                    ],
-                                )
-                            else:  # File view commands
-                                return FileReadObservation(
-                                    content=result_dict['formatted_output_and_error'],
-                                    path=result_dict['path'],
-                                    impl_source=FileReadSource.OH_ACI,
-                                )
-                        else:  # Error output
-                            results.append(result_dict['formatted_output_and_error'])
-                    except json.JSONDecodeError:
-                        # Handle JSON decoding errors if necessary
-                        results.append(
-                            f"Invalid JSON in 'openhands-aci' output: {match}"
-                        )
-                else:
-                    for match in matches:
-                        try:
-                            result_dict = json.loads(match)
-                            results.append(result_dict['formatted_output_and_error'])
-                        except json.JSONDecodeError:
-                            # Handle JSON decoding errors if necessary
-                            results.append(
-                                f"Invalid JSON in 'openhands-aci' output: {match}"
-                            )
-
-                # Combine the results (e.g., join them) or handle them as required
-                obs.content = '\n'.join(str(result) for result in results)
 
             if action.include_extra:
                 obs.content += (
@@ -303,11 +244,27 @@ class ActionExecutor:
     async def read(self, action: FileReadAction) -> Observation:
         assert self.bash_session is not None
         if action.impl_source == FileReadSource.OH_ACI:
-            return await self.run_ipython(
-                IPythonRunCellAction(
-                    code=action.translated_ipython_code,
-                    include_extra=False,
+            result: ToolResult | None = None
+            try:
+                result = self.file_editor(
+                    command='view',
+                    path=action.path,
+                    view_range=action.view_range,
                 )
+            except ToolError as e:
+                result = ToolResult(error=e.message)
+            result_str = ''
+            if result.error:
+                result_str = f'ERROR:\n{result.error}'
+            else:
+                result_str = result.output
+                if not result_str:
+                    logger.warning(f'No output from file_editor for {action.path}')
+
+            return FileReadObservation(
+                content=result_str,
+                path=action.path,
+                impl_source=FileReadSource.OH_ACI,
             )
 
         # NOTE: the client code is running inside the sandbox,
@@ -382,61 +339,6 @@ class ActionExecutor:
                         new_file = insert_lines(
                             insert, all_lines, action.start, action.end
                         )
-
-    async def edit(self, action: FileEditAction) -> Observation:
-        assert self.bash_session is not None
-        working_dir = self.bash_session.cwd
-        filepath = self._resolve_path(action.path, working_dir)
-
-        try:
-            # Translate the action to the format expected by file_editor
-            editor_action = {
-                'command': action.command,
-                'path': filepath,
-            }
-            
-            if action.command == 'view':
-                if hasattr(action, 'view_range'):
-                    editor_action['view_range'] = action.view_range
-            elif action.command == 'create':
-                editor_action['file_text'] = action.file_text
-            elif action.command == 'str_replace':
-                editor_action['old_str'] = action.old_str
-                editor_action['new_str'] = action.new_str
-            elif action.command == 'insert':
-                editor_action['insert_line'] = action.insert_line
-                editor_action['new_str'] = action.new_str
-            elif action.command == 'write':
-                editor_action['content'] = action.content
-                if hasattr(action, 'start'):
-                    editor_action['start'] = action.start
-                if hasattr(action, 'end'):
-                    editor_action['end'] = action.end
-
-            # Call the file_editor function
-            result = file_editor(**editor_action)
-
-            # Convert the result to the appropriate Observation type
-            if action.command == 'view':
-                return FileReadObservation(path=filepath, content=result['formatted_output_and_error'])
-            elif action.command in ['create', 'write']:
-                return FileWriteObservation(path=filepath, content=result['formatted_output_and_error'])
-            elif action.command in ['str_replace', 'insert']:
-                return FileEditObservation(
-                    path=filepath,
-                    old_content=result['old_content'],
-                    new_content=result['new_content'],
-                    content=get_diff(result['old_content'], result['new_content'], filepath),
-                    prev_exist=result['prev_exist'],
-                    impl_source=FileEditSource.OH_ACI
-                )
-            else:
-                return ErrorObservation(f"Invalid command: {action.command}")
-
-        except FileNotFoundError:
-            return ErrorObservation(f"File not found: {filepath}")
-        except Exception as e:
-            return ErrorObservation(f"Error: {str(e)}")
                     else:
                         new_file = [i + '\n' for i in insert]
 
@@ -468,6 +370,39 @@ class ActionExecutor:
         except PermissionError:
             return ErrorObservation(f'Malformed paths not permitted: {filepath}')
         return FileWriteObservation(content='', path=filepath)
+
+    async def edit(self, action: FileEditAction) -> Observation:
+        assert action.impl_source == FileEditSource.OH_ACI
+        result: ToolResult | None = None
+        try:
+            result = self.file_editor(
+                command=action.command,
+                path=action.path,
+                file_text=action.file_text,
+                view_range=action.view_range,
+                old_str=action.old_str,
+                new_str=action.new_str,
+                insert_line=action.insert_line,
+                enable_linting=False,
+            )
+        except ToolError as e:
+            result = ToolResult(error=e.message)
+
+        result_str = ''
+        if result.error:
+            result_str = f'ERROR:\n{result.error}'
+        else:
+            result_str = result.output
+            if not result_str:
+                logger.warning(f'No output from file_editor for {action.path}')
+
+        return FileEditObservation(
+            content=result_str,
+            path=action.path,
+            old_content=action.old_str,
+            new_content=action.new_str,
+            impl_source=FileEditSource.OH_ACI,
+        )
 
     async def browse(self, action: BrowseURLAction) -> Observation:
         return await browse(action, self.browser)
