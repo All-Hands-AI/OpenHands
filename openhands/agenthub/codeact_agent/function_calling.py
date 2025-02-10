@@ -540,19 +540,24 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     raise FunctionCallValidationError(
                         f'Missing required argument "path" in tool call {tool_call.function.name}'
                     )
+                path = arguments['path']
+                command = arguments['command']
+                other_kwargs = {
+                    k: v for k, v in arguments.items() if k not in ['command', 'path']
+                }
 
-                if arguments['command'] == 'view':
+                if command == 'view':
                     action = FileReadAction(
-                        path=arguments['path'],
+                        path=path,
                         impl_source=FileReadSource.OH_ACI,
-                        view_range=arguments.get('view_range', None),
+                        view_range=other_kwargs.get('view_range', None),
                     )
                 else:
                     action = FileEditAction(
-                        path=arguments['path'],
-                        command=arguments['command'],
+                        path=path,
+                        command=command,
                         impl_source=FileEditSource.OH_ACI,
-                        **{k: v for k, v in arguments.items() if k != 'command'},
+                        **other_kwargs,
                     )
             elif tool_call.function.name == 'browser':
                 if 'code' not in arguments:
