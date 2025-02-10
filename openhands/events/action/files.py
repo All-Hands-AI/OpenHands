@@ -62,10 +62,35 @@ class FileWriteAction(Action):
 class FileEditAction(Action):
     """Edits a file using various commands including view, create, str_replace, insert, and undo_edit.
 
-    Can be set to edit specific lines using start and end (1-index, inclusive) if the file is too long.
-    Default lines 1:-1 (whole file).
+    This class supports two main modes of operation:
+    1. LLM-based editing (impl_source = FileEditSource.LLM_BASED_EDIT)
+    2. ACI-based editing (impl_source = FileEditSource.OH_ACI)
 
-    If start is set to -1, the FileEditAction will simply append the content to the file.
+    Attributes:
+        path (str): The path to the file being edited.
+        command (str): The editing command to be performed (view, create, str_replace, insert, undo_edit, write).
+        content (str): The content to be written or edited in the file (used in LLM-based editing and 'write' command).
+        start (int): The starting line for editing (1-indexed, inclusive). Default is 1.
+        end (int): The ending line for editing (1-indexed, inclusive). Default is -1 (end of file).
+        thought (str): The reasoning behind the edit action.
+        action (str): The type of action being performed (always ActionType.EDIT).
+        runnable (bool): Indicates if the action can be executed (always True).
+        security_risk (ActionSecurityRisk | None): Indicates any security risks associated with the action.
+        impl_source (FileEditSource): The source of the implementation (LLM_BASED_EDIT or OH_ACI).
+        translated_ipython_code (str): The translated IPython code for the edit action (used in OH_ACI mode).
+        file_text (str): The content of the file to be created (used with 'create' command in OH_ACI mode).
+        old_str (str): The string to be replaced (used with 'str_replace' command in OH_ACI mode).
+        new_str (str): The string to replace old_str (used with 'str_replace' and 'insert' commands in OH_ACI mode).
+        insert_line (int): The line number after which to insert new_str (used with 'insert' command in OH_ACI mode).
+        view_range (list[int]): The range of lines to view (used with 'view' command in OH_ACI mode).
+
+    Usage:
+        - For LLM-based editing: Use path, content, start, and end attributes.
+        - For ACI-based editing: Use path, command, and the appropriate attributes for the specific command.
+
+    Note:
+        - If start is set to -1 in LLM-based editing, the content will be appended to the file.
+        - The 'write' command behaves similarly to LLM-based editing, using content, start, and end attributes.
     """
 
     path: str
