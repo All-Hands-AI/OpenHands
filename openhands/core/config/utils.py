@@ -3,6 +3,7 @@ import os
 import pathlib
 import platform
 import sys
+from ast import literal_eval
 from types import UnionType
 from typing import Any, MutableMapping, get_args, get_origin
 from uuid import uuid4
@@ -72,6 +73,8 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
                     # Attempt to cast the env var to type hinted in the dataclass
                     if field_type is bool:
                         cast_value = str(value).lower() in ['true', '1']
+                    elif get_origin(field_type) is dict:
+                        cast_value = literal_eval(value)
                     else:
                         cast_value = field_type(value)
                     setattr(sub_config, field_name, cast_value)
