@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 import tempfile
 import time
 from functools import partial
@@ -27,6 +28,7 @@ from evaluation.utils.shared import (
 )
 from openhands.core.config import (
     AppConfig,
+    LLMConfig,
     SandboxConfig,
     get_parser,
 )
@@ -90,6 +92,7 @@ def get_config(metadata: EvalMetadata, instance: pd.Series) -> AppConfig:
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             remote_runtime_init_timeout=3600,
+            remote_runtime_api_timeout=120,
             remote_runtime_resource_factor=get_instance_resource_factor(
                 dataset_name=metadata.dataset,
                 instance_id=instance['instance_id'],
@@ -415,13 +418,17 @@ if __name__ == '__main__':
     else:
         # Initialize with a dummy metadata when file doesn't exist
         metadata = EvalMetadata(
-            agent_class="dummy_agent",  # Placeholder agent class
-            llm_config=LLMConfig(model="dummy_model"),  # Minimal LLM config
+            agent_class='dummy_agent',  # Placeholder agent class
+            llm_config=LLMConfig(model='dummy_model'),  # Minimal LLM config
             max_iterations=1,  # Minimal iterations
-            eval_output_dir=os.path.dirname(args.input_file),  # Use input file dir as output dir
+            eval_output_dir=os.path.dirname(
+                args.input_file
+            ),  # Use input file dir as output dir
             start_time=time.strftime('%Y-%m-%d %H:%M:%S'),  # Current time
-            git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8').strip(),  # Current commit
-            dataset=args.dataset  # Dataset name from args
+            git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+            .decode('utf-8')
+            .strip(),  # Current commit
+            dataset=args.dataset,  # Dataset name from args
         )
 
     # The evaluation harness constrains the signature of `process_instance_func` but we need to

@@ -23,6 +23,7 @@ from litellm.exceptions import (
     InternalServerError,
     RateLimitError,
     ServiceUnavailableError,
+    Timeout,
 )
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
@@ -49,6 +50,7 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
     InternalServerError,
     RateLimitError,
     ServiceUnavailableError,
+    Timeout,
 )
 
 # cache prompt supporting models

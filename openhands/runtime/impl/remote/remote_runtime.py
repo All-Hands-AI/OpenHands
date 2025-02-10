@@ -384,7 +384,7 @@ class RemoteRuntime(ActionExecutionClient):
         try:
             kwargs['timeout'] = self.config.sandbox.remote_runtime_api_timeout
             return send_request(self.session, method, url, **kwargs)
-        except requests.Timeout:
+        except (requests.exceptions.ReadTimeout, requests.Timeout):
             self.log(
                 'error',
                 f'No response received within the timeout period for url: {url}',
