@@ -184,10 +184,7 @@ class ActionExecutor:
         async with self.lock:
             action_type = action.action
             logger.debug(f'Running action:\n{action}')
-            if action_type == 'edit':
-                observation = await self.edit(action)
-            else:
-                observation = await getattr(self, action_type)(action)
+            observation = await getattr(self, action_type)(action)
             logger.debug(f'Action output:\n{observation}')
             return observation
 
