@@ -222,7 +222,9 @@ class Runtime(FileEditRuntimeMixin):
                     gh_client = GithubServiceImpl(user_id=self.user_id)
                     token = await gh_client.get_latest_token()
                     if token:
-                        export_cmd = CmdRunAction(f"export GITHUB_TOKEN='{token}'")
+                        export_cmd = CmdRunAction(
+                            f"export GITHUB_TOKEN='{token.get_secret_value()}'"
+                        )
                         await call_sync_from_async(self.run, export_cmd)
 
             observation: Observation = await call_sync_from_async(
