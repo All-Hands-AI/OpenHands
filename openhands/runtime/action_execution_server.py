@@ -36,6 +36,7 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    FileEditAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
@@ -183,8 +184,8 @@ class ActionExecutor:
         async with self.lock:
             action_type = action.action
             logger.debug(f'Running action:\n{action}')
-            if action_type == 'str_replace_editor':
-                observation = await self.str_replace_editor(action)
+            if action_type == 'edit':
+                observation = await self.edit(action)
             else:
                 observation = await getattr(self, action_type)(action)
             logger.debug(f'Action output:\n{observation}')
@@ -382,7 +383,7 @@ class ActionExecutor:
                             insert, all_lines, action.start, action.end
                         )
 
-    async def str_replace_editor(self, action: Action) -> Observation:
+    async def edit(self, action: FileEditAction) -> Observation:
         assert self.bash_session is not None
         working_dir = self.bash_session.cwd
         filepath = self._resolve_path(action.path, working_dir)
