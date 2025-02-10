@@ -145,7 +145,7 @@ while IFS= read -r task_image; do
     fi
 
     # Build the Python command
-    python_cmd="poetry run python run_infer.py \
+    COMMAND="poetry run python run_infer.py \
             --agent-llm-config \"$AGENT_LLM_CONFIG\" \
             --env-llm-config \"$ENV_LLM_CONFIG\" \
             --outputs-path \"$OUTPUTS_PATH\" \
@@ -153,12 +153,12 @@ while IFS= read -r task_image; do
             --task-image-name \"$task_image\""
 
     # Add agent-config if it's defined
-    if [ -n "${AGENT_CONFIG+x}" ]; then
-        python_cmd="$python_cmd --agent-config \"$AGENT_CONFIG\""
+    if [ -n "$AGENT_CONFIG" ]; then
+        COMMAND="$COMMAND --agent-config $AGENT_CONFIG"
     fi
 
     export PYTHONPATH=evaluation/benchmarks/the_agent_company:$PYTHONPATH && \
-        eval "$python_cmd"
+        eval "$COMMAND"
 
     # Prune unused images and volumes
     docker image rm "$task_image"
