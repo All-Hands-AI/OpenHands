@@ -14,7 +14,7 @@ import { ImageCarousel } from "../features/images/image-carousel";
 import { UploadImageInput } from "../features/images/upload-image-input";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { LoadingSpinner } from "./loading-spinner";
-import { FaArrowRight } from "react-icons/fa";
+import { Switch } from "@headlessui/react";
 
 interface TaskFormProps {
   ref: React.RefObject<HTMLFormElement | null>;
@@ -33,6 +33,7 @@ export function TaskForm({ ref }: TaskFormProps) {
   });
   const [inputIsFocused, setInputIsFocused] = React.useState(false);
   const { mutate: createConversation, isPending } = useCreateConversation();
+  const [estimateCost, setEstimateCost] = React.useState(false);
 
   const onRefreshSuggestion = () => {
     const suggestions = SUGGESTIONS["non-repo"];
@@ -104,23 +105,29 @@ export function TaskForm({ ref }: TaskFormProps) {
             />
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            console.log("Estimate cost clicked!");
-          }}
-          className={cn(
-            "px-4 py-2 rounded-lg",
-            "bg-neutral-700 hover:bg-neutral-600",
-            "border border-neutral-600 hover:border-neutral-500",
-            "transition-colors duration-200",
-            "flex items-center gap-2",
-            "text-sm whitespace-nowrap"
-          )}
-        >
-          <span>Estimate cost</span>
-          <FaArrowRight className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-neutral-400">Estimate cost</span>
+          <Switch
+            checked={estimateCost}
+            onChange={setEstimateCost}
+            className={cn(
+              "relative inline-flex h-6 w-11 items-center rounded-full",
+              "transition-colors duration-200 ease-in-out",
+              estimateCost ? "bg-green-500" : "bg-neutral-600",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
+            )}
+          >
+            <span className="sr-only">Enable cost estimation</span>
+            <span
+              className={cn(
+                "inline-block h-4 w-4 transform rounded-full bg-white",
+                "transition duration-200 ease-in-out",
+                "shadow-lg",
+                estimateCost ? "translate-x-6" : "translate-x-1"
+              )}
+            />
+          </Switch>
+        </div>
       </form>
       <UploadImageInput
         onUpload={async (uploadedFiles) => {
