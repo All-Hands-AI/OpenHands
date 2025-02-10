@@ -14,6 +14,7 @@ import { ImageCarousel } from "../features/images/image-carousel";
 import { UploadImageInput } from "../features/images/upload-image-input";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { LoadingSpinner } from "./loading-spinner";
+import { FaArrowRight } from "react-icons/fa";
 
 interface TaskFormProps {
   ref: React.RefObject<HTMLFormElement | null>;
@@ -103,6 +104,23 @@ export function TaskForm({ ref }: TaskFormProps) {
             />
           )}
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            console.log("Estimate cost clicked!");
+          }}
+          className={cn(
+            "px-4 py-2 rounded-lg",
+            "bg-neutral-700 hover:bg-neutral-600",
+            "border border-neutral-600 hover:border-neutral-500",
+            "transition-colors duration-200",
+            "flex items-center gap-2",
+            "text-sm whitespace-nowrap"
+          )}
+        >
+          <span>Estimate cost</span>
+          <FaArrowRight className="w-4 h-4" />
+        </button>
       </form>
       <UploadImageInput
         onUpload={async (uploadedFiles) => {
