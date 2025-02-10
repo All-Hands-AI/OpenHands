@@ -85,4 +85,5 @@ class FileEditAction(Action):
         ret += f'Range: [L{self.start}:L{self.end}]\n'
         ret += f'Path: [{self.path}]\n'
         ret += f'Content:\n```\n{self.content}\n```\n'
+        ret += f'Translated IPython Code:\n```\n{self.translated_ipython_code}\n```\n'
         return ret
