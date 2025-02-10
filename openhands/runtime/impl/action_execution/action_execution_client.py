@@ -283,6 +283,9 @@ class ActionExecutionClient(Runtime):
     def write(self, action: FileWriteAction) -> Observation:
         return self.send_action_for_execution(action)
 
+    def edit(self, action: FileEditAction) -> Observation:
+        return self.send_action_for_execution(action)
+
     def browse(self, action: BrowseURLAction) -> Observation:
         return self.send_action_for_execution(action)
 
