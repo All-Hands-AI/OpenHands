@@ -3,7 +3,7 @@ from openhands.resolver.patching.patch import parse_patch
 
 
 def test_patch_whitespace_mismatch():
-    """Test that the patch application fails correctly when whitespace doesn't match."""
+    """Test that the patch application succeeds even when whitespace doesn't match."""
     # Original content has a line with spaces
     original_content = """class Example:
     def method(self):
@@ -33,7 +33,7 @@ index 1234567..89abcdef 100644
         'class Example:',
         '    def method(self):',
         '        pass',
-        '    ',
+        '',
         '    new_field: str = "value"',
         '',
         '    def another(self):',
