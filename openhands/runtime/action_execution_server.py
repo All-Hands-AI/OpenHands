@@ -115,7 +115,7 @@ class ActionExecutor:
             1024 * 1024 * 1024
         )  # Convert to GB
         self.max_memory_gb = int(max(0.5, total_memory_gb - 1.0))
-        # Reserve 1GB as head room, minimum of 0.5GB, maximum of 4GB
+        # Reserve 1GB as head room, minimum of 0.5GB
         logger.info(
             f'Total memory: {total_memory_gb}GB, setting limit to {self.max_memory_gb}GB (reserved 1GB for action execution server, minimum 0.5GB)'
         )
