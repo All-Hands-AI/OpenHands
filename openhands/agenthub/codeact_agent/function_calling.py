@@ -287,8 +287,8 @@ def translate_str_replace_editor_to_edit_action(tool_call_result):
         insert_line=tool_call_result.get('insert_line'),
         view_range=tool_call_result.get('view_range'),
         content=tool_call_result.get('content'),
-        start=tool_call_result.get('start'),
-        end=tool_call_result.get('end')
+        start=tool_call_result.get('start', 1),
+        end=tool_call_result.get('end', -1)
     )
 
 

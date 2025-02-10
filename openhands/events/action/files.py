@@ -60,7 +60,7 @@ class FileWriteAction(Action):
 
 @dataclass
 class FileEditAction(Action):
-    """Edits a file by provided a draft at a given path.
+    """Edits a file using various commands including view, create, str_replace, insert, and undo_edit.
 
     Can be set to edit specific lines using start and end (1-index, inclusive) if the file is too long.
     Default lines 1:-1 (whole file).
@@ -69,7 +69,8 @@ class FileEditAction(Action):
     """
 
     path: str
-    content: str
+    command: str
+    content: str = ''
     start: int = 1
     end: int = -1
     thought: str = ''
@@ -78,11 +79,29 @@ class FileEditAction(Action):
     security_risk: ActionSecurityRisk | None = None
     impl_source: FileEditSource = FileEditSource.LLM_BASED_EDIT
     translated_ipython_code: str = ''
+    file_text: str = ''
+    old_str: str = ''
+    new_str: str = ''
+    insert_line: int = None
+    view_range: list[int] = None
 
     def __repr__(self) -> str:
         ret = '**FileEditAction**\n'
+        ret += f'Command: {self.command}\n'
         ret += f'Thought: {self.thought}\n'
-        ret += f'Range: [L{self.start}:L{self.end}]\n'
         ret += f'Path: [{self.path}]\n'
-        ret += f'Content:\n```\n{self.content}\n```\n'
+        if self.command in ['view', 'create', 'str_replace', 'insert']:
+            if self.command == 'view' and self.view_range:
+                ret += f'View Range: {self.view_range}\n'
+            elif self.command == 'create':
+                ret += f'File Text:\n```\n{self.file_text}\n```\n'
+            elif self.command == 'str_replace':
+                ret += f'Old String: {self.old_str}\n'
+                ret += f'New String: {self.new_str}\n'
+            elif self.command == 'insert':
+                ret += f'Insert Line: {self.insert_line}\n'
+                ret += f'New String: {self.new_str}\n'
+        else:
+            ret += f'Range: [L{self.start}:L{self.end}]\n'
+            ret += f'Content:\n```\n{self.content}\n```\n'
         return ret
