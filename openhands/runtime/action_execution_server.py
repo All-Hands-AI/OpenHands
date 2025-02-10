@@ -50,6 +50,7 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     Observation,
 )
+from openhands_aci.utils.diff import get_diff
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
@@ -182,7 +183,10 @@ class ActionExecutor:
         async with self.lock:
             action_type = action.action
             logger.debug(f'Running action:\n{action}')
-            observation = await getattr(self, action_type)(action)
+            if action_type == 'str_replace_editor':
+                observation = await self.str_replace_editor(action)
+            else:
+                observation = await getattr(self, action_type)(action)
             logger.debug(f'Action output:\n{observation}')
             return observation
 
@@ -352,6 +356,100 @@ class ActionExecutor:
 
         code_view = ''.join(lines)
         return FileReadObservation(path=filepath, content=code_view)
+
+    async def write(self, action: FileWriteAction) -> Observation:
+        assert self.bash_session is not None
+        working_dir = self.bash_session.cwd
+        filepath = self._resolve_path(action.path, working_dir)
+
+        insert = action.content.split('\n')
+        try:
+            if not os.path.exists(os.path.dirname(filepath)):
+                os.makedirs(os.path.dirname(filepath))
+
+            file_exists = os.path.exists(filepath)
+            if file_exists:
+                file_stat = os.stat(filepath)
+            else:
+                file_stat = None
+
+            mode = 'w' if not file_exists else 'r+'
+            try:
+                with open(filepath, mode, encoding='utf-8') as file:
+                    if mode != 'w':
+                        all_lines = file.readlines()
+                        new_file = insert_lines(
+                            insert, all_lines, action.start, action.end
+                        )
+
+    async def str_replace_editor(self, action: Action) -> Observation:
+        assert self.bash_session is not None
+        working_dir = self.bash_session.cwd
+        filepath = self._resolve_path(action.path, working_dir)
+
+        try:
+            if action.command == 'view':
+                with open(filepath, 'r', encoding='utf-8') as file:
+                    content = file.read()
+                    if action.view_range:
+                        start, end = action.view_range
+                        lines = content.split('\n')
+                        if end == -1:
+                            end = len(lines)
+                        content = '\n'.join(lines[start-1:end])
+                return FileReadObservation(path=filepath, content=content)
+
+            elif action.command == 'create':
+                if os.path.exists(filepath):
+                    return ErrorObservation(f"File already exists: {filepath}")
+                with open(filepath, 'w', encoding='utf-8') as file:
+                    file.write(action.file_text)
+                return FileWriteObservation(path=filepath, content=action.file_text)
+
+            elif action.command == 'str_replace':
+                with open(filepath, 'r', encoding='utf-8') as file:
+                    content = file.read()
+                if action.old_str not in content:
+                    return ErrorObservation(f"Old string not found in file: {filepath}")
+                new_content = content.replace(action.old_str, action.new_str)
+                with open(filepath, 'w', encoding='utf-8') as file:
+                    file.write(new_content)
+                return FileEditObservation(
+                    path=filepath,
+                    old_content=content,
+                    new_content=new_content,
+                    content=get_diff(content, new_content, filepath),
+                    prev_exist=True,
+                    impl_source=FileEditSource.OH_ACI
+                )
+
+            elif action.command == 'insert':
+                with open(filepath, 'r', encoding='utf-8') as file:
+                    lines = file.readlines()
+                lines.insert(action.insert_line, action.new_str + '\n')
+                new_content = ''.join(lines)
+                with open(filepath, 'w', encoding='utf-8') as file:
+                    file.write(new_content)
+                return FileEditObservation(
+                    path=filepath,
+                    old_content=''.join(lines),
+                    new_content=new_content,
+                    content=get_diff(''.join(lines), new_content, filepath),
+                    prev_exist=True,
+                    impl_source=FileEditSource.OH_ACI
+                )
+
+            elif action.command == 'undo_edit':
+                # Implement undo functionality here
+                return ErrorObservation("Undo functionality not implemented yet")
+
+            else:
+                return ErrorObservation(f"Invalid command: {action.command}")
+
+        except FileNotFoundError:
+            return ErrorObservation(f"File not found: {filepath}")
+        except Exception as e:
+            return ErrorObservation(f"Error: {str(e)}")
 
     async def write(self, action: FileWriteAction) -> Observation:
         assert self.bash_session is not None
