@@ -77,7 +77,6 @@ class FileEditAction(Action):
         runnable (bool): Indicates if the action can be executed (always True).
         security_risk (ActionSecurityRisk | None): Indicates any security risks associated with the action.
         impl_source (FileEditSource): The source of the implementation (LLM_BASED_EDIT or OH_ACI).
-        translated_ipython_code (str): The translated IPython code for the edit action (used in OH_ACI mode).
         file_text (str): The content of the file to be created (used with 'create' command in OH_ACI mode).
         old_str (str): The string to be replaced (used with 'str_replace' command in OH_ACI mode).
         new_str (str): The string to replace old_str (used with 'str_replace' and 'insert' commands in OH_ACI mode).
@@ -103,7 +102,6 @@ class FileEditAction(Action):
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
     impl_source: FileEditSource = FileEditSource.LLM_BASED_EDIT
-    translated_ipython_code: str = ''
     file_text: str = ''
     old_str: str = ''
     new_str: str = ''
