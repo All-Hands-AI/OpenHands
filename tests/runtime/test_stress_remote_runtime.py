@@ -43,7 +43,13 @@ from openhands.core.config import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import CmdRunAction, MessageAction
+from openhands.events.action import (
+    CmdRunAction,
+    FileReadAction,
+    FileWriteAction,
+    IPythonRunCellAction,
+    MessageAction,
+)
 from openhands.events.observation import CmdOutputObservation
 from openhands.events.serialization.event import event_to_dict
 from openhands.llm import LLM
@@ -401,7 +407,7 @@ def test_stress_runtime_memory_limits():
         assert obs.exit_code == 0
 
         action = CmdRunAction(
-            command='stress-ng --vm 1 --vm-bytes 4G --timeout 1m --metrics'
+            command='stress-ng --vm 1 --vm-bytes 6G --timeout 1m --metrics'
         )
         action.set_hard_timeout(120)
         logger.info(action, extra={'msg_type': 'ACTION'})
@@ -409,6 +415,69 @@ def test_stress_runtime_memory_limits():
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'aborted early, out of system resources' in obs.content
         assert obs.exit_code == 3  # OOM killed!
+
+    finally:
+        runtime.close()
+
+
+@pytest.mark.skipif(
+    TEST_IN_CI,
+    reason='This test should only be run locally, not in CI.',
+)
+def test_stress_runtime_memory_limits_with_repeated_file_edit():
+    """Test runtime behavior under resource constraints with repeated file edits."""
+    config = get_config()
+
+    # For Docker runtime, add resource constraints
+    if config.runtime == 'docker':
+        config.sandbox.docker_runtime_kwargs = {
+            'cpu_period': 100000,  # 100ms
+            'cpu_quota': 100000,  # Can use 100ms out of each 100ms period (1 CPU)
+            'mem_limit': '4G',  # 4 GB of memory
+            'memswap_limit': '0',  # No swap
+            'mem_swappiness': 0,  # Disable swapping
+            'oom_kill_disable': False,  # Enable OOM killer
+        }
+    config.sandbox.runtime_startup_env_vars = {
+        'RUNTIME_MAX_MEMORY_GB': '3',
+    }
+
+    try:
+        runtime = create_runtime(config, headless_mode=True)
+        call_async_from_sync(runtime.connect)
+
+        # Create initial test file with base content
+        test_file = '/tmp/test_file.txt'
+        base_content = 'Initial content\n' * 1000  # Create a reasonably sized file
+
+        # Use FileWriteAction instead of echo command
+        write_action = FileWriteAction(path=test_file, content=base_content)
+        obs = runtime.run_action(write_action)
+
+        # Perform repeated file edits
+        for i in range(1000):
+            edit_action = IPythonRunCellAction(
+                code=f"""
+                result = file_editor(
+                    command='str_replace',
+                    path='{test_file}',
+                    old_str=f"content_{i if i > 0 else 'Initial'}\\n",
+                    new_str=f"content_{i + 1}\\n",
+                    enable_linting=False,
+                )
+                """
+            )
+
+            logger.info(edit_action, extra={'msg_type': 'ACTION'})
+            obs = runtime.run_action(edit_action)
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+        # Check file size
+        action = FileReadAction(path=test_file)
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        logger.info(f'Final file stats: {obs.content}')
 
     finally:
         runtime.close()
