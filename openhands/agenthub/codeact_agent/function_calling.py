@@ -16,7 +16,6 @@ from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
 )
-from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -541,13 +540,6 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     raise FunctionCallValidationError(
                         f'Missing required argument "path" in tool call {tool_call.function.name}'
                     )
-
-                # We implement this in agent_skills, which can be used via Jupyter
-                # convert tool_call.function.arguments to kwargs that can be passed to file_editor
-                code = f'print(file_editor(**{arguments}))'
-                logger.debug(
-                    f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
-                )
 
                 if arguments['command'] == 'view':
                     action = FileReadAction(
