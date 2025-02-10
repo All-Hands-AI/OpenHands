@@ -16,7 +16,6 @@ from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
 )
-from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -541,26 +540,24 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     raise FunctionCallValidationError(
                         f'Missing required argument "path" in tool call {tool_call.function.name}'
                     )
+                path = arguments['path']
+                command = arguments['command']
+                other_kwargs = {
+                    k: v for k, v in arguments.items() if k not in ['command', 'path']
+                }
 
-                # We implement this in agent_skills, which can be used via Jupyter
-                # convert tool_call.function.arguments to kwargs that can be passed to file_editor
-                code = f'print(file_editor(**{arguments}))'
-                logger.debug(
-                    f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
-                )
-
-                if arguments['command'] == 'view':
+                if command == 'view':
                     action = FileReadAction(
-                        path=arguments['path'],
-                        translated_ipython_code=code,
+                        path=path,
                         impl_source=FileReadSource.OH_ACI,
+                        view_range=other_kwargs.get('view_range', None),
                     )
                 else:
                     action = FileEditAction(
-                        path=arguments['path'],
-                        content='',  # dummy value -- we don't need it
-                        translated_ipython_code=code,
+                        path=path,
+                        command=command,
                         impl_source=FileEditSource.OH_ACI,
+                        **other_kwargs,
                     )
             elif tool_call.function.name == 'browser':
                 if 'code' not in arguments:
