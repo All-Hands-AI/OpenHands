@@ -440,6 +440,29 @@ class ActionExecutor:
                     impl_source=FileEditSource.OH_ACI
                 )
 
+            elif action.command == 'write':
+                insert = action.content.split('\n')
+                if not os.path.exists(os.path.dirname(filepath)):
+                    os.makedirs(os.path.dirname(filepath))
+
+                file_exists = os.path.exists(filepath)
+                mode = 'w' if not file_exists else 'r+'
+                
+                with open(filepath, mode, encoding='utf-8') as file:
+                    if mode != 'w':
+                        all_lines = file.readlines()
+                        new_file = insert_lines(
+                            insert, all_lines, action.start, action.end
+                        )
+                    else:
+                        new_file = [i + '\n' for i in insert]
+
+                    file.seek(0)
+                    file.writelines(new_file)
+                    file.truncate()
+
+                return FileWriteObservation(path=filepath, content=''.join(new_file))
+
             elif action.command == 'undo_edit':
                 # Implement undo functionality here
                 return ErrorObservation("Undo functionality not implemented yet")
@@ -451,31 +474,6 @@ class ActionExecutor:
             return ErrorObservation(f"File not found: {filepath}")
         except Exception as e:
             return ErrorObservation(f"Error: {str(e)}")
-
-    async def write(self, action: FileWriteAction) -> Observation:
-        assert self.bash_session is not None
-        working_dir = self.bash_session.cwd
-        filepath = self._resolve_path(action.path, working_dir)
-
-        insert = action.content.split('\n')
-        try:
-            if not os.path.exists(os.path.dirname(filepath)):
-                os.makedirs(os.path.dirname(filepath))
-
-            file_exists = os.path.exists(filepath)
-            if file_exists:
-                file_stat = os.stat(filepath)
-            else:
-                file_stat = None
-
-            mode = 'w' if not file_exists else 'r+'
-            try:
-                with open(filepath, mode, encoding='utf-8') as file:
-                    if mode != 'w':
-                        all_lines = file.readlines()
-                        new_file = insert_lines(
-                            insert, all_lines, action.start, action.end
-                        )
                     else:
                         new_file = [i + '\n' for i in insert]
 
