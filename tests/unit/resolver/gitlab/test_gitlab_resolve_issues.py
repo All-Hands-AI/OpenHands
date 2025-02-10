@@ -71,23 +71,37 @@ def create_cmd_output(exit_code: int, content: str, command: str):
 
 def test_initialize_runtime():
     mock_runtime = MagicMock()
-    mock_runtime.run_action.side_effect = [
-        create_cmd_output(exit_code=0, content='', command='cd /workspace'),
-        create_cmd_output(
-            exit_code=0, content='', command='sudo chown -R 1001:0 /workspace/*'
-        ),
-        create_cmd_output(
-            exit_code=0, content='', command='git config --global core.pager ""'
-        ),
-    ]
+
+    if os.getenv('GITLAB_CI') == 'true':
+        mock_runtime.run_action.side_effect = [
+            create_cmd_output(exit_code=0, content='', command='cd /workspace'),
+            create_cmd_output(
+                exit_code=0, content='', command='sudo chown -R 1001:0 /workspace/*'
+            ),
+            create_cmd_output(
+                exit_code=0, content='', command='git config --global core.pager ""'
+            ),
+        ]
+    else:
+        mock_runtime.run_action.side_effect = [
+            create_cmd_output(exit_code=0, content='', command='cd /workspace'),
+            create_cmd_output(
+                exit_code=0, content='', command='git config --global core.pager ""'
+            ),
+        ]
 
     initialize_runtime(mock_runtime, Platform.GITLAB)
 
-    assert mock_runtime.run_action.call_count == 3
+    if os.getenv('GITLAB_CI') == 'true':
+        assert mock_runtime.run_action.call_count == 3
+    else:
+        assert mock_runtime.run_action.call_count == 2
+
     mock_runtime.run_action.assert_any_call(CmdRunAction(command='cd /workspace'))
-    mock_runtime.run_action.assert_any_call(
-        CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
-    )
+    if os.getenv('GITLAB_CI') == 'true':
+        mock_runtime.run_action.assert_any_call(
+            CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
+        )
     mock_runtime.run_action.assert_any_call(
         CmdRunAction(command='git config --global core.pager ""')
     )

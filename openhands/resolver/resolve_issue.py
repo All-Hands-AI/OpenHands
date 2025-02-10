@@ -66,7 +66,7 @@ def initialize_runtime(
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
 
-    if platform == Platform.GITLAB:
+    if platform == Platform.GITLAB and os.getenv('GITLAB_CI') == 'true':
         action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
@@ -119,7 +119,7 @@ async def complete_runtime(
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
-    if platform == Platform.GITLAB:
+    if platform == Platform.GITLAB and os.getenv('GITLAB_CI') == 'true':
         action = CmdRunAction(command='sudo git add -A')
     else:
         action = CmdRunAction(command='git add -A')
