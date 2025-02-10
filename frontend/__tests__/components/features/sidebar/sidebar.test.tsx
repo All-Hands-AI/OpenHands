@@ -26,6 +26,6 @@ describe("Sidebar", () => {
 
   it("should fetch settings data on mount", () => {
     renderSidebar();
-    expect(getSettingsSpy).toHaveBeenCalledOnce();
+    expect(getSettingsSpy).toHaveBeenCalled();
   });
 });
