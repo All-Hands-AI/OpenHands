@@ -21,17 +21,3 @@ class ActionSecurityRisk(int, Enum):
 @dataclass
 class Action(Event):
     runnable: ClassVar[bool] = False
-
-@dataclass
-class FileEditAction(Action):
-    runnable: ClassVar[bool] = True
-    path: str
-    command: str
-    file_text: str = None
-    old_str: str = None
-    new_str: str = None
-    insert_line: int = None
-    view_range: list[int] = None
-    content: str = None
-    start: int = None
-    end: int = None
