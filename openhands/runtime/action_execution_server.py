@@ -51,7 +51,7 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     Observation,
 )
-from openhands_aci.utils.diff import get_diff
+from openhands_aci.editor import file_editor
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
@@ -389,84 +389,47 @@ class ActionExecutor:
         filepath = self._resolve_path(action.path, working_dir)
 
         try:
+            # Translate the action to the format expected by file_editor
+            editor_action = {
+                'command': action.command,
+                'path': filepath,
+            }
+            
             if action.command == 'view':
-                with open(filepath, 'r', encoding='utf-8') as file:
-                    content = file.read()
-                    if action.view_range:
-                        start, end = action.view_range
-                        lines = content.split('\n')
-                        if end == -1:
-                            end = len(lines)
-                        content = '\n'.join(lines[start-1:end])
-                return FileReadObservation(path=filepath, content=content)
-
+                if hasattr(action, 'view_range'):
+                    editor_action['view_range'] = action.view_range
             elif action.command == 'create':
-                if os.path.exists(filepath):
-                    return ErrorObservation(f"File already exists: {filepath}")
-                with open(filepath, 'w', encoding='utf-8') as file:
-                    file.write(action.file_text)
-                return FileWriteObservation(path=filepath, content=action.file_text)
-
+                editor_action['file_text'] = action.file_text
             elif action.command == 'str_replace':
-                with open(filepath, 'r', encoding='utf-8') as file:
-                    content = file.read()
-                if action.old_str not in content:
-                    return ErrorObservation(f"Old string not found in file: {filepath}")
-                new_content = content.replace(action.old_str, action.new_str)
-                with open(filepath, 'w', encoding='utf-8') as file:
-                    file.write(new_content)
-                return FileEditObservation(
-                    path=filepath,
-                    old_content=content,
-                    new_content=new_content,
-                    content=get_diff(content, new_content, filepath),
-                    prev_exist=True,
-                    impl_source=FileEditSource.OH_ACI
-                )
-
+                editor_action['old_str'] = action.old_str
+                editor_action['new_str'] = action.new_str
             elif action.command == 'insert':
-                with open(filepath, 'r', encoding='utf-8') as file:
-                    lines = file.readlines()
-                lines.insert(action.insert_line, action.new_str + '\n')
-                new_content = ''.join(lines)
-                with open(filepath, 'w', encoding='utf-8') as file:
-                    file.write(new_content)
+                editor_action['insert_line'] = action.insert_line
+                editor_action['new_str'] = action.new_str
+            elif action.command == 'write':
+                editor_action['content'] = action.content
+                if hasattr(action, 'start'):
+                    editor_action['start'] = action.start
+                if hasattr(action, 'end'):
+                    editor_action['end'] = action.end
+
+            # Call the file_editor function
+            result = file_editor(**editor_action)
+
+            # Convert the result to the appropriate Observation type
+            if action.command == 'view':
+                return FileReadObservation(path=filepath, content=result['formatted_output_and_error'])
+            elif action.command in ['create', 'write']:
+                return FileWriteObservation(path=filepath, content=result['formatted_output_and_error'])
+            elif action.command in ['str_replace', 'insert']:
                 return FileEditObservation(
                     path=filepath,
-                    old_content=''.join(lines),
-                    new_content=new_content,
-                    content=get_diff(''.join(lines), new_content, filepath),
-                    prev_exist=True,
+                    old_content=result['old_content'],
+                    new_content=result['new_content'],
+                    content=get_diff(result['old_content'], result['new_content'], filepath),
+                    prev_exist=result['prev_exist'],
                     impl_source=FileEditSource.OH_ACI
                 )
-
-            elif action.command == 'write':
-                insert = action.content.split('\n')
-                if not os.path.exists(os.path.dirname(filepath)):
-                    os.makedirs(os.path.dirname(filepath))
-
-                file_exists = os.path.exists(filepath)
-                mode = 'w' if not file_exists else 'r+'
-                
-                with open(filepath, mode, encoding='utf-8') as file:
-                    if mode != 'w':
-                        all_lines = file.readlines()
-                        new_file = insert_lines(
-                            insert, all_lines, action.start, action.end
-                        )
-                    else:
-                        new_file = [i + '\n' for i in insert]
-
-                    file.seek(0)
-                    file.writelines(new_file)
-                    file.truncate()
-
-                return FileWriteObservation(path=filepath, content=''.join(new_file))
-
-            elif action.command == 'undo_edit':
-                # Implement undo functionality here
-                return ErrorObservation("Undo functionality not implemented yet")
-
             else:
                 return ErrorObservation(f"Invalid command: {action.command}")
 
