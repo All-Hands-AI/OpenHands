@@ -2,19 +2,16 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
-from openhands.server.auth import get_github_token, get_user_id
-from openhands.server.shared import server_config
-from openhands.services.github.github_service import (
+from openhands.integrations.github.github_service import GithubServiceImpl
+from openhands.integrations.github.github_types import (
     GhAuthenticationError,
     GHUnknownException,
-    GitHubService,
+    GitHubRepository,
+    GitHubUser,
 )
-from openhands.services.github.github_types import GitHubRepository, GitHubUser
-from openhands.utils.import_utils import get_impl
+from openhands.server.auth import get_github_token, get_user_id
 
 app = APIRouter(prefix='/api/github')
-
-GithubServiceImpl = get_impl(GitHubService, server_config.github_service_class)
 
 
 @app.get('/repositories')

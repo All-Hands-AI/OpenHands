@@ -4,8 +4,8 @@ import httpx
 import pytest
 from pydantic import SecretStr
 
-from openhands.services.github.github_service import GitHubService
-from openhands.services.github.github_types import GhAuthenticationError
+from openhands.integrations.github.github_service import GitHubService
+from openhands.integrations.github.github_types import GhAuthenticationError
 
 
 @pytest.mark.asyncio
