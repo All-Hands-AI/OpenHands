@@ -124,7 +124,7 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
         <ModalButton
           disabled={isPending}
           type="submit"
-          text={t(I18nKey.FEEDBACK$CONTRIBUTE_LABEL)}
+          text={t(I18nKey.FEEDBACK$SHARE_LABEL)}
           className="bg-[#4465DB] grow"
         />
         <ModalButton

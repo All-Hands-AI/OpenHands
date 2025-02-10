@@ -4,7 +4,7 @@ import {
   Autocomplete,
   AutocompleteItem,
   AutocompleteSection,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { I18nKey } from "#/i18n/declaration";
@@ -70,7 +70,7 @@ export function GitHubRepositorySelector({
       }}
       onSelectionChange={(id) => handleRepoSelection(id?.toString() ?? null)}
       onInputChange={onInputChange}
-      clearButtonProps={{ onClick: handleClearSelection }}
+      clearButtonProps={{ onPress: handleClearSelection }}
       listboxProps={{
         emptyContent,
       }}
