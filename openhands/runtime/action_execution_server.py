@@ -406,8 +406,8 @@ class ActionExecutor:
                 return ErrorObservation(
                     f'File could not be decoded as utf-8: {filepath}'
                 )
-        except PermissionError:
-            return ErrorObservation(f'Malformed paths not permitted: {filepath}')
+        except PermissionError as e:
+            return ErrorObservation(f'Permission error on {filepath}: {e}')
         return FileWriteObservation(content='', path=filepath)
 
     async def edit(self, action: FileEditAction) -> Observation:
