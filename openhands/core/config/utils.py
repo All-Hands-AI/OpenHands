@@ -3,13 +3,14 @@ import os
 import pathlib
 import platform
 import sys
+from ast import literal_eval
 from types import UnionType
 from typing import Any, MutableMapping, get_args, get_origin
 from uuid import uuid4
 
 import toml
 from dotenv import load_dotenv
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, SecretStr, ValidationError
 
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
@@ -72,6 +73,9 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
                     # Attempt to cast the env var to type hinted in the dataclass
                     if field_type is bool:
                         cast_value = str(value).lower() in ['true', '1']
+                    # parse dicts like SANDBOX_RUNTIME_STARTUP_ENV_VARS
+                    elif get_origin(field_type) is dict:
+                        cast_value = literal_eval(value)
                     else:
                         cast_value = field_type(value)
                     setattr(sub_config, field_name, cast_value)
@@ -287,8 +291,10 @@ def finalize_config(cfg: AppConfig):
         pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
 
     if not cfg.jwt_secret:
-        cfg.jwt_secret = get_or_create_jwt_secret(
-            get_file_store(cfg.file_store, cfg.file_store_path)
+        cfg.jwt_secret = SecretStr(
+            get_or_create_jwt_secret(
+                get_file_store(cfg.file_store, cfg.file_store_path)
+            )
         )
 
 

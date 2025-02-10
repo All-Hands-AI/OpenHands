@@ -23,6 +23,9 @@ export const useActiveHost = () => {
     },
     enabled: !RUNTIME_INACTIVE_STATES.includes(curAgentState),
     initialData: { hosts: [] },
+    meta: {
+      disableToast: true,
+    },
   });
 
   const apps = useQueries({
@@ -37,6 +40,9 @@ export const useActiveHost = () => {
         }
       },
       refetchInterval: 3000,
+      meta: {
+        disableToast: true,
+      },
     })),
   });
 

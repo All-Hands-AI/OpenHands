@@ -14,7 +14,7 @@ describe("WaitlistModal", () => {
   });
 
   it("should render a tos checkbox that is unchecked by default", () => {
-    render(<WaitlistModal ghToken={null} githubAuthUrl={null} />);
+    render(<WaitlistModal ghTokenIsSet={false} githubAuthUrl={null} />);
     const checkbox = screen.getByRole("checkbox");
 
     expect(checkbox).not.toBeChecked();
@@ -22,7 +22,7 @@ describe("WaitlistModal", () => {
 
   it("should only enable the GitHub button if the tos checkbox is checked", async () => {
     const user = userEvent.setup();
-    render(<WaitlistModal ghToken={null} githubAuthUrl={null} />);
+    render(<WaitlistModal ghTokenIsSet={false} githubAuthUrl={null} />);
     const checkbox = screen.getByRole("checkbox");
     const button = screen.getByRole("button", { name: "Connect to GitHub" });
 
@@ -40,7 +40,7 @@ describe("WaitlistModal", () => {
     );
 
     const user = userEvent.setup();
-    render(<WaitlistModal ghToken={null} githubAuthUrl="mock-url" />);
+    render(<WaitlistModal ghTokenIsSet={false} githubAuthUrl="mock-url" />);
 
     const checkbox = screen.getByRole("checkbox");
     await user.click(checkbox);

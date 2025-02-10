@@ -1,8 +1,9 @@
 import asyncio
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import ANY, AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
+from litellm import ContextWindowExceededError
 
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
@@ -39,6 +40,7 @@ def mock_agent():
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
+    agent.llm.config = AppConfig().get_llm_config()
     return agent
 
 
@@ -47,6 +49,14 @@ def mock_event_stream():
     mock = MagicMock(spec=EventStream)
     mock.get_latest_event_id.return_value = 0
     return mock
+
+
+@pytest.fixture
+def mock_runtime() -> Runtime:
+    return MagicMock(
+        spec=Runtime,
+        event_stream=EventStream(sid='test', file_store=InMemoryFileStore({})),
+    )
 
 
 @pytest.fixture
@@ -552,3 +562,123 @@ async def test_run_controller_max_iterations_has_metrics():
     assert (
         state.metrics.accumulated_cost == 10.0 * 3
     ), f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
+
+
+@pytest.mark.asyncio
+async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_callback):
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        status_callback=mock_status_callback,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+    controller._notify_on_llm_retry(1, 2)
+    controller.status_callback.assert_called_once_with('info', 'STATUS$LLM_RETRY', ANY)
+    await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_context_window_exceeded_error_handling(mock_agent, mock_event_stream):
+    """Test that context window exceeded errors are handled correctly by truncating history."""
+
+    class StepState:
+        def __init__(self):
+            self.has_errored = False
+
+        def step(self, state: State):
+            # Append a few messages to the history -- these will be truncated when we throw the error
+            state.history = [
+                MessageAction(content='Test message 0'),
+                MessageAction(content='Test message 1'),
+            ]
+
+            error = ContextWindowExceededError(
+                message='prompt is too long: 233885 tokens > 200000 maximum',
+                model='',
+                llm_provider='',
+            )
+            self.has_errored = True
+            raise error
+
+    state = StepState()
+    mock_agent.step = state.step
+
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Set the agent running and take a step in the controller -- this is similar
+    # to taking a single step using `run_controller`, but much easier to control
+    # termination for testing purposes
+    controller.state.agent_state = AgentState.RUNNING
+    await controller._step()
+
+    # Check that the error was thrown and the history has been truncated
+    assert state.has_errored
+    assert controller.state.history == [MessageAction(content='Test message 1')]
+
+
+@pytest.mark.asyncio
+async def test_run_controller_with_context_window_exceeded(mock_agent, mock_runtime):
+    """Tests that the controller can make progress after handling context window exceeded errors."""
+
+    class StepState:
+        def __init__(self):
+            self.has_errored = False
+
+        def step(self, state: State):
+            # If the state has more than one message and we haven't errored yet,
+            # throw the context window exceeded error
+            if len(state.history) > 1 and not self.has_errored:
+                error = ContextWindowExceededError(
+                    message='prompt is too long: 233885 tokens > 200000 maximum',
+                    model='',
+                    llm_provider='',
+                )
+                self.has_errored = True
+                raise error
+
+            return MessageAction(content=f'STEP {len(state.history)}')
+
+    step_state = StepState()
+    mock_agent.step = step_state.step
+
+    try:
+        state = await asyncio.wait_for(
+            run_controller(
+                config=AppConfig(max_iterations=3),
+                initial_user_action=MessageAction(content='INITIAL'),
+                runtime=mock_runtime,
+                sid='test',
+                agent=mock_agent,
+                fake_user_response_fn=lambda _: 'repeat',
+            ),
+            timeout=10,
+        )
+
+    # A timeout error indicates the run_controller entrypoint is not making
+    # progress
+    except asyncio.TimeoutError as e:
+        raise AssertionError(
+            'The run_controller function did not complete in time.'
+        ) from e
+
+    # Hitting the iteration limit indicates the controller is failing for the
+    # expected reason
+    assert state.iteration == 3
+    assert state.agent_state == AgentState.ERROR
+    assert (
+        state.last_error
+        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
+    )
+
+    # Check that the context window exceeded error was raised during the run
+    assert step_state.has_errored
