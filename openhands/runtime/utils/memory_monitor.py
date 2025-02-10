@@ -13,8 +13,8 @@ from openhands.core.logger import openhands_logger as logger
 class MemoryMonitor:
     def __init__(
         self,
-        soft_limit_gb: float = 3.5,
-        hard_limit_gb: float = 3.8,
+        soft_limit_gb: float,
+        hard_limit_gb: float,
         check_interval: float = 1.0,
     ):
         """Initialize memory monitor with configurable limits.
@@ -52,7 +52,7 @@ class MemoryMonitor:
         main_process = psutil.Process(os.getpid())
 
         # Get main process memory usage
-        main_memory = main_process.memory_full_info().pss
+        main_memory = main_process.memory_full_info().uss
         memory_info = {
             'processes': [
                 {
@@ -68,7 +68,7 @@ class MemoryMonitor:
         total_memory = main_memory
         for child in main_process.children(recursive=True):
             try:
-                child_memory = child.memory_full_info().pss
+                child_memory = child.memory_full_info().uss
                 total_memory += child_memory
                 memory_info['processes'].append(
                     {
