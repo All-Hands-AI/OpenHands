@@ -4,14 +4,14 @@ from typing import Callable
 
 from fastapi import APIRouter, Body, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.events.stream import EventStreamSubscriber
+from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.runtime import get_runtime_cls
-from openhands.server.auth import get_user_id
-from openhands.server.routes.github import GithubServiceImpl
+from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -44,7 +44,7 @@ class InitSessionRequest(BaseModel):
 
 async def _create_new_conversation(
     user_id: str | None,
-    token: str | None,
+    token: SecretStr | None,
     selected_repository: str | None,
     initial_user_msg: str | None,
     image_urls: list[str] | None,
@@ -72,7 +72,7 @@ async def _create_new_conversation(
         logger.warn('Settings not present, not starting conversation')
         raise MissingSettingsError('Settings not found')
 
-    session_init_args['github_token'] = token or ''
+    session_init_args['github_token'] = token or SecretStr('')
     session_init_args['selected_repository'] = selected_repository
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
@@ -131,7 +131,9 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     """
     logger.info('Initializing new conversation')
     user_id = get_user_id(request)
-    github_token = GithubServiceImpl.get_gh_token(request)
+    gh_client = GithubServiceImpl(user_key=user_id, token=get_github_token(request))
+    github_token = await gh_client.get_latest_token()
+
     selected_repository = data.selected_repository
     initial_user_msg = data.initial_user_msg
     image_urls = data.image_urls or []

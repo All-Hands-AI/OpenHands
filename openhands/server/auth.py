@@ -1,7 +1,8 @@
 from fastapi import Request
+from pydantic import SecretStr
 
 
-def get_github_token(request: Request) -> str | None:
+def get_github_token(request: Request) -> SecretStr | None:
     return getattr(request.state, 'github_token', None)
 
 

@@ -55,7 +55,10 @@ class Session:
         self.last_active_ts = int(time.time())
         self.file_store = file_store
         self.agent_session = AgentSession(
-            sid, file_store, status_callback=self.queue_status_message
+            sid,
+            file_store,
+            status_callback=self.queue_status_message,
+            github_user_id=user_id,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
