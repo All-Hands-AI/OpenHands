@@ -165,7 +165,7 @@ function SettingsScreen() {
       <form action={formAction} className="flex flex-col h-full">
         <header className="px-3 py-1.5 border-b border-b-[#454545] flex items-center gap-2">
           <SettingsIcon width={16} height={16} />
-          <span className="text-sm leading-6">Settings</span>
+          <h1 className="text-sm leading-6">Settings</h1>
         </header>
 
         <div className="flex flex-col gap-6 grow overflow-y-auto px-11 py-9">
