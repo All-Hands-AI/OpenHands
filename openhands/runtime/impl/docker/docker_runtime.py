@@ -323,9 +323,6 @@ class DockerRuntime(ActionExecutionClient):
                 self._container_port = self._host_port
             elif env_var.startswith('VSCODE_PORT='):
                 self._vscode_port = int(env_var.split('VSCODE_PORT=')[1])
-        else:
-            # fallback if host network is used
-            self._container_port = int(self.container.attrs['Args'][9])
 
         self._app_ports = []
         exposed_ports = config.get('ExposedPorts')
@@ -342,7 +339,7 @@ class DockerRuntime(ActionExecutionClient):
         )
 
     @tenacity.retry(
-        stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
+        stop=tenacity.stop_after_delay(300) | stop_if_should_exit(),
         retry=tenacity.retry_if_exception_type(
             (ConnectionError, requests.exceptions.ConnectionError)
         ),
