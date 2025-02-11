@@ -155,7 +155,7 @@ def test_str_replace(temp_dir, runtime_cls, run_as_openhands):
             new_str='sample file',
         )
         obs = runtime.run_action(action)
-        assert 'The file has been edited' in obs.content
+        assert f'The file {test_file} has been edited' in obs.content
 
         # Verify file content
         action = FileEditAction(
@@ -353,7 +353,7 @@ def test_str_replace_with_empty_old_str(temp_dir, runtime_cls, run_as_openhands)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert (
             obs.content
-            == """No replacement was performed. Multiple occurrences of old_str `` in lines [1, 2, 3]. Please ensure it is unique."""
+            == """No replacement was performed. Multiple occurrences of old_str `` in lines [1, 2, 3, 4]. Please ensure it is unique."""
         )
     finally:
         _close_test_runtime(runtime)
@@ -367,6 +367,8 @@ def test_str_replace_with_none_old_str(temp_dir, runtime_cls, run_as_openhands):
             content='Line 1\nLine 2\nLine 3',
             path=test_file,
         )
+        runtime.run_action(action)
+
         action = FileEditAction(
             command='str_replace',
             path=test_file,
