@@ -291,6 +291,20 @@ describe("Settings Screen", () => {
       });
     });
 
+    it("should set asterik placeholder if the LLM API key is set", async () => {
+      getSettingsSpy.mockResolvedValueOnce({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        llm_api_key: "**********",
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        const input = screen.getByTestId("llm-api-key-input");
+        expect(input).toHaveProperty("placeholder", "**********");
+      });
+    });
+
     describe("Basic Model Selector", () => {
       it("should set the provider and model", async () => {
         getSettingsSpy.mockResolvedValue({
@@ -423,6 +437,7 @@ describe("Settings Screen", () => {
       });
     });
 
+    // FIXME: security analyzer is not found for some reason...
     it.skip("should have the values set if the user previously had them set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
@@ -457,14 +472,6 @@ describe("Settings Screen", () => {
         );
       });
     });
-
-    it.todo(
-      "should disable the 'Save Changes' button if the settings are unchanged",
-    );
-
-    it.todo(
-      "should disable the 'Reset to defaults' button if the settings are unchanged",
-    );
 
     it("should save the settings when the 'Save Changes' button is clicked", async () => {
       const user = userEvent.setup();

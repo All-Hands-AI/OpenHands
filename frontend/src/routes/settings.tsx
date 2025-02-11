@@ -285,6 +285,7 @@ function SettingsScreen() {
             type="password"
             className="w-[680px]"
             startContent={isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />}
+            placeholder={isLLMKeySet ? "**********" : ""}
           />
 
           <HelpLink
