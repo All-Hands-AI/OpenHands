@@ -633,10 +633,10 @@ def main():
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
 
-parts = my_args.repo.rsplit('/', 1)
-if len(parts) < 2:
-    raise ValueError("Invalid repo name")
-owner, repo = parts
+    parts = my_args.repo.rsplit('/', 1)
+    if len(parts) < 2:
+        raise ValueError("Invalid repo name")
+    owner, repo = parts
 
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
     username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
