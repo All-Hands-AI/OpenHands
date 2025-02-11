@@ -1,6 +1,5 @@
 import React from "react";
 import toast from "react-hot-toast";
-import { isAxiosError } from "axios";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
@@ -20,6 +19,7 @@ import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import SettingsIcon from "#/icons/settings.svg?react";
+import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 
 const displayErrorToast = (error: string) => {
   toast.error(error, {
@@ -49,7 +49,7 @@ function SettingsScreen() {
   const { data: settings, isFetching, isSuccess } = useSettings();
   const { data: config } = useConfig();
   const { data: resources } = useAIConfigOptions();
-  const { mutateAsync: saveSettings } = useSaveSettings();
+  const { mutate: saveSettings } = useSaveSettings();
   const { handleLogout } = useAppLogout();
 
   const isSaas = config?.APP_MODE === "saas";
@@ -91,37 +91,32 @@ function SettingsScreen() {
     const userConsentsToAnalytics =
       formData.get("enable-analytics-switch")?.toString() === "on";
 
-    try {
-      await saveSettings(
-        {
-          github_token: formData.get("github-token-input")?.toString() || "",
-          LANGUAGE: languageValue,
-          user_consents_to_analytics: userConsentsToAnalytics,
-          LLM_MODEL: customLlmModel || fullLlmModel,
-          LLM_BASE_URL: formData.get("base-url-input")?.toString() || "",
-          LLM_API_KEY: formData.get("llm-api-key-input")?.toString(),
-          AGENT: formData.get("agent-input")?.toString(),
-          SECURITY_ANALYZER:
-            formData.get("security-analyzer-input")?.toString() || "",
-          REMOTE_RUNTIME_RESOURCE_FACTOR: remoteRuntimeResourceFactor,
-          ENABLE_DEFAULT_CONDENSER: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
+    saveSettings(
+      {
+        github_token: formData.get("github-token-input")?.toString() || "",
+        LANGUAGE: languageValue,
+        user_consents_to_analytics: userConsentsToAnalytics,
+        LLM_MODEL: customLlmModel || fullLlmModel,
+        LLM_BASE_URL: formData.get("base-url-input")?.toString() || "",
+        LLM_API_KEY: formData.get("llm-api-key-input")?.toString(),
+        AGENT: formData.get("agent-input")?.toString(),
+        SECURITY_ANALYZER:
+          formData.get("security-analyzer-input")?.toString() || "",
+        REMOTE_RUNTIME_RESOURCE_FACTOR: remoteRuntimeResourceFactor,
+        ENABLE_DEFAULT_CONDENSER: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
+      },
+      {
+        onSuccess: () => {
+          handleCaptureConsent(userConsentsToAnalytics);
+          displaySuccessToast("Settings saved");
+          setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
         },
-        {
-          onSuccess: () => {
-            handleCaptureConsent(userConsentsToAnalytics);
-            displaySuccessToast("Settings saved");
-            setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
-          },
+        onError: (error) => {
+          const errorMessage = retrieveAxiosErrorMessage(error);
+          displayErrorToast(errorMessage);
         },
-      );
-    } catch (error) {
-      if (isAxiosError(error)) {
-        const errorMessage = error.response?.data.error || error.message;
-        displayErrorToast(errorMessage);
-      }
-
-      displayErrorToast("An error occurred while saving settings");
-    }
+      },
+    );
   };
 
   const handleReset = () => {
