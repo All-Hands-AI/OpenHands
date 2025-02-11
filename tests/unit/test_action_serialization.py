@@ -5,6 +5,7 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    FileEditAction,
     FileReadAction,
     FileWriteAction,
     MessageAction,
@@ -135,7 +136,7 @@ def test_file_read_action_serialization_deserialization():
             'end': -1,
             'thought': 'None',
             'impl_source': 'default',
-            'translated_ipython_code': '',
+            'view_range': None,
         },
     }
     serialization_deserialization(original_action_dict, FileReadAction)
@@ -153,6 +154,48 @@ def test_file_write_action_serialization_deserialization():
         },
     }
     serialization_deserialization(original_action_dict, FileWriteAction)
+
+
+def test_file_edit_action_aci_serialization_deserialization():
+    original_action_dict = {
+        'action': 'edit',
+        'args': {
+            'path': '/path/to/file.txt',
+            'command': 'str_replace',
+            'file_text': None,
+            'view_range': None,
+            'old_str': 'old text',
+            'new_str': 'new text',
+            'insert_line': None,
+            'content': '',
+            'start': 1,
+            'end': -1,
+            'thought': 'Replacing text',
+            'impl_source': 'oh_aci',
+        },
+    }
+    serialization_deserialization(original_action_dict, FileEditAction)
+
+
+def test_file_edit_action_llm_serialization_deserialization():
+    original_action_dict = {
+        'action': 'edit',
+        'args': {
+            'path': '/path/to/file.txt',
+            'command': None,
+            'file_text': None,
+            'view_range': None,
+            'old_str': None,
+            'new_str': None,
+            'insert_line': None,
+            'content': 'Updated content',
+            'start': 1,
+            'end': 10,
+            'thought': 'Updating file content',
+            'impl_source': 'llm_based_edit',
+        },
+    }
+    serialization_deserialization(original_action_dict, FileEditAction)
 
 
 def test_legacy_serialization():
