@@ -70,6 +70,7 @@ class ConversationManager(ABC):
         settings: Settings,
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
+        replay_json: str | None = None,
     ) -> EventStream:
         """Start an event loop if one is not already running"""
 
