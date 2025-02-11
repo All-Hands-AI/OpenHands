@@ -153,6 +153,14 @@ function SettingsScreen() {
     return <div>Failed to fetch settings. Please try reloading.</div>;
   }
 
+  const onToggleAdvancedMode = (isToggled: boolean) => {
+    setLlmConfigMode(isToggled ? "advanced" : "basic");
+    if (!isToggled) {
+      // reset advanced state
+      setConfirmationModeIsEnabled(!!settings?.SECURITY_ANALYZER);
+    }
+  };
+
   return (
     <main
       data-testid="settings-screen"
@@ -229,9 +237,7 @@ function SettingsScreen() {
             <SettingsSwitch
               testId="advanced-settings-switch"
               defaultIsToggled={isAdvancedSettingsSet}
-              onToggle={(isToggled) =>
-                setLlmConfigMode(isToggled ? "advanced" : "basic")
-              }
+              onToggle={onToggleAdvancedMode}
             >
               Advanced
             </SettingsSwitch>

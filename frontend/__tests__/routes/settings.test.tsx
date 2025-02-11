@@ -214,6 +214,33 @@ describe("Settings Screen", () => {
       expect(llmProviderInput).toHaveValue("Anthropic");
       expect(llmModelInput).toHaveValue("claude-3-5-sonnet-20241022");
     });
+
+    test("enabling advanced, enabling confirmation mode, and then disabling + enabling advanced should not render the security analyzer input", async () => {
+      const user = userEvent.setup();
+      renderSettingsScreen();
+
+      await toggleAdvancedSettings(user);
+
+      const confirmationModeSwitch = await screen.findByTestId(
+        "enable-confirmation-mode-switch",
+      );
+      await user.click(confirmationModeSwitch);
+
+      let securityAnalyzerInput = screen.queryByTestId(
+        "security-analyzer-input",
+      );
+      expect(securityAnalyzerInput).toBeInTheDocument();
+
+      await toggleAdvancedSettings(user);
+
+      securityAnalyzerInput = screen.queryByTestId("security-analyzer-input");
+      expect(securityAnalyzerInput).not.toBeInTheDocument();
+
+      await toggleAdvancedSettings(user);
+
+      securityAnalyzerInput = screen.queryByTestId("security-analyzer-input");
+      expect(securityAnalyzerInput).not.toBeInTheDocument();
+    });
   });
 
   describe("LLM Settings", () => {
