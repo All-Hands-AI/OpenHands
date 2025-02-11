@@ -81,7 +81,7 @@ class FileEditAction(Action):
             end (int): The ending line for editing (1-indexed, inclusive). Default is -1 (end of file).
             thought (str): The reasoning behind the edit action.
             action (str): The type of action being performed (always ActionType.EDIT).
-            runnable (bool): Indicates if the action can be executed (always True).
+        runnable (bool): Indicates if the action can be executed (always True).
         security_risk (ActionSecurityRisk | None): Indicates any security risks associated with the action.
         impl_source (FileEditSource): The source of the implementation (LLM_BASED_EDIT or OH_ACI).
 
