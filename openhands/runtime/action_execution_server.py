@@ -21,6 +21,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
+import psutil
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -108,6 +109,22 @@ class ActionExecutor:
         self.last_execution_time = self.start_time
         self._initialized = False
 
+        if _override_max_memory_gb := os.environ.get('RUNTIME_MAX_MEMORY_GB', None):
+            self.max_memory_gb = int(_override_max_memory_gb)
+            logger.info(
+                f'Setting max memory to {self.max_memory_gb}GB (according to the RUNTIME_MAX_MEMORY_GB environment variable)'
+            )
+        else:
+            # Get available system memory
+            total_memory_gb = psutil.virtual_memory().total / (
+                1024 * 1024 * 1024
+            )  # Convert to GB
+            self.max_memory_gb = int(max(0.5, total_memory_gb - 1.0))
+            # Reserve 1GB as head room, minimum of 0.5GB
+            logger.info(
+                f'Total memory: {total_memory_gb}GB, setting limit to {self.max_memory_gb}GB (reserved 1GB for action execution server, minimum 0.5GB)'
+            )
+
     @property
     def initial_cwd(self):
         return self._initial_cwd
@@ -120,8 +137,10 @@ class ActionExecutor:
             no_change_timeout_seconds=int(
                 os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
             ),
+            max_memory_mb=self.max_memory_gb * 1024,
         )
         self.bash_session.initialize()
+
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
             timeout=30,
