@@ -38,7 +38,7 @@ actions = (
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]
 
 
-def handle_deprecated_args(args: dict) -> dict:
+def handle_action_deprecated_args(args: dict) -> dict:
     # keep_prompt has been deprecated in https://github.com/All-Hands-AI/OpenHands/pull/4881
     if 'keep_prompt' in args:
         args.pop('keep_prompt')
@@ -80,7 +80,7 @@ def action_from_dict(action: dict) -> Action:
         args['image_urls'] = args.pop('images_urls')
 
     # handle deprecated args
-    args = handle_deprecated_args(args)
+    args = handle_action_deprecated_args(args)
 
     try:
         decoded_action = action_class(**args)
