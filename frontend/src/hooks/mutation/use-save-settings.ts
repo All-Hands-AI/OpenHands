@@ -30,5 +30,8 @@ export const useSaveSettings = () => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["settings"] });
     },
+    meta: {
+      disableToast: true,
+    },
   });
 };
