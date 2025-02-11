@@ -68,7 +68,7 @@ class FileEditAction(Action):
 
     Attributes:
         path (str): The path to the file being edited. Works for both LLM-based and OH_ACI editing.
-        OH_ACI only argments:
+        OH_ACI only arguments:
             command (str): The editing command to be performed (view, create, str_replace, insert, undo_edit, write).
             file_text (str): The content of the file to be created (used with 'create' command in OH_ACI mode).
             old_str (str): The string to be replaced (used with 'str_replace' command in OH_ACI mode).
