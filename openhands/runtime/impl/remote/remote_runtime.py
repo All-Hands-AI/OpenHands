@@ -225,7 +225,6 @@ class RemoteRuntime(ActionExecutionClient):
             'environment': environment,
             'session_id': self.sid,
             'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
-            'runtime_class': 'sysbox-runc',
         }
 
         # Start the sandbox using the /start endpoint
