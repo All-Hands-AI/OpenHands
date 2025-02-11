@@ -1,4 +1,5 @@
 import React from "react";
+import type { Message } from "#/message";
 import { ChatMessage } from "#/components/features/chat/chat-message";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { ImageCarousel } from "../images/image-carousel";

@@ -15,3 +15,15 @@ class GitHubRepository(BaseModel):
     full_name: str
     stargazers_count: int | None = None
     link_header: str | None = None
+
+
+class GhAuthenticationError(ValueError):
+    """Raised when there is an issue with GitHub authentication."""
+
+    pass
+
+
+class GHUnknownException(ValueError):
+    """Raised when there is an issue with GitHub communcation."""
+
+    pass
