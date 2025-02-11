@@ -47,7 +47,7 @@ const displaySuccessToast = (message: string) => {
 };
 
 function SettingsScreen() {
-  const { data: settings, isFetching, isSuccess } = useSettings();
+  const { data: settings, isFetching } = useSettings();
   const { data: config } = useConfig();
   const { data: resources } = useAIConfigOptions();
   const { mutate: saveSettings } = useSaveSettings();
@@ -148,7 +148,7 @@ function SettingsScreen() {
     return <div>Loading...</div>;
   }
 
-  if (!isSuccess) {
+  if (!settings) {
     return <div>Failed to fetch settings. Please try reloading.</div>;
   }
 

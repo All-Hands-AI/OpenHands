@@ -30,6 +30,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
         <p className="text-xs text-[#A3A3A3]">
           {t(I18nKey.SETTINGS$DESCRIPTION)} For other options,{" "}
           <Link
+            data-testid="advanced-settings-link"
             to="/settings"
             className="underline underline-offset-2 text-white"
           >

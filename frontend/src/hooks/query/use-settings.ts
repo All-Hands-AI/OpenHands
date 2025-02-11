@@ -4,6 +4,7 @@ import posthog from "posthog-js";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { useConfig } from "#/hooks/query/use-config";
+import { DEFAULT_SETTINGS } from "#/services/settings";
 
 const getSettingsQueryFn = async () => {
   const apiSettings = await OpenHands.getSettings();
@@ -31,6 +32,7 @@ export const useSettings = () => {
     queryKey: ["settings", githubTokenIsSet],
     queryFn: getSettingsQueryFn,
     enabled: config?.APP_MODE !== "saas" || githubTokenIsSet,
+    initialData: DEFAULT_SETTINGS,
     meta: {
       disableToast: true,
     },
@@ -45,6 +47,14 @@ export const useSettings = () => {
   React.useEffect(() => {
     setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
   }, [query.data?.GITHUB_TOKEN_IS_SET, query.isFetched]);
+
+  // check if 404
+  if (query.error?.status === 404) {
+    return {
+      ...query,
+      data: DEFAULT_SETTINGS,
+    };
+  }
 
   return query;
 };

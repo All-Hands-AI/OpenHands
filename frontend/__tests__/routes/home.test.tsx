@@ -1,5 +1,5 @@
 import { createRoutesStub } from "react-router";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
 import userEvent from "@testing-library/user-event";
 import { screen } from "@testing-library/react";
@@ -9,7 +9,25 @@ import SettingsScreen from "#/routes/settings";
 import Home from "#/routes/_oh._index/route";
 import OpenHands from "#/api/open-hands";
 
+const createAxiosNotFoundErrorObject = () =>
+  new AxiosError(
+    "Request failed with status code 404",
+    "ERR_BAD_REQUEST",
+    undefined,
+    undefined,
+    {
+      status: 404,
+      statusText: "Not Found",
+      data: { message: "Settings not found" },
+      headers: {},
+      // @ts-expect-error - we only need the response object for this test
+      config: {},
+    },
+  );
+
 describe("Home Screen", () => {
+  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+
   const RouterStub = createRoutesStub([
     {
       // layout route
@@ -28,6 +46,10 @@ describe("Home Screen", () => {
       path: "/settings",
     },
   ]);
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("should render the home screen", () => {
     renderWithProviders(<RouterStub initialEntries={["/"]} />);
@@ -58,22 +80,8 @@ describe("Home Screen", () => {
 
   describe("Settings 404", () => {
     it("should open the settings modal if GET /settings fails with a 404", async () => {
-      const error = new AxiosError(
-        "Request failed with status code 404",
-        "ERR_BAD_REQUEST",
-        undefined,
-        undefined,
-        {
-          status: 404,
-          statusText: "Not Found",
-          data: { message: "Settings not found" },
-          headers: {},
-          // @ts-expect-error - we only need the response object for this test
-          config: {},
-        },
-      );
-
-      vi.spyOn(OpenHands, "getSettings").mockRejectedValue(error);
+      const error = createAxiosNotFoundErrorObject();
+      getSettingsSpy.mockRejectedValue(error);
 
       renderWithProviders(<RouterStub initialEntries={["/"]} />);
 
@@ -81,25 +89,9 @@ describe("Home Screen", () => {
       expect(settingsModal).toBeInTheDocument();
     });
 
-    // We don't return default settings if there is a 404, so the settings screen errors]
-    // after navigating to it
-    it.skip("should navigate to the settings screen when clicking the advanced settings button", async () => {
-      const error = new AxiosError(
-        "Request failed with status code 404",
-        "ERR_BAD_REQUEST",
-        undefined,
-        undefined,
-        {
-          status: 404,
-          statusText: "Not Found",
-          data: { message: "Settings not found" },
-          headers: {},
-          // @ts-expect-error - we only need the response object for this test
-          config: {},
-        },
-      );
-
-      vi.spyOn(OpenHands, "getSettings").mockRejectedValue(error);
+    it("should navigate to the settings screen when clicking the advanced settings button", async () => {
+      const error = createAxiosNotFoundErrorObject();
+      getSettingsSpy.mockRejectedValue(error);
 
       const user = userEvent.setup();
       renderWithProviders(<RouterStub initialEntries={["/"]} />);
@@ -108,11 +100,12 @@ describe("Home Screen", () => {
       expect(settingsModal).toBeInTheDocument();
 
       const advancedSettingsButton = await screen.findByTestId(
-        "advanced-settings-button",
+        "advanced-settings-link",
       );
       await user.click(advancedSettingsButton);
 
-      expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
+      const settingsModalAfter = screen.queryByTestId("ai-config-modal");
+      expect(settingsModalAfter).not.toBeInTheDocument();
 
       const settingsScreen = await screen.findByTestId("settings-screen");
       expect(settingsScreen).toBeInTheDocument();
