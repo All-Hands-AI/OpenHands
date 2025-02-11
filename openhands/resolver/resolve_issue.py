@@ -633,24 +633,22 @@ def main():
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
 
-    parts = my_args.repo.split('/')
-    if len(parts) > 2:
-        owner = '/'.join(parts[:-1])
-        repo = parts[-1]
-    else:
-        owner, repo = parts
+parts = my_args.repo.rsplit('/', 1)
+if len(parts) < 2:
+    raise ValueError("Invalid repo name")
+owner, repo = parts
 
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
     username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
     if not username:
-        raise ValueError('username is required.')
+        raise ValueError('Username is required.')
 
     if not token:
-        raise ValueError('token is required.')
+        raise ValueError('Token is required.')
 
     platform = identify_token(token)
     if platform == Platform.INVALID:
-        raise ValueError('token is invalid.')
+        raise ValueError('Token is invalid.')
 
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(
