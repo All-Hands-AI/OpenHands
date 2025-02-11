@@ -1,5 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 import { sendNotification } from "./notification";
+
+type NotificationMockType = {
+  permission: NotificationPermission;
+  requestPermission: () => Promise<NotificationPermission>;
+} & Mock;
 
 describe("sendNotification", () => {
   beforeEach(() => {
@@ -12,7 +17,7 @@ describe("sendNotification", () => {
   });
 
   it("should not send notification when notifications are disabled", async () => {
-    const NotificationMock = vi.fn();
+    const NotificationMock = vi.fn() as NotificationMockType;
     NotificationMock.permission = "granted";
     NotificationMock.requestPermission = vi.fn().mockResolvedValue("granted");
     vi.stubGlobal("Notification", NotificationMock);
@@ -24,7 +29,7 @@ describe("sendNotification", () => {
   });
 
   it("should send notification when notifications are enabled and permission is granted", async () => {
-    const NotificationMock = vi.fn();
+    const NotificationMock = vi.fn() as NotificationMockType;
     NotificationMock.permission = "granted";
     NotificationMock.requestPermission = vi.fn().mockResolvedValue("granted");
     vi.stubGlobal("Notification", NotificationMock);
@@ -39,7 +44,7 @@ describe("sendNotification", () => {
   });
 
   it("should request permission when notifications are enabled but permission is not granted", async () => {
-    const NotificationMock = vi.fn();
+    const NotificationMock = vi.fn() as NotificationMockType;
     NotificationMock.permission = "default";
     NotificationMock.requestPermission = vi.fn().mockResolvedValue("granted");
     vi.stubGlobal("Notification", NotificationMock);
@@ -55,7 +60,7 @@ describe("sendNotification", () => {
   });
 
   it("should not send notification when permission is denied", async () => {
-    const NotificationMock = vi.fn();
+    const NotificationMock = vi.fn() as NotificationMockType;
     NotificationMock.permission = "denied";
     NotificationMock.requestPermission = vi.fn().mockResolvedValue("denied");
     vi.stubGlobal("Notification", NotificationMock);
@@ -67,7 +72,7 @@ describe("sendNotification", () => {
   });
 
   it("should not request permission when permission is denied", async () => {
-    const NotificationMock = vi.fn();
+    const NotificationMock = vi.fn() as NotificationMockType;
     NotificationMock.permission = "denied";
     NotificationMock.requestPermission = vi.fn().mockResolvedValue("denied");
     vi.stubGlobal("Notification", NotificationMock);
