@@ -192,10 +192,12 @@ async def process_issue(
     # This code looks unnecessary because these are default values in the config class
     # they're set by default if nothing else overrides them
     # FIXME we should remove them here
-    local_runtime_url = os.getenv('LOCAL_RUNTIME_URL', 'http://localhost')
-    user_id = os.getuid() if hasattr(os, 'getuid') else 1000
-    if user_id == 0:
-        user_id = get_unique_uid()
+    kwargs = {}
+    if os.getenv('GITLAB_CI') == 'True':
+        kwargs['local_runtime_url'] = os.getenv('LOCAL_RUNTIME_URL', 'http://localhost')
+        user_id = os.getuid() if hasattr(os, 'getuid') else 1000
+        if user_id == 0:
+            kwargs['user_id'] = get_unique_uid()
 
     config = AppConfig(
         default_agent='CodeActAgent',
@@ -206,10 +208,9 @@ async def process_issue(
             runtime_container_image=runtime_container_image,
             enable_auto_lint=False,
             use_host_network=False,
-            user_id=user_id,
-            local_runtime_url=local_runtime_url,
             # large enough timeout, since some testcases take very long to run
             timeout=300,
+            **kwargs,
         ),
         # do not mount workspace
         workspace_base=workspace_base,
