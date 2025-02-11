@@ -15,13 +15,13 @@ class HttpSession:
 
     session: requests.Session | None = field(default_factory=requests.Session)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> object:
         if self.session is None:
             logger.error(
                 'Session is being used after close!', stack_info=True, exc_info=True
             )
         return object.__getattribute__(self.session, name)
 
-    def close(self):
+    def close(self) -> None:
         if self.session is not None:
             self.session.close()
