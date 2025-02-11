@@ -70,7 +70,7 @@ def init_loop_image():
     if not os.path.exists(LOOP_IMAGE):
         print(f"Initializing Docker Btrfs loop image {LOOP_IMAGE}")
         run_command("sudo apt-get install -y btrfs-progs")
-        run_command(f"sudo truncate -s 10G {safe_loop_img}")
+        run_command(f"sudo truncate -s 2000G {safe_loop_img}")
 
         # Format
         loop_dev = run_command("losetup -f", capture_output=True)
