@@ -624,3 +624,68 @@ def test_pr_handler_get_converted_issues_with_duplicate_issue_refs():
                 'External context #1.',
                 'External context #2.',
             ]
+
+
+def test_issue_handler_with_text_attachments():
+    with patch('requests.get') as mock_get:
+        # Mock the response for issues
+        mock_issues_response = MagicMock()
+        mock_issues_response.json.return_value = [
+            {
+                'number': 1,
+                'title': 'Test Issue',
+                'body': 'Test Body with attachment [error.log](https://example.com/error.log) and [config.yaml](https://example.com/config.yaml)',
+            }
+        ]
+        mock_issues_response.raise_for_status = MagicMock()
+
+        # Mock the responses for downloading attachments
+        mock_error_log = MagicMock()
+        mock_error_log.text = 'Error: Something went wrong\nStack trace: ...'
+        mock_error_log.raise_for_status = MagicMock()
+
+        mock_config_yaml = MagicMock()
+        mock_config_yaml.text = 'key: value\nsetting: enabled'
+        mock_config_yaml.raise_for_status = MagicMock()
+
+        # Mock the response for comments
+        mock_comments_response = MagicMock()
+        mock_comments_response.json.return_value = []
+        mock_comments_response.raise_for_status = MagicMock()
+
+        # Set up the mock to return different responses for different URLs and params
+        def get_side_effect(url, *args, **kwargs):
+            if url == f'https://api.github.com/repos/test-owner/test-repo/issues':
+                # For the first page, return issues
+                if kwargs.get('params', {}).get('page') == 1:
+                    return mock_issues_response
+                # For subsequent pages, return empty list to end pagination
+                return mock_comments_response
+            elif url == 'https://example.com/error.log':
+                return mock_error_log
+            elif url == 'https://example.com/config.yaml':
+                return mock_config_yaml
+            else:
+                return mock_comments_response
+
+        mock_get.side_effect = get_side_effect
+
+        # Create an instance of IssueHandler
+        llm_config = LLMConfig(model='test', api_key='test')
+        handler = IssueHandler('test-owner', 'test-repo', 'test-token', llm_config)
+
+        # Get converted issues
+        issues = handler.get_converted_issues(issue_numbers=[1])
+
+        # Get instruction to verify attachment handling
+        instruction, _ = handler.get_instruction(
+            issues[0],
+            'Test template: {{ issues }}',
+            repo_instruction=None
+        )
+
+        # Verify that the instruction contains the attachment contents
+        assert 'Content of attached file \'error.log\'' in instruction
+        assert 'Error: Something went wrong' in instruction
+        assert 'Content of attached file \'config.yaml\'' in instruction
+        assert 'key: value' in instruction
