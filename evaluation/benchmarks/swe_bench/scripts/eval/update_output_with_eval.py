@@ -207,12 +207,13 @@ with open(args.input_file, 'r') as infile:
     for line in tqdm(infile, desc='Checking for changes'):
         data = json.loads(line)
         instance_id = data['instance_id']
-        if instance_id in instance_id_to_status:
-            current_report = data.get('report', {})
-            new_report = instance_id_to_status[instance_id]
-            if current_report != new_report:
-                needs_update = True
-                break
+        current_report = data.get('report', {})
+        new_report = instance_id_to_status[
+            instance_id
+        ]  # if no report, it's not resolved
+        if current_report != new_report:
+            needs_update = True
+            break
 
 if not needs_update:
     print('No updates detected. Skipping file update.')
@@ -234,6 +235,5 @@ with open(args.input_file + '.bak', 'r') as infile, open(
     for line in tqdm(infile, desc='Updating output file'):
         data = json.loads(line)
         instance_id = data['instance_id']
-        if instance_id in instance_id_to_status:
-            data['report'] = instance_id_to_status[instance_id]
+        data['report'] = instance_id_to_status[instance_id]
         outfile.write(json.dumps(data) + '\n')

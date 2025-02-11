@@ -179,9 +179,10 @@ describe("ConversationPanel", () => {
     const user = userEvent.setup();
     renderConversationPanel();
     const cards = await screen.findAllByTestId("conversation-card");
-    const title = within(cards[0]).getByTestId("conversation-card-title");
 
-    await clickOnEditButton(user);
+    const card = cards[0];
+    await clickOnEditButton(user, card);
+    const title = within(card).getByTestId("conversation-card-title");
 
     await user.clear(title);
     await user.type(title, "Conversation 1 Renamed");
@@ -202,7 +203,10 @@ describe("ConversationPanel", () => {
     const user = userEvent.setup();
     renderConversationPanel();
     const cards = await screen.findAllByTestId("conversation-card");
-    const title = within(cards[0]).getByTestId("conversation-card-title");
+
+    const card = cards[0];
+    await clickOnEditButton(user, card);
+    const title = within(card).getByTestId("conversation-card-title");
 
     await user.click(title);
     await user.tab();
@@ -227,7 +231,7 @@ describe("ConversationPanel", () => {
   it("should call onClose after clicking a card", async () => {
     renderConversationPanel();
     const cards = await screen.findAllByTestId("conversation-card");
-    const firstCard = cards[0];
+    const firstCard = cards[1];
 
     await userEvent.click(firstCard);
 

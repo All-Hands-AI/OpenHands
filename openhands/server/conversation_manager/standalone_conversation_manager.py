@@ -149,8 +149,8 @@ class StandaloneConversationManager(ConversationManager):
                     self._close_session(sid) for sid in self._local_agent_loops_by_sid
                 )
                 return
-            except Exception as e:
-                logger.warning(f'error_cleaning_stale: {str(e)}')
+            except Exception:
+                logger.error('error_cleaning_stale')
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
     async def get_running_agent_loops(

@@ -1,4 +1,4 @@
-import { Input, Tooltip } from "@nextui-org/react";
+import { Input, Tooltip } from "@heroui/react";
 import { useTranslation } from "react-i18next";
 import { FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
 import { I18nKey } from "#/i18n/declaration";

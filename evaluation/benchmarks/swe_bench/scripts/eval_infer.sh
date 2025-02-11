@@ -76,7 +76,7 @@ echo "Running SWE-bench evaluation"
 echo "=============================================================="
 
 RUN_ID=$(date +"%Y%m%d_%H%M%S")
-N_PROCESS=16
+N_PROCESS=4
 
 if [ -z "$INSTANCE_ID" ]; then
     echo "Running SWE-bench evaluation on the whole input file..."
@@ -87,7 +87,7 @@ if [ -z "$INSTANCE_ID" ]; then
         --dataset_name "$DATASET_NAME" \
         --split "$SPLIT" \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
-        --timeout 1800 \
+        --timeout 3600 \
         --cache_level instance \
         --max_workers $N_PROCESS \
         --run_id $RUN_ID
@@ -133,7 +133,7 @@ else
         --dataset_name "$DATASET_NAME" \
         --split "$SPLIT" \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
-        --timeout 1800 \
+        --timeout 3600 \
         --instance_ids $INSTANCE_ID \
         --cache_level instance \
         --max_workers $N_PROCESS \

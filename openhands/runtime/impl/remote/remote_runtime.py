@@ -45,6 +45,7 @@ class RemoteRuntime(ActionExecutionClient):
         status_callback: Optional[Callable] = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        github_user_id: str | None = None,
     ):
         super().__init__(
             config,
@@ -55,6 +56,7 @@ class RemoteRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
+            github_user_id,
         )
         if self.config.sandbox.api_key is None:
             raise ValueError(
@@ -67,6 +69,10 @@ class RemoteRuntime(ActionExecutionClient):
             self.log(
                 'debug',
                 'Setting workspace_base is not supported in the remote runtime.',
+            )
+        if self.config.sandbox.remote_runtime_api_url is None:
+            raise ValueError(
+                'remote_runtime_api_url is required in the remote runtime.'
             )
 
         self.runtime_builder = RemoteRuntimeBuilder(
@@ -206,13 +212,17 @@ class RemoteRuntime(ActionExecutionClient):
             plugins=self.plugins,
             app_config=self.config,
         )
+        environment = {
+            'DEBUG': 'true'
+            if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
+            else {},
+        }
+        environment.update(self.config.sandbox.runtime_startup_env_vars)
         start_request = {
             'image': self.container_image,
             'command': command,
             'working_dir': '/openhands/code/',
-            'environment': {'DEBUG': 'true'}
-            if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
-            else {},
+            'environment': environment,
             'session_id': self.sid,
             'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
         }
@@ -287,7 +297,8 @@ class RemoteRuntime(ActionExecutionClient):
             stop=tenacity.stop_after_delay(
                 self.config.sandbox.remote_runtime_init_timeout
             )
-            | stop_if_should_exit(),
+            | stop_if_should_exit()
+            | self._stop_if_closed,
             reraise=True,
             retry=tenacity.retry_if_exception_type(AgentRuntimeNotReadyError),
             wait=tenacity.wait_fixed(2),
@@ -337,8 +348,6 @@ class RemoteRuntime(ActionExecutionClient):
                 f'Runtime (ID={self.runtime_id}) is not yet ready. Status: {pod_status}'
             )
         elif pod_status in ('failed', 'unknown', 'crashloopbackoff'):
-            # clean up the runtime
-            self.close()
             if pod_status == 'crashloopbackoff':
                 raise AgentRuntimeUnavailableError(
                     'Runtime crashed and is being restarted, potentially due to memory usage. Please try again.'
@@ -377,6 +386,7 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _send_runtime_api_request(self, method, url, **kwargs):
         try:
+            kwargs['timeout'] = self.config.sandbox.remote_runtime_api_timeout
             return send_request(self.session, method, url, **kwargs)
         except requests.Timeout:
             self.log(
@@ -385,12 +395,22 @@ class RemoteRuntime(ActionExecutionClient):
             )
             raise
 
-    @tenacity.retry(
-        retry=tenacity.retry_if_exception_type(ConnectionError),
-        stop=tenacity.stop_after_attempt(3) | stop_if_should_exit(),
-        wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
-    )
     def _send_action_server_request(self, method, url, **kwargs):
+        if not self.config.sandbox.remote_runtime_enable_retries:
+            return self._send_action_server_request_impl(method, url, **kwargs)
+
+        retry_decorator = tenacity.retry(
+            retry=tenacity.retry_if_exception_type(ConnectionError),
+            stop=tenacity.stop_after_attempt(3)
+            | stop_if_should_exit()
+            | self._stop_if_closed,
+            wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
+        )
+        return retry_decorator(self._send_action_server_request_impl)(
+            method, url, **kwargs
+        )
+
+    def _send_action_server_request_impl(self, method, url, **kwargs):
         try:
             return super()._send_action_server_request(method, url, **kwargs)
         except requests.Timeout:
@@ -421,3 +441,6 @@ class RemoteRuntime(ActionExecutionClient):
                     ) from e
             else:
                 raise e
+
+    def _stop_if_closed(self, retry_state: tenacity.RetryCallState) -> bool:
+        return self._runtime_closed
