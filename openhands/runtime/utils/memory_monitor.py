@@ -1,101 +1,59 @@
 """Memory monitoring utilities for the runtime."""
 
-import os
-import resource
-import signal
+import threading
 from typing import Optional
 
-import psutil
+from memory_profiler import memory_usage
 
 from openhands.core.logger import openhands_logger as logger
 
 
-class MemoryMonitor:
-    def __init__(
-        self,
-        soft_limit_gb: float,
-        hard_limit_gb: float,
-        check_interval: float = 1.0,
-    ):
-        """Initialize memory monitor with configurable limits.
+class LogStream:
+    """Stream-like object that redirects writes to a logger."""
 
-        Args:
-            soft_limit_gb: Soft memory limit in GB. When exceeded, a warning is logged.
-            hard_limit_gb: Hard memory limit in GB. When exceeded, process is killed.
-            check_interval: How often to check memory usage, in seconds.
-        """
-        self.soft_limit_bytes = int(soft_limit_gb * 1024 * 1024 * 1024)
-        self.hard_limit_bytes = int(hard_limit_gb * 1024 * 1024 * 1024)
-        self.check_interval = check_interval
-        self._timer: Optional[int] = None
+    def write(self, message):
+        if message and not message.isspace():
+            logger.debug(f'[Memory usage] {message.strip()}')
+
+    def flush(self):
+        pass
+
+
+class MemoryMonitor:
+    def __init__(self):
+        """Memory monitor for the runtime."""
+        self._monitoring_thread: Optional[threading.Thread] = None
+        self._stop_monitoring = threading.Event()
+        self.log_stream = LogStream()
 
     def start_monitoring(self):
         """Start monitoring memory usage."""
-        # Set resource limits
-        resource.setrlimit(
-            resource.RLIMIT_AS, (self.hard_limit_bytes, self.hard_limit_bytes)
-        )
+        if self._monitoring_thread is not None:
+            return
 
-        # Set up signal handler for timer
-        signal.signal(signal.SIGALRM, self._check_memory)
-        signal.setitimer(signal.ITIMER_REAL, self.check_interval, self.check_interval)
+        def monitor_process():
+            try:
+                # Use memory_usage's built-in monitoring loop
+                mem_usage = memory_usage(
+                    -1,  # Monitor current process
+                    interval=0.1,  # Check every second
+                    timeout=None,  # Run indefinitely
+                    max_usage=False,  # Get continuous readings
+                    include_children=True,  # Include child processes
+                    multiprocess=True,  # Monitor all processes
+                    stream=self.log_stream,  # Redirect output to logger
+                )
+                logger.info(f'Memory usage across time: {mem_usage}')
+            except Exception as e:
+                logger.error(f'Memory monitoring failed: {e}')
+
+        self._monitoring_thread = threading.Thread(target=monitor_process, daemon=True)
+        self._monitoring_thread.start()
+        logger.debug('Memory monitoring started')
 
     def stop_monitoring(self):
         """Stop monitoring memory usage."""
-        if self._timer is not None:
-            signal.setitimer(signal.ITIMER_REAL, 0)
-            self._timer = None
-
-    def _check_memory(self, signum, frame):
-        """Check current memory usage and take action if limits are exceeded."""
-        # Get the main process
-        main_process = psutil.Process(os.getpid())
-
-        # Get main process memory usage
-        main_memory = main_process.memory_full_info().uss
-        memory_info = {
-            'processes': [
-                {
-                    'type': 'main',
-                    'name': main_process.name(),
-                    'pid': os.getpid(),
-                    'memory_gb': main_memory / 1024**3,
-                }
-            ]
-        }
-
-        # Track total memory and collect child process usage
-        total_memory = main_memory
-        for child in main_process.children(recursive=True):
-            try:
-                child_memory = child.memory_full_info().uss
-                total_memory += child_memory
-                memory_info['processes'].append(
-                    {
-                        'type': 'child',
-                        'name': child.name(),
-                        'pid': child.pid,
-                        'memory_gb': child_memory / 1024**3,
-                    }
-                )
-            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                continue
-
-        memory_info['total_gb'] = total_memory / 1024**3
-
-        # Get system-wide memory usage percentage
-        system_memory_total = psutil.virtual_memory().total / 1024**3
-        system_memory_used = psutil.virtual_memory().used / 1024**3
-        system_memory_percent = system_memory_used / system_memory_total * 100
-
-        # Only create and log report if system memory usage is high (>80%)
-        # Create a simple formatted string
-        report = 'Memory Usage Report:\n'
-        for proc in memory_info['processes']:
-            report += f"  [{proc['type']}] {proc['name']} (PID {proc['pid']}): {proc['memory_gb']:.2f}GB\n"
-        report += f"Total Memory Usage (by action execution server): {memory_info['total_gb']:.2f}GB\n"
-        report += f'Total Memory Usage (by system): {system_memory_used:.2f} / {system_memory_total:.2f}GB ({system_memory_percent:.1f}%)'
-
-        if system_memory_percent > 80:
-            logger.info(f'(High memory usage): {memory_info}')
-        logger.debug(report)
+        if self._monitoring_thread is not None:
+            self._stop_monitoring.set()
+            self._monitoring_thread = None
+            logger.debug('Memory monitoring stopped')

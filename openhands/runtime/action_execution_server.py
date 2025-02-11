@@ -58,6 +58,7 @@ from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
+from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
@@ -162,7 +163,7 @@ class ActionExecutor:
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
-
+        self.memory_monitor = MemoryMonitor()
         if _override_max_memory_gb := os.environ.get('RUNTIME_MAX_MEMORY_GB', None):
             self.max_memory_gb = int(_override_max_memory_gb)
             logger.info(
@@ -178,6 +179,8 @@ class ActionExecutor:
             logger.info(
                 f'Total memory: {total_memory_gb}GB, setting limit to {self.max_memory_gb}GB (reserved 1GB for action execution server, minimum 0.5GB)'
             )
+
+        self.memory_monitor.start_monitoring()
 
     @property
     def initial_cwd(self):
@@ -455,6 +458,7 @@ class ActionExecutor:
         return await browse(action, self.browser)
 
     def close(self):
+        self.memory_monitor.stop_monitoring()
         if self.bash_session is not None:
             self.bash_session.close()
         self.browser.close()
