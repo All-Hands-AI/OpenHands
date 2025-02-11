@@ -191,6 +191,7 @@ class ActionExecutor:
 
     async def ainit(self):
         # bash needs to be initialized first
+        logger.debug('Initializing bash session')
         self.bash_session = BashSession(
             work_dir=self._initial_cwd,
             username=self.username,
@@ -200,15 +201,18 @@ class ActionExecutor:
             max_memory_mb=self.max_memory_gb * 1024,
         )
         self.bash_session.initialize()
+        logger.debug('Bash session initialized')
 
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
             timeout=30,
         )
+        logger.debug('All plugins initialized')
 
         # This is a temporary workaround
         # TODO: refactor AgentSkills to be part of JupyterPlugin
         # AFTER ServerRuntime is deprecated
+        logger.debug('Initializing AgentSkills')
         if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
             obs = await self.run_ipython(
                 IPythonRunCellAction(
@@ -217,6 +221,7 @@ class ActionExecutor:
             )
             logger.debug(f'AgentSkills initialized: {obs}')
 
+        logger.debug('Initializing bash commands')
         await self._init_bash_commands()
         logger.debug('Runtime client initialized.')
         self._initialized = True
