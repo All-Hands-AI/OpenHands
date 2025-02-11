@@ -127,11 +127,9 @@ function SettingsScreen() {
     saveSettings(
       {
         ...DEFAULT_SETTINGS,
-        user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
       },
       {
         onSuccess: () => {
-          handleCaptureConsent(!!DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS);
           displaySuccessToast("Settings reset");
           setResetSettingsModalIsOpen(false);
           setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");

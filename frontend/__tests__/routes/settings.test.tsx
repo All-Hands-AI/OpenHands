@@ -596,6 +596,7 @@ describe("Settings Screen", () => {
       };
       delete mockCopy.github_token_is_set;
       delete mockCopy.unset_github_token;
+      delete mockCopy.user_consents_to_analytics;
 
       expect(saveSettingsSpy).toHaveBeenCalledWith({
         ...mockCopy,
@@ -660,13 +661,19 @@ describe("Settings Screen", () => {
       expect(handleCaptureConsentSpy).toHaveBeenCalledWith(false);
     });
 
-    it("should call handleCaptureConsent with defaults if the reset is successful", async () => {
+    it("should not reset analytics consent when resetting to defaults", async () => {
       const user = userEvent.setup();
-      const handleCaptureConsentSpy = vi.spyOn(
-        ConsentHandlers,
-        "handleCaptureConsent",
-      );
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        user_consents_to_analytics: true,
+      });
+
       renderSettingsScreen();
+
+      const analyticsConsentInput = await screen.findByTestId(
+        "enable-analytics-switch",
+      );
+      expect(analyticsConsentInput).toBeChecked();
 
       const resetButton = await screen.findByText("Reset to defaults");
       await user.click(resetButton);
@@ -675,8 +682,8 @@ describe("Settings Screen", () => {
       const confirmButton = within(modal).getByText("Reset");
       await user.click(confirmButton);
 
-      expect(handleCaptureConsentSpy).toHaveBeenCalledWith(
-        DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ user_consents_to_analytics: undefined }),
       );
     });
 
