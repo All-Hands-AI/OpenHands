@@ -95,7 +95,8 @@ function SettingsScreen() {
 
     saveSettings(
       {
-        github_token: formData.get("github-token-input")?.toString() || "",
+        github_token:
+          formData.get("github-token-input")?.toString() || undefined,
         LANGUAGE: languageValue,
         user_consents_to_analytics: userConsentsToAnalytics,
         LLM_MODEL: customLlmModel || fullLlmModel,
@@ -193,7 +194,6 @@ function SettingsScreen() {
                 label="GitHub Token"
                 type="password"
                 className="w-[680px]"
-                startContent={<KeyStatusIcon isSet={!!isGitHubTokenSet} />}
               />
 
               <HelpLink
@@ -284,7 +284,7 @@ function SettingsScreen() {
             label="API Key"
             type="password"
             className="w-[680px]"
-            startContent={<KeyStatusIcon isSet={isLLMKeySet} />}
+            startContent={isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />}
           />
 
           <HelpLink

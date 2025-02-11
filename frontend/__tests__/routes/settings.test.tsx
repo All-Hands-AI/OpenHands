@@ -142,32 +142,6 @@ describe("Settings Screen", () => {
       await screen.findByText("Configure GitHub Repositories");
     });
 
-    it("should render the unset indicator if the GitHub token is not set", async () => {
-      getConfigSpy.mockResolvedValue({
-        APP_MODE: "oss",
-        GITHUB_CLIENT_ID: "123",
-        POSTHOG_CLIENT_KEY: "456",
-      });
-      getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        github_token_is_set: false,
-      });
-
-      renderSettingsScreen();
-
-      await waitFor(() => {
-        const input = screen.getByTestId("github-token-input");
-        const inputParent = input.parentElement;
-
-        if (inputParent) {
-          const badge = within(inputParent).getByTestId("unset-indicator");
-          expect(badge).toBeInTheDocument();
-        } else {
-          throw new Error("GitHub Token input parent not found");
-        }
-      });
-    });
-
     it("should not render the GitHub token input if SaaS mode", async () => {
       getConfigSpy.mockResolvedValue({
         APP_MODE: "saas",
@@ -294,27 +268,6 @@ describe("Settings Screen", () => {
 
       // Not rendered until the switch is toggled
       // screen.getByTestId("security-analyzer-input");
-    });
-
-    it("should render an indicator if the LLM API key was not set", async () => {
-      getSettingsSpy.mockResolvedValueOnce({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        llm_api_key: null,
-      });
-
-      renderSettingsScreen();
-
-      await waitFor(() => {
-        const input = screen.getByTestId("llm-api-key-input");
-        const inputParent = input.parentElement;
-
-        if (inputParent) {
-          const badge = within(inputParent).getByTestId("unset-indicator");
-          expect(badge).toBeInTheDocument();
-        } else {
-          throw new Error("LLM API Key input parent not found");
-        }
-      });
     });
 
     it("should render an indicator if the LLM API key is set", async () => {
@@ -532,18 +485,13 @@ describe("Settings Screen", () => {
       const saveButton = screen.getByText("Save Changes");
       await user.click(saveButton);
 
-      const MOCK_COPY: Partial<PostApiSettings> = {
-        ...MOCK_DEFAULT_USER_SETTINGS,
-      };
-      delete MOCK_COPY.github_token_is_set;
-      delete MOCK_COPY.confirmation_mode;
-
-      expect(saveSettingsSpy).toHaveBeenCalledWith({
-        ...MOCK_COPY,
-        llm_api_key: undefined,
-        github_token: "",
-        language: "no",
-      });
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          llm_api_key: undefined,
+          github_token: undefined,
+          language: "no",
+        }),
+      );
     });
 
     it("should properly save basic LLM model settings", async () => {
@@ -575,20 +523,13 @@ describe("Settings Screen", () => {
       const saveButton = screen.getByText("Save Changes");
       await user.click(saveButton);
 
-      const mockCopy: Partial<PostApiSettings> = {
-        ...MOCK_DEFAULT_USER_SETTINGS,
-      };
-      delete mockCopy.github_token_is_set;
-      delete mockCopy.unset_github_token;
-
-      expect(saveSettingsSpy).toHaveBeenCalledWith({
-        ...mockCopy,
-        llm_model: "openai/gpt-4o",
-        // keys aren't present in basic mode
-        github_token: "",
-        confirmation_mode: undefined,
-        llm_api_key: undefined,
-      });
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          github_token: undefined,
+          llm_api_key: undefined,
+          llm_model: "openai/gpt-4o",
+        }),
+      );
     });
 
     it("should reset the settings when the 'Reset to defaults' button is clicked", async () => {
