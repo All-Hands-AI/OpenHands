@@ -70,25 +70,19 @@ describe("SettingsInput", () => {
     expect(screen.getByTestId("test-input")).toHaveValue("Test Value");
   });
 
-  it("should render a badge if content is provided", async () => {
-    const { rerender } = render(
-      <SettingsInput testId="test-input" label="Test Input" type="text" />,
-    );
+  it("should render start content", async () => {
+    const startContent = <div>Start Content</div>;
 
-    expect(screen.queryByTestId("badge")).not.toBeInTheDocument();
-
-    rerender(
+    render(
       <SettingsInput
         testId="test-input"
         label="Test Input"
         type="text"
-        badgeContent="Test Badge"
+        defaultValue="Test Value"
+        startContent={startContent}
       />,
     );
 
-    const badge = screen.getByTestId("badge");
-
-    expect(badge).toBeInTheDocument();
-    expect(badge).toHaveTextContent("Test Badge");
+    expect(screen.getByText("Start Content")).toBeInTheDocument();
   });
 });

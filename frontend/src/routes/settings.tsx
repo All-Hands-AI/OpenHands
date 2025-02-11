@@ -18,6 +18,7 @@ import { useAppLogout } from "#/hooks/use-app-logout";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
+import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 
 const displayErrorToast = (error: string) => {
   toast.error(error, {
@@ -181,6 +182,7 @@ function SettingsScreen() {
                 label="GitHub Token"
                 type="password"
                 className="w-[680px]"
+                startContent={<KeyStatusIcon isSet={!!isGitHubTokenSet} />}
               />
 
               <HelpLink
@@ -272,8 +274,8 @@ function SettingsScreen() {
             name="llm-api-key-input"
             label="API Key"
             type="password"
-            badgeContent={isLLMKeySet ? "SET" : undefined}
             className="w-[680px]"
+            startContent={<KeyStatusIcon isSet={isLLMKeySet} />}
           />
 
           <HelpLink

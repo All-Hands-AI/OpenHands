@@ -143,6 +143,33 @@ describe("Settings Screen", () => {
       await screen.findByText("Configure GitHub Repositories");
     });
 
+    it("should render the unset indicator if the GitHub token is not set", async () => {
+      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      getConfigSpy.mockResolvedValue({
+        APP_MODE: "oss",
+        GITHUB_CLIENT_ID: "123",
+        POSTHOG_CLIENT_KEY: "456",
+      });
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        github_token_is_set: false,
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        const input = screen.getByTestId("github-token-input");
+        const inputParent = input.parentElement;
+
+        if (inputParent) {
+          const badge = within(inputParent).getByTestId("unset-indicator");
+          expect(badge).toBeInTheDocument();
+        } else {
+          throw new Error("GitHub Token input parent not found");
+        }
+      });
+    });
+
     it("should not render the GitHub token input if SaaS mode", async () => {
       const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
       getConfigSpy.mockResolvedValue({
@@ -245,7 +272,7 @@ describe("Settings Screen", () => {
       // screen.getByTestId("security-analyzer-input");
     });
 
-    it("should not render a badge if the LLM API key was not set", async () => {
+    it("should render an indicator if the LLM API key was not set", async () => {
       getSettingsSpy.mockResolvedValueOnce({
         ...MOCK_DEFAULT_USER_SETTINGS,
         llm_api_key: null,
@@ -254,14 +281,19 @@ describe("Settings Screen", () => {
       renderSettingsScreen();
 
       await waitFor(() => {
-        screen.getByTestId("llm-api-key-input");
+        const input = screen.getByTestId("llm-api-key-input");
+        const inputParent = input.parentElement;
 
-        const badge = screen.queryByTestId("badge");
-        expect(badge).not.toBeInTheDocument();
+        if (inputParent) {
+          const badge = within(inputParent).getByTestId("unset-indicator");
+          expect(badge).toBeInTheDocument();
+        } else {
+          throw new Error("LLM API Key input parent not found");
+        }
       });
     });
 
-    it("should render a set badge if the LLM API key is set", async () => {
+    it("should render an indicator if the LLM API key is set", async () => {
       getSettingsSpy.mockResolvedValueOnce({
         ...MOCK_DEFAULT_USER_SETTINGS,
         llm_api_key: "**********",
@@ -270,10 +302,15 @@ describe("Settings Screen", () => {
       renderSettingsScreen();
 
       await waitFor(() => {
-        const badge = screen.getByTestId("badge");
+        const input = screen.getByTestId("llm-api-key-input");
+        const inputParent = input.parentElement;
 
-        expect(badge).toBeInTheDocument();
-        expect(badge).toHaveTextContent(/set/i);
+        if (inputParent) {
+          const badge = within(inputParent).getByTestId("set-indicator");
+          expect(badge).toBeInTheDocument();
+        } else {
+          throw new Error("LLM API Key input parent not found");
+        }
       });
     });
 
