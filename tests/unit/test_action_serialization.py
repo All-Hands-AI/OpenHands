@@ -164,7 +164,6 @@ def test_file_edit_action_aci_serialization_deserialization():
             'path': '/path/to/file.txt',
             'command': 'str_replace',
             'file_text': None,
-            'view_range': None,
             'old_str': 'old text',
             'new_str': 'new text',
             'insert_line': None,
@@ -185,7 +184,6 @@ def test_file_edit_action_llm_serialization_deserialization():
             'path': '/path/to/file.txt',
             'command': None,
             'file_text': None,
-            'view_range': None,
             'old_str': None,
             'new_str': None,
             'insert_line': None,
@@ -255,7 +253,6 @@ def test_file_llm_based_edit_action_legacy_serialization():
     # OH_ACI arguments
     assert event.command == ''
     assert event.file_text is None
-    assert event.view_range is None
     assert event.old_str is None
     assert event.new_str is None
     assert event.insert_line is None
@@ -276,7 +273,6 @@ def test_file_llm_based_edit_action_legacy_serialization():
     # OH_ACI arguments
     assert event_dict['args']['command'] == ''
     assert event_dict['args']['file_text'] is None
-    assert event_dict['args']['view_range'] is None
     assert event_dict['args']['old_str'] is None
     assert event_dict['args']['new_str'] is None
     assert event_dict['args']['insert_line'] is None
@@ -316,7 +312,6 @@ def test_file_ohaci_edit_action_legacy_serialization():
     # OH_ACI arguments
     assert event.command == 'create'
     assert event.file_text == 'New file content'
-    assert event.view_range is None
     assert event.old_str is None
     assert event.new_str is None
     assert event.insert_line is None
@@ -340,7 +335,6 @@ def test_file_ohaci_edit_action_legacy_serialization():
     # OH_ACI arguments
     assert event_dict['args']['command'] == 'create'
     assert event_dict['args']['file_text'] == 'New file content'
-    assert event_dict['args']['view_range'] is None
     assert event_dict['args']['old_str'] is None
     assert event_dict['args']['new_str'] is None
     assert event_dict['args']['insert_line'] is None

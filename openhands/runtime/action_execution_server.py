@@ -434,7 +434,6 @@ class ActionExecutor:
             command=action.command,
             path=action.path,
             file_text=action.file_text,
-            view_range=action.view_range,
             old_str=action.old_str,
             new_str=action.new_str,
             insert_line=action.insert_line,
