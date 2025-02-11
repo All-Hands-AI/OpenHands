@@ -391,6 +391,7 @@ def test_stress_runtime_memory_limits():
         }
     config.sandbox.runtime_startup_env_vars = {
         'RUNTIME_MAX_MEMORY_GB': '3',
+        'RUNTIME_MEMORY_MONITOR': 'true',
     }
 
     try:
@@ -440,6 +441,7 @@ def test_stress_runtime_memory_limits_with_repeated_file_edit():
         }
     config.sandbox.runtime_startup_env_vars = {
         'RUNTIME_MAX_MEMORY_GB': '3',
+        'RUNTIME_MEMORY_MONITOR': 'true',
     }
 
     try:
@@ -468,9 +470,8 @@ def test_stress_runtime_memory_limits_with_repeated_file_edit():
                 """
             )
 
-            logger.info(edit_action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(edit_action)
-            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+            logger.info(f'finished iteration {i}')
 
         # Check file size
         action = FileReadAction(path=test_file)
