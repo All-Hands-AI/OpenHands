@@ -68,20 +68,19 @@ class FileEditAction(Action):
 
     Attributes:
         path (str): The path to the file being edited. Works for both LLM-based and OH_ACI editing.
-        OH_ACI only argments:
+        OH_ACI only arguments:
             command (str): The editing command to be performed (view, create, str_replace, insert, undo_edit, write).
             file_text (str): The content of the file to be created (used with 'create' command in OH_ACI mode).
             old_str (str): The string to be replaced (used with 'str_replace' command in OH_ACI mode).
             new_str (str): The string to replace old_str (used with 'str_replace' and 'insert' commands in OH_ACI mode).
             insert_line (int): The line number after which to insert new_str (used with 'insert' command in OH_ACI mode).
-            view_range (list[int]): The range of lines to view (used with 'view' command in OH_ACI mode).
         LLM-based editing arguments:
             content (str): The content to be written or edited in the file (used in LLM-based editing and 'write' command).
             start (int): The starting line for editing (1-indexed, inclusive). Default is 1.
             end (int): The ending line for editing (1-indexed, inclusive). Default is -1 (end of file).
             thought (str): The reasoning behind the edit action.
             action (str): The type of action being performed (always ActionType.EDIT).
-            runnable (bool): Indicates if the action can be executed (always True).
+        runnable (bool): Indicates if the action can be executed (always True).
         security_risk (ActionSecurityRisk | None): Indicates any security risks associated with the action.
         impl_source (FileEditSource): The source of the implementation (LLM_BASED_EDIT or OH_ACI).
 
@@ -97,9 +96,8 @@ class FileEditAction(Action):
     path: str
 
     # OH_ACI arguments
-    command: str | None = None
+    command: str = ''
     file_text: str | None = None
-    view_range: list[int] | None = None
     old_str: str | None = None
     new_str: str | None = None
     insert_line: int | None = None
@@ -126,9 +124,7 @@ class FileEditAction(Action):
             ret += f'Content:\n```\n{self.content}\n```\n'
         else:  # OH_ACI mode
             ret += f'Command: {self.command}\n'
-            if self.command == 'view' and self.view_range:
-                ret += f'View Range: {self.view_range}\n'
-            elif self.command == 'create':
+            if self.command == 'create':
                 ret += f'Created File with Text:\n```\n{self.file_text}\n```\n'
             elif self.command == 'str_replace':
                 ret += f'Old String: ```\n{self.old_str}\n```\n'
@@ -138,4 +134,5 @@ class FileEditAction(Action):
                 ret += f'New String: ```\n{self.new_str}\n```\n'
             elif self.command == 'undo_edit':
                 ret += 'Undo Edit\n'
+            # We ignore "view" command because it will be mapped to a FileReadAction
         return ret

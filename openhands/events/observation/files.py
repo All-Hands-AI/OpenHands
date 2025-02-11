@@ -50,9 +50,13 @@ class FileEditObservation(Observation):
     The observation includes both the old and new content of the file, and can
     generate a diff visualization showing the changes. The diff is computed lazily
     and cached to improve performance.
+
+    The .content property can either be:
+      - Git diff in LLM-based editing mode
+      - the rendered message sent to the LLM in OH_ACI mode (e.g., "The file /path/to/file.txt is created with the provided content.")
     """
 
-    path: str
+    path: str = ''
     prev_exist: bool = False
     old_content: str | None = None
     new_content: str | None = None

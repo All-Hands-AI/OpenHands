@@ -553,6 +553,9 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         view_range=other_kwargs.get('view_range', None),
                     )
                 else:
+                    other_kwargs.pop(
+                        'view_range'
+                    )  # Remove view_range from other_kwargs since it is not needed for FileEditAction
                     action = FileEditAction(
                         path=path,
                         command=command,

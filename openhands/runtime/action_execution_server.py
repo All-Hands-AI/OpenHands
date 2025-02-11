@@ -423,19 +423,17 @@ class ActionExecutor:
                 os.chown(filepath, self.user_id, self.user_id)
         except PermissionError as e:
             return ErrorObservation(
-                f'File written, but failed to change ownership and permissions: {e}'
+                f'File {filepath} written, but failed to change ownership and permissions: {e}'
             )
         return FileWriteObservation(content='', path=filepath)
 
     async def edit(self, action: FileEditAction) -> Observation:
         assert action.impl_source == FileEditSource.OH_ACI
-        assert action.command is not None
         result_str = _execute_file_editor(
             self.file_editor,
             command=action.command,
             path=action.path,
             file_text=action.file_text,
-            view_range=action.view_range,
             old_str=action.old_str,
             new_str=action.new_str,
             insert_line=action.insert_line,
