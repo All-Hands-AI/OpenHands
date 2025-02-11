@@ -13,7 +13,7 @@ class LogStream:
 
     def write(self, message):
         if message and not message.isspace():
-            logger.debug(f'[Memory usage] {message.strip()}')
+            logger.info(f'[Memory usage] {message.strip()}')
 
     def flush(self):
         pass
@@ -37,7 +37,7 @@ class MemoryMonitor:
                 mem_usage = memory_usage(
                     -1,  # Monitor current process
                     interval=0.1,  # Check every second
-                    timeout=None,  # Run indefinitely
+                    timeout=3600,  # Run indefinitely
                     max_usage=False,  # Get continuous readings
                     include_children=True,  # Include child processes
                     multiprocess=True,  # Monitor all processes
@@ -49,11 +49,11 @@ class MemoryMonitor:
 
         self._monitoring_thread = threading.Thread(target=monitor_process, daemon=True)
         self._monitoring_thread.start()
-        logger.debug('Memory monitoring started')
+        logger.info('Memory monitoring started')
 
     def stop_monitoring(self):
         """Stop monitoring memory usage."""
         if self._monitoring_thread is not None:
             self._stop_monitoring.set()
             self._monitoring_thread = None
-            logger.debug('Memory monitoring stopped')
+            logger.info('Memory monitoring stopped')
