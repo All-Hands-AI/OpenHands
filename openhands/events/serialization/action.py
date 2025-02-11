@@ -1,3 +1,5 @@
+import re
+
 from openhands.core.exceptions import LLMMalformedActionError
 from openhands.events.action.action import Action
 from openhands.events.action.agent import (
@@ -43,9 +45,24 @@ def handle_action_deprecated_args(args: dict) -> dict:
     if 'keep_prompt' in args:
         args.pop('keep_prompt')
 
-    # translated_ipython_code has been deprecated in https://github.com/All-Hands-AI/OpenHands/pull/6671
+    # Handle translated_ipython_code deprecation
     if 'translated_ipython_code' in args:
-        args.pop('translated_ipython_code')
+        code = args.pop('translated_ipython_code')
+
+        # Check if it's a file_editor call
+        file_editor_pattern = r'print\(file_editor\(\*\*(.*?)\)\)'
+        if code is not None and (match := re.match(file_editor_pattern, code)):
+            try:
+                # Extract and evaluate the dictionary string
+                import ast
+
+                file_args = ast.literal_eval(match.group(1))
+
+                # Update args with the extracted file editor arguments
+                args.update(file_args)
+            except (ValueError, SyntaxError):
+                # If parsing fails, just remove the translated_ipython_code
+                pass
 
     return args
 
