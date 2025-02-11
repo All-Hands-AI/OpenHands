@@ -1,8 +1,8 @@
 import { Settings } from "#/types/settings";
 
 const extractBasicFormData = (formData: FormData) => {
-  const provider = formData.get("llm-provider")?.toString();
-  const model = formData.get("llm-model")?.toString();
+  const provider = formData.get("llm-provider-input")?.toString();
+  const model = formData.get("llm-model-input")?.toString();
 
   const LLM_MODEL = `${provider}/${model}`.toLowerCase();
   const LLM_API_KEY = formData.get("api-key")?.toString();

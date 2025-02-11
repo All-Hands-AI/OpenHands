@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { I18nKey } from "#/i18n/declaration";
 import { LoadingSpinner } from "../../loading-spinner";
@@ -23,11 +24,17 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
         {aiConfigOptions.error && (
           <p className="text-danger text-xs">{aiConfigOptions.error.message}</p>
         )}
-        <span className="text-xl leading-6 font-semibold -tracking-[0.01em">
+        <span className="text-xl leading-6 font-semibold -tracking-[0.01em]">
           {t(I18nKey.AI_SETTINGS$TITLE)}
         </span>
         <p className="text-xs text-[#A3A3A3]">
-          {t(I18nKey.SETTINGS$DESCRIPTION)}
+          {t(I18nKey.SETTINGS$DESCRIPTION)} For other options,{" "}
+          <Link
+            to="/settings"
+            className="underline underline-offset-2 text-white"
+          >
+            see advanced settings
+          </Link>
         </p>
         {aiConfigOptions.isLoading && (
           <div className="flex justify-center">

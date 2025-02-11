@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router";
+import { useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import React from "react";
 import posthog from "posthog-js";
@@ -86,16 +86,6 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
         onSubmit={handleSubmit}
       >
         <div className="flex flex-col gap-4">
-          <Link to="/settings" onClick={onClose}>
-            <BrandButton
-              testId="advanced-settings-button"
-              type="button"
-              variant="secondary"
-            >
-              Advanced Settings
-            </BrandButton>
-          </Link>
-
           <ModelSelector
             models={organizeModelsAndProviders(models)}
             currentModel={settings.LLM_MODEL}

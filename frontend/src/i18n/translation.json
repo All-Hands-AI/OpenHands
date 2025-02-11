@@ -4258,7 +4258,7 @@
         "de": "Einstellungen"
     },
     "SETTINGS$DESCRIPTION": {
-        "en": "To continue, connect an OpenAI, Anthropic, or other LLM account",
+        "en": "To continue, connect an Anthropic or OpenAI account.",
         "ja": "続行するには、OpenAI、Anthropic、または他のLLMアカウントを接続してください",
         "zh-CN": "要继续，请连接 OpenAI、Anthropic 或其他 LLM 账户",
         "zh-TW": "要繼續，請連接 OpenAI、Anthropic 或其他 LLM 帳戶",
