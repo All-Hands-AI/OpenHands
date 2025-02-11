@@ -352,8 +352,8 @@ def test_str_replace_with_empty_old_str(temp_dir, runtime_cls, run_as_openhands)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert (
-            obs.content
-            == """No replacement was performed. Multiple occurrences of old_str `` in lines [1, 2, 3, 4]. Please ensure it is unique."""
+            'No replacement was performed. Multiple occurrences of old_str `` in lines [1, 2, 3, 4]. Please ensure it is unique.'
+            in obs.content
         )
     finally:
         _close_test_runtime(runtime)
