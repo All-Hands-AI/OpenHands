@@ -14,7 +14,7 @@ from openhands.events.observation import (
 from openhands.llm.llm import LLM
 from openhands.resolver.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.issue import Issue, ReviewThread
-from openhands.resolver.issue_definitions import ServiceContext, ServiceContextPR
+from openhands.resolver.issue_definitions import ServiceContextIssue, ServiceContextPR
 from openhands.resolver.resolve_issue import (
     complete_runtime,
     initialize_runtime,
@@ -145,7 +145,9 @@ async def test_resolve_issue_no_issues_found():
 
 def test_download_issues_from_gitlab():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = ServiceContext(GitlabIssueHandler('owner', 'repo', 'token'), llm_config)
+    handler = ServiceContextIssue(
+        GitlabIssueHandler('owner', 'repo', 'token'), llm_config
+    )
 
     mock_issues_response = MagicMock()
     mock_issues_response.json.side_effect = [
@@ -522,7 +524,7 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
         body='This is a test issue refer to image ![First Image](https://sampleimage.com/image1.png)',
     )
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
-    issue_handler = ServiceContext(
+    issue_handler = ServiceContextIssue(
         GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
     instruction, images_urls = issue_handler.get_instruction(
@@ -578,7 +580,7 @@ def test_file_instruction():
         prompt = f.read()
     # Test without thread comments
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
-    issue_handler = ServiceContext(
+    issue_handler = ServiceContextIssue(
         GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
     instruction, images_urls = issue_handler.get_instruction(issue, prompt, None)
@@ -618,7 +620,7 @@ def test_file_instruction_with_repo_instruction():
         repo_instruction = f.read()
 
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
-    issue_handler = ServiceContext(
+    issue_handler = ServiceContextIssue(
         GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
     instruction, image_urls = issue_handler.get_instruction(
@@ -667,7 +669,7 @@ def test_guess_success():
             )
         )
     ]
-    issue_handler = ServiceContext(
+    issue_handler = ServiceContextIssue(
         GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
 
@@ -707,7 +709,7 @@ def test_guess_success_with_thread_comments():
             )
         )
     ]
-    issue_handler = ServiceContext(
+    issue_handler = ServiceContextIssue(
         GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
 
@@ -743,7 +745,7 @@ def test_instruction_with_thread_comments():
         prompt = f.read()
 
     llm_config = LLMConfig(model='test', api_key='test')
-    issue_handler = ServiceContext(
+    issue_handler = ServiceContextIssue(
         GitlabIssueHandler('owner', 'repo', 'token'), llm_config
     )
     instruction, images_urls = issue_handler.get_instruction(issue, prompt, None)
@@ -780,7 +782,7 @@ def test_guess_success_failure():
             )
         )
     ]
-    issue_handler = ServiceContext(
+    issue_handler = ServiceContextIssue(
         GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
 
@@ -815,7 +817,7 @@ def test_guess_success_negative_case():
             )
         )
     ]
-    issue_handler = ServiceContext(
+    issue_handler = ServiceContextIssue(
         GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
 
@@ -846,7 +848,7 @@ def test_guess_success_invalid_output():
     mock_completion_response.choices = [
         MagicMock(message=MagicMock(content='This is not a valid output'))
     ]
-    issue_handler = ServiceContext(
+    issue_handler = ServiceContextIssue(
         GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
 
@@ -867,7 +869,9 @@ def test_guess_success_invalid_output():
 
 def test_download_issue_with_specific_comment():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = ServiceContext(GitlabIssueHandler('owner', 'repo', 'token'), llm_config)
+    handler = ServiceContextIssue(
+        GitlabIssueHandler('owner', 'repo', 'token'), llm_config
+    )
 
     # Define the specific comment_id to filter
     specific_comment_id = 101

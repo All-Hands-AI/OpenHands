@@ -9,7 +9,7 @@ from openhands.events.action.message import MessageAction
 from openhands.llm.llm import LLM
 from openhands.resolver.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.issue import Issue
-from openhands.resolver.issue_definitions import ServiceContext, ServiceContextPR
+from openhands.resolver.issue_definitions import ServiceContextIssue, ServiceContextPR
 
 
 @pytest.fixture(autouse=True)
@@ -212,7 +212,7 @@ def test_guess_success_rate_limit_wait_time(mock_litellm_completion, default_con
         ]
 
         llm = LLM(config=default_config)
-        handler = ServiceContext(
+        handler = ServiceContextIssue(
             GitlabIssueHandler('test-owner', 'test-repo', 'test-token'), default_config
         )
         handler.llm = llm

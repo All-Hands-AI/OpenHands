@@ -245,16 +245,6 @@ class ServiceContextPR:
 
         return self._check_feedback_with_llm(prompt)
 
-    def __download_pr_metadata(
-        self, pull_number: int, comment_id: int | None = None
-    ) -> tuple[list[str], list[int], list[str], list[ReviewThread], list[str]]:
-        return self._strategy.download_pr_metadata(pull_number, comment_id)
-
-    def _get_pr_comments(
-        self, pr_number: int, comment_id: int | None = None
-    ) -> list[str] | None:
-        return self._strategy.get_pr_comments(pr_number, comment_id)
-
     def __get_context_from_external_issues_references(
         self,
         closing_issues: list[str],
@@ -274,7 +264,7 @@ class ServiceContextPR:
         )
 
 
-class ServiceContext:
+class ServiceContextIssue:
     issue_type: ClassVar[str] = 'issue'
     default_git_patch: ClassVar[str] = 'No changes made yet'
 

@@ -229,6 +229,12 @@ class GitlabIssueHandler(IssueHandlerInterface):
             )
         response.raise_for_status()
         pr_data = response.json()
+        if 'web_url' in pr_data:
+            pr_data['html_url'] = pr_data['web_url']
+
+        if 'iid' in pr_data:
+            pr_data['number'] = pr_data['iid']
+
         return pr_data
 
     def request_reviewers(self, reviewer: str, pr_number: int):

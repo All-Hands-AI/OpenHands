@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 from openhands.core.config import LLMConfig
 from openhands.resolver.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.issue import ReviewThread
-from openhands.resolver.issue_definitions import ServiceContext, ServiceContextPR
+from openhands.resolver.issue_definitions import ServiceContextIssue, ServiceContextPR
 
 
 def test_get_converted_issues_initializes_review_comments():
@@ -28,7 +28,7 @@ def test_get_converted_issues_initializes_review_comments():
 
         # Create an instance of IssueHandler
         llm_config = LLMConfig(model='test', api_key='test')
-        handler = ServiceContext(
+        handler = ServiceContextIssue(
             GitlabIssueHandler('test-owner', 'test-repo', 'test-token'), llm_config
         )
 
@@ -69,7 +69,7 @@ def test_get_converted_issues_handles_empty_body():
 
         # Create an instance of IssueHandler
         llm_config = LLMConfig(model='test', api_key='test')
-        handler = ServiceContext(
+        handler = ServiceContextIssue(
             GitlabIssueHandler('test-owner', 'test-repo', 'test-token'), llm_config
         )
 
@@ -190,7 +190,7 @@ def test_get_issue_comments_with_specific_comment_id():
 
         # Create an instance of IssueHandler
         llm_config = LLMConfig(model='test', api_key='test')
-        handler = ServiceContext(
+        handler = ServiceContextIssue(
             GitlabIssueHandler('test-owner', 'test-repo', 'test-token'), llm_config
         )
 

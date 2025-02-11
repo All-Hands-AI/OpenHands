@@ -16,7 +16,7 @@ from openhands.resolver.io_utils import (
     load_single_resolver_output,
 )
 from openhands.resolver.issue import Issue
-from openhands.resolver.issue_definitions import ServiceContext
+from openhands.resolver.issue_definitions import ServiceContextIssue
 from openhands.resolver.patching import apply_diff, parse_patch
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import (
@@ -237,7 +237,7 @@ def send_pull_request(
 
     Args:
         issue: The issue to send the pull request for
-        oken: The GitHub or Gitlab token to use for authentication
+        token: The GitHub or Gitlab token to use for authentication
         username: The GitHub or Gitlab username, if provided
         platform: The platform of the repository.
         patch_dir: The directory containing the patches to apply
@@ -253,11 +253,11 @@ def send_pull_request(
 
     handler = None
     if platform == Platform.GITHUB:
-        handler = ServiceContext(
+        handler = ServiceContextIssue(
             GithubIssueHandler(issue.owner, issue.repo, token, username), None
         )
     else:  # platform == Platform.GITLAB
-        handler = ServiceContext(
+        handler = ServiceContextIssue(
             GitlabIssueHandler(issue.owner, issue.repo, token, username), None
         )
 
@@ -341,13 +341,12 @@ def send_pull_request(
             }
 
         pr_data = handler.create_pull_request(data)
-        url = pr_data['html_url'] if platform == Platform.GITHUB else pr_data['web_url']
+        url = pr_data['html_url']
 
+        print(pr_data)
         # Request review if a reviewer was specified
         if reviewer and pr_type != 'branch':
-            number = (
-                pr_data['number'] if platform == Platform.GITHUB else pr_data['iid']
-            )
+            number = pr_data['number']
             handler.request_reviewers(reviewer, number)
 
     print(
@@ -383,11 +382,11 @@ def update_existing_pull_request(
 
     handler = None
     if platform == Platform.GITHUB:
-        handler = ServiceContext(
+        handler = ServiceContextIssue(
             GithubIssueHandler(issue.owner, issue.repo, token, username), llm_config
         )
     else:  # platform == Platform.GITLAB
-        handler = ServiceContext(
+        handler = ServiceContextIssue(
             GitlabIssueHandler(issue.owner, issue.repo, token, username), llm_config
         )
 

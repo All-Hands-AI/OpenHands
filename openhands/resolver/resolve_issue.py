@@ -28,7 +28,7 @@ from openhands.resolver.github import GithubIssueHandler, GithubPRHandler
 from openhands.resolver.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.issue import Issue
 from openhands.resolver.issue_definitions import (
-    ServiceContext,
+    ServiceContextIssue,
     ServiceContextPR,
 )
 from openhands.resolver.resolver_output import ResolverOutput
@@ -167,7 +167,7 @@ async def process_issue(
     output_dir: str,
     runtime_container_image: str | None,
     prompt_template: str,
-    issue_handler: ServiceContext | ServiceContextPR,
+    issue_handler: ServiceContextIssue | ServiceContextPR,
     repo_instruction: str | None = None,
     reset_logger: bool = False,
 ) -> ResolverOutput:
@@ -318,14 +318,14 @@ def issue_handler_factory(
     llm_config: LLMConfig,
     platform: Platform,
     username: str | None = None,
-) -> ServiceContext | ServiceContextPR:
+) -> ServiceContextIssue | ServiceContextPR:
     if issue_type == 'issue':
         if platform == Platform.GITHUB:
-            return ServiceContext(
+            return ServiceContextIssue(
                 GithubIssueHandler(owner, repo, token, username), llm_config
             )
         else:  # platform == Platform.GITLAB
-            return ServiceContext(
+            return ServiceContextIssue(
                 GitlabIssueHandler(owner, repo, token, username), llm_config
             )
     elif issue_type == 'pr':

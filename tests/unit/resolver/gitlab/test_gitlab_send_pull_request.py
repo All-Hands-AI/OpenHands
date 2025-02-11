@@ -1212,7 +1212,7 @@ def test_main(
 
     # Test for invalid token
     mock_identify_token.return_value = Platform.INVALID
-    with pytest.raises(ValueError, match='token is invalid.'):
+    with pytest.raises(ValueError, match='Token is invalid.'):
         main()
 
 
