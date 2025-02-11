@@ -452,7 +452,7 @@ def test_stress_runtime_memory_limits_with_repeated_file_edit():
         # base_content = 'content_1\n' * 1000  # Create a reasonably sized file
         base_content = ''
         for i in range(1000):
-            base_content += f'content_{i}\n'
+            base_content += f'content_{i:03d}\n'
 
         # Use FileWriteAction to create initial file
         write_action = FileWriteAction(path=test_file, content=base_content)
@@ -464,8 +464,8 @@ def test_stress_runtime_memory_limits_with_repeated_file_edit():
             edit_action = FileEditAction(
                 command='str_replace',
                 path=test_file,
-                old_str=f'content_{i}',
-                new_str=f'content_{i + 1000}',
+                old_str=f'content_{i:03d}',
+                new_str=f'content_{i + 1000:03d}',
             )
             obs = runtime.run_action(edit_action)
             assert (
