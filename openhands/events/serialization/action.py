@@ -64,6 +64,11 @@ def handle_action_deprecated_args(args: dict) -> dict:
                 # If parsing fails, just remove the translated_ipython_code
                 pass
 
+        if args.get('command') == 'view':
+            args.pop(
+                'command'
+            )  # "view" will be translated to FileReadAction which doesn't have a command argument
+
     return args
 
 
