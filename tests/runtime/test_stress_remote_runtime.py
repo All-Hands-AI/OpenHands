@@ -465,7 +465,7 @@ def test_stress_runtime_memory_limits_with_repeated_file_edit():
                 command='str_replace',
                 path=test_file,
                 old_str=f'content_{i:03d}',
-                new_str=f'content_{i + 1000:03d}',
+                new_str=f'-content_{i:03d}',
             )
             obs = runtime.run_action(edit_action)
             assert (
@@ -476,7 +476,7 @@ def test_stress_runtime_memory_limits_with_repeated_file_edit():
         # Verify final file state using FileEditAction view command
         action = FileEditAction(command='view', path=test_file)
         obs = runtime.run_action(action)
-        assert 'content_1000' in obs.content, 'Final content verification failed'
+        assert '-content_999' in obs.content, 'Final content verification failed'
         logger.info('Final file content verified successfully')
 
     finally:
