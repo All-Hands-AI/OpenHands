@@ -64,6 +64,23 @@ def _update_cmd_output_metadata(
     return metadata
 
 
+def handle_observation_deprecated_extras(extras: dict) -> dict:
+    # These are deprecated in https://github.com/All-Hands-AI/OpenHands/pull/4881
+    if 'exit_code' in extras:
+        extras['metadata'] = _update_cmd_output_metadata(
+            extras.get('metadata', None), exit_code=extras.pop('exit_code')
+        )
+    if 'command_id' in extras:
+        extras['metadata'] = _update_cmd_output_metadata(
+            extras.get('metadata', None), pid=extras.pop('command_id')
+        )
+
+    # formatted_output_and_error has been deprecated in https://github.com/All-Hands-AI/OpenHands/pull/6671
+    if 'formatted_output_and_error' in extras:
+        extras.pop('formatted_output_and_error')
+    return extras
+
+
 def observation_from_dict(observation: dict) -> Observation:
     observation = observation.copy()
     if 'observation' not in observation:
@@ -78,15 +95,8 @@ def observation_from_dict(observation: dict) -> Observation:
     content = observation.pop('content', '')
     extras = copy.deepcopy(observation.pop('extras', {}))
 
-    # Handle legacy attributes for CmdOutputObservation
-    if 'exit_code' in extras:
-        extras['metadata'] = _update_cmd_output_metadata(
-            extras.get('metadata', None), exit_code=extras.pop('exit_code')
-        )
-    if 'command_id' in extras:
-        extras['metadata'] = _update_cmd_output_metadata(
-            extras.get('metadata', None), pid=extras.pop('command_id')
-        )
+    extras = handle_observation_deprecated_extras(extras)
+
     # convert metadata to CmdOutputMetadata if it is a dict
     if observation_class is CmdOutputObservation:
         if 'metadata' in extras and isinstance(extras['metadata'], dict):
