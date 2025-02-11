@@ -97,7 +97,7 @@ class FileEditAction(Action):
     path: str
 
     # OH_ACI arguments
-    command: str | None = None
+    command: str = ''
     file_text: str | None = None
     view_range: list[int] | None = None
     old_str: str | None = None

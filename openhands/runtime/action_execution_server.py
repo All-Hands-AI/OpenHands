@@ -410,7 +410,6 @@ class ActionExecutor:
 
     async def edit(self, action: FileEditAction) -> Observation:
         assert action.impl_source == FileEditSource.OH_ACI
-        assert action.command is not None
         result_str = _execute_file_editor(
             self.file_editor,
             command=action.command,
