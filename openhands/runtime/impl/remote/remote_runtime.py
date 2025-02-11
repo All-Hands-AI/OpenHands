@@ -215,7 +215,7 @@ class RemoteRuntime(ActionExecutionClient):
         environment = {
             'DEBUG': 'true'
             if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
-            else {},
+            else '',
         }
         environment.update(self.config.sandbox.runtime_startup_env_vars)
         start_request = {
