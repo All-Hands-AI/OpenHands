@@ -120,6 +120,10 @@ class EventStream:
             for callback_id in callback_ids:
                 self._clean_up_subscriber(subscriber_id, callback_id)
 
+        # Clear queue
+        while not self._queue.empty():
+            self._queue.get()
+
     def _clean_up_subscriber(self, subscriber_id: str, callback_id: str):
         if subscriber_id not in self._subscribers:
             logger.warning(f'Subscriber not found during cleanup: {subscriber_id}')
@@ -384,7 +388,7 @@ class EventStream:
         start_id: int = 0,
         limit: int = 100,
         reverse: bool = False,
-    ) -> list:
+    ) -> list[type[Event]]:
         """Get matching events from the event stream based on filters.
 
         Args:
@@ -414,7 +418,7 @@ class EventStream:
             ):
                 continue
 
-            matching_events.append(event_to_dict(event))
+            matching_events.append(event)
 
             # Stop if we have enough events
             if len(matching_events) >= limit:

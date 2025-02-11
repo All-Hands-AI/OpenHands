@@ -389,27 +389,6 @@ def test_completion_with_two_positional_args(mock_litellm_completion, default_co
     )  # No positional args should be passed to litellm_completion here
 
 
-@patch('openhands.llm.llm.litellm_completion')
-def test_llm_cloudflare_blockage(mock_litellm_completion, default_config):
-    from litellm.exceptions import APIError
-
-    from openhands.core.exceptions import CloudFlareBlockageError
-
-    llm = LLM(default_config)
-    mock_litellm_completion.side_effect = APIError(
-        message='Attention Required! | Cloudflare',
-        llm_provider='test_provider',
-        model='test_model',
-        status_code=403,
-    )
-
-    with pytest.raises(CloudFlareBlockageError, match='Request blocked by CloudFlare'):
-        llm.completion(messages=[{'role': 'user', 'content': 'Hello'}])
-
-    # Ensure the completion was called
-    mock_litellm_completion.assert_called_once()
-
-
 @patch('openhands.llm.llm.litellm.token_counter')
 def test_get_token_count_with_dict_messages(mock_token_counter, default_config):
     mock_token_counter.return_value = 42

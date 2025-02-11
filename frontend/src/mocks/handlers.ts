@@ -4,11 +4,8 @@ import {
   Conversation,
   ResultSet,
 } from "#/api/open-hands.types";
-import {
-  ApiSettings,
-  DEFAULT_SETTINGS,
-  PostApiSettings,
-} from "#/services/settings";
+import { DEFAULT_SETTINGS } from "#/services/settings";
+import { ApiSettings, PostApiSettings } from "#/types/settings";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
@@ -22,6 +19,7 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
     DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
   github_token_is_set: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
+  user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
 };
 
 const MOCK_USER_PREFERENCES: {

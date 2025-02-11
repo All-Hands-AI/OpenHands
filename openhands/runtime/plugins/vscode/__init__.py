@@ -19,6 +19,15 @@ class VSCodePlugin(Plugin):
     name: str = 'vscode'
 
     async def initialize(self, username: str):
+        if username not in ['root', 'openhands']:
+            self.vscode_port = None
+            self.vscode_connection_token = None
+            logger.warning(
+                'VSCodePlugin is only supported for root or openhands user. '
+                'It is not yet supported for other users (i.e., when running LocalRuntime).'
+            )
+            return
+
         self.vscode_port = int(os.environ['VSCODE_PORT'])
         self.vscode_connection_token = str(uuid.uuid4())
         assert check_port_available(self.vscode_port)

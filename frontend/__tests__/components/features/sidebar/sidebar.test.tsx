@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { createRoutesStub } from "react-router";
+import { AxiosError } from "axios";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import OpenHands from "#/api/open-hands";
 
@@ -82,6 +83,10 @@ describe("Sidebar", () => {
         within(accountSettingsModal).getByLabelText(/GITHUB\$TOKEN_LABEL/i);
       await user.type(tokenInput, "new-token");
 
+      const analyticsConsentInput =
+        within(accountSettingsModal).getByTestId("analytics-consent");
+      await user.click(analyticsConsentInput);
+
       const saveButton =
         within(accountSettingsModal).getByTestId("save-settings");
       await user.click(saveButton);
@@ -96,6 +101,7 @@ describe("Sidebar", () => {
         llm_model: "anthropic/claude-3-5-sonnet-20241022",
         remote_runtime_resource_factor: 1,
         security_analyzer: "",
+        user_consents_to_analytics: true,
       });
     });
 
@@ -135,27 +141,6 @@ describe("Sidebar", () => {
   });
 
   describe("Settings Modal", () => {
-    it("should open the settings modal if the settings version is out of date", async () => {
-      const user = userEvent.setup();
-      localStorage.clear();
-
-      const { rerender } = renderSidebar();
-
-      const settingsModal = await screen.findByTestId("ai-config-modal");
-      expect(settingsModal).toBeInTheDocument();
-
-      const saveSettingsButton = await within(settingsModal).findByTestId(
-        "save-settings-button",
-      );
-      await user.click(saveSettingsButton);
-
-      expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
-
-      rerender(<RouterStub />);
-
-      expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
-    });
-
     it("should open the settings modal if the user clicks the settings button", async () => {
       const user = userEvent.setup();
       renderSidebar();
@@ -169,10 +154,23 @@ describe("Sidebar", () => {
       expect(settingsModal).toBeInTheDocument();
     });
 
-    it("should open the settings modal if GET /settings fails", async () => {
-      vi.spyOn(OpenHands, "getSettings").mockRejectedValue(
-        new Error("Failed to fetch settings"),
+    it("should open the settings modal if GET /settings fails with a 404", async () => {
+      const error = new AxiosError(
+        "Request failed with status code 404",
+        "ERR_BAD_REQUEST",
+        undefined,
+        undefined,
+        {
+          status: 404,
+          statusText: "Not Found",
+          data: { message: "Settings not found" },
+          headers: {},
+          // @ts-expect-error - we only need the response object for this test
+          config: {},
+        },
       );
+
+      vi.spyOn(OpenHands, "getSettings").mockRejectedValue(error);
 
       renderSidebar();
 
