@@ -38,8 +38,6 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
           <SettingsForm
             settings={DEFAULT_SETTINGS}
             models={aiConfigOptions.data?.models}
-            agents={aiConfigOptions.data?.agents}
-            securityAnalyzers={aiConfigOptions.data?.securityAnalyzers}
             onClose={onClose}
           />
         )}
