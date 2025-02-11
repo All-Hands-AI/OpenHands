@@ -46,6 +46,7 @@ class MemoryMonitor:
                     include_children=True,  # Include child processes
                     multiprocess=True,  # Monitor all processes
                     stream=self.log_stream,  # Redirect output to logger
+                    backend='psutil_pss',
                 )
                 logger.info(f'Memory usage across time: {mem_usage}')
             except Exception as e:
