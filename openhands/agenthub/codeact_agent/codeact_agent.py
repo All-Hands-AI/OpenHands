@@ -11,6 +11,7 @@ from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
+from openhands.core.schema import ActionType
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -89,15 +90,7 @@ class CodeActAgent(Agent):
         self.pending_actions: deque[Action] = deque()
         self.reset()
 
-        self.mock_function_calling = False
-        if not self.llm.is_function_calling_active():
-            logger.info(
-                f'Function calling not enabled for model {self.llm.config.model}. '
-                'Mocking function calling via prompting.'
-            )
-            self.mock_function_calling = True
-
-        # Function calling mode
+        # Retrieve the enabled tools
         self.tools = codeact_function_calling.get_tools(
             codeact_enable_browsing=self.config.codeact_enable_browsing,
             codeact_enable_jupyter=self.config.codeact_enable_jupyter,
@@ -304,10 +297,26 @@ class CodeActAgent(Agent):
             )  # Content is already truncated by openhands-aci
         elif isinstance(obs, BrowserOutputObservation):
             text = obs.get_agent_obs_text()
-            message = Message(
-                role='user',
-                content=[TextContent(text=text)],
-            )
+            if (
+                obs.trigger_by_action == ActionType.BROWSE_INTERACTIVE
+                and obs.set_of_marks is not None
+                and len(obs.set_of_marks) > 0
+                and self.config.enable_som_visual_browsing
+                and self.llm.vision_is_active()
+            ):
+                text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
+                message = Message(
+                    role='user',
+                    content=[
+                        TextContent(text=text),
+                        ImageContent(image_urls=[obs.set_of_marks]),
+                    ],
+                )
+            else:
+                message = Message(
+                    role='user',
+                    content=[TextContent(text=text)],
+                )
         elif isinstance(obs, AgentDelegateObservation):
             text = truncate_content(
                 obs.outputs['content'] if 'content' in obs.outputs else '',
@@ -379,8 +388,6 @@ class CodeActAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
-        if self.mock_function_calling:
-            params['mock_function_calling'] = True
         response = self.llm.completion(**params)
         actions = codeact_function_calling.response_to_actions(response)
         for action in actions:

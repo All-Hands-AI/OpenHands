@@ -132,6 +132,7 @@ describe("AccountSettingsModal", () => {
       agent: "CodeActAgent",
       confirmation_mode: false,
       enable_default_condenser: false,
+      github_token: undefined,
       language: "en",
       llm_base_url: "",
       llm_model: "anthropic/claude-3-5-sonnet-20241022",

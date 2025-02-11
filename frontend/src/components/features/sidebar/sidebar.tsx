@@ -2,6 +2,7 @@ import React from "react";
 import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
+import toast from "react-hot-toast";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
@@ -28,7 +29,12 @@ export function Sidebar() {
   const endSession = useEndSession();
   const user = useGitHubUser();
   const { data: config } = useConfig();
-  const { data: settings, isError: settingsError } = useSettings();
+  const {
+    data: settings,
+    error: settingsError,
+    isError: settingsIsError,
+    isFetching: isFetchingSettings,
+  } = useSettings();
   const { mutateAsync: logout } = useLogout();
   const { saveUserSettings } = useCurrentSettings();
 
@@ -45,6 +51,20 @@ export function Sidebar() {
       setAccountSettingsModalOpen(true);
     }
   }, [user.isError]);
+
+  React.useEffect(() => {
+    // We don't show toast errors for settings in the global error handler
+    // because we have a special case for 404 errors
+    if (
+      !isFetchingSettings &&
+      settingsIsError &&
+      settingsError?.status !== 404
+    ) {
+      toast.error(
+        "Something went wrong while fetching settings. Please reload the page.",
+      );
+    }
+  }, [settingsError?.status, settingsError, isFetchingSettings]);
 
   const handleEndSession = () => {
     dispatch(setCurrentAgentState(AgentState.LOADING));
@@ -105,7 +125,7 @@ export function Sidebar() {
       {accountSettingsModalOpen && (
         <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
       )}
-      {(settingsError || settingsModalIsOpen) && (
+      {(settingsError?.status === 404 || settingsModalIsOpen) && (
         <SettingsModal
           settings={settings}
           onClose={() => setSettingsModalIsOpen(false)}

@@ -4,7 +4,7 @@ import { IoAlertCircle } from "react-icons/io5";
 import { useTranslation } from "react-i18next";
 import { Editor, Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
-import { Button, Select, SelectItem } from "@nextui-org/react";
+import { Button, Select, SelectItem } from "@heroui/react";
 import { useMutation } from "@tanstack/react-query";
 import { RootState } from "#/store";
 import {

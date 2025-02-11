@@ -1,4 +1,4 @@
-import { Tooltip } from "@nextui-org/react";
+import { Tooltip } from "@heroui/react";
 import { AgentState } from "#/types/agent-state";
 
 interface ActionButtonProps {

@@ -15,6 +15,4 @@ export default [
       route("served", "routes/app.tsx"),
     ]),
   ]),
-
-  route("oauth/github/callback", "routes/oauth.github.callback.tsx"),
 ] satisfies RouteConfig;

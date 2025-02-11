@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { createRoutesStub } from "react-router";
+import { AxiosError } from "axios";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import OpenHands from "#/api/open-hands";
 
@@ -153,10 +154,23 @@ describe("Sidebar", () => {
       expect(settingsModal).toBeInTheDocument();
     });
 
-    it("should open the settings modal if GET /settings fails", async () => {
-      vi.spyOn(OpenHands, "getSettings").mockRejectedValue(
-        new Error("Failed to fetch settings"),
+    it("should open the settings modal if GET /settings fails with a 404", async () => {
+      const error = new AxiosError(
+        "Request failed with status code 404",
+        "ERR_BAD_REQUEST",
+        undefined,
+        undefined,
+        {
+          status: 404,
+          statusText: "Not Found",
+          data: { message: "Settings not found" },
+          headers: {},
+          // @ts-expect-error - we only need the response object for this test
+          config: {},
+        },
       );
+
+      vi.spyOn(OpenHands, "getSettings").mockRejectedValue(error);
 
       renderSidebar();
 
