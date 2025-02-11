@@ -423,7 +423,7 @@ class ActionExecutor:
                 os.chown(filepath, self.user_id, self.user_id)
         except PermissionError as e:
             return ErrorObservation(
-                f'File written, but failed to change ownership and permissions: {e}'
+                f'File {filepath} written, but failed to change ownership and permissions: {e}'
             )
         return FileWriteObservation(content='', path=filepath)
 
