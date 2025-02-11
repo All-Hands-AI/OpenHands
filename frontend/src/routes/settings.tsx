@@ -19,6 +19,7 @@ import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
+import SettingsIcon from "#/icons/settings.svg?react";
 
 const displayErrorToast = (error: string) => {
   toast.error(error, {
@@ -167,8 +168,9 @@ function SettingsScreen() {
       className="bg-[#24272E] border border-[#454545] h-full rounded-xl"
     >
       <form action={formAction} className="flex flex-col h-full">
-        <header className="text-sm leading-6 px-3 py-1.5 border-b border-b-[#454545]">
-          Settings
+        <header className="px-3 py-1.5 border-b border-b-[#454545] flex items-center gap-2">
+          <SettingsIcon width={16} height={16} />
+          <span className="text-sm leading-6">Settings</span>
         </header>
 
         <div className="flex flex-col gap-6 grow overflow-y-auto px-11 py-9">
