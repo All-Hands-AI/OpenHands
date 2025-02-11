@@ -233,19 +233,19 @@ def send_pull_request(
     reviewer: str | None = None,
     pr_title: str | None = None,
 ) -> str:
-    """Send a pull request to a GitHub repository.
+    """Send a pull request to a GitHub or Gitlab repository.
 
     Args:
         issue: The issue to send the pull request for
-        oken: The GitHub token to use for authentication
-        username: The GitHub username, if provided
+        oken: The GitHub or Gitlab token to use for authentication
+        username: The GitHub or Gitlab username, if provided
         platform: The platform of the repository.
         patch_dir: The directory containing the patches to apply
         pr_type: The type: branch (no PR created), draft or ready (regular PR created)
         fork_owner: The owner of the fork to push changes to (if different from the original repo owner)
         additional_message: The additional messages to post as a comment on the PR in json list format
         target_branch: The target branch to create the pull request against (defaults to repository default branch)
-        reviewer: The GitHub username of the reviewer to assign
+        reviewer: The GitHub or Gitlab username of the reviewer to assign
         pr_title: Custom title for the pull request (optional)
     """
     if pr_type not in ['branch', 'draft', 'ready']:
@@ -330,6 +330,7 @@ def send_pull_request(
                 'base': base_branch,
                 'draft': pr_type == 'draft',
             }
+        # Prepare the PR for the GitLab API
         elif platform == Platform.GITLAB:
             data = {
                 'title': final_pr_title,
@@ -378,7 +379,7 @@ def update_existing_pull_request(
         comment_message: The main message to post as a comment on the PR.
         additional_message: The additional messages to post as a comment on the PR in json list format.
     """
-    # Set up headers and base URL for GitHub API
+    # Set up headers and base URL for GitHub or GitLab API
 
     handler = None
     if platform == Platform.GITHUB:
@@ -554,7 +555,9 @@ def process_all_successful_issues(
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Send a pull request to Github.')
+    parser = argparse.ArgumentParser(
+        description='Send a pull request to Github or Gitlab.'
+    )
     parser.add_argument(
         '--token',
         type=str,
@@ -624,7 +627,7 @@ def main():
     parser.add_argument(
         '--reviewer',
         type=str,
-        help='GitHub username of the person to request review from',
+        help='GitHub or GitLab username of the person to request review from',
         default=None,
     )
     parser.add_argument(
@@ -644,7 +647,7 @@ def main():
 
     platform = identify_token(token)
     if platform == Platform.INVALID:
-        raise ValueError('token is invalid.')
+        raise ValueError('Token is invalid.')
 
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(

@@ -67,13 +67,13 @@ async def resolve_issues(
     repo_instruction: str | None,
     issue_numbers: list[int] | None,
 ) -> None:
-    """Resolve multiple github issues.
+    """Resolve multiple github or gitlab issues.
 
     Args:
-        owner: Github owner of the repo.
-        repo: Github repository to resolve issues in form of `owner/repo`.
-        token: Github token to access the repository.
-        username: Github username to access the repository.
+        owner: Github or Gitlab owner of the repo.
+        repo: Github or Gitlab repository to resolve issues in form of `owner/repo`.
+        token: Github or Gitlab token to access the repository.
+        username: Github or Gitlab username to access the repository.
         max_iterations: Maximum number of iterations to run.
         limit_issues: Limit the number of issues to resolve.
         num_workers: Number of workers to use for parallel processing.
@@ -229,24 +229,26 @@ async def resolve_issues(
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Resolve multiple issues from Github.')
+    parser = argparse.ArgumentParser(
+        description='Resolve multiple issues from Github or Gitlab.'
+    )
     parser.add_argument(
         '--repo',
         type=str,
         required=True,
-        help='Github repository to resolve issues in form of `owner/repo`.',
+        help='Github or Gitlab repository to resolve issues in form of `owner/repo`.',
     )
     parser.add_argument(
         '--token',
         type=str,
         default=None,
-        help='Github token to access the repository.',
+        help='Github or Gitlab token to access the repository.',
     )
     parser.add_argument(
         '--username',
         type=str,
         default=None,
-        help='Github username to access the repository.',
+        help='Github or Gitlab username to access the repository.',
     )
     parser.add_argument(
         '--runtime-container-image',
@@ -334,14 +336,14 @@ def main():
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
     username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
     if not username:
-        raise ValueError('Github username is required.')
+        raise ValueError('Username is required.')
 
     if not token:
-        raise ValueError('Github token is required.')
+        raise ValueError('Token is required.')
 
     platform = identify_token(token)
     if platform == Platform.INVALID:
-        raise ValueError('token is invalid.')
+        raise ValueError('Token is invalid.')
 
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
 

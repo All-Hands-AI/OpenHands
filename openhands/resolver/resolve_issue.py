@@ -635,7 +635,7 @@ def main():
 
     parts = my_args.repo.rsplit('/', 1)
     if len(parts) < 2:
-        raise ValueError("Invalid repo name")
+        raise ValueError('Invalid repo name')
     owner, repo = parts
 
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
