@@ -1,5 +1,6 @@
 import React from "react";
 import toast from "react-hot-toast";
+import { Link } from "react-router";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
@@ -53,6 +54,7 @@ function SettingsScreen() {
   const { handleLogout } = useAppLogout();
 
   const isSaas = config?.APP_MODE === "saas";
+  const hasAppSlug = !!config?.APP_SLUG;
   const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
@@ -172,10 +174,16 @@ function SettingsScreen() {
           <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
             Account Settings
           </h2>
-          {isSaas && (
-            <BrandButton type="button" variant="secondary">
-              Configure GitHub Repositories
-            </BrandButton>
+          {isSaas && hasAppSlug && (
+            <Link
+              to={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              <BrandButton type="button" variant="secondary">
+                Configure GitHub Repositories
+              </BrandButton>
+            </Link>
           )}
           {!isSaas && !isGitHubTokenSet && (
             <>

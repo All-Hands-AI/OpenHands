@@ -130,11 +130,12 @@ describe("Settings Screen", () => {
       expect(button).not.toBeInTheDocument();
     });
 
-    it("should render the 'Configure GitHub Repositories' button if SaaS mode", async () => {
+    it("should render the 'Configure GitHub Repositories' button if SaaS mode and app slug exists", async () => {
       getConfigSpy.mockResolvedValue({
         APP_MODE: "saas",
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
+        APP_SLUG: "test-app",
       });
 
       renderSettingsScreen();
