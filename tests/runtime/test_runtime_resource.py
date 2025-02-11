@@ -27,7 +27,7 @@ def test_stress_docker_runtime(temp_dir, runtime_cls, repeat=1):
 
     for _ in range(repeat):
         # run stress-ng stress tests for 1 minute
-        action = CmdRunAction(command='stress-ng --all 1 -t 1m')
+        action = CmdRunAction(command='stress-ng --all 1 -t 30s')
         action.set_hard_timeout(120)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
@@ -63,7 +63,7 @@ def test_stress_docker_runtime_hit_memory_limits(temp_dir, runtime_cls):
     assert obs.exit_code == 0
 
     action = CmdRunAction(
-        command='stress-ng --vm 1 --vm-bytes 6G --timeout 1m --metrics'
+        command='stress-ng --vm 1 --vm-bytes 6G --timeout 30s --metrics'
     )
     action.set_hard_timeout(120)
     logger.info(action, extra={'msg_type': 'ACTION'})
