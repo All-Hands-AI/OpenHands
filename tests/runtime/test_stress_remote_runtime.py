@@ -45,9 +45,8 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import (
     CmdRunAction,
-    FileReadAction,
+    FileEditAction,
     FileWriteAction,
-    IPythonRunCellAction,
     MessageAction,
 )
 from openhands.events.observation import CmdOutputObservation
@@ -450,35 +449,35 @@ def test_stress_runtime_memory_limits_with_repeated_file_edit():
 
         # Create initial test file with base content
         test_file = '/tmp/test_file.txt'
-        base_content = 'Initial content\n' * 1000  # Create a reasonably sized file
+        # base_content = 'content_1\n' * 1000  # Create a reasonably sized file
+        base_content = ''
+        for i in range(1000):
+            base_content += f'content_{i}\n'
 
-        # Use FileWriteAction instead of echo command
+        # Use FileWriteAction to create initial file
         write_action = FileWriteAction(path=test_file, content=base_content)
         obs = runtime.run_action(write_action)
 
         # Perform repeated file edits
         for i in range(1000):
-            edit_action = IPythonRunCellAction(
-                code=f"""
-                result = file_editor(
-                    command='str_replace',
-                    path='{test_file}',
-                    old_str=f"content_{i if i > 0 else 'Initial'}\\n",
-                    new_str=f"content_{i + 1}\\n",
-                    enable_linting=False,
-                )
-                """
+            # Use FileEditAction with str_replace instead of IPythonRunCellAction
+            edit_action = FileEditAction(
+                command='str_replace',
+                path=test_file,
+                old_str=f'content_{i}',
+                new_str=f'content_{i + 1000}',
             )
-
             obs = runtime.run_action(edit_action)
+            assert (
+                f'The file {test_file} has been edited' in obs.content
+            ), f'Edit failed at iteration {i}'
             logger.info(f'finished iteration {i}')
 
-        # Check file size
-        action = FileReadAction(path=test_file)
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        # Verify final file state using FileEditAction view command
+        action = FileEditAction(command='view', path=test_file)
         obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        logger.info(f'Final file stats: {obs.content}')
+        assert 'content_1000' in obs.content, 'Final content verification failed'
+        logger.info('Final file content verified successfully')
 
     finally:
         runtime.close()
