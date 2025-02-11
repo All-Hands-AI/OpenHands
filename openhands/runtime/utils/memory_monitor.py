@@ -20,14 +20,18 @@ class LogStream:
 
 
 class MemoryMonitor:
-    def __init__(self):
+    def __init__(self, enable: bool = False):
         """Memory monitor for the runtime."""
         self._monitoring_thread: Optional[threading.Thread] = None
         self._stop_monitoring = threading.Event()
         self.log_stream = LogStream()
+        self.enable = enable
 
     def start_monitoring(self):
         """Start monitoring memory usage."""
+        if not self.enable:
+            return
+
         if self._monitoring_thread is not None:
             return
 
@@ -53,6 +57,9 @@ class MemoryMonitor:
 
     def stop_monitoring(self):
         """Stop monitoring memory usage."""
+        if not self.enable:
+            return
+
         if self._monitoring_thread is not None:
             self._stop_monitoring.set()
             self._monitoring_thread = None

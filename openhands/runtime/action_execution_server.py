@@ -163,7 +163,10 @@ class ActionExecutor:
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
-        self.memory_monitor = MemoryMonitor()
+        self.memory_monitor = MemoryMonitor(
+            enable=os.environ.get('RUNTIME_MEMORY_MONITOR', 'False').lower()
+            in ['true', '1', 'yes']
+        )
         if _override_max_memory_gb := os.environ.get('RUNTIME_MAX_MEMORY_GB', None):
             self.max_memory_gb = int(_override_max_memory_gb)
             logger.info(
