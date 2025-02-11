@@ -20,6 +20,7 @@ const toggleAdvancedSettings = async (user: UserEvent) => {
 describe("Settings Screen", () => {
   const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
   const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
 
   const { handleLogoutMock } = vi.hoisted(() => ({
     handleLogoutMock: vi.fn(),
@@ -118,7 +119,6 @@ describe("Settings Screen", () => {
     });
 
     it("should not render the 'Configure GitHub Repositories' button if OSS mode", async () => {
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
       getConfigSpy.mockResolvedValue({
         APP_MODE: "oss",
         GITHUB_CLIENT_ID: "123",
@@ -132,7 +132,6 @@ describe("Settings Screen", () => {
     });
 
     it("should render the 'Configure GitHub Repositories' button if SaaS mode", async () => {
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
       getConfigSpy.mockResolvedValue({
         APP_MODE: "saas",
         GITHUB_CLIENT_ID: "123",
@@ -144,7 +143,6 @@ describe("Settings Screen", () => {
     });
 
     it("should render the unset indicator if the GitHub token is not set", async () => {
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
       getConfigSpy.mockResolvedValue({
         APP_MODE: "oss",
         GITHUB_CLIENT_ID: "123",
@@ -171,7 +169,6 @@ describe("Settings Screen", () => {
     });
 
     it("should not render the GitHub token input if SaaS mode", async () => {
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
       getConfigSpy.mockResolvedValue({
         APP_MODE: "saas",
         GITHUB_CLIENT_ID: "123",
@@ -340,7 +337,6 @@ describe("Settings Screen", () => {
     describe("Advanced LLM Settings", () => {
       it("should not render the runtime settings input if OSS mode", async () => {
         const user = userEvent.setup();
-        const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
         getConfigSpy.mockResolvedValue({
           APP_MODE: "oss",
           GITHUB_CLIENT_ID: "123",
@@ -356,7 +352,6 @@ describe("Settings Screen", () => {
 
       it("should render the runtime settings input if SaaS mode", async () => {
         const user = userEvent.setup();
-        const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
         getConfigSpy.mockResolvedValue({
           APP_MODE: "saas",
           GITHUB_CLIENT_ID: "123",
