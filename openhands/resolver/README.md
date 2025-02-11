@@ -90,7 +90,7 @@ pip install openhands-ai
 # GitHub credentials
 
 export GITHUB_TOKEN="your-github-token"
-export GITHUB_USERNAME="your-github-username"  # Optional, defaults to token owner
+export GIT_USERNAME="your-github-username"  # Optional, defaults to token owner
 
 # LLM configuration
 
