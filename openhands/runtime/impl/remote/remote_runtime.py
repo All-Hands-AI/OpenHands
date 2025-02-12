@@ -212,11 +212,9 @@ class RemoteRuntime(ActionExecutionClient):
             plugins=self.plugins,
             app_config=self.config,
         )
-        environment = {
-            'DEBUG': 'true'
-            if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
-            else '',
-        }
+        environment = {}
+        if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true':
+            environment['DEBUG'] = 'true'
         environment.update(self.config.sandbox.runtime_startup_env_vars)
         start_request = {
             'image': self.container_image,
