@@ -24,10 +24,10 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.stream import EventStreamSubscriber
-from openhands.resolver.github import GithubIssueHandler, GithubPRHandler
-from openhands.resolver.gitlab import GitlabIssueHandler, GitlabPRHandler
-from openhands.resolver.issue import Issue
-from openhands.resolver.issue_definitions import (
+from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
+from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
+from openhands.resolver.interfaces.issue import Issue
+from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextIssue,
     ServiceContextPR,
 )

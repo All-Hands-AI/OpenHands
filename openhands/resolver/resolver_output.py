@@ -2,7 +2,7 @@ from typing import Any
 
 from litellm import BaseModel
 
-from openhands.resolver.issue import Issue
+from openhands.resolver.interfaces.issue import Issue
 
 
 class ResolverOutput(BaseModel):

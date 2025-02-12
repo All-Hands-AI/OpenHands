@@ -4,9 +4,12 @@ from unittest.mock import MagicMock, patch
 from openhands.core.config import LLMConfig
 from openhands.events.action.message import MessageAction
 from openhands.llm import LLM
-from openhands.resolver.gitlab import GitlabIssueHandler, GitlabPRHandler
-from openhands.resolver.issue import Issue
-from openhands.resolver.issue_definitions import ServiceContextIssue, ServiceContextPR
+from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
+from openhands.resolver.interfaces.issue import Issue
+from openhands.resolver.interfaces.issue_definitions import (
+    ServiceContextIssue,
+    ServiceContextPR,
+)
 
 
 def test_guess_success_multiline_explanation():

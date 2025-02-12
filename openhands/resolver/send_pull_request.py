@@ -9,14 +9,14 @@ import jinja2
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import LLM
-from openhands.resolver.github import GithubIssueHandler
-from openhands.resolver.gitlab import GitlabIssueHandler
+from openhands.resolver.interfaces.github import GithubIssueHandler
+from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
+from openhands.resolver.interfaces.issue import Issue
+from openhands.resolver.interfaces.issue_definitions import ServiceContextIssue
 from openhands.resolver.io_utils import (
     load_all_resolver_outputs,
     load_single_resolver_output,
 )
-from openhands.resolver.issue import Issue
-from openhands.resolver.issue_definitions import ServiceContextIssue
 from openhands.resolver.patching import apply_diff, parse_patch
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import (

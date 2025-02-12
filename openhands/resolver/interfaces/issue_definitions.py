@@ -8,7 +8,11 @@ import jinja2
 from openhands.core.config import LLMConfig
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
-from openhands.resolver.issue import Issue, ReviewThread
+from openhands.resolver.interfaces.issue import (
+    Issue,
+    IssueHandlerInterface,
+    ReviewThread,
+)
 from openhands.resolver.utils import extract_image_urls
 
 
@@ -17,7 +21,7 @@ class ServiceContextPR:
     issue_type: ClassVar[str] = 'pr'
     default_git_patch: ClassVar[str] = 'No changes made yet'
 
-    def __init__(self, strategy, llm_config: LLMConfig):
+    def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig):
         self._strategy = strategy
         self.llm = LLM(llm_config)
 
@@ -175,7 +179,7 @@ class ServiceContextPR:
         with open(
             os.path.join(
                 os.path.dirname(__file__),
-                'prompts/guess_success/pr-feedback-check.jinja',
+                '../prompts/guess_success/pr-feedback-check.jinja',
             ),
             'r',
         ) as f:
@@ -203,7 +207,8 @@ class ServiceContextPR:
 
         with open(
             os.path.join(
-                os.path.dirname(__file__), 'prompts/guess_success/pr-thread-check.jinja'
+                os.path.dirname(__file__),
+                '../prompts/guess_success/pr-thread-check.jinja',
             ),
             'r',
         ) as f:
@@ -230,7 +235,8 @@ class ServiceContextPR:
 
         with open(
             os.path.join(
-                os.path.dirname(__file__), 'prompts/guess_success/pr-review-check.jinja'
+                os.path.dirname(__file__),
+                '../prompts/guess_success/pr-review-check.jinja',
             ),
             'r',
         ) as f:
@@ -244,24 +250,6 @@ class ServiceContextPR:
         )
 
         return self._check_feedback_with_llm(prompt)
-
-    def __get_context_from_external_issues_references(
-        self,
-        closing_issues: list[str],
-        closing_issue_numbers: list[int],
-        issue_body: str,
-        review_comments: list[str],
-        review_threads: list[ReviewThread],
-        thread_comments: list[str] | None,
-    ):
-        return self._strategy.get_context_from_external_issues_references(
-            closing_issues,
-            closing_issue_numbers,
-            issue_body,
-            review_comments,
-            review_threads,
-            thread_comments,
-        )
 
 
 class ServiceContextIssue:
@@ -383,7 +371,7 @@ class ServiceContextIssue:
         with open(
             os.path.join(
                 os.path.dirname(__file__),
-                'prompts/guess_success/issue-success-check.jinja',
+                '../prompts/guess_success/issue-success-check.jinja',
             ),
             'r',
         ) as f:

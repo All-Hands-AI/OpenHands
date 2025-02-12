@@ -1,9 +1,12 @@
 from unittest.mock import MagicMock, patch
 
 from openhands.core.config import LLMConfig
-from openhands.resolver.github import GithubIssueHandler, GithubPRHandler
-from openhands.resolver.issue import ReviewThread
-from openhands.resolver.issue_definitions import ServiceContextIssue, ServiceContextPR
+from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
+from openhands.resolver.interfaces.issue import ReviewThread
+from openhands.resolver.interfaces.issue_definitions import (
+    ServiceContextIssue,
+    ServiceContextPR,
+)
 
 
 def test_get_converted_issues_initializes_review_comments():

@@ -13,7 +13,7 @@ from tqdm import tqdm
 import openhands
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.resolver.issue import Issue
+from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.resolve_issue import (
     issue_handler_factory,
     process_issue,

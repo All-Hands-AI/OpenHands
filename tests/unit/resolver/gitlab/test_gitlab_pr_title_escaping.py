@@ -2,7 +2,8 @@ import os
 import subprocess
 import tempfile
 
-from openhands.resolver.issue import Issue
+from openhands.core.logger import openhands_logger as logger
+from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.send_pull_request import make_commit
 from openhands.resolver.utils import Platform
 
@@ -90,7 +91,7 @@ def test_pr_title_with_quotes(monkeypatch):
     monkeypatch.setattr('requests.post', mock_post)
     monkeypatch.setattr('requests.get', lambda *args, **kwargs: MockGetResponse())
     monkeypatch.setattr(
-        'openhands.resolver.github.GithubIssueHandler.branch_exists',
+        'openhands.resolver.interfaces.github.GithubIssueHandler.branch_exists',
         lambda *args, **kwargs: False,
     )
 
@@ -98,7 +99,7 @@ def test_pr_title_with_quotes(monkeypatch):
     original_run = subprocess.run
 
     def mock_run(*args, **kwargs):
-        print(f"Running command: {args[0] if args else kwargs.get('args', [])}")
+        logger.info(f"Running command: {args[0] if args else kwargs.get('args', [])}")
         if isinstance(args[0], list) and args[0][0] == 'git':
             if 'push' in args[0]:
                 return subprocess.CompletedProcess(
@@ -111,7 +112,7 @@ def test_pr_title_with_quotes(monkeypatch):
 
     # Create a temporary directory and initialize git repo
     with tempfile.TemporaryDirectory() as temp_dir:
-        print('Initializing git repo...')
+        logger.info('Initializing git repo...')
         subprocess.run(['git', 'init', temp_dir], check=True)
 
         # Add these lines to configure git
@@ -128,14 +129,14 @@ def test_pr_title_with_quotes(monkeypatch):
         with open(test_file, 'w') as f:
             f.write('test content')
 
-        print('Adding and committing test file...')
+        logger.info('Adding and committing test file...')
         subprocess.run(['git', '-C', temp_dir, 'add', 'test.txt'], check=True)
         subprocess.run(
             ['git', '-C', temp_dir, 'commit', '-m', 'Initial commit'], check=True
         )
 
         # Create a test issue with problematic title
-        print('Creating test issue...')
+        logger.info('Creating test issue...')
         issue = Issue(
             owner='test-owner',
             repo='test-repo',
@@ -153,7 +154,7 @@ def test_pr_title_with_quotes(monkeypatch):
         )
 
         # Try to send a PR - this will fail if the title is incorrectly escaped
-        print('Sending PR...')
+        logger.info('Sending PR...')
         from openhands.resolver.send_pull_request import send_pull_request
 
         send_pull_request(

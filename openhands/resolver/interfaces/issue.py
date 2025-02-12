@@ -92,6 +92,18 @@ class IssueHandlerInterface(ABC):
         pass
 
     @abstractmethod
+    def get_context_from_external_issues_references(
+        self,
+        closing_issues: list[str],
+        closing_issue_numbers: list[int],
+        issue_body: str,
+        review_comments: list[str] | None,
+        review_threads: list[ReviewThread],
+        thread_comments: list[str] | None,
+    ):
+        pass
+
+    @abstractmethod
     def get_converted_issues(
         self, issue_numbers: list[int] | None = None, comment_id: int | None = None
     ) -> list[Issue]:

@@ -7,9 +7,12 @@ from litellm.exceptions import RateLimitError
 from openhands.core.config import LLMConfig
 from openhands.events.action.message import MessageAction
 from openhands.llm.llm import LLM
-from openhands.resolver.github import GithubIssueHandler, GithubPRHandler
-from openhands.resolver.issue import Issue
-from openhands.resolver.issue_definitions import ServiceContextIssue, ServiceContextPR
+from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
+from openhands.resolver.interfaces.issue import Issue
+from openhands.resolver.interfaces.issue_definitions import (
+    ServiceContextIssue,
+    ServiceContextPR,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -46,7 +49,7 @@ def test_handle_nonexistent_issue_reference():
 
     with patch('requests.get', return_value=mock_response):
         # Call the method with a non-existent issue reference
-        result = handler._ServiceContextPR__get_context_from_external_issues_references(
+        result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
             issue_body='This references #999999',  # Non-existent issue
@@ -73,7 +76,7 @@ def test_handle_rate_limit_error():
 
     with patch('requests.get', return_value=mock_response):
         # Call the method with an issue reference
-        result = handler._ServiceContextPR__get_context_from_external_issues_references(
+        result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
             issue_body='This references #123',
@@ -97,7 +100,7 @@ def test_handle_network_error():
         'requests.get', side_effect=requests.exceptions.ConnectionError('Network Error')
     ):
         # Call the method with an issue reference
-        result = handler._ServiceContextPR__get_context_from_external_issues_references(
+        result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
             issue_body='This references #123',
@@ -123,7 +126,7 @@ def test_successful_issue_reference():
 
     with patch('requests.get', return_value=mock_response):
         # Call the method with an issue reference
-        result = handler._ServiceContextPR__get_context_from_external_issues_references(
+        result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
             issue_body='This references #123',

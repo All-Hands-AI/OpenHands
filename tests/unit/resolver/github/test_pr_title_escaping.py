@@ -2,7 +2,7 @@ import os
 import subprocess
 import tempfile
 
-from openhands.resolver.issue import Issue
+from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.send_pull_request import make_commit
 from openhands.resolver.utils import Platform
 
@@ -90,7 +90,7 @@ def test_pr_title_with_quotes(monkeypatch):
     monkeypatch.setattr('requests.post', mock_post)
     monkeypatch.setattr('requests.get', lambda *args, **kwargs: MockGetResponse())
     monkeypatch.setattr(
-        'openhands.resolver.github.GithubIssueHandler.branch_exists',
+        'openhands.resolver.interfaces.github.GithubIssueHandler.branch_exists',
         lambda *args, **kwargs: False,
     )
 

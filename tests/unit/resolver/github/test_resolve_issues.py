@@ -12,9 +12,12 @@ from openhands.events.observation import (
     NullObservation,
 )
 from openhands.llm.llm import LLM
-from openhands.resolver.github import GithubIssueHandler, GithubPRHandler
-from openhands.resolver.issue import Issue, ReviewThread
-from openhands.resolver.issue_definitions import ServiceContextIssue, ServiceContextPR
+from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
+from openhands.resolver.interfaces.issue import Issue, ReviewThread
+from openhands.resolver.interfaces.issue_definitions import (
+    ServiceContextIssue,
+    ServiceContextPR,
+)
 from openhands.resolver.resolve_issue import (
     complete_runtime,
     initialize_runtime,

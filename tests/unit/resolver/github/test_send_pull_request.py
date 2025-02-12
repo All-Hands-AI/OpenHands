@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 
 from openhands.core.config import LLMConfig
-from openhands.resolver.github import GithubIssueHandler
-from openhands.resolver.issue import ReviewThread
+from openhands.resolver.interfaces.github import GithubIssueHandler
+from openhands.resolver.interfaces.issue import ReviewThread
 from openhands.resolver.resolver_output import Issue, ResolverOutput
 from openhands.resolver.send_pull_request import (
     apply_patch,
@@ -242,7 +242,7 @@ def test_initialize_repo(mock_output_dir):
         assert f.read() == 'hello world'
 
 
-@patch('openhands.resolver.github.GithubIssueHandler.reply_to_comment')
+@patch('openhands.resolver.interfaces.github.GithubIssueHandler.reply_to_comment')
 @patch('requests.post')
 @patch('subprocess.run')
 @patch('openhands.resolver.send_pull_request.LLM')

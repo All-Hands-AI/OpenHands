@@ -4,7 +4,11 @@ from urllib.parse import quote
 import requests
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.resolver.issue import Issue, IssueHandlerInterface, ReviewThread
+from openhands.resolver.interfaces.issue import (
+    Issue,
+    IssueHandlerInterface,
+    ReviewThread,
+)
 from openhands.resolver.utils import extract_issue_references
 
 
@@ -275,6 +279,17 @@ class GitlabIssueHandler(IssueHandlerInterface):
             )
         else:
             print(f'Comment added to the PR: {msg}')
+
+    def get_context_from_external_issues_references(
+        self,
+        closing_issues: list[str],
+        closing_issue_numbers: list[int],
+        issue_body: str,
+        review_comments: list[str] | None,
+        review_threads: list[ReviewThread],
+        thread_comments: list[str] | None,
+    ):
+        pass
 
 
 class GitlabPRHandler(GitlabIssueHandler):
