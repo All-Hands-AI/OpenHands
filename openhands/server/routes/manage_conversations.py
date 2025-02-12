@@ -132,8 +132,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     logger.info('Initializing new conversation')
     user_id = get_user_id(request)
     access_token = get_keycloak_token(request)
-    logger.info(f'user_id: {user_id}, access_token: {access_token}')
-    gh_client = GithubServiceImpl(user_key=user_id, token=access_token)
+    gh_client = GithubServiceImpl(user_key=access_token)
     github_token = await gh_client.get_latest_token()
 
     selected_repository = data.selected_repository
