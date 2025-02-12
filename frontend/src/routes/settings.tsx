@@ -101,7 +101,7 @@ function SettingsScreen() {
         user_consents_to_analytics: userConsentsToAnalytics,
         LLM_MODEL: customLlmModel || fullLlmModel,
         LLM_BASE_URL: formData.get("base-url-input")?.toString() || "",
-        LLM_API_KEY: formData.get("llm-api-key-input")?.toString(),
+        LLM_API_KEY: formData.get("llm-api-key-input")?.toString() || undefined,
         AGENT: formData.get("agent-input")?.toString(),
         SECURITY_ANALYZER:
           formData.get("security-analyzer-input")?.toString() || "",
@@ -126,6 +126,7 @@ function SettingsScreen() {
     saveSettings(
       {
         ...DEFAULT_SETTINGS,
+        LLM_API_KEY: "", // reset LLM API key
       },
       {
         onSuccess: () => {

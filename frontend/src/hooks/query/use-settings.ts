@@ -32,7 +32,6 @@ export const useSettings = () => {
     queryKey: ["settings", githubTokenIsSet],
     queryFn: getSettingsQueryFn,
     enabled: config?.APP_MODE !== "saas" || githubTokenIsSet,
-    initialData: DEFAULT_SETTINGS,
     meta: {
       disableToast: true,
     },
