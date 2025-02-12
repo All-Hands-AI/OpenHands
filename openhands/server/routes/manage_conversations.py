@@ -11,7 +11,7 @@ from openhands.events.action.message import MessageAction
 from openhands.events.stream import EventStreamSubscriber
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.runtime import get_runtime_cls
-from openhands.server.auth import get_github_token, get_user_id
+from openhands.server.auth import get_keycloak_token, get_user_id
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -131,7 +131,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     """
     logger.info('Initializing new conversation')
     user_id = get_user_id(request)
-    gh_client = GithubServiceImpl(user_key=user_id, token=get_github_token(request))
+    gh_client = GithubServiceImpl(user_key=user_id, token=get_keycloak_token(request))
     github_token = await gh_client.get_latest_token()
 
     selected_repository = data.selected_repository
