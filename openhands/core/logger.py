@@ -90,6 +90,12 @@ class NoColorFormatter(logging.Formatter):
         # Strip ANSI color codes from the message
         new_record.msg = strip_ansi(new_record.msg)
 
+        if new_record.exc_info is True and not new_record.exc_text:  # type: ignore
+            # The formatter expects a non boolean value here, and will raise an exception if there is a boolean.
+            # But using sys.exc_info at this point may give the wrong exc_info, so all we can do is drop it.
+            record.exc_info = None  # type: ignore
+            record.stack_info = None  # type: ignore
+
         return super().format(new_record)
 
 
@@ -134,6 +140,7 @@ class ColoredFormatter(logging.Formatter):
             # The formatter expects a non boolean value here, and will raise an exception if there is a boolean.
             # But using sys.exc_info at this point may give the wrong exc_info, so all we can do is drop it.
             record.exc_info = None
+            record.stack_info = None
         return super().format(record)
 
 
