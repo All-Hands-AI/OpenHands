@@ -419,6 +419,23 @@ describe("Settings Screen", () => {
       });
     });
 
+    it.only("should toggle advanced if user had set a custom model", async () => {
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        llm_model: "some/custom-model",
+      });
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+        expect(advancedSwitch).toBeChecked();
+
+        const llmCustomInput = screen.getByTestId("llm-custom-model-input");
+        expect(llmCustomInput).toBeInTheDocument();
+        expect(llmCustomInput).toHaveValue("some/custom-model");
+      });
+    });
+
     it("should have advanced settings enabled if the user previously had them enabled", async () => {
       const hasAdvancedSettingsSetSpy = vi.spyOn(
         AdvancedSettingsUtlls,

@@ -22,6 +22,7 @@ import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import SettingsIcon from "#/icons/settings.svg?react";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { isCustomModel } from "#/utils/is-custom-model";
 
 const displayErrorToast = (error: string) => {
   toast.error(error, {
@@ -48,20 +49,44 @@ const displaySuccessToast = (message: string) => {
 };
 
 function SettingsScreen() {
-  const { data: settings, isFetching, isFetched, isSuccess } = useSettings();
+  const {
+    data: settings,
+    isFetching: isFetchingSettings,
+    isFetched,
+    isSuccess: isSuccessfulSettings,
+  } = useSettings();
   const { data: config } = useConfig();
-  const { data: resources } = useAIConfigOptions();
+  const {
+    data: resources,
+    isFetching: isFetchingResources,
+    isSuccess: isSuccessfulResources,
+  } = useAIConfigOptions();
   const { mutate: saveSettings } = useSaveSettings();
   const { handleLogout } = useAppLogout();
+
+  const isFetching = isFetchingSettings || isFetchingResources;
+  const isSuccess = isSuccessfulSettings && isSuccessfulResources;
+
+  const determineWhetherToToggleAdvancedSettings = () => {
+    if (isSuccess) {
+      return (
+        isCustomModel(resources.models, settings.LLM_MODEL) ||
+        hasAdvancedSettingsSet(settings)
+      );
+    }
+
+    return false;
+  };
 
   const isSaas = config?.APP_MODE === "saas";
   const hasAppSlug = !!config?.APP_SLUG;
   const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
-  const isAdvancedSettingsSet = settings
-    ? hasAdvancedSettingsSet(settings)
-    : false;
+  const isAdvancedSettingsSet = React.useMemo(
+    () => determineWhetherToToggleAdvancedSettings(),
+    [isSuccess],
+  );
 
   const modelsAndProviders = organizeModelsAndProviders(
     resources?.models || [],
