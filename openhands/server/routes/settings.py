@@ -32,11 +32,6 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
 
         del settings_with_token_data.github_token
         return settings_with_token_data
-    except FileNotFoundError:
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content={'error': 'Settings not found'},
-        )
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
         return JSONResponse(
@@ -74,11 +69,7 @@ async def store_settings(
         settings_store = await SettingsStoreImpl.get_instance(
             config, get_user_id(request)
         )
-        existing_settings = None
-        try:
-            existing_settings = await settings_store.load()
-        except FileNotFoundError:
-            pass
+        existing_settings = await settings_store.load()
 
         if existing_settings:
             # LLM key isn't on the frontend, so we need to keep it if unset
