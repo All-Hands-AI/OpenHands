@@ -48,7 +48,10 @@ export const useSettings = () => {
     setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
   }, [query.data?.GITHUB_TOKEN_IS_SET, query.isFetched]);
 
-  // check if 404
+  // We want to return the defaults if the settings aren't found so the user can still see the
+  // options to make their initial save. We don't set the defaults in `initialData` above because
+  // that would prepopulate the data to the cache and mess with expectations. Read more:
+  // https://tanstack.com/query/latest/docs/framework/react/guides/initial-query-data#using-initialdata-to-prepopulate-a-query
   if (query.error?.status === 404) {
     return {
       ...query,
