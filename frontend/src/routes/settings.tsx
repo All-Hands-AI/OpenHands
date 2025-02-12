@@ -21,6 +21,7 @@ import { SettingsDropdownInput } from "#/components/features/settings/settings-d
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import SettingsIcon from "#/icons/settings.svg?react";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
+import { LoadingSpinner } from "#/components/shared/loading-spinner";
 
 const displayErrorToast = (error: string) => {
   toast.error(error, {
@@ -47,7 +48,7 @@ const displaySuccessToast = (message: string) => {
 };
 
 function SettingsScreen() {
-  const { data: settings, isFetching } = useSettings();
+  const { data: settings, isFetching, isFetched, isSuccess } = useSettings();
   const { data: config } = useConfig();
   const { data: resources } = useAIConfigOptions();
   const { mutate: saveSettings } = useSaveSettings();
@@ -145,11 +146,7 @@ function SettingsScreen() {
     setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
   }, [isAdvancedSettingsSet]);
 
-  if (isFetching) {
-    return <div>Loading...</div>;
-  }
-
-  if (!settings) {
+  if (isFetched && !settings) {
     return <div>Failed to fetch settings. Please try reloading.</div>;
   }
 
@@ -172,185 +169,194 @@ function SettingsScreen() {
           <h1 className="text-sm leading-6">Settings</h1>
         </header>
 
-        <div className="flex flex-col gap-6 grow overflow-y-auto px-11 py-9">
-          <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-            Account Settings
-          </h2>
-          {isSaas && hasAppSlug && (
-            <Link
-              to={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              <BrandButton type="button" variant="secondary">
-                Configure GitHub Repositories
-              </BrandButton>
-            </Link>
-          )}
-          {!isSaas && !isGitHubTokenSet && (
-            <>
-              <SettingsInput
-                testId="github-token-input"
-                name="github-token-input"
-                label="GitHub Token"
-                type="password"
-                className="w-[680px]"
-              />
-
-              <HelpLink
-                testId="github-token-help-anchor"
-                text="Get your token"
-                linkText="here"
-                href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
-              />
-            </>
-          )}
-
-          {isGitHubTokenSet && (
-            <BrandButton
-              type="button"
-              variant="secondary"
-              onClick={handleLogout}
-            >
-              Disconnect from GitHub
-            </BrandButton>
-          )}
-
-          <SettingsDropdownInput
-            testId="language-input"
-            name="language-input"
-            label="Language"
-            items={AvailableLanguages.map((language) => ({
-              key: language.value,
-              label: language.label,
-            }))}
-            defaultSelectedKey={settings.LANGUAGE}
-            isClearable={false}
-          />
-
-          <SettingsSwitch
-            testId="enable-analytics-switch"
-            name="enable-analytics-switch"
-            defaultIsToggled={!!isAnalyticsEnabled}
-          >
-            Enable analytics
-          </SettingsSwitch>
-
-          <div className="flex items-center gap-7">
-            <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              LLM Settings
-            </h2>
-            <SettingsSwitch
-              testId="advanced-settings-switch"
-              defaultIsToggled={isAdvancedSettingsSet}
-              onToggle={onToggleAdvancedMode}
-            >
-              Advanced
-            </SettingsSwitch>
+        {isFetching && (
+          <div className="flex grow p-4">
+            <LoadingSpinner size="large" />
           </div>
+        )}
+        {!isFetching && isSuccess && (
+          <div className="flex flex-col gap-6 grow overflow-y-auto px-11 py-9">
+            <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
+              Account Settings
+            </h2>
+            {isSaas && hasAppSlug && (
+              <Link
+                to={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                <BrandButton type="button" variant="secondary">
+                  Configure GitHub Repositories
+                </BrandButton>
+              </Link>
+            )}
+            {!isSaas && !isGitHubTokenSet && (
+              <>
+                <SettingsInput
+                  testId="github-token-input"
+                  name="github-token-input"
+                  label="GitHub Token"
+                  type="password"
+                  className="w-[680px]"
+                />
 
-          {llmConfigMode === "basic" && (
-            <ModelSelector
-              models={modelsAndProviders}
-              currentModel={settings.LLM_MODEL}
-            />
-          )}
+                <HelpLink
+                  testId="github-token-help-anchor"
+                  text="Get your token"
+                  linkText="here"
+                  href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
+                />
+              </>
+            )}
 
-          {llmConfigMode === "advanced" && (
-            <SettingsInput
-              testId="llm-custom-model-input"
-              name="llm-custom-model-input"
-              label="Custom Model"
-              defaultValue={settings.LLM_MODEL}
-              placeholder="anthropic/claude-3-5-sonnet-20241022"
-              type="text"
-              className="w-[680px]"
-            />
-          )}
-          {llmConfigMode === "advanced" && (
-            <SettingsInput
-              testId="base-url-input"
-              name="base-url-input"
-              label="Base URL"
-              defaultValue={settings.LLM_BASE_URL}
-              placeholder="https://api.openai.com"
-              type="text"
-              className="w-[680px]"
-            />
-          )}
+            {isGitHubTokenSet && (
+              <BrandButton
+                type="button"
+                variant="secondary"
+                onClick={handleLogout}
+              >
+                Disconnect from GitHub
+              </BrandButton>
+            )}
 
-          <SettingsInput
-            testId="llm-api-key-input"
-            name="llm-api-key-input"
-            label="API Key"
-            type="password"
-            className="w-[680px]"
-            startContent={isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />}
-            placeholder={isLLMKeySet ? "**********" : ""}
-          />
-
-          <HelpLink
-            testId="llm-api-key-help-anchor"
-            text="Don't know your API key?"
-            linkText="Click here for instructions"
-            href="https://docs.all-hands.dev/modules/usage/llms"
-          />
-
-          {llmConfigMode === "advanced" && (
             <SettingsDropdownInput
-              testId="agent-input"
-              name="agent-input"
-              label="Agent"
-              items={
-                resources?.agents.map((agent) => ({
-                  key: agent,
-                  label: agent,
-                })) || []
-              }
-              defaultSelectedKey={settings.AGENT}
+              testId="language-input"
+              name="language-input"
+              label="Language"
+              items={AvailableLanguages.map((language) => ({
+                key: language.value,
+                label: language.label,
+              }))}
+              defaultSelectedKey={settings.LANGUAGE}
               isClearable={false}
             />
-          )}
 
-          {isSaas && llmConfigMode === "advanced" && (
-            <SettingsInput
-              testId="runtime-settings-input"
-              name="runtime-settings-input"
-              label="Runtime Settings"
-              type="text"
-              className="w-[680px]"
-            />
-          )}
-
-          {llmConfigMode === "advanced" && (
             <SettingsSwitch
-              testId="enable-confirmation-mode-switch"
-              onToggle={setConfirmationModeIsEnabled}
-              defaultIsToggled={!!settings.SECURITY_ANALYZER}
-              isBeta
+              testId="enable-analytics-switch"
+              name="enable-analytics-switch"
+              defaultIsToggled={!!isAnalyticsEnabled}
             >
-              Enable confirmation mode
+              Enable analytics
             </SettingsSwitch>
-          )}
-          {llmConfigMode === "advanced" && confirmationModeIsEnabled && (
-            <div className="peer-has-checked:hidden">
+
+            <div className="flex items-center gap-7">
+              <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
+                LLM Settings
+              </h2>
+              <SettingsSwitch
+                testId="advanced-settings-switch"
+                defaultIsToggled={isAdvancedSettingsSet}
+                onToggle={onToggleAdvancedMode}
+              >
+                Advanced
+              </SettingsSwitch>
+            </div>
+
+            {llmConfigMode === "basic" && (
+              <ModelSelector
+                models={modelsAndProviders}
+                currentModel={settings.LLM_MODEL}
+              />
+            )}
+
+            {llmConfigMode === "advanced" && (
+              <SettingsInput
+                testId="llm-custom-model-input"
+                name="llm-custom-model-input"
+                label="Custom Model"
+                defaultValue={settings.LLM_MODEL}
+                placeholder="anthropic/claude-3-5-sonnet-20241022"
+                type="text"
+                className="w-[680px]"
+              />
+            )}
+            {llmConfigMode === "advanced" && (
+              <SettingsInput
+                testId="base-url-input"
+                name="base-url-input"
+                label="Base URL"
+                defaultValue={settings.LLM_BASE_URL}
+                placeholder="https://api.openai.com"
+                type="text"
+                className="w-[680px]"
+              />
+            )}
+
+            <SettingsInput
+              testId="llm-api-key-input"
+              name="llm-api-key-input"
+              label="API Key"
+              type="password"
+              className="w-[680px]"
+              startContent={
+                isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
+              }
+              placeholder={isLLMKeySet ? "**********" : ""}
+            />
+
+            <HelpLink
+              testId="llm-api-key-help-anchor"
+              text="Don't know your API key?"
+              linkText="Click here for instructions"
+              href="https://docs.all-hands.dev/modules/usage/llms"
+            />
+
+            {llmConfigMode === "advanced" && (
               <SettingsDropdownInput
-                testId="security-analyzer-input"
-                name="security-analyzer-input"
-                label="Security Analyzer"
+                testId="agent-input"
+                name="agent-input"
+                label="Agent"
                 items={
-                  resources?.securityAnalyzers.map((analyzer) => ({
-                    key: analyzer,
-                    label: analyzer,
+                  resources?.agents.map((agent) => ({
+                    key: agent,
+                    label: agent,
                   })) || []
                 }
-                defaultSelectedKey={settings.SECURITY_ANALYZER}
-                isClearable
-                showOptionalTag
+                defaultSelectedKey={settings.AGENT}
+                isClearable={false}
               />
-            </div>
-          )}
-        </div>
+            )}
+
+            {isSaas && llmConfigMode === "advanced" && (
+              <SettingsInput
+                testId="runtime-settings-input"
+                name="runtime-settings-input"
+                label="Runtime Settings"
+                type="text"
+                className="w-[680px]"
+              />
+            )}
+
+            {llmConfigMode === "advanced" && (
+              <SettingsSwitch
+                testId="enable-confirmation-mode-switch"
+                onToggle={setConfirmationModeIsEnabled}
+                defaultIsToggled={!!settings.SECURITY_ANALYZER}
+                isBeta
+              >
+                Enable confirmation mode
+              </SettingsSwitch>
+            )}
+            {llmConfigMode === "advanced" && confirmationModeIsEnabled && (
+              <div className="peer-has-checked:hidden">
+                <SettingsDropdownInput
+                  testId="security-analyzer-input"
+                  name="security-analyzer-input"
+                  label="Security Analyzer"
+                  items={
+                    resources?.securityAnalyzers.map((analyzer) => ({
+                      key: analyzer,
+                      label: analyzer,
+                    })) || []
+                  }
+                  defaultSelectedKey={settings.SECURITY_ANALYZER}
+                  isClearable
+                  showOptionalTag
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         <footer className="flex gap-6 p-6 justify-end border-t border-t-[#454545]">
           <BrandButton
