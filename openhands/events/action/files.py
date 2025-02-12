@@ -21,7 +21,7 @@ class FileReadAction(Action):
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
     impl_source: FileReadSource = FileReadSource.DEFAULT
-    translated_ipython_code: str = ''  # translated openhands-aci IPython code
+    view_range: list[int] | None = None  # ONLY used in OH_ACI mode
 
     @property
     def message(self) -> str:
@@ -60,29 +60,79 @@ class FileWriteAction(Action):
 
 @dataclass
 class FileEditAction(Action):
-    """Edits a file by provided a draft at a given path.
+    """Edits a file using various commands including view, create, str_replace, insert, and undo_edit.
 
-    Can be set to edit specific lines using start and end (1-index, inclusive) if the file is too long.
-    Default lines 1:-1 (whole file).
+    This class supports two main modes of operation:
+    1. LLM-based editing (impl_source = FileEditSource.LLM_BASED_EDIT)
+    2. ACI-based editing (impl_source = FileEditSource.OH_ACI)
 
-    If start is set to -1, the FileEditAction will simply append the content to the file.
+    Attributes:
+        path (str): The path to the file being edited. Works for both LLM-based and OH_ACI editing.
+        OH_ACI only arguments:
+            command (str): The editing command to be performed (view, create, str_replace, insert, undo_edit, write).
+            file_text (str): The content of the file to be created (used with 'create' command in OH_ACI mode).
+            old_str (str): The string to be replaced (used with 'str_replace' command in OH_ACI mode).
+            new_str (str): The string to replace old_str (used with 'str_replace' and 'insert' commands in OH_ACI mode).
+            insert_line (int): The line number after which to insert new_str (used with 'insert' command in OH_ACI mode).
+        LLM-based editing arguments:
+            content (str): The content to be written or edited in the file (used in LLM-based editing and 'write' command).
+            start (int): The starting line for editing (1-indexed, inclusive). Default is 1.
+            end (int): The ending line for editing (1-indexed, inclusive). Default is -1 (end of file).
+            thought (str): The reasoning behind the edit action.
+            action (str): The type of action being performed (always ActionType.EDIT).
+        runnable (bool): Indicates if the action can be executed (always True).
+        security_risk (ActionSecurityRisk | None): Indicates any security risks associated with the action.
+        impl_source (FileEditSource): The source of the implementation (LLM_BASED_EDIT or OH_ACI).
+
+    Usage:
+        - For LLM-based editing: Use path, content, start, and end attributes.
+        - For ACI-based editing: Use path, command, and the appropriate attributes for the specific command.
+
+    Note:
+        - If start is set to -1 in LLM-based editing, the content will be appended to the file.
+        - The 'write' command behaves similarly to LLM-based editing, using content, start, and end attributes.
     """
 
     path: str
-    content: str
+
+    # OH_ACI arguments
+    command: str = ''
+    file_text: str | None = None
+    old_str: str | None = None
+    new_str: str | None = None
+    insert_line: int | None = None
+
+    # LLM-based editing arguments
+    content: str = ''
     start: int = 1
     end: int = -1
+
+    # Shared arguments
     thought: str = ''
     action: str = ActionType.EDIT
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
-    impl_source: FileEditSource = FileEditSource.LLM_BASED_EDIT
-    translated_ipython_code: str = ''
+    impl_source: FileEditSource = FileEditSource.OH_ACI
 
     def __repr__(self) -> str:
         ret = '**FileEditAction**\n'
-        ret += f'Thought: {self.thought}\n'
-        ret += f'Range: [L{self.start}:L{self.end}]\n'
         ret += f'Path: [{self.path}]\n'
-        ret += f'Content:\n```\n{self.content}\n```\n'
+        ret += f'Thought: {self.thought}\n'
+
+        if self.impl_source == FileEditSource.LLM_BASED_EDIT:
+            ret += f'Range: [L{self.start}:L{self.end}]\n'
+            ret += f'Content:\n```\n{self.content}\n```\n'
+        else:  # OH_ACI mode
+            ret += f'Command: {self.command}\n'
+            if self.command == 'create':
+                ret += f'Created File with Text:\n```\n{self.file_text}\n```\n'
+            elif self.command == 'str_replace':
+                ret += f'Old String: ```\n{self.old_str}\n```\n'
+                ret += f'New String: ```\n{self.new_str}\n```\n'
+            elif self.command == 'insert':
+                ret += f'Insert Line: {self.insert_line}\n'
+                ret += f'New String: ```\n{self.new_str}\n```\n'
+            elif self.command == 'undo_edit':
+                ret += 'Undo Edit\n'
+            # We ignore "view" command because it will be mapped to a FileReadAction
         return ret
