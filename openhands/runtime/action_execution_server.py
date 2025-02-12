@@ -19,7 +19,6 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
-import psutil
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -163,26 +162,20 @@ class ActionExecutor:
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
-        self.memory_monitor = MemoryMonitor(
-            enable=os.environ.get('RUNTIME_MEMORY_MONITOR', 'False').lower()
-            in ['true', '1', 'yes']
-        )
+
+        self.max_memory_gb: int | None = None
         if _override_max_memory_gb := os.environ.get('RUNTIME_MAX_MEMORY_GB', None):
             self.max_memory_gb = int(_override_max_memory_gb)
             logger.info(
                 f'Setting max memory to {self.max_memory_gb}GB (according to the RUNTIME_MAX_MEMORY_GB environment variable)'
             )
         else:
-            # Get available system memory
-            total_memory_gb = psutil.virtual_memory().total / (
-                1024 * 1024 * 1024
-            )  # Convert to GB
-            self.max_memory_gb = int(max(0.5, total_memory_gb - 1.0))
-            # Reserve 1GB as head room, minimum of 0.5GB
-            logger.info(
-                f'Total memory: {total_memory_gb}GB, setting limit to {self.max_memory_gb}GB (reserved 1GB for action execution server, minimum 0.5GB)'
-            )
+            logger.info('No max memory limit set, using all available system memory')
 
+        self.memory_monitor = MemoryMonitor(
+            enable=os.environ.get('RUNTIME_MEMORY_MONITOR', 'False').lower()
+            in ['true', '1', 'yes']
+        )
         self.memory_monitor.start_monitoring()
 
     @property
@@ -198,7 +191,7 @@ class ActionExecutor:
             no_change_timeout_seconds=int(
                 os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
             ),
-            max_memory_mb=self.max_memory_gb * 1024,
+            max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
         )
         self.bash_session.initialize()
         logger.debug('Bash session initialized')
