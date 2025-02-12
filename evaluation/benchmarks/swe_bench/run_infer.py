@@ -130,6 +130,8 @@ def get_config(
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
         runtime=os.environ.get('RUNTIME', 'docker'),
+        modal_api_token_id=os.environ.get('MODAL_API_TOKEN_ID', None),
+        modal_api_token_secret=os.environ.get('MODAL_API_TOKEN_SECRET', None),
         sandbox=SandboxConfig(
             base_container_image=base_container_image,
             enable_auto_lint=True,
