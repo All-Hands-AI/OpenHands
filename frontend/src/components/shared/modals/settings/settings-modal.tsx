@@ -5,9 +5,10 @@ import { LoadingSpinner } from "../../loading-spinner";
 import { ModalBackdrop } from "../modal-backdrop";
 import { SettingsForm } from "./settings-form";
 import { Settings } from "#/types/settings";
+import { DEFAULT_SETTINGS } from "#/services/settings";
 
 interface SettingsModalProps {
-  settings: Settings;
+  settings?: Settings;
   onClose: () => void;
 }
 
@@ -38,7 +39,7 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
         )}
         {aiConfigOptions.data && (
           <SettingsForm
-            settings={settings}
+            settings={settings || DEFAULT_SETTINGS}
             models={aiConfigOptions.data?.models}
             agents={aiConfigOptions.data?.agents}
             securityAnalyzers={aiConfigOptions.data?.securityAnalyzers}

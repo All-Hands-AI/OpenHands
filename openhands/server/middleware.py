@@ -191,7 +191,12 @@ class GitHubTokenMiddleware(SessionMiddlewareInterface):
         settings_store = await shared.SettingsStoreImpl.get_instance(
             shared.config, get_user_id(request)
         )
-        settings = await settings_store.load()
+
+        settings = None
+        try:
+            settings = await settings_store.load()
+        except Exception:
+            pass
 
         # TODO: To avoid checks like this we should re-add the abilty to have completely different middleware in SAAS as in OSS
         if getattr(request.state, 'github_token', None) is None:
