@@ -130,6 +130,10 @@ class ColoredFormatter(logging.Formatter):
                 return f'{msg}'
             else:
                 return record.msg
+        if record.exc_info is True and not record.exc_text:
+            # The formatter expects a non boolean value here, and will raise an exception if there is a boolean.
+            # But using sys.exc_info at this point may give the wrong exc_info, so all we can do is drop it.
+            record.exc_info = None
         return super().format(record)
 
 
