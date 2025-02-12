@@ -16,17 +16,25 @@ from openhands.resolver.interfaces.issue import (
 from openhands.resolver.utils import extract_image_urls
 
 
-# Strategy context interface
-class ServiceContextPR:
-    issue_type: ClassVar[str] = 'pr'
+class ServiceContext:
+    issue_type: ClassVar[str]
     default_git_patch: ClassVar[str] = 'No changes made yet'
 
-    def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig):
+    def __init__(self, strategy, llm_config: LLMConfig | None):
         self._strategy = strategy
-        self.llm = LLM(llm_config)
+        if llm_config is not None:
+            self.llm = LLM(llm_config)
 
     def set_strategy(self, strategy):
         self._strategy = strategy
+
+
+# Strategy context interface
+class ServiceContextPR(ServiceContext):
+    issue_type: ClassVar[str] = 'pr'
+
+    def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig):
+        super().__init__(strategy, llm_config)
 
     def get_clone_url(self):
         return self._strategy.get_clone_url()
@@ -252,17 +260,11 @@ class ServiceContextPR:
         return self._check_feedback_with_llm(prompt)
 
 
-class ServiceContextIssue:
+class ServiceContextIssue(ServiceContext):
     issue_type: ClassVar[str] = 'issue'
-    default_git_patch: ClassVar[str] = 'No changes made yet'
 
     def __init__(self, strategy, llm_config: LLMConfig | None):
-        self._strategy = strategy
-        if llm_config is not None:
-            self.llm = LLM(llm_config)
-
-    def set_strategy(self, strategy):
-        self._strategy = strategy
+        super().__init__(strategy, llm_config)
 
     def get_base_url(self):
         return self._strategy.get_base_url()
