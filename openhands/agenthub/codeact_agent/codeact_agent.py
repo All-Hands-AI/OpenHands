@@ -429,25 +429,12 @@ class CodeActAgent(Agent):
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
 
-        messages: list[Message] = [
-            Message(
-                role='system',
-                content=[
-                    TextContent(
-                        text=self.prompt_manager.get_system_message(),
-                        cache_prompt=self.llm.is_caching_prompt_active(),
-                    )
-                ],
-            )
-        ]
-
         pending_tool_call_action_messages: dict[str, Message] = {}
         tool_call_id_to_message: dict[str, Message] = {}
 
         # Condense the events from the state.
         events = self.condenser.condensed_history(state)
 
-        is_first_message_handled = False
         for event in events:
             # create a regular message from an event
             if isinstance(event, Action):
@@ -489,23 +476,63 @@ class CodeActAgent(Agent):
             for response_id in _response_ids_to_remove:
                 pending_tool_call_action_messages.pop(response_id)
 
-            for msg in messages_to_add:
-                if msg:
-                    if msg.role == 'user' and not is_first_message_handled:
-                        is_first_message_handled = True
-                        # compose the first user message with examples
-                        self.prompt_manager.add_examples_to_initial_message(msg)
+        messages: list[Message] = self._initial_messages()
+        messages += self._enhance_messages(messages_to_add)
 
-                        # and/or repo/runtime info
-                        if self.config.enable_prompt_extensions:
-                            self.prompt_manager.add_info_to_initial_message(msg)
+        self._apply_caching(messages)
 
-                    # enhance the user message with additional context based on keywords matched
-                    if msg.role == 'user':
-                        self.prompt_manager.enhance_message(msg)
+        return messages
 
-                    messages.append(msg)
+    def _initial_messages(self) -> list[Message]:
+        """Creates the initial messages (including the system prompt) for the LLM conversation."""
+        assert self.prompt_manager, 'Prompt Manager not instantiated.'
 
+        return [
+            Message(
+                role='system',
+                content=[
+                    TextContent(
+                        text=self.prompt_manager.get_system_message(),
+                        cache_prompt=self.llm.is_caching_prompt_active(),
+                    )
+                ],
+            )
+        ]
+
+    def _enhance_messages(self, messages: list[Message]) -> list[Message]:
+        """Enhances the user message with additional context based on keywords matched.
+
+        Args:
+            messages (list[Message]): The list of messages to enhance
+
+        Returns:
+            list[Message]: The enhanced list of messages
+        """
+        assert self.prompt_manager, 'Prompt Manager not instantiated.'
+
+        results: list[Message] = []
+        is_first_message_handled = False
+
+        for msg in messages:
+            if msg.role == 'user' and not is_first_message_handled:
+                is_first_message_handled = True
+                # compose the first user message with examples
+                self.prompt_manager.add_examples_to_initial_message(msg)
+
+                # and/or repo/runtime info
+                if self.config.enable_prompt_extensions:
+                    self.prompt_manager.add_info_to_initial_message(msg)
+
+            # enhance the user message with additional context based on keywords matched
+            if msg.role == 'user':
+                self.prompt_manager.enhance_message(msg)
+
+            results.append(msg)
+
+        return results
+
+    def _apply_caching(self, messages: list[Message]) -> None:
+        """Applies caching breakpoints to the messages."""
         if self.llm.is_caching_prompt_active():
             # NOTE: this is only needed for anthropic
             # following logic here:
@@ -520,5 +547,3 @@ class CodeActAgent(Agent):
                         breakpoints_remaining -= 1
                     else:
                         break
-
-        return messages
