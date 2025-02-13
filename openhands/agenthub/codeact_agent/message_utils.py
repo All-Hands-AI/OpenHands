@@ -32,10 +32,10 @@ from openhands.events.serialization.event import truncate_content
 
 
 def events_to_messages(
-    self,
     events: list[Event],
     max_message_chars: int = -1,
     vision_is_active: bool = False,
+    enable_som_visual_browsing: bool = False,
 ) -> list[Message]:
     """Converts a list of events into a list of messages that can be sent to the LLM.
 
@@ -56,11 +56,11 @@ def events_to_messages(
             )
         elif isinstance(event, Observation):
             messages_to_add = get_observation_message(
-                self,
                 obs=event,
                 tool_call_id_to_message=tool_call_id_to_message,
                 max_message_chars=max_message_chars,
                 vision_is_active=vision_is_active,
+                enable_som_visual_browsing=enable_som_visual_browsing,
             )
         else:
             raise ValueError(f'Unknown event type: {type(event)}')
@@ -218,11 +218,11 @@ def get_action_message(
 
 
 def get_observation_message(
-    self,
     obs: Observation,
     tool_call_id_to_message: dict[str, Message],
     max_message_chars: int = -1,
     vision_is_active: bool = False,
+    enable_som_visual_browsing: bool = False,
 ) -> list[Message]:
     """Converts an observation into a message format that can be sent to the LLM.
 
@@ -287,7 +287,7 @@ def get_observation_message(
             obs.trigger_by_action == ActionType.BROWSE_INTERACTIVE
             and obs.set_of_marks is not None
             and len(obs.set_of_marks) > 0
-            and self.config.enable_som_visual_browsing
+            and enable_som_visual_browsing
             and vision_is_active
         ):
             text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
