@@ -88,12 +88,18 @@ The `Advanced Options` also allow you to specify a `Base URL` if required.
   <img src="/img/settings-advanced.png" alt="settings-modal" width="335" />
 </div>
 
+
+<div style={{ marginTop: '20px' }}>
+  Now you're ready to <a href="./getting-started">get started with OpenHands</a>.
+</div>
+
 ## Versions
 
-The command above pulls the most recent stable release of OpenHands. You have other options as well:
-- For a specific release, use `docker.all-hands.dev/all-hands-ai/openhands:$VERSION`, replacing $VERSION with the version number.
-- We use semver, and release major, minor, and patch tags. So `0.9` will automatically point to the latest `0.9.x` release, and `0` will point to the latest `0.x.x` release.
-- For the most up-to-date development version, you can use `docker.all-hands.dev/all-hands-ai/openhands:main`. This version is unstable and is recommended for testing or development purposes only.
+The [docker command above](./installation#start-the-app) pulls the most recent stable release of OpenHands. You have other options as well:
+- For a specific release, replace $VERSION in `openhands:$VERSION` and `runtime:$VERSION`, with the version number.
+We use SemVer so `0.9` will automatically point to the latest `0.9.x` release, and `0` will point to the latest `0.x.x` release.
+- For the most up-to-date development version, replace $VERSION in `openhands:$VERSION` and `runtime:$VERSION`, with `main`.
+This version is unstable and is recommended for testing or development purposes only.
 
 You can choose the tag that best suits your needs based on stability requirements and desired features.
 
