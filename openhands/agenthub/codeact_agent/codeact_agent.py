@@ -435,6 +435,8 @@ class CodeActAgent(Agent):
         # Condense the events from the state.
         events = self.condenser.condensed_history(state)
 
+        messages: list[Message] = self._initial_messages()
+
         for event in events:
             # create a regular message from an event
             if isinstance(event, Action):
@@ -476,10 +478,10 @@ class CodeActAgent(Agent):
             for response_id in _response_ids_to_remove:
                 pending_tool_call_action_messages.pop(response_id)
 
-        messages: list[Message] = self._initial_messages()
-        messages += self._enhance_messages(messages_to_add)
+            messages += self._enhance_messages(messages_to_add)
 
-        self._apply_caching(messages)
+        if self.llm.is_caching_prompt_active():
+            self._apply_caching(messages)
 
         return messages
 
@@ -533,17 +535,16 @@ class CodeActAgent(Agent):
 
     def _apply_caching(self, messages: list[Message]) -> None:
         """Applies caching breakpoints to the messages."""
-        if self.llm.is_caching_prompt_active():
-            # NOTE: this is only needed for anthropic
-            # following logic here:
-            # https://github.com/anthropics/anthropic-quickstarts/blob/8f734fd08c425c6ec91ddd613af04ff87d70c5a0/computer-use-demo/computer_use_demo/loop.py#L241-L262
-            breakpoints_remaining = 3  # remaining 1 for system/tool
-            for message in reversed(messages):
-                if message.role in ('user', 'tool'):
-                    if breakpoints_remaining > 0:
-                        message.content[
-                            -1
-                        ].cache_prompt = True  # Last item inside the message content
-                        breakpoints_remaining -= 1
-                    else:
-                        break
+        # NOTE: this is only needed for anthropic
+        # following logic here:
+        # https://github.com/anthropics/anthropic-quickstarts/blob/8f734fd08c425c6ec91ddd613af04ff87d70c5a0/computer-use-demo/computer_use_demo/loop.py#L241-L262
+        breakpoints_remaining = 3  # remaining 1 for system/tool
+        for message in reversed(messages):
+            if message.role in ('user', 'tool'):
+                if breakpoints_remaining > 0:
+                    message.content[
+                        -1
+                    ].cache_prompt = True  # Last item inside the message content
+                    breakpoints_remaining -= 1
+                else:
+                    break
