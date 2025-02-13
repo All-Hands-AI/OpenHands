@@ -15,6 +15,7 @@ from evaluation.utils.shared import (
     EvalOutput,
     assert_and_raise,
     codeact_user_response,
+    get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -25,10 +26,8 @@ from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
     AppConfig,
-    SandboxConfig,
     get_llm_config_arg,
     get_parser,
-    get_default_sandbox_config_for_eval,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -117,11 +116,6 @@ def get_config(
 
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = base_container_image
-    sandbox_config.timeout = 300  # large enough timeout, since some testcases take very long to run
-    sandbox_config.api_key = os.environ.get('ALLHANDS_API_KEY', None)
-    sandbox_config.remote_runtime_api_url = os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL')
-    sandbox_config.keep_runtime_alive = False
-    sandbox_config.remote_runtime_init_timeout = 3600
 
     config = AppConfig(
         default_agent=metadata.agent_class,
