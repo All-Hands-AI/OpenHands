@@ -42,6 +42,7 @@ Reminder:
 - Only call one function at a time
 - You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after.
 - If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls
+</IMPORTANT>
 """
 
 STOP_WORDS = ['</function']

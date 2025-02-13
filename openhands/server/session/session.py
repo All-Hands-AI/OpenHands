@@ -6,7 +6,9 @@ import socketio
 
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
-from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
+from openhands.core.config.condenser_config import (
+    LLMSummarizingCondenserConfig,
+)
 from openhands.core.const.guide_url import TROUBLESHOOTING_URL
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
@@ -53,7 +55,10 @@ class Session:
         self.last_active_ts = int(time.time())
         self.file_store = file_store
         self.agent_session = AgentSession(
-            sid, file_store, status_callback=self.queue_status_message
+            sid,
+            file_store,
+            status_callback=self.queue_status_message,
+            github_user_id=user_id,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
@@ -108,8 +113,8 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
-            default_condenser_config = AmortizedForgettingCondenserConfig(
-                keep_first=3, max_size=20
+            default_condenser_config = LLMSummarizingCondenserConfig(
+                llm_config=llm.config, keep_first=3, max_size=40
             )
             logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
@@ -118,9 +123,11 @@ class Session:
 
         github_token = None
         selected_repository = None
+        selected_branch = None
         if isinstance(settings, ConversationInitData):
             github_token = settings.github_token
             selected_repository = settings.selected_repository
+            selected_branch = settings.selected_branch
 
         try:
             await self.agent_session.start(
@@ -133,6 +140,7 @@ class Session:
                 agent_configs=self.config.get_agent_configs(),
                 github_token=github_token,
                 selected_repository=selected_repository,
+                selected_branch=selected_branch,
                 initial_message=initial_message,
             )
         except Exception as e:

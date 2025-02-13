@@ -53,6 +53,7 @@ def get_config(
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             keep_runtime_alive=False,
             remote_runtime_init_timeout=3600,
+            remote_runtime_enable_retries=True,
         ),
         # do not mount workspace
         workspace_base=None,

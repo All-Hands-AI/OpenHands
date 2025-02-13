@@ -86,7 +86,8 @@ class NoColorFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         # Create a deep copy of the record to avoid modifying the original
-        new_record: logging.LogRecord = copy.deepcopy(record)
+        new_record = _fix_record(record)
+
         # Strip ANSI color codes from the message
         new_record.msg = strip_ansi(new_record.msg)
 
@@ -130,7 +131,18 @@ class ColoredFormatter(logging.Formatter):
                 return f'{msg}'
             else:
                 return record.msg
-        return super().format(record)
+
+        new_record = _fix_record(record)
+        return super().format(new_record)
+
+
+def _fix_record(record: logging.LogRecord):
+    new_record = copy.copy(record)
+    # The formatter expects non boolean values, and will raise an exception if there is a boolean - so we fix these
+    if new_record.exc_info is True and not new_record.exc_text:  # type: ignore
+        new_record.exc_info = sys.exc_info()  # type: ignore
+        new_record.stack_info = None  # type: ignore
+    return new_record
 
 
 file_formatter = NoColorFormatter(
