@@ -215,7 +215,7 @@ def test_message_action_with_image():
     )
     action._source = EventSource.AGENT
 
-    results = get_action_message(action, {})
+    results = get_action_message(action, {}, vision_is_active=True)
     assert len(results) == 1
 
     result = results[0]
