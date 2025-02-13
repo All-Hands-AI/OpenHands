@@ -92,8 +92,9 @@ class RemoteRuntime(ActionExecutionClient):
     async def connect(self):
         try:
             await call_sync_from_async(self._start_or_attach_to_runtime)
-        except AgentRuntimeNotReadyError:
-            self.log('error', 'Runtime failed to start, timed out before ready')
+        except Exception:
+            self.close()
+            self.log('error', 'Runtime failed to start')
             raise
         await call_sync_from_async(self.setup_initial_env)
         self._runtime_initialized = True
