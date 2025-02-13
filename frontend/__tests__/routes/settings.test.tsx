@@ -481,6 +481,27 @@ describe("Settings Screen", () => {
           ).not.toBeInTheDocument();
         });
       });
+
+      it("should save if only confirmation mode is enabled", async () => {
+        const user = userEvent.setup();
+        renderSettingsScreen();
+
+        await toggleAdvancedSettings(user);
+
+        const confirmationModeSwitch = await screen.findByTestId(
+          "enable-confirmation-mode-switch",
+        );
+        await user.click(confirmationModeSwitch);
+
+        const saveButton = screen.getByText("Save Changes");
+        await user.click(saveButton);
+
+        expect(saveSettingsSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            confirmation_mode: true,
+          }),
+        );
+      });
     });
 
     it("should toggle advanced if user had set a custom model", async () => {
@@ -515,6 +536,22 @@ describe("Settings Screen", () => {
 
         const llmCustomInput = screen.getByTestId("llm-custom-model-input");
         expect(llmCustomInput).toBeInTheDocument();
+      });
+    });
+
+    it.only("should have confirmation mode enabled if the user previously had it enabled", async () => {
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        confirmation_mode: true,
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        const confirmationModeSwitch = screen.getByTestId(
+          "enable-confirmation-mode-switch",
+        );
+        expect(confirmationModeSwitch).toBeChecked();
       });
     });
 

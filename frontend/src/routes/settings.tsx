@@ -83,10 +83,7 @@ function SettingsScreen() {
   const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
-  const isAdvancedSettingsSet = React.useMemo(
-    () => determineWhetherToToggleAdvancedSettings(),
-    [isSuccess],
-  );
+  const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
 
   const modelsAndProviders = organizeModelsAndProviders(
     resources?.models || [],
@@ -133,6 +130,7 @@ function SettingsScreen() {
           formData.get("security-analyzer-input")?.toString() || "",
         REMOTE_RUNTIME_RESOURCE_FACTOR: remoteRuntimeResourceFactor,
         ENABLE_DEFAULT_CONDENSER: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
+        CONFIRMATION_MODE: confirmationModeIsEnabled,
       },
       {
         onSuccess: () => {
@@ -354,7 +352,7 @@ function SettingsScreen() {
               <SettingsSwitch
                 testId="enable-confirmation-mode-switch"
                 onToggle={setConfirmationModeIsEnabled}
-                defaultIsToggled={!!settings.SECURITY_ANALYZER}
+                defaultIsToggled={!!settings.CONFIRMATION_MODE}
                 isBeta
               >
                 Enable confirmation mode
