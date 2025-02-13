@@ -145,6 +145,7 @@ def get_config(
                 instance_id=instance['instance_id'],
             ),
             remote_runtime_enable_retries=True,
+            remote_runtime_class='sysbox',
         ),
         # do not mount workspace
         workspace_base=None,
