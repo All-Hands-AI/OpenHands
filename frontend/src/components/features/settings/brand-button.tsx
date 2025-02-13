@@ -27,7 +27,7 @@ export function BrandButton({
       type={type}
       onClick={onClick}
       className={cn(
-        "w-fit p-2 rounded",
+        "w-fit p-2 rounded disabled:opacity-30 disabled:cursor-not-allowed",
         variant === "primary" && "bg-[#C9B974] text-[#0D0F11]",
         variant === "secondary" && "border border-[#C9B974] text-[#C9B974]",
         className,
