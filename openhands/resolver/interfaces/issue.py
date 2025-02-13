@@ -26,6 +26,10 @@ class Issue(BaseModel):
 
 class IssueHandlerInterface(ABC):
     @abstractmethod
+    def set_owner(self, owner: str):
+        pass
+
+    @abstractmethod
     def download_issues(self) -> list[Any]:
         pass
 
@@ -52,6 +56,10 @@ class IssueHandlerInterface(ABC):
         pass
 
     @abstractmethod
+    def get_pull_url(self, pr_number: int):
+        pass
+
+    @abstractmethod
     def get_graphql_url(self):
         pass
 
@@ -65,6 +73,10 @@ class IssueHandlerInterface(ABC):
 
     @abstractmethod
     def get_branch_name(self, base_branch_name: str):
+        pass
+
+    @abstractmethod
+    def get_default_branch_name(self):
         pass
 
     @abstractmethod

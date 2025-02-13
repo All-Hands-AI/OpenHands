@@ -263,7 +263,7 @@ class ServiceContextPR(ServiceContext):
 class ServiceContextIssue(ServiceContext):
     issue_type: ClassVar[str] = 'issue'
 
-    def __init__(self, strategy, llm_config: LLMConfig | None):
+    def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig | None):
         super().__init__(strategy, llm_config)
 
     def get_base_url(self):

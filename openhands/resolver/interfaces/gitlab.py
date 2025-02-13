@@ -23,6 +23,9 @@ class GitlabIssueHandler(IssueHandlerInterface):
         self.clone_url = self.get_clone_url()
         self.headers = self.get_headers()
 
+    def set_owner(self, owner: str):
+        self.owner = owner
+
     def get_headers(self):
         return {
             'Authorization': f'Bearer {self.token}',
