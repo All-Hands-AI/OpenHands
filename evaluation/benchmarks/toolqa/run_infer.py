@@ -21,6 +21,7 @@ from openhands.core.config import (
     SandboxConfig,
     get_llm_config_arg,
     get_parser,
+    get_default_sandbox_config_for_eval,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -46,12 +47,7 @@ def get_config(
         run_as_openhands=False,
         runtime='docker',
         max_iterations=metadata.max_iterations,
-        sandbox=SandboxConfig(
-            base_container_image='python:3.12-bookworm',
-            enable_auto_lint=True,
-            use_host_network=False,
-            remote_runtime_enable_retries=True,
-        ),
+        sandbox=get_default_sandbox_config_for_eval(),
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,

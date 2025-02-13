@@ -28,6 +28,7 @@ from openhands.core.config import (
     SandboxConfig,
     get_llm_config_arg,
     get_parser,
+    get_default_sandbox_config_for_eval,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -105,9 +106,7 @@ def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
 ) -> AppConfig:
-    # COMMIT0_CONTAINER_IMAGE = 'wentingzhao/'
     assert USE_INSTANCE_IMAGE
-    # We use a different instance image for the each instance of commit0 eval
     repo_name = instance['repo'].split('/')[1]
     base_container_image = get_instance_docker_image(repo_name)
     logger.info(
@@ -115,28 +114,21 @@ def get_config(
         f'Please make sure this image exists. '
         f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
     )
-    # else:
-    #     raise
-    # base_container_image = SWE_BENCH_CONTAINER_IMAGE
-    # logger.info(f'Using swe-bench container image: {base_container_image}')
+
+    sandbox_config = get_default_sandbox_config_for_eval()
+    sandbox_config.base_container_image = base_container_image
+    sandbox_config.timeout = 300  # large enough timeout, since some testcases take very long to run
+    sandbox_config.api_key = os.environ.get('ALLHANDS_API_KEY', None)
+    sandbox_config.remote_runtime_api_url = os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL')
+    sandbox_config.keep_runtime_alive = False
+    sandbox_config.remote_runtime_init_timeout = 3600
 
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
         runtime=os.environ.get('RUNTIME', 'docker'),
-        sandbox=SandboxConfig(
-            base_container_image=base_container_image,
-            enable_auto_lint=True,
-            use_host_network=False,
-            # large enough timeout, since some testcases take very long to run
-            timeout=300,
-            api_key=os.environ.get('ALLHANDS_API_KEY', None),
-            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
-            keep_runtime_alive=False,
-            remote_runtime_init_timeout=3600,
-            remote_runtime_enable_retries=True,
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
