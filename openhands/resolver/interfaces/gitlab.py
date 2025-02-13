@@ -46,9 +46,9 @@ class GitlabIssueHandler(IssueHandlerInterface):
         return f'{self.base_url}/issues'
 
     def get_clone_url(self):
-        username_and_token = (
-            f'{self.username}:{self.token}' if self.username else f'{self.token}'
-        )
+        username_and_token = self.token
+        if self.username:
+            username_and_token = f'{self.username}:{self.token}'
         return f'https://{username_and_token}@gitlab.com/{self.owner}/{self.repo}.git'
 
     def get_graphql_url(self):
@@ -361,7 +361,8 @@ class GitlabPRHandler(GitlabIssueHandler):
                 }
             """
 
-        variables = {'projectPath': f'{self.owner}/{self.repo}', 'pr': f'{pull_number}'}
+        project_path = f'{self.owner}/{self.repo}'
+        variables = {'projectPath': project_path, 'pr': str(pull_number)}
 
         response = requests.post(
             self.get_graphql_url(),
