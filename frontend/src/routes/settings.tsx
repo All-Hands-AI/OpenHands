@@ -199,7 +199,7 @@ function SettingsScreen() {
             <LoadingSpinner size="large" />
           </div>
         )}
-        {!isFetching && isSuccess && (
+        {!isFetching && settings && (
           <div className="flex flex-col gap-6 grow overflow-y-auto px-11 py-9">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
               Account Settings

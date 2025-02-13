@@ -32,6 +32,10 @@ export const useSettings = () => {
     queryKey: ["settings", githubTokenIsSet],
     queryFn: getSettingsQueryFn,
     enabled: config?.APP_MODE !== "saas" || githubTokenIsSet,
+    // Only retry if the error is not a 404 because we
+    // would want to show the modal immediately if the
+    // settings are not found
+    retry: (_, error) => error.status !== 404,
     meta: {
       disableToast: true,
     },

@@ -229,6 +229,7 @@ class OpenHands {
   ): Promise<Conversation> {
     const body = {
       selected_repository: selectedRepository,
+      selected_branch: undefined,
       initial_user_msg: initialUserMsg,
       image_urls: imageUrls,
     };
