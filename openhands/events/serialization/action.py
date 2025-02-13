@@ -1,3 +1,5 @@
+import re
+
 from openhands.core.exceptions import LLMMalformedActionError
 from openhands.events.action.action import Action
 from openhands.events.action.agent import (
@@ -38,6 +40,38 @@ actions = (
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]
 
 
+def handle_action_deprecated_args(args: dict) -> dict:
+    # keep_prompt has been deprecated in https://github.com/All-Hands-AI/OpenHands/pull/4881
+    if 'keep_prompt' in args:
+        args.pop('keep_prompt')
+
+    # Handle translated_ipython_code deprecation
+    if 'translated_ipython_code' in args:
+        code = args.pop('translated_ipython_code')
+
+        # Check if it's a file_editor call
+        file_editor_pattern = r'print\(file_editor\(\*\*(.*?)\)\)'
+        if code is not None and (match := re.match(file_editor_pattern, code)):
+            try:
+                # Extract and evaluate the dictionary string
+                import ast
+
+                file_args = ast.literal_eval(match.group(1))
+
+                # Update args with the extracted file editor arguments
+                args.update(file_args)
+            except (ValueError, SyntaxError):
+                # If parsing fails, just remove the translated_ipython_code
+                pass
+
+        if args.get('command') == 'view':
+            args.pop(
+                'command'
+            )  # "view" will be translated to FileReadAction which doesn't have a command argument
+
+    return args
+
+
 def action_from_dict(action: dict) -> Action:
     if not isinstance(action, dict):
         raise LLMMalformedActionError('action must be a dictionary')
@@ -67,9 +101,8 @@ def action_from_dict(action: dict) -> Action:
     if 'images_urls' in args:
         args['image_urls'] = args.pop('images_urls')
 
-    # keep_prompt has been deprecated in https://github.com/All-Hands-AI/OpenHands/pull/4881
-    if 'keep_prompt' in args:
-        args.pop('keep_prompt')
+    # handle deprecated args
+    args = handle_action_deprecated_args(args)
 
     try:
         decoded_action = action_class(**args)
