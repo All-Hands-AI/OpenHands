@@ -33,13 +33,20 @@ from openhands.events.serialization.event import truncate_content
 
 def events_to_messages(
     events: list[Event],
-    max_message_chars: int = -1,
+    max_message_chars: int | None = None,
     vision_is_active: bool = False,
     enable_som_visual_browsing: bool = False,
 ) -> list[Message]:
     """Converts a list of events into a list of messages that can be sent to the LLM.
 
     Ensures that tool call actions are processed correctly in function calling mode.
+
+    Args:
+        events: A list of events to convert. Each event can be an Action or Observation.
+        max_message_chars: The maximum number of characters in the content of an event included in the prompt to the LLM.
+            Larger observations are truncated.
+        vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
+        enable_som_visual_browsing: Whether to enable visual browsing for the SOM model.
     """
     messages = []
 
@@ -220,7 +227,7 @@ def get_action_message(
 def get_observation_message(
     obs: Observation,
     tool_call_id_to_message: dict[str, Message],
-    max_message_chars: int = -1,
+    max_message_chars: int | None = None,
     vision_is_active: bool = False,
     enable_som_visual_browsing: bool = False,
 ) -> list[Message]:
@@ -239,9 +246,11 @@ def get_observation_message(
     tool_call_id_to_message for later processing instead of being returned immediately.
 
     Args:
-        obs (Observation): The observation to convert
-        tool_call_id_to_message (dict[str, Message]): Dictionary mapping tool call IDs
-            to their corresponding messages (used in function calling mode)
+        obs: The observation to convert
+        tool_call_id_to_message: Dictionary mapping tool call IDs to their corresponding messages (used in function calling mode)
+        max_message_chars: The maximum number of characters in the content of an observation included in the prompt to the LLM
+        vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included
+        enable_som_visual_browsing: Whether to enable visual browsing for the SOM model
 
     Returns:
         list[Message]: A list containing the formatted message(s) for the observation.

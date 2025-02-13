@@ -4,15 +4,15 @@ from collections import deque
 
 import openhands
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
-from openhands.agenthub.codeact_agent.message_utils import (
-    apply_prompt_caching,
-    events_to_messages,
-)
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
+from openhands.core.message_utils import (
+    apply_prompt_caching,
+    events_to_messages,
+)
 from openhands.events.action import (
     Action,
     AgentFinishAction,
