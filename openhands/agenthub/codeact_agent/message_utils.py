@@ -31,7 +31,9 @@ from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 
 
-def events_to_messages(self, events: list[Event]) -> list[Message]:
+def events_to_messages(
+    self, events: list[Event], vision_is_active: bool = False
+) -> list[Message]:
     """Converts a list of events into a list of messages that can be sent to the LLM.
 
     Ensures that tool call actions are processed correctly in function calling mode.
@@ -45,9 +47,9 @@ def events_to_messages(self, events: list[Event]) -> list[Message]:
         # create a regular message from an event
         if isinstance(event, Action):
             messages_to_add = get_action_message(
-                self,
                 action=event,
                 pending_tool_call_action_messages=pending_tool_call_action_messages,
+                vision_is_active=vision_is_active,
             )
         elif isinstance(event, Observation):
             messages_to_add = get_observation_message(
@@ -90,9 +92,9 @@ def events_to_messages(self, events: list[Event]) -> list[Message]:
 
 
 def get_action_message(
-    self,
     action: Action,
     pending_tool_call_action_messages: dict[str, Message],
+    vision_is_active: bool = False,
 ) -> list[Message]:
     """Converts an action into a message format that can be sent to the LLM.
 
@@ -103,7 +105,7 @@ def get_action_message(
     2. For MessageActions: Creates a message with the text content and optional image content
 
     Args:
-        action (Action): The action to convert. Can be one of:
+        action: The action to convert. Can be one of:
             - CmdRunAction: For executing bash commands
             - IPythonRunCellAction: For running IPython code
             - FileEditAction: For editing files
@@ -111,9 +113,11 @@ def get_action_message(
             - BrowseInteractiveAction: For browsing the web
             - AgentFinishAction: For ending the interaction
             - MessageAction: For sending messages
-        pending_tool_call_action_messages (dict[str, Message]): Dictionary mapping response IDs
-            to their corresponding messages. Used in function calling mode to track tool calls
-            that are waiting for their results.
+
+        pending_tool_call_action_messages: Dictionary mapping response IDs to their corresponding messages.
+            Used in function calling mode to track tool calls that are waiting for their results.
+
+        vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included
 
     Returns:
         list[Message]: A list containing the formatted message(s) for the action.
@@ -189,7 +193,7 @@ def get_action_message(
     elif isinstance(action, MessageAction):
         role = 'user' if action.source == 'user' else 'assistant'
         content = [TextContent(text=action.content or '')]
-        if self.llm.vision_is_active() and action.image_urls:
+        if vision_is_active and action.image_urls:
             content.append(ImageContent(image_urls=action.image_urls))
         return [
             Message(
