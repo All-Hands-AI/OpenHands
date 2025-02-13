@@ -10,6 +10,7 @@ from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 from openhands.core.config.utils import (
     finalize_config,
+    get_agent_config_arg,
     get_llm_config_arg,
     get_parser,
     load_app_config,
@@ -31,6 +32,7 @@ __all__ = [
     'load_from_env',
     'load_from_toml',
     'finalize_config',
+    'get_agent_config_arg',
     'get_llm_config_arg',
     'get_field_info',
     'get_parser',

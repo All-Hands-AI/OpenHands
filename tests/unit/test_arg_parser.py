@@ -128,6 +128,7 @@ def test_help_message(capsys):
         '--eval-note EVAL_NOTE',
         '--eval-ids EVAL_IDS',
         '-l LLM_CONFIG, --llm-config LLM_CONFIG',
+        '--agent-config AGENT_CONFIG',
         '-n NAME, --name NAME',
         '--config-file CONFIG_FILE',
         '--no-auto-continue',
@@ -137,4 +138,4 @@ def test_help_message(capsys):
         assert element in help_output, f"Expected '{element}' to be in the help message"
 
     option_count = help_output.count('  -')
-    assert option_count == 17, f'Expected 17 options, found {option_count}'
+    assert option_count == 18, f'Expected 18 options, found {option_count}'

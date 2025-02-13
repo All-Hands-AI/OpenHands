@@ -18,9 +18,11 @@ from openhands.core.config import (
     AppConfig,
     LLMConfig,
     SandboxConfig,
+    get_agent_config_arg,
     get_llm_config_arg,
     get_parser,
 )
+from openhands.core.config.agent_config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
@@ -34,6 +36,7 @@ def get_config(
     task_short_name: str,
     mount_path_on_host: str,
     llm_config: LLMConfig,
+    agent_config: AgentConfig,
 ) -> AppConfig:
     config = AppConfig(
         run_as_openhands=False,
@@ -58,6 +61,14 @@ def get_config(
         workspace_mount_path_in_sandbox='/outputs',
     )
     config.set_llm_config(llm_config)
+    if agent_config:
+        config.set_agent_config(agent_config)
+    else:
+        logger.info('Agent config not provided, using default settings')
+        agent_config = AgentConfig(
+            enable_prompt_extensions=False,
+        )
+        config.set_agent_config(agent_config)
     return config
 
 
@@ -215,6 +226,10 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
+    agent_config: AgentConfig | None = None
+    if args.agent_config:
+        agent_config = get_agent_config_arg(args.agent_config)
+
     agent_llm_config: LLMConfig | None = None
     if args.agent_llm_config:
         agent_llm_config = get_llm_config_arg(args.agent_llm_config)
@@ -255,7 +270,7 @@ if __name__ == '__main__':
     else:
         temp_dir = tempfile.mkdtemp()
     config: AppConfig = get_config(
-        args.task_image_name, task_short_name, temp_dir, agent_llm_config
+        args.task_image_name, task_short_name, temp_dir, agent_llm_config, agent_config
     )
     runtime: Runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
