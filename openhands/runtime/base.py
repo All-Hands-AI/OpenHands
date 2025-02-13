@@ -219,7 +219,7 @@ class Runtime(FileEditRuntimeMixin):
         try:
             if isinstance(event, CmdRunAction):
                 if self.github_user_id and '$GITHUB_TOKEN' in event.command:
-                    gh_client = GithubServiceImpl(user_id=self.github_user_id)
+                    gh_client = GithubServiceImpl(user_key=self.github_user_id)
                     token = await gh_client.get_latest_token()
                     if token:
                         export_cmd = CmdRunAction(
