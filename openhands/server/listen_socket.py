@@ -39,10 +39,10 @@ async def connect(connection_id: str, environ, auth):
     if server_config.app_mode != AppMode.OSS:
         cookies_str = environ.get('HTTP_COOKIE', '')
         cookies = dict(cookie.split('=', 1) for cookie in cookies_str.split('; '))
-        signed_token = cookies.get('github_auth', '')
+        signed_token = cookies.get('openhands_auth', '')
         if not signed_token:
-            logger.error('No github_auth cookie')
-            raise ConnectionRefusedError('No github_auth cookie')
+            logger.error('No openhands_auth cookie')
+            raise ConnectionRefusedError('No openhands_auth cookie')
         if not config.jwt_secret:
             raise RuntimeError('JWT secret not found')
 

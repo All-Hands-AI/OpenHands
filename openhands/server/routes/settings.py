@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
+from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.auth import get_user_id
-from openhands.server.services.github_service import GitHubService
+from openhands.integrations.github.github_service import GithubServiceImpl
+from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
 
@@ -13,9 +14,8 @@ app = APIRouter(prefix='/api')
 @app.get('/settings')
 async def load_settings(request: Request) -> GETSettingsModel | None:
     try:
-        settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
-        )
+        user_id = get_user_id(request)
+        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
         settings = await settings_store.load()
         if not settings:
             return JSONResponse(
@@ -23,10 +23,10 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
                 content={'error': 'Settings not found'},
             )
 
-        github_token = request.state.github_token
+        token_is_set = bool(user_id) or bool(get_github_token(request))
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(),
-            github_token_is_set=bool(github_token),
+            github_token_is_set=token_is_set,
         )
         settings_with_token_data.llm_api_key = settings.llm_api_key
 
@@ -51,8 +51,10 @@ async def store_settings(
         try:
             # We check if the token is valid by getting the user
             # If the token is invalid, this will raise an exception
-            github = GitHubService(None)
-            await github.validate_user(settings.github_token)
+            github = GithubServiceImpl(
+                user_id=None, token=SecretStr(settings.github_token)
+            )
+            await github.get_user()
 
         except Exception as e:
             logger.warning(f'Invalid GitHub token: {e}')

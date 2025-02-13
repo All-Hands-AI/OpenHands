@@ -41,22 +41,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: true
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.3.0
+        uses: docker/setup-qemu-action@v3.4.0
         with:
           image: tonistiigi/binfmt:latest
       - name: Login to GHCR
@@ -104,22 +90,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: true
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.3.0
+        uses: docker/setup-qemu-action@v3.4.0
         with:
           image: tonistiigi/binfmt:latest
       - name: Login to GHCR
@@ -230,20 +202,6 @@ jobs:
         base_image: ['nikolaik']
     steps:
       - uses: actions/checkout@v4
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: true
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -275,7 +233,7 @@ jobs:
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies
-      - name: Run runtime tests
+      - name: Run docker runtime tests
         run: |
           # We install pytest-xdist in order to run tests across CPUs
           poetry run pip install pytest-xdist
@@ -307,20 +265,6 @@ jobs:
         base_image: ['nikolaik']
     steps:
       - uses: actions/checkout@v4
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: true
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
