@@ -325,6 +325,11 @@ The agent configuration options are defined in the `[agent]` and `[agent.<agent_
   - Default: `true`
   - Description: Whether function calling is enabled
 
+- `enable_agent_skills` (DEPRECATED)
+  - Type: `bool`
+  - Default: `false`
+  - Description: Enable legacy agent skills. This option will be removed in v0.22.0. See [migration guide](./migration/agent-skills-to-function-calls.md)
+
 - `codeact_enable_browsing`
   - Type: `bool`
   - Default: `false`
