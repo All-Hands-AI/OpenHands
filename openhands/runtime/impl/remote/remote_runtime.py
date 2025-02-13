@@ -45,6 +45,7 @@ class RemoteRuntime(ActionExecutionClient):
         status_callback: Optional[Callable] = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        github_user_id: str | None = None,
     ):
         super().__init__(
             config,
@@ -55,6 +56,7 @@ class RemoteRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
+            github_user_id,
         )
         if self.config.sandbox.api_key is None:
             raise ValueError(
@@ -210,15 +212,18 @@ class RemoteRuntime(ActionExecutionClient):
             plugins=self.plugins,
             app_config=self.config,
         )
+        environment = {}
+        if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true':
+            environment['DEBUG'] = 'true'
+        environment.update(self.config.sandbox.runtime_startup_env_vars)
         start_request = {
             'image': self.container_image,
             'command': command,
             'working_dir': '/openhands/code/',
-            'environment': {'DEBUG': 'true'}
-            if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
-            else {},
+            'environment': environment,
             'session_id': self.sid,
             'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
+            'runtime_class': 'sysbox-runc',
         }
 
         # Start the sandbox using the /start endpoint
