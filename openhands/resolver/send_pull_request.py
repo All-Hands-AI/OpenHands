@@ -322,23 +322,13 @@ def send_pull_request(
         url = handler.get_compare_url(branch_name)
     else:
         # Prepare the PR for the GitHub API
-        if platform == Platform.GITHUB:
-            data = {
-                'title': final_pr_title,  # No need to escape title for GitHub API
-                'body': pr_body,
-                'head': branch_name,
-                'base': base_branch,
-                'draft': pr_type == 'draft',
-            }
-        # Prepare the PR for the GitLab API
-        elif platform == Platform.GITLAB:
-            data = {
-                'title': final_pr_title,
-                'description': pr_body,
-                'source_branch': branch_name,
-                'target_branch': base_branch,
-                'draft': pr_type == 'draft',
-            }
+        data = {
+            'title': final_pr_title,
+            ('body' if platform == Platform.GITHUB else 'description'): pr_body,
+            ('head' if platform == Platform.GITHUB else 'source_branch'): branch_name,
+            ('base' if platform == Platform.GITHUB else 'target_branch'): base_branch,
+            'draft': pr_type == 'draft',
+        }
 
         pr_data = handler.create_pull_request(data)
         url = pr_data['html_url']
