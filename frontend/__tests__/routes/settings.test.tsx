@@ -422,6 +422,58 @@ describe("Settings Screen", () => {
         screen.getByTestId("runtime-settings-input");
       });
 
+      it("should set the default runtime setting set", async () => {
+        getConfigSpy.mockResolvedValue({
+          APP_MODE: "saas",
+          GITHUB_CLIENT_ID: "123",
+          POSTHOG_CLIENT_KEY: "456",
+        });
+
+        getSettingsSpy.mockResolvedValue({
+          ...MOCK_DEFAULT_USER_SETTINGS,
+          remote_runtime_resource_factor: 1,
+        });
+
+        renderSettingsScreen();
+
+        await toggleAdvancedSettings(userEvent.setup());
+
+        const input = await screen.findByTestId("runtime-settings-input");
+        expect(input).toHaveValue("1x (2 core, 8G)");
+      });
+
+      it("should save the runtime settings when the 'Save Changes' button is clicked", async () => {
+        const user = userEvent.setup();
+        getConfigSpy.mockResolvedValue({
+          APP_MODE: "saas",
+          GITHUB_CLIENT_ID: "123",
+          POSTHOG_CLIENT_KEY: "456",
+        });
+
+        getSettingsSpy.mockResolvedValue({
+          ...MOCK_DEFAULT_USER_SETTINGS,
+        });
+
+        renderSettingsScreen();
+
+        await toggleAdvancedSettings(user);
+
+        const input = await screen.findByTestId("runtime-settings-input");
+        await user.click(input);
+
+        const option = await screen.findByText("2x (4 core, 16G)");
+        await user.click(option);
+
+        const saveButton = screen.getByText("Save Changes");
+        await user.click(saveButton);
+
+        expect(saveSettingsSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            remote_runtime_resource_factor: 2,
+          }),
+        );
+      });
+
       test("saving with no changes but having advanced enabled should hide the advanced items", async () => {
         const user = userEvent.setup();
         renderSettingsScreen();
@@ -539,7 +591,7 @@ describe("Settings Screen", () => {
       });
     });
 
-    it.only("should have confirmation mode enabled if the user previously had it enabled", async () => {
+    it("should have confirmation mode enabled if the user previously had it enabled", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         confirmation_mode: true,

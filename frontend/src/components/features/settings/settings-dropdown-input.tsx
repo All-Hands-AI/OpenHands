@@ -5,7 +5,7 @@ interface SettingsDropdownInputProps {
   testId: string;
   label: string;
   name: string;
-  items: { key: string; label: string }[];
+  items: { key: React.Key; label: string }[];
   showOptionalTag?: boolean;
   isDisabled?: boolean;
   defaultSelectedKey?: string;

@@ -24,6 +24,11 @@ import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message"
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { isCustomModel } from "#/utils/is-custom-model";
 
+const REMOTE_RUNTIME_OPTIONS = [
+  { key: 1, label: "1x (2 core, 8G)" },
+  { key: 2, label: "2x (4 core, 16G)" },
+];
+
 const displayErrorToast = (error: string) => {
   toast.error(error, {
     position: "top-right",
@@ -108,10 +113,12 @@ function SettingsScreen() {
     const fullLlmModel = `${llmProvider}/${llmModel}`.toLowerCase();
     const customLlmModel = formData.get("llm-custom-model-input")?.toString();
 
-    const rawRemoteRuntimeResourceFactor =
-      formData.get("runtime-settings-input")?.toString() ||
-      DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR;
-    const remoteRuntimeResourceFactor = Number(rawRemoteRuntimeResourceFactor);
+    const rawRemoteRuntimeResourceFactor = formData
+      .get("runtime-settings-input")
+      ?.toString();
+    const remoteRuntimeResourceFactor = REMOTE_RUNTIME_OPTIONS.find(
+      ({ label }) => label === rawRemoteRuntimeResourceFactor,
+    )?.key;
 
     const userConsentsToAnalytics =
       formData.get("enable-analytics-switch")?.toString() === "on";
@@ -128,7 +135,9 @@ function SettingsScreen() {
         AGENT: formData.get("agent-input")?.toString(),
         SECURITY_ANALYZER:
           formData.get("security-analyzer-input")?.toString() || "",
-        REMOTE_RUNTIME_RESOURCE_FACTOR: remoteRuntimeResourceFactor,
+        REMOTE_RUNTIME_RESOURCE_FACTOR:
+          remoteRuntimeResourceFactor ||
+          DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
         ENABLE_DEFAULT_CONDENSER: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
         CONFIRMATION_MODE: confirmationModeIsEnabled,
       },
@@ -339,12 +348,13 @@ function SettingsScreen() {
             )}
 
             {isSaas && llmConfigMode === "advanced" && (
-              <SettingsInput
+              <SettingsDropdownInput
                 testId="runtime-settings-input"
                 name="runtime-settings-input"
                 label="Runtime Settings"
-                type="text"
-                className="w-[680px]"
+                items={REMOTE_RUNTIME_OPTIONS}
+                defaultSelectedKey={settings.REMOTE_RUNTIME_RESOURCE_FACTOR?.toString()}
+                isClearable={false}
               />
             )}
 
