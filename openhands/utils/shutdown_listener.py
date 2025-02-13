@@ -19,10 +19,10 @@ _should_exit = None
 _shutdown_listeners: dict[UUID, Callable] = {}
 
 
-def _register_signal_handler(sig: signal.Signals):
+def _register_signal_handler(sig: signal.Signals) -> None:
     original_handler = None
 
-    def handler(sig_: int, frame: FrameType | None):
+    def handler(sig_: int, frame: FrameType | None) -> None:
         logger.debug(f'shutdown_signal:{sig_}')
         global _should_exit
         if not _should_exit:
@@ -39,7 +39,7 @@ def _register_signal_handler(sig: signal.Signals):
     original_handler = signal.signal(sig, handler)
 
 
-def _register_signal_handlers():
+def _register_signal_handlers() -> None:
     global _should_exit
     if _should_exit is not None:
         return
@@ -66,7 +66,7 @@ def should_continue() -> bool:
     return not _should_exit
 
 
-def sleep_if_should_continue(timeout: float):
+def sleep_if_should_continue(timeout: float) -> None:
     if timeout <= 1:
         time.sleep(timeout)
         return
@@ -75,7 +75,7 @@ def sleep_if_should_continue(timeout: float):
         time.sleep(1)
 
 
-async def async_sleep_if_should_continue(timeout: float):
+async def async_sleep_if_should_continue(timeout: float) -> None:
     if timeout <= 1:
         await asyncio.sleep(timeout)
         return
