@@ -2,15 +2,59 @@ import json
 import logging
 import multiprocessing as mp
 import os
+import re
+from enum import Enum
 from typing import Callable
 
 import pandas as pd
+import requests
 
 from openhands.controller.state.state import State
 from openhands.core.logger import get_console_handler
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action
 from openhands.events.action.message import MessageAction
+
+
+class Platform(Enum):
+    INVALID = 0
+    GITHUB = 1
+    GITLAB = 2
+
+
+def identify_token(token: str) -> Platform:
+    """
+    Identifies whether a token belongs to GitHub or GitLab.
+
+    Parameters:
+        token (str): The personal access token to check.
+
+    Returns:
+        Platform: "GitHub" if the token is valid for GitHub,
+             "GitLab" if the token is valid for GitLab,
+             "Invalid" if the token is not recognized by either.
+    """
+    github_url = 'https://api.github.com/user'
+    github_headers = {'Authorization': f'token {token}'}
+
+    try:
+        github_response = requests.get(github_url, headers=github_headers, timeout=5)
+        if github_response.status_code == 200:
+            return Platform.GITHUB
+    except requests.RequestException as e:
+        print(f'Error connecting to GitHub API: {e}')
+
+    gitlab_url = 'https://gitlab.com/api/v4/user'
+    gitlab_headers = {'Authorization': f'Bearer {token}'}
+
+    try:
+        gitlab_response = requests.get(gitlab_url, headers=gitlab_headers, timeout=5)
+        if gitlab_response.status_code == 200:
+            return Platform.GITLAB
+    except requests.RequestException as e:
+        print(f'Error connecting to GitLab API: {e}')
+
+    return Platform.INVALID
 
 
 def codeact_user_response(
@@ -137,3 +181,45 @@ def reset_logger_for_multiprocessing(
         logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     )
     logger.addHandler(file_handler)
+
+
+def extract_image_urls(issue_body: str) -> list[str]:
+    # Regular expression to match Markdown image syntax ![alt text](image_url)
+    image_pattern = r'!\[.*?\]\((https?://[^\s)]+)\)'
+    return re.findall(image_pattern, issue_body)
+
+
+def extract_issue_references(body: str) -> list[int]:
+    # First, remove code blocks as they may contain false positives
+    body = re.sub(r'```.*?```', '', body, flags=re.DOTALL)
+
+    # Remove inline code
+    body = re.sub(r'`[^`]*`', '', body)
+
+    # Remove URLs that contain hash symbols
+    body = re.sub(r'https?://[^\s)]*#\d+[^\s)]*', '', body)
+
+    # Now extract issue numbers, making sure they're not part of other text
+    # The pattern matches #number that:
+    # 1. Is at the start of text or after whitespace/punctuation
+    # 2. Is followed by whitespace, punctuation, or end of text
+    # 3. Is not part of a URL
+    pattern = r'(?:^|[\s\[({]|[^\w#])#(\d+)(?=[\s,.\])}]|$)'
+    return [int(match) for match in re.findall(pattern, body)]
+
+
+def get_unique_uid(start_uid=1000):
+    existing_uids = set()
+    with open('/etc/passwd', 'r') as passwd_file:
+        for line in passwd_file:
+            parts = line.split(':')
+            if len(parts) > 2:
+                try:
+                    existing_uids.add(int(parts[2]))
+                except ValueError:
+                    continue
+
+    while start_uid in existing_uids:
+        start_uid += 1
+
+    return start_uid

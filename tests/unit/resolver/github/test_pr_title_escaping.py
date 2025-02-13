@@ -2,8 +2,9 @@ import os
 import subprocess
 import tempfile
 
-from openhands.resolver.github_issue import GithubIssue
+from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.send_pull_request import make_commit
+from openhands.resolver.utils import Platform
 
 
 def test_commit_message_with_quotes():
@@ -19,7 +20,7 @@ def test_commit_message_with_quotes():
         subprocess.run(['git', '-C', temp_dir, 'add', 'test.txt'], check=True)
 
         # Create a test issue with problematic title
-        issue = GithubIssue(
+        issue = Issue(
             owner='test-owner',
             repo='test-repo',
             number=123,
@@ -89,7 +90,7 @@ def test_pr_title_with_quotes(monkeypatch):
     monkeypatch.setattr('requests.post', mock_post)
     monkeypatch.setattr('requests.get', lambda *args, **kwargs: MockGetResponse())
     monkeypatch.setattr(
-        'openhands.resolver.send_pull_request.branch_exists',
+        'openhands.resolver.interfaces.github.GithubIssueHandler.branch_exists',
         lambda *args, **kwargs: False,
     )
 
@@ -135,7 +136,7 @@ def test_pr_title_with_quotes(monkeypatch):
 
         # Create a test issue with problematic title
         print('Creating test issue...')
-        issue = GithubIssue(
+        issue = Issue(
             owner='test-owner',
             repo='test-repo',
             number=123,
@@ -156,9 +157,10 @@ def test_pr_title_with_quotes(monkeypatch):
         from openhands.resolver.send_pull_request import send_pull_request
 
         send_pull_request(
-            github_issue=issue,
-            github_token='dummy-token',
-            github_username='test-user',
+            issue=issue,
+            token='dummy-token',
+            username='test-user',
+            platform=Platform.GITHUB,
             patch_dir=temp_dir,
             pr_type='ready',
         )

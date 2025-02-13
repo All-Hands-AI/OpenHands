@@ -12,21 +12,26 @@ from openhands.events.observation import (
     NullObservation,
 )
 from openhands.llm.llm import LLM
-from openhands.resolver.github_issue import GithubIssue, ReviewThread
-from openhands.resolver.issue_definitions import IssueHandler, PRHandler
+from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
+from openhands.resolver.interfaces.issue import Issue, ReviewThread
+from openhands.resolver.interfaces.issue_definitions import (
+    ServiceContextIssue,
+    ServiceContextPR,
+)
 from openhands.resolver.resolve_issue import (
     complete_runtime,
     initialize_runtime,
     process_issue,
 )
 from openhands.resolver.resolver_output import ResolverOutput
+from openhands.resolver.utils import Platform
 
 
 @pytest.fixture
 def mock_output_dir():
     with tempfile.TemporaryDirectory() as temp_dir:
         repo_path = os.path.join(temp_dir, 'repo')
-        # Initialize a GitHub repo in "repo" and add a commit with "README.md"
+        # Initialize a Gitlab repo in "repo" and add a commit with "README.md"
         os.makedirs(repo_path)
         os.system(f'git init {repo_path}')
         readme_path = os.path.join(repo_path, 'README.md')
@@ -69,17 +74,37 @@ def create_cmd_output(exit_code: int, content: str, command: str):
 
 def test_initialize_runtime():
     mock_runtime = MagicMock()
-    mock_runtime.run_action.side_effect = [
-        create_cmd_output(exit_code=0, content='', command='cd /workspace'),
-        create_cmd_output(
-            exit_code=0, content='', command='git config --global core.pager ""'
-        ),
-    ]
 
-    initialize_runtime(mock_runtime)
+    if os.getenv('GITLAB_CI') == 'true':
+        mock_runtime.run_action.side_effect = [
+            create_cmd_output(exit_code=0, content='', command='cd /workspace'),
+            create_cmd_output(
+                exit_code=0, content='', command='sudo chown -R 1001:0 /workspace/*'
+            ),
+            create_cmd_output(
+                exit_code=0, content='', command='git config --global core.pager ""'
+            ),
+        ]
+    else:
+        mock_runtime.run_action.side_effect = [
+            create_cmd_output(exit_code=0, content='', command='cd /workspace'),
+            create_cmd_output(
+                exit_code=0, content='', command='git config --global core.pager ""'
+            ),
+        ]
 
-    assert mock_runtime.run_action.call_count == 2
+    initialize_runtime(mock_runtime, Platform.GITLAB)
+
+    if os.getenv('GITLAB_CI') == 'true':
+        assert mock_runtime.run_action.call_count == 3
+    else:
+        assert mock_runtime.run_action.call_count == 2
+
     mock_runtime.run_action.assert_any_call(CmdRunAction(command='cd /workspace'))
+    if os.getenv('GITLAB_CI') == 'true':
+        mock_runtime.run_action.assert_any_call(
+            CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
+        )
     mock_runtime.run_action.assert_any_call(
         CmdRunAction(command='git config --global core.pager ""')
     )
@@ -103,6 +128,7 @@ async def test_resolve_issue_no_issues_found():
                 repo='test-repo',
                 token='test-token',
                 username='test-user',
+                platform=Platform.GITLAB,
                 max_iterations=5,
                 output_dir='/tmp',
                 llm_config=LLMConfig(model='test', api_key='test'),
@@ -120,21 +146,23 @@ async def test_resolve_issue_no_issues_found():
         assert 'correct permissions' in str(exc_info.value)
 
 
-def test_download_issues_from_github():
+def test_download_issues_from_gitlab():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = IssueHandler('owner', 'repo', 'token', llm_config)
+    handler = ServiceContextIssue(
+        GitlabIssueHandler('owner', 'repo', 'token'), llm_config
+    )
 
     mock_issues_response = MagicMock()
     mock_issues_response.json.side_effect = [
         [
-            {'number': 1, 'title': 'Issue 1', 'body': 'This is an issue'},
+            {'iid': 1, 'title': 'Issue 1', 'description': 'This is an issue'},
             {
-                'number': 2,
+                'iid': 2,
                 'title': 'PR 1',
-                'body': 'This is a pull request',
+                'description': 'This is a pull request',
                 'pull_request': {},
             },
-            {'number': 3, 'title': 'Issue 2', 'body': 'This is another issue'},
+            {'iid': 3, 'title': 'Issue 2', 'description': 'This is another issue'},
         ],
         None,
     ]
@@ -145,7 +173,7 @@ def test_download_issues_from_github():
     mock_comments_response.raise_for_status = MagicMock()
 
     def get_mock_response(url, *args, **kwargs):
-        if '/comments' in url:
+        if '/notes' in url:
             return mock_comments_response
         return mock_issues_response
 
@@ -154,7 +182,7 @@ def test_download_issues_from_github():
 
     assert len(issues) == 2
     assert handler.issue_type == 'issue'
-    assert all(isinstance(issue, GithubIssue) for issue in issues)
+    assert all(isinstance(issue, Issue) for issue in issues)
     assert [issue.number for issue in issues] == [1, 3]
     assert [issue.title for issue in issues] == ['Issue 1', 'Issue 2']
     assert [issue.review_comments for issue in issues] == [None, None]
@@ -162,29 +190,42 @@ def test_download_issues_from_github():
     assert [issue.thread_ids for issue in issues] == [None, None]
 
 
-def test_download_pr_from_github():
+def test_download_pr_from_gitlab():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = PRHandler('owner', 'repo', 'token', llm_config)
+    handler = ServiceContextPR(GitlabPRHandler('owner', 'repo', 'token'), llm_config)
     mock_pr_response = MagicMock()
     mock_pr_response.json.side_effect = [
         [
             {
-                'number': 1,
+                'iid': 1,
                 'title': 'PR 1',
-                'body': 'This is a pull request',
-                'head': {'ref': 'b1'},
+                'description': 'This is a pull request',
+                'source_branch': 'b1',
             },
             {
-                'number': 2,
+                'iid': 2,
                 'title': 'My PR',
-                'body': 'This is another pull request',
-                'head': {'ref': 'b2'},
+                'description': 'This is another pull request',
+                'source_branch': 'b2',
             },
-            {'number': 3, 'title': 'PR 3', 'body': 'Final PR', 'head': {'ref': 'b3'}},
+            {
+                'iid': 3,
+                'title': 'PR 3',
+                'description': 'Final PR',
+                'source_branch': 'b3',
+            },
         ],
         None,
     ]
     mock_pr_response.raise_for_status = MagicMock()
+
+    # Mock for related issues response
+    mock_related_issuse_response = MagicMock()
+    mock_related_issuse_response.json.return_value = [
+        {'description': 'Issue 1 body', 'iid': 1},
+        {'description': 'Issue 2 body', 'iid': 2},
+    ]
+    mock_related_issuse_response.raise_for_status = MagicMock()
 
     # Mock for PR comments response
     mock_comments_response = MagicMock()
@@ -195,55 +236,60 @@ def test_download_pr_from_github():
     mock_graphql_response = MagicMock()
     mock_graphql_response.json.side_effect = lambda: {
         'data': {
-            'repository': {
-                'pullRequest': {
-                    'closingIssuesReferences': {
-                        'edges': [
-                            {'node': {'body': 'Issue 1 body', 'number': 1}},
-                            {'node': {'body': 'Issue 2 body', 'number': 2}},
-                        ]
-                    },
-                    'reviewThreads': {
+            'project': {
+                'mergeRequest': {
+                    'discussions': {
                         'edges': [
                             {
                                 'node': {
-                                    'isResolved': False,
                                     'id': '1',
-                                    'comments': {
+                                    'resolved': False,
+                                    'resolvable': True,
+                                    'notes': {
                                         'nodes': [
                                             {
                                                 'body': 'Unresolved comment 1',
-                                                'path': '/frontend/header.tsx',
+                                                'position': {
+                                                    'filePath': '/frontend/header.tsx',
+                                                },
                                             },
-                                            {'body': 'Follow up thread'},
+                                            {
+                                                'body': 'Follow up thread',
+                                            },
                                         ]
                                     },
                                 }
                             },
                             {
                                 'node': {
-                                    'isResolved': True,
                                     'id': '2',
-                                    'comments': {
+                                    'resolved': True,
+                                    'resolvable': True,
+                                    'notes': {
                                         'nodes': [
                                             {
                                                 'body': 'Resolved comment 1',
-                                                'path': '/some/file.py',
-                                            }
+                                                'position': {
+                                                    'filePath': '/some/file.py',
+                                                },
+                                            },
                                         ]
                                     },
                                 }
                             },
                             {
                                 'node': {
-                                    'isResolved': False,
                                     'id': '3',
-                                    'comments': {
+                                    'resolved': False,
+                                    'resolvable': True,
+                                    'notes': {
                                         'nodes': [
                                             {
                                                 'body': 'Unresolved comment 3',
-                                                'path': '/another/file.py',
-                                            }
+                                                'position': {
+                                                    'filePath': '/another/file.py',
+                                                },
+                                            },
                                         ]
                                     },
                                 }
@@ -258,8 +304,10 @@ def test_download_pr_from_github():
     mock_graphql_response.raise_for_status = MagicMock()
 
     def get_mock_response(url, *args, **kwargs):
-        if '/comments' in url:
+        if '/notes' in url:
             return mock_comments_response
+        if '/related_issues' in url:
+            return mock_related_issuse_response
         return mock_pr_response
 
     with patch('requests.get', side_effect=get_mock_response):
@@ -268,7 +316,7 @@ def test_download_pr_from_github():
 
     assert len(issues) == 3
     assert handler.issue_type == 'pr'
-    assert all(isinstance(issue, GithubIssue) for issue in issues)
+    assert all(isinstance(issue, Issue) for issue in issues)
     assert [issue.number for issue in issues] == [1, 2, 3]
     assert [issue.title for issue in issues] == ['PR 1', 'My PR', 'PR 3']
     assert [issue.head_branch for issue in issues] == ['b1', 'b2', 'b3']
@@ -307,7 +355,7 @@ async def test_complete_runtime():
         create_cmd_output(exit_code=0, content='git diff content', command='git apply'),
     ]
 
-    result = await complete_runtime(mock_runtime, 'base_commit_hash')
+    result = await complete_runtime(mock_runtime, 'base_commit_hash', Platform.GITLAB)
 
     assert result == {'git_patch': 'git diff content'}
     assert mock_runtime.run_action.call_count == 5
@@ -323,7 +371,7 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
     handler_instance = MagicMock()
 
     # Set up test data
-    issue = GithubIssue(
+    issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=1,
@@ -434,6 +482,7 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
             # Call the function
             result = await process_issue(
                 issue,
+                Platform.GITLAB,
                 base_commit,
                 max_iterations,
                 llm_config,
@@ -470,7 +519,7 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
 
 
 def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
-    issue = GithubIssue(
+    issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=123,
@@ -478,7 +527,9 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
         body='This is a test issue refer to image ![First Image](https://sampleimage.com/image1.png)',
     )
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContextIssue(
+        GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
     instruction, images_urls = issue_handler.get_instruction(
         issue, mock_prompt_template, None
     )
@@ -488,7 +539,7 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
     assert issue_handler.issue_type == 'issue'
     assert instruction == expected_instruction
 
-    issue = GithubIssue(
+    issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=123,
@@ -506,7 +557,9 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
         ],
     )
 
-    pr_handler = PRHandler('owner', 'repo', 'token', mock_llm_config)
+    pr_handler = ServiceContextPR(
+        GitlabPRHandler('owner', 'repo', 'token'), mock_llm_config
+    )
     instruction, images_urls = pr_handler.get_instruction(
         issue, mock_followup_prompt_template, None
     )
@@ -518,7 +571,7 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
 
 
 def test_file_instruction():
-    issue = GithubIssue(
+    issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=123,
@@ -530,7 +583,9 @@ def test_file_instruction():
         prompt = f.read()
     # Test without thread comments
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContextIssue(
+        GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
     instruction, images_urls = issue_handler.get_instruction(issue, prompt, None)
     expected_instruction = """Please fix the following issue for the repository in /workspace.
 An environment has been set up for you to start working. You may assume all necessary tools are installed.
@@ -550,7 +605,7 @@ When you think you have fixed the issue through code changes, please finish the 
 
 
 def test_file_instruction_with_repo_instruction():
-    issue = GithubIssue(
+    issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=123,
@@ -568,7 +623,9 @@ def test_file_instruction_with_repo_instruction():
         repo_instruction = f.read()
 
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContextIssue(
+        GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
     instruction, image_urls = issue_handler.get_instruction(
         issue, prompt, repo_instruction
     )
@@ -597,7 +654,7 @@ When you think you have fixed the issue through code changes, please finish the 
 
 
 def test_guess_success():
-    mock_issue = GithubIssue(
+    mock_issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=1,
@@ -615,7 +672,9 @@ def test_guess_success():
             )
         )
     ]
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContextIssue(
+        GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
 
     with patch.object(
         LLM, 'completion', MagicMock(return_value=mock_completion_response)
@@ -630,7 +689,7 @@ def test_guess_success():
 
 
 def test_guess_success_with_thread_comments():
-    mock_issue = GithubIssue(
+    mock_issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=1,
@@ -653,7 +712,9 @@ def test_guess_success_with_thread_comments():
             )
         )
     ]
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContextIssue(
+        GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
 
     with patch.object(
         LLM, 'completion', MagicMock(return_value=mock_completion_response)
@@ -669,7 +730,7 @@ def test_guess_success_with_thread_comments():
 
 def test_instruction_with_thread_comments():
     # Create an issue with thread comments
-    issue = GithubIssue(
+    issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=123,
@@ -687,7 +748,9 @@ def test_instruction_with_thread_comments():
         prompt = f.read()
 
     llm_config = LLMConfig(model='test', api_key='test')
-    issue_handler = IssueHandler('owner', 'repo', 'token', llm_config)
+    issue_handler = ServiceContextIssue(
+        GitlabIssueHandler('owner', 'repo', 'token'), llm_config
+    )
     instruction, images_urls = issue_handler.get_instruction(issue, prompt, None)
 
     # Verify that thread comments are included in the instruction
@@ -699,7 +762,7 @@ def test_instruction_with_thread_comments():
 
 
 def test_guess_success_failure():
-    mock_issue = GithubIssue(
+    mock_issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=1,
@@ -722,7 +785,9 @@ def test_guess_success_failure():
             )
         )
     ]
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContextIssue(
+        GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
 
     with patch.object(
         LLM, 'completion', MagicMock(return_value=mock_completion_response)
@@ -737,7 +802,7 @@ def test_guess_success_failure():
 
 
 def test_guess_success_negative_case():
-    mock_issue = GithubIssue(
+    mock_issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=1,
@@ -755,7 +820,9 @@ def test_guess_success_negative_case():
             )
         )
     ]
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContextIssue(
+        GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
 
     with patch.object(
         LLM, 'completion', MagicMock(return_value=mock_completion_response)
@@ -770,7 +837,7 @@ def test_guess_success_negative_case():
 
 
 def test_guess_success_invalid_output():
-    mock_issue = GithubIssue(
+    mock_issue = Issue(
         owner='test_owner',
         repo='test_repo',
         number=1,
@@ -784,7 +851,9 @@ def test_guess_success_invalid_output():
     mock_completion_response.choices = [
         MagicMock(message=MagicMock(content='This is not a valid output'))
     ]
-    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
+    issue_handler = ServiceContextIssue(
+        GitlabIssueHandler('owner', 'repo', 'token'), mock_llm_config
+    )
 
     with patch.object(
         LLM, 'completion', MagicMock(return_value=mock_completion_response)
@@ -801,76 +870,11 @@ def test_guess_success_invalid_output():
         )
 
 
-def test_download_pr_with_review_comments():
-    llm_config = LLMConfig(model='test', api_key='test')
-    handler = PRHandler('owner', 'repo', 'token', llm_config)
-    mock_pr_response = MagicMock()
-    mock_pr_response.json.side_effect = [
-        [
-            {
-                'number': 1,
-                'title': 'PR 1',
-                'body': 'This is a pull request',
-                'head': {'ref': 'b1'},
-            },
-        ],
-        None,
-    ]
-    mock_pr_response.raise_for_status = MagicMock()
-
-    # Mock for PR comments response
-    mock_comments_response = MagicMock()
-    mock_comments_response.json.return_value = []  # No PR comments
-    mock_comments_response.raise_for_status = MagicMock()
-
-    # Mock for GraphQL request with review comments but no threads
-    mock_graphql_response = MagicMock()
-    mock_graphql_response.json.side_effect = lambda: {
-        'data': {
-            'repository': {
-                'pullRequest': {
-                    'closingIssuesReferences': {'edges': []},
-                    'reviews': {
-                        'nodes': [
-                            {'body': 'Please fix this typo'},
-                            {'body': 'Add more tests'},
-                        ]
-                    },
-                }
-            }
-        }
-    }
-
-    mock_graphql_response.raise_for_status = MagicMock()
-
-    def get_mock_response(url, *args, **kwargs):
-        if '/comments' in url:
-            return mock_comments_response
-        return mock_pr_response
-
-    with patch('requests.get', side_effect=get_mock_response):
-        with patch('requests.post', return_value=mock_graphql_response):
-            issues = handler.get_converted_issues(issue_numbers=[1])
-
-    assert len(issues) == 1
-    assert handler.issue_type == 'pr'
-    assert isinstance(issues[0], GithubIssue)
-    assert issues[0].number == 1
-    assert issues[0].title == 'PR 1'
-    assert issues[0].head_branch == 'b1'
-
-    # Verify review comments are set but threads are empty
-    assert len(issues[0].review_comments) == 2
-    assert issues[0].review_comments[0] == 'Please fix this typo'
-    assert issues[0].review_comments[1] == 'Add more tests'
-    assert not issues[0].review_threads
-    assert not issues[0].closing_issues
-    assert not issues[0].thread_ids
-
-
 def test_download_issue_with_specific_comment():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = IssueHandler('owner', 'repo', 'token', llm_config)
+    handler = ServiceContextIssue(
+        GitlabIssueHandler('owner', 'repo', 'token'), llm_config
+    )
 
     # Define the specific comment_id to filter
     specific_comment_id = 101
@@ -879,7 +883,7 @@ def test_download_issue_with_specific_comment():
     mock_issue_response = MagicMock()
     mock_issue_response.json.side_effect = [
         [
-            {'number': 1, 'title': 'Issue 1', 'body': 'This is an issue'},
+            {'iid': 1, 'title': 'Issue 1', 'description': 'This is an issue'},
         ],
         None,
     ]
@@ -890,18 +894,16 @@ def test_download_issue_with_specific_comment():
         {
             'id': specific_comment_id,
             'body': 'Specific comment body',
-            'issue_url': 'https://api.github.com/repos/owner/repo/issues/1',
         },
         {
             'id': 102,
             'body': 'Another comment body',
-            'issue_url': 'https://api.github.com/repos/owner/repo/issues/2',
         },
     ]
     mock_comments_response.raise_for_status = MagicMock()
 
     def get_mock_response(url, *args, **kwargs):
-        if '/comments' in url:
+        if '/notes' in url:
             return mock_comments_response
 
         return mock_issue_response

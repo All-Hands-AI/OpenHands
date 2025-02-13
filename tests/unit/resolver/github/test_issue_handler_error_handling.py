@@ -7,8 +7,12 @@ from litellm.exceptions import RateLimitError
 from openhands.core.config import LLMConfig
 from openhands.events.action.message import MessageAction
 from openhands.llm.llm import LLM
-from openhands.resolver.github_issue import GithubIssue
-from openhands.resolver.issue_definitions import IssueHandler, PRHandler
+from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
+from openhands.resolver.interfaces.issue import Issue
+from openhands.resolver.interfaces.issue_definitions import (
+    ServiceContextIssue,
+    ServiceContextPR,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -33,7 +37,9 @@ def default_config():
 
 def test_handle_nonexistent_issue_reference():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+    )
 
     # Mock the requests.get to simulate a 404 error
     mock_response = MagicMock()
@@ -43,7 +49,7 @@ def test_handle_nonexistent_issue_reference():
 
     with patch('requests.get', return_value=mock_response):
         # Call the method with a non-existent issue reference
-        result = handler._PRHandler__get_context_from_external_issues_references(
+        result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
             issue_body='This references #999999',  # Non-existent issue
@@ -58,7 +64,9 @@ def test_handle_nonexistent_issue_reference():
 
 def test_handle_rate_limit_error():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+    )
 
     # Mock the requests.get to simulate a rate limit error
     mock_response = MagicMock()
@@ -68,7 +76,7 @@ def test_handle_rate_limit_error():
 
     with patch('requests.get', return_value=mock_response):
         # Call the method with an issue reference
-        result = handler._PRHandler__get_context_from_external_issues_references(
+        result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
             issue_body='This references #123',
@@ -83,14 +91,16 @@ def test_handle_rate_limit_error():
 
 def test_handle_network_error():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+    )
 
     # Mock the requests.get to simulate a network error
     with patch(
         'requests.get', side_effect=requests.exceptions.ConnectionError('Network Error')
     ):
         # Call the method with an issue reference
-        result = handler._PRHandler__get_context_from_external_issues_references(
+        result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
             issue_body='This references #123',
@@ -105,7 +115,9 @@ def test_handle_network_error():
 
 def test_successful_issue_reference():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+    )
 
     # Mock a successful response
     mock_response = MagicMock()
@@ -114,7 +126,7 @@ def test_successful_issue_reference():
 
     with patch('requests.get', return_value=mock_response):
         # Call the method with an issue reference
-        result = handler._PRHandler__get_context_from_external_issues_references(
+        result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
             issue_body='This references #123',
@@ -201,11 +213,13 @@ def test_guess_success_rate_limit_wait_time(mock_litellm_completion, default_con
         ]
 
         llm = LLM(config=default_config)
-        handler = IssueHandler('test-owner', 'test-repo', 'test-token', default_config)
+        handler = ServiceContextIssue(
+            GithubIssueHandler('test-owner', 'test-repo', 'test-token'), default_config
+        )
         handler.llm = llm
 
         # Mock issue and history
-        issue = GithubIssue(
+        issue = Issue(
             owner='test-owner',
             repo='test-repo',
             number=1,
@@ -241,11 +255,13 @@ def test_guess_success_exhausts_retries(mock_completion, default_config):
 
     # Initialize LLM and handler
     llm = LLM(config=default_config)
-    handler = PRHandler('test-owner', 'test-repo', 'test-token', default_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), default_config
+    )
     handler.llm = llm
 
     # Mock issue and history
-    issue = GithubIssue(
+    issue = Issue(
         owner='test-owner',
         repo='test-repo',
         number=1,
