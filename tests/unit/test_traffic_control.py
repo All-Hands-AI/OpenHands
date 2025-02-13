@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from openhands.controller.agent_controller import AgentController
-from openhands.core.config import AgentConfig, LLMConfig
+from openhands.core.config import AgentConfig
 from openhands.events import EventStream
 from openhands.llm.llm import LLM
 from openhands.storage import InMemoryFileStore
@@ -11,7 +11,9 @@ from openhands.storage import InMemoryFileStore
 
 @pytest.fixture
 def agent_controller():
-    llm = LLM(config=LLMConfig())
+    llm = MagicMock(spec=LLM)
+    llm.config = MagicMock()
+    llm.metrics = MagicMock()
     agent = MagicMock()
     agent.name = 'test_agent'
     agent.llm = llm

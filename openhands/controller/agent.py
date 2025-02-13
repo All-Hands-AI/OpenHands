@@ -111,3 +111,22 @@ class Agent(ABC):
         if not bool(cls._registry):
             raise AgentNotRegisteredError()
         return list(cls._registry.keys())
+
+    def get_prompt_manager(
+        self,
+        microagent_dir: str | None = None,
+        disabled_microagents: list[str] | None = None,
+    ) -> 'PromptManager | None':
+        """Get a prompt manager instance for this agent.
+
+        This method can be overridden by subclasses to return a specialized prompt manager.
+        By default, it returns None.
+
+        Args:
+            microagent_dir: Directory containing microagent prompts
+            disabled_microagents: List of microagents to disable
+
+        Returns:
+            A PromptManager instance, a subclass of PromptManager, or None
+        """
+        return None

@@ -1,10 +1,8 @@
 import json
-import os
 from collections import deque
 
 from litellm import ModelResponse
 
-import openhands
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -23,6 +21,8 @@ from openhands.events.action import (
     FileReadAction,
     IPythonRunCellAction,
     MessageAction,
+    PromptExtensionAction,
+    SystemMessageAction,
 )
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -44,7 +44,6 @@ from openhands.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
 )
-from openhands.utils.prompt import PromptManager
 
 
 class CodeActAgent(Agent):
@@ -99,19 +98,29 @@ class CodeActAgent(Agent):
         logger.debug(
             f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2, ensure_ascii=False).replace("\\n", "\n")}'
         )
-        self.prompt_manager = PromptManager(
-            microagent_dir=os.path.join(
-                os.path.dirname(os.path.dirname(openhands.__file__)),
-                'microagents',
-            )
-            if self.config.enable_prompt_extensions
-            else None,
-            prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
-            disabled_microagents=self.config.disabled_microagents,
-        )
 
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {self.condenser}')
+
+    def get_system_message(self) -> str:
+        """Get the system message for this agent.
+
+        Returns:
+            The system message as a string
+        """
+        import os
+
+        # Determine the prompt_dir for CodeActAgent
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        prompt_dir = os.path.join(current_dir, 'prompts')
+        system_message_path = os.path.join(prompt_dir, 'system_message.txt')
+
+        if os.path.exists(system_message_path):
+            with open(system_message_path, 'r') as f:
+                return f.read().strip()
+        else:
+            return "You are a helpful AI assistant."
+
 
     def get_action_message(
         self,
@@ -229,6 +238,22 @@ class CodeActAgent(Agent):
                 Message(
                     role='user',
                     content=content,
+                )
+            ]
+        elif isinstance(action, SystemMessageAction):
+            return [
+                Message(
+                    role='system',
+                    content=[TextContent(text=action.content)],
+                )
+            ]
+        elif isinstance(action, PromptExtensionAction):
+            # For prompt extensions, we add them as assistant messages
+            # This way they appear in the conversation history but don't interfere with the system message
+            return [
+                Message(
+                    role='assistant',
+                    content=[TextContent(text=action.content)],
                 )
             ]
         return []
@@ -426,20 +451,7 @@ class CodeActAgent(Agent):
             - Messages from the same role are combined to prevent consecutive same-role messages
             - For Anthropic models, specific messages are cached according to their documentation
         """
-        if not self.prompt_manager:
-            raise Exception('Prompt Manager not instantiated.')
-
-        messages: list[Message] = [
-            Message(
-                role='system',
-                content=[
-                    TextContent(
-                        text=self.prompt_manager.get_system_message(),
-                        cache_prompt=self.llm.is_caching_prompt_active(),
-                    )
-                ],
-            )
-        ]
+        messages: list[Message] = []
 
         pending_tool_call_action_messages: dict[str, Message] = {}
         tool_call_id_to_message: dict[str, Message] = {}
@@ -447,7 +459,6 @@ class CodeActAgent(Agent):
         # Condense the events from the state.
         events = self.condenser.condensed_history(state)
 
-        is_first_message_handled = False
         for event in events:
             # create a regular message from an event
             if isinstance(event, Action):
@@ -491,19 +502,6 @@ class CodeActAgent(Agent):
 
             for msg in messages_to_add:
                 if msg:
-                    if msg.role == 'user' and not is_first_message_handled:
-                        is_first_message_handled = True
-                        # compose the first user message with examples
-                        self.prompt_manager.add_examples_to_initial_message(msg)
-
-                        # and/or repo/runtime info
-                        if self.config.enable_prompt_extensions:
-                            self.prompt_manager.add_info_to_initial_message(msg)
-
-                    # enhance the user message with additional context based on keywords matched
-                    if msg.role == 'user':
-                        self.prompt_manager.enhance_message(msg)
-
                     messages.append(msg)
 
         if self.llm.is_caching_prompt_active():
