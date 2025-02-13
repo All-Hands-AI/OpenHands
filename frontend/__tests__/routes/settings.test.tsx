@@ -75,7 +75,7 @@ describe("Settings Screen", () => {
       });
     });
 
-    it("should not render a 'Disconnect from GitHub' button if the GitHub token is not set", async () => {
+    it("should render an indicator if the GitHub token is not set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         github_token_is_set: false,
@@ -83,22 +83,65 @@ describe("Settings Screen", () => {
 
       renderSettingsScreen();
 
-      const button = screen.queryByText("Disconnect from GitHub");
-      expect(button).not.toBeInTheDocument();
+      await waitFor(() => {
+        const input = screen.getByTestId("github-token-input");
+        const inputParent = input.parentElement;
+
+        if (inputParent) {
+          const badge = within(inputParent).getByTestId("unset-indicator");
+          expect(badge).toBeInTheDocument();
+        } else {
+          throw new Error("GitHub token input parent not found");
+        }
+      });
     });
 
-    it("should render a 'Disconnect from GitHub' button if the GitHub token is set", async () => {
+    it("should render an indicator if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         github_token_is_set: true,
       });
 
       renderSettingsScreen();
-      await screen.findByText("Disconnect from GitHub");
 
-      // input should not be rendered
-      const input = screen.queryByTestId("github-token-input");
-      expect(input).not.toBeInTheDocument();
+      const input = await screen.findByTestId("github-token-input");
+      const inputParent = input.parentElement;
+
+      if (inputParent) {
+        const badge = await within(inputParent).findByTestId("set-indicator");
+        expect(badge).toBeInTheDocument();
+      } else {
+        throw new Error("GitHub token input parent not found");
+      }
+    });
+
+    it("should render a disabled 'Disconnect from GitHub' button if the GitHub token is not set", async () => {
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        github_token_is_set: false,
+      });
+
+      renderSettingsScreen();
+
+      const button = await screen.findByText("Disconnect from GitHub");
+      expect(button).toBeInTheDocument();
+      expect(button).toBeDisabled();
+    });
+
+    it("should render an enabled 'Disconnect from GitHub' button if the GitHub token is set", async () => {
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        github_token_is_set: true,
+      });
+
+      renderSettingsScreen();
+      const button = await screen.findByText("Disconnect from GitHub");
+      expect(button).toBeInTheDocument();
+      expect(button).toBeEnabled();
+
+      // input should still be rendered
+      const input = await screen.findByTestId("github-token-input");
+      expect(input).toBeInTheDocument();
     });
 
     it("should logout the user when the 'Disconnect from GitHub' button is clicked", async () => {
@@ -270,6 +313,27 @@ describe("Settings Screen", () => {
       // screen.getByTestId("security-analyzer-input");
     });
 
+    it("should render an indicator if the LLM API key is not set", async () => {
+      getSettingsSpy.mockResolvedValueOnce({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        llm_api_key: null,
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        const input = screen.getByTestId("llm-api-key-input");
+        const inputParent = input.parentElement;
+
+        if (inputParent) {
+          const badge = within(inputParent).getByTestId("unset-indicator");
+          expect(badge).toBeInTheDocument();
+        } else {
+          throw new Error("LLM API Key input parent not found");
+        }
+      });
+    });
+
     it("should render an indicator if the LLM API key is set", async () => {
       getSettingsSpy.mockResolvedValueOnce({
         ...MOCK_DEFAULT_USER_SETTINGS,
@@ -419,7 +483,7 @@ describe("Settings Screen", () => {
       });
     });
 
-    it.only("should toggle advanced if user had set a custom model", async () => {
+    it("should toggle advanced if user had set a custom model", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         llm_model: "some/custom-model",

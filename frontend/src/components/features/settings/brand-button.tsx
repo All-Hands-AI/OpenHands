@@ -4,6 +4,7 @@ interface BrandButtonProps {
   testId?: string;
   variant: "primary" | "secondary";
   type: React.ButtonHTMLAttributes<HTMLButtonElement>["type"];
+  isDisabled?: boolean;
   className?: string;
   onClick?: () => void;
 }
@@ -13,12 +14,14 @@ export function BrandButton({
   children,
   variant,
   type,
+  isDisabled,
   className,
   onClick,
 }: React.PropsWithChildren<BrandButtonProps>) {
   return (
     <button
       data-testid={testId}
+      disabled={isDisabled}
       // The type is alreadt passed as a prop to the button component
       // eslint-disable-next-line react/button-has-type
       type={type}

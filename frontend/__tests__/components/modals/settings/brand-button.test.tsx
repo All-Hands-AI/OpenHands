@@ -26,4 +26,14 @@ describe("BrandButton", () => {
 
     await user.click(screen.getByText("Test Button"));
   });
+
+  it("should be disabled if isDisabled is true", () => {
+    render(
+      <BrandButton type="button" variant="primary" isDisabled>
+        Test Button
+      </BrandButton>,
+    );
+
+    expect(screen.getByText("Test Button")).toBeDisabled();
+  });
 });

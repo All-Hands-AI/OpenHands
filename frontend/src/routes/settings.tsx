@@ -215,7 +215,7 @@ function SettingsScreen() {
                 </BrandButton>
               </Link>
             )}
-            {!isSaas && !isGitHubTokenSet && (
+            {!isSaas && (
               <>
                 <SettingsInput
                   testId="github-token-input"
@@ -223,6 +223,7 @@ function SettingsScreen() {
                   label="GitHub Token"
                   type="password"
                   className="w-[680px]"
+                  startContent={<KeyStatusIcon isSet={!!isGitHubTokenSet} />}
                 />
 
                 <HelpLink
@@ -234,15 +235,14 @@ function SettingsScreen() {
               </>
             )}
 
-            {isGitHubTokenSet && (
-              <BrandButton
-                type="button"
-                variant="secondary"
-                onClick={handleLogout}
-              >
-                Disconnect from GitHub
-              </BrandButton>
-            )}
+            <BrandButton
+              type="button"
+              variant="secondary"
+              onClick={handleLogout}
+              isDisabled={!isGitHubTokenSet}
+            >
+              Disconnect from GitHub
+            </BrandButton>
 
             <SettingsDropdownInput
               testId="language-input"
@@ -313,9 +313,7 @@ function SettingsScreen() {
               label="API Key"
               type="password"
               className="w-[680px]"
-              startContent={
-                isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
-              }
+              startContent={<KeyStatusIcon isSet={isLLMKeySet} />}
               placeholder={isLLMKeySet ? "**********" : ""}
             />
 
