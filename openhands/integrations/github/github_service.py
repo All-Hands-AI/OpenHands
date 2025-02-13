@@ -18,18 +18,15 @@ class GitHubService:
     token: SecretStr = SecretStr('')
     refresh = False
 
-    def __init__(self, user_id: str | None = None, token: SecretStr | None = None):
-        self.user_id = user_id
+    def __init__(self, user_key: str | None, token: SecretStr | None = None):
+        self.user_key = user_key
 
         if token:
             self.token = token
 
     async def _get_github_headers(self) -> dict:
-        """
-        Retrieve the GH Token from settings store to construct the headers
-        """
-
-        if self.user_id and not self.token:
+        """Retrieve the GH Token from settings store to construct the headers."""
+        if self.user_key and not self.token:
             self.token = await self.get_latest_token()
 
         return {

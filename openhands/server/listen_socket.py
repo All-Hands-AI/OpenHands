@@ -1,6 +1,8 @@
+import os
 from urllib.parse import parse_qs
 
 import jwt
+from keycloak import KeycloakOpenID
 from pydantic import SecretStr
 from socketio.exceptions import ConnectionRefusedError
 
@@ -52,7 +54,20 @@ async def connect(connection_id: str, environ, auth):
             else config.jwt_secret
         )
         decoded = jwt.decode(signed_token, jwt_secret, algorithms=['HS256'])
-        user_id = decoded['github_user_id']
+        access_token = decoded['access_token']
+
+        KEYCLOAK_SERVER_URL = os.getenv('KEYCLOAK_SERVER_URL', '')
+        KEYCLOAK_REALM_NAME = os.getenv('KEYCLOAK_REALM_NAME', '')
+        KEYCLOAK_CLIENT_ID = os.getenv('KEYCLOAK_CLIENT_ID', '')
+        KEYCLOAK_CLIENT_SECRET = os.getenv('KEYCLOAK_CLIENT_SECRET', '')
+        keycloak_openid = KeycloakOpenID(
+            server_url=KEYCLOAK_SERVER_URL,
+            realm_name=KEYCLOAK_REALM_NAME,
+            client_id=KEYCLOAK_CLIENT_ID,
+            client_secret_key=KEYCLOAK_CLIENT_SECRET,
+        )
+        user_info = await keycloak_openid.a_userinfo(access_token)
+        user_id = user_info['github_id']
 
         logger.info(f'User {user_id} is connecting to conversation {conversation_id}')
 
