@@ -308,7 +308,7 @@ class RemoteRuntime(ActionExecutionClient):
         self.log('debug', f'Waiting for runtime to be alive at url: {self.runtime_url}')
         with self._send_runtime_api_request(
             'GET',
-            f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
+            f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
         ) as runtime_info_response:
             runtime_data = runtime_info_response.json()
         assert 'runtime_id' in runtime_data
