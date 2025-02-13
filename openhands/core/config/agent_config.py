@@ -31,3 +31,4 @@ class AgentConfig(BaseModel):
     enable_prompt_extensions: bool = Field(default=True)
     disabled_microagents: list[str] | None = Field(default=None)
     condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
+    enable_plan_routing: bool = Field(default=False)
