@@ -75,6 +75,8 @@ class RemoteRuntime(ActionExecutionClient):
                 'remote_runtime_api_url is required in the remote runtime.'
             )
 
+        assert self.config.sandbox.remote_runtime_class in (None, 'sysbox', 'gvisor')
+
         self.runtime_builder = RemoteRuntimeBuilder(
             self.config.sandbox.remote_runtime_api_url,
             self.config.sandbox.api_key,
@@ -223,8 +225,10 @@ class RemoteRuntime(ActionExecutionClient):
             'environment': environment,
             'session_id': self.sid,
             'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
-            'runtime_class': 'sysbox-runc',
         }
+        if self.config.sandbox.remote_runtime_class == 'sysbox':
+            start_request['runtime_class'] = 'sysbox-runc'
+        # We ignore other runtime classes for now, because both None and 'gvisor' map to 'gvisor'
 
         # Start the sandbox using the /start endpoint
         try:
