@@ -6,6 +6,7 @@ from litellm import ModelResponse
 
 import openhands
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
+from openhands.agenthub.codeact_agent.message_utils import apply_prompt_caching
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -481,7 +482,7 @@ class CodeActAgent(Agent):
             messages += self._enhance_messages(messages_to_add)
 
         if self.llm.is_caching_prompt_active():
-            self._apply_caching(messages)
+            apply_prompt_caching(messages)
 
         return messages
 
@@ -532,19 +533,3 @@ class CodeActAgent(Agent):
             results.append(msg)
 
         return results
-
-    def _apply_caching(self, messages: list[Message]) -> None:
-        """Applies caching breakpoints to the messages."""
-        # NOTE: this is only needed for anthropic
-        # following logic here:
-        # https://github.com/anthropics/anthropic-quickstarts/blob/8f734fd08c425c6ec91ddd613af04ff87d70c5a0/computer-use-demo/computer_use_demo/loop.py#L241-L262
-        breakpoints_remaining = 3  # remaining 1 for system/tool
-        for message in reversed(messages):
-            if message.role in ('user', 'tool'):
-                if breakpoints_remaining > 0:
-                    message.content[
-                        -1
-                    ].cache_prompt = True  # Last item inside the message content
-                    breakpoints_remaining -= 1
-                else:
-                    break
