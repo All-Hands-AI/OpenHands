@@ -138,7 +138,6 @@ function SettingsScreen() {
         REMOTE_RUNTIME_RESOURCE_FACTOR:
           remoteRuntimeResourceFactor ||
           DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-        ENABLE_DEFAULT_CONDENSER: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
         CONFIRMATION_MODE: confirmationModeIsEnabled,
       },
       {

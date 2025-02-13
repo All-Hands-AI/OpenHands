@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
 import { PostSettings, PostApiSettings } from "#/types/settings";
+import { MEMORY_CONDENSER } from "#/utils/feature-flags";
 
 const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
   const resetLlmApiKey = settings.LLM_API_KEY === "";
@@ -19,7 +20,8 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
     remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     github_token: settings.github_token,
     unset_github_token: settings.unset_github_token,
-    enable_default_condenser: settings.ENABLE_DEFAULT_CONDENSER,
+    enable_default_condenser:
+      MEMORY_CONDENSER || settings.ENABLE_DEFAULT_CONDENSER,
     user_consents_to_analytics: settings.user_consents_to_analytics,
   };
 

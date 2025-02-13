@@ -851,5 +851,22 @@ describe("Settings Screen", () => {
       );
       expect(securityAnalyzerInput).toBeInTheDocument();
     });
+
+    // FIXME: localStorage isn't being set
+    it.skip("should save with ENABLE_DEFAULT_CONDENSER with true if user set the feature flag in local storage", async () => {
+      localStorage.setItem("ENABLE_DEFAULT_CONDENSER", "true");
+
+      const user = userEvent.setup();
+      renderSettingsScreen();
+
+      const saveButton = screen.getByText("Save Changes");
+      await user.click(saveButton);
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          enable_default_condenser: true,
+        }),
+      );
+    });
   });
 });
