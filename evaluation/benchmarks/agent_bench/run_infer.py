@@ -17,6 +17,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
+    get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -25,7 +26,6 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AppConfig,
-    SandboxConfig,
     get_llm_config_arg,
     parse_arguments,
 )
@@ -40,21 +40,15 @@ from openhands.utils.async_utils import call_async_from_sync
 def get_config(
     metadata: EvalMetadata,
 ) -> AppConfig:
+    sandbox_config = get_default_sandbox_config_for_eval()
+    sandbox_config.base_container_image = 'python:3.12-slim'
+
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'docker'),
         max_iterations=metadata.max_iterations,
-        sandbox=SandboxConfig(
-            base_container_image='python:3.12-slim',
-            enable_auto_lint=True,
-            use_host_network=False,
-            api_key=os.environ.get('ALLHANDS_API_KEY', None),
-            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
-            keep_runtime_alive=False,
-            remote_runtime_init_timeout=3600,
-            remote_runtime_enable_retries=True,
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
