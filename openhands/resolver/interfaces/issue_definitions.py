@@ -20,7 +20,7 @@ class ServiceContext:
     issue_type: ClassVar[str]
     default_git_patch: ClassVar[str] = 'No changes made yet'
 
-    def __init__(self, strategy, llm_config: LLMConfig | None):
+    def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig | None):
         self._strategy = strategy
         if llm_config is not None:
             self.llm = LLM(llm_config)
