@@ -8970,6 +8970,22 @@ release = ["twine"]
 test = ["pylint", "pytest", "pytest-black", "pytest-cov", "pytest-pylint"]
 
 [[package]]
+name = "stripe"
+version = "11.5.0"
+description = "Python bindings for the Stripe API"
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "stripe-11.5.0-py2.py3-none-any.whl", hash = "sha256:3b2cd47ed3002328249bff5cacaee38d5e756c3899ab425d3bd07acdaf32534a"},
+    {file = "stripe-11.5.0.tar.gz", hash = "sha256:bc3e0358ffc23d5ecfa8aafec1fa4f048ee8107c3237bcb00003e68c8c96fa02"},
+]
+
+[package.dependencies]
+requests = {version = ">=2.20", markers = "python_version >= \"3.0\""}
+typing-extensions = {version = ">=4.5.0", markers = "python_version >= \"3.7\""}
+
+[[package]]
 name = "striprtf"
 version = "0.0.26"
 description = "A simple library to convert rtf to text"
@@ -10636,4 +10652,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "439164c45c674574af3fc15ade8e69452c11d4d45d95c2e671c752cfed6a3143"
+content-hash = "c93433f4639eecf54e0d5d4c523a3d2650f4f9db8666bee3a2f639faa6672704"
