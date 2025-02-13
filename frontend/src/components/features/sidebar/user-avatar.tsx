@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import DefaultUserAvatar from "#/icons/default-user.svg?react";
+import ProfileIcon from "#/icons/profile.svg?react";
 import { cn } from "#/utils/utils";
 import { Avatar } from "./avatar";
 import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
@@ -21,16 +21,17 @@ export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
       ariaLabel={t(I18nKey.USER$ACCOUNT_SETTINGS)}
       onClick={onClick}
       className={cn(
-        "w-8 h-8 rounded-full flex items-center justify-center border-2 border-gray-200",
+        "w-8 h-8 rounded-full flex items-center justify-center",
         isLoading && "bg-transparent",
       )}
     >
       {!isLoading && avatarUrl && <Avatar src={avatarUrl} />}
       {!isLoading && !avatarUrl && (
-        <DefaultUserAvatar
+        <ProfileIcon
           aria-label={t(I18nKey.USER$AVATAR_PLACEHOLDER)}
-          width={20}
-          height={20}
+          width={28}
+          height={28}
+          className="text-[#9099AC]"
         />
       )}
       {isLoading && <LoadingSpinner size="small" />}

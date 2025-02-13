@@ -14,24 +14,14 @@ describe("UserActions", () => {
   });
 
   it("should render", () => {
-    render(
-      <UserActions
-        onClickAccountSettings={onClickAccountSettingsMock}
-        onLogout={onLogoutMock}
-      />,
-    );
+    render(<UserActions onLogout={onLogoutMock} />);
 
     expect(screen.getByTestId("user-actions")).toBeInTheDocument();
     expect(screen.getByTestId("user-avatar")).toBeInTheDocument();
   });
 
   it("should toggle the user menu when the user avatar is clicked", async () => {
-    render(
-      <UserActions
-        onClickAccountSettings={onClickAccountSettingsMock}
-        onLogout={onLogoutMock}
-      />,
-    );
+    render(<UserActions onLogout={onLogoutMock} />);
 
     const userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
@@ -47,30 +37,9 @@ describe("UserActions", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should call onClickAccountSettings and close the menu when the account settings option is clicked", async () => {
-    render(
-      <UserActions
-        onClickAccountSettings={onClickAccountSettingsMock}
-        onLogout={onLogoutMock}
-      />,
-    );
-
-    const userAvatar = screen.getByTestId("user-avatar");
-    await user.click(userAvatar);
-
-    const accountSettingsOption = screen.getByText("ACCOUNT_SETTINGS$SETTINGS");
-    await user.click(accountSettingsOption);
-
-    expect(onClickAccountSettingsMock).toHaveBeenCalledOnce();
-    expect(
-      screen.queryByTestId("account-settings-context-menu"),
-    ).not.toBeInTheDocument();
-  });
-
   it("should call onLogout and close the menu when the logout option is clicked", async () => {
     render(
       <UserActions
-        onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
         user={{ avatar_url: "https://example.com/avatar.png" }}
       />,
@@ -89,12 +58,7 @@ describe("UserActions", () => {
   });
 
   test("onLogout should not be called when the user is not logged in", async () => {
-    render(
-      <UserActions
-        onClickAccountSettings={onClickAccountSettingsMock}
-        onLogout={onLogoutMock}
-      />,
-    );
+    render(<UserActions onLogout={onLogoutMock} />);
 
     const userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
@@ -103,22 +67,5 @@ describe("UserActions", () => {
     await user.click(logoutOption);
 
     expect(onLogoutMock).not.toHaveBeenCalled();
-  });
-
-  // FIXME: Spinner now provided through useQuery
-  it.skip("should display the loading spinner", () => {
-    render(
-      <UserActions
-        onClickAccountSettings={onClickAccountSettingsMock}
-        onLogout={onLogoutMock}
-        user={{ avatar_url: "https://example.com/avatar.png" }}
-      />,
-    );
-
-    const userAvatar = screen.getByTestId("user-avatar");
-    user.click(userAvatar);
-
-    expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
-    expect(screen.queryByAltText("user avatar")).not.toBeInTheDocument();
   });
 });

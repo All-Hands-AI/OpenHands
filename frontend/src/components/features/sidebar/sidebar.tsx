@@ -3,6 +3,7 @@ import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import toast from "react-hot-toast";
+import { NavLink } from "react-router";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
@@ -10,7 +11,6 @@ import { DocsButton } from "#/components/shared/buttons/docs-button";
 import { ExitProjectButton } from "#/components/shared/buttons/exit-project-button";
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import { AccountSettingsModal } from "#/components/shared/modals/account-settings/account-settings-modal";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { useCurrentSettings } from "#/context/settings-context";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -30,27 +30,17 @@ export function Sidebar() {
   const user = useGitHubUser();
   const { data: config } = useConfig();
   const {
-    data: settings,
     error: settingsError,
     isError: settingsIsError,
     isFetching: isFetchingSettings,
   } = useSettings();
   const { mutateAsync: logout } = useLogout();
-  const { saveUserSettings } = useCurrentSettings();
+  const { settings, saveUserSettings } = useCurrentSettings();
 
-  const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
-    React.useState(false);
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
 
   const [conversationPanelIsOpen, setConversationPanelIsOpen] =
     React.useState(false);
-
-  React.useEffect(() => {
-    // If the github token is invalid, open the account settings modal again
-    if (user.isError) {
-      setAccountSettingsModalOpen(true);
-    }
-  }, [user.isError]);
 
   React.useEffect(() => {
     // We don't show toast errors for settings in the global error handler
@@ -63,16 +53,14 @@ export function Sidebar() {
       toast.error(
         "Something went wrong while fetching settings. Please reload the page.",
       );
+    } else if (settingsError?.status === 404) {
+      setSettingsModalIsOpen(true);
     }
   }, [settingsError?.status, settingsError, isFetchingSettings]);
 
   const handleEndSession = () => {
     dispatch(setCurrentAgentState(AgentState.LOADING));
     endSession();
-  };
-
-  const handleAccountSettingsModalClose = () => {
-    setAccountSettingsModalOpen(false);
   };
 
   const handleLogout = async () => {
@@ -84,33 +72,44 @@ export function Sidebar() {
   return (
     <>
       <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
-        <nav className="flex flex-row md:flex-col items-center gap-[18px]">
-          <div className="w-[34px] h-[34px] flex items-center justify-center mb-7">
-            <AllHandsLogoButton onClick={handleEndSession} />
+        <nav className="flex flex-row md:flex-col items-center justify-between h-full">
+          <div className="flex flex-col items-center gap-[26px]">
+            <div className="flex items-center justify-center">
+              <AllHandsLogoButton onClick={handleEndSession} />
+            </div>
+            <ExitProjectButton onClick={handleEndSession} />
+            {MULTI_CONVERSATION_UI && (
+              <TooltipButton
+                testId="toggle-conversation-panel"
+                tooltip="Conversations"
+                ariaLabel="Conversations"
+                onClick={() => setConversationPanelIsOpen((prev) => !prev)}
+              >
+                <FaListUl size={22} />
+              </TooltipButton>
+            )}
+            <DocsButton />
           </div>
-          {user.isLoading && <LoadingSpinner size="small" />}
-          <ExitProjectButton onClick={handleEndSession} />
-          {MULTI_CONVERSATION_UI && (
-            <TooltipButton
-              testId="toggle-conversation-panel"
-              tooltip="Conversations"
-              ariaLabel="Conversations"
-              onClick={() => setConversationPanelIsOpen((prev) => !prev)}
-            >
-              <FaListUl size={22} />
-            </TooltipButton>
-          )}
-          <DocsButton />
-          <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
-          {!user.isLoading && (
-            <UserActions
-              user={
-                user.data ? { avatar_url: user.data.avatar_url } : undefined
+
+          <div className="flex flex-col items-center gap-[26px] mb-4">
+            <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                isActive ? "text-white" : "text-[#9099AC]"
               }
-              onLogout={handleLogout}
-              onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
-            />
-          )}
+            >
+              <SettingsButton />
+            </NavLink>
+            {!user.isLoading && (
+              <UserActions
+                user={
+                  user.data ? { avatar_url: user.data.avatar_url } : undefined
+                }
+                onLogout={handleLogout}
+              />
+            )}
+            {user.isLoading && <LoadingSpinner size="small" />}
+          </div>
         </nav>
 
         {conversationPanelIsOpen && (
@@ -122,10 +121,7 @@ export function Sidebar() {
         )}
       </aside>
 
-      {accountSettingsModalOpen && (
-        <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
-      )}
-      {(settingsError?.status === 404 || settingsModalIsOpen) && (
+      {settingsModalIsOpen && (
         <SettingsModal
           settings={settings}
           onClose={() => setSettingsModalIsOpen(false)}
