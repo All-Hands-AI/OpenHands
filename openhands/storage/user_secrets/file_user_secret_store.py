@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import hashlib
-
-from abc import abstractmethod
+import json
 from base64 import b64decode, b64encode
-from cryptography.fernet import Fernet
 from dataclasses import dataclass
 
+from cryptography.fernet import Fernet
 from pydantic import SecretStr
 
 from openhands.core.config.app_config import AppConfig
@@ -15,33 +14,67 @@ from openhands.storage.data_models.user_secret import UserSecret
 from openhands.storage.data_models.user_secret_result_set import UserSecretResultSet
 from openhands.storage.files import FileStore
 from openhands.storage.user_secrets.user_secret_store import UserSecretStore
+from openhands.utils.async_utils import call_sync_from_async, wait_all
+from openhands.utils.search_utils import offset_to_page_id, page_id_to_offset
 
 
 @dataclass
 class FileUserSecretStore(UserSecretStore):
     file_store: FileStore
-    path: str = 'secrets/{key}.json'
     jwt_secret: SecretStr
+    path: str = 'secrets/'
 
     async def save_secret(self, secret: UserSecret):
-        json_str = secret.model_dump_json(context={'expose_secrets': True})
-        await call_sync_from_async(self.file_store.write, self.path, json_str)
+        data = secret.model_dump(context={'expose_secrets': True})
+        data['value'] = self._encrypt_value(data['value'])
+        json_str = json.dumps(data)
+        path = self._file_path(secret.id)
+        await call_sync_from_async(self.file_store.write, path, json_str)
 
     async def load_secret(self, id: str) -> UserSecret | None:
-        
+        try:
+            path = self._file_path(id)
+            kwargs = json.loads(self.file_store.read(path))
+            kwargs['value'] = self._decrypt_value(kwargs['value'])
+            result = UserSecret(**kwargs)
+            return result
+        except FileNotFoundError:
+            return None
 
     async def delete_secret(self, id: str) -> bool:
-        """delete secret"""
+        path = self._file_path(id)
+        try:
+            self.file_store.delete(path)
+            return True
+        except FileNotFoundError:
+            return False
 
     async def search(
         self,
         page_id: str | None = None,
         limit: int = 20,
     ) -> UserSecretResultSet:
-        """Search secrets"""
+        try:
+            secret_ids = [
+                path.split('/')[-2] for path in self.file_store.list(self.path)
+            ]
+        except FileNotFoundError:
+            return UserSecretResultSet([])
+        num_secrets = len(secret_ids)
+        start = page_id_to_offset(page_id)
+        end = min(limit + start, num_secrets)
+        result_set = UserSecretResultSet(
+            results=await wait_all(
+                [self.load_secret(secret_id) for secret_id in secret_ids[start:end]]
+            ),
+            next_page_id=offset_to_page_id(end, end < num_secrets),
+        )
+        return result_set
+
+    def _file_path(self, id: str) -> str:
+        return f'{self.path}{id}.json'
 
     @classmethod
-    @abstractmethod
     async def get_instance(
         cls, config: AppConfig, user_id: str | None
     ) -> UserSecretStore:
@@ -53,22 +86,18 @@ class FileUserSecretStore(UserSecretStore):
     def _decrypt_value(self, value: SecretStr | str) -> str:
         fernet = self._fernet()
         if isinstance(value, SecretStr):
-            return fernet.decrypt(
-                b64decode(value.get_secret_value().encode())
-            ).decode()
+            return fernet.decrypt(b64decode(value.get_secret_value().encode())).decode()
         else:
             return fernet.decrypt(b64decode(value.encode())).decode()
 
     def _encrypt_value(self, value: SecretStr | str) -> str:
         fernet = self._fernet()
         if isinstance(value, SecretStr):
-            return b64encode(
-                fernet.encrypt(value.get_secret_value().encode())
-            ).decode()
+            return b64encode(fernet.encrypt(value.get_secret_value().encode())).decode()
         else:
             return b64encode(fernet.encrypt(value.encode())).decode()
 
     def _fernet(self):
-        jwt_secret = self.config.jwt_secret.get_secret_value()
+        jwt_secret = self.jwt_secret.get_secret_value()
         fernet_key = b64encode(hashlib.sha256(jwt_secret.encode()).digest())
         return Fernet(fernet_key)

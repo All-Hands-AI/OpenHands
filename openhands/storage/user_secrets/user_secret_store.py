@@ -30,7 +30,7 @@ class UserSecretStore(ABC):
         page_id: str | None = None,
         limit: int = 20,
     ) -> UserSecretResultSet:
-        """Search secrets"""
+        """Search secrets. The ordering of results is undefined."""
 
     @classmethod
     @abstractmethod
