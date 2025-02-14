@@ -11,6 +11,7 @@ import {
   Conversation,
   ResultSet,
   GetTrajectoryResponse,
+  GetStripePaymentStatusResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
@@ -272,6 +273,37 @@ class OpenHands {
   ): Promise<boolean> {
     const data = await openHands.post("/api/settings", settings);
     return data.status === 200;
+  }
+
+  static async createCheckoutSession(amount: number): Promise<string> {
+    const { data } = await openHands.post(
+      "/api/billing/create-checkout-session",
+      {
+        amount,
+      },
+    );
+    return data.redirect_url;
+  }
+
+  // TODO: This should probably be removed from the API now that we are using the stripe hosted UI
+  static async checkSessionStatus(
+    sessionId: string,
+  ): Promise<GetStripePaymentStatusResponse> {
+    const response = await openHands.get<GetStripePaymentStatusResponse>(
+      "/api/billing/session-status",
+      {
+        params: { session_id: sessionId },
+      },
+    );
+
+    return response.data;
+  }
+
+  static async getBalance(): Promise<string> {
+    const { data } = await openHands.get<{ credits: string }>(
+      "/api/billing/credits",
+    );
+    return data.credits;
   }
 
   static async getGitHubUser(): Promise<GitHubUser> {
