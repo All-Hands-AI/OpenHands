@@ -629,8 +629,8 @@ if __name__ == '__main__':
             if not os.path.exists(path):
                 raise HTTPException(status_code=404, detail='File not found')
 
-            with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp_file:
-                with ZipFile(temp_file.name, 'w') as zipf:
+            with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp_zip:
+                with ZipFile(temp_zip, 'w') as zipf:
                     for root, _, files in os.walk(path):
                         for file in files:
                             file_path = os.path.join(root, file)
@@ -638,10 +638,10 @@ if __name__ == '__main__':
                                 file_path, arcname=os.path.relpath(file_path, path)
                             )
                 return FileResponse(
-                    path=temp_file.name,
+                    path=temp_zip.name,
                     media_type='application/zip',
                     filename=f'{os.path.basename(path)}.zip',
-                    background=BackgroundTask(lambda: os.unlink(temp_file.name)),
+                    background=BackgroundTask(lambda: os.unlink(temp_zip.name)),
                 )
 
         except Exception as e:

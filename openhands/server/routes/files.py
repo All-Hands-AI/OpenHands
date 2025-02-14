@@ -325,7 +325,7 @@ def zip_current_workspace(request: Request, conversation_id: str):
         return FileResponse(
             path=zip_file_path,
             filename='workspace.zip',
-            media_type='application/x-zip-compressed',
+            media_type='application/zip',
             background=BackgroundTask(lambda: os.unlink(zip_file_path)),
         )
     except Exception as e:
