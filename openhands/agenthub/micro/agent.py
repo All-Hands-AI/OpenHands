@@ -11,7 +11,7 @@ from openhands.events.action import Action
 from openhands.events.event import Event
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.event import event_to_memory
-from openhands.llm.llm import LLM
+from openhands.llm.async_llm import AsyncLLM
 
 
 def parse_response(orig_response: str) -> Action:
@@ -56,7 +56,7 @@ class MicroAgent(Agent):
 
         return json.dumps(processed_history, **kwargs)
 
-    def __init__(self, llm: LLM, config: AgentConfig):
+    def __init__(self, llm: AsyncLLM, config: AgentConfig):
         super().__init__(llm, config)
         if 'name' not in self.agent_definition:
             raise ValueError('Agent definition must contain a name')
@@ -64,7 +64,7 @@ class MicroAgent(Agent):
         self.delegates = all_microagents.copy()
         del self.delegates[self.agent_definition['name']]
 
-    def step(self, state: State) -> Action:
+    async def step(self, state: State) -> Action:
         last_user_message, last_image_urls = state.get_current_user_intent()
         prompt = self.prompt_template.render(
             state=state,
@@ -78,7 +78,7 @@ class MicroAgent(Agent):
         if self.llm.vision_is_active() and last_image_urls:
             content.append(ImageContent(image_urls=last_image_urls))
         message = Message(role='user', content=content)
-        resp = self.llm.completion(
+        resp = await self.llm.async_completion(
             messages=self.llm.format_messages_for_llm(message),
         )
         action_resp = resp['choices'][0]['message']['content']

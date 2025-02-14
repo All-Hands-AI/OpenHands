@@ -3,7 +3,7 @@ from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.events.action import Action, AgentDelegateAction, AgentFinishAction
 from openhands.events.observation import AgentDelegateObservation, Observation
-from openhands.llm.llm import LLM
+from openhands.llm.async_llm import AsyncLLM
 
 
 class DelegatorAgent(Agent):
@@ -14,7 +14,7 @@ class DelegatorAgent(Agent):
 
     current_delegate: str = ''
 
-    def __init__(self, llm: LLM, config: AgentConfig):
+    def __init__(self, llm: AsyncLLM, config: AgentConfig):
         """Initialize the Delegator Agent with an LLM
 
         Parameters:
@@ -22,7 +22,7 @@ class DelegatorAgent(Agent):
         """
         super().__init__(llm, config)
 
-    def step(self, state: State) -> Action:
+    async def step(self, state: State) -> Action:
         """Checks to see if current step is completed, returns AgentFinishAction if True.
         Otherwise, delegates the task to the next agent in the pipeline.
 

@@ -16,7 +16,7 @@ from openhands.events.action import (
 from openhands.events.event import EventSource
 from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.observation import Observation
-from openhands.llm.llm import LLM
+from openhands.llm.async_llm import AsyncLLM
 from openhands.runtime.plugins import (
     PluginRequirement,
 )
@@ -127,7 +127,7 @@ class VisualBrowsingAgent(Agent):
 
     def __init__(
         self,
-        llm: LLM,
+        llm: AsyncLLM,
         config: AgentConfig,
     ) -> None:
         """Initializes a new instance of the VisualBrowsingAgent class.
@@ -179,7 +179,7 @@ Note:
         self.cost_accumulator = 0
         self.error_accumulator = 0
 
-    def step(self, state: State) -> Action:
+    async def step(self, state: State) -> Action:
         """Performs one step using the VisualBrowsingAgent.
 
         This includes gathering information on previous steps and prompting the model to make a browsing command to execute.
@@ -297,7 +297,7 @@ You are an agent trying to solve a web task based on the content of the page and
 
         flat_messages = self.llm.format_messages_for_llm(messages)
 
-        response = self.llm.completion(
+        response = await self.llm.async_completion(
             messages=flat_messages,
             temperature=0.0,
             stop=[')```', ')\n```'],

@@ -37,7 +37,7 @@ from openhands.events.observation import (
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
-from openhands.llm.llm import LLM
+from openhands.llm.async_llm import AsyncLLM
 from openhands.memory.condenser import Condenser
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
@@ -78,13 +78,13 @@ class CodeActAgent(Agent):
 
     def __init__(
         self,
-        llm: LLM,
+        llm: AsyncLLM,
         config: AgentConfig,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
-        - llm (LLM): The llm to be used by this agent
+        - llm (AsyncLLM): The llm to be used by this agent
         """
         super().__init__(llm, config)
         self.pending_actions: deque[Action] = deque()
@@ -359,7 +359,7 @@ class CodeActAgent(Agent):
         super().reset()
         self.pending_actions.clear()
 
-    def step(self, state: State) -> Action:
+    async def step(self, state: State) -> Action:
         """Performs one step using the CodeAct Agent.
         This includes gathering info on previous steps and prompting the model to make a command to execute.
 
@@ -388,7 +388,7 @@ class CodeActAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
-        response = self.llm.completion(**params)
+        response = await self.llm.async_completion(**params)
         actions = codeact_function_calling.response_to_actions(response)
         for action in actions:
             self.pending_actions.append(action)

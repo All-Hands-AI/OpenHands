@@ -20,7 +20,7 @@ from openhands.events.event import Event, EventSource
 from openhands.events.observation import Observation
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.stream import EventStream
-from openhands.llm.llm import LLM
+from openhands.llm.async_llm import AsyncLLM
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.security.analyzer import SecurityAnalyzer
 from openhands.security.invariant.client import InvariantClient
@@ -40,7 +40,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
     settings: dict = {}
 
     check_browsing_alignment: bool = False
-    guardrail_llm: LLM | None = None
+    guardrail_llm: AsyncLLM | None = None
 
     def __init__(
         self,
@@ -177,7 +177,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
             assert (
                 self.guardrail_llm is not None
             ), 'InvariantAnalyzer.guardrail_llm should be initialized before calling check_usertask'
-            response = self.guardrail_llm.completion(
+            response = await self.guardrail_llm.async_completion(
                 messages=self.guardrail_llm.format_messages_for_llm(messages),
                 stop=['.'],
             )
@@ -261,7 +261,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
                     assert (
                         self.guardrail_llm is not None
                     ), 'InvariantAnalyzer.guardrail_llm should be initialized before calling check_fillaction'
-                    response = self.guardrail_llm.completion(
+                    response = await self.guardrail_llm.async_completion(
                         messages=self.guardrail_llm.format_messages_for_llm(messages),
                         stop=['.'],
                     )

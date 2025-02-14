@@ -660,7 +660,7 @@ class AgentController:
             action = self._replay_manager.step()
         else:
             try:
-                action = self.agent.step(self.state)
+                action = await self.agent.step(self.state)
                 if action is None:
                     raise LLMNoActionError('No action was returned')
                 action._source = EventSource.AGENT  # type: ignore [attr-defined]
