@@ -23,6 +23,7 @@ import SettingsIcon from "#/icons/settings.svg?react";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { isCustomModel } from "#/utils/is-custom-model";
+import { PaymentForm } from "#/components/features/payment/payment-form";
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },
@@ -194,6 +195,8 @@ function SettingsScreen() {
       data-testid="settings-screen"
       className="bg-[#24272E] border border-[#454545] h-full rounded-xl"
     >
+      {isSaas && <PaymentForm />}
+
       <form action={formAction} className="flex flex-col h-full">
         <header className="px-3 py-1.5 border-b border-b-[#454545] flex items-center gap-2">
           <SettingsIcon width={16} height={16} />

@@ -870,4 +870,36 @@ describe("Settings Screen", () => {
       );
     });
   });
+
+  describe("Billing Settings", () => {
+    it("should not render the billing settings if OSS mode", async () => {
+      getConfigSpy.mockResolvedValue({
+        APP_MODE: "oss",
+        GITHUB_CLIENT_ID: "123",
+        POSTHOG_CLIENT_KEY: "456",
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        const billingSection = screen.queryByTestId("billing-settings");
+        expect(billingSection).not.toBeInTheDocument();
+      });
+    });
+
+    it("should render the billing settings if SaaS mode", async () => {
+      getConfigSpy.mockResolvedValue({
+        APP_MODE: "saas",
+        GITHUB_CLIENT_ID: "123",
+        POSTHOG_CLIENT_KEY: "456",
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        const billingSection = screen.getByTestId("billing-settings");
+        within(billingSection).getByText("Manage Credits");
+      });
+    });
+  });
 });
