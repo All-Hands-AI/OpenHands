@@ -9,7 +9,7 @@ from openhands.core.exceptions import (
     AgentAlreadyRegisteredError,
     AgentNotRegisteredError,
 )
-from openhands.llm.llm import LLM
+from openhands.llm.async_llm import AsyncLLM
 from openhands.runtime.plugins import PluginRequirement
 
 if TYPE_CHECKING:
@@ -30,7 +30,7 @@ class Agent(ABC):
 
     def __init__(
         self,
-        llm: LLM,
+        llm: AsyncLLM,
         config: 'AgentConfig',
     ):
         self.llm = llm
@@ -48,7 +48,7 @@ class Agent(ABC):
         return self._complete
 
     @abstractmethod
-    def step(self, state: 'State') -> 'Action':
+    async def step(self, state: 'State') -> 'Action':
         """Starts the execution of the assigned instruction. This method should
         be implemented by subclasses to define the specific execution logic.
         """

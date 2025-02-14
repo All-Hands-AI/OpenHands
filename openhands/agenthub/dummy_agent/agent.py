@@ -26,7 +26,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization.event import event_to_dict
-from openhands.llm.llm import LLM
+from openhands.llm.async_llm import AsyncLLM
 
 """
 FIXME: There are a few problems this surfaced
@@ -46,7 +46,7 @@ class DummyAgent(Agent):
     without making any LLM calls.
     """
 
-    def __init__(self, llm: LLM, config: AgentConfig):
+    def __init__(self, llm: AsyncLLM, config: AgentConfig):
         super().__init__(llm, config)
         self.steps: list[ActionObs] = [
             {
@@ -119,7 +119,7 @@ class DummyAgent(Agent):
             },
         ]
 
-    def step(self, state: State) -> Action:
+    async def step(self, state: State) -> Action:
         if state.iteration >= len(self.steps):
             return AgentFinishAction()
 
