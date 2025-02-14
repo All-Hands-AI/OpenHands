@@ -38,7 +38,17 @@ describe("PaymentForm", () => {
 
     await waitFor(() => {
       const balance = screen.getByTestId("user-balance");
-      expect(balance).toHaveTextContent("100.50");
+      expect(balance).toHaveTextContent("$100.50");
+    });
+  });
+
+  it("should render the users current balance to two decimal places", async () => {
+    getBalanceSpy.mockResolvedValue("100");
+    renderPaymentForm();
+
+    await waitFor(() => {
+      const balance = screen.getByTestId("user-balance");
+      expect(balance).toHaveTextContent("$100.00");
     });
   });
 

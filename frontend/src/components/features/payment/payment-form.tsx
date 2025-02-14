@@ -1,5 +1,10 @@
 import { useCreateStripeCheckoutSession } from "#/hooks/mutation/stripe/use-create-stripe-checkout-session";
 import { useBalance } from "#/hooks/query/use-balance";
+import { cn } from "#/utils/utils";
+import MoneyIcon from "#/icons/money.svg?react";
+import { SettingsInput } from "../settings/settings-input";
+import { BrandButton } from "../settings/brand-button";
+import { HelpLink } from "../settings/help-link";
 
 export function PaymentForm() {
   const { data: balance } = useBalance();
@@ -28,9 +33,38 @@ export function PaymentForm() {
         Manage Credits
       </h2>
 
-      <p data-testid="user-balance">{balance}</p>
-      <input data-testid="top-up-input" name="top-up-input" type="text" />
-      <button type="submit">Add credit</button>
+      <div
+        className={cn(
+          "flex justify-between w-[680px] bg-[#7F7445] rounded px-3 py-2",
+          "text-[28px] leading-8 -tracking-[0.02em] font-bold",
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <MoneyIcon width={22} height={14} />
+          <span>Balance</span>
+        </div>
+        <span data-testid="user-balance">${Number(balance).toFixed(2)}</span>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <SettingsInput
+          testId="top-up-input"
+          name="top-up-input"
+          type="text"
+          label="Top-up amount"
+          placeholder="Enter amount"
+          className="w-[680px]"
+        />
+        <BrandButton variant="primary" type="submit">
+          Add credit
+        </BrandButton>
+      </div>
+
+      <HelpLink
+        href="https://stripe.com/"
+        text="Manage payment methods on"
+        linkText="Stripe"
+      />
     </form>
   );
 }

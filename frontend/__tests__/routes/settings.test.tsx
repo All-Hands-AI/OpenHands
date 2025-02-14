@@ -10,6 +10,7 @@ import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { PostApiSettings } from "#/types/settings";
 import * as ConsentHandlers from "#/utils/handle-capture-consent";
+import AccountSettings from "#/routes/account-settings";
 
 const toggleAdvancedSettings = async (user: UserEvent) => {
   const advancedSwitch = await screen.findByTestId("advanced-settings-switch");
@@ -36,6 +37,7 @@ describe("Settings Screen", () => {
     {
       Component: SettingsScreen,
       path: "/settings",
+      children: [{ Component: AccountSettings, path: "/settings" }],
     },
   ]);
 
@@ -868,38 +870,6 @@ describe("Settings Screen", () => {
           enable_default_condenser: true,
         }),
       );
-    });
-  });
-
-  describe("Billing Settings", () => {
-    it("should not render the billing settings if OSS mode", async () => {
-      getConfigSpy.mockResolvedValue({
-        APP_MODE: "oss",
-        GITHUB_CLIENT_ID: "123",
-        POSTHOG_CLIENT_KEY: "456",
-      });
-
-      renderSettingsScreen();
-
-      await waitFor(() => {
-        const billingSection = screen.queryByTestId("billing-settings");
-        expect(billingSection).not.toBeInTheDocument();
-      });
-    });
-
-    it("should render the billing settings if SaaS mode", async () => {
-      getConfigSpy.mockResolvedValue({
-        APP_MODE: "saas",
-        GITHUB_CLIENT_ID: "123",
-        POSTHOG_CLIENT_KEY: "456",
-      });
-
-      renderSettingsScreen();
-
-      await waitFor(() => {
-        const billingSection = screen.getByTestId("billing-settings");
-        within(billingSection).getByText("Manage Credits");
-      });
     });
   });
 });
