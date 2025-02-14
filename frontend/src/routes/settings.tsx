@@ -104,7 +104,7 @@ function SettingsScreen() {
 
   const formRef = React.useRef<HTMLFormElement>(null);
 
-  const onSubmit = async (formData: FormData) => {
+  const formAction = async (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
     const languageValue = AvailableLanguages.find(
       ({ label }) => label === languageLabel,
@@ -203,7 +203,7 @@ function SettingsScreen() {
 
       <form
         ref={formRef}
-        action={onSubmit}
+        action={formAction}
         className="flex flex-col grow overflow-auto"
       >
         {isFetching && (
