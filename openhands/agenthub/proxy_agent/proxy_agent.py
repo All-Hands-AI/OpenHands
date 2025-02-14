@@ -93,7 +93,7 @@ class ProxyAgent(Agent):
                 role='system',
                 content=[
                     TextContent(
-                        text='Available agents is the following:'
+                        text='Available agents are the following:'
                         + json.dumps(self.agent_list)
                     )
                 ],
@@ -152,5 +152,4 @@ class ProxyAgent(Agent):
         return message
 
     def reset(self) -> None:
-        """Resets the SimpleAgent."""
         super().reset()
