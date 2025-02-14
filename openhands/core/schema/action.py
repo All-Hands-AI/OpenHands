@@ -78,8 +78,5 @@ class ActionTypeSchema(BaseModel):
     SEND_PR: str = Field(default='send_pr')
     """Send a PR to github."""
 
-    SEARCH_SECRETS: str = Field(default='search_secrets')
-    """Lookup of available secrets."""
-
 
 ActionType = ActionTypeSchema()
