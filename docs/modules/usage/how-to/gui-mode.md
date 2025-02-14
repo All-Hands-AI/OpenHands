@@ -21,7 +21,7 @@ OpenHands provides a Graphical User Interface (GUI) mode for interacting with th
 
 OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it is available. This can happen in two ways:
 
-- **Local (OSS)**: The user directly inputs their GitHub token.
+- **Local Installation**: The user directly inputs their GitHub token.
 <details>
   <summary>Setting Up a GitHub Token</summary>
   1. **Generate a Personal Access Token (PAT)**:
@@ -74,7 +74,7 @@ OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it 
      - Check the browser console for any error messages.
 </details>
 
-- **OpenHands Cloud (SaaS)**: The token is obtained through GitHub OAuth authentication.
+- **OpenHands Cloud**: The token is obtained through GitHub OAuth authentication.
 
 <details>
   <summary>OAuth Authentication</summary>
