@@ -71,20 +71,15 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'gpt-4o-mini',
     'gpt-4o',
     'o1-2024-12-17',
+    'o3-mini-2025-01-31',
+    'o3-mini',
 ]
-
-# visual browsing tool supported models
-# This flag is needed since gpt-4o and gpt-4o-mini do not allow passing image_urls with role='tool'
-VISUAL_BROWSING_TOOL_SUPPORTED_MODELS = [
-    'claude-3-5-sonnet',
-    'claude-3-5-sonnet-20240620',
-    'claude-3-5-sonnet-20241022',
-    'o1-2024-12-17',
-]
-
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
     'o1-2024-12-17',
+    'o1',
+    'o3-mini-2025-01-31',
+    'o3-mini',
 ]
 
 MODELS_WITHOUT_STOP_WORDS = [
@@ -149,6 +144,18 @@ class LLM(RetryMixin, DebugMixin):
             self.tokenizer = None
 
         # set up the completion function
+        kwargs: dict[str, Any] = {
+            'temperature': self.config.temperature,
+        }
+        if (
+            self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
+            or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
+        ):
+            kwargs['reasoning_effort'] = self.config.reasoning_effort
+            kwargs.pop(
+                'temperature'
+            )  # temperature is not supported for reasoning models
+
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
@@ -158,17 +165,11 @@ class LLM(RetryMixin, DebugMixin):
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens,
+            max_completion_tokens=self.config.max_output_tokens,
             timeout=self.config.timeout,
-            temperature=self.config.temperature,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
-            # add reasoning_effort, only if the model is supported
-            **(
-                {'reasoning_effort': self.config.reasoning_effort}
-                if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
-                else {}
-            ),
+            **kwargs,
         )
 
         self._completion_unwrapped = self._completion
@@ -186,7 +187,7 @@ class LLM(RetryMixin, DebugMixin):
             from openhands.core.utils import json
 
             messages: list[dict[str, Any]] | dict[str, Any] = []
-            mock_function_calling = kwargs.pop('mock_function_calling', False)
+            mock_function_calling = not self.is_function_calling_active()
 
             # some callers might send the model and messages directly
             # litellm allows positional args, like completion(model, messages, **kwargs)
@@ -205,19 +206,25 @@ class LLM(RetryMixin, DebugMixin):
 
             # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]
+
+            # handle conversion of to non-function calling messages if needed
             original_fncall_messages = copy.deepcopy(messages)
             mock_fncall_tools = None
-            if mock_function_calling:
-                assert (
-                    'tools' in kwargs
-                ), "'tools' must be in kwargs when mock_function_calling is True"
+            # if the agent or caller has defined tools, and we mock via prompting, convert the messages
+            if mock_function_calling and 'tools' in kwargs:
                 messages = convert_fncall_messages_to_non_fncall_messages(
                     messages, kwargs['tools']
                 )
                 kwargs['messages'] = messages
+
+                # add stop words if the model supports it
                 if self.config.model not in MODELS_WITHOUT_STOP_WORDS:
                     kwargs['stop'] = STOP_WORDS
+
                 mock_fncall_tools = kwargs.pop('tools')
+                kwargs['tool_choice'] = (
+                    'none'  # force no tool calling because we're mocking it - without it, it will cause issue with sglang
+                )
 
             # if we have no messages, something went very wrong
             if not messages:
@@ -245,9 +252,10 @@ class LLM(RetryMixin, DebugMixin):
             self.metrics.add_response_latency(latency, response_id)
 
             non_fncall_response = copy.deepcopy(resp)
-            if mock_function_calling:
+
+            # if we mocked function calling, and we have tools, convert the response back to function calling format
+            if mock_function_calling and mock_fncall_tools is not None:
                 assert len(resp.choices) == 1
-                assert mock_fncall_tools is not None
                 non_fncall_response_message = resp.choices[0].message
                 fn_call_messages_with_response = (
                     convert_non_fncall_messages_to_fncall_messages(
@@ -476,15 +484,6 @@ class LLM(RetryMixin, DebugMixin):
         The result is cached during initialization for performance.
         """
         return self._function_calling_active
-
-    def is_visual_browser_tool_active(self) -> bool:
-        return (
-            self.config.model in VISUAL_BROWSING_TOOL_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in VISUAL_BROWSING_TOOL_SUPPORTED_MODELS
-            or any(
-                m in self.config.model for m in VISUAL_BROWSING_TOOL_SUPPORTED_MODELS
-            )
-        )
 
     def _post_completion(self, response: ModelResponse) -> float:
         """Post-process the completion response.

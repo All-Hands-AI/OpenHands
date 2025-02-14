@@ -67,6 +67,7 @@ def get_config(
             base_container_image=BIOCODER_BENCH_CONTAINER_IMAGE,
             enable_auto_lint=True,
             use_host_network=False,
+            remote_runtime_enable_retries=True,
         ),
         # do not mount workspace
         workspace_base=None,
