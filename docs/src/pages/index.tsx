@@ -2,7 +2,6 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
 import { HomepageHeader } from '../components/HomepageHeader/HomepageHeader';
 import { translate } from '@docusaurus/Translate';
-import Link from '@docusaurus/Link';
 
 export function Header({ title, summary }): JSX.Element {
   return (
