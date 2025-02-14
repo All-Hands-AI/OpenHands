@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from openhands.core.config.condenser_config import LLMAttentionCondenserConfig
 from openhands.events.event import Event
-from openhands.llm.llm import LLM
+from openhands.llm.async_llm import AsyncLLM
 from openhands.memory.condenser.condenser import RollingCondenser
 
 
@@ -18,7 +18,7 @@ class ImportantEventSelection(BaseModel):
 class LLMAttentionCondenser(RollingCondenser):
     """Rolling condenser strategy that uses an LLM to select the most important events when condensing the history."""
 
-    def __init__(self, llm: LLM, max_size: int = 100, keep_first: int = 0):
+    def __init__(self, llm: AsyncLLM, max_size: int = 100, keep_first: int = 0):
         if keep_first >= max_size // 2:
             raise ValueError(
                 f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
@@ -43,7 +43,7 @@ class LLMAttentionCondenser(RollingCondenser):
 
         super().__init__()
 
-    def condense(self, events: list[Event]) -> list[Event]:
+    async def condense(self, events: list[Event]) -> list[Event]:
         """If the history is too long, use an LLM to select the most important events."""
         if len(events) <= self.max_size:
             return events
@@ -58,7 +58,7 @@ class LLMAttentionCondenser(RollingCondenser):
         contents of the item are for the next step of the coding agent's task, from most important to least
         important."""
 
-        response = self.llm.completion(
+        response = await self.llm.async_completion(
             messages=[
                 {'content': message, 'role': 'user'},
                 *[
@@ -107,7 +107,7 @@ class LLMAttentionCondenser(RollingCondenser):
     @classmethod
     def from_config(cls, config: LLMAttentionCondenserConfig) -> LLMAttentionCondenser:
         return LLMAttentionCondenser(
-            llm=LLM(config=config.llm_config),
+            llm=AsyncLLM(config=config.llm_config),
             max_size=config.max_size,
             keep_first=config.keep_first,
         )

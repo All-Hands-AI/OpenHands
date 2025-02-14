@@ -3,7 +3,7 @@ from __future__ import annotations
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
-from openhands.llm import LLM
+from openhands.llm.async_llm import AsyncLLM
 from openhands.memory.condenser.condenser import RollingCondenser
 
 
@@ -15,7 +15,7 @@ class LLMSummarizingCondenser(RollingCondenser):
     and newly forgotten events.
     """
 
-    def __init__(self, llm: LLM, max_size: int = 100, keep_first: int = 1):
+    def __init__(self, llm: AsyncLLM, max_size: int = 100, keep_first: int = 1):
         if keep_first >= max_size // 2:
             raise ValueError(
                 f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
@@ -31,7 +31,7 @@ class LLMSummarizingCondenser(RollingCondenser):
 
         super().__init__()
 
-    def condense(self, events: list[Event]) -> list[Event]:
+    async def condense(self, events: list[Event]) -> list[Event]:
         """Apply the amortized forgetting strategy with LLM summarization to the given list of events."""
         if len(events) <= self.max_size:
             return events
@@ -83,7 +83,7 @@ INTENT: Fix float precision overflow"""
         for forgotten_event in forgotten_events:
             prompt += str(forgotten_event) + '\n\n'
 
-        response = self.llm.completion(
+        response = await self.llm.async_completion(
             messages=[
                 {
                     'content': prompt,
@@ -103,7 +103,7 @@ INTENT: Fix float precision overflow"""
         cls, config: LLMSummarizingCondenserConfig
     ) -> LLMSummarizingCondenser:
         return LLMSummarizingCondenser(
-            llm=LLM(config=config.llm_config),
+            llm=AsyncLLM(config=config.llm_config),
             max_size=config.max_size,
             keep_first=config.keep_first,
         )

@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from litellm import ChatCompletionMessageToolCall
@@ -37,14 +37,14 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.files import FileEditObservation, FileReadObservation
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.tool import ToolCallMetadata
-from openhands.llm.llm import LLM
+from openhands.llm.async_llm import AsyncLLM
 
 
 @pytest.fixture
 def agent() -> CodeActAgent:
     config = AgentConfig()
-    agent = CodeActAgent(llm=LLM(LLMConfig()), config=config)
-    agent.llm = Mock()
+    agent = CodeActAgent(llm=AsyncLLM(LLMConfig()), config=config)
+    agent.llm = AsyncMock()
     agent.llm.config = Mock()
     agent.llm.config.max_message_chars = 1000
     return agent
@@ -320,14 +320,15 @@ def test_reset(agent: CodeActAgent):
     assert len(agent.pending_actions) == 0
 
 
-def test_step_with_pending_actions(agent: CodeActAgent):
+@pytest.mark.asyncio
+async def test_step_with_pending_actions(agent: CodeActAgent):
     # Add a pending action
     pending_action = MessageAction(content='test')
     pending_action._source = EventSource.AGENT
     agent.pending_actions.append(pending_action)
 
     # Step should return the pending action
-    result = agent.step(Mock())
+    result = await agent.step(Mock())
     assert result == pending_action
     assert len(agent.pending_actions) == 0
 

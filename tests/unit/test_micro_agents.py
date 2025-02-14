@@ -52,11 +52,12 @@ def test_all_agents_are_loaded():
     assert agent_names == set(all_microagents.keys())
 
 
-def test_coder_agent_with_summary(event_stream: EventStream, agent_configs: dict):
+@pytest.mark.asyncio
+async def test_coder_agent_with_summary(event_stream: EventStream, agent_configs: dict):
     """Coder agent should render code summary as part of prompt"""
     mock_llm = MagicMock()
     content = json.dumps({'action': 'finish', 'args': {}})
-    mock_llm.completion.return_value = {'choices': [{'message': {'content': content}}]}
+    mock_llm.async_completion.return_value = {'choices': [{'message': {'content': content}}]}
     mock_llm.format_messages_for_llm.return_value = [
         {
             'role': 'user',
@@ -76,10 +77,10 @@ def test_coder_agent_with_summary(event_stream: EventStream, agent_configs: dict
 
     summary = 'This is a dummy summary about this repo'
     state = State(history=history, inputs={'summary': summary})
-    coder_agent.step(state)
+    await coder_agent.step(state)
 
-    mock_llm.completion.assert_called_once()
-    _, kwargs = mock_llm.completion.call_args
+    mock_llm.async_completion.assert_called_once()
+    _, kwargs = mock_llm.async_completion.call_args
     prompt_element = kwargs['messages'][0]['content']
     if isinstance(prompt_element, dict):
         prompt = prompt_element['content']
@@ -90,13 +91,14 @@ def test_coder_agent_with_summary(event_stream: EventStream, agent_configs: dict
     assert summary in prompt
 
 
-def test_coder_agent_without_summary(event_stream: EventStream, agent_configs: dict):
+@pytest.mark.asyncio
+async def test_coder_agent_without_summary(event_stream: EventStream, agent_configs: dict):
     """When there's no codebase_summary available, there shouldn't be any prompt
     about 'code summary'
     """
     mock_llm = MagicMock()
     content = json.dumps({'action': 'finish', 'args': {}})
-    mock_llm.completion.return_value = {'choices': [{'message': {'content': content}}]}
+    mock_llm.async_completion.return_value = {'choices': [{'message': {'content': content}}]}
     mock_llm.format_messages_for_llm.return_value = [
         {
             'role': 'user',
@@ -121,10 +123,10 @@ def test_coder_agent_without_summary(event_stream: EventStream, agent_configs: d
 
     # set state without codebase summary
     state = State(history=history)
-    coder_agent.step(state)
+    await coder_agent.step(state)
 
-    mock_llm.completion.assert_called_once()
-    _, kwargs = mock_llm.completion.call_args
+    mock_llm.async_completion.assert_called_once()
+    _, kwargs = mock_llm.async_completion.call_args
     prompt_element = kwargs['messages'][0]['content']
     if isinstance(prompt_element, dict):
         prompt = prompt_element['content']
