@@ -4,7 +4,7 @@ import hashlib
 import json
 from base64 import b64decode, b64encode
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 from cryptography.fernet import Fernet
 from pydantic import SecretStr
@@ -28,6 +28,7 @@ class FileUserSecretStore(UserSecretStore):
     async def save_secret(self, secret: UserSecret):
         data = secret.model_dump(context={'expose_secrets': True})
         data['value'] = self._encrypt_value(data['value'])
+        secret.updated_at = datetime.now(timezone.utc)
         data['updated_at'] = data['updated_at'].isoformat()
         data['created_at'] = data['created_at'].isoformat()
         json_str = json.dumps(data)
