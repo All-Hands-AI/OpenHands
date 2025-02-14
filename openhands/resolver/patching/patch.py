@@ -3,6 +3,7 @@ import base64
 import re
 import zlib
 from collections import namedtuple
+from typing import Iterable
 
 from . import exceptions
 from .snippets import findall_regex, split_by_regex
@@ -71,10 +72,10 @@ cvs_header_timestamp_colon = re.compile(r':([\d.]+)\t(.+)')
 old_cvs_diffcmd_header = re.compile('^diff.* (.+):(.*) (.+):(.*)$')
 
 
-def parse_patch(text):
-    try:
+def parse_patch(text: str | list[str]) -> Iterable[diffobj]:
+    if isinstance(text, str):
         lines = text.splitlines()
-    except AttributeError:
+    else:
         lines = text
 
     # maybe use this to nuke all of those line endings?
@@ -104,17 +105,17 @@ def parse_patch(text):
             yield diffobj(header=h, changes=d, text=difftext)
 
 
-def parse_header(text):
+def parse_header(text: str | list[str]) -> header | None:
     h = parse_scm_header(text)
     if h is None:
         h = parse_diff_header(text)
     return h
 
 
-def parse_scm_header(text):
-    try:
+def parse_scm_header(text: str | list[str]) -> header | None:
+    if isinstance(text, str):
         lines = text.splitlines()
-    except AttributeError:
+    else:
         lines = text
 
     check = [
@@ -154,10 +155,10 @@ def parse_scm_header(text):
     return None
 
 
-def parse_diff_header(text):
-    try:
+def parse_diff_header(text: str | list[str]) -> header | None:
+    if isinstance(text, str):
         lines = text.splitlines()
-    except AttributeError:
+    else:
         lines = text
 
     check = [
@@ -178,10 +179,10 @@ def parse_diff_header(text):
     return None  # no header?
 
 
-def parse_diff(text):
-    try:
+def parse_diff(text: str | list[str]) -> list[Change] | None:
+    if isinstance(text, str):
         lines = text.splitlines()
-    except AttributeError:
+    else:
         lines = text
 
     check = [
@@ -200,10 +201,10 @@ def parse_diff(text):
     return None
 
 
-def parse_git_header(text):
-    try:
+def parse_git_header(text: str | list[str]) -> header | None:
+    if isinstance(text, str):
         lines = text.splitlines()
-    except AttributeError:
+    else:
         lines = text
 
     old_version = None
@@ -275,10 +276,10 @@ def parse_git_header(text):
     return None
 
 
-def parse_svn_header(text):
-    try:
+def parse_svn_header(text: str | list[str]) -> header | None:
+    if isinstance(text, str):
         lines = text.splitlines()
-    except AttributeError:
+    else:
         lines = text
 
     headers = findall_regex(lines, svn_header_index)
@@ -346,7 +347,7 @@ def parse_svn_header(text):
     return None
 
 
-def parse_cvs_header(text):
+def parse_cvs_header(text: str | list[str]) -> header | None:
     try:
         lines = text.splitlines()
     except AttributeError:
@@ -430,7 +431,7 @@ def parse_cvs_header(text):
     return None
 
 
-def parse_diffcmd_header(text):
+def parse_diffcmd_header(text: str | list[str]) -> header | None:
     try:
         lines = text.splitlines()
     except AttributeError:
@@ -454,7 +455,7 @@ def parse_diffcmd_header(text):
     return None
 
 
-def parse_unified_header(text):
+def parse_unified_header(text: str | list[str]) -> header | None:
     try:
         lines = text.splitlines()
     except AttributeError:
@@ -490,7 +491,7 @@ def parse_unified_header(text):
     return None
 
 
-def parse_context_header(text):
+def parse_context_header(text: str | list[str]) -> header | None:
     try:
         lines = text.splitlines()
     except AttributeError:
@@ -526,7 +527,7 @@ def parse_context_header(text):
     return None
 
 
-def parse_default_diff(text):
+def parse_default_diff(text: str | list[str]) -> list[Change] | None:
     try:
         lines = text.splitlines()
     except AttributeError:
@@ -582,7 +583,7 @@ def parse_default_diff(text):
     return None
 
 
-def parse_unified_diff(text):
+def parse_unified_diff(text: str | list[str]) -> list[Change] | None:
     try:
         lines = text.splitlines()
     except AttributeError:
@@ -652,7 +653,7 @@ def parse_unified_diff(text):
     return None
 
 
-def parse_context_diff(text):
+def parse_context_diff(text: str | list[str]) -> list[Change] | None:
     try:
         lines = text.splitlines()
     except AttributeError:
@@ -795,7 +796,7 @@ def parse_context_diff(text):
     return None
 
 
-def parse_ed_diff(text):
+def parse_ed_diff(text: str | list[str]) -> list[Change] | None:
     try:
         lines = text.splitlines()
     except AttributeError:
@@ -930,10 +931,10 @@ def parse_rcs_ed_diff(text):
     return None
 
 
-def parse_git_binary_diff(text):
-    try:
+def parse_git_binary_diff(text: str | list[str]) -> list[Change] | None:
+    if isinstance(text, str):
         lines = text.splitlines()
-    except AttributeError:
+    else:
         lines = text
 
     changes: list[Change] = list()
