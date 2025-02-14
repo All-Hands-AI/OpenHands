@@ -12,8 +12,10 @@ from litellm import (
     ModelResponse,
 )
 
-from openhands.core.exceptions import FunctionCallNotExistsError
-from openhands.core.logger import openhands_logger as logger
+from openhands.core.exceptions import (
+    FunctionCallNotExistsError,
+    FunctionCallValidationError,
+)
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -494,15 +496,19 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     f'Failed to parse tool call arguments: {tool_call.function.arguments}'
                 ) from e
             if tool_call.function.name == 'execute_bash':
-                # this is an LLM error: add empty command to avoid breaking the tool call
                 if 'command' not in arguments:
-                    arguments['command'] = ''
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "command" in tool call {tool_call.function.name}'
+                    )
                 # convert is_input to boolean
-                if 'is_input' in arguments:
-                    arguments['is_input'] = arguments['is_input'] == 'true'
-                action = CmdRunAction(**arguments)
+                is_input = arguments.get('is_input', 'false') == 'true'
+                action = CmdRunAction(command=arguments['command'], is_input=is_input)
             elif tool_call.function.name == 'execute_ipython_cell':
-                action = IPythonRunCellAction(**arguments)
+                if 'code' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "code" in tool call {tool_call.function.name}'
+                    )
+                action = IPythonRunCellAction(code=arguments['code'])
             elif tool_call.function.name == 'delegate_to_browsing_agent':
                 action = AgentDelegateAction(
                     agent='BrowsingAgent',
@@ -511,31 +517,62 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             elif tool_call.function.name == 'finish':
                 action = AgentFinishAction()
             elif tool_call.function.name == 'edit_file':
-                action = FileEditAction(**arguments)
-            elif tool_call.function.name == 'str_replace_editor':
-                # We implement this in agent_skills, which can be used via Jupyter
-                # convert tool_call.function.arguments to kwargs that can be passed to file_editor
-                code = f'print(file_editor(**{arguments}))'
-                logger.debug(
-                    f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+                if 'content' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "content" in tool call {tool_call.function.name}'
+                    )
+                action = FileEditAction(
+                    path=arguments['path'],
+                    content=arguments['content'],
+                    start=arguments.get('start', 1),
+                    end=arguments.get('end', -1),
                 )
+            elif tool_call.function.name == 'str_replace_editor':
+                if 'command' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "command" in tool call {tool_call.function.name}'
+                    )
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+                path = arguments['path']
+                command = arguments['command']
+                other_kwargs = {
+                    k: v for k, v in arguments.items() if k not in ['command', 'path']
+                }
 
-                if arguments['command'] == 'view':
+                if command == 'view':
                     action = FileReadAction(
-                        path=arguments['path'],
-                        translated_ipython_code=code,
+                        path=path,
                         impl_source=FileReadSource.OH_ACI,
+                        view_range=other_kwargs.get('view_range', None),
                     )
                 else:
+                    if 'view_range' in other_kwargs:
+                        # Remove view_range from other_kwargs since it is not needed for FileEditAction
+                        other_kwargs.pop('view_range')
                     action = FileEditAction(
-                        path=arguments['path'],
-                        content='',  # dummy value -- we don't need it
-                        translated_ipython_code=code,
+                        path=path,
+                        command=command,
                         impl_source=FileEditSource.OH_ACI,
+                        **other_kwargs,
                     )
             elif tool_call.function.name == 'browser':
+                if 'code' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "code" in tool call {tool_call.function.name}'
+                    )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
             elif tool_call.function.name == 'web_read':
+                if 'url' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "url" in tool call {tool_call.function.name}'
+                    )
                 action = BrowseURLAction(url=arguments['url'])
             else:
                 raise FunctionCallNotExistsError(

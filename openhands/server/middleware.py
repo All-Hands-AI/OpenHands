@@ -12,6 +12,7 @@ from starlette.requests import Request as StarletteRequest
 from starlette.types import ASGIApp
 
 from openhands.server import shared
+from openhands.server.auth import get_user_id
 from openhands.server.types import SessionMiddlewareInterface
 
 
@@ -180,3 +181,23 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
             await self._detach_session(request)
 
         return response
+
+
+class GitHubTokenMiddleware(SessionMiddlewareInterface):
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, request: Request, call_next: Callable):
+        settings_store = await shared.SettingsStoreImpl.get_instance(
+            shared.config, get_user_id(request)
+        )
+        settings = await settings_store.load()
+
+        # TODO: To avoid checks like this we should re-add the abilty to have completely different middleware in SAAS as in OSS
+        if getattr(request.state, 'github_token', None) is None:
+            if settings and settings.github_token:
+                request.state.github_token = settings.github_token
+            else:
+                request.state.github_token = None
+
+        return await call_next(request)
