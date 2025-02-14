@@ -36,7 +36,7 @@ def get_config(
     task_short_name: str,
     mount_path_on_host: str,
     llm_config: LLMConfig,
-    agent_config: AgentConfig,
+    agent_config: AgentConfig | None,
 ) -> AppConfig:
     config = AppConfig(
         run_as_openhands=False,
@@ -159,11 +159,21 @@ def run_solver(
         os.makedirs(screenshots_dir, exist_ok=True)
         for image_id, obs in enumerate(state.history):
             if isinstance(obs, BrowserOutputObservation):
-                image_data = base64.b64decode(obs.screenshot)
+                image_data = base64.b64decode(
+                    obs.screenshot.replace('data:image/png;base64,', '')
+                )
                 with open(
                     os.path.join(screenshots_dir, f'{image_id}.png'), 'wb'
                 ) as file:
                     file.write(image_data)
+                if obs.set_of_marks:
+                    som_image_data = base64.b64decode(
+                        obs.set_of_marks.replace('data:image/png;base64,', '')
+                    )
+                    with open(
+                        os.path.join(screenshots_dir, f'{image_id}_som.png'), 'wb'
+                    ) as file:
+                        file.write(som_image_data)
 
     if save_final_state:
         os.makedirs(state_dir, exist_ok=True)

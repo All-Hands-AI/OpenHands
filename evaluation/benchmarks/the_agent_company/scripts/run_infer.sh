@@ -129,8 +129,6 @@ temp_file="tasks_${START_PERCENTILE}_${END_PERCENTILE}.md"
 sed -n "${start_line},${end_line}p" tasks.md > "$temp_file"
 
 while IFS= read -r task_image; do
-    docker pull $task_image
-
     # Remove prefix using ## to remove longest matching pattern from start
     task_name=${task_image##ghcr.io/theagentcompany/}
 
@@ -143,6 +141,8 @@ while IFS= read -r task_image; do
         echo "Skipping $task_name - evaluation file already exists"
         continue
     fi
+
+    docker pull $task_image
 
     # Build the Python command
     COMMAND="poetry run python run_infer.py \
