@@ -27,7 +27,7 @@ export function PaymentForm() {
     <form
       action={billingFormAction}
       data-testid="billing-settings"
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-6 px-11 py-9"
     >
       <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
         Manage Credits

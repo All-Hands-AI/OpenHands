@@ -43,7 +43,9 @@ function SettingsScreen() {
         </nav>
       )}
 
-      <Outlet />
+      <div className="flex flex-col grow overflow-auto">
+        <Outlet />
+      </div>
     </main>
   );
 }
