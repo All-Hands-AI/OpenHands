@@ -36,7 +36,7 @@ def get_config(
     task_short_name: str,
     mount_path_on_host: str,
     llm_config: LLMConfig,
-    agent_config: AgentConfig,
+    agent_config: AgentConfig | None,
 ) -> AppConfig:
     config = AppConfig(
         run_as_openhands=False,
