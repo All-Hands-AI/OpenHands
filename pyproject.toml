@@ -67,7 +67,7 @@ runloop-api-client = "0.22.0"
 libtmux = ">=0.37,<0.40"
 pygithub = "^2.5.0"
 joblib = "*"
-openhands-aci = "^0.2.1"
+openhands-aci = "^0.2.2"
 python-socketio = "^5.11.4"
 redis = "^5.2.0"
 sse-starlette = "^2.1.3"
@@ -105,6 +105,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -132,6 +133,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
