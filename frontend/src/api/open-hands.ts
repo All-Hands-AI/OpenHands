@@ -14,7 +14,7 @@ import {
   GetStripePaymentStatusResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings } from "#/types/settings";
+import { ApiSettings, PostApiSettings } from "#/types/settings";
 
 class OpenHands {
   /**
@@ -268,7 +268,9 @@ class OpenHands {
    * Save the settings to the server. Only valid settings are saved.
    * @param settings - the settings to save
    */
-  static async saveSettings(settings: Partial<ApiSettings>): Promise<boolean> {
+  static async saveSettings(
+    settings: Partial<PostApiSettings>,
+  ): Promise<boolean> {
     const data = await openHands.post("/api/settings", settings);
     return data.status === 200;
   }
