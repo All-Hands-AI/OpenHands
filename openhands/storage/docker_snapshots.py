@@ -2,6 +2,8 @@
 """
 ## Test case ##
 
+cd  openhands/storage/
+
 # Init docker-snapshots
 cd /workspaces/OpenHands/openhands/storage/
 ./docker_snapshots.py enable
@@ -68,13 +70,15 @@ def disable():
 
 def init_loop_image():
     if not os.path.exists(LOOP_IMAGE):
+        loop_dev = run_command("losetup -f", capture_output=True)
+        safe_loop_dev = shlex.quote(loop_dev)
+
         print(f"Initializing Docker Btrfs loop image {LOOP_IMAGE}")
-        run_command("sudo apt-get install -y btrfs-progs")
+        run_command("dpkg -l btrfs-progs >/dev/null 2>&1 || sudo apt install -y btrfs-progs")
         run_command(f"sudo truncate -s 2000G {safe_loop_img}")
 
         # Format
-        loop_dev = run_command("losetup -f", capture_output=True)
-        safe_loop_dev = shlex.quote(loop_dev)
+        detach_old_images()
         run_command(f"sudo losetup {safe_loop_dev} {safe_loop_img}")
         run_command(f"sudo mkfs.btrfs -f {safe_loop_dev}")
         run_command(f"sudo losetup -d {safe_loop_dev}")
@@ -108,17 +112,24 @@ def configure_docker(enable):
         print("Btrfs not mounted. Restarting dockerd...")
         docker_restart(enable)
 
+def detach_old_images():
+    # Detach all existing loop devices, since they may reference a deleted .img file
+    run_command("""
+for dev in $(losetup | grep "/var/lib/docker-snapshots.img" | awk '{print $1}'); do
+sudo losetup -d "$dev"
+done
+""")
+
 def mount_btrfs_storage():
     if not is_mounted():
         print("Mounting Btrfs storage...")
+
+        detach_old_images()
+
         loop_dev = run_command("losetup -f", capture_output=True)
+        print(f"Using loop dev: {loop_dev}")
         safe_loop_dev = shlex.quote(loop_dev)
-        # Detach all existing loop devices (may also reference a deleted .img file)
-        run_command("""
-for dev in $(losetup | grep "/var/lib/docker-snapshots.img" | awk '{print $1}'); do
-    sudo losetup -d "$dev"
-done
-""")
+
         run_command(f"sudo losetup {safe_loop_dev} {safe_loop_img}")
         os.makedirs("/var/lib/docker", exist_ok=True)
         run_command(f"sudo mount {safe_loop_dev} /var/lib/docker")
