@@ -102,7 +102,9 @@ function SettingsScreen() {
   const [resetSettingsModalIsOpen, setResetSettingsModalIsOpen] =
     React.useState(false);
 
-  const formAction = async (formData: FormData) => {
+  const formRef = React.useRef<HTMLFormElement>(null);
+
+  const onSubmit = async (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
     const languageValue = AvailableLanguages.find(
       ({ label }) => label === languageLabel,
@@ -192,21 +194,25 @@ function SettingsScreen() {
   return (
     <main
       data-testid="settings-screen"
-      className="bg-[#24272E] border border-[#454545] h-full rounded-xl"
+      className="bg-[#24272E] border border-[#454545] h-full rounded-xl flex flex-col"
     >
-      <form action={formAction} className="flex flex-col h-full">
-        <header className="px-3 py-1.5 border-b border-b-[#454545] flex items-center gap-2">
-          <SettingsIcon width={16} height={16} />
-          <h1 className="text-sm leading-6">Settings</h1>
-        </header>
+      <header className="px-3 py-1.5 border-b border-b-[#454545] flex items-center gap-2">
+        <SettingsIcon width={16} height={16} />
+        <h1 className="text-sm leading-6">Settings</h1>
+      </header>
 
+      <form
+        ref={formRef}
+        action={onSubmit}
+        className="flex flex-col grow overflow-auto"
+      >
         {isFetching && (
           <div className="flex grow p-4">
             <LoadingSpinner size="large" />
           </div>
         )}
         {!isFetching && settings && (
-          <div className="flex flex-col gap-12 grow overflow-y-auto px-11 py-9">
+          <div className="flex flex-col gap-12 px-11 py-9">
             <section className="flex flex-col gap-6">
               <div className="flex items-center gap-7">
                 <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
@@ -397,20 +403,26 @@ function SettingsScreen() {
             </section>
           </div>
         )}
-
-        <footer className="flex gap-6 p-6 justify-end border-t border-t-[#454545]">
-          <BrandButton
-            type="button"
-            variant="secondary"
-            onClick={() => setResetSettingsModalIsOpen(true)}
-          >
-            Reset to defaults
-          </BrandButton>
-          <BrandButton type="submit" variant="primary">
-            Save Changes
-          </BrandButton>
-        </footer>
       </form>
+
+      <footer className="flex gap-6 p-6 justify-end border-t border-t-[#454545]">
+        <BrandButton
+          type="button"
+          variant="secondary"
+          onClick={() => setResetSettingsModalIsOpen(true)}
+        >
+          Reset to defaults
+        </BrandButton>
+        <BrandButton
+          type="button"
+          variant="primary"
+          onClick={() => {
+            formRef.current?.requestSubmit();
+          }}
+        >
+          Save Changes
+        </BrandButton>
+      </footer>
 
       {resetSettingsModalIsOpen && (
         <ModalBackdrop>
