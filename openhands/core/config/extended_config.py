@@ -15,7 +15,7 @@ class ExtendedConfig(BaseModel):
 
     def __str__(self) -> str:
         # Build string representation using all model attributes from model_dump()
-        data = self.model_dump()
+        data = self.model_dump()  # type: ignore
         attr_str = [f'{k}={repr(v)}' for k, v in data.items()]
         return f"ExtendedConfig({', '.join(attr_str)})"
 
@@ -29,11 +29,11 @@ class ExtendedConfig(BaseModel):
 
     def __getitem__(self, key: str) -> object:
         # Allow dictionary-like access to attributes using model_dump()
-        return self.model_dump()[key]
+        return self.model_dump()[key]  # type: ignore
 
     def __getattr__(self, key: str) -> object:
         # Fallback for attribute access if the attribute is not found normally
-        data = self.model_dump()
+        data = self.model_dump()  # type: ignore
         try:
             return data[key]
         except KeyError as e:
