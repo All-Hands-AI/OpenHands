@@ -1,6 +1,8 @@
 import pytest
 
+from openhands.core.config.app_config import AppConfig
 from openhands.core.config.extended_config import ExtendedConfig
+from openhands.core.config.utils import load_from_toml
 
 
 def test_extended_config_from_dict():
@@ -58,3 +60,80 @@ def test_extended_config_invalid_key():
 
     with pytest.raises(AttributeError):
         _ = ext_cfg.nonexistent
+
+
+def test_app_config_extended_from_toml(tmp_path: os.PathLike) -> None:
+    """
+    Test that the [extended] section in a TOML file is correctly loaded into
+    AppConfig.extended and that it accepts arbitrary keys.
+    """
+    # Create a temporary TOML file with multiple sections including [extended]
+    config_content = """
+[llm]
+model = "test-model"
+api_key = "toml-api-key"
+
+[extended]
+custom1 = "custom_value"
+custom2 = 42
+llm = "overridden"  # even a key like 'llm' is accepted in extended
+
+[agent]
+memory_enabled = true
+"""
+    config_file = tmp_path / 'config.toml'
+    config_file.write_text(config_content)
+
+    # Load the TOML into the AppConfig instance
+    config = AppConfig()
+    load_from_toml(config, str(config_file))
+
+    # Verify that extended section is applied
+    assert config.extended.custom1 == 'custom_value'
+    assert config.extended.custom2 == 42
+    # Even though 'llm' is defined in extended, it should not affect the main llm config.
+    assert config.get_llm_config().model == 'test-model'
+
+
+def test_app_config_extended_default(tmp_path: os.PathLike) -> None:
+    """
+    Test that if there is no [extended] section in the TOML file,
+    AppConfig.extended remains its default (empty) ExtendedConfig.
+    """
+    config_content = """
+[llm]
+model = "test-model"
+api_key = "toml-api-key"
+
+[agent]
+memory_enabled = true
+"""
+    config_file = tmp_path / 'config.toml'
+    config_file.write_text(config_content)
+
+    config = AppConfig()
+    load_from_toml(config, str(config_file))
+
+    # Extended config should be the default instance with no extra keys.
+    assert config.extended.model_dump() == {}
+
+
+def test_app_config_extended_random_keys(tmp_path: os.PathLike) -> None:
+    """
+    Test that the extended section accepts arbitrary keys,
+    including ones not defined in any schema.
+    """
+    config_content = """
+[extended]
+random_key = "random_value"
+another_key = 3.14
+"""
+    config_file = tmp_path / 'config.toml'
+    config_file.write_text(config_content)
+
+    config = AppConfig()
+    load_from_toml(config, str(config_file))
+
+    # Verify that extended config holds the arbitrary keys with correct values.
+    assert config.extended.random_key == 'random_value'
+    assert config.extended.another_key == 3.14
