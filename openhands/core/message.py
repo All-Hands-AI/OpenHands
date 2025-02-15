@@ -3,6 +3,7 @@ from typing import Literal
 
 from litellm import ChatCompletionMessageToolCall
 from pydantic import BaseModel, Field, model_serializer
+from litellm.types.utils import Usage
 
 
 class ContentType(Enum):
@@ -64,6 +65,7 @@ class Message(BaseModel):
     name: str | None = None  # name of the tool
     # force string serializer
     force_string_serializer: bool = False
+    usage: Usage | None = None
 
     @property
     def contains_image(self) -> bool:

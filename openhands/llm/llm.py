@@ -558,6 +558,17 @@ class LLM(RetryMixin, DebugMixin):
         Returns:
             int: The number of tokens.
         """
+        total_tokens = 0
+        if isinstance(messages, list):
+            for message in messages:
+                if isinstance(message, Message) and message.usage and message.usage.total_tokens:
+                    total_tokens += message.usage.total_tokens
+                    continue # skip to next message if usage data is available
+
+        if total_tokens > 0:
+            return total_tokens
+
+
         # attempt to convert Message objects to dicts, litellm expects dicts
         if (
             isinstance(messages, list)

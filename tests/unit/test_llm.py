@@ -14,6 +14,7 @@ from openhands.core.exceptions import OperationCancelled
 from openhands.core.message import Message, TextContent
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
+from litellm.types.utils import Usage
 
 
 @pytest.fixture(autouse=True)
@@ -463,3 +464,18 @@ def test_get_token_count_error_handling(
     mock_logger.error.assert_called_once_with(
         'Error getting token count for\n model gpt-4o\nToken counting failed'
     )
+
+
+@patch('openhands.llm.llm.litellm.token_counter')
+def test_get_token_count_with_usage_data(mock_token_counter, default_config):
+    mock_token_counter.return_value = 100  # Should not be called in this test
+
+    llm = LLM(default_config)
+    usage_data = Usage(prompt_tokens=10, completion_tokens=40, total_tokens=50)
+    message_obj = Message(role='user', content=[TextContent(text='Hello!')], usage=usage_data)
+    messages = [message_obj]
+
+    token_count = llm.get_token_count(messages)
+
+    assert token_count == 50
+    mock_token_counter.assert_not_called() # token_counter should not be called

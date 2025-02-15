@@ -181,6 +181,7 @@ class CodeActAgent(Agent):
                 if assistant_msg.content is not None
                 else [],
                 tool_calls=assistant_msg.tool_calls,
+                usage=llm_response.usage,
             )
             return []
         elif isinstance(action, AgentFinishAction):
