@@ -1,89 +1,130 @@
 import React from "react";
-import { useLocation } from "react-router";
-import { useAuth } from "#/context/auth-context";
-import { useUserPrefs } from "#/context/user-prefs-context";
+import { FaListUl } from "react-icons/fa";
+import { useDispatch } from "react-redux";
+import posthog from "posthog-js";
+import toast from "react-hot-toast";
+import { NavLink } from "react-router";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
-import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
 import { DocsButton } from "#/components/shared/buttons/docs-button";
 import { ExitProjectButton } from "#/components/shared/buttons/exit-project-button";
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import { AccountSettingsModal } from "#/components/shared/modals/account-settings/account-settings-modal";
-import { ExitProjectConfirmationModal } from "#/components/shared/modals/exit-project-confirmation-modal";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
+import { useCurrentSettings } from "#/context/settings-context";
+import { useSettings } from "#/hooks/query/use-settings";
+import { ConversationPanel } from "../conversation-panel/conversation-panel";
+import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
+import { useEndSession } from "#/hooks/use-end-session";
+import { setCurrentAgentState } from "#/state/agent-slice";
+import { AgentState } from "#/types/agent-state";
+import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
+import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
+import { useLogout } from "#/hooks/mutation/use-logout";
+import { useConfig } from "#/hooks/query/use-config";
 
 export function Sidebar() {
-  const location = useLocation();
-
+  const dispatch = useDispatch();
+  const endSession = useEndSession();
   const user = useGitHubUser();
-  const { data: isAuthed } = useIsAuthed();
+  const { data: config } = useConfig();
+  const {
+    error: settingsError,
+    isError: settingsIsError,
+    isFetching: isFetchingSettings,
+  } = useSettings();
+  const { mutateAsync: logout } = useLogout();
+  const { settings, saveUserSettings } = useCurrentSettings();
 
-  const { token, logout } = useAuth();
-  const { settingsAreUpToDate } = useUserPrefs();
-
-  const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
-    React.useState(false);
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
-  const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
+
+  const [conversationPanelIsOpen, setConversationPanelIsOpen] =
     React.useState(false);
 
   React.useEffect(() => {
-    // If the github token is invalid, open the account settings modal again
-    if (user.isError) {
-      setAccountSettingsModalOpen(true);
+    // We don't show toast errors for settings in the global error handler
+    // because we have a special case for 404 errors
+    if (
+      !isFetchingSettings &&
+      settingsIsError &&
+      settingsError?.status !== 404
+    ) {
+      toast.error(
+        "Something went wrong while fetching settings. Please reload the page.",
+      );
+    } else if (settingsError?.status === 404) {
+      setSettingsModalIsOpen(true);
     }
-  }, [user.isError]);
+  }, [settingsError?.status, settingsError, isFetchingSettings]);
 
-  const handleAccountSettingsModalClose = () => {
-    // If the user closes the modal without connecting to GitHub,
-    // we need to log them out to clear the invalid token from the
-    // local storage
-    if (user.isError) logout();
-    setAccountSettingsModalOpen(false);
+  const handleEndSession = () => {
+    dispatch(setCurrentAgentState(AgentState.LOADING));
+    endSession();
   };
 
-  const handleClickLogo = () => {
-    if (location.pathname.startsWith("/app"))
-      setStartNewProjectModalIsOpen(true);
+  const handleLogout = async () => {
+    if (config?.APP_MODE === "saas") await logout();
+    else await saveUserSettings({ unset_github_token: true });
+    posthog.reset();
   };
-
-  const showSettingsModal =
-    isAuthed && (!settingsAreUpToDate || settingsModalIsOpen);
 
   return (
     <>
-      <aside className="px-1 flex flex-col gap-1">
-        <div className="w-[34px] h-[34px] flex items-center justify-center">
-          {user.isLoading && <LoadingSpinner size="small" />}
-          {!user.isLoading && <AllHandsLogoButton onClick={handleClickLogo} />}
-        </div>
+      <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
+        <nav className="flex flex-row md:flex-col items-center justify-between h-full">
+          <div className="flex flex-col items-center gap-[26px]">
+            <div className="flex items-center justify-center">
+              <AllHandsLogoButton onClick={handleEndSession} />
+            </div>
+            <ExitProjectButton onClick={handleEndSession} />
+            {MULTI_CONVERSATION_UI && (
+              <TooltipButton
+                testId="toggle-conversation-panel"
+                tooltip="Conversations"
+                ariaLabel="Conversations"
+                onClick={() => setConversationPanelIsOpen((prev) => !prev)}
+              >
+                <FaListUl size={22} />
+              </TooltipButton>
+            )}
+            <DocsButton />
+          </div>
 
-        <nav className="py-[18px] flex flex-col items-center gap-[18px]">
-          <UserActions
-            user={user.data ? { avatar_url: user.data.avatar_url } : undefined}
-            onLogout={logout}
-            onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
-          />
-          <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
-          <DocsButton />
-          {!!token && (
-            <ExitProjectButton
-              onClick={() => setStartNewProjectModalIsOpen(true)}
-            />
-          )}
+          <div className="flex flex-col items-center gap-[26px] mb-4">
+            <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                isActive ? "text-white" : "text-[#9099AC]"
+              }
+            >
+              <SettingsButton />
+            </NavLink>
+            {!user.isLoading && (
+              <UserActions
+                user={
+                  user.data ? { avatar_url: user.data.avatar_url } : undefined
+                }
+                onLogout={handleLogout}
+              />
+            )}
+            {user.isLoading && <LoadingSpinner size="small" />}
+          </div>
         </nav>
+
+        {conversationPanelIsOpen && (
+          <ConversationPanelWrapper isOpen={conversationPanelIsOpen}>
+            <ConversationPanel
+              onClose={() => setConversationPanelIsOpen(false)}
+            />
+          </ConversationPanelWrapper>
+        )}
       </aside>
-      {accountSettingsModalOpen && (
-        <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
-      )}
-      {showSettingsModal && (
-        <SettingsModal onClose={() => setSettingsModalIsOpen(false)} />
-      )}
-      {startNewProjectModalIsOpen && (
-        <ExitProjectConfirmationModal
-          onClose={() => setStartNewProjectModalIsOpen(false)}
+
+      {settingsModalIsOpen && (
+        <SettingsModal
+          settings={settings}
+          onClose={() => setSettingsModalIsOpen(false)}
         />
       )}
     </>

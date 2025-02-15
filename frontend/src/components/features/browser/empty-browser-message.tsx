@@ -8,7 +8,7 @@ export function EmptyBrowserMessage() {
   return (
     <div className="flex flex-col items-center h-full justify-center">
       <IoIosGlobe size={100} />
-      {t(I18nKey.BROWSER$EMPTY_MESSAGE)}
+      {t(I18nKey.BROWSER$NO_PAGE_LOADED)}
     </div>
   );
 }

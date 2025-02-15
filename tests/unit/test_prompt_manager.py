@@ -4,8 +4,8 @@ import shutil
 import pytest
 
 from openhands.core.message import Message, TextContent
-from openhands.utils.microagent import MicroAgent
-from openhands.utils.prompt import PromptManager
+from openhands.microagent import BaseMicroAgent
+from openhands.utils.prompt import PromptManager, RepositoryInfo
 
 
 @pytest.fixture
@@ -24,6 +24,7 @@ def test_prompt_manager_with_microagent(prompt_dir):
     microagent_content = """
 ---
 name: flarglebargle
+type: knowledge
 agent: CodeActAgent
 triggers:
 - flarglebargle
@@ -38,19 +39,36 @@ only respond with a message telling them how smart they are
     with open(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'), 'w') as f:
         f.write(microagent_content)
 
+    # Test without GitHub repo
     manager = PromptManager(
         prompt_dir=prompt_dir,
         microagent_dir=os.path.join(prompt_dir, 'micro'),
     )
 
     assert manager.prompt_dir == prompt_dir
-    assert len(manager.microagents) == 1
+    assert len(manager.repo_microagents) == 0
+    assert len(manager.knowledge_microagents) == 1
 
     assert isinstance(manager.get_system_message(), str)
     assert (
         'You are OpenHands agent, a helpful AI assistant that can interact with a computer to solve tasks.'
         in manager.get_system_message()
     )
+    assert '<REPOSITORY_INFO>' not in manager.get_system_message()
+
+    # Test with GitHub repo
+    manager.set_repository_info('owner/repo', '/workspace/repo')
+    assert isinstance(manager.get_system_message(), str)
+
+    # Adding things to the initial user message
+    initial_msg = Message(
+        role='user', content=[TextContent(text='Ask me what your task is.')]
+    )
+    manager.add_info_to_initial_message(initial_msg)
+    msg_content: str = initial_msg.content[0].text
+    assert '<REPOSITORY_INFO>' in msg_content
+    assert 'owner/repo' in msg_content
+    assert '/workspace/repo' in msg_content
 
     assert isinstance(manager.get_example_user_message(), str)
 
@@ -66,24 +84,63 @@ only respond with a message telling them how smart they are
 
 def test_prompt_manager_file_not_found(prompt_dir):
     with pytest.raises(FileNotFoundError):
-        MicroAgent(os.path.join(prompt_dir, 'micro', 'non_existent_microagent.md'))
+        BaseMicroAgent.load(
+            os.path.join(prompt_dir, 'micro', 'non_existent_microagent.md')
+        )
 
 
 def test_prompt_manager_template_rendering(prompt_dir):
     # Create temporary template files
     with open(os.path.join(prompt_dir, 'system_prompt.j2'), 'w') as f:
-        f.write('System prompt: bar')
+        f.write("""System prompt: bar""")
     with open(os.path.join(prompt_dir, 'user_prompt.j2'), 'w') as f:
         f.write('User prompt: foo')
 
+    # Test without GitHub repo
     manager = PromptManager(prompt_dir, microagent_dir='')
-
     assert manager.get_system_message() == 'System prompt: bar'
+    assert manager.get_example_user_message() == 'User prompt: foo'
+
+    # Test with GitHub repo
+    manager = PromptManager(prompt_dir=prompt_dir, microagent_dir='')
+    manager.set_repository_info('owner/repo', '/workspace/repo')
+    assert manager.repository_info.repo_name == 'owner/repo'
+    system_msg = manager.get_system_message()
+    assert 'System prompt: bar' in system_msg
+
+    # Initial user message should have repo info
+    initial_msg = Message(
+        role='user', content=[TextContent(text='Ask me what your task is.')]
+    )
+    manager.add_info_to_initial_message(initial_msg)
+    msg_content: str = initial_msg.content[0].text
+    assert '<REPOSITORY_INFO>' in msg_content
+    assert (
+        "At the user's request, repository owner/repo has been cloned to directory /workspace/repo."
+        in msg_content
+    )
+    assert '</REPOSITORY_INFO>' in msg_content
     assert manager.get_example_user_message() == 'User prompt: foo'
 
     # Clean up temporary files
     os.remove(os.path.join(prompt_dir, 'system_prompt.j2'))
     os.remove(os.path.join(prompt_dir, 'user_prompt.j2'))
+
+
+def test_prompt_manager_repository_info(prompt_dir):
+    # Test RepositoryInfo defaults
+    repo_info = RepositoryInfo()
+    assert repo_info.repo_name is None
+    assert repo_info.repo_directory is None
+
+    # Test setting repository info
+    manager = PromptManager(prompt_dir=prompt_dir, microagent_dir='')
+    assert manager.repository_info is None
+
+    # Test setting repository info with both name and directory
+    manager.set_repository_info('owner/repo2', '/workspace/repo2')
+    assert manager.repository_info.repo_name == 'owner/repo2'
+    assert manager.repository_info.repo_directory == '/workspace/repo2'
 
 
 def test_prompt_manager_disabled_microagents(prompt_dir):
@@ -93,6 +150,7 @@ def test_prompt_manager_disabled_microagents(prompt_dir):
     microagent1_content = """
 ---
 name: Test Microagent 1
+type: knowledge
 agent: CodeActAgent
 triggers:
 - test1
@@ -103,6 +161,7 @@ Test microagent 1 content
     microagent2_content = """
 ---
 name: Test Microagent 2
+type: knowledge
 agent: CodeActAgent
 triggers:
 - test2
@@ -125,9 +184,9 @@ Test microagent 2 content
         disabled_microagents=['Test Microagent 1'],
     )
 
-    assert len(manager.microagents) == 1
-    assert 'Test Microagent 2' in manager.microagents
-    assert 'Test Microagent 1' not in manager.microagents
+    assert len(manager.knowledge_microagents) == 1
+    assert 'Test Microagent 2' in manager.knowledge_microagents
+    assert 'Test Microagent 1' not in manager.knowledge_microagents
 
     # Test that all microagents are enabled by default
     manager = PromptManager(
@@ -135,9 +194,9 @@ Test microagent 2 content
         microagent_dir=os.path.join(prompt_dir, 'micro'),
     )
 
-    assert len(manager.microagents) == 2
-    assert 'Test Microagent 1' in manager.microagents
-    assert 'Test Microagent 2' in manager.microagents
+    assert len(manager.knowledge_microagents) == 2
+    assert 'Test Microagent 1' in manager.knowledge_microagents
+    assert 'Test Microagent 2' in manager.knowledge_microagents
 
     # Clean up temporary files
     os.remove(os.path.join(prompt_dir, 'micro', f'{microagent1_name}.md'))

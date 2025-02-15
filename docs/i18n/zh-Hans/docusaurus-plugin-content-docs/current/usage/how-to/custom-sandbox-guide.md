@@ -2,7 +2,7 @@
 
 沙箱是代理执行任务的地方。代理不是直接在你的计算机上运行命令（这可能有风险），而是在 Docker 容器内运行。
 
-默认的 OpenHands 沙箱（来自 [nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs) 的 `python-nodejs:python3.12-nodejs22`）预装了一些软件包，如 Python 和 Node.js，但可能需要默认安装其他软件。
+默认的 OpenHands 沙箱（`python-nodejs:python3.12-nodejs22`，来自 [nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)）预装了一些软件包，如 Python 和 Node.js，但可能需要默认安装其他软件。
 
 你有两个自定义选项：
 
@@ -38,7 +38,7 @@ docker build -t custom-image .
 
 ### 设置
 
-首先，按照 [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) 中的说明确保你可以运行 OpenHands。
+首先，按照 [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) 中的说明，确保你可以运行 OpenHands。
 
 ### 指定基础沙箱镜像
 
@@ -57,25 +57,3 @@ sandbox_base_container_image="custom-image"
 ## 技术解释
 
 请参阅[运行时文档的自定义 docker 镜像部分](https://docs.all-hands.dev/modules/usage/architecture/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images)以获取更多详细信息。
-
-## 故障排除/错误
-
-### 错误：```useradd: UID 1000 is not unique```
-
-如果你在控制台输出中看到此错误，是因为 OpenHands 试图在沙箱中创建 UID 为 1000 的 openhands 用户，但此 UID 已在镜像中使用（出于某种原因）。要解决此问题，请将 config.toml 文件中的 sandbox_user_id 字段更改为其他值：
-
-```toml
-[core]
-workspace_base="./workspace"
-run_as_openhands=true
-sandbox_base_container_image="custom_image"
-sandbox_user_id="1001"
-```
-
-### 端口使用错误
-
-如果你看到有关端口正在使用或不可用的错误，请尝试删除所有正在运行的 Docker 容器（运行 `docker ps` 和 `docker rm` 相关容器），然后重新运行 ```make run```。
-
-## 讨论
-
-对于其他问题或疑问，请加入 [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA) 或 [Discord](https://discord.gg/ESHStjSjD4) 并提问！

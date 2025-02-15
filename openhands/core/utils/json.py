@@ -6,26 +6,37 @@ from litellm.types.utils import ModelResponse
 
 from openhands.core.exceptions import LLMResponseError
 from openhands.events.event import Event
+from openhands.events.observation import CmdOutputMetadata
 from openhands.events.serialization import event_to_dict
 from openhands.llm.metrics import Metrics
 
 
-def my_default_encoder(obj):
+class OpenHandsJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder that handles datetime and event objects"""
-    if isinstance(obj, datetime):
-        return obj.isoformat()
-    if isinstance(obj, Event):
-        return event_to_dict(obj)
-    if isinstance(obj, Metrics):
-        return obj.get()
-    if isinstance(obj, ModelResponse):
-        return obj.model_dump()
-    return json.JSONEncoder().default(obj)
+
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        if isinstance(obj, Event):
+            return event_to_dict(obj)
+        if isinstance(obj, Metrics):
+            return obj.get()
+        if isinstance(obj, ModelResponse):
+            return obj.model_dump()
+        if isinstance(obj, CmdOutputMetadata):
+            return obj.model_dump()
+        return super().default(obj)
+
+
+# Create a single reusable encoder instance
+_json_encoder = OpenHandsJSONEncoder()
 
 
 def dumps(obj, **kwargs):
     """Serialize an object to str format"""
-    return json.dumps(obj, default=my_default_encoder, **kwargs)
+    if not kwargs:
+        return _json_encoder.encode(obj)
+    return json.dumps(obj, cls=OpenHandsJSONEncoder, **kwargs)
 
 
 def loads(json_str, **kwargs):

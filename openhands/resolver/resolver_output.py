@@ -2,12 +2,12 @@ from typing import Any
 
 from litellm import BaseModel
 
-from openhands.resolver.github_issue import GithubIssue
+from openhands.resolver.interfaces.issue import Issue
 
 
 class ResolverOutput(BaseModel):
     # NOTE: User-specified
-    issue: GithubIssue
+    issue: Issue
     issue_type: str
     instruction: str
     base_commit: str
@@ -16,5 +16,5 @@ class ResolverOutput(BaseModel):
     metrics: dict[str, Any] | None
     success: bool
     comment_success: list[bool] | None
-    success_explanation: str
+    result_explanation: str
     error: str | None

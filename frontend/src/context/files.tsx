@@ -24,10 +24,6 @@ interface FilesContextType {
   setFileContent: (path: string, content: string) => void;
   selectedPath: string | null;
   setSelectedPath: (path: string | null) => void;
-  modifiedFiles: Record<string, string>;
-  modifyFileContent: (path: string, content: string) => void;
-  saveFileContent: (path: string) => string | undefined;
-  discardChanges: (path: string) => void;
 }
 
 const FilesContext = React.createContext<FilesContextType | undefined>(
@@ -41,48 +37,11 @@ interface FilesProviderProps {
 function FilesProvider({ children }: FilesProviderProps) {
   const [paths, setPaths] = React.useState<string[]>([]);
   const [files, setFiles] = React.useState<Record<string, string>>({});
-  const [modifiedFiles, setModifiedFiles] = React.useState<
-    Record<string, string>
-  >({});
   const [selectedPath, setSelectedPath] = React.useState<string | null>(null);
 
   const setFileContent = React.useCallback((path: string, content: string) => {
     setFiles((prev) => ({ ...prev, [path]: content }));
   }, []);
-
-  const modifyFileContent = React.useCallback(
-    (path: string, content: string) => {
-      if (files[path] !== content) {
-        setModifiedFiles((prev) => ({ ...prev, [path]: content }));
-      } else {
-        const newModifiedFiles = { ...modifiedFiles };
-        delete newModifiedFiles[path];
-        setModifiedFiles(newModifiedFiles);
-      }
-    },
-    [files, modifiedFiles],
-  );
-
-  const discardChanges = React.useCallback((path: string) => {
-    setModifiedFiles((prev) => {
-      const newModifiedFiles = { ...prev };
-      delete newModifiedFiles[path];
-      return newModifiedFiles;
-    });
-  }, []);
-
-  const saveFileContent = React.useCallback(
-    (path: string): string | undefined => {
-      const content = modifiedFiles[path];
-      if (content) {
-        setFiles((prev) => ({ ...prev, [path]: content }));
-        discardChanges(path);
-      }
-
-      return content;
-    },
-    [files, modifiedFiles, selectedPath, discardChanges],
-  );
 
   const value = React.useMemo(
     () => ({
@@ -92,28 +51,11 @@ function FilesProvider({ children }: FilesProviderProps) {
       setFileContent,
       selectedPath,
       setSelectedPath,
-      modifiedFiles,
-      modifyFileContent,
-      saveFileContent,
-      discardChanges,
     }),
-    [
-      paths,
-      setPaths,
-      files,
-      setFileContent,
-      selectedPath,
-      setSelectedPath,
-      modifiedFiles,
-      modifyFileContent,
-      saveFileContent,
-      discardChanges,
-    ],
+    [paths, setPaths, files, setFileContent, selectedPath, setSelectedPath],
   );
 
-  return (
-    <FilesContext.Provider value={value}>{children}</FilesContext.Provider>
-  );
+  return <FilesContext value={value}>{children}</FilesContext>;
 }
 
 function useFiles() {

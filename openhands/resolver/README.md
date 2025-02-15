@@ -1,4 +1,4 @@
-# OpenHands Github Issue Resolver 🙌
+# OpenHands Github & Gitlab Issue Resolver 🙌
 
 Need help resolving a GitHub issue but don't have the time to do it yourself? Let an AI agent help you out!
 
@@ -32,16 +32,17 @@ Follow these steps to use this workflow in your own repository:
 
 5. Set up [GitHub secrets](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions):
    - Required:
+    - `LLM_API_KEY`: Your LLM API key
+   - Optional:
      - `PAT_USERNAME`: GitHub username for the personal access token
      - `PAT_TOKEN`: The personal access token
-     - `LLM_MODEL`: LLM model to use (e.g., "anthropic/claude-3-5-sonnet-20241022")
-     - `LLM_API_KEY`: Your LLM API key
-   - Optional:
      - `LLM_BASE_URL`: Base URL for LLM API (only if using a proxy)
 
    Note: You can set these secrets at the organization level to use across multiple repositories.
 
-6. Usage:
+6. Set up any [custom configurations required](https://docs.all-hands.dev/modules/usage/how-to/github-action#custom-configurations)
+
+7. Usage:
    There are two ways to trigger the OpenHands agent:
 
    a. Using the 'fix-me' label:
@@ -61,7 +62,7 @@ Follow these steps to use this workflow in your own repository:
         2. Create a draft PR if successful, or push a branch if unsuccessful
         3. Comment on the issue with the results
 
-Need help? Feel free to [open an issue](https://github.com/all-hands-ai/openhands-resolver/issues) or email us at [contact@all-hands.dev](mailto:contact@all-hands.dev).
+Need help? Feel free to [open an issue](https://github.com/all-hands-ai/openhands/issues) or email us at [contact@all-hands.dev](mailto:contact@all-hands.dev).
 
 ## Manual Installation
 
@@ -73,14 +74,24 @@ If you prefer to run the resolver programmatically instead of using GitHub Actio
 pip install openhands-ai
 ```
 
-2. Create a GitHub access token:
-   - Visit [GitHub's token settings](https://github.com/settings/personal-access-tokens/new)
-   - Create a fine-grained token with these scopes:
-     - "Content"
-     - "Pull requests"
-     - "Issues"
-     - "Workflows"
-   - If you don't have push access to the target repo, you can fork it first
+2. Create a GitHub or GitLab access token:
+   - Create a GitHub acces token
+      - Visit [GitHub's token settings](https://github.com/settings/personal-access-tokens/new)
+      - Create a fine-grained token with these scopes:
+      - "Content"
+      - "Pull requests"
+      - "Issues"
+      - "Workflows"
+      - If you don't have push access to the target repo, you can fork it first
+
+   - Create a GitLab acces token
+      - Visit [GitLab's token settings](https://gitlab.com/-/user_settings/personal_access_tokens)
+      - Create a fine-grained token with these scopes:
+      - 'api'
+      - 'read_api'
+      - 'read_user'
+      - 'read_repository'
+      - 'write_repository'
 
 3. Set up environment variables:
 
@@ -89,7 +100,12 @@ pip install openhands-ai
 # GitHub credentials
 
 export GITHUB_TOKEN="your-github-token"
-export GITHUB_USERNAME="your-github-username"  # Optional, defaults to token owner
+export GIT_USERNAME="your-github-username"  # Optional, defaults to token owner
+
+# GitLab credentials if you're using GitLab repo
+
+export GITLAB_TOKEN="your-gitlab-token"
+export GIT_USERNAME="your-gitlab-username"  # Optional, defaults to token owner
 
 # LLM configuration
 
@@ -111,7 +127,7 @@ python -m openhands.resolver.resolve_issue --repo [OWNER]/[REPO] --issue-number 
 For instance, if you want to resolve issue #100 in this repo, you would run:
 
 ```bash
-python -m openhands.resolver.resolve_issue --repo all-hands-ai/openhands-resolver --issue-number 100
+python -m openhands.resolver.resolve_issue --repo all-hands-ai/openhands --issue-number 100
 ```
 
 The output will be written to the `output/` directory.
@@ -119,7 +135,7 @@ The output will be written to the `output/` directory.
 If you've installed the package from source using poetry, you can use:
 
 ```bash
-poetry run python openhands/resolver/resolve_issue.py --repo all-hands-ai/openhands-resolver --issue-number 100
+poetry run python openhands/resolver/resolve_issue.py --repo all-hands-ai/openhands --issue-number 100
 ```
 
 For resolving multiple issues at once (e.g., in a batch process), you can use the `resolve_all_issues` command:
@@ -131,7 +147,7 @@ python -m openhands.resolver.resolve_all_issues --repo [OWNER]/[REPO] --issue-nu
 For example:
 
 ```bash
-python -m openhands.resolver.resolve_all_issues --repo all-hands-ai/openhands-resolver --issue-numbers 100,101,102
+python -m openhands.resolver.resolve_all_issues --repo all-hands-ai/openhands --issue-numbers 100,101,102
 ```
 
 ## Responding to PR Comments
@@ -168,13 +184,13 @@ There are three ways you can upload:
 3. `ready` - create a non-draft PR that's ready for review
 
 ```bash
-python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --github-username YOUR_GITHUB_USERNAME --pr-type draft
+python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GITHUB_OR_GITLAB_USERNAME --pr-type draft
 ```
 
 If you want to upload to a fork, you can do so by specifying the `fork-owner`:
 
 ```bash
-python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --github-username YOUR_GITHUB_USERNAME --pr-type draft --fork-owner YOUR_GITHUB_USERNAME
+python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GITHUB_OR_GITLAB_USERNAME --pr-type draft --fork-owner YOUR_GITHUB_OR_GITLAB_USERNAME
 ```
 
 ## Providing Custom Instructions
@@ -183,5 +199,5 @@ You can customize how the AI agent approaches issue resolution by adding a `.ope
 
 ## Troubleshooting
 
-If you have any issues, please open an issue on this github repo, we're happy to help!
-Alternatively, you can [email us](mailto:contact@all-hands.dev) or join the [OpenHands Slack workspace](https://join.slack.com/t/openhands-ai/shared_invite/zt-2vbfigwev-G03twSpXaErwzYVD4CFiBg) and ask there.
+If you have any issues, please open an issue on this github or gitlab repo, we're happy to help!
+Alternatively, you can [email us](mailto:contact@all-hands.dev) or join the OpenHands Slack workspace (see [the README](/README.md) for an invite link).

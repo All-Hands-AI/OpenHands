@@ -42,6 +42,7 @@ Reminder:
 - Only call one function at a time
 - You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after.
 - If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls
+</IMPORTANT>
 """
 
 STOP_WORDS = ['</function']
@@ -200,7 +201,6 @@ ASSISTANT:
 Running the updated file:
 <function=execute_bash>
 <parameter=command>
-<parameter=command>
 python3 app.py > server.log 2>&1 &
 </parameter>
 </function>
@@ -224,7 +224,7 @@ IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX = """
 --------------------- END OF NEW TASK DESCRIPTION ---------------------
 
 PLEASE follow the format strictly! PLEASE EMIT ONE AND ONLY ONE FUNCTION CALL PER MESSAGE.
-""".lstrip()
+"""
 
 # Regex patterns for function call parsing
 FN_REGEX_PATTERN = r'<function=([^>]+)>\n(.*?)</function>'
@@ -321,7 +321,7 @@ def convert_fncall_messages_to_non_fncall_messages(
     first_user_message_encountered = False
     for message in messages:
         role = message['role']
-        content = message.get('content', '')
+        content = message['content']
 
         # 1. SYSTEM MESSAGES
         # append system prompt suffix to content

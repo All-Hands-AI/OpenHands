@@ -1,5 +1,5 @@
 import { I18nKey } from "#/i18n/declaration";
-import AgentState from "#/types/agent-state";
+import { AgentState } from "#/types/agent-state";
 
 enum IndicatorColor {
   BLUE = "bg-blue-500",
@@ -23,7 +23,7 @@ export const AGENT_STATUS_MAP: {
   },
   [AgentState.AWAITING_USER_INPUT]: {
     message: I18nKey.CHAT_INTERFACE$AGENT_AWAITING_USER_INPUT_MESSAGE,
-    indicator: IndicatorColor.ORANGE,
+    indicator: IndicatorColor.BLUE,
   },
   [AgentState.PAUSED]: {
     message: I18nKey.CHAT_INTERFACE$AGENT_PAUSED_MESSAGE,
@@ -60,5 +60,9 @@ export const AGENT_STATUS_MAP: {
   [AgentState.USER_REJECTED]: {
     message: I18nKey.CHAT_INTERFACE$AGENT_ACTION_USER_REJECTED_MESSAGE,
     indicator: IndicatorColor.RED,
+  },
+  [AgentState.RATE_LIMITED]: {
+    message: I18nKey.CHAT_INTERFACE$AGENT_RATE_LIMITED_MESSAGE,
+    indicator: IndicatorColor.YELLOW,
   },
 };

@@ -11,16 +11,12 @@ import { hydrateRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import posthog from "posthog-js";
 import "./i18n";
-import {
-  QueryCache,
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
-import { UserPrefsProvider } from "./context/user-prefs-context";
+import { queryClientConfig } from "./query-client-config";
+import { SettingsProvider } from "./context/settings-context";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -50,20 +46,7 @@ async function prepareApp() {
   }
 }
 
-const queryClient = new QueryClient({
-  queryCache: new QueryCache({
-    onError: (error, query) => {
-      if (!query.queryKey.includes("authenticated")) toast.error(error.message);
-    },
-  }),
-  defaultOptions: {
-    mutations: {
-      onError: (error) => {
-        toast.error(error.message);
-      },
-    },
-  },
-});
+const queryClient = new QueryClient(queryClientConfig);
 
 prepareApp().then(() =>
   startTransition(() => {
@@ -71,14 +54,14 @@ prepareApp().then(() =>
       document,
       <StrictMode>
         <Provider store={store}>
-          <UserPrefsProvider>
-            <AuthProvider>
-              <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <QueryClientProvider client={queryClient}>
+              <SettingsProvider>
                 <HydratedRouter />
                 <PosthogInit />
-              </QueryClientProvider>
-            </AuthProvider>
-          </UserPrefsProvider>
+              </SettingsProvider>
+            </QueryClientProvider>
+          </AuthProvider>
         </Provider>
       </StrictMode>,
     );

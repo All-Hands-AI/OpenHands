@@ -11,7 +11,7 @@ interface TokenConfigError {
 
 type TokenConfig = TokenConfigSuccess | TokenConfigError;
 
-interface InitConfig {
+export interface InitConfig {
   action: "initialize";
   args: {
     AGENT: string;
@@ -20,6 +20,9 @@ interface InitConfig {
     LLM_API_KEY: string;
     LLM_MODEL: string;
   };
+  token?: string;
+  github_token?: string;
+  latest_event_id?: unknown; // Not sure what this is
 }
 
 // Bare minimum event type sent from the client

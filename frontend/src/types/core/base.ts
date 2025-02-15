@@ -4,13 +4,12 @@ export type OpenHandsEventType =
   | "run"
   | "read"
   | "write"
+  | "edit"
   | "run_ipython"
   | "delegate"
   | "browse"
   | "browse_interactive"
   | "reject"
-  | "add_task"
-  | "modify_task"
   | "finish"
   | "error";
 

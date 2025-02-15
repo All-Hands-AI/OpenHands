@@ -42,7 +42,7 @@ temperature = 0.0
 
 ## Supported Benchmarks
 
-The OpenHands evaluation harness supports a wide variety of benchmarks across [software engineering](#software-engineering), [web browsing](#web-browsing), and [miscellaneous assistance](#misc-assistance) tasks.
+The OpenHands evaluation harness supports a wide variety of benchmarks across [software engineering](#software-engineering), [web browsing](#web-browsing), [miscellaneous assistance](#misc-assistance), and [real-world](#real-world) tasks.
 
 ### Software Engineering
 
@@ -72,6 +72,10 @@ The OpenHands evaluation harness supports a wide variety of benchmarks across [s
 - Entity deduction Arena (EDA): [`evaluation/benchmarks/EDA`](./benchmarks/EDA)
 - ProofWriter: [`evaluation/benchmarks/logic_reasoning`](./benchmarks/logic_reasoning)
 - ScienceAgentBench: [`evaluation/benchmarks/scienceagentbench`](./benchmarks/scienceagentbench)
+
+### Real World
+
+- TheAgentCompany: [`evaluation/benchmarks/the_agent_company`](./benchmarks/the_agent_company)
 
 ## Result Visualization
 

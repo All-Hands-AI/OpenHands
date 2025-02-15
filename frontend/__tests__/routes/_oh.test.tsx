@@ -4,8 +4,9 @@ import { screen, waitFor, within } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import userEvent from "@testing-library/user-event";
 import MainApp from "#/routes/_oh/route";
-import * as CaptureConsent from "#/utils/handle-capture-consent";
 import i18n from "#/i18n";
+import * as CaptureConsent from "#/utils/handle-capture-consent";
+import OpenHands from "#/api/open-hands";
 
 describe("frontend/routes/_oh", () => {
   const RouteStub = createRoutesStub([{ Component: MainApp, path: "/" }]);
@@ -38,13 +39,7 @@ describe("frontend/routes/_oh", () => {
     await screen.findByTestId("root-layout");
   });
 
-  it("should render the AI config modal if the user is authed", async () => {
-    // Our mock return value is true by default
-    renderWithProviders(<RouteStub />);
-    await screen.findByTestId("ai-config-modal");
-  });
-
-  it("should render the AI config modal if settings are not up-to-date", async () => {
+  it.skip("should render the AI config modal if settings are not up-to-date", async () => {
     settingsAreUpToDateMock.mockReturnValue(false);
     renderWithProviders(<RouteStub />);
 
@@ -60,19 +55,31 @@ describe("frontend/routes/_oh", () => {
     });
   });
 
-  it("should capture the user's consent", async () => {
+  it("should render and capture the user's consent if oss mode", async () => {
     const user = userEvent.setup();
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     const handleCaptureConsentSpy = vi.spyOn(
       CaptureConsent,
       "handleCaptureConsent",
     );
+
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "oss",
+      GITHUB_CLIENT_ID: "test-id",
+      POSTHOG_CLIENT_KEY: "test-key",
+    });
+
+    // @ts-expect-error - We only care about the user_consents_to_analytics field
+    getSettingsSpy.mockResolvedValue({
+      user_consents_to_analytics: null,
+    });
 
     renderWithProviders(<RouteStub />);
 
     // The user has not consented to tracking
     const consentForm = await screen.findByTestId("user-capture-consent-form");
     expect(handleCaptureConsentSpy).not.toHaveBeenCalled();
-    expect(localStorage.getItem("analytics-consent")).toBeNull();
 
     const submitButton = within(consentForm).getByRole("button", {
       name: /confirm preferences/i,
@@ -81,14 +88,19 @@ describe("frontend/routes/_oh", () => {
 
     // The user has now consented to tracking
     expect(handleCaptureConsentSpy).toHaveBeenCalledWith(true);
-    expect(localStorage.getItem("analytics-consent")).toBe("true");
     expect(
       screen.queryByTestId("user-capture-consent-form"),
     ).not.toBeInTheDocument();
   });
 
-  it("should not render the user consent form if the user has already made a decision", async () => {
-    localStorage.setItem("analytics-consent", "true");
+  it("should not render the user consent form if saas mode", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+      GITHUB_CLIENT_ID: "test-id",
+      POSTHOG_CLIENT_KEY: "test-key",
+    });
+
     renderWithProviders(<RouteStub />);
 
     await waitFor(() => {

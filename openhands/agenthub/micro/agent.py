@@ -50,6 +50,10 @@ class MicroAgent(Agent):
         # history is in reverse order, let's fix it
         processed_history.reverse()
 
+        # everything starts with a message
+        # the first message is already in the prompt as the task
+        # TODO: so we don't need to include it in the history
+
         return json.dumps(processed_history, **kwargs)
 
     def __init__(self, llm: LLM, config: AgentConfig):

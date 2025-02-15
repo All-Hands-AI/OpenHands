@@ -11,7 +11,7 @@ import gymnasium as gym
 import html2text
 import numpy as np
 import tenacity
-from browsergym.utils.obs import flatten_dom_to_str
+from browsergym.utils.obs import flatten_dom_to_str, overlay_som
 from PIL import Image
 
 from openhands.core.exceptions import BrowserInitException
@@ -65,15 +65,22 @@ class BrowserEnv:
             logger.error(f'Failed to start browser process: {e}')
             raise
 
-        if not self.check_alive():
+        if not self.check_alive(timeout=200):
             self.close()
             raise BrowserInitException('Failed to start browser environment.')
 
     def browser_process(self):
         if self.eval_mode:
             assert self.browsergym_eval_env is not None
-            logger.debug('Initializing browser env for web browsing evaluation.')
-            if 'webarena' in self.browsergym_eval_env:
+            logger.info('Initializing browser env for web browsing evaluation.')
+            if not self.browsergym_eval_env.startswith('browsergym/'):
+                self.browsergym_eval_env = 'browsergym/' + self.browsergym_eval_env
+            if 'visualwebarena' in self.browsergym_eval_env:
+                import browsergym.visualwebarena  # noqa F401 register visualwebarena tasks as gym environments
+                import nltk
+
+                nltk.download('punkt_tab')
+            elif 'webarena' in self.browsergym_eval_env:
                 import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
             elif 'miniwob' in self.browsergym_eval_env:
                 import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environments
@@ -81,10 +88,7 @@ class BrowserEnv:
                 raise ValueError(
                     f'Unsupported browsergym eval env: {self.browsergym_eval_env}'
                 )
-            env = gym.make(
-                self.browsergym_eval_env,
-                tags_to_mark='all',
-            )
+            env = gym.make(self.browsergym_eval_env, tags_to_mark='all', timeout=100000)
         else:
             env = gym.make(
                 'browsergym/openended',
@@ -94,17 +98,27 @@ class BrowserEnv:
                 disable_env_checker=True,
                 tags_to_mark='all',
             )
-
         obs, info = env.reset()
 
+        logger.info('Successfully called env.reset')
         # EVAL ONLY: save the goal into file for evaluation
         self.eval_goal = None
+        self.goal_image_urls = []
         self.eval_rewards: list[float] = []
         if self.eval_mode:
-            logger.debug(f"Browsing goal: {obs['goal']}")
             self.eval_goal = obs['goal']
+            if 'goal_object' in obs:
+                if len(obs['goal_object']) > 0:
+                    self.eval_goal = obs['goal_object'][0]['text']
+                for message in obs['goal_object']:
+                    if message['type'] == 'image_url':
+                        image_src = message['image_url']
+                        if isinstance(image_src, dict):
+                            image_src = image_src['url']
+                        self.goal_image_urls.append(image_src)
+            logger.debug(f'Browsing goal: {self.eval_goal}')
+        logger.info('Browser env started.')
 
-        logger.debug('Browser env started.')
         while should_continue():
             try:
                 if self.browser_side.poll(timeout=0.01):
@@ -122,7 +136,13 @@ class BrowserEnv:
                     # EVAL ONLY: Get evaluation info
                     if action_data['action'] == BROWSER_EVAL_GET_GOAL_ACTION:
                         self.browser_side.send(
-                            (unique_request_id, {'text_content': self.eval_goal})
+                            (
+                                unique_request_id,
+                                {
+                                    'text_content': self.eval_goal,
+                                    'image_content': self.goal_image_urls,
+                                },
+                            )
                         )
                         continue
                     elif action_data['action'] == BROWSER_EVAL_GET_REWARDS_ACTION:
@@ -145,7 +165,15 @@ class BrowserEnv:
                     html_str = flatten_dom_to_str(obs['dom_object'])
                     obs['text_content'] = self.html_text_converter.handle(html_str)
                     # make observation serializable
-                    obs['screenshot'] = self.image_to_png_base64_url(obs['screenshot'])
+                    obs['set_of_marks'] = self.image_to_png_base64_url(
+                        overlay_som(
+                            obs['screenshot'], obs.get('extra_element_properties', {})
+                        ),
+                        add_data_prefix=True,
+                    )
+                    obs['screenshot'] = self.image_to_png_base64_url(
+                        obs['screenshot'], add_data_prefix=True
+                    )
                     obs['active_page_index'] = obs['active_page_index'].item()
                     obs['elapsed_time'] = obs['elapsed_time'].item()
                     self.browser_side.send((unique_request_id, obs))
@@ -157,7 +185,7 @@ class BrowserEnv:
                     pass
                 return
 
-    def step(self, action_str: str, timeout: float = 30) -> dict:
+    def step(self, action_str: str, timeout: float = 100) -> dict:
         """Execute an action in the browser environment and return the observation."""
         unique_request_id = str(uuid.uuid4())
         self.agent_side.send((unique_request_id, {'action': action_str}))
@@ -195,8 +223,8 @@ class BrowserEnv:
                     self.process.join(5)  # Wait for the process to terminate
             self.agent_side.close()
             self.browser_side.close()
-        except Exception:
-            logger.error('Encountered an error when closing browser env', exc_info=True)
+        except Exception as e:
+            logger.error(f'Encountered an error when closing browser env: {e}')
 
     @staticmethod
     def image_to_png_base64_url(

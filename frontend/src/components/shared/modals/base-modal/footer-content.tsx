@@ -1,4 +1,4 @@
-import { Button } from "@nextui-org/react";
+import { Button } from "@heroui/react";
 import React from "react";
 
 export interface Action {
@@ -23,7 +23,7 @@ export function FooterContent({ actions, closeModal }: FooterContentProps) {
             key={label}
             type="button"
             isDisabled={isDisabled}
-            onClick={() => {
+            onPress={() => {
               action();
               if (closeAfterAction) closeModal();
             }}

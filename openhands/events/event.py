@@ -12,8 +12,20 @@ class EventSource(str, Enum):
     ENVIRONMENT = 'environment'
 
 
+class FileEditSource(str, Enum):
+    LLM_BASED_EDIT = 'llm_based_edit'
+    OH_ACI = 'oh_aci'  # openhands-aci
+
+
+class FileReadSource(str, Enum):
+    OH_ACI = 'oh_aci'  # openhands-aci
+    DEFAULT = 'default'
+
+
 @dataclass
 class Event:
+    INVALID_ID = -1
+
     @property
     def message(self) -> str | None:
         if hasattr(self, '_message'):
@@ -24,7 +36,7 @@ class Event:
     def id(self) -> int:
         if hasattr(self, '_id'):
             return self._id  # type: ignore[attr-defined]
-        return -1
+        return Event.INVALID_ID
 
     @property
     def timestamp(self):
@@ -54,14 +66,25 @@ class Event:
             return self._timeout  # type: ignore[attr-defined]
         return None
 
-    @timeout.setter
-    def timeout(self, value: int | None) -> None:
+    def set_hard_timeout(self, value: int | None, blocking: bool = True) -> None:
+        """Set the timeout for the event.
+
+        NOTE, this is a hard timeout, meaning that the event will be blocked
+        until the timeout is reached.
+        """
         self._timeout = value
+        if value is not None and value > 600:
+            from openhands.core.logger import openhands_logger as logger
+
+            logger.warning(
+                'Timeout greater than 600 seconds may not be supported by '
+                'the runtime. Consider setting a lower timeout.'
+            )
 
         # Check if .blocking is an attribute of the event
         if hasattr(self, 'blocking'):
             # .blocking needs to be set to True if .timeout is set
-            self.blocking = True
+            self.blocking = blocking
 
     # optional metadata, LLM call cost of the edit
     @property

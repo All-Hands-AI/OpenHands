@@ -10,16 +10,17 @@ interface JupyterEditorProps {
 }
 
 export function JupyterEditor({ maxWidth }: JupyterEditorProps) {
-  const { cells } = useSelector((state: RootState) => state.jupyter);
+  const cells = useSelector((state: RootState) => state.jupyter?.cells ?? []);
   const jupyterRef = React.useRef<HTMLDivElement>(null);
 
   const { hitBottom, scrollDomToBottom, onChatBodyScroll } =
     useScrollToBottom(jupyterRef);
 
   return (
-    <div className="flex-1" style={{ maxWidth }}>
+    <div className="flex-1 h-full flex flex-col" style={{ maxWidth }}>
       <div
-        className="overflow-y-auto h-full"
+        data-testid="jupyter-container"
+        className="flex-1 overflow-y-auto"
         ref={jupyterRef}
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}
       >

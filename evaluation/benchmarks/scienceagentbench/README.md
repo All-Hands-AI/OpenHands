@@ -1,10 +1,10 @@
 # ScienceAgentBench Evaluation with OpenHands
 
-This folder contains the evaluation harness for [ScienceAgentBench](https://osu-nlp-group.github.io/ScienceAgentBench/) (paper: https://arxiv.org/abs/2410.05080).
+This folder contains the evaluation harness for [ScienceAgentBench](https://osu-nlp-group.github.io/ScienceAgentBench/) (paper: <https://arxiv.org/abs/2410.05080>).
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Setup ScienceAgentBench
 
@@ -45,6 +45,7 @@ After the inference is completed, you may use the following command to extract n
 ```bash
 python post_proc.py [log_fname]
 ```
+
 - `log_fname`, e.g. `evaluation/.../output.jsonl`, is the automatically saved trajectory log of an OpenHands agent.
 
 Output will be write to e.g. `evaluation/.../output.converted.jsonl`

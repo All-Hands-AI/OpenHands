@@ -25,6 +25,7 @@ from openhands.core.config import (
     get_llm_config_arg,
     get_parser,
 )
+from openhands.core.config.utils import get_agent_config_arg
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
@@ -50,18 +51,25 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
+        runtime='docker',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             base_container_image='python:3.12-bookworm',
             enable_auto_lint=True,
             use_host_network=False,
+            remote_runtime_enable_retries=True,
         ),
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
+    if metadata.agent_config:
+        config.set_agent_config(metadata.agent_config, metadata.agent_class)
+    else:
+        logger.info('Agent config not provided, using default settings')
+        agent_config = config.get_agent_config(metadata.agent_class)
+        agent_config.enable_prompt_extensions = False
     return config
 
 
@@ -235,9 +243,16 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
+    agent_config = None
+    if args.agent_config:
+        agent_config = get_agent_config_arg(args.agent_config)
+
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
+        # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
+        llm_config.modify_params = False
+
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
@@ -250,6 +265,7 @@ if __name__ == '__main__':
         eval_output_dir=args.eval_output_dir,
         data_split=args.data_split,
         details={'gaia-level': args.level},
+        agent_config=agent_config,
     )
 
     dataset = load_dataset('gaia-benchmark/GAIA', args.level)

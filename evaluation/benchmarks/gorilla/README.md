@@ -4,7 +4,7 @@ This folder contains evaluation harness we built on top of the original [Gorilla
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Run Inference on APIBench Instances
 

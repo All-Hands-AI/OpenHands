@@ -4,7 +4,7 @@ This folder contains evaluation for [WebArena](https://github.com/web-arena-x/we
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Setup WebArena Environment
 

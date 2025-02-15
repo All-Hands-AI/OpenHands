@@ -81,10 +81,10 @@ check-nodejs:
 	@if command -v node > /dev/null; then \
 		NODE_VERSION=$(shell node --version | sed -E 's/v//g'); \
 		IFS='.' read -r -a NODE_VERSION_ARRAY <<< "$$NODE_VERSION"; \
-		if [ "$${NODE_VERSION_ARRAY[0]}" -gt 18 ] || ([ "$${NODE_VERSION_ARRAY[0]}" -eq 18 ] && [ "$${NODE_VERSION_ARRAY[1]}" -gt 17 ]) || ([ "$${NODE_VERSION_ARRAY[0]}" -eq 18 ] && [ "$${NODE_VERSION_ARRAY[1]}" -eq 17 ] && [ "$${NODE_VERSION_ARRAY[2]}" -ge 1 ]); then \
+		if [ "$${NODE_VERSION_ARRAY[0]}" -ge 20 ]; then \
 			echo "$(BLUE)Node.js $$NODE_VERSION is already installed.$(RESET)"; \
 		else \
-			echo "$(RED)Node.js 18.17.1 or later is required. Please install Node.js 18.17.1 or later to continue.$(RESET)"; \
+			echo "$(RED)Node.js 20.x or later is required. Please install Node.js 20.x or later to continue.$(RESET)"; \
 			exit 1; \
 		fi; \
 	else \
@@ -106,7 +106,7 @@ check-poetry:
 	@if command -v poetry > /dev/null; then \
 		POETRY_VERSION=$(shell poetry --version 2>&1 | sed -E 's/Poetry \(version ([0-9]+\.[0-9]+\.[0-9]+)\)/\1/'); \
 		IFS='.' read -r -a POETRY_VERSION_ARRAY <<< "$$POETRY_VERSION"; \
-		if [ $${POETRY_VERSION_ARRAY[0]} -ge 1 ] && [ $${POETRY_VERSION_ARRAY[1]} -ge 8 ]; then \
+		if [ $${POETRY_VERSION_ARRAY[0]} -gt 1 ] || ([ $${POETRY_VERSION_ARRAY[0]} -eq 1 ] && [ $${POETRY_VERSION_ARRAY[1]} -ge 8 ]); then \
 			echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
 		else \
 			echo "$(RED)Poetry 1.8 or later is required. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
@@ -190,7 +190,7 @@ build-frontend:
 # Start backend
 start-backend:
 	@echo "$(YELLOW)Starting backend...$(RESET)"
-	@poetry run uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) --reload --reload-exclude "$(shell pwd)/workspace"
+	@poetry run uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) --reload --reload-exclude "./workspace"
 
 # Start frontend
 start-frontend:
