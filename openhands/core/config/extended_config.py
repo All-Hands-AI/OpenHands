@@ -14,11 +14,9 @@ class ExtendedConfig(BaseModel):
         extra = 'allow'  # allow arbitrary extra fields
 
     def __str__(self) -> str:
-        # Build string representation using all model attributes
-        attr_str = []
-        # __dict__ contains both declared and extra attributes
-        for attr_name, attr_value in self.__dict__.items():
-            attr_str.append(f'{attr_name}={repr(attr_value)}')
+        # Build string representation using all model attributes from model_dump()
+        data = self.model_dump()
+        attr_str = [f'{k}={repr(v)}' for k, v in data.items()]
         return f"ExtendedConfig({', '.join(attr_str)})"
 
     @classmethod
@@ -30,13 +28,14 @@ class ExtendedConfig(BaseModel):
         return self.__str__()
 
     def __getitem__(self, key: str) -> object:
-        # Allow dictionary-like access to attributes
-        return self.__dict__[key]
+        # Allow dictionary-like access to attributes using model_dump()
+        return self.model_dump()[key]
 
     def __getattr__(self, key: str) -> object:
         # Fallback for attribute access if the attribute is not found normally
+        data = self.model_dump()
         try:
-            return self.__dict__[key]
+            return data[key]
         except KeyError as e:
             raise AttributeError(
                 f"'ExtendedConfig' object has no attribute '{key}'"
