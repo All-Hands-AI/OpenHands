@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 import threading
 from abc import abstractmethod
@@ -143,12 +144,10 @@ class ActionExecutionClient(Runtime):
                 stream=True,
                 timeout=30,
             ) as response:
-                with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-                    total_length = 0
-                    for chunk in response.iter_content(chunk_size=8192):
-                        if chunk:  # filter out keep-alive new chunks
-                            total_length += len(chunk)
-                            temp_file.write(chunk)
+                with tempfile.NamedTemporaryFile(
+                    suffix='.zip', delete=False
+                ) as temp_file:
+                    shutil.copyfileobj(response.raw, temp_file, length=16 * 1024)
                     return Path(temp_file.name)
         except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
