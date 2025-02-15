@@ -337,6 +337,7 @@ def test_get_tools_default():
         codeact_enable_jupyter=True,
         codeact_enable_llm_editor=True,
         codeact_enable_browsing=True,
+        code_act_enable_secrets=True,
     )
     assert len(tools) > 0
 
@@ -346,6 +347,7 @@ def test_get_tools_default():
     assert 'execute_ipython_cell' in tool_names
     assert 'edit_file' in tool_names
     assert 'web_read' in tool_names
+    assert 'search_secrets' in tool_names
 
 
 def test_get_tools_with_options():
