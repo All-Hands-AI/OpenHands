@@ -15,13 +15,13 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
 # Install base system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        wget curl sudo apt-utils git jq \
-        {% if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) %}
+        wget curl sudo apt-utils git jq tmux \
+        {%- if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) -%}
         libgl1 \
-        {% else %}
+        {%- else %}
         libgl1-mesa-glx \
-        {% endif %}
-        libasound2-plugins libatomic1 curl && \
+        {% endif -%}
+        libasound2-plugins libatomic1 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -61,9 +61,13 @@ RUN if [ -z "${RELEASE_TAG}" ]; then \
     fi && \
     wget https://github.com/${RELEASE_ORG}/openvscode-server/releases/download/${RELEASE_TAG}/${RELEASE_TAG}-linux-${arch}.tar.gz && \
     tar -xzf ${RELEASE_TAG}-linux-${arch}.tar.gz && \
-    mv -f ${RELEASE_TAG}-linux-${arch} ${OPENVSCODE_SERVER_ROOT} && \
+    if [ -d "${OPENVSCODE_SERVER_ROOT}" ]; then rm -rf "${OPENVSCODE_SERVER_ROOT}"; fi && \
+    mv ${RELEASE_TAG}-linux-${arch} ${OPENVSCODE_SERVER_ROOT} && \
     cp ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/openvscode-server ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/code && \
-    rm -f ${RELEASE_TAG}-linux-${arch}.tar.gz
+    rm -f ${RELEASE_TAG}-linux-${arch}.tar.gz && \
+    # Install our custom extension
+    mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-hello-world && \
+    cp -r /openhands/code/openhands/runtime/utils/vscode-extensions/hello-world/* ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-hello-world/
 
 {% endmacro %}
 
@@ -102,7 +106,6 @@ RUN \
 # rather than the current OpenHands release
 
 {{ setup_base_system() }}
-{{ setup_vscode_server() }}
 
 # Install micromamba
 RUN mkdir -p /openhands/micromamba/bin && \
@@ -136,6 +139,8 @@ RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; 
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 COPY ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py
+
+{{ setup_vscode_server() }}
 
 # ================================================================
 # END: Build from versioned image

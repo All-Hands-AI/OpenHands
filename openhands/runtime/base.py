@@ -4,11 +4,15 @@ import copy
 import json
 import os
 import random
+import shutil
 import string
+import tempfile
 from abc import abstractmethod
 from pathlib import Path
 from typing import Callable
+from zipfile import ZipFile
 
+from pydantic import SecretStr
 from requests.exceptions import ConnectionError
 
 from openhands.core.config import AppConfig, SandboxConfig
@@ -29,11 +33,17 @@ from openhands.events.event import Event
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
+    FileReadObservation,
     NullObservation,
     Observation,
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.integrations.github.github_service import GithubServiceImpl
+from openhands.microagent import (
+    BaseMicroAgent,
+    load_microagents_from_dir,
+)
 from openhands.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
@@ -85,6 +95,7 @@ class Runtime(FileEditRuntimeMixin):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
+        github_user_id: str | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
@@ -113,17 +124,29 @@ class Runtime(FileEditRuntimeMixin):
         )
 
         # Load mixins
-        FileEditRuntimeMixin.__init__(self)
+        FileEditRuntimeMixin.__init__(
+            self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
+        )
+
+        self.github_user_id = github_user_id
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
             return
-        logger.debug(f'Adding env vars: {self.initial_env_vars}')
+        logger.debug(f'Adding env vars: {self.initial_env_vars.keys()}')
         self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
 
     def close(self) -> None:
+        """
+        This should only be called by conversation manager or closing the session.
+        If called for instance by error handling, it could prevent recovery.
+        """
+        pass
+
+    @classmethod
+    async def delete(cls, conversation_id: str) -> None:
         pass
 
     def log(self, level: str, message: str) -> None:
@@ -150,22 +173,38 @@ class Runtime(FileEditRuntimeMixin):
                 # Note: json.dumps gives us nice escaping for free
                 code += f'os.environ["{key}"] = {json.dumps(value)}\n'
             code += '\n'
-            obs = self.run_ipython(IPythonRunCellAction(code))
-            self.log('debug', f'Added env vars to IPython: code={code}, obs={obs}')
+            self.run_ipython(IPythonRunCellAction(code))
+            # Note: we don't log the vars values, they're leaking info
+            logger.debug('Added env vars to IPython')
 
-        # Add env vars to the Bash shell
+        # Add env vars to the Bash shell and .bashrc for persistence
         cmd = ''
+        bashrc_cmd = ''
         for key, value in env_vars.items():
             # Note: json.dumps gives us nice escaping for free
             cmd += f'export {key}={json.dumps(value)}; '
+            # Add to .bashrc if not already present
+            bashrc_cmd += f'grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
         if not cmd:
             return
         cmd = cmd.strip()
-        logger.debug(f'Adding env var: {cmd}')
+        logger.debug(
+            'Adding env vars to bash'
+        )  # don't log the vars values, they're leaking info
+
         obs = self.run(CmdRunAction(cmd))
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(
-                f'Failed to add env vars [{env_vars}] to environment: {obs.content}'
+                f'Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}'
+            )
+
+        # Add to .bashrc for persistence
+        bashrc_cmd = bashrc_cmd.strip()
+        logger.debug(f'Adding env var to .bashrc: {env_vars.keys()}')
+        obs = self.run(CmdRunAction(bashrc_cmd))
+        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+            raise RuntimeError(
+                f'Failed to add env vars [{env_vars.keys()}] to .bashrc: {obs.content}'
             )
 
     def on_event(self, event: Event) -> None:
@@ -174,9 +213,20 @@ class Runtime(FileEditRuntimeMixin):
 
     async def _handle_action(self, event: Action) -> None:
         if event.timeout is None:
-            event.timeout = self.config.sandbox.timeout
+            # We don't block the command if this is a default timeout action
+            event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
         assert event.timeout is not None
         try:
+            if isinstance(event, CmdRunAction):
+                if self.github_user_id and '$GITHUB_TOKEN' in event.command:
+                    gh_client = GithubServiceImpl(user_id=self.github_user_id)
+                    token = await gh_client.get_latest_token()
+                    if token:
+                        export_cmd = CmdRunAction(
+                            f"export GITHUB_TOKEN='{token.get_secret_value()}'"
+                        )
+                        await call_sync_from_async(self.run, export_cmd)
+
             observation: Observation = await call_sync_from_async(
                 self.run_action, event
             )
@@ -186,14 +236,10 @@ class Runtime(FileEditRuntimeMixin):
                 e, AgentRuntimeDisconnectedError
             ):
                 err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
-            logger.error(
-                'Unexpected error while running action',
-                exc_info=True,
-                stack_info=True,
-            )
+            error_message = f'{type(e).__name__}: {str(e)}'
+            self.log('error', f'Unexpected error while running action: {error_message}')
             self.log('error', f'Problematic action: {str(event)}')
-            self.send_error_message(err_id, str(e))
-            self.close()
+            self.send_error_message(err_id, error_message)
             return
 
         observation._cause = event.id  # type: ignore[attr-defined]
@@ -203,50 +249,121 @@ class Runtime(FileEditRuntimeMixin):
         source = event.source if event.source else EventSource.AGENT
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    def clone_repo(self, github_token: str | None, selected_repository: str | None):
+    def clone_repo(
+        self,
+        github_token: SecretStr,
+        selected_repository: str,
+        selected_branch: str | None,
+    ) -> str:
         if not github_token or not selected_repository:
-            return
-        url = f'https://{github_token}@github.com/{selected_repository}.git'
+            raise ValueError(
+                'github_token and selected_repository must be provided to clone a repository'
+            )
+        url = f'https://{github_token.get_secret_value()}@github.com/{selected_repository}.git'
         dir_name = selected_repository.split('/')[1]
-        # add random branch name to avoid conflicts
+
+        # Generate a random branch name to avoid conflicts
         random_str = ''.join(
             random.choices(string.ascii_lowercase + string.digits, k=8)
         )
-        branch_name = f'openhands-workspace-{random_str}'
+        openhands_workspace_branch = f'openhands-workspace-{random_str}'
+
+        # Clone repository command
+        clone_command = f'git clone {url} {dir_name}'
+
+        # Checkout to appropriate branch
+        checkout_command = (
+            f'git checkout {selected_branch}'
+            if selected_branch
+            else f'git checkout -b {openhands_workspace_branch}'
+        )
+
         action = CmdRunAction(
-            command=f'git clone {url} {dir_name} ; cd {dir_name} ; git checkout -b {branch_name}',
+            command=f'{clone_command} ; cd {dir_name} ; {checkout_command}',
         )
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
+        return dir_name
 
-    def get_custom_microagents(self, selected_repository: str | None) -> list[str]:
-        custom_microagents_content = []
-        custom_microagents_dir = Path('.openhands') / 'microagents'
+    def get_microagents_from_selected_repo(
+        self, selected_repository: str | None
+    ) -> list[BaseMicroAgent]:
+        """Load microagents from the selected repository.
+        If selected_repository is None, load microagents from the current workspace.
 
-        dir_name = str(custom_microagents_dir)
+        This is the main entry point for loading microagents.
+        """
+
+        loaded_microagents: list[BaseMicroAgent] = []
+        workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
+        microagents_dir = workspace_root / '.openhands' / 'microagents'
+        repo_root = None
         if selected_repository:
-            dir_name = str(
-                Path(selected_repository.split('/')[1]) / custom_microagents_dir
+            repo_root = workspace_root / selected_repository.split('/')[1]
+            microagents_dir = repo_root / '.openhands' / 'microagents'
+        self.log(
+            'info',
+            f'Selected repo: {selected_repository}, loading microagents from {microagents_dir} (inside runtime)',
+        )
+
+        # Legacy Repo Instructions
+        # Check for legacy .openhands_instructions file
+        obs = self.read(
+            FileReadAction(path=str(workspace_root / '.openhands_instructions'))
+        )
+        if isinstance(obs, ErrorObservation) and repo_root is not None:
+            # If the instructions file is not found in the workspace root, try to load it from the repo root
+            self.log(
+                'debug',
+                f'.openhands_instructions not present, trying to load from repository {microagents_dir=}',
             )
-        obs = self.read(FileReadAction(path='.openhands_instructions'))
-        if isinstance(obs, ErrorObservation):
-            self.log('debug', 'openhands_instructions not present')
-        else:
-            openhands_instructions = obs.content
-            self.log('info', f'openhands_instructions: {openhands_instructions}')
-            custom_microagents_content.append(openhands_instructions)
+            obs = self.read(
+                FileReadAction(path=str(repo_root / '.openhands_instructions'))
+            )
 
-        files = self.list_files(dir_name)
+        if isinstance(obs, FileReadObservation):
+            self.log('info', 'openhands_instructions microagent loaded.')
+            loaded_microagents.append(
+                BaseMicroAgent.load(
+                    path='.openhands_instructions', file_content=obs.content
+                )
+            )
 
-        self.log('info', f'Found {len(files)} custom microagents.')
+        # Load microagents from directory
+        files = self.list_files(str(microagents_dir))
+        if files:
+            self.log('info', f'Found {len(files)} files in microagents directory.')
+            zip_path = self.copy_from(str(microagents_dir))
+            microagent_folder = tempfile.mkdtemp()
 
-        for fname in files:
-            content = self.read(
-                FileReadAction(path=str(custom_microagents_dir / fname))
-            ).content
-            custom_microagents_content.append(content)
+            # Properly handle the zip file
+            with ZipFile(zip_path, 'r') as zip_file:
+                zip_file.extractall(microagent_folder)
 
-        return custom_microagents_content
+            # Add debug print of directory structure
+            self.log('debug', 'Microagent folder structure:')
+            for root, _, files in os.walk(microagent_folder):
+                relative_path = os.path.relpath(root, microagent_folder)
+                self.log('debug', f'Directory: {relative_path}/')
+                for file in files:
+                    self.log('debug', f'  File: {os.path.join(relative_path, file)}')
+
+            # Clean up the temporary zip file
+            zip_path.unlink()
+            # Load all microagents using the existing function
+            repo_agents, knowledge_agents, task_agents = load_microagents_from_dir(
+                microagent_folder
+            )
+            self.log(
+                'info',
+                f'Loaded {len(repo_agents)} repo agents, {len(knowledge_agents)} knowledge agents, and {len(task_agents)} task agents',
+            )
+            loaded_microagents.extend(repo_agents.values())
+            loaded_microagents.extend(knowledge_agents.values())
+            loaded_microagents.extend(task_agents.values())
+            shutil.rmtree(microagent_folder)
+
+        return loaded_microagents
 
     def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.
@@ -352,3 +469,7 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def vscode_url(self) -> str | None:
         raise NotImplementedError('This method is not implemented in the base class.')
+
+    @property
+    def web_hosts(self) -> dict[str, int]:
+        return {}

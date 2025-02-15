@@ -84,12 +84,10 @@ describe("ChatInput", () => {
     expect(onSubmitMock).not.toHaveBeenCalled();
   });
 
-  it("should render a placeholder", () => {
-    render(
-      <ChatInput placeholder="Enter your message" onSubmit={onSubmitMock} />,
-    );
+  it("should render a placeholder with translation key", () => {
+    render(<ChatInput onSubmit={onSubmitMock} />);
 
-    const textarea = screen.getByPlaceholderText("Enter your message");
+    const textarea = screen.getByPlaceholderText("SUGGESTIONS$WHAT_TO_BUILD");
     expect(textarea).toBeInTheDocument();
   });
 
@@ -217,5 +215,31 @@ describe("ChatInput", () => {
 
     // Verify image paste was handled
     expect(onImagePaste).toHaveBeenCalledWith([file]);
+  });
+
+  it("should not submit when Enter is pressed during IME composition", async () => {
+    const user = userEvent.setup();
+    render(<ChatInput onSubmit={onSubmitMock} />);
+    const textarea = screen.getByRole("textbox");
+
+    await user.type(textarea, "こんにちは");
+
+    // Simulate Enter during IME composition
+    fireEvent.keyDown(textarea, {
+      key: "Enter",
+      isComposing: true,
+      nativeEvent: { isComposing: true },
+    });
+
+    expect(onSubmitMock).not.toHaveBeenCalled();
+
+    // Simulate normal Enter after composition is done
+    fireEvent.keyDown(textarea, {
+      key: "Enter",
+      isComposing: false,
+      nativeEvent: { isComposing: false },
+    });
+
+    expect(onSubmitMock).toHaveBeenCalledWith("こんにちは");
   });
 });

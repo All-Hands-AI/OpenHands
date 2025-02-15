@@ -80,12 +80,15 @@ def get_config(
             base_container_image='python:3.12-bookworm',
             enable_auto_lint=True,
             use_host_network=False,
+            remote_runtime_enable_retries=True,
         ),
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
+    agent_config = config.get_agent_config(metadata.agent_class)
+    agent_config.enable_prompt_extensions = False
     return config
 
 
@@ -266,10 +269,7 @@ def initialize_runtime(
     runtime.copy_to(db_file, '/workspace')
 
     # Check the database is copied
-    action = CmdRunAction(
-        command='cd /workspace && ls -l',
-        keep_prompt=False,
-    )
+    action = CmdRunAction(command='cd /workspace && ls -l')
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
@@ -298,10 +298,7 @@ def complete_runtime(
     instance_id = instance.instance_id.replace('/', '__')
     path = os.path.join('/workspace', f'{instance_id}.py')
 
-    action = CmdRunAction(
-        command=f'cat {path}',
-        keep_prompt=False,
-    )
+    action = CmdRunAction(command=f'cat {path}')
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 

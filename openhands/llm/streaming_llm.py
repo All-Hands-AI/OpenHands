@@ -5,6 +5,7 @@ from typing import Any
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.async_llm import LLM_RETRY_EXCEPTIONS, AsyncLLM
+from openhands.llm.llm import REASONING_EFFORT_SUPPORTED_MODELS
 
 
 class StreamingLLM(AsyncLLM):
@@ -16,7 +17,9 @@ class StreamingLLM(AsyncLLM):
         self._async_streaming_completion = partial(
             self._call_acompletion,
             model=self.config.model,
-            api_key=self.config.api_key,
+            api_key=self.config.api_key.get_secret_value()
+            if self.config.api_key
+            else None,
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
@@ -60,6 +63,10 @@ class StreamingLLM(AsyncLLM):
                 raise ValueError(
                     'The messages list is empty. At least one message is required.'
                 )
+
+            # Set reasoning effort for models that support it
+            if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS:
+                kwargs['reasoning_effort'] = self.config.reasoning_effort
 
             self.log_prompt(messages)
 

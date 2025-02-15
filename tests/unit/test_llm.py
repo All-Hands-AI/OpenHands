@@ -40,7 +40,7 @@ def default_config():
 def test_llm_init_with_default_config(default_config):
     llm = LLM(default_config)
     assert llm.config.model == 'gpt-4o'
-    assert llm.config.api_key == 'test_key'
+    assert llm.config.api_key.get_secret_value() == 'test_key'
     assert isinstance(llm.metrics, Metrics)
     assert llm.metrics.model_name == 'gpt-4o'
 
@@ -77,7 +77,7 @@ def test_llm_init_with_custom_config():
     )
     llm = LLM(custom_config)
     assert llm.config.model == 'custom-model'
-    assert llm.config.api_key == 'custom_key'
+    assert llm.config.api_key.get_secret_value() == 'custom_key'
     assert llm.config.max_input_tokens == 5000
     assert llm.config.max_output_tokens == 1500
     assert llm.config.temperature == 0.8
@@ -141,9 +141,9 @@ def test_llm_reset():
     initial_metrics.add_cost(1.0)
     initial_metrics.add_response_latency(0.5, 'test-id')
     llm.reset()
-    assert llm.metrics._accumulated_cost != initial_metrics._accumulated_cost
-    assert llm.metrics._costs != initial_metrics._costs
-    assert llm.metrics._response_latencies != initial_metrics._response_latencies
+    assert llm.metrics.accumulated_cost != initial_metrics.accumulated_cost
+    assert llm.metrics.costs != initial_metrics.costs
+    assert llm.metrics.response_latencies != initial_metrics.response_latencies
     assert isinstance(llm.metrics, Metrics)
 
 
@@ -387,27 +387,6 @@ def test_completion_with_two_positional_args(mock_litellm_completion, default_co
     assert (
         len(call_args) == 0
     )  # No positional args should be passed to litellm_completion here
-
-
-@patch('openhands.llm.llm.litellm_completion')
-def test_llm_cloudflare_blockage(mock_litellm_completion, default_config):
-    from litellm.exceptions import APIError
-
-    from openhands.core.exceptions import CloudFlareBlockageError
-
-    llm = LLM(default_config)
-    mock_litellm_completion.side_effect = APIError(
-        message='Attention Required! | Cloudflare',
-        llm_provider='test_provider',
-        model='test_model',
-        status_code=403,
-    )
-
-    with pytest.raises(CloudFlareBlockageError, match='Request blocked by CloudFlare'):
-        llm.completion(messages=[{'role': 'user', 'content': 'Hello'}])
-
-    # Ensure the completion was called
-    mock_litellm_completion.assert_called_once()
 
 
 @patch('openhands.llm.llm.litellm.token_counter')

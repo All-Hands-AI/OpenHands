@@ -16,10 +16,8 @@ interface GitHubUser {
 interface GitHubRepository {
   id: number;
   full_name: string;
-}
-
-interface GitHubAppRepository {
-  repositories: GitHubRepository[];
+  stargazers_count?: number;
+  link_header?: string;
 }
 
 interface GitHubCommit {

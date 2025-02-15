@@ -19,23 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: true
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
+      - name: Install tmux
+        run: sudo apt-get update && sudo apt-get install -y tmux
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python

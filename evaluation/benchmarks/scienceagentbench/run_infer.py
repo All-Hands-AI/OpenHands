@@ -73,6 +73,7 @@ def get_config(
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             keep_runtime_alive=False,
+            remote_runtime_enable_retries=True,
         ),
         # do not mount workspace
         workspace_base=None,
@@ -121,10 +122,7 @@ def initialize_runtime(
     runtime.copy_to(dataset_dir, '/workspace/benchmark/datasets', recursive=True)
 
     # Check the dataset exists
-    action = CmdRunAction(
-        command='cd /workspace/benchmark/datasets && ls',
-        keep_prompt=False,
-    )
+    action = CmdRunAction(command='cd /workspace/benchmark/datasets && ls')
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
@@ -154,10 +152,7 @@ def complete_runtime(
 
     assert obs.exit_code == 0
 
-    action = CmdRunAction(
-        command=f'cat pred_programs/{instance.pred_program_name}',
-        keep_prompt=False,
-    )
+    action = CmdRunAction(command=f'cat pred_programs/{instance.pred_program_name}')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
 

@@ -1,15 +1,20 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import toast from "react-hot-toast";
+import { showErrorToast } from "#/utils/error-handler";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { AGENT_STATUS_MAP } from "../../agent-status-map.constant";
+import {
+  useWsClient,
+  WsClientProviderStatus,
+} from "#/context/ws-client-provider";
 
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const { curStatusMessage } = useSelector((state: RootState) => state.status);
+  const { status } = useWsClient();
 
   const [statusMessage, setStatusMessage] = React.useState<string>("");
 
@@ -22,7 +27,11 @@ export function AgentStatusBar() {
       }
     }
     if (curStatusMessage?.type === "error") {
-      toast.error(message);
+      showErrorToast({
+        message,
+        source: "agent-status",
+        metadata: { ...curStatusMessage },
+      });
       return;
     }
     if (curAgentState === AgentState.LOADING && message.trim()) {
@@ -37,7 +46,11 @@ export function AgentStatusBar() {
   }, [curStatusMessage.id]);
 
   React.useEffect(() => {
-    setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
+    if (status === WsClientProviderStatus.DISCONNECTED) {
+      setStatusMessage("Connecting...");
+    } else {
+      setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
+    }
   }, [curAgentState]);
 
   return (

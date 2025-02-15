@@ -31,7 +31,7 @@ def event_stream(temp_dir):
 def agent_configs():
     return {
         'CoderAgent': AgentConfig(memory_enabled=True),
-        'PlannerAgent': AgentConfig(memory_enabled=True),
+        'BrowsingAgent': AgentConfig(memory_enabled=True),
     }
 
 

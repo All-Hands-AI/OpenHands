@@ -3,16 +3,16 @@ import random
 import shutil
 import stat
 import time
-from pathlib import Path
 
 import pytest
 from pytest import TempPathFactory
 
-from openhands.core.config import load_app_config
+from openhands.core.config import AppConfig, load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
@@ -26,7 +26,7 @@ test_mount_path = ''
 project_dir = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
-sandbox_test_folder = '/openhands/workspace'
+sandbox_test_folder = '/workspace'
 
 
 def _get_runtime_sid(runtime: Runtime) -> str:
@@ -36,13 +36,6 @@ def _get_runtime_sid(runtime: Runtime) -> str:
 
 def _get_host_folder(runtime: Runtime) -> str:
     return runtime.config.workspace_mount_path
-
-
-def _get_sandbox_folder(runtime: Runtime) -> Path | None:
-    sid = _get_runtime_sid(runtime)
-    if sid:
-        return Path(os.path.join(sandbox_test_folder, sid))
-    return None
 
 
 def _remove_folder(folder: str) -> bool:
@@ -69,7 +62,7 @@ def _close_test_runtime(runtime: Runtime) -> None:
     time.sleep(1)
 
 
-def _reset_pwd() -> None:
+def _reset_cwd() -> None:
     global project_dir
     # Try to change back to project directory
     try:
@@ -131,6 +124,8 @@ def get_runtime_classes() -> list[type[Runtime]]:
     runtime = TEST_RUNTIME
     if runtime.lower() == 'docker' or runtime.lower() == 'eventstream':
         return [DockerRuntime]
+    elif runtime.lower() == 'local':
+        return [LocalRuntime]
     elif runtime.lower() == 'remote':
         return [RemoteRuntime]
     elif runtime.lower() == 'runloop':
@@ -152,16 +147,16 @@ def get_run_as_openhands() -> list[bool]:
 
 @pytest.fixture(scope='module')  # for xdist
 def runtime_setup_module():
-    _reset_pwd()
+    _reset_cwd()
     yield
-    _reset_pwd()
+    _reset_cwd()
 
 
 @pytest.fixture(scope='session')  # not for xdist
 def runtime_setup_session():
-    _reset_pwd()
+    _reset_cwd()
     yield
-    _reset_pwd()
+    _reset_cwd()
 
 
 # This assures that all tests run together per runtime, not alternating between them,
@@ -215,7 +210,8 @@ def _load_runtime(
     use_workspace: bool | None = None,
     force_rebuild_runtime: bool = False,
     runtime_startup_env_vars: dict[str, str] | None = None,
-) -> Runtime:
+    docker_runtime_kwargs: dict[str, str] | None = None,
+) -> tuple[Runtime, AppConfig]:
     sid = 'rt_' + str(random.randint(100000, 999999))
 
     # AgentSkills need to be initialized **before** Jupyter
@@ -226,18 +222,20 @@ def _load_runtime(
     config.run_as_openhands = run_as_openhands
     config.sandbox.force_rebuild_runtime = force_rebuild_runtime
     config.sandbox.keep_runtime_alive = False
+    config.sandbox.docker_runtime_kwargs = docker_runtime_kwargs
     # Folder where all tests create their own folder
     global test_mount_path
     if use_workspace:
         test_mount_path = os.path.join(config.workspace_base, 'rt')
+    elif temp_dir is not None:
+        test_mount_path = temp_dir
     else:
-        test_mount_path = os.path.join(
-            temp_dir, sid
-        )  # need a subfolder to avoid conflicts
+        test_mount_path = None
+    config.workspace_base = test_mount_path
     config.workspace_mount_path = test_mount_path
 
     # Mounting folder specific for this test inside the sandbox
-    config.workspace_mount_path_in_sandbox = f'{sandbox_test_folder}/{sid}'
+    config.workspace_mount_path_in_sandbox = f'{sandbox_test_folder}'
     print('\nPaths used:')
     print(f'use_host_network: {config.sandbox.use_host_network}')
     print(f'workspace_base: {config.workspace_base}')
@@ -266,13 +264,12 @@ def _load_runtime(
     )
     call_async_from_sync(runtime.connect)
     time.sleep(2)
-    return runtime
+    return runtime, config
 
 
 # Export necessary function
 __all__ = [
     '_load_runtime',
     '_get_host_folder',
-    '_get_sandbox_folder',
     '_remove_folder',
 ]

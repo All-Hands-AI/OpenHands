@@ -23,6 +23,9 @@ workspace_base = "./workspace"
 # Cache directory path
 #cache_dir = "/tmp/cache"
 
+# Reasoning effort for o1 models (low, medium, high, or not set)
+#reasoning_effort = "medium"
+
 # Debugging enabled
 #debug = false
 
@@ -34,7 +37,12 @@ workspace_base = "./workspace"
 
 # Path to store trajectories, can be a folder or a file
 # If it's a folder, the session id will be used as the file name
-#trajectories_path="./trajectories"
+#save_trajectory_path="./trajectories"
+
+# Path to replay a trajectory, must be a file path
+# If provided, trajectory will be loaded and replayed before the
+# agent responds to any user instruction
+#replay_trajectory_path = ""
 
 # File store path
 #file_store_path = "/tmp/file_store"
@@ -67,7 +75,7 @@ workspace_base = "./workspace"
 #run_as_openhands = true
 
 # Runtime environment
-#runtime = "eventstream"
+#runtime = "docker"
 
 # Name of the default agent
 #default_agent = "CodeActAgent"
@@ -96,7 +104,7 @@ workspace_base = "./workspace"
 #aws_secret_access_key = ""
 
 # API key to use (For Headless / CLI only -  In Web this is overridden by Session Init)
-api_key = "your-api-key"
+api_key = ""
 
 # API base URL (For Headless / CLI only -  In Web this is overridden by Session Init)
 #base_url = ""
@@ -180,8 +188,14 @@ model = "gpt-4o"
 # https://docs.litellm.ai/docs/completion/token_usage
 #custom_tokenizer = ""
 
+# Whether to use native tool calling if supported by the model. Can be true, false, or None by default, which chooses the model's default behavior based on the evaluation.
+# ATTENTION: Based on evaluation, enabling native function calling may lead to worse results
+# in some scenarios. Use with caution and consider testing with your specific use case.
+# https://github.com/All-Hands-AI/OpenHands/pull/4711
+#native_tool_calling = None
+
 [llm.gpt4o-mini]
-api_key = "your-api-key"
+api_key = ""
 model = "gpt-4o"
 
 
@@ -192,6 +206,16 @@ model = "gpt-4o"
 # agent.CodeActAgent
 ##############################################################################
 [agent]
+
+# whether the browsing tool is enabled
+codeact_enable_browsing = true
+
+# whether the LLM draft editor is enabled
+codeact_enable_llm_editor = false
+
+# whether the IPython tool is enabled
+codeact_enable_jupyter = true
+
 # Name of the micro agent to use for this agent
 #micro_agent_name = ""
 
@@ -203,6 +227,12 @@ model = "gpt-4o"
 
 # LLM config group to use
 #llm_config = 'your-llm-config-group'
+
+# Whether to use prompt extension (e.g., microagent, repo/runtime info) at all
+#enable_prompt_extensions = true
+
+# List of microagents to disable
+#disabled_microagents = []
 
 [agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially

@@ -1,10 +1,9 @@
-from dataclasses import dataclass, fields
+from pydantic import BaseModel, Field
 
-from openhands.core.config.config_utils import get_field_info
+from openhands.core.config.condenser_config import CondenserConfig, NoOpCondenserConfig
 
 
-@dataclass
-class AgentConfig:
+class AgentConfig(BaseModel):
     """Configuration for the agent.
 
     Attributes:
@@ -16,23 +15,19 @@ class AgentConfig:
         memory_enabled: Whether long-term memory (embeddings) is enabled.
         memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
         llm_config: The name of the llm config to use. If specified, this will override global llm config.
-        use_microagents: Whether to use microagents at all. Default is True.
+        enable_prompt_extensions: Whether to use prompt extensions (e.g., microagents, inject runtime info). Default is True.
         disabled_microagents: A list of microagents to disable. Default is None.
+        condenser: Configuration for the memory condenser. Default is NoOpCondenserConfig.
     """
 
-    codeact_enable_browsing: bool = True
-    codeact_enable_llm_editor: bool = False
-    codeact_enable_jupyter: bool = True
-    micro_agent_name: str | None = None
-    memory_enabled: bool = False
-    memory_max_threads: int = 3
-    llm_config: str | None = None
-    use_microagents: bool = True
-    disabled_microagents: list[str] | None = None
-
-    def defaults_to_dict(self) -> dict:
-        """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
-        result = {}
-        for f in fields(self):
-            result[f.name] = get_field_info(f)
-        return result
+    codeact_enable_browsing: bool = Field(default=True)
+    enable_som_visual_browsing: bool = Field(default=False)
+    codeact_enable_llm_editor: bool = Field(default=False)
+    codeact_enable_jupyter: bool = Field(default=True)
+    micro_agent_name: str | None = Field(default=None)
+    memory_enabled: bool = Field(default=False)
+    memory_max_threads: int = Field(default=3)
+    llm_config: str | None = Field(default=None)
+    enable_prompt_extensions: bool = Field(default=True)
+    disabled_microagents: list[str] | None = Field(default=None)
+    condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)

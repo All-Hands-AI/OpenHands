@@ -1,34 +1,43 @@
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
-import { Settings } from "#/services/settings";
+import { I18nKey } from "#/i18n/declaration";
 import { LoadingSpinner } from "../../loading-spinner";
 import { ModalBackdrop } from "../modal-backdrop";
 import { SettingsForm } from "./settings-form";
+import { Settings } from "#/types/settings";
+import { DEFAULT_SETTINGS } from "#/services/settings";
 
 interface SettingsModalProps {
-  settings: Settings;
+  settings?: Settings;
   onClose: () => void;
 }
 
 export function SettingsModal({ onClose, settings }: SettingsModalProps) {
   const aiConfigOptions = useAIConfigOptions();
+  const { t } = useTranslation();
 
   return (
     <ModalBackdrop onClose={onClose}>
       <div
         data-testid="ai-config-modal"
-        className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2"
+        className="bg-root-primary min-w-[384px] p-6 rounded-xl flex flex-col gap-2"
       >
         {aiConfigOptions.error && (
           <p className="text-danger text-xs">{aiConfigOptions.error.message}</p>
         )}
-        <span className="text-xl leading-6 font-semibold -tracking-[0.01em">
-          AI Provider Configuration
+        <span className="text-xl leading-6 font-semibold -tracking-[0.01em]">
+          {t(I18nKey.AI_SETTINGS$TITLE)}
         </span>
         <p className="text-xs text-[#A3A3A3]">
-          To continue, connect an OpenAI, Anthropic, or other LLM account
-        </p>
-        <p className="text-xs text-danger">
-          Changing settings during an active session will end the session
+          {t(I18nKey.SETTINGS$DESCRIPTION)} For other options,{" "}
+          <Link
+            data-testid="advanced-settings-link"
+            to="/settings"
+            className="underline underline-offset-2 text-white"
+          >
+            see advanced settings
+          </Link>
         </p>
         {aiConfigOptions.isLoading && (
           <div className="flex justify-center">
@@ -37,10 +46,8 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
         )}
         {aiConfigOptions.data && (
           <SettingsForm
-            settings={settings}
+            settings={settings || DEFAULT_SETTINGS}
             models={aiConfigOptions.data?.models}
-            agents={aiConfigOptions.data?.agents}
-            securityAnalyzers={aiConfigOptions.data?.securityAnalyzers}
             onClose={onClose}
           />
         )}

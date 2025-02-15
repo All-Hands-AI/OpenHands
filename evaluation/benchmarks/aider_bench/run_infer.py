@@ -61,12 +61,15 @@ def get_config(
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             keep_runtime_alive=False,
             remote_runtime_init_timeout=1800,
+            remote_runtime_enable_retries=True,
         ),
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
+    agent_config = config.get_agent_config(metadata.agent_class)
+    agent_config.enable_prompt_extensions = False
 
     # copy 'draft_editor' config if exists
     config_copy = copy.deepcopy(config)
@@ -143,10 +146,7 @@ def complete_runtime(
         )
         logger.info(f'Running test file: {script_name}')
 
-    action = CmdRunAction(
-        command=f'python3 -m unittest {script_name}',
-        keep_prompt=False,
-    )
+    action = CmdRunAction(command=f'python3 -m unittest {script_name}')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})

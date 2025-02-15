@@ -25,10 +25,14 @@ export function ConfirmDeleteModal({
         <div className="flex flex-col gap-2 w-full">
           <ModalButton
             onClick={onConfirm}
-            className="bg-[#4465DB]"
+            className="bg-danger font-bold"
             text="Confirm"
           />
-          <ModalButton onClick={onCancel} className="bg-danger" text="Cancel" />
+          <ModalButton
+            onClick={onCancel}
+            className="bg-neutral-500 font-bold"
+            text="Cancel"
+          />
         </div>
       </ModalBody>
     </ModalBackdrop>

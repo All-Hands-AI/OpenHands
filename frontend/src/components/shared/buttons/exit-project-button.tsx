@@ -1,4 +1,6 @@
-import NewProjectIcon from "#/icons/new-project.svg?react";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
+import PlusIcon from "#/icons/plus.svg?react";
 import { TooltipButton } from "./tooltip-button";
 
 interface ExitProjectButtonProps {
@@ -6,14 +8,16 @@ interface ExitProjectButtonProps {
 }
 
 export function ExitProjectButton({ onClick }: ExitProjectButtonProps) {
+  const { t } = useTranslation();
+  const startNewProject = t(I18nKey.PROJECT$START_NEW);
   return (
     <TooltipButton
-      tooltip="Start new project"
-      ariaLabel="Start new project"
+      tooltip={startNewProject}
+      ariaLabel={startNewProject}
       onClick={onClick}
       testId="new-project-button"
     >
-      <NewProjectIcon width={28} height={28} />
+      <PlusIcon width={28} height={28} className="text-[#9099AC]" />
     </TooltipButton>
   );
 }

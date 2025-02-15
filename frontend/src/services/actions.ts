@@ -4,6 +4,7 @@ import {
   addUserMessage,
   addErrorMessage,
 } from "#/state/chat-slice";
+import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
@@ -16,6 +17,7 @@ import {
   StatusMessage,
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
+import { appendInput } from "#/state/command-slice";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -62,6 +64,10 @@ export function handleActionMessage(message: ActionMessage) {
     return;
   }
 
+  if (message.action === ActionType.RUN) {
+    store.dispatch(appendInput(message.args.command));
+  }
+
   if ("args" in message && "security_risk" in message.args) {
     store.dispatch(appendSecurityAnalyzerInput(message));
   }
@@ -70,6 +76,7 @@ export function handleActionMessage(message: ActionMessage) {
     if (message.args && message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
+    // Need to convert ActionMessage to RejectAction
     // @ts-expect-error TODO: fix
     store.dispatch(addAssistantAction(message));
   }
@@ -89,6 +96,11 @@ export function handleStatusMessage(message: StatusMessage) {
       }),
     );
   } else if (message.type === "error") {
+    trackError({
+      message: message.message,
+      source: "chat",
+      metadata: { msgId: message.id },
+    });
     store.dispatch(
       addErrorMessage({
         ...message,
@@ -105,9 +117,15 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
   } else if (message.status_update) {
     handleStatusMessage(message as unknown as StatusMessage);
   } else {
+    const errorMsg = "Unknown message type received";
+    trackError({
+      message: errorMsg,
+      source: "chat",
+      metadata: { raw_message: message },
+    });
     store.dispatch(
       addErrorMessage({
-        message: "Unknown message type received",
+        message: errorMsg,
       }),
     );
   }

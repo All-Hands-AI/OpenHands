@@ -116,22 +116,22 @@ The `session.py` file defines the `Session` class, which represents a WebSocket 
 - Dispatching events between the client and the agent
 - Sending messages and errors to the client
 
-### 2. session/agent.py
+### 2. session/agent_session.py
 
-The `agent.py` file contains the `AgentSession` class, which manages the lifecycle of an agent within a session. Key features include:
+The `agent_session.py` file contains the `AgentSession` class, which manages the lifecycle of an agent within a session. Key features include:
 
 - Creating and managing the runtime environment
 - Initializing the agent controller
 - Handling security analysis
 - Managing the event stream
 
-### 3. session/manager.py
+### 3. session/conversation_manager/conversation_manager.py
 
-The `manager.py` file defines the `SessionManager` class, which is responsible for managing multiple client sessions. Key features include:
+The `conversation_manager.py` file defines the `ConversationManager` class, which is responsible for managing multiple client conversations. Key features include:
 
-- Adding and restarting sessions
-- Sending messages to specific sessions
-- Cleaning up inactive sessions
+- Adding and restarting conversations
+- Sending messages to specific conversations
+- Cleaning up inactive conversations
 
 ### 4. listen.py
 
@@ -148,7 +148,7 @@ The `listen.py` file is the main server file that sets up the FastAPI applicatio
 1. **Server Initialization**:
    - The FastAPI application is created and configured in `listen.py`.
    - CORS middleware and static file serving are set up.
-   - The `SessionManager` is initialized.
+   - The `ConversationManager` is initialized.
 
 2. **Client Connection**:
    - When a client connects via WebSocket, a new `Session` is created or an existing one is restarted.
@@ -173,7 +173,7 @@ The `listen.py` file is the main server file that sets up the FastAPI applicatio
    - Security-related API requests are forwarded to the security analyzer.
 
 7. **Session Management**:
-   - The `SessionManager` periodically cleans up inactive sessions.
+   - The `ConversationManager` periodically cleans up inactive sessions.
    - It also handles sending messages to specific sessions when needed.
 
 8. **API Endpoints**:

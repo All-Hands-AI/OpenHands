@@ -24,7 +24,7 @@ class Test(BaseIntegrationTest):
     @classmethod
     def verify_result(cls, runtime: Runtime, histories: list[Event]) -> TestResult:
         # check if the file /workspace/bad.txt has been fixed
-        action = CmdRunAction(command='cat /workspace/bad.txt', keep_prompt=False)
+        action = CmdRunAction(command='cat /workspace/bad.txt')
         obs = runtime.run_action(action)
         if obs.exit_code != 0:
             return TestResult(

@@ -1,21 +1,27 @@
 interface ConversationRepoLinkProps {
-  repo: string;
-  onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+  selectedRepository: string;
 }
 
 export function ConversationRepoLink({
-  repo,
-  onClick,
+  selectedRepository,
 }: ConversationRepoLinkProps) {
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    window.open(
+      `https://github.com/${selectedRepository}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
   return (
-    <a
-      data-testid="conversation-card-repo"
-      href={`https://github.com/${repo}`}
-      target="_blank noopener noreferrer"
-      onClick={onClick}
+    <button
+      type="button"
+      data-testid="conversation-card-selected-repository"
+      onClick={handleClick}
       className="text-xs text-neutral-400 hover:text-neutral-200"
     >
-      {repo}
-    </a>
+      {selectedRepository}
+    </button>
   );
 }

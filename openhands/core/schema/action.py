@@ -4,10 +4,6 @@ __all__ = ['ActionType']
 
 
 class ActionTypeSchema(BaseModel):
-    INIT: str = Field(default='initialize')
-    """Initializes the agent. Only sent by client.
-    """
-
     MESSAGE: str = Field(default='message')
     """Represents a message.
     """
@@ -61,10 +57,6 @@ class ActionTypeSchema(BaseModel):
     NULL: str = Field(default='null')
 
     SUMMARIZE: str = Field(default='summarize')
-
-    ADD_TASK: str = Field(default='add_task')
-
-    MODIFY_TASK: str = Field(default='modify_task')
 
     PAUSE: str = Field(default='pause')
     """Pauses the task.

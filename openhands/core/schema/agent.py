@@ -6,10 +6,6 @@ class AgentState(str, Enum):
     """The agent is loading.
     """
 
-    INIT = 'init'
-    """The agent is initialized.
-    """
-
     RUNNING = 'running'
     """The agent is running.
     """
@@ -48,4 +44,8 @@ class AgentState(str, Enum):
 
     USER_REJECTED = 'user_rejected'
     """The user rejected the agent's action.
+    """
+
+    RATE_LIMITED = 'rate_limited'
+    """The agent is rate limited.
     """

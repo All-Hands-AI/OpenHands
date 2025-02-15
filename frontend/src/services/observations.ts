@@ -80,8 +80,7 @@ export function handleObservationMessage(message: ObservationMessage) {
             observation: "run" as const,
             extras: {
               command: String(message.extras.command || ""),
-              command_id: Number(message.extras.command_id || 0),
-              exit_code: Number(message.extras.exit_code || 0),
+              metadata: message.extras.metadata,
               hidden: Boolean(message.extras.hidden),
             },
           }),

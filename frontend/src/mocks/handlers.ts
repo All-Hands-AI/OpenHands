@@ -1,42 +1,63 @@
 import { delay, http, HttpResponse } from "msw";
-import { GetConfigResponse, Conversation } from "#/api/open-hands.types";
+import {
+  GetConfigResponse,
+  Conversation,
+  ResultSet,
+} from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+import { ApiSettings, PostApiSettings } from "#/types/settings";
 
-const userPreferences = {
-  settings: {
-    llm_model: DEFAULT_SETTINGS.LLM_MODEL,
-    llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
-    llm_api_key: DEFAULT_SETTINGS.LLM_API_KEY,
-    agent: DEFAULT_SETTINGS.AGENT,
-    language: DEFAULT_SETTINGS.LANGUAGE,
-    confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,
-    security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
-  },
+export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
+  llm_model: DEFAULT_SETTINGS.LLM_MODEL,
+  llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
+  llm_api_key: DEFAULT_SETTINGS.LLM_API_KEY,
+  agent: DEFAULT_SETTINGS.AGENT,
+  language: DEFAULT_SETTINGS.LANGUAGE,
+  confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,
+  security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
+  remote_runtime_resource_factor:
+    DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+  github_token_is_set: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
+  enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
+  user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
+};
+
+const MOCK_USER_PREFERENCES: {
+  settings: ApiSettings | PostApiSettings;
+} = {
+  settings: MOCK_DEFAULT_USER_SETTINGS,
 };
 
 const conversations: Conversation[] = [
   {
     conversation_id: "1",
-    name: "My New Project",
-    repo: null,
-    lastUpdated: new Date().toISOString(),
-    state: "running",
+    title: "My New Project",
+    selected_repository: null,
+    last_updated_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    status: "RUNNING",
   },
   {
     conversation_id: "2",
-    name: "Repo Testing",
-    repo: "octocat/hello-world",
+    title: "Repo Testing",
+    selected_repository: "octocat/hello-world",
     // 2 days ago
-    lastUpdated: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    state: "cold",
+    last_updated_at: new Date(
+      Date.now() - 2 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    status: "STOPPED",
   },
   {
     conversation_id: "3",
-    name: "Another Project",
-    repo: "octocat/earth",
+    title: "Another Project",
+    selected_repository: "octocat/earth",
     // 5 days ago
-    lastUpdated: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    state: "finished",
+    last_updated_at: new Date(
+      Date.now() - 5 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    status: "STOPPED",
   },
 ];
 
@@ -130,7 +151,7 @@ export const handlers = [
       { id: 2, full_name: "octocat/earth" },
     ]),
   ),
-  http.get("https://api.github.com/user", () => {
+  http.get("/api/github/user", () => {
     const user: GitHubUser = {
       id: 1,
       login: "octocat",
@@ -157,17 +178,34 @@ export const handlers = [
 
     return HttpResponse.json(config);
   }),
-  http.get("/api/settings", async () =>
-    HttpResponse.json(userPreferences.settings),
-  ),
+  http.get("/api/settings", async () => {
+    await delay();
+    const settings: ApiSettings = {
+      ...MOCK_USER_PREFERENCES.settings,
+      language: "no",
+    };
+    // @ts-expect-error - mock types
+    if (settings.github_token) settings.github_token_is_set = true;
+
+    return HttpResponse.json(settings);
+  }),
   http.post("/api/settings", async ({ request }) => {
     const body = await request.json();
 
     if (body) {
-      userPreferences.settings = {
-        ...userPreferences.settings,
-        // @ts-expect-error - We know this is a settings object
-        ...body,
+      let newSettings: Partial<PostApiSettings> = {};
+      if (typeof body === "object") {
+        newSettings = { ...body };
+        if (newSettings.unset_github_token) {
+          newSettings.github_token = undefined;
+          newSettings.github_token_is_set = false;
+          delete newSettings.unset_github_token;
+        }
+      }
+
+      MOCK_USER_PREFERENCES.settings = {
+        ...MOCK_USER_PREFERENCES.settings,
+        ...newSettings,
       };
 
       return HttpResponse.json(null, { status: 200 });
@@ -182,9 +220,15 @@ export const handlers = [
 
   http.get("/api/options/config", () => HttpResponse.json({ APP_MODE: "oss" })),
 
-  http.get("/api/conversations", async () =>
-    HttpResponse.json(Array.from(CONVERSATIONS.values())),
-  ),
+  http.get("/api/conversations", async () => {
+    const values = Array.from(CONVERSATIONS.values());
+    const results: ResultSet<Conversation> = {
+      results: values,
+      next_page_id: null,
+    };
+
+    return HttpResponse.json(results, { status: 200 });
+  }),
 
   http.delete("/api/conversations/:conversationId", async ({ params }) => {
     const { conversationId } = params;
@@ -197,7 +241,7 @@ export const handlers = [
     return HttpResponse.json(null, { status: 404 });
   }),
 
-  http.put(
+  http.patch(
     "/api/conversations/:conversationId",
     async ({ params, request }) => {
       const { conversationId } = params;
@@ -207,10 +251,10 @@ export const handlers = [
 
         if (conversation) {
           const body = await request.json();
-          if (typeof body === "object" && body?.name) {
+          if (typeof body === "object" && body?.title) {
             CONVERSATIONS.set(conversationId, {
               ...conversation,
-              name: body.name,
+              title: body.title,
             });
             return HttpResponse.json(null, { status: 200 });
           }
@@ -224,10 +268,11 @@ export const handlers = [
   http.post("/api/conversations", () => {
     const conversation: Conversation = {
       conversation_id: (Math.random() * 100).toString(),
-      name: "New Conversation",
-      repo: null,
-      lastUpdated: new Date().toISOString(),
-      state: "warm",
+      title: "New Conversation",
+      selected_repository: null,
+      last_updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      status: "RUNNING",
     };
 
     CONVERSATIONS.set(conversation.conversation_id, conversation);
@@ -247,4 +292,6 @@ export const handlers = [
 
     return HttpResponse.json(null, { status: 404 });
   }),
+
+  http.post("/api/logout", () => HttpResponse.json(null, { status: 200 })),
 ];

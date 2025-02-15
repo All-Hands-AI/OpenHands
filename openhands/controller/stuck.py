@@ -5,7 +5,7 @@ from openhands.events.action.commands import IPythonRunCellAction
 from openhands.events.action.empty import NullAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, EventSource
-from openhands.events.observation.commands import (
+from openhands.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )

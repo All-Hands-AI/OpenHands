@@ -1,9 +1,10 @@
 import asyncio
+import queue
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from enum import Enum
-from queue import Queue
+from functools import partial
 from typing import Callable, Iterable
 
 from openhands.core.logger import openhands_logger as logger
@@ -56,23 +57,33 @@ class AsyncEventStreamWrapper:
 class EventStream:
     sid: str
     file_store: FileStore
+    secrets: dict[str, str]
     # For each subscriber ID, there is a map of callback functions - useful
     # when there are multiple listeners
     _subscribers: dict[str, dict[str, Callable]]
     _cur_id: int = 0
     _lock: threading.Lock
+    _queue: queue.Queue[Event]
+    _queue_thread: threading.Thread
+    _queue_loop: asyncio.AbstractEventLoop | None
+    _thread_pools: dict[str, dict[str, ThreadPoolExecutor]]
+    _thread_loops: dict[str, dict[str, asyncio.AbstractEventLoop]]
 
-    def __init__(self, sid: str, file_store: FileStore, num_workers: int = 1):
+    def __init__(self, sid: str, file_store: FileStore):
         self.sid = sid
         self.file_store = file_store
-        self._queue: Queue[Event] = Queue()
-        self._thread_pools: dict[str, dict[str, ThreadPoolExecutor]] = {}
+        self._stop_flag = threading.Event()
+        self._queue: queue.Queue[Event] = queue.Queue()
+        self._thread_pools = {}
+        self._thread_loops = {}
+        self._queue_loop = None
         self._queue_thread = threading.Thread(target=self._run_queue_loop)
         self._queue_thread.daemon = True
         self._queue_thread.start()
         self._subscribers = {}
         self._lock = threading.Lock()
         self._cur_id = 0
+        self.secrets = {}
 
         # load the stream
         self.__post_init__()
@@ -91,9 +102,58 @@ class EventStream:
             if id >= self._cur_id:
                 self._cur_id = id + 1
 
-    def _init_thread_loop(self):
+    def _init_thread_loop(self, subscriber_id: str, callback_id: str):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        if subscriber_id not in self._thread_loops:
+            self._thread_loops[subscriber_id] = {}
+        self._thread_loops[subscriber_id][callback_id] = loop
+
+    def close(self):
+        self._stop_flag.set()
+        if self._queue_thread.is_alive():
+            self._queue_thread.join()
+
+        subscriber_ids = list(self._subscribers.keys())
+        for subscriber_id in subscriber_ids:
+            callback_ids = list(self._subscribers[subscriber_id].keys())
+            for callback_id in callback_ids:
+                self._clean_up_subscriber(subscriber_id, callback_id)
+
+        # Clear queue
+        while not self._queue.empty():
+            self._queue.get()
+
+    def _clean_up_subscriber(self, subscriber_id: str, callback_id: str):
+        if subscriber_id not in self._subscribers:
+            logger.warning(f'Subscriber not found during cleanup: {subscriber_id}')
+            return
+        if callback_id not in self._subscribers[subscriber_id]:
+            logger.warning(f'Callback not found during cleanup: {callback_id}')
+            return
+        if (
+            subscriber_id in self._thread_loops
+            and callback_id in self._thread_loops[subscriber_id]
+        ):
+            loop = self._thread_loops[subscriber_id][callback_id]
+            try:
+                loop.stop()
+                loop.close()
+            except Exception as e:
+                logger.warning(
+                    f'Error closing loop for {subscriber_id}/{callback_id}: {e}'
+                )
+            del self._thread_loops[subscriber_id][callback_id]
+
+        if (
+            subscriber_id in self._thread_pools
+            and callback_id in self._thread_pools[subscriber_id]
+        ):
+            pool = self._thread_pools[subscriber_id][callback_id]
+            pool.shutdown()
+            del self._thread_pools[subscriber_id][callback_id]
+
+        del self._subscribers[subscriber_id][callback_id]
 
     def _get_filename_for_id(self, id: int) -> str:
         return get_conversation_event_filename(self.sid, id)
@@ -176,7 +236,8 @@ class EventStream:
     def subscribe(
         self, subscriber_id: EventStreamSubscriber, callback: Callable, callback_id: str
     ):
-        pool = ThreadPoolExecutor(max_workers=1, initializer=self._init_thread_loop)
+        initializer = partial(self._init_thread_loop, subscriber_id, callback_id)
+        pool = ThreadPoolExecutor(max_workers=1, initializer=initializer)
         if subscriber_id not in self._subscribers:
             self._subscribers[subscriber_id] = {}
             self._thread_pools[subscriber_id] = {}
@@ -198,12 +259,12 @@ class EventStream:
             logger.warning(f'Callback not found during unsubscribe: {callback_id}')
             return
 
-        del self._subscribers[subscriber_id][callback_id]
+        self._clean_up_subscriber(subscriber_id, callback_id)
 
     def add_event(self, event: Event, source: EventSource):
         if hasattr(event, '_id') and event.id is not None:
             raise ValueError(
-                'Event already has an ID. It was probably added back to the EventStream from inside a handler, trigging a loop.'
+                f'Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop.'
             )
         with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
@@ -212,18 +273,41 @@ class EventStream:
         event._timestamp = datetime.now().isoformat()
         event._source = source  # type: ignore [attr-defined]
         data = event_to_dict(event)
+        data = self._replace_secrets(data)
+        event = event_from_dict(data)
         if event.id is not None:
             self.file_store.write(self._get_filename_for_id(event.id), json.dumps(data))
         self._queue.put(event)
 
+    def set_secrets(self, secrets: dict[str, str]):
+        self.secrets = secrets.copy()
+
+    def _replace_secrets(self, data: dict) -> dict:
+        for key in data:
+            if isinstance(data[key], dict):
+                data[key] = self._replace_secrets(data[key])
+            elif isinstance(data[key], str):
+                for secret in self.secrets.values():
+                    data[key] = data[key].replace(secret, '<secret_hidden>')
+        return data
+
     def _run_queue_loop(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(self._process_queue())
+        self._queue_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self._queue_loop)
+        try:
+            self._queue_loop.run_until_complete(self._process_queue())
+        finally:
+            self._queue_loop.close()
 
     async def _process_queue(self):
-        while should_continue():
-            event = self._queue.get()
+        while should_continue() and not self._stop_flag.is_set():
+            event = None
+            try:
+                event = self._queue.get(timeout=0.1)
+            except queue.Empty:
+                continue
+
+            # pass each event to each callback in order
             for key in sorted(self._subscribers.keys()):
                 callbacks = self._subscribers[key]
                 for callback_id in callbacks:
@@ -240,8 +324,6 @@ class EventStream:
             except Exception as e:
                 logger.error(
                     f'Error in event callback {callback_id} for subscriber {subscriber_id}: {str(e)}',
-                    exc_info=True,
-                    stack_info=True,
                 )
                 # Re-raise in the main thread so the error is not swallowed
                 raise e
@@ -257,7 +339,7 @@ class EventStream:
         self,
         event,
         query: str | None = None,
-        event_type: str | None = None,
+        event_types: tuple[type[Event], ...] | None = None,
         source: str | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
@@ -266,16 +348,16 @@ class EventStream:
 
         Args:
             event: The event to check
-            query (str, optional): Text to search for in event content
-            event_type (str, optional): Filter by event type (e.g., "FileReadAction")
-            source (str, optional): Filter by event source
-            start_date (str, optional): Filter events after this date (ISO format)
-            end_date (str, optional): Filter events before this date (ISO format)
+            query: Text to search for in event content
+            event_type: Filter by event type classes (e.g., (FileReadAction, ) ).
+            source: Filter by event source
+            start_date: Filter events after this date (ISO format)
+            end_date: Filter events before this date (ISO format)
 
         Returns:
             bool: True if the event should be filtered out, False if it matches all criteria
         """
-        if event_type and not event.__class__.__name__ == event_type:
+        if event_types and not isinstance(event, event_types):
             return True
 
         if source and not event.source.value == source:
@@ -299,23 +381,25 @@ class EventStream:
     def get_matching_events(
         self,
         query: str | None = None,
-        event_type: str | None = None,
+        event_types: tuple[type[Event], ...] | None = None,
         source: str | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
         start_id: int = 0,
         limit: int = 100,
-    ) -> list:
+        reverse: bool = False,
+    ) -> list[type[Event]]:
         """Get matching events from the event stream based on filters.
 
         Args:
-            query (str, optional): Text to search for in event content
-            event_type (str, optional): Filter by event type (e.g., "FileReadAction")
-            source (str, optional): Filter by event source
-            start_date (str, optional): Filter events after this date (ISO format)
-            end_date (str, optional): Filter events before this date (ISO format)
-            start_id (int): Starting ID in the event stream. Defaults to 0
-            limit (int): Maximum number of events to return. Must be between 1 and 100. Defaults to 100
+            query: Text to search for in event content
+            event_types: Filter by event type classes (e.g., (FileReadAction, ) ).
+            source: Filter by event source
+            start_date: Filter events after this date (ISO format)
+            end_date: Filter events before this date (ISO format)
+            start_id: Starting ID in the event stream. Defaults to 0
+            limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 100
+            reverse: Whether to retrieve events in reverse order. Defaults to False.
 
         Returns:
             list: List of matching events (as dicts)
@@ -328,13 +412,13 @@ class EventStream:
 
         matching_events: list = []
 
-        for event in self.get_events(start_id=start_id):
+        for event in self.get_events(start_id=start_id, reverse=reverse):
             if self._should_filter_event(
-                event, query, event_type, source, start_date, end_date
+                event, query, event_types, source, start_date, end_date
             ):
                 continue
 
-            matching_events.append(event_to_dict(event))
+            matching_events.append(event)
 
             # Stop if we have enough events
             if len(matching_events) >= limit:

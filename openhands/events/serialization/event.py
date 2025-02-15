@@ -1,6 +1,8 @@
 from dataclasses import asdict
 from datetime import datetime
 
+from pydantic import BaseModel
+
 from openhands.events import Event, EventSource
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.action import action_from_dict
@@ -56,6 +58,12 @@ def event_from_dict(data) -> 'Event':
     return evt
 
 
+def _convert_pydantic_to_dict(obj: BaseModel | dict) -> dict:
+    if isinstance(obj, BaseModel):
+        return obj.model_dump()
+    return obj
+
+
 def event_to_dict(event: 'Event') -> dict:
     props = asdict(event)
     d = {}
@@ -82,7 +90,11 @@ def event_to_dict(event: 'Event') -> dict:
             d['timeout'] = event.timeout
     elif 'observation' in d:
         d['content'] = props.pop('content', '')
-        d['extras'] = props
+
+        # props is a dict whose values can include a complex object like an instance of a BaseModel subclass
+        # such as CmdOutputMetadata
+        # we serialize it along with the rest
+        d['extras'] = {k: _convert_pydantic_to_dict(v) for k, v in props.items()}
         # Include success field for CmdOutputObservation
         if hasattr(event, 'success'):
             d['success'] = event.success
@@ -109,7 +121,6 @@ def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
     # runnable actions have some extra fields used in the BE/FE, which should not be sent to the LLM
     if 'args' in d:
         d['args'].pop('blocking', None)
-        d['args'].pop('keep_prompt', None)
         d['args'].pop('confirmation_state', None)
 
     if 'extras' in d:

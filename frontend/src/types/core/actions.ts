@@ -78,33 +78,14 @@ export interface BrowseInteractiveAction
   };
 }
 
-export interface AddTaskAction extends OpenHandsActionEvent<"add_task"> {
-  source: "agent";
-  timeout: number;
-  args: {
-    parent: string;
-    goal: string;
-    subtasks: unknown[];
-    thought: string;
-  };
-}
-
-export interface ModifyTaskAction extends OpenHandsActionEvent<"modify_task"> {
-  source: "agent";
-  timeout: number;
-  args: {
-    task_id: string;
-    state: string;
-    thought: string;
-  };
-}
-
 export interface FileReadAction extends OpenHandsActionEvent<"read"> {
   source: "agent";
   args: {
     path: string;
     thought: string;
-    translated_ipython_code: string | null;
+    security_risk: ActionSecurityRisk | null;
+    impl_source?: string;
+    view_range?: number[] | null;
   };
 }
 
@@ -121,7 +102,18 @@ export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
   source: "agent";
   args: {
     path: string;
-    translated_ipython_code: string;
+    command?: string;
+    file_text?: string | null;
+    view_range?: number[] | null;
+    old_str?: string | null;
+    new_str?: string | null;
+    insert_line?: number | null;
+    content?: string;
+    start?: number;
+    end?: number;
+    thought: string;
+    security_risk: ActionSecurityRisk | null;
+    impl_source?: string;
   };
 }
 
@@ -144,6 +136,4 @@ export type OpenHandsAction =
   | FileReadAction
   | FileEditAction
   | FileWriteAction
-  | AddTaskAction
-  | ModifyTaskAction
   | RejectAction;

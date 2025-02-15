@@ -2,7 +2,6 @@ import uvicorn
 from fastapi import FastAPI, WebSocket
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.schema import ActionType
 from openhands.utils.shutdown_listener import should_continue
 
 app = FastAPI()
@@ -11,10 +10,6 @@ app = FastAPI()
 @app.websocket('/ws')
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    # send message to mock connection
-    await websocket.send_json(
-        {'action': ActionType.INIT, 'message': 'Control loop started.'}
-    )
 
     try:
         while should_continue():
@@ -49,7 +44,6 @@ def read_llm_models():
 def read_llm_agents():
     return [
         'CodeActAgent',
-        'PlannerAgent',
     ]
 
 

@@ -67,12 +67,15 @@ def get_config(
             base_container_image=BIOCODER_BENCH_CONTAINER_IMAGE,
             enable_auto_lint=True,
             use_host_network=False,
+            remote_runtime_enable_retries=True,
         ),
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
+    agent_config = config.get_agent_config(metadata.agent_class)
+    agent_config.enable_prompt_extensions = False
     return config
 
 
@@ -197,7 +200,7 @@ def complete_runtime(
     if obs.exit_code == 0:
         test_result['metadata']['1_copy_change_success'] = True
 
-        action = CmdRunAction(command=f'cat {generated_path}', keep_prompt=False)
+        action = CmdRunAction(command=f'cat {generated_path}')
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         assert obs.exit_code == 0
@@ -221,9 +224,7 @@ def complete_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    action = CmdRunAction(
-        command='cat /testing_files/results_biocoder.json', keep_prompt=False
-    )
+    action = CmdRunAction(command='cat /testing_files/results_biocoder.json')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     if obs.exit_code == 0:
