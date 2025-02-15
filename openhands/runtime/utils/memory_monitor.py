@@ -1,7 +1,6 @@
 """Memory monitoring utilities for the runtime."""
 
 import threading
-from typing import Optional
 
 from memory_profiler import memory_usage
 
