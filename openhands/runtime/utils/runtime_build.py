@@ -349,7 +349,7 @@ def _build_sandbox_image(
     platform: str | None = None,
     extra_build_args: List[str] | None = None,
 ):
-    """Build and tag the sandbox image with all non-existing tags."""
+    """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist."""
     names = [
         f'{runtime_image_repo}:{source_tag}',
         f'{runtime_image_repo}:{lock_tag}',

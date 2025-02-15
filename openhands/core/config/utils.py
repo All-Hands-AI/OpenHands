@@ -35,8 +35,8 @@ def load_from_env(
     """Sets config attributes from environment variables or TOML dictionary.
 
     Reads environment-style variables and updates the config attributes accordingly.
-    Supports configuration of LLM settings (e.g., `LLM_BASE_URL`), agent settings
-    (e.g., `AGENT_MEMORY_ENABLED`), sandbox settings (e.g., `SANDBOX_TIMEOUT`), and more.
+    Supports configuration of LLM settings (e.g., LLM_BASE_URL), agent settings
+    (e.g., AGENT_MEMORY_ENABLED), sandbox settings (e.g., SANDBOX_TIMEOUT), and more.
 
     Args:
         cfg: The AppConfig object to set attributes on.
@@ -106,6 +106,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     Args:
         cfg: The AppConfig object to update attributes of.
         toml_file: The path to the toml file. Defaults to 'config.toml'.
+
+    See Also:
+    - config.template.toml for the full list of config options.
     """
     # try to read the config.toml file into the config object
     try:

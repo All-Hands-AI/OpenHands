@@ -14,8 +14,7 @@ Functions:
 - find_file(file_name: str, dir_path: str = './'): Finds all files with the given name in the specified directory.
 
 Note:
-    All functions return string representations of their results or appropriate
-    error messages when operations cannot be completed.
+    All functions return string representations of their results.
 """
 
 import os
@@ -96,9 +95,9 @@ def _lint_file(file_path: str) -> tuple[str | None, int | None]:
         file_path: str: The path to the file to lint.
 
     Returns:
-        tuple[str | None, int | None]: A tuple containing:
-            - str | None: The lint error message if found, None otherwise
-            - int | None: The line number of the first error, None if no errors
+    A tuple containing:
+        - The lint error message if found, None otherwise
+        - The line number of the first error, None if no errors
     """
     linter = DefaultLinter()
     lint_error: list[LintResult] = linter.lint(file_path)
@@ -181,7 +180,7 @@ def open_file(
     """Opens a file in the editor and optionally positions at a specific line.
 
     The function displays a limited window of content, centered around the specified line
-    number if provided. To view the complete file content, use `scroll_down` and `scroll_up`
+    number if provided. To view the complete file content, the agent should use scroll_down and scroll_up
     commands iteratively.
 
     Args:
@@ -190,11 +189,6 @@ def open_file(
             Defaults to 1.
         context_lines: Maximum number of lines to display in the view window.
             Limited to 100 lines. Defaults to 100.
-
-    Note:
-        - Always use `scroll_down` repeatedly to read the entire file before editing
-        - View window is limited to 100 lines at a time
-        - Use `scroll_up` and `scroll_down` to navigate through longer files
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
@@ -338,8 +332,8 @@ def search_file(search_term: str, file_path: str | None = None) -> None:
     """Searches for search_term in file. If file is not provided, searches in the current open file.
 
     Args:
-        search_term: str: The term to search for.
-        file_path: str | None: The path to the file to search.
+        search_term: The term to search for.
+        file_path: The path to the file to search.
     """
     global CURRENT_FILE
     if file_path is None:
