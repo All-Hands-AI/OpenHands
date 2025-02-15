@@ -4885,6 +4885,21 @@ files = [
 ]
 
 [[package]]
+name = "memory-profiler"
+version = "0.61.0"
+description = "A module for monitoring memory usage of a python program"
+optional = false
+python-versions = ">=3.5"
+groups = ["main"]
+files = [
+    {file = "memory_profiler-0.61.0-py3-none-any.whl", hash = "sha256:400348e61031e3942ad4d4109d18753b2fb08c2f6fb8290671c5513a34182d84"},
+    {file = "memory_profiler-0.61.0.tar.gz", hash = "sha256:4e5b73d7864a1d1292fb76a03e82a3e78ef934d06828a698d9dada76da2067b0"},
+]
+
+[package.dependencies]
+psutil = "*"
+
+[[package]]
 name = "minio"
 version = "7.2.15"
 description = "MinIO Python SDK for Amazon S3 Compatible Cloud Storage"
@@ -10655,4 +10670,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "431b15e98a730d03d7b3b8ea9ea15d812cf50802b35c18c741a69518c1a00464"
+content-hash = "e9ae47ca13de911290b2cbf57c81ec74b84663d915e252159e42707f5fa9ed5b"
