@@ -61,8 +61,8 @@ RUN add-apt-repository ppa:deadsnakes/ppa \
     && apt-get install -y python3.12 python3.12-venv python3.12-dev python3-pip \
     && ln -s /usr/bin/python3.12 /usr/bin/python
 
-# NodeJS >= 18.17.1
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+# NodeJS >= 20
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - \
     && apt-get install -y nodejs
 
 # Poetry >= 1.8
@@ -113,12 +113,14 @@ RUN \
 #!/bin/bash
 make -s clean
 make -s check-dependencies
-make -s install-python-dependencies
+EOF
+
+RUN --mount=type=bind,source=./,target=/app/ make -s install-python-dependencies
+RUN --mount=type=bind,source=./,target=/app/ make build
 
 # NOTE
 # node_modules are .dockerignore-d therefore not mountable
 # make -s install-frontend-dependencies
-EOF
 
 #
 CMD ["bash"]
