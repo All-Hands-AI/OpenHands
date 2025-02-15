@@ -123,9 +123,11 @@ class Session:
 
         github_token = None
         selected_repository = None
+        selected_branch = None
         if isinstance(settings, ConversationInitData):
             github_token = settings.github_token
             selected_repository = settings.selected_repository
+            selected_branch = settings.selected_branch
 
         try:
             await self.agent_session.start(
@@ -138,6 +140,7 @@ class Session:
                 agent_configs=self.config.get_agent_configs(),
                 github_token=github_token,
                 selected_repository=selected_repository,
+                selected_branch=selected_branch,
                 initial_message=initial_message,
             )
         except Exception as e:
