@@ -192,7 +192,7 @@ class BashSession:
         # otherwise, we are running as the CURRENT USER (e.g., when running LocalRuntime)
         if self.max_memory_mb is not None:
             window_command = (
-                f'prlimit --as={self.max_memory_mb * 1024 * 1024} {_shell_command}'
+                f'prlimit --rss={self.max_memory_mb * 1024 * 1024} {_shell_command}'
             )
         else:
             window_command = _shell_command
