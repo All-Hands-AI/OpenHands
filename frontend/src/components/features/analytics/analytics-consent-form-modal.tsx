@@ -27,11 +27,10 @@ export function AnalyticsConsentFormModal({
       {
         onSuccess: () => {
           handleCaptureConsent(analytics);
+          onClose();
         },
       },
     );
-
-    onClose();
   };
 
   return (
