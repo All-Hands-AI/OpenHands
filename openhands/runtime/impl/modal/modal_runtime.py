@@ -140,7 +140,7 @@ class ModalRuntime(ActionExecutionClient):
             self.send_status_message('STATUS$WAITING_FOR_CLIENT')
 
         self._wait_until_alive()
-        self.setup_initial_env()
+        await self.setup_initial_env()
 
         if not self.attach_to_existing:
             self.send_status_message(' ')

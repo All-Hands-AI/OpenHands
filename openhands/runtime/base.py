@@ -50,7 +50,9 @@ from openhands.runtime.plugins import (
     VSCodeRequirement,
 )
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
+from openhands.storage.user_secrets.user_secret_store import UserSecretStore
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.import_utils import get_impl
 
 STATUS_MESSAGES = {
     'STATUS$STARTING_RUNTIME': 'Starting runtime...',
@@ -59,6 +61,14 @@ STATUS_MESSAGES = {
     'STATUS$CONTAINER_STARTED': 'Container started.',
     'STATUS$WAITING_FOR_CLIENT': 'Waiting for client...',
 }
+
+UserSecretStoreImpl = get_impl(
+    UserSecretStore,  # type: ignore
+    os.environ.get(
+        'USER_SECRET_STORE_CLS',
+        'openhands.storage.user_secrets.file_user_secret_store.FileUserSecretStore',
+    ),
+)
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -130,13 +140,28 @@ class Runtime(FileEditRuntimeMixin):
 
         self.github_user_id = github_user_id
 
-    def setup_initial_env(self) -> None:
+    async def setup_initial_env(self) -> None:
         if self.attach_to_existing:
             return
         logger.debug(f'Adding env vars: {self.initial_env_vars.keys()}')
         self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
+        if self.github_user_id:
+            user_secret_store = await UserSecretStoreImpl.get_instance(
+                self.config, self.github_user_id
+            )
+            page_id = None
+            while True:
+                result_set = await user_secret_store.search(page_id)
+                env_vars = {
+                    secret.key: secret.value.get_secret_value()
+                    for secret in result_set.results
+                }
+                self.add_env_vars(env_vars)
+                page_id = result_set.next_page_id
+                if not page_id:
+                    break
 
     def close(self) -> None:
         """
@@ -218,6 +243,23 @@ class Runtime(FileEditRuntimeMixin):
         assert event.timeout is not None
         try:
             if isinstance(event, CmdRunAction):
+                if self.github_user_id:
+                    user_secret_store = await UserSecretStoreImpl.get_instance(
+                        self.config, self.github_user_id
+                    )
+                    page_id = None
+                    while True:
+                        result_set = await user_secret_store.search(page_id)
+                        for secret in result_set.results:
+                            if f'${secret.key}' in event.command:
+                                export_cmd = CmdRunAction(
+                                    f"export {secret.key}='{secret.value.get_secret_value()}'"
+                                )
+                                await call_sync_from_async(self.run, export_cmd)
+                        page_id = result_set.next_page_id
+                        if not page_id:
+                            break
+
                 if self.github_user_id and '$GITHUB_TOKEN' in event.command:
                     gh_client = GithubServiceImpl(user_id=self.github_user_id)
                     token = await gh_client.get_latest_token()

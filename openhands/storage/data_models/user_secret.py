@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
+from typing import Annotated, Union
 
-from pydantic import BaseModel, Field, SecretStr, SerializationInfo, field_serializer
-from pydantic.json import pydantic_encoder
+from pydantic import BaseModel, Field
+
+from openhands.storage.data_models.token_factory import ApiKey, GithubToken
 
 
 class UserSecret(BaseModel):
@@ -12,10 +14,15 @@ class UserSecret(BaseModel):
     id: str
     key: str
     user_id: str | None
-    value: SecretStr
+    description: str | None
+    token_factory: Annotated[
+        Union[ApiKey | GithubToken],
+        Field(discriminator="type"),
+    ]
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+    '''
     @field_serializer('value')
     def llm_api_key_serializer(self, value: SecretStr, info: SerializationInfo):
         """Custom serializer for the value
@@ -27,3 +34,4 @@ class UserSecret(BaseModel):
             return value.get_secret_value()
 
         return pydantic_encoder(value)
+    '''

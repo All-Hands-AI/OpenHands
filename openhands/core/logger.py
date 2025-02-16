@@ -236,6 +236,8 @@ class SensitiveDataFilter(logging.Filter):
         sensitive_patterns.append('GITHUB_TOKEN')
         sensitive_patterns.append('SANDBOX_ENV_GITHUB_TOKEN')
 
+        # TODO: Add user secrets here
+
         # this also formats the message with % args
         msg = record.getMessage()
         record.args = ()

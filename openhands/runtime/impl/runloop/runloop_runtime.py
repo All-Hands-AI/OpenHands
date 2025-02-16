@@ -141,7 +141,7 @@ class RunloopRuntime(ActionExecutionClient):
         self._wait_until_alive()
 
         if not self.attach_to_existing:
-            self.setup_initial_env()
+            await self.setup_initial_env()
 
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
