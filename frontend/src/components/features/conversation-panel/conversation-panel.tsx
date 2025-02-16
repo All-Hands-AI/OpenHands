@@ -114,8 +114,11 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
       {confirmDeleteModalVisible && (
         <ConfirmDeleteModal
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setConfirmDeleteModalVisible(false)}
+          onConfirm={() => setTimeout(() => {
+            handleConfirmDelete()
+            setConfirmDeleteModalVisible(false)
+          })}
+          onCancel={() => setTimeout(() => setConfirmDeleteModalVisible(false), 100)}
         />
       )}
 
@@ -125,7 +128,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
             endSession();
             onClose();
           }}
-          onClose={() => setConfirmExitConversationModalVisible(false)}
+          onClose={() => setTimeout(() => setConfirmExitConversationModalVisible(false), 100)}
         />
       )}
     </div>
