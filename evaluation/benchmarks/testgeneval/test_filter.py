@@ -307,8 +307,10 @@ def filter_tests(
                         new_class_body.append(subnode)
                 # Always include the class even if no test methods remain, as it might contain
                 # setup, teardown, or other necessary logic.
-                node.body = new_class_body
-                new_body.append(node)
+                if new_class_body:
+                    node.body = new_class_body
+                    new_body.append(node)
+
             else:
                 new_body.append(node)
 

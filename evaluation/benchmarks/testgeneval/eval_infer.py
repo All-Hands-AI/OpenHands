@@ -136,6 +136,7 @@ def run_tests(runtime, instance, test_script, log_file='/tmp/test_output.log'):
         check_obs = runtime.run_action(check_action)
         if (
             isinstance(check_obs, CmdOutputObservation)
+            and len(check_obs.content.split()) > 0
             and check_obs.content.split()[-1].strip() == '1'
         ):
             logger.info(f'[{instance.instance_id}] Test process completed.')
@@ -173,6 +174,7 @@ def run_mutation_testing(
         check_obs = runtime.run_action(check_action)
         if (
             isinstance(check_obs, CmdOutputObservation)
+            and len(check_obs.content.split()) > 0
             and check_obs.content.split()[-1].strip() == '1'
         ):
             logger.info(f'[{instance.instance_id}] Mutation process completed.')
@@ -216,7 +218,6 @@ def grade_test_output(
                 'all_pass': False,
                 'passing_test_names': [],
                 'failing_test_names': [],
-                'filtered_suite': '',
             },
         )
 
@@ -234,7 +235,6 @@ def grade_test_output(
         'all_pass': len(failing_tests) == 0 and total_tests > 0,
         'passing_test_names': passing_tests,
         'failing_test_names': failing_tests,
-        'filtered_suite': '',
     }
 
     if not passing_tests:
@@ -242,12 +242,17 @@ def grade_test_output(
 
     # If all tests pass, evaluate coverage immediately
     if not failing_tests:
+        coverage = 0
+        cov_success = False
         if COVERAGE_PREFIX in test_output:
             coverage_output = test_output.split(COVERAGE_PREFIX)[1]
             _, coverage = check_coverage(coverage_output, test_spec.code_file)
-        test_stats['filtered_suite'] = test_suite
-        return True, coverage, unit_test_output, coverage_output, test_stats
+            cov_success = True
+        # test_stats['filtered_suite'] = test_suite
+        return cov_success, coverage, unit_test_output, coverage_output, test_stats
 
+    cov_success = False
+    coverage = 0
     # Second pass - run coverage on passing tests
     if filtered_content:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -265,9 +270,10 @@ def grade_test_output(
             coverage_output = test_output_second_pass.split(COVERAGE_PREFIX)[1]
             unit_test_output = test_output_second_pass.split(TESTS_SUFFIX)[0]
             _, coverage = check_coverage(coverage_output, test_spec.code_file)
+            cov_success = True
 
-    test_stats['filtered_suite'] = filtered_content
-    return True, coverage, unit_test_output, coverage_output, test_stats
+    # test_stats['filtered_suite'] = filtered_content
+    return cov_success, coverage, unit_test_output, coverage_output, test_stats
 
 
 def process_instance(
@@ -305,8 +311,8 @@ def process_instance(
     instance['test_result']['id'] = id
     instance['test_result']['report'] = {
         'test_output': '',
-        'coverage_output': '',
-        'mutation_output': '',
+        # 'coverage_output': '',
+        # 'mutation_output': '',
         'empty_generation': False,
         'error_eval': False,
         'all_tests_pass': False,
@@ -385,7 +391,7 @@ def process_instance(
         instance['test_result']['report'].update(
             {
                 'test_output': unit_test_output,
-                'coverage_output': coverage_output,
+                # 'coverage_output': coverage_output,
                 'tests_pass': test_stats['any_pass'],  # Changed to use any_pass
                 'all_tests_pass': test_stats['all_pass'],  # Added all_pass metric
                 'coverage_success': coverage_success,
@@ -395,7 +401,12 @@ def process_instance(
         )
 
         # Only run mutation testing if we have passing tests and coverage
-        if not args.skip_mutation and coverage_success and test_stats['any_pass']:
+        if (
+            not args.skip_mutation
+            and coverage_success
+            and test_stats['any_pass']
+            and coverage > 0
+        ):
             mutation_timeout = max(10, 1.5 * test_time)
             mutation_toml = MUTATION_TEMPLATE.format(
                 test_cmd=test_spec.test_cmd,
@@ -414,7 +425,7 @@ def process_instance(
             mutation_code, mutation_output = run_mutation_testing(
                 runtime, instance, '/tmp/mutation.sh'
             )
-            instance['test_result']['report']['mutation_output'] = mutation_output
+            # instance['test_result']['report']['mutation_output'] = mutation_output
             if mutation_output and mutation_code == 0:
                 (
                     mutation_success,
