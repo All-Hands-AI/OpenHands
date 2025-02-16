@@ -46,3 +46,11 @@ docker run -it \
     -e THAT=that
     ...
 ```
+
+### Referring to UI Elements
+
+When referencing UI elements, use ``.
+
+Example:
+1. Toggle the `Advanced` option
+2. Enter your model in the `Custom Model` textbox.

@@ -38,7 +38,7 @@ The following can be set in the OpenHands UI through the Settings:
 - `LLM Provider`
 - `LLM Model`
 - `API Key`
-- `Base URL` (through `Advanced Settings`)
+- `Base URL` (through `Advanced` settings)
 
 There are some settings that may be necessary for some LLMs/providers that cannot be set through the UI. Instead, these
 can be set through environment variables passed to the [docker run command](/modules/usage/installation#start-the-app)
