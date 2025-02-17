@@ -10,10 +10,11 @@ import {
   addAssistantMessage,
   addAssistantObservation,
 } from "#/state/chat-slice";
+import { Modal } from 'antd';
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
-    case ObservationType.RUN: {
+    case ObservationType.RUN:
       if (message.extras.hidden) break;
       let { content } = message;
 
@@ -23,10 +24,24 @@ export function handleObservationMessage(message: ObservationMessage) {
       }
 
       store.dispatch(appendOutput(content));
+
+      const usage = message.tool_call_metadata?.model_response?.usage;
+      if (usage) {
+        Modal.info({
+          title: 'Model Usage Information',
+          content: (
+            <div>
+              <p>Prompt Tokens: {usage.prompt_tokens}</p>
+              <p>Completion Tokens: {usage.completion_tokens}</p>
+              <p>Total Tokens: {usage.total_tokens}</p>
+            </div>
+          ),
+          okText: 'Close',
+          maskClosable: true,
+        });
+      }
       break;
-    }
     case ObservationType.RUN_IPYTHON:
-      // FIXME: render this as markdown
       store.dispatch(appendJupyterOutput(message.content));
       break;
     case ObservationType.BROWSE:
