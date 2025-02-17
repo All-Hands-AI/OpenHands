@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import posthog from "posthog-js";
-import { DEFAULT_SETTINGS } from "#/services/settings";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
+import { useConfig } from "#/hooks/query/use-config";
+import { DEFAULT_SETTINGS } from "#/services/settings";
 
 const getSettingsQueryFn = async () => {
   const apiSettings = await OpenHands.getSettings();
@@ -24,14 +25,17 @@ const getSettingsQueryFn = async () => {
 };
 
 export const useSettings = () => {
-  const { setGitHubTokenIsSet } = useAuth();
+  const { setGitHubTokenIsSet, githubTokenIsSet } = useAuth();
+  const { data: config } = useConfig();
 
   const query = useQuery({
-    queryKey: ["settings"],
+    queryKey: ["settings", githubTokenIsSet],
     queryFn: getSettingsQueryFn,
-    initialData: DEFAULT_SETTINGS,
-    staleTime: 0,
-    retry: false,
+    enabled: config?.APP_MODE !== "saas" || githubTokenIsSet,
+    // Only retry if the error is not a 404 because we
+    // would want to show the modal immediately if the
+    // settings are not found
+    retry: (_, error) => error.status !== 404,
     meta: {
       disableToast: true,
     },
@@ -46,6 +50,17 @@ export const useSettings = () => {
   React.useEffect(() => {
     setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
   }, [query.data?.GITHUB_TOKEN_IS_SET, query.isFetched]);
+
+  // We want to return the defaults if the settings aren't found so the user can still see the
+  // options to make their initial save. We don't set the defaults in `initialData` above because
+  // that would prepopulate the data to the cache and mess with expectations. Read more:
+  // https://tanstack.com/query/latest/docs/framework/react/guides/initial-query-data#using-initialdata-to-prepopulate-a-query
+  if (query.error?.status === 404) {
+    return {
+      ...query,
+      data: DEFAULT_SETTINGS,
+    };
+  }
 
   return query;
 };

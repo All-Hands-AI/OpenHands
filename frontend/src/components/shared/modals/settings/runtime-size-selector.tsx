@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Select, SelectItem } from "@nextui-org/react";
+import { Select, SelectItem } from "@heroui/react";
 import { I18nKey } from "#/i18n/declaration";
 
 interface RuntimeSizeSelectorProps {

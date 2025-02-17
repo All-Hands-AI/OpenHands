@@ -98,7 +98,7 @@ def read_input(config: AppConfig) -> str:
 
 
 async def main(loop: asyncio.AbstractEventLoop):
-    """Runs the agent in CLI mode"""
+    """Runs the agent in CLI mode."""
 
     args = parse_arguments()
 

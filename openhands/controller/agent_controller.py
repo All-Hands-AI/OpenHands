@@ -77,6 +77,7 @@ class AgentController:
         NullObservation,
         ChangeAgentStateAction,
         AgentStateChangedObservation,
+        AgentCondensationObservation,
     )
 
     def __init__(
@@ -213,6 +214,17 @@ class AgentController:
             err_id = ''
             if isinstance(e, litellm.AuthenticationError):
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
+            elif isinstance(
+                e,
+                (
+                    litellm.ServiceUnavailableError,
+                    litellm.APIConnectionError,
+                    litellm.APIError,
+                ),
+            ):
+                err_id = 'STATUS$ERROR_LLM_SERVICE_UNAVAILABLE'
+            elif isinstance(e, litellm.InternalServerError):
+                err_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR'
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
                 return
@@ -662,6 +674,7 @@ class AgentController:
                 action = self.agent.step(self.state)
                 if action is None:
                     raise LLMNoActionError('No action was returned')
+                action._source = EventSource.AGENT  # type: ignore [attr-defined]
             except (
                 LLMMalformedActionError,
                 LLMNoActionError,
@@ -720,7 +733,7 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-            self.event_stream.add_event(action, EventSource.AGENT)
+            self.event_stream.add_event(action, action._source)  # type: ignore [attr-defined]
 
         await self.update_state_after_step()
 

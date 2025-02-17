@@ -69,6 +69,7 @@ def get_config(
             base_container_image='python:3.12-bookworm',
             enable_auto_lint=False,
             use_host_network=False,
+            remote_runtime_enable_retries=True,
         ),
         # do not mount workspace
         workspace_base=None,
