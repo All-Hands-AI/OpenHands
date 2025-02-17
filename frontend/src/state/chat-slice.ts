@@ -156,10 +156,11 @@ export const chatSlice = createSlice({
       } else if (observationID === "read" || observationID === "edit") {
         // For read operations, we consider it successful if there's no error
         // For edit operations, we consider it successful if there's content and no error
-        causeMessage.success = observationID === "read"
-          ? !observation.payload.content.includes("ERROR:\n")
-          : (observation.payload.content.length > 0 &&
-             !observation.payload.content.includes("ERROR:\n"));
+        causeMessage.success =
+          observationID === "read"
+            ? !observation.payload.content.includes("ERROR:\n")
+            : observation.payload.content.length > 0 &&
+              !observation.payload.content.includes("ERROR:\n");
       }
 
       if (observationID === "run" || observationID === "run_ipython") {
