@@ -6,6 +6,7 @@ import pytest
 from pydantic import SecretStr
 
 from openhands.core.config.app_config import AppConfig
+from openhands.storage.data_models.token_factory import ApiKey
 from openhands.storage.data_models.user_secret import UserSecret
 from openhands.storage.files import FileStore
 from openhands.storage.user_secret.file_user_secret_store import FileUserSecretStore
@@ -31,7 +32,7 @@ def sample_secret():
         id='test-id',
         key='api-key',
         user_id='user-123',
-        value=SecretStr('test-secret-value'),
+        token_factory=ApiKey(secret_value=SecretStr('test-secret-value')),
         updated_at=datetime.now(timezone.utc),
         created_at=datetime.now(timezone.utc),
     )
@@ -60,9 +61,7 @@ async def test_save_and_load_secret(file_user_secret_store, sample_secret):
     assert loaded_secret.id == sample_secret.id
     assert loaded_secret.key == sample_secret.key
     assert loaded_secret.user_id == sample_secret.user_id
-    assert (
-        loaded_secret.value.get_secret_value() == sample_secret.value.get_secret_value()
-    )
+    assert loaded_secret.token_factory == sample_secret.token_factory
     assert isinstance(loaded_secret.updated_at, datetime)
     assert isinstance(loaded_secret.created_at, datetime)
 
@@ -96,10 +95,7 @@ async def test_search_secrets(file_user_secret_store, sample_secret):
     result_set = await file_user_secret_store.search()
     assert len(result_set.results) == 1
     assert result_set.results[0].id == sample_secret.id
-    assert (
-        result_set.results[0].value.get_secret_value()
-        == sample_secret.value.get_secret_value()
-    )
+    assert result_set.results[0].token_factory == sample_secret.token_factory
     assert isinstance(result_set.results[0].updated_at, datetime)
     assert isinstance(result_set.results[0].created_at, datetime)
 
@@ -133,13 +129,7 @@ async def test_get_instance():
 
 @pytest.mark.asyncio
 async def test_encryption_decryption(file_user_secret_store):
-    original_value = 'test-secret-value'
+    original_value = {'type': 'ApiKey', 'secret_value': 'test-secret-value'}
     encrypted = file_user_secret_store._encrypt_value(original_value)
-    decrypted = file_user_secret_store._decrypt_value(encrypted)
-    assert decrypted == original_value
-
-    # Test with SecretStr
-    secret_str = SecretStr(original_value)
-    encrypted = file_user_secret_store._encrypt_value(secret_str)
     decrypted = file_user_secret_store._decrypt_value(encrypted)
     assert decrypted == original_value
