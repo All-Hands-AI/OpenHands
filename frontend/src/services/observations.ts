@@ -10,7 +10,6 @@ import {
   addAssistantMessage,
   addAssistantObservation,
 } from "#/state/chat-slice";
-import { Modal } from 'antd';
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
@@ -27,16 +26,12 @@ export function handleObservationMessage(message: ObservationMessage) {
 
       const usage = message.tool_call_metadata?.model_response?.usage;
       if (usage) {
-        Modal.info({
-          title: 'Model Usage Information',
-          content: [
-            `Prompt Tokens: ${usage.prompt_tokens}`,
-            `Completion Tokens: ${usage.completion_tokens}`,
-            `Total Tokens: ${usage.total_tokens}`
-          ].join('\n'),
-          okText: 'Close',
-          maskClosable: true,
-        });
+        alert([
+          'Model Usage Information',
+          `Prompt Tokens: ${usage.prompt_tokens}`,
+          `Completion Tokens: ${usage.completion_tokens}`,
+          `Total Tokens: ${usage.total_tokens}`
+        ].join('\n'));
       }
       break;
     case ObservationType.RUN_IPYTHON:
