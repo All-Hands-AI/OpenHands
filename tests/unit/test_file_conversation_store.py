@@ -86,7 +86,7 @@ async def test_search_basic():
             }
         )
     )
-    
+
     result = await store.search()
     assert len(result.results) == 3
     # Should be sorted by date, newest first
@@ -115,7 +115,7 @@ async def test_search_pagination():
             }
         )
     )
-    
+
     # Test with limit of 2
     result = await store.search(limit=2)
     assert len(result.results) == 2
@@ -156,7 +156,7 @@ async def test_search_with_invalid_conversation():
             }
         )
     )
-    
+
     result = await store.search()
     # Should return only the valid conversation
     assert len(result.results) == 1

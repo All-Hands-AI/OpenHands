@@ -217,7 +217,21 @@ class RollingLogger:
 
 class SensitiveDataFilter(logging.Filter):
     def filter(self, record):
-        # start with attributes
+        # Gather sensitive values which should not ever appear in the logs.
+        sensitive_values = []
+        for key, value in os.environ.items():
+            key_upper = key.upper()
+            if len(value) > 2 and any(
+                s in key_upper for s in ('SECRET', 'KEY', 'CODE', 'TOKEN')
+            ):
+                sensitive_values.append(value)
+
+        # Replace sensitive values from env!
+        msg = record.getMessage()
+        for sensitive_value in sensitive_values:
+            msg = msg.replace(sensitive_value, '******')
+
+        # Replace obvious sensitive values from log itself...
         sensitive_patterns = [
             'api_key',
             'aws_access_key_id',
@@ -227,30 +241,22 @@ class SensitiveDataFilter(logging.Filter):
             'jwt_secret',
             'modal_api_token_id',
             'modal_api_token_secret',
+            'llm_api_key',
+            'sandbox_env_github_token',
         ]
 
         # add env var names
         env_vars = [attr.upper() for attr in sensitive_patterns]
         sensitive_patterns.extend(env_vars)
 
-        # and some special cases
-        sensitive_patterns.append('JWT_SECRET')
-        sensitive_patterns.append('LLM_API_KEY')
-        sensitive_patterns.append('GITHUB_TOKEN')
-        sensitive_patterns.append('SANDBOX_ENV_GITHUB_TOKEN')
-
-        # TODO: Add user secrets here
-
-        # this also formats the message with % args
-        msg = record.getMessage()
-        record.args = ()
-
         for attr in sensitive_patterns:
             pattern = rf"{attr}='?([\w-]+)'?"
             msg = re.sub(pattern, f"{attr}='******'", msg)
 
-        # passed with msg
+        # Update the record
         record.msg = msg
+        record.args = ()
+
         return True
 
 
