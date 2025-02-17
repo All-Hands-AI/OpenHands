@@ -280,7 +280,7 @@ class EventStream:
         self._queue.put(event)
 
     def set_secrets(self, secrets: dict[str, str]):
-        self.secrets = secrets.copy()
+        self.secrets.update(secrets)
 
     def _replace_secrets(self, data: dict) -> dict:
         for key in data:
