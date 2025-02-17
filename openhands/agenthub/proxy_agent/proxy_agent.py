@@ -11,14 +11,19 @@ from openhands.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
+    CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
 )
 from openhands.events.observation import (
     AgentDelegateObservation,
+    CmdOutputObservation,
+    ErrorObservation,
     IPythonRunCellObservation,
+    UserRejectObservation,
 )
 from openhands.events.observation.observation import Observation
+from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
 from openhands.runtime.plugins import (
@@ -112,12 +117,31 @@ class ProxyAgent(Agent):
 
     def _get_observation_message(self, observation: Observation) -> Message:
         message: Message
+        max_message_chars = self.llm.config.max_message_chars
         if isinstance(observation, IPythonRunCellObservation):
             message = Message(
-                role='system', content=[TextContent(text=str(observation))]
+                role='system',
+                content=[TextContent(text=f'IPython Output\n{observation.content}')],
             )
         elif isinstance(observation, AgentDelegateObservation):
-            text = observation.content + '\noutputs: ' + json.dumps(observation.outputs)
+            text = observation.content + '\nOutputs: ' + json.dumps(observation.outputs)
+            message = Message(role='system', content=[TextContent(text=text)])
+        elif isinstance(observation, ErrorObservation):
+            text = truncate_content(observation.content, max_message_chars)
+            text += '\n[Error occurred in processing last action]'
+            message = Message(role='system', content=[TextContent(text=text)])
+        elif isinstance(observation, UserRejectObservation):
+            text = 'OBSERVATION:\n' + truncate_content(
+                observation.content, max_message_chars
+            )
+            text += '\n[Last action has been rejected by the user]'
+            message = Message(role='system', content=[TextContent(text=text)])
+        elif isinstance(observation, CmdOutputObservation):
+            # Proxy Agent doesn't issue CmdRunAction. If there is a CmdOutputObservation, it's triggered by a user.
+            text = truncate_content(
+                f'\nObserved result of command executed by user:\n{observation.to_agent_observation()}',
+                max_message_chars,
+            )
             message = Message(role='system', content=[TextContent(text=text)])
         else:
             raise ValueError(f'Unknown observation type: {type(observation)}')
@@ -145,7 +169,14 @@ class ProxyAgent(Agent):
                 role=role,
                 content=content,
             )
-
+        elif isinstance(action, CmdRunAction):
+            # Proxy Agent doesn't issue CmdRunAction. If there is, it's triggered by a user.
+            message = Message(
+                role='user',
+                content=[
+                    TextContent(text=f'User executed the command:\n{action.command}')
+                ],
+            )
         else:
             raise ValueError(f'Unknown action type: {type(action)}')
 
