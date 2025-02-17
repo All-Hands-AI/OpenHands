@@ -149,16 +149,15 @@ class Runtime(FileEditRuntimeMixin):
         self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
-        if self.github_user_id:
-            user_secret_store = await UserSecretStoreImpl.get_instance(
-                self.config, self.github_user_id
-            )
-            iter: AsyncIterator[UserSecret] = iterate(user_secret_store.search)
-            env_vars = {
-                secret.key: await secret.token_factory.get_token()
-                async for secret in iter
-            }
-            self.add_env_vars(env_vars)
+
+        user_secret_store = await UserSecretStoreImpl.get_instance(
+            self.config, self.github_user_id
+        )
+        iter: AsyncIterator[UserSecret] = iterate(user_secret_store.search)
+        env_vars = {
+            secret.key: await secret.token_factory.get_token() async for secret in iter
+        }
+        self.add_env_vars(env_vars)
 
     def close(self) -> None:
         """
@@ -240,17 +239,16 @@ class Runtime(FileEditRuntimeMixin):
         assert event.timeout is not None
         try:
             if isinstance(event, CmdRunAction):
-                if self.github_user_id:
-                    user_secret_store = await UserSecretStoreImpl.get_instance(
-                        self.config, self.github_user_id
-                    )
-                    iter: AsyncIterator[UserSecret] = iterate(user_secret_store.search)
-                    async for secret in iter:
-                        if f'${secret.key}' in event.command:
-                            export_cmd = CmdRunAction(
-                                f"export {secret.key}='{await secret.token_factory.get_token()}'"
-                            )
-                            await call_sync_from_async(self.run, export_cmd)
+                user_secret_store = await UserSecretStoreImpl.get_instance(
+                    self.config, self.github_user_id
+                )
+                iter: AsyncIterator[UserSecret] = iterate(user_secret_store.search)
+                async for secret in iter:
+                    if f'${secret.key}' in event.command:
+                        export_cmd = CmdRunAction(
+                            f"export {secret.key}='{await secret.token_factory.get_token()}'"
+                        )
+                        await call_sync_from_async(self.run, export_cmd)
 
                 if self.github_user_id and '$GITHUB_TOKEN' in event.command:
                     gh_client = GithubServiceImpl(user_id=self.github_user_id)

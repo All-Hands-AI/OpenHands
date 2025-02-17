@@ -62,7 +62,8 @@ class FileUserSecretStore(UserSecretStore):
     ) -> UserSecretResultSet:
         try:
             secret_ids = [
-                path.split('/')[-2] for path in self.file_store.list(self.path)
+                path.split('/')[-1].split('.')[0]
+                for path in self.file_store.list(self.path)
             ]
         except FileNotFoundError:
             return UserSecretResultSet([])
