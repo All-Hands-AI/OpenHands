@@ -417,7 +417,7 @@ if __name__ == '__main__':
         # Initialize with a dummy metadata when file doesn't exist
         metadata = EvalMetadata(
             agent_class='dummy_agent',  # Placeholder agent class
-            llm_config=None,  # Minimal LLM config
+            llm_config=LLMConfig(model="dummy_model"),  # Minimal LLM config
             max_iterations=1,  # Minimal iterations
             eval_output_dir=os.path.dirname(
                 args.input_file
