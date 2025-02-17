@@ -5,7 +5,7 @@ The GitHub Resolver automates code fixes and provides intelligent assistance for
 ## Setup
 
 - Available automatically when you grant repository access
-- Log in to Cloud OpenHands and configure LLM settings in your profile
+- Log in to Openhands Cloud and configure LLM settings in your profile
 
 ## Usage
 

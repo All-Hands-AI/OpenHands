@@ -1,8 +1,9 @@
-# Cloud OpenHands
+# Openhands Cloud
 
 ## Getting Started
 
 1. Connect to GitHub
+
    - Log in using your GitHub account
    - OpenHands uses a GitHub App for secure authentication
    - The app uses short-lived tokens (8-hour expiry) and requests these permissions:

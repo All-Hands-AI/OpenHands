@@ -77,7 +77,7 @@ const sidebars: SidebarsConfig = {
       items: [
         {
           type: "doc",
-          label: "Cloud Openhands",
+          label: "Openhands Cloud",
           id: "usage/cloud/cloud-openhands",
         },
 
