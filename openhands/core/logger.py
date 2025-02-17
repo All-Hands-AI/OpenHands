@@ -156,11 +156,13 @@ class RollingLogger:
     max_lines: int
     char_limit: int
     log_lines: list[str]
+    all_lines: str
 
     def __init__(self, max_lines=10, char_limit=80):
         self.max_lines = max_lines
         self.char_limit = char_limit
         self.log_lines = [''] * self.max_lines
+        self.all_lines = ''
 
     def is_enabled(self):
         return DEBUG and sys.stdout.isatty()
@@ -175,6 +177,7 @@ class RollingLogger:
         self.log_lines.pop(0)
         self.log_lines.append(line[: self.char_limit])
         self.print_lines()
+        self.all_lines += line + '\n'
 
     def write_immediately(self, line):
         self._write(line)

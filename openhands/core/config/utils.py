@@ -29,9 +29,14 @@ JWT_SECRET = '.jwt_secret'
 load_dotenv()
 
 
-def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, str]):
-    """Reads the env-style vars and sets config attributes based on env vars or a config.toml dict.
-    Compatibility with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED, SANDBOX_TIMEOUT and others.
+def load_from_env(
+    cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, str]
+) -> None:
+    """Sets config attributes from environment variables or TOML dictionary.
+
+    Reads environment-style variables and updates the config attributes accordingly.
+    Supports configuration of LLM settings (e.g., LLM_BASE_URL), agent settings
+    (e.g., AGENT_MEMORY_ENABLED), sandbox settings (e.g., SANDBOX_TIMEOUT), and more.
 
     Args:
         cfg: The AppConfig object to set attributes on.
@@ -44,7 +49,7 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
         return next((t for t in types if t is not type(None)), None)
 
     # helper function to set attributes based on env vars
-    def set_attr_from_env(sub_config: BaseModel, prefix=''):
+    def set_attr_from_env(sub_config: BaseModel, prefix='') -> None:
         """Set attributes of a config model based on environment variables."""
         for field_name, field_info in sub_config.model_fields.items():
             field_value = getattr(sub_config, field_name)
@@ -95,7 +100,7 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
     set_attr_from_env(default_agent_config, 'AGENT_')
 
 
-def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
+def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     """Load the config from the toml file. Supports both styles of config vars.
 
     Args:
@@ -103,8 +108,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         toml_file: The path to the toml file. Defaults to 'config.toml'.
 
     See Also:
-    - `config.template.toml` for the full list of config options.
-    - `SandboxConfig` for the sandbox-specific config options.
+    - config.template.toml for the full list of config options.
     """
     # try to read the config.toml file into the config object
     try:
