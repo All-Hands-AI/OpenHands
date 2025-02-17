@@ -22,7 +22,10 @@ export function ConfirmDeleteModal({
           <BaseModalTitle title="Are you sure you want to delete this project?" />
           <BaseModalDescription description="All data associated with this project will be lost." />
         </div>
-        <div className="flex flex-col gap-2 w-full">
+        <div
+          className="flex flex-col gap-2 w-full"
+          onClick={(event) => event.stopPropagation()}
+        >
           <ModalButton
             onClick={onConfirm}
             className="bg-danger font-bold"
