@@ -109,11 +109,18 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
         target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
 
+        # Set environment variables for non-interactive Docker builds
+        os.environ['DOCKER_BUILDKIT'] = '1'
+        os.environ['DOCKER_SCAN_SUGGEST'] = 'false'
+        os.environ['DEBIAN_FRONTEND'] = 'noninteractive'
+
         buildx_cmd = [
             'docker',
             'buildx',
             'build',
             '--progress=plain',
+            '--force-rm',  # Force remove intermediate containers
+            '--rm',  # Remove intermediate containers after a successful build
             f'--build-arg=OPENHANDS_RUNTIME_VERSION={oh_version}',
             f'--build-arg=OPENHANDS_RUNTIME_BUILD_TIME={datetime.datetime.now().isoformat()}',
             f'--tag={target_image_hash_name}',
