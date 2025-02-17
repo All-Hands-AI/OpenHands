@@ -9,8 +9,7 @@ from openhands.core.logger import SensitiveDataFilter
     'NORMAL_VAR': 'normal-value'
 })
 def test_sensitive_data_filter_basic():
-    # Create a test logger
-    logger = logging.getLogger('test_logger')
+    # Create a filter instance
     filter = SensitiveDataFilter()
     
     # Create a log record with sensitive data
@@ -36,7 +35,6 @@ def test_sensitive_data_filter_basic():
 @patch.dict('os.environ', {})
 def test_sensitive_data_filter_empty_values():
     # Test with empty environment variables
-    logger = logging.getLogger('test_logger')
     filter = SensitiveDataFilter()
     
     record = logging.LogRecord(
@@ -60,7 +58,6 @@ def test_sensitive_data_filter_empty_values():
 })
 def test_sensitive_data_filter_multiple_occurrences():
     # Test with multiple occurrences of the same sensitive data
-    logger = logging.getLogger('test_logger')
     filter = SensitiveDataFilter()
     
     # Create a message with multiple occurrences of the same sensitive data
@@ -88,7 +85,6 @@ def test_sensitive_data_filter_multiple_occurrences():
 })
 def test_sensitive_data_filter_case_sensitivity():
     # Test with different case variations in environment variable names
-    logger = logging.getLogger('test_logger')
     filter = SensitiveDataFilter()
     
     record = logging.LogRecord(
