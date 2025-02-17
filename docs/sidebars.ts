@@ -47,23 +47,6 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "Cloud",
-      items: [
-        {
-          type: "doc",
-          label: "Cloud Openhands",
-          id: "usage/cloud/cloud-openhands",
-        },
-
-        {
-          type: "doc",
-          label: "Cloud GitHub Resolver",
-          id: "usage/cloud/github-resolver",
-        },
-      ],
-    },
-    {
-      type: "category",
       label: "Usage Methods",
       items: [
         {
@@ -85,6 +68,23 @@ const sidebars: SidebarsConfig = {
           type: "doc",
           label: "Github Actions",
           id: "usage/how-to/github-action",
+        },
+      ],
+    },
+    {
+      type: "category",
+      label: "Cloud",
+      items: [
+        {
+          type: "doc",
+          label: "Cloud Openhands",
+          id: "usage/cloud/cloud-openhands",
+        },
+
+        {
+          type: "doc",
+          label: "Cloud GitHub Resolver",
+          id: "usage/cloud/github-resolver",
         },
       ],
     },
