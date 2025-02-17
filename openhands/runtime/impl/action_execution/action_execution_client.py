@@ -24,6 +24,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
 )
 from openhands.events.action.action import Action
+from openhands.events.action.files import FileEditSource
 from openhands.events.observation import (
     ErrorObservation,
     NullObservation,
@@ -55,6 +56,7 @@ class ActionExecutionClient(Runtime):
         status_callback: Any | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        github_user_id: str | None = None,
     ):
         self.session = HttpSession()
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
@@ -70,6 +72,7 @@ class ActionExecutionClient(Runtime):
             status_callback,
             attach_to_existing,
             headless_mode,
+            github_user_id,
         )
 
     @abstractmethod
@@ -140,11 +143,13 @@ class ActionExecutionClient(Runtime):
                 stream=True,
                 timeout=30,
             ) as response:
-                temp_file = tempfile.NamedTemporaryFile(delete=False)
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:  # filter out keep-alive new chunks
-                        temp_file.write(chunk)
-                return Path(temp_file.name)
+                with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                    total_length = 0
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:  # filter out keep-alive new chunks
+                            total_length += len(chunk)
+                            temp_file.write(chunk)
+                    return Path(temp_file.name)
         except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
 
@@ -213,8 +218,11 @@ class ActionExecutionClient(Runtime):
             return ''
 
     def send_action_for_execution(self, action: Action) -> Observation:
-        if isinstance(action, FileEditAction):
-            return self.edit(action)
+        if (
+            isinstance(action, FileEditAction)
+            and action.impl_source == FileEditSource.LLM_BASED_EDIT
+        ):
+            return self.llm_based_edit(action)
 
         # set timeout to default if not set
         if action.timeout is None:
@@ -275,6 +283,9 @@ class ActionExecutionClient(Runtime):
         return self.send_action_for_execution(action)
 
     def write(self, action: FileWriteAction) -> Observation:
+        return self.send_action_for_execution(action)
+
+    def edit(self, action: FileEditAction) -> Observation:
         return self.send_action_for_execution(action)
 
     def browse(self, action: BrowseURLAction) -> Observation:

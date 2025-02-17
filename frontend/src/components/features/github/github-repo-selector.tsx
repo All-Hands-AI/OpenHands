@@ -31,7 +31,7 @@ export function GitHubRepositorySelector({
 
   const allRepositories: GitHubRepository[] = [
     ...publicRepositories.filter(
-      (repo) => !publicRepositories.find((r) => r.id === repo.id),
+      (repo) => !userRepositories.find((r) => r.id === repo.id),
     ),
     ...userRepositories,
   ];

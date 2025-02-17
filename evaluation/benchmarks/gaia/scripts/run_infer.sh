@@ -9,6 +9,7 @@ AGENT=$3
 EVAL_LIMIT=$4
 LEVELS=$5
 NUM_WORKERS=$6
+AGENT_CONFIG=$7
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -48,6 +49,10 @@ if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"
   COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
 fi
+
+if [ -n "$AGENT_CONFIG" ]; then
+  echo "AGENT_CONFIG: $AGENT_CONFIG"
+  COMMAND="$COMMAND --agent-config $AGENT_CONFIG"
 
 # Run the command
 eval $COMMAND

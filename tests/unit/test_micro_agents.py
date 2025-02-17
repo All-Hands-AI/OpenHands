@@ -53,7 +53,7 @@ def test_all_agents_are_loaded():
 
 
 def test_coder_agent_with_summary(event_stream: EventStream, agent_configs: dict):
-    """Coder agent should render code summary as part of prompt"""
+    """Coder agent should render code summary as part of prompt."""
     mock_llm = MagicMock()
     content = json.dumps({'action': 'finish', 'args': {}})
     mock_llm.completion.return_value = {'choices': [{'message': {'content': content}}]}
