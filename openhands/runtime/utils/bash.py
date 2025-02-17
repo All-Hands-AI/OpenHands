@@ -189,13 +189,15 @@ class BashSession:
         if self.username in ['root', 'openhands']:
             # This starts a non-login (new) shell for the given user
             _shell_command = f'su {self.username} -'
-        # otherwise, we are running as the CURRENT USER (e.g., when running LocalRuntime)
-        if self.max_memory_mb is not None:
-            window_command = (
-                f'prlimit --as={self.max_memory_mb * 1024 * 1024} {_shell_command}'
-            )
-        else:
-            window_command = _shell_command
+
+        # FIXME: we will introduce memory limit using sysbox-runc in coming PR
+        # # otherwise, we are running as the CURRENT USER (e.g., when running LocalRuntime)
+        # if self.max_memory_mb is not None:
+        #     window_command = (
+        #         f'prlimit --as={self.max_memory_mb * 1024 * 1024} {_shell_command}'
+        #     )
+        # else:
+        window_command = _shell_command
 
         logger.debug(f'Initializing bash session with command: {window_command}')
         session_name = f'openhands-{self.username}-{uuid.uuid4()}'
