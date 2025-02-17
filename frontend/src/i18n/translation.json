@@ -3249,7 +3249,7 @@
         "ja": "非公開"
     },
     "STATUS$STARTING_RUNTIME": {
-        "en": "Starting Runtime...",
+        "en": "Starting runtime...",
         "zh-CN": "启动运行时...",
         "zh-TW": "啟動執行時...",
         "de": "Laufzeitumgebung wird gestartet...",
