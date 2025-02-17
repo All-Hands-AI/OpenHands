@@ -227,7 +227,7 @@ class SensitiveDataFilter(logging.Filter):
                 sensitive_values.append(value)
 
         # Replace sensitive values!
-        msg = record.msg
+        msg = record.getMessage()
         for sensitive_value in sensitive_values:
             msg = msg.replace(sensitive_value, '******')
 
