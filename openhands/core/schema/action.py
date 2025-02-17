@@ -78,5 +78,11 @@ class ActionTypeSchema(BaseModel):
     SEND_PR: str = Field(default='send_pr')
     """Send a PR to github."""
 
+    SYSTEM_MESSAGE: str = Field(default='system_message')
+    """Send a system message to the agent."""
+
+    PROMPT_EXTENSION: str = Field(default='prompt_extension')
+    """Add extensions to the prompt."""
+
 
 ActionType = ActionTypeSchema()
