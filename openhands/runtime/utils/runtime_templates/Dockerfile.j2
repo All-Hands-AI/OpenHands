@@ -89,8 +89,10 @@ RUN \
     /openhands/micromamba/bin/micromamba run -n openhands poetry install --only main,runtime --no-interaction --no-root && \
     # Update and install additional tools
     apt-get update && \
-    /openhands/micromamba/bin/micromamba run -n openhands poetry run pip install playwright && \
-    /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium && \
+    # Install playwright and its dependencies non-interactively
+    DEBIAN_FRONTEND=noninteractive /openhands/micromamba/bin/micromamba run -n openhands poetry run pip install playwright && \
+    DEBIAN_FRONTEND=noninteractive PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium && \
+    yes | /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install chromium && \
     # Set environment variables
     echo "OH_INTERPRETER_PATH=$(/openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print(sys.executable)")" >> /etc/environment && \
     # Clear caches
