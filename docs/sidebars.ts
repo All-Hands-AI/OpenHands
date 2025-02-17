@@ -1,7 +1,7 @@
-import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
+import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 
 const sidebars: SidebarsConfig = {
-  apiSidebar: [require('./modules/python/sidebar.json')],
+  apiSidebar: [require("./modules/python/sidebar.json")],
   docsSidebar: [
     {
       type: 'doc',
@@ -82,7 +82,7 @@ const sidebars: SidebarsConfig = {
             {
               type: 'doc',
               label: 'Cloud GitHub Resolver',
-              id: 'usage/cloud/github-resolver',
+              id: 'usage/cloud/cloud-github-resolver',
             },
           ],
         },
