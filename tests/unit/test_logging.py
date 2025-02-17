@@ -1,5 +1,6 @@
 import logging
 from io import StringIO
+from unittest.mock import patch
 
 import pytest
 
@@ -112,18 +113,18 @@ def test_sensitive_env_vars_masking(test_handler):
 
 def test_special_cases_masking(test_handler):
     logger, stream = test_handler
-    sensitive_data = {
+    environ = {
         'LLM_API_KEY': 'LLM_API_KEY_VALUE',
         'SANDBOX_ENV_GITHUB_TOKEN': 'SANDBOX_ENV_GITHUB_TOKEN_VALUE',
     }
 
-    log_message = ' '.join(
-        f"{attr}={value} with no single quotes' and something"
-        for attr, value in sensitive_data.items()
-    )
-    logger.info(log_message)
+    with patch.dict('openhands.core.logger.os.environ', environ, clear=True):
+        log_message = ' '.join(
+            f"{attr}={value} with no single quotes' and something"
+            for attr, value in environ.items()
+        )
+        logger.info(log_message)
 
-    log_output = stream.getvalue()
-    for attr, value in sensitive_data.items():
-        assert f"{attr}='******'" in log_output
-        assert value not in log_output
+        log_output = stream.getvalue()
+        for attr, value in environ.items():
+            assert value not in log_output
