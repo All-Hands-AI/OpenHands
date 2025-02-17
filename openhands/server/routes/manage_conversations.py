@@ -129,8 +129,9 @@ async def _create_new_conversation(
 @app.post('/conversations')
 async def new_conversation(request: Request, data: InitSessionRequest):
     """Initialize a new session or join an existing one.
+
     After successful initialization, the client should connect to the WebSocket
-    using the returned conversation ID
+    using the returned conversation ID.
     """
     logger.info('Initializing new conversation')
     user_id = get_user_id(request)
