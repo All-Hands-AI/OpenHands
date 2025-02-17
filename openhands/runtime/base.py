@@ -226,7 +226,7 @@ class Runtime(FileEditRuntimeMixin):
                             f"export GITHUB_TOKEN='{token.get_secret_value()}'"
                         )
 
-                        self.event_stream.set_secrets(
+                        self.event_stream.update_secrets(
                             {
                                 'github_token': token.get_secret_value(),
                             }
