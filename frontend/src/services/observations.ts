@@ -29,13 +29,11 @@ export function handleObservationMessage(message: ObservationMessage) {
       if (usage) {
         Modal.info({
           title: 'Model Usage Information',
-          content: (
-            <div>
-              <p>Prompt Tokens: {usage.prompt_tokens}</p>
-              <p>Completion Tokens: {usage.completion_tokens}</p>
-              <p>Total Tokens: {usage.total_tokens}</p>
-            </div>
-          ),
+          content: [
+            `Prompt Tokens: ${usage.prompt_tokens}`,
+            `Completion Tokens: ${usage.completion_tokens}`,
+            `Total Tokens: ${usage.total_tokens}`
+          ].join('\n'),
           okText: 'Close',
           maskClosable: true,
         });
