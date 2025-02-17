@@ -50,7 +50,7 @@ from openhands.events.observation import (
     NullObservation,
     Observation,
 )
-from openhands.events.serialization.event import truncate_content
+from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
 
 # note: RESUME is only available on web GUI
@@ -687,22 +687,7 @@ class AgentController:
                     or 'prompt is too long' in error_str
                     or isinstance(e, ContextWindowExceededError)
                 ):
-                    # When context window is exceeded, keep roughly half of agent interactions
-                    self.state.history = self._apply_conversation_window(
-                        self.state.history
-                    )
-
-                    # Save the ID of the first event in our truncated history for future reloading
-                    if self.state.history:
-                        self.state.start_id = self.state.history[0].id
-
-                    # Add an error event to trigger another step by the agent
-                    self.event_stream.add_event(
-                        AgentCondensationObservation(
-                            content='Trimming prompt to meet context window limitations'
-                        ),
-                        EventSource.AGENT,
-                    )
+                    self._handle_long_context_error()
                     return
                 raise e
 
@@ -831,6 +816,10 @@ class AgentController:
         # Always load from the event stream to avoid losing history
         self._init_history()
 
+    def get_trajectory(self) -> list[dict]:
+        events = self.event_stream.get_events()
+        return [event_to_trajectory(event) for event in events]
+
     def _init_history(self) -> None:
         """Initializes the agent's history from the event stream.
 
@@ -955,6 +944,22 @@ class AgentController:
 
         # make sure history is in sync
         self.state.start_id = start_id
+
+    def _handle_long_context_error(self) -> None:
+        # When context window is exceeded, keep roughly half of agent interactions
+        self.state.history = self._apply_conversation_window(self.state.history)
+
+        # Save the ID of the first event in our truncated history for future reloading
+        if self.state.history:
+            self.state.start_id = self.state.history[0].id
+
+        # Add an error event to trigger another step by the agent
+        self.event_stream.add_event(
+            AgentCondensationObservation(
+                content='Trimming prompt to meet context window limitations'
+            ),
+            EventSource.AGENT,
+        )
 
     def _apply_conversation_window(self, events: list[Event]) -> list[Event]:
         """Cuts history roughly in half when context window is exceeded, preserving action-observation pairs

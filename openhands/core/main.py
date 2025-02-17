@@ -28,7 +28,6 @@ from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.events.serialization import event_from_dict
-from openhands.events.serialization.event import event_to_trajectory
 from openhands.runtime.base import Runtime
 
 
@@ -204,7 +203,7 @@ async def run_controller(
         else:
             file_path = config.save_trajectory_path
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        histories = [event_to_trajectory(event) for event in state.history]
+        histories = controller.get_trajectory()
         with open(file_path, 'w') as f:
             json.dump(histories, f)
 

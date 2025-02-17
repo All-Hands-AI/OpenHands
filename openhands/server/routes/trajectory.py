@@ -22,9 +22,7 @@ async def get_trajectory(request: Request):
         events.
     """
     try:
-        async_stream = AsyncEventStreamWrapper(
-            request.state.conversation.event_stream, filter_hidden=True
-        )
+        async_stream = AsyncEventStreamWrapper(request.state.conversation.event_stream)
         trajectory = []
         async for event in async_stream:
             trajectory.append(event_to_trajectory(event))
