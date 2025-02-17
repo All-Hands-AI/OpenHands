@@ -828,6 +828,8 @@ class AgentController:
         self._init_history()
 
     def get_trajectory(self) -> list[dict]:
+        # state history could be partially hidden/truncated before controller is closed
+        assert self._closed
         return [event_to_trajectory(event) for event in self.state.history]
 
     def _init_history(self) -> None:
