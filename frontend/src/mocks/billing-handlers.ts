@@ -17,6 +17,7 @@ export const STRIPE_BILLING_HANDLERS = [
   }),
 
   http.post("/api/billing/create-checkout-session", async ({ request }) => {
+    await delay();
     const body = await request.json();
 
     if (body && typeof body === "object" && body.amount) {

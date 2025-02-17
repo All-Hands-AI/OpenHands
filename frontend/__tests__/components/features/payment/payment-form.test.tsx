@@ -84,9 +84,31 @@ describe("PaymentForm", () => {
     screen.getByTestId("payment-methods-link");
   });
 
-  it.todo(
-    "should disable the top-up button if the user enters an invalid amount",
-  );
+  it("should disable the top-up button if the user enters an invalid amount", async () => {
+    const user = userEvent.setup();
+    renderPaymentForm();
+
+    const topUpButton = screen.getByText("Add credit");
+    expect(topUpButton).toBeDisabled();
+
+    const topUpInput = await screen.findByTestId("top-up-input");
+    await user.type(topUpInput, "  ");
+
+    expect(topUpButton).toBeDisabled();
+  });
+
+  it("should disable the top-up button after submission", async () => {
+    const user = userEvent.setup();
+    renderPaymentForm();
+
+    const topUpInput = await screen.findByTestId("top-up-input");
+    await user.type(topUpInput, "50.12");
+
+    const topUpButton = screen.getByText("Add credit");
+    await user.click(topUpButton);
+
+    expect(topUpButton).toBeDisabled();
+  });
 
   describe("prevent submission if", () => {
     test("user enters a negative amount", async () => {

@@ -1,3 +1,4 @@
+import React from "react";
 import { useCreateStripeCheckoutSession } from "#/hooks/mutation/stripe/use-create-stripe-checkout-session";
 import { useBalance } from "#/hooks/query/use-balance";
 import { cn } from "#/utils/utils";
@@ -6,22 +7,29 @@ import { SettingsInput } from "../settings/settings-input";
 import { BrandButton } from "../settings/brand-button";
 import { HelpLink } from "../settings/help-link";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { amountIsValid } from "#/utils/amount-is-valid";
 
 export function PaymentForm() {
   const { data: balance, isLoading } = useBalance();
-  const { mutate: addBalance } = useCreateStripeCheckoutSession();
+  const { mutate: addBalance, isPending } = useCreateStripeCheckoutSession();
+
+  const [buttonIsDisabled, setButtonIsDisabled] = React.useState(true);
 
   const billingFormAction = async (formData: FormData) => {
     const amount = formData.get("top-up-input")?.toString();
 
     if (amount?.trim()) {
-      const float = parseFloat(amount);
-      if (Number.isNaN(float)) return;
-      if (float < 0) return;
-      if (float < 25) return;
+      if (!amountIsValid(amount)) return;
 
+      const float = parseFloat(amount);
       addBalance({ amount: Number(float.toFixed(2)) });
     }
+
+    setButtonIsDisabled(true);
+  };
+
+  const handleTopUpInputChange = (value: string) => {
+    setButtonIsDisabled(!amountIsValid(value));
   };
 
   return (
@@ -54,14 +62,23 @@ export function PaymentForm() {
         <SettingsInput
           testId="top-up-input"
           name="top-up-input"
+          onChange={handleTopUpInputChange}
           type="text"
           label="Top-up amount"
           placeholder="Specify an amount to top up your credits"
           className="w-[680px]"
         />
-        <BrandButton variant="primary" type="submit">
-          Add credit
-        </BrandButton>
+
+        <div className="flex items-center w-[680px] gap-2">
+          <BrandButton
+            variant="primary"
+            type="submit"
+            isDisabled={isPending || buttonIsDisabled}
+          >
+            Add credit
+          </BrandButton>
+          {isPending && <LoadingSpinner size="small" />}
+        </div>
       </div>
 
       <HelpLink

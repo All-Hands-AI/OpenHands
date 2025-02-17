@@ -12,6 +12,7 @@ interface SettingsInputProps {
   isDisabled?: boolean;
   startContent?: React.ReactNode;
   className?: string;
+  onChange?: (value: string) => void;
 }
 
 export function SettingsInput({
@@ -25,6 +26,7 @@ export function SettingsInput({
   isDisabled,
   startContent,
   className,
+  onChange,
 }: SettingsInputProps) {
   return (
     <label className={cn("flex flex-col gap-2.5 w-fit", className)}>
@@ -35,6 +37,7 @@ export function SettingsInput({
       </div>
       <input
         data-testid={testId}
+        onChange={(e) => onChange?.(e.target.value)}
         name={name}
         disabled={isDisabled}
         type={type}
