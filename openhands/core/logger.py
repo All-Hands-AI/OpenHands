@@ -221,7 +221,7 @@ class SensitiveDataFilter(logging.Filter):
         sensitive_values = []
         for key, value in os.environ.items():
             key_upper = key.upper()
-            if value and any(
+            if len(value) > 2 and any(
                 s in key_upper for s in ('SECRET', 'KEY', 'CODE', 'TOKEN')
             ):
                 sensitive_values.append(value)
