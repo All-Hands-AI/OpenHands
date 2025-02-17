@@ -22,6 +22,9 @@ async def main():
     loaded_secret = await user_secret_store.load_secret(slack_api_key.id)
     print(loaded_secret)
 
+    result_set = await user_secret_store.search()
+    print(result_set)
+
 
 if __name__ == '__main__':
     asyncio.run(main())
