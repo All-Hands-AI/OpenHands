@@ -241,10 +241,8 @@ class SensitiveDataFilter(logging.Filter):
             'jwt_secret',
             'modal_api_token_id',
             'modal_api_token_secret',
-            'JWT_SECRET',
-            'LLM_API_KEY',
-            'GITHUB_TOKEN',
-            'SANDBOX_ENV_GITHUB_TOKEN',
+            'llm_api_key',
+            'sandbox_env_github_token',
         ]
 
         # add env var names
