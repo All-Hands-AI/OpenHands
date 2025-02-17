@@ -1,23 +1,25 @@
-import os
 import logging
+from unittest.mock import patch
+
 from openhands.core.logger import SensitiveDataFilter
 
+@patch.dict('os.environ', {
+    'API_SECRET': 'super-secret-123',
+    'AUTH_TOKEN': 'auth-token-456',
+    'NORMAL_VAR': 'normal-value'
+})
 def test_sensitive_data_filter_basic():
     # Create a test logger
     logger = logging.getLogger('test_logger')
     filter = SensitiveDataFilter()
     
     # Create a log record with sensitive data
-    os.environ['API_SECRET'] = 'super-secret-123'
-    os.environ['AUTH_TOKEN'] = 'auth-token-456'
-    os.environ['NORMAL_VAR'] = 'normal-value'
-    
     record = logging.LogRecord(
         name='test_logger',
         level=logging.INFO,
         pathname='test.py',
         lineno=1,
-        msg=f'API Secret: {os.environ["API_SECRET"]}, Token: {os.environ["AUTH_TOKEN"]}, Normal: {os.environ["NORMAL_VAR"]}',
+        msg='API Secret: super-secret-123, Token: auth-token-456, Normal: normal-value',
         args=(),
         exc_info=None
     )
@@ -31,6 +33,7 @@ def test_sensitive_data_filter_basic():
     assert 'auth-token-456' not in record.msg
     assert 'normal-value' in record.msg
 
+@patch.dict('os.environ', {})
 def test_sensitive_data_filter_empty_values():
     # Test with empty environment variables
     logger = logging.getLogger('test_logger')
@@ -52,12 +55,13 @@ def test_sensitive_data_filter_empty_values():
     # Message should remain unchanged
     assert record.msg == 'No sensitive data here'
 
+@patch.dict('os.environ', {
+    'API_KEY': 'secret-key-789'
+})
 def test_sensitive_data_filter_multiple_occurrences():
     # Test with multiple occurrences of the same sensitive data
     logger = logging.getLogger('test_logger')
     filter = SensitiveDataFilter()
-    
-    os.environ['API_KEY'] = 'secret-key-789'
     
     # Create a message with multiple occurrences of the same sensitive data
     record = logging.LogRecord(
@@ -65,7 +69,7 @@ def test_sensitive_data_filter_multiple_occurrences():
         level=logging.INFO,
         pathname='test.py',
         lineno=1,
-        msg=f'Key1: {os.environ["API_KEY"]}, Key2: {os.environ["API_KEY"]}',
+        msg='Key1: secret-key-789, Key2: secret-key-789',
         args=(),
         exc_info=None
     )
@@ -77,21 +81,22 @@ def test_sensitive_data_filter_multiple_occurrences():
     assert record.msg.count('******') == 2
     assert 'secret-key-789' not in record.msg
 
+@patch.dict('os.environ', {
+    'secret_KEY': 'secret-value-1',
+    'API_secret': 'secret-value-2',
+    'TOKEN_code': 'secret-value-3'
+})
 def test_sensitive_data_filter_case_sensitivity():
     # Test with different case variations in environment variable names
     logger = logging.getLogger('test_logger')
     filter = SensitiveDataFilter()
-    
-    os.environ['secret_KEY'] = 'secret-value-1'
-    os.environ['API_secret'] = 'secret-value-2'
-    os.environ['TOKEN_code'] = 'secret-value-3'
     
     record = logging.LogRecord(
         name='test_logger',
         level=logging.INFO,
         pathname='test.py',
         lineno=1,
-        msg=f'Values: {os.environ["secret_KEY"]}, {os.environ["API_secret"]}, {os.environ["TOKEN_code"]}',
+        msg='Values: secret-value-1, secret-value-2, secret-value-3',
         args=(),
         exc_info=None
     )
