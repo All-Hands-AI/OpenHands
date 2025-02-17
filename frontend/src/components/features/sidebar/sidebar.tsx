@@ -92,7 +92,7 @@ export function Sidebar() {
             <NavLink
               to="/settings"
               className={({ isActive }) =>
-                (isActive ? "text-white" : "text-[#9099AC]") + " mt-0.5 md:mt-0"
+                `${isActive ? "text-white" : "text-[#9099AC]"} mt-0.5 md:mt-0`
               }
             >
               <SettingsButton />
