@@ -61,6 +61,7 @@ export function PaymentForm() {
       </div>
 
       <HelpLink
+        testId="payment-methods-link"
         href="https://stripe.com/"
         text="Manage payment methods on"
         linkText="Stripe"
