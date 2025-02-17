@@ -225,6 +225,13 @@ class Runtime(FileEditRuntimeMixin):
                         export_cmd = CmdRunAction(
                             f"export GITHUB_TOKEN='{token.get_secret_value()}'"
                         )
+
+                        self.event_stream.set_secrets(
+                            {
+                                'github_token': token.get_secret_value(),
+                            }
+                        )
+
                         await call_sync_from_async(self.run, export_cmd)
 
             observation: Observation = await call_sync_from_async(
