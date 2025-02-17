@@ -2,6 +2,8 @@ import asyncio
 import time
 from typing import Callable, Optional
 
+from pydantic import SecretStr
+
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -9,13 +11,13 @@ from openhands.core.config import AgentConfig, AppConfig, LLMConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
-from openhands.events.action import ChangeAgentStateAction
-from openhands.events.action.message import MessageAction
+from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
+from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
@@ -48,6 +50,7 @@ class AgentSession:
         sid: str,
         file_store: FileStore,
         status_callback: Optional[Callable] = None,
+        github_user_id: str | None = None,
     ):
         """Initializes a new instance of the Session class
 
@@ -60,6 +63,7 @@ class AgentSession:
         self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
         self._status_callback = status_callback
+        self.github_user_id = github_user_id
 
     async def start(
         self,
@@ -70,9 +74,10 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        github_token: str | None = None,
+        github_token: SecretStr | None = None,
         selected_repository: str | None = None,
-        initial_user_msg: str | None = None,
+        selected_branch: str | None = None,
+        initial_message: MessageAction | None = None,
     ):
         """Starts the Agent session
         Parameters:
@@ -94,33 +99,43 @@ class AgentSession:
             return
         self._starting = True
         self._started_at = time.time()
-        self._create_security_analyzer(config.security.security_analyzer)
-        await self._create_runtime(
-            runtime_name=runtime_name,
-            config=config,
-            agent=agent,
-            github_token=github_token,
-            selected_repository=selected_repository,
-        )
-
-        self.controller = self._create_controller(
-            agent,
-            config.security.confirmation_mode,
-            max_iterations,
-            max_budget_per_task=max_budget_per_task,
-            agent_to_llm_config=agent_to_llm_config,
-            agent_configs=agent_configs,
-        )
-        self.event_stream.add_event(
-            ChangeAgentStateAction(AgentState.INIT), EventSource.ENVIRONMENT
-        )
-
-        if initial_user_msg:
-            self.event_stream.add_event(
-                MessageAction(content=initial_user_msg), EventSource.USER
+        try:
+            self._create_security_analyzer(config.security.security_analyzer)
+            await self._create_runtime(
+                runtime_name=runtime_name,
+                config=config,
+                agent=agent,
+                github_token=github_token,
+                selected_repository=selected_repository,
+                selected_branch=selected_branch,
             )
-            
-        self._starting = False
+
+            self.controller = self._create_controller(
+                agent,
+                config.security.confirmation_mode,
+                max_iterations,
+                max_budget_per_task=max_budget_per_task,
+                agent_to_llm_config=agent_to_llm_config,
+                agent_configs=agent_configs,
+            )
+            if github_token:
+                self.event_stream.set_secrets(
+                    {
+                        'github_token': github_token.get_secret_value(),
+                    }
+                )
+            if initial_message:
+                self.event_stream.add_event(initial_message, EventSource.USER)
+                self.event_stream.add_event(
+                    ChangeAgentStateAction(AgentState.RUNNING), EventSource.ENVIRONMENT
+                )
+            else:
+                self.event_stream.add_event(
+                    ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT),
+                    EventSource.ENVIRONMENT,
+                )
+        finally:
+            self._starting = False
 
     async def close(self):
         """Closes the Agent session"""
@@ -170,8 +185,9 @@ class AgentSession:
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
-        github_token: str | None = None,
+        github_token: SecretStr | None = None,
         selected_repository: str | None = None,
+        selected_branch: str | None = None,
     ):
         """Creates a runtime instance
 
@@ -188,11 +204,16 @@ class AgentSession:
         runtime_cls = get_runtime_cls(runtime_name)
         env_vars = (
             {
-                'GITHUB_TOKEN': github_token,
+                'GITHUB_TOKEN': github_token.get_secret_value(),
             }
             if github_token
             else None
         )
+
+        kwargs = {}
+        if runtime_cls == RemoteRuntime:
+            kwargs['github_user_id'] = self.github_user_id
+
         self.runtime = runtime_cls(
             config=config,
             event_stream=self.event_stream,
@@ -201,6 +222,7 @@ class AgentSession:
             status_callback=self._status_callback,
             headless_mode=False,
             env_vars=env_vars,
+            **kwargs,
         )
 
         # FIXME: this sleep is a terrible hack.
@@ -221,7 +243,10 @@ class AgentSession:
         repo_directory = None
         if selected_repository:
             repo_directory = await call_sync_from_async(
-                self.runtime.clone_repo, github_token, selected_repository
+                self.runtime.clone_repo,
+                github_token,
+                selected_repository,
+                selected_branch,
             )
 
         if agent.prompt_manager:

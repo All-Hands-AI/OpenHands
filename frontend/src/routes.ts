@@ -8,6 +8,7 @@ import {
 export default [
   layout("routes/_oh/route.tsx", [
     index("routes/_oh._index/route.tsx"),
+    route("settings", "routes/settings.tsx"),
     route("conversations/:conversationId", "routes/_oh.app/route.tsx", [
       index("routes/_oh.app._index/route.tsx"),
       route("browser", "routes/_oh.app.browser.tsx"),
@@ -15,6 +16,4 @@ export default [
       route("served", "routes/app.tsx"),
     ]),
   ]),
-
-  route("oauth/github/callback", "routes/oauth.github.callback.tsx"),
 ] satisfies RouteConfig;

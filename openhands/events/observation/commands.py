@@ -149,16 +149,18 @@ class CmdOutputObservation(Observation):
             f'**CmdOutputObservation (source={self.source}, exit code={self.exit_code}, '
             f'metadata={json.dumps(self.metadata.model_dump(), indent=2)})**\n'
             '--BEGIN AGENT OBSERVATION--\n'
-            f'{self._to_agent_observation()}\n'
+            f'{self.to_agent_observation()}\n'
             '--END AGENT OBSERVATION--'
         )
 
-    def _to_agent_observation(self) -> str:
+    def to_agent_observation(self) -> str:
         ret = f'{self.metadata.prefix}{self.content}{self.metadata.suffix}'
         if self.metadata.working_dir:
             ret += f'\n[Current working directory: {self.metadata.working_dir}]'
         if self.metadata.py_interpreter_path:
             ret += f'\n[Python interpreter: {self.metadata.py_interpreter_path}]'
+        if self.metadata.exit_code != -1:
+            ret += f'\n[Command finished with exit code {self.metadata.exit_code}]'
         return ret
 
 
