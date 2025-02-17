@@ -5,9 +5,10 @@ import MoneyIcon from "#/icons/money.svg?react";
 import { SettingsInput } from "../settings/settings-input";
 import { BrandButton } from "../settings/brand-button";
 import { HelpLink } from "../settings/help-link";
+import { LoadingSpinner } from "#/components/shared/loading-spinner";
 
 export function PaymentForm() {
-  const { data: balance } = useBalance();
+  const { data: balance, isLoading } = useBalance();
   const { mutate: addBalance } = useCreateStripeCheckoutSession();
 
   const billingFormAction = async (formData: FormData) => {
@@ -35,7 +36,7 @@ export function PaymentForm() {
 
       <div
         className={cn(
-          "flex justify-between w-[680px] bg-[#7F7445] rounded px-3 py-2",
+          "flex items-center justify-between w-[680px] bg-[#7F7445] rounded px-3 py-2",
           "text-[28px] leading-8 -tracking-[0.02em] font-bold",
         )}
       >
@@ -43,7 +44,10 @@ export function PaymentForm() {
           <MoneyIcon width={22} height={14} />
           <span>Balance</span>
         </div>
-        <span data-testid="user-balance">${Number(balance).toFixed(2)}</span>
+        {!isLoading && (
+          <span data-testid="user-balance">${Number(balance).toFixed(2)}</span>
+        )}
+        {isLoading && <LoadingSpinner size="small" />}
       </div>
 
       <div className="flex flex-col gap-3">
@@ -52,7 +56,7 @@ export function PaymentForm() {
           name="top-up-input"
           type="text"
           label="Top-up amount"
-          placeholder="Enter amount"
+          placeholder="Specify an amount to top up your credits"
           className="w-[680px]"
         />
         <BrandButton variant="primary" type="submit">

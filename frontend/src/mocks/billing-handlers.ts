@@ -1,4 +1,4 @@
-import { http, HttpResponse } from "msw";
+import { delay, http, HttpResponse } from "msw";
 import Stripe from "stripe";
 
 export const TEST_STRIPE_SECRET_KEY =
@@ -11,7 +11,10 @@ const PRICES: Record<number, string> = {
 };
 
 export const STRIPE_BILLING_HANDLERS = [
-  http.get("/api/billing/credits", () => HttpResponse.json({ credits: "100" })),
+  http.get("/api/billing/credits", async () => {
+    await delay();
+    return HttpResponse.json({ credits: "100" });
+  }),
 
   http.post("/api/billing/create-checkout-session", async ({ request }) => {
     const body = await request.json();

@@ -172,8 +172,9 @@ export const handlers = [
     HttpResponse.json(null, { status: 200 }),
   ),
   http.get("/api/options/config", () => {
+    const mockSaas = import.meta.env.VITE_MOCK_SAAS === "true";
     const config: GetConfigResponse = {
-      APP_MODE: "oss",
+      APP_MODE: mockSaas ? "saas" : "oss",
       GITHUB_CLIENT_ID: "fake-github-client-id",
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
     };
