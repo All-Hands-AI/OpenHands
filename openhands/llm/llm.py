@@ -75,16 +75,6 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'o3-mini',
 ]
 
-# visual browsing tool supported models
-# This flag is needed since gpt-4o and gpt-4o-mini do not allow passing image_urls with role='tool'
-VISUAL_BROWSING_TOOL_SUPPORTED_MODELS = [
-    'claude-3-5-sonnet',
-    'claude-3-5-sonnet-20240620',
-    'claude-3-5-sonnet-20241022',
-    'o1-2024-12-17',
-]
-
-
 REASONING_EFFORT_SUPPORTED_MODELS = [
     'o1-2024-12-17',
     'o1',
@@ -495,15 +485,6 @@ class LLM(RetryMixin, DebugMixin):
         """
         return self._function_calling_active
 
-    def is_visual_browser_tool_supported(self) -> bool:
-        return (
-            self.config.model in VISUAL_BROWSING_TOOL_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in VISUAL_BROWSING_TOOL_SUPPORTED_MODELS
-            or any(
-                m in self.config.model for m in VISUAL_BROWSING_TOOL_SUPPORTED_MODELS
-            )
-        )
-
     def _post_completion(self, response: ModelResponse) -> float:
         """Post-process the completion response.
 
@@ -624,7 +605,9 @@ class LLM(RetryMixin, DebugMixin):
         return False
 
     def _completion_cost(self, response) -> float:
-        """Calculate the cost of a completion response based on the model.  Local models are treated as free.
+        """Calculate completion cost and update metrics with running total.
+
+        Calculate the cost of a completion response based on the model. Local models are treated as free.
         Add the current cost into total cost in metrics.
 
         Args:

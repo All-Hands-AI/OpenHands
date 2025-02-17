@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import type { Message } from "#/message";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
