@@ -28,6 +28,7 @@ from evaluation.utils.shared import (
 )
 from openhands.core.config import (
     AppConfig,
+    LLMConfig,
     SandboxConfig,
     get_parser,
 )
