@@ -817,8 +817,7 @@ class AgentController:
         self._init_history()
 
     def get_trajectory(self) -> list[dict]:
-        events = self.event_stream.get_events()
-        return [event_to_trajectory(event) for event in events]
+        return [event_to_trajectory(event) for event in self.state.history]
 
     def _init_history(self) -> None:
         """Initializes the agent's history from the event stream.

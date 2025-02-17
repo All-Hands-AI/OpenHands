@@ -1,3 +1,4 @@
+import asyncio
 from unittest.mock import MagicMock
 
 import pytest
@@ -110,10 +111,13 @@ class TestTruncation:
         # Force apply truncation
         controller._handle_long_context_error()
 
-        # Check that the history has been truncated
+        # Check that the history has been truncated before closing the controller
         assert len(controller.state.history) == 13 < history_len
 
+        # Check that after properly closing the controller, history is recovered
+        asyncio.run(controller.close())
         assert len(controller.event_stream.get_events()) == history_len
+        assert len(controller.state.history) == history_len
         assert len(controller.get_trajectory()) == history_len
 
     def test_context_window_exceeded_handling(self, mock_event_stream, mock_agent):
