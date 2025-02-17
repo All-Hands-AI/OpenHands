@@ -19,9 +19,15 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         version_info = self.docker_client.version()
         server_version = version_info.get('Version', '').replace('-', '.')
-        if tuple(map(int, server_version.split('.')[:2])) < (18, 9):
+        self.is_podman = version_info.get('Components')[0].get('Name').startswith('Podman')
+        if tuple(map(int, server_version.split('.')[:2])) < (18, 9) and not self.is_podman:
             raise AgentRuntimeBuildError(
                 'Docker server version must be >= 18.09 to use BuildKit'
+            )
+
+        if self.is_podman and tuple(map(int, server_version.split('.')[:2])) < (4, 9):
+            raise AgentRuntimeBuildError(
+                'Podman server version must be >= 4.9.0'
             )
 
         self.rolling_logger = RollingLogger(max_lines=10)
@@ -31,7 +37,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         """Check if Docker Buildx is available"""
         try:
             result = subprocess.run(
-                ['docker', 'buildx', 'version'], capture_output=True, text=True
+                ['docker' if not self.is_podman else 'podman',, 'buildx', 'version'], capture_output=True, text=True
             )
             return result.returncode == 0
         except FileNotFoundError:
@@ -68,9 +74,15 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         self.docker_client = docker.from_env()
         version_info = self.docker_client.version()
         server_version = version_info.get('Version', '').replace('-', '.')
-        if tuple(map(int, server_version.split('.'))) < (18, 9):
+        self.is_podman = version_info.get('Components')[0].get('Name').startswith('Podman')
+        if tuple(map(int, server_version.split('.'))) < (18, 9) and not self.is_podman:
             raise AgentRuntimeBuildError(
                 'Docker server version must be >= 18.09 to use BuildKit'
+            )
+
+        if self.is_podman and tuple(map(int, server_version.split('.'))) < (4, 9):
+            raise AgentRuntimeBuildError(
+                'Podman server version must be >= 4.9.0'
             )
 
         if not DockerRuntimeBuilder.check_buildx():
@@ -110,7 +122,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
 
         buildx_cmd = [
-            'docker',
+            'docker' if not self.is_podman else 'podman',
             'buildx',
             'build',
             '--progress=plain',
@@ -139,7 +151,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         buildx_cmd.append(path)  # must be last!
 
         self.rolling_logger.start(
-            '================ DOCKER BUILD STARTED ================'
+            f'================ {buildx_cmd[0].upper()} BUILD STARTED ================'
         )
 
         try:
