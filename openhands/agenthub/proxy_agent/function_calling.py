@@ -57,6 +57,10 @@ DelegateRemoteOHTool = ChatCompletionToolParam(
                     'type': 'string',
                     'description': 'The URL of the remote agent.',
                 },
+                'agent_name': {
+                    'type': 'string',
+                    'description': 'The name of the agent to delegate to.',
+                },
                 'task': {
                     'type': 'string',
                     'description': 'The task to delegate.',
@@ -66,7 +70,7 @@ DelegateRemoteOHTool = ChatCompletionToolParam(
                     'description': 'The conversation ID to connect an existing session. If you have requested a task to the agent, check history and enter the correct conversation_id.',
                 },
             },
-            'required': ['url', 'task'],
+            'required': ['url', 'agent_name', 'task'],
         },
     ),
 )
@@ -118,7 +122,10 @@ def response_to_action(response: ModelResponse) -> Action:
             ) from e
 
         if tool_call.function.name == 'delegate_remote_oh':
-            message = arguments['task']
+            message = (
+                arguments['task']
+                + f'I\'d like {arguments["agent_name"]} to handle this task'
+            )
             url = arguments['url']
             conversation_id = arguments.get('conversation_id')
 
