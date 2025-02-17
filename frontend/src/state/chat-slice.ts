@@ -152,16 +152,14 @@ export const chatSlice = createSlice({
       } else if (observationID === "run_ipython") {
         // For IPython, we consider it successful if there's no error message
         const ipythonObs = observation.payload as IPythonObservation;
-        causeMessage.success = !ipythonObs.content
-          .toLowerCase()
-          .includes("error:");
+        causeMessage.success = !ipythonObs.content.includes("ERROR:\n");
       } else if (observationID === "read" || observationID === "edit") {
         // For read operations, we consider it successful if there's no error
         // For edit operations, we consider it successful if there's content and no error
         causeMessage.success = observationID === "read"
-          ? !observation.payload.content.toLowerCase().includes("error:")
+          ? !observation.payload.content.includes("ERROR:\n")
           : (observation.payload.content.length > 0 &&
-             !observation.payload.content.toLowerCase().includes("error:"));
+             !observation.payload.content.includes("ERROR:\n"));
       }
 
       if (observationID === "run" || observationID === "run_ipython") {

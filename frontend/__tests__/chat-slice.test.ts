@@ -76,7 +76,7 @@ describe('chatSlice', () => {
       id: 'test-observation-id',
       observation: 'read',
       cause: 'test-event-id',
-      content: 'Error: File not found',
+      content: 'ERROR:\nFile not found',
       extras: {},
     };
 
@@ -84,5 +84,33 @@ describe('chatSlice', () => {
     const newState = chatSlice.reducer(initialState, action);
 
     expect(newState.messages[0].success).toBe(false);
+  });
+
+  it('should handle read operations with non-error content containing "error"', () => {
+    const initialState = {
+      messages: [
+        {
+          type: 'action',
+          sender: 'assistant',
+          eventID: 'test-event-id',
+          content: 'Reading file: error_description.txt',
+          imageUrls: [],
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    };
+
+    const readObservation: OpenHandsObservation = {
+      id: 'test-observation-id',
+      observation: 'read',
+      cause: 'test-event-id',
+      content: 'This file contains a description of an error, but is not itself an error.',
+      extras: {},
+    };
+
+    const action = addAssistantObservation(readObservation);
+    const newState = chatSlice.reducer(initialState, action);
+
+    expect(newState.messages[0].success).toBe(true);
   });
 });
