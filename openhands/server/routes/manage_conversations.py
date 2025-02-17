@@ -194,7 +194,7 @@ async def search_conversations(
     filtered_results = [
         conversation for conversation in conversation_metadata_result_set.results
         if hasattr(conversation, 'created_at') and 
-        (now - conversation.created_at).total_seconds() <= max_age
+        (now - conversation.created_at.replace(tzinfo=timezone.utc)).total_seconds() <= max_age
     ]
     
     conversation_ids = set(
