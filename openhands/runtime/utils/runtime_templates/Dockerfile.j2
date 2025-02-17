@@ -122,8 +122,8 @@ RUN mkdir -p /openhands/micromamba/bin && \
     /openhands/micromamba/bin/micromamba config list
 
 # Create the openhands virtual environment and install poetry and python
-RUN /openhands/micromamba/bin/micromamba create -n openhands -y && \
-    /openhands/micromamba/bin/micromamba install -n openhands -c conda-forge poetry python=3.12 -y
+RUN CONDA_ALWAYS_YES=true /openhands/micromamba/bin/micromamba create -n openhands -y && \
+    CONDA_ALWAYS_YES=true /openhands/micromamba/bin/micromamba install -n openhands -c conda-forge poetry python=3.12 -y
 
 # Create a clean openhands directory including only the pyproject.toml, poetry.lock and openhands/__init__.py
 RUN \
