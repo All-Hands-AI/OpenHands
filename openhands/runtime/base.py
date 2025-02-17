@@ -9,7 +9,7 @@ import string
 import tempfile
 from abc import abstractmethod
 from pathlib import Path
-from typing import Callable
+from typing import AsyncIterator, Callable
 from zipfile import ZipFile
 
 from pydantic import SecretStr
@@ -50,9 +50,11 @@ from openhands.runtime.plugins import (
     VSCodeRequirement,
 )
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
-from openhands.storage.user_secrets.user_secret_store import UserSecretStore
+from openhands.storage.data_models.user_secret import UserSecret
+from openhands.storage.user_secret.user_secret_store import UserSecretStore
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.import_utils import get_impl
+from openhands.utils.search_utils import iterate
 
 STATUS_MESSAGES = {
     'STATUS$STARTING_RUNTIME': 'Starting runtime...',
@@ -66,7 +68,7 @@ UserSecretStoreImpl = get_impl(
     UserSecretStore,  # type: ignore
     os.environ.get(
         'USER_SECRET_STORE_CLS',
-        'openhands.storage.user_secrets.file_user_secret_store.FileUserSecretStore',
+        'openhands.storage.user_secret.file_user_secret_store.FileUserSecretStore',
     ),
 )
 
@@ -151,17 +153,12 @@ class Runtime(FileEditRuntimeMixin):
             user_secret_store = await UserSecretStoreImpl.get_instance(
                 self.config, self.github_user_id
             )
-            page_id = None
-            while True:
-                result_set = await user_secret_store.search(page_id)
-                env_vars = {
-                    secret.key: secret.value.get_secret_value()
-                    for secret in result_set.results
-                }
-                self.add_env_vars(env_vars)
-                page_id = result_set.next_page_id
-                if not page_id:
-                    break
+            iter: AsyncIterator[UserSecret] = iterate(user_secret_store.search)
+            env_vars = {
+                secret.key: await secret.token_factory.get_token()
+                async for secret in iter
+            }
+            self.add_env_vars(env_vars)
 
     def close(self) -> None:
         """
@@ -247,18 +244,13 @@ class Runtime(FileEditRuntimeMixin):
                     user_secret_store = await UserSecretStoreImpl.get_instance(
                         self.config, self.github_user_id
                     )
-                    page_id = None
-                    while True:
-                        result_set = await user_secret_store.search(page_id)
-                        for secret in result_set.results:
-                            if f'${secret.key}' in event.command:
-                                export_cmd = CmdRunAction(
-                                    f"export {secret.key}='{secret.value.get_secret_value()}'"
-                                )
-                                await call_sync_from_async(self.run, export_cmd)
-                        page_id = result_set.next_page_id
-                        if not page_id:
-                            break
+                    iter: AsyncIterator[UserSecret] = iterate(user_secret_store.search)
+                    async for secret in iter:
+                        if f'${secret.key}' in event.command:
+                            export_cmd = CmdRunAction(
+                                f"export {secret.key}='{await secret.token_factory.get_token()}'"
+                            )
+                            await call_sync_from_async(self.run, export_cmd)
 
                 if self.github_user_id and '$GITHUB_TOKEN' in event.command:
                     gh_client = GithubServiceImpl(user_id=self.github_user_id)

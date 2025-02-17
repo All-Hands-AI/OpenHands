@@ -14,11 +14,11 @@ class UserSecret(BaseModel):
     id: str
     key: str
     user_id: str | None
-    description: str | None
     token_factory: Annotated[
         Union[ApiKey | GithubToken],
-        Field(discriminator="type"),
+        Field(discriminator='type'),
     ]
+    description: str | None = None
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

@@ -14,7 +14,7 @@ from openhands.storage import get_file_store
 from openhands.storage.data_models.user_secret import UserSecret
 from openhands.storage.data_models.user_secret_result_set import UserSecretResultSet
 from openhands.storage.files import FileStore
-from openhands.storage.user_secrets.user_secret_store import UserSecretStore
+from openhands.storage.user_secret.user_secret_store import UserSecretStore
 from openhands.utils.async_utils import call_sync_from_async, wait_all
 from openhands.utils.search_utils import offset_to_page_id, page_id_to_offset
 
@@ -27,7 +27,7 @@ class FileUserSecretStore(UserSecretStore):
 
     async def save_secret(self, secret: UserSecret):
         data = secret.model_dump(context={'expose_secrets': True})
-        data['value'] = self._encrypt_value(data['value'])
+        data['token_factory'] = self._encrypt_value(data['token_factory'])
         secret.updated_at = datetime.now(timezone.utc)
         data['updated_at'] = data['updated_at'].isoformat()
         data['created_at'] = data['created_at'].isoformat()
@@ -39,7 +39,7 @@ class FileUserSecretStore(UserSecretStore):
         try:
             path = self._file_path(id)
             kwargs = json.loads(self.file_store.read(path))
-            kwargs['value'] = self._decrypt_value(kwargs['value'])
+            kwargs['token_factory'] = self._decrypt_value(kwargs['token_factory'])
             kwargs['updated_at'] = datetime.fromisoformat(kwargs['updated_at'])
             kwargs['created_at'] = datetime.fromisoformat(kwargs['created_at'])
             result = UserSecret(**kwargs)
@@ -89,19 +89,16 @@ class FileUserSecretStore(UserSecretStore):
             jwt_secret=config.jwt_secret,
         )
 
-    def _decrypt_value(self, value: SecretStr | str) -> str:
+    def _decrypt_value(self, value: str) -> dict:
         fernet = self._fernet()
-        if isinstance(value, SecretStr):
-            return fernet.decrypt(b64decode(value.get_secret_value().encode())).decode()
-        else:
-            return fernet.decrypt(b64decode(value.encode())).decode()
+        value_json = fernet.decrypt(b64decode(value.encode())).decode()
+        result = json.loads(value_json)
+        return result
 
-    def _encrypt_value(self, value: SecretStr | str) -> str:
+    def _encrypt_value(self, value: dict) -> str:
+        value_json = json.dumps(value)
         fernet = self._fernet()
-        if isinstance(value, SecretStr):
-            return b64encode(fernet.encrypt(value.get_secret_value().encode())).decode()
-        else:
-            return b64encode(fernet.encrypt(value.encode())).decode()
+        return b64encode(fernet.encrypt(value_json.encode())).decode()
 
     def _fernet(self):
         jwt_secret = self.jwt_secret.get_secret_value()
