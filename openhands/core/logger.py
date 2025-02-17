@@ -217,13 +217,13 @@ class RollingLogger:
 
 class SensitiveDataFilter(logging.Filter):
     def filter(self, record):
-        # Gather sensitive values - these should never be logged!
+        # Gather sensitive values which should not ever appear in the logs.
         sensitive_values = []
         for key, value in os.environ.items():
             key_upper = key.upper()
             if any(s in key_upper for s in ('SECRET', 'KEY', 'CODE', 'TOKEN')):
                 sensitive_values.append(value)
-        
+
         # Replace sensitive values!
         msg = record.msg
         for sensitive_value in sensitive_values:
