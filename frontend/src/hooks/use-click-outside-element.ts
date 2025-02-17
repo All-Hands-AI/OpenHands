@@ -11,7 +11,6 @@ export const useClickOutsideElement = <T extends HTMLElement>(
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      console.log("TRACE:use-click-outside-element", event);
       if (ref.current && !ref.current.contains(event.target as Node)) {
         callback();
       }
