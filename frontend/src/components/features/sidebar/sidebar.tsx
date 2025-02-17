@@ -71,8 +71,8 @@ export function Sidebar() {
   return (
     <>
       <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
-        <nav className="flex flex-row md:flex-col items-center justify-between h-full">
-          <div className="flex flex-col items-center gap-[26px]">
+        <nav className="flex flex-row md:flex-col items-center justify-between w-full h-auto md:w-auto md:h-full">
+          <div className="flex flex-row md:flex-col items-center gap-[26px]">
             <div className="flex items-center justify-center">
               <AllHandsLogoButton onClick={handleEndSession} />
             </div>
@@ -88,11 +88,11 @@ export function Sidebar() {
             <DocsButton />
           </div>
 
-          <div className="flex flex-col items-center gap-[26px] mb-4">
+          <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-4">
             <NavLink
               to="/settings"
               className={({ isActive }) =>
-                isActive ? "text-white" : "text-[#9099AC]"
+                (isActive ? "text-white" : "text-[#9099AC]") + " mt-0.5 md:mt-0"
               }
             >
               <SettingsButton />
