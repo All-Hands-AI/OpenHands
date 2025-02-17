@@ -70,6 +70,7 @@ def get_config(
             base_container_image='python:3.12-bookworm',
             enable_auto_lint=True,
             use_host_network=False,
+            remote_runtime_enable_retries=True,
         ),
         # do not mount workspace
         workspace_base=None,
@@ -77,7 +78,7 @@ def get_config(
     )
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
-    agent_config.use_microagents = False
+    agent_config.enable_prompt_extensions = False
     return config
 
 

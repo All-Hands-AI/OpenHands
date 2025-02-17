@@ -59,28 +59,28 @@ def test_load_from_toml_llm_with_fallback(
     # Verify generic LLM configuration
     generic_llm = default_config.get_llm_config('llm')
     assert generic_llm.model == 'base-model'
-    assert generic_llm.api_key == 'base-api-key'
+    assert generic_llm.api_key.get_secret_value() == 'base-api-key'
     assert generic_llm.embedding_model == 'base-embedding'
     assert generic_llm.num_retries == 3
 
     # Verify custom1 LLM falls back 'num_retries' from base
     custom1 = default_config.get_llm_config('custom1')
     assert custom1.model == 'custom-model-1'
-    assert custom1.api_key == 'custom-api-key-1'
+    assert custom1.api_key.get_secret_value() == 'custom-api-key-1'
     assert custom1.embedding_model == 'base-embedding'
     assert custom1.num_retries == 3  # from [llm]
 
     # Verify custom2 LLM overrides 'num_retries'
     custom2 = default_config.get_llm_config('custom2')
     assert custom2.model == 'custom-model-2'
-    assert custom2.api_key == 'custom-api-key-2'
+    assert custom2.api_key.get_secret_value() == 'custom-api-key-2'
     assert custom2.embedding_model == 'base-embedding'
     assert custom2.num_retries == 5  # overridden value
 
     # Verify custom3 LLM inherits all attributes except 'model' and 'api_key'
     custom3 = default_config.get_llm_config('custom3')
     assert custom3.model == 'custom-model-3'
-    assert custom3.api_key == 'custom-api-key-3'
+    assert custom3.api_key.get_secret_value() == 'custom-api-key-3'
     assert custom3.embedding_model == 'base-embedding'
     assert custom3.num_retries == 3  # from [llm]
 
@@ -113,14 +113,14 @@ num_retries = 10
     # Verify generic LLM configuration remains unchanged
     generic_llm = default_config.get_llm_config('llm')
     assert generic_llm.model == 'base-model'
-    assert generic_llm.api_key == 'base-api-key'
+    assert generic_llm.api_key.get_secret_value() == 'base-api-key'
     assert generic_llm.embedding_model == 'base-embedding'
     assert generic_llm.num_retries == 3
 
     # Verify custom_full LLM overrides all attributes
     custom_full = default_config.get_llm_config('custom_full')
     assert custom_full.model == 'full-custom-model'
-    assert custom_full.api_key == 'full-custom-api-key'
+    assert custom_full.api_key.get_secret_value() == 'full-custom-api-key'
     assert custom_full.embedding_model == 'full-custom-embedding'
     assert custom_full.num_retries == 10  # overridden value
 
@@ -136,14 +136,14 @@ def test_load_from_toml_llm_custom_partial_override(
     # Verify custom1 LLM overrides 'model' and 'api_key' but inherits 'num_retries'
     custom1 = default_config.get_llm_config('custom1')
     assert custom1.model == 'custom-model-1'
-    assert custom1.api_key == 'custom-api-key-1'
+    assert custom1.api_key.get_secret_value() == 'custom-api-key-1'
     assert custom1.embedding_model == 'base-embedding'
     assert custom1.num_retries == 3  # from [llm]
 
     # Verify custom2 LLM overrides 'model', 'api_key', and 'num_retries'
     custom2 = default_config.get_llm_config('custom2')
     assert custom2.model == 'custom-model-2'
-    assert custom2.api_key == 'custom-api-key-2'
+    assert custom2.api_key.get_secret_value() == 'custom-api-key-2'
     assert custom2.embedding_model == 'base-embedding'
     assert custom2.num_retries == 5  # Overridden value
 
@@ -159,7 +159,7 @@ def test_load_from_toml_llm_custom_no_override(
     # Verify custom3 LLM inherits 'embedding_model' and 'num_retries' from generic
     custom3 = default_config.get_llm_config('custom3')
     assert custom3.model == 'custom-model-3'
-    assert custom3.api_key == 'custom-api-key-3'
+    assert custom3.api_key.get_secret_value() == 'custom-api-key-3'
     assert custom3.embedding_model == 'base-embedding'
     assert custom3.num_retries == 3  # from [llm]
 
@@ -186,7 +186,7 @@ api_key = "custom-only-api-key"
     # Verify custom_only LLM uses its own attributes and defaults for others
     custom_only = default_config.get_llm_config('custom_only')
     assert custom_only.model == 'custom-only-model'
-    assert custom_only.api_key == 'custom-only-api-key'
+    assert custom_only.api_key.get_secret_value() == 'custom-only-api-key'
     assert custom_only.embedding_model == 'local'  # default value
     assert custom_only.num_retries == 8  # default value
 
@@ -217,12 +217,12 @@ unknown_attr = "should_not_exist"
     # Verify generic LLM is loaded correctly
     generic_llm = default_config.get_llm_config('llm')
     assert generic_llm.model == 'base-model'
-    assert generic_llm.api_key == 'base-api-key'
+    assert generic_llm.api_key.get_secret_value() == 'base-api-key'
     assert generic_llm.num_retries == 3
 
     # Verify invalid_custom LLM does not override generic attributes
     custom_invalid = default_config.get_llm_config('invalid_custom')
     assert custom_invalid.model == 'base-model'
-    assert custom_invalid.api_key == 'base-api-key'
+    assert custom_invalid.api_key.get_secret_value() == 'base-api-key'
     assert custom_invalid.num_retries == 3  # default value
     assert custom_invalid.embedding_model == 'local'  # default value

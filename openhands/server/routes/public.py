@@ -16,15 +16,14 @@ from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm import bedrock
-from openhands.server.shared import config, openhands_config
+from openhands.server.shared import config, server_config
 
 app = APIRouter(prefix='/api/options')
 
 
 @app.get('/models')
 async def get_litellm_models() -> list[str]:
-    """
-    Get all models supported by LiteLLM.
+    """Get all models supported by LiteLLM.
 
     This function combines models from litellm and Bedrock, removing any
     error-prone Bedrock models.
@@ -51,8 +50,8 @@ async def get_litellm_models() -> list[str]:
     ):
         bedrock_model_list = bedrock.list_foundation_models(
             llm_config.aws_region_name,
-            llm_config.aws_access_key_id,
-            llm_config.aws_secret_access_key,
+            llm_config.aws_access_key_id.get_secret_value(),
+            llm_config.aws_secret_access_key.get_secret_value(),
         )
     model_list = litellm_model_list_without_bedrock + bedrock_model_list
     for llm_config in config.llms.values():
@@ -112,4 +111,4 @@ async def get_config():
     Get current config
     """
 
-    return openhands_config.get_config()
+    return server_config.get_config()

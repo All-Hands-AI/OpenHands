@@ -1,11 +1,11 @@
-import { Settings } from "#/services/settings";
+import { Settings } from "#/types/settings";
 
 const extractBasicFormData = (formData: FormData) => {
-  const provider = formData.get("llm-provider")?.toString();
-  const model = formData.get("llm-model")?.toString();
+  const provider = formData.get("llm-provider-input")?.toString();
+  const model = formData.get("llm-model-input")?.toString();
 
   const LLM_MODEL = `${provider}/${model}`.toLowerCase();
-  const LLM_API_KEY = formData.get("api-key")?.toString();
+  const LLM_API_KEY = formData.get("llm-api-key-input")?.toString();
   const AGENT = formData.get("agent")?.toString();
   const LANGUAGE = formData.get("language")?.toString();
 
@@ -44,7 +44,7 @@ const extractAdvancedFormData = (formData: FormData) => {
   };
 };
 
-const extractSettings = (formData: FormData): Partial<Settings> => {
+export const extractSettings = (formData: FormData): Partial<Settings> => {
   const { LLM_MODEL, LLM_API_KEY, AGENT, LANGUAGE } =
     extractBasicFormData(formData);
 
@@ -65,12 +65,3 @@ const extractSettings = (formData: FormData): Partial<Settings> => {
     SECURITY_ANALYZER,
   };
 };
-
-const saveSettingsView = (view: "basic" | "advanced") => {
-  localStorage.setItem(
-    "use-advanced-options",
-    view === "advanced" ? "true" : "false",
-  );
-};
-
-export { extractSettings, saveSettingsView };

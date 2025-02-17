@@ -24,15 +24,19 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.stream import EventStreamSubscriber
-from openhands.resolver.github_issue import GithubIssue
-from openhands.resolver.issue_definitions import (
-    IssueHandler,
-    IssueHandlerInterface,
-    PRHandler,
+from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
+from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
+from openhands.resolver.interfaces.issue import Issue
+from openhands.resolver.interfaces.issue_definitions import (
+    ServiceContextIssue,
+    ServiceContextPR,
 )
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import (
+    Platform,
     codeact_user_response,
+    get_unique_uid,
+    identify_token,
     reset_logger_for_multiprocessing,
 )
 from openhands.runtime.base import Runtime
@@ -43,6 +47,7 @@ AGENT_CLASS = 'CodeActAgent'
 
 def initialize_runtime(
     runtime: Runtime,
+    platform: Platform,
 ):
     """Initialize the runtime for the agent.
 
@@ -61,6 +66,12 @@ def initialize_runtime(
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
 
+    if platform == Platform.GITLAB and os.getenv('GITLAB_CI') == 'true':
+        action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
     action = CmdRunAction(command='git config --global core.pager ""')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
@@ -72,6 +83,7 @@ def initialize_runtime(
 async def complete_runtime(
     runtime: Runtime,
     base_commit: str,
+    platform: Platform,
 ) -> dict[str, Any]:
     """Complete the runtime for the agent.
 
@@ -107,7 +119,11 @@ async def complete_runtime(
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
-    action = CmdRunAction(command='git add -A')
+    if platform == Platform.GITLAB and os.getenv('GITLAB_CI') == 'true':
+        action = CmdRunAction(command='sudo git add -A')
+    else:
+        action = CmdRunAction(command='git add -A')
+
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -118,7 +134,7 @@ async def complete_runtime(
     git_patch = None
     while n_retries < 5:
         action = CmdRunAction(command=f'git diff --no-color --cached {base_commit}')
-        action.timeout = 600 + 100 * n_retries
+        action.set_hard_timeout(600 + 100 * n_retries)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -143,14 +159,15 @@ async def complete_runtime(
 
 
 async def process_issue(
-    issue: GithubIssue,
+    issue: Issue,
+    platform: Platform,
     base_commit: str,
     max_iterations: int,
     llm_config: LLMConfig,
     output_dir: str,
     runtime_container_image: str | None,
     prompt_template: str,
-    issue_handler: IssueHandlerInterface,
+    issue_handler: ServiceContextIssue | ServiceContextPR,
     repo_instruction: str | None = None,
     reset_logger: bool = False,
 ) -> ResolverOutput:
@@ -172,6 +189,16 @@ async def process_issue(
         shutil.rmtree(workspace_base)
     shutil.copytree(os.path.join(output_dir, 'repo'), workspace_base)
 
+    # This code looks unnecessary because these are default values in the config class
+    # they're set by default if nothing else overrides them
+    # FIXME we should remove them here
+    kwargs = {}
+    if os.getenv('GITLAB_CI') == 'True':
+        kwargs['local_runtime_url'] = os.getenv('LOCAL_RUNTIME_URL', 'http://localhost')
+        user_id = os.getuid() if hasattr(os, 'getuid') else 1000
+        if user_id == 0:
+            kwargs['user_id'] = get_unique_uid()
+
     config = AppConfig(
         default_agent='CodeActAgent',
         runtime='docker',
@@ -183,6 +210,7 @@ async def process_issue(
             use_host_network=False,
             # large enough timeout, since some testcases take very long to run
             timeout=300,
+            **kwargs,
         ),
         # do not mount workspace
         workspace_base=workspace_base,
@@ -199,7 +227,7 @@ async def process_issue(
 
     runtime.event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
-    initialize_runtime(runtime)
+    initialize_runtime(runtime, platform)
 
     instruction, images_urls = issue_handler.get_instruction(
         issue, prompt_template, repo_instruction
@@ -222,7 +250,7 @@ async def process_issue(
         last_error: str | None = error_msg
 
     # Get git patch
-    return_val = await complete_runtime(runtime, base_commit)
+    return_val = await complete_runtime(runtime, base_commit, platform)
     git_patch = return_val['git_patch']
     logger.info(
         f'Got git diff for instance {issue.number}:\n--------\n{git_patch}\n--------'
@@ -283,12 +311,32 @@ async def process_issue(
 
 
 def issue_handler_factory(
-    issue_type: str, owner: str, repo: str, token: str, llm_config: LLMConfig
-) -> IssueHandlerInterface:
+    issue_type: str,
+    owner: str,
+    repo: str,
+    token: str,
+    llm_config: LLMConfig,
+    platform: Platform,
+    username: str | None = None,
+) -> ServiceContextIssue | ServiceContextPR:
     if issue_type == 'issue':
-        return IssueHandler(owner, repo, token, llm_config)
+        if platform == Platform.GITHUB:
+            return ServiceContextIssue(
+                GithubIssueHandler(owner, repo, token, username), llm_config
+            )
+        else:  # platform == Platform.GITLAB
+            return ServiceContextIssue(
+                GitlabIssueHandler(owner, repo, token, username), llm_config
+            )
     elif issue_type == 'pr':
-        return PRHandler(owner, repo, token, llm_config)
+        if platform == Platform.GITHUB:
+            return ServiceContextPR(
+                GithubPRHandler(owner, repo, token, username), llm_config
+            )
+        else:  # platform == Platform.GITLAB
+            return ServiceContextPR(
+                GitlabPRHandler(owner, repo, token, username), llm_config
+            )
     else:
         raise ValueError(f'Invalid issue type: {issue_type}')
 
@@ -298,6 +346,7 @@ async def resolve_issue(
     repo: str,
     token: str,
     username: str,
+    platform: Platform,
     max_iterations: int,
     output_dir: str,
     llm_config: LLMConfig,
@@ -307,16 +356,16 @@ async def resolve_issue(
     repo_instruction: str | None,
     issue_number: int,
     comment_id: int | None,
-    target_branch: str | None = None,
     reset_logger: bool = False,
 ) -> None:
-    """Resolve a single github issue.
+    """Resolve a single issue.
 
     Args:
-        owner: Github owner of the repo.
-        repo: Github repository to resolve issues in form of `owner/repo`.
-        token: Github token to access the repository.
-        username: Github username to access the repository.
+        owner: owner of the repo.
+        repo: repository to resolve issues in form of `owner/repo`.
+        token: token to access the repository.
+        username: username to access the repository.
+        platform: platform of the repository.
         max_iterations: Maximum number of iterations to run.
         output_dir: Output directory to write the results.
         llm_config: Configuration for the language model.
@@ -326,13 +375,15 @@ async def resolve_issue(
         repo_instruction: Repository instruction to use.
         issue_number: Issue number to resolve.
         comment_id: Optional ID of a specific comment to focus on.
-        target_branch: Optional target branch to create PR against (for PRs).
+
         reset_logger: Whether to reset the logger for multiprocessing.
     """
-    issue_handler = issue_handler_factory(issue_type, owner, repo, token, llm_config)
+    issue_handler = issue_handler_factory(
+        issue_type, owner, repo, token, llm_config, platform, username
+    )
 
     # Load dataset
-    issues: list[GithubIssue] = issue_handler.get_converted_issues(
+    issues: list[Issue] = issue_handler.get_converted_issues(
         issue_numbers=[issue_number], comment_id=comment_id
     )
 
@@ -378,7 +429,7 @@ async def resolve_issue(
             [
                 'git',
                 'clone',
-                f'https://{username}:{token}@github.com/{owner}/{repo}',
+                issue_handler.get_clone_url(),
                 f'{output_dir}/repo',
             ]
         ).decode('utf-8')
@@ -424,9 +475,9 @@ async def resolve_issue(
     try:
         # checkout to pr branch if needed
         if issue_type == 'pr':
-            branch_to_use = target_branch if target_branch else issue.head_branch
+            branch_to_use = issue.head_branch
             logger.info(
-                f'Checking out to PR branch {target_branch} for issue {issue.number}'
+                f'Checking out to PR branch {branch_to_use} for issue {issue.number}'
             )
 
             if not branch_to_use:
@@ -446,10 +497,6 @@ async def resolve_issue(
                 cwd=repo_dir,
             )
 
-            # Update issue's base_branch if using custom target branch
-            if target_branch:
-                issue.base_branch = target_branch
-
             base_commit = (
                 subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
                 .decode('utf-8')
@@ -458,6 +505,7 @@ async def resolve_issue(
 
         output = await process_issue(
             issue,
+            platform,
             base_commit,
             max_iterations,
             llm_config,
@@ -485,24 +533,24 @@ def main():
         else:
             return int(value)
 
-    parser = argparse.ArgumentParser(description='Resolve a single issue from Github.')
+    parser = argparse.ArgumentParser(description='Resolve a single issue.')
     parser.add_argument(
         '--repo',
         type=str,
         required=True,
-        help='Github repository to resolve issues in form of `owner/repo`.',
+        help='repository to resolve issues in form of `owner/repo`.',
     )
     parser.add_argument(
         '--token',
         type=str,
         default=None,
-        help='Github token to access the repository.',
+        help='token to access the repository.',
     )
     parser.add_argument(
         '--username',
         type=str,
         default=None,
-        help='Github username to access the repository.',
+        help='username to access the repository.',
     )
     parser.add_argument(
         '--runtime-container-image',
@@ -573,12 +621,6 @@ def main():
         help='Type of issue to resolve, either open issue or pr comments.',
     )
     parser.add_argument(
-        '--target-branch',
-        type=str,
-        default=None,
-        help="Target branch to pull and create PR against (for PRs). If not specified, uses the PR's base branch.",
-    )
-    parser.add_argument(
         '--is-experimental',
         type=lambda x: x.lower() == 'true',
         help='Whether to run in experimental mode.',
@@ -592,18 +634,27 @@ def main():
             f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
 
-    owner, repo = my_args.repo.split('/')
-    token = my_args.token if my_args.token else os.getenv('GITHUB_TOKEN')
-    username = my_args.username if my_args.username else os.getenv('GITHUB_USERNAME')
+    parts = my_args.repo.rsplit('/', 1)
+    if len(parts) < 2:
+        raise ValueError('Invalid repo name')
+    owner, repo = parts
+
+    token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
+    username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
     if not username:
-        raise ValueError('Github username is required.')
+        raise ValueError('Username is required.')
 
     if not token:
-        raise ValueError('Github token is required.')
+        raise ValueError('Token is required.')
 
+    platform = identify_token(token)
+    if platform == Platform.INVALID:
+        raise ValueError('Token is invalid.')
+
+    api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(
         model=my_args.llm_model or os.environ['LLM_MODEL'],
-        api_key=my_args.llm_api_key or os.environ['LLM_API_KEY'],
+        api_key=str(api_key) if api_key else None,
         base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
     )
 
@@ -634,6 +685,7 @@ def main():
             repo=repo,
             token=token,
             username=username,
+            platform=platform,
             runtime_container_image=runtime_container_image,
             max_iterations=my_args.max_iterations,
             output_dir=my_args.output_dir,
@@ -643,7 +695,6 @@ def main():
             repo_instruction=repo_instruction,
             issue_number=my_args.issue_number,
             comment_id=my_args.comment_id,
-            target_branch=my_args.target_branch,
         )
     )
 

@@ -101,6 +101,36 @@ In this example:
 - Code generation uses GPT-4 with a higher token limit for generating larger code blocks
 - The default configuration remains available for other tasks
 
+# Custom Configurations with Reserved Names
+
+OpenHands can use custom LLM configurations named with reserved names, for specific use cases. If you specify the model and other settings under the reserved names, then OpenHands will load and them for a specific purpose. As of now, one such configuration is implemented: draft editor.
+
+## Draft Editor Configuration
+
+The `draft_editor` configuration is a group of settings you can provide, to specify the model to use for preliminary drafting of code edits, for any tasks that involve editing and refining code. You need to provide it under the section `[llm.draft_editor]`.
+
+For example, you can define in `config.toml` a draft editor like this:
+
+```toml
+[llm.draft_editor]
+model = "gpt-4"
+temperature = 0.2
+top_p = 0.95
+presence_penalty = 0.0
+frequency_penalty = 0.0
+```
+
+This configuration:
+- Uses GPT-4 for high-quality edits and suggestions
+- Sets a low temperature (0.2) to maintain consistency while allowing some flexibility
+- Uses a high top_p value (0.95) to consider a wide range of token options
+- Disables presence and frequency penalties to maintain focus on the specific edits needed
+
+Use this configuration when you want to let an LLM draft edits before making them. In general, it may be useful to:
+- Review and suggest code improvements
+- Refine existing content while maintaining its core meaning
+- Make precise, focused changes to code or text
+
 :::note
 Custom LLM configurations are only available when using OpenHands in development mode, via `main.py` or `cli.py`. When running via `docker run`, please use the standard configuration options.
 :::

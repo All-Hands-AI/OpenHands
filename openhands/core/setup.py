@@ -11,6 +11,7 @@ from openhands.core.config import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
@@ -78,7 +79,11 @@ def create_agent(runtime: Runtime, config: AppConfig) -> Agent:
 
 
 def create_controller(
-    agent: Agent, runtime: Runtime, config: AppConfig, headless_mode: bool = True
+    agent: Agent,
+    runtime: Runtime,
+    config: AppConfig,
+    headless_mode: bool = True,
+    replay_events: list[Event] | None = None,
 ) -> Tuple[AgentController, State | None]:
     event_stream = runtime.event_stream
     initial_state = None
@@ -101,6 +106,7 @@ def create_controller(
         initial_state=initial_state,
         headless_mode=headless_mode,
         confirmation_mode=config.security.confirmation_mode,
+        replay_events=replay_events,
     )
     return (controller, initial_state)
 

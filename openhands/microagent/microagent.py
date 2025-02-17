@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from openhands.core.exceptions import (
     MicroAgentValidationError,
 )
+from openhands.core.logger import openhands_logger as logger
 from openhands.microagent.types import MicroAgentMetadata, MicroAgentType
 
 
@@ -132,8 +133,10 @@ def load_microagents_from_dir(
 ]:
     """Load all microagents from the given directory.
 
+    Note, legacy repo instructions will not be loaded here.
+
     Args:
-        microagent_dir: Path to the microagents directory.
+        microagent_dir: Path to the microagents directory (e.g. .openhands/microagents)
 
     Returns:
         Tuple of (repo_agents, knowledge_agents, task_agents) dictionaries
@@ -145,20 +148,24 @@ def load_microagents_from_dir(
     knowledge_agents = {}
     task_agents = {}
 
-    # Load all agents
-    for file in microagent_dir.rglob('*.md'):
-        # skip README.md
-        if file.name == 'README.md':
-            continue
-        try:
-            agent = BaseMicroAgent.load(file)
-            if isinstance(agent, RepoMicroAgent):
-                repo_agents[agent.name] = agent
-            elif isinstance(agent, KnowledgeMicroAgent):
-                knowledge_agents[agent.name] = agent
-            elif isinstance(agent, TaskMicroAgent):
-                task_agents[agent.name] = agent
-        except Exception as e:
-            raise ValueError(f'Error loading agent from {file}: {e}')
+    # Load all agents from .openhands/microagents directory
+    logger.debug(f'Loading agents from {microagent_dir}')
+    if microagent_dir.exists():
+        for file in microagent_dir.rglob('*.md'):
+            logger.debug(f'Checking file {file}...')
+            # skip README.md
+            if file.name == 'README.md':
+                continue
+            try:
+                agent = BaseMicroAgent.load(file)
+                if isinstance(agent, RepoMicroAgent):
+                    repo_agents[agent.name] = agent
+                elif isinstance(agent, KnowledgeMicroAgent):
+                    knowledge_agents[agent.name] = agent
+                elif isinstance(agent, TaskMicroAgent):
+                    task_agents[agent.name] = agent
+                logger.debug(f'Loaded agent {agent.name} from {file}')
+            except Exception as e:
+                raise ValueError(f'Error loading agent from {file}: {e}')
 
     return repo_agents, knowledge_agents, task_agents
