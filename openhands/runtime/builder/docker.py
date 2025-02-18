@@ -37,7 +37,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         """Check if Docker Buildx is available"""
         try:
             result = subprocess.run(
-                ['docker' if not self.is_podman else 'podman',, 'buildx', 'version'], capture_output=True, text=True
+                ['docker' if not self.is_podman else 'podman', 'buildx', 'version'], capture_output=True, text=True
             )
             return result.returncode == 0
         except FileNotFoundError:
