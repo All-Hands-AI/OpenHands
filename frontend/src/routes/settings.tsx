@@ -11,7 +11,7 @@ function SettingsScreen() {
   return (
     <main
       data-testid="settings-screen"
-      className="bg-[#24272E] border border-[#454545] h-full rounded-xl flex flex-col"
+      className="bg-[#262626] border border-[#454545] h-full rounded-xl flex flex-col"
     >
       <header className="px-3 py-1.5 border-b border-b-[#454545] flex items-center gap-2">
         <SettingsIcon width={16} height={16} />
