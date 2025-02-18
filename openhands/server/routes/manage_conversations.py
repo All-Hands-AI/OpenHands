@@ -100,6 +100,7 @@ async def _create_new_conversation(
             title=conversation_title,
             github_user_id=user_id,
             selected_repository=selected_repository,
+            selected_branch=selected_branch,
         )
     )
 
