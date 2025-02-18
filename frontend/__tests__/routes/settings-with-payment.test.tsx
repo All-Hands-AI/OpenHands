@@ -6,9 +6,11 @@ import { renderWithProviders } from "test-utils";
 import OpenHands from "#/api/open-hands";
 import SettingsScreen from "#/routes/settings";
 import { PaymentForm } from "#/components/features/payment/payment-form";
+import * as FeatureFlags from "#/utils/feature-flags";
 
 describe("Settings Billing", () => {
   const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+  vi.spyOn(FeatureFlags, "BILLING_SETTINGS").mockReturnValue(true);
 
   const RoutesStub = createRoutesStub([
     {

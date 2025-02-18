@@ -7,11 +7,12 @@ import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
+import { BILLING_SETTINGS } from "#/utils/feature-flags";
 
 export const clientLoader = async () => {
   const config = queryClient.getQueryData<GetConfigResponse>(["config"]);
 
-  if (config?.APP_MODE !== "saas") {
+  if (config?.APP_MODE !== "saas" || !BILLING_SETTINGS()) {
     return redirect("/settings");
   }
 

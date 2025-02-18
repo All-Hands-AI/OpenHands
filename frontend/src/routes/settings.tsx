@@ -2,6 +2,7 @@ import { NavLink, Outlet } from "react-router";
 import SettingsIcon from "#/icons/settings.svg?react";
 import { cn } from "#/utils/utils";
 import { useConfig } from "#/hooks/query/use-config";
+import { BILLING_SETTINGS } from "#/utils/feature-flags";
 
 function SettingsScreen() {
   const { data: config } = useConfig();
@@ -17,7 +18,7 @@ function SettingsScreen() {
         <h1 className="text-sm leading-6">Settings</h1>
       </header>
 
-      {isSaas && (
+      {isSaas && BILLING_SETTINGS() && (
         <nav
           data-testid="settings-navbar"
           className="flex items-end gap-12 px-11 border-b border-[#454545]"
