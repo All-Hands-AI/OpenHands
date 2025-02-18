@@ -18,7 +18,7 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
   const { t } = useTranslation();
 
   return (
-    <ModalBackdrop onClose={onClose}>
+    <ModalBackdrop>
       <div
         data-testid="ai-config-modal"
         className="bg-root-primary min-w-[384px] p-6 rounded-xl flex flex-col gap-2"
