@@ -125,12 +125,11 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
 
     # if there was an exception or core is not in the toml, try to use the old-style toml
     if 'core' not in toml_config:
-        # Even without [core], we should still process other sections normally
-        logger.openhands_logger.debug(
-            'No [core] section found in TOML, but continuing with other sections'
-        )
-    else:
-        core_config = toml_config['core']
+        # re-use the env loader to set the config from env-style vars
+        load_from_env(cfg, toml_config)
+        return
+
+    core_config = toml_config['core']
 
     # load llm configs and agent configs
     for key, value in toml_config.items():
@@ -138,13 +137,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
             try:
                 if key.lower() == 'extended':
                     # For ExtendedConfig (RootModel), pass the entire dict as the root value
-                    logger.openhands_logger.debug(
-                        f'Loading extended config with value: {value}'
-                    )
                     cfg.extended = ExtendedConfig(value)
-                    logger.openhands_logger.debug(
-                        f'Extended config root after loading: {cfg.extended.root}'
-                    )
                     continue
                 if key is not None and key.lower() == 'agent':
                     # Every entry here is either a field for the default `agent` config group, or itself a group
