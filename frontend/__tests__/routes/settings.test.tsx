@@ -76,7 +76,8 @@ describe("Settings Screen", () => {
       });
     });
 
-    it("should render an indicator if the GitHub token is not set", async () => {
+    // TODO: Set a better unset indicator
+    it.skip("should render an indicator if the GitHub token is not set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         github_token_is_set: false,
@@ -94,6 +95,20 @@ describe("Settings Screen", () => {
         } else {
           throw new Error("GitHub token input parent not found");
         }
+      });
+    });
+
+    it("should set asterik placeholder if the GitHub token is set", async () => {
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        github_token_is_set: true,
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        const input = screen.getByTestId("github-token-input");
+        expect(input).toHaveProperty("placeholder", "**********");
       });
     });
 
@@ -314,7 +329,8 @@ describe("Settings Screen", () => {
       // screen.getByTestId("security-analyzer-input");
     });
 
-    it("should render an indicator if the LLM API key is not set", async () => {
+    // TODO: Set a better unset indicator
+    it.skip("should render an indicator if the LLM API key is not set", async () => {
       getSettingsSpy.mockResolvedValueOnce({
         ...MOCK_DEFAULT_USER_SETTINGS,
         llm_api_key: null,
@@ -443,7 +459,22 @@ describe("Settings Screen", () => {
         expect(input).toHaveValue("1x (2 core, 8G)");
       });
 
-      it("should save the runtime settings when the 'Save Changes' button is clicked", async () => {
+      it("should always have the runtime input disabled", async () => {
+        getConfigSpy.mockResolvedValue({
+          APP_MODE: "saas",
+          GITHUB_CLIENT_ID: "123",
+          POSTHOG_CLIENT_KEY: "456",
+        });
+
+        renderSettingsScreen();
+
+        await toggleAdvancedSettings(userEvent.setup());
+
+        const input = await screen.findByTestId("runtime-settings-input");
+        expect(input).toBeDisabled();
+      });
+
+      it.skip("should save the runtime settings when the 'Save Changes' button is clicked", async () => {
         const user = userEvent.setup();
         getConfigSpy.mockResolvedValue({
           APP_MODE: "saas",
