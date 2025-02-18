@@ -41,7 +41,9 @@ def send_request(
     timeout: int = 10,
     **kwargs: Any,
 ) -> requests.Response:
+    print(f'Sending {method} request to {url} with timeout {timeout}: {kwargs}')
     response = session.request(method, url, timeout=timeout, **kwargs)
+    print(f'Response: {response.status_code} {response.text}')
     try:
         response.raise_for_status()
     except requests.HTTPError as e:
