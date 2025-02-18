@@ -146,6 +146,7 @@ class LLM(RetryMixin, DebugMixin):
             )  # temperature is not supported for reasoning models
         # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
         if self.config.model.startswith('azure'):
+            kwargs['max_tokens'] = self.config.max_output_tokens
             kwargs.pop('max_completion_tokens')
 
         self._completion = partial(
