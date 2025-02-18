@@ -1,8 +1,7 @@
 import { delay, http, HttpResponse } from "msw";
 import Stripe from "stripe";
 
-export const TEST_STRIPE_SECRET_KEY =
-  "sk_test_51QfO2dK5Ces1YVhfVdZ2oTHz6xhgEnZkNtMKVTgCIGO6RISEPekbqSdtf4UV6oXRL96JMffdWAi5ESeedm5YZnhR00qVSEgA4I";
+export const TEST_STRIPE_SECRET_KEY = "";
 
 const PRICES: Record<number, string> = {
   "25": "price_1Qk3elK5Ces1YVhflhgIflrx",
