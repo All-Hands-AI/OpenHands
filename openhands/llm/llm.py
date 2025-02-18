@@ -18,11 +18,7 @@ from litellm import Message as LiteLLMMessage
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
-    APIConnectionError,
-    APIError,
-    InternalServerError,
     RateLimitError,
-    ServiceUnavailableError,
 )
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
@@ -41,15 +37,7 @@ from openhands.llm.retry_mixin import RetryMixin
 __all__ = ['LLM']
 
 # tuple of exceptions to retry on
-LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
-    APIConnectionError,
-    # FIXME: APIError is useful on 502 from a proxy for example,
-    # but it also retries on other errors that are permanent
-    APIError,
-    InternalServerError,
-    RateLimitError,
-    ServiceUnavailableError,
-)
+LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (RateLimitError,)
 
 # cache prompt supporting models
 # remove this when we gemini and deepseek are supported
@@ -605,7 +593,9 @@ class LLM(RetryMixin, DebugMixin):
         return False
 
     def _completion_cost(self, response) -> float:
-        """Calculate the cost of a completion response based on the model.  Local models are treated as free.
+        """Calculate completion cost and update metrics with running total.
+
+        Calculate the cost of a completion response based on the model. Local models are treated as free.
         Add the current cost into total cost in metrics.
 
         Args:

@@ -15,7 +15,6 @@ import { SettingsModal } from "#/components/shared/modals/settings/settings-moda
 import { useCurrentSettings } from "#/context/settings-context";
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
-import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 import { useEndSession } from "#/hooks/use-end-session";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
@@ -72,30 +71,28 @@ export function Sidebar() {
   return (
     <>
       <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
-        <nav className="flex flex-row md:flex-col items-center justify-between h-full">
-          <div className="flex flex-col items-center gap-[26px]">
+        <nav className="flex flex-row md:flex-col items-center justify-between w-full h-auto md:w-auto md:h-full">
+          <div className="flex flex-row md:flex-col items-center gap-[26px]">
             <div className="flex items-center justify-center">
               <AllHandsLogoButton onClick={handleEndSession} />
             </div>
             <ExitProjectButton onClick={handleEndSession} />
-            {MULTI_CONVERSATION_UI && (
-              <TooltipButton
-                testId="toggle-conversation-panel"
-                tooltip="Conversations"
-                ariaLabel="Conversations"
-                onClick={() => setConversationPanelIsOpen((prev) => !prev)}
-              >
-                <FaListUl size={22} />
-              </TooltipButton>
-            )}
+            <TooltipButton
+              testId="toggle-conversation-panel"
+              tooltip="Conversations"
+              ariaLabel="Conversations"
+              onClick={() => setConversationPanelIsOpen((prev) => !prev)}
+            >
+              <FaListUl size={22} />
+            </TooltipButton>
             <DocsButton />
           </div>
 
-          <div className="flex flex-col items-center gap-[26px] mb-4">
+          <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-4">
             <NavLink
               to="/settings"
               className={({ isActive }) =>
-                isActive ? "text-white" : "text-[#9099AC]"
+                `${isActive ? "text-white" : "text-[#9099AC]"} mt-0.5 md:mt-0`
               }
             >
               <SettingsButton />
