@@ -285,20 +285,6 @@ class OpenHands {
     return data.redirect_url;
   }
 
-  // TODO: This should probably be removed from the API now that we are using the stripe hosted UI
-  static async checkSessionStatus(
-    sessionId: string,
-  ): Promise<GetStripePaymentStatusResponse> {
-    const response = await openHands.get<GetStripePaymentStatusResponse>(
-      "/api/billing/session-status",
-      {
-        params: { session_id: sessionId },
-      },
-    );
-
-    return response.data;
-  }
-
   static async getBalance(): Promise<string> {
     const { data } = await openHands.get<{ credits: string }>(
       "/api/billing/credits",
