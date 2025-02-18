@@ -348,43 +348,6 @@ def send_pull_request(
     return url
 
 
-def reply_to_comment(github_token: str, comment_id: str, reply: str) -> None:
-    """Reply to a comment on a GitHub issue or pull request.
-
-    Args:
-        github_token: The GitHub token to use for authentication
-        comment_id: The ID of the comment to reply to
-        reply: The reply message to post
-    """
-    # Opting for graphql as REST API doesn't allow reply to replies in comment threads
-    query = """
-            mutation($body: String!, $pullRequestReviewThreadId: ID!) {
-                addPullRequestReviewThreadReply(input: { body: $body, pullRequestReviewThreadId: $pullRequestReviewThreadId }) {
-                    comment {
-                        id
-                        body
-                        createdAt
-                    }
-                }
-            }
-            """
-
-    # Prepare the reply to the comment
-    comment_reply = f'Openhands fix success summary\n\n\n{reply}'
-    variables = {'body': comment_reply, 'pullRequestReviewThreadId': comment_id}
-    url = 'https://api.github.com/graphql'
-    headers = {
-        'Authorization': f'Bearer {github_token}',
-        'Content-Type': 'application/json',
-    }
-
-    # Send the reply to the comment
-    response = requests.post(
-        url, json={'query': query, 'variables': variables}, headers=headers
-    )
-    response.raise_for_status()
-
-
 def send_comment_msg(
     base_url: str, issue_number: int, github_token: str, msg: str
 ) -> None:
