@@ -33,11 +33,11 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         self.rolling_logger = RollingLogger(max_lines=10)
 
     @staticmethod
-    def check_buildx():
+    def check_buildx(is_podman: bool = False):
         """Check if Docker Buildx is available"""
         try:
             result = subprocess.run(
-                ['docker' if not self.is_podman else 'podman', 'buildx', 'version'], capture_output=True, text=True
+                ['docker' if not is_podman else 'podman', 'buildx', 'version'], capture_output=True, text=True
             )
             return result.returncode == 0
         except FileNotFoundError:
@@ -85,7 +85,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 'Podman server version must be >= 4.9.0'
             )
 
-        if not DockerRuntimeBuilder.check_buildx():
+        if not DockerRuntimeBuilder.check_buildx(self.is_podman):
             # when running openhands in a container, there might not be a "docker"
             # binary available, in which case we need to download docker binary.
             # since the official openhands app image is built from debian, we use
