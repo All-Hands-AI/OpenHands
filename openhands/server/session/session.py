@@ -55,7 +55,10 @@ class Session:
         self.last_active_ts = int(time.time())
         self.file_store = file_store
         self.agent_session = AgentSession(
-            sid, file_store, status_callback=self.queue_status_message
+            sid,
+            file_store,
+            status_callback=self.queue_status_message,
+            github_user_id=user_id,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
@@ -120,9 +123,11 @@ class Session:
 
         github_token = None
         selected_repository = None
+        selected_branch = None
         if isinstance(settings, ConversationInitData):
             github_token = settings.github_token
             selected_repository = settings.selected_repository
+            selected_branch = settings.selected_branch
 
         try:
             await self.agent_session.start(
@@ -135,6 +140,7 @@ class Session:
                 agent_configs=self.config.get_agent_configs(),
                 github_token=github_token,
                 selected_repository=selected_repository,
+                selected_branch=selected_branch,
                 initial_message=initial_message,
             )
         except Exception as e:

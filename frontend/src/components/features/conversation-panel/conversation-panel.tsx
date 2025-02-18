@@ -44,12 +44,16 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   const handleConfirmDelete = () => {
     if (selectedConversationId) {
-      deleteConversation({ conversationId: selectedConversationId });
-      setConfirmDeleteModalVisible(false);
-
-      if (cid === selectedConversationId) {
-        endSession();
-      }
+      deleteConversation(
+        { conversationId: selectedConversationId },
+        {
+          onSuccess: () => {
+            if (cid === selectedConversationId) {
+              endSession();
+            }
+          },
+        },
+      );
     }
   };
 
@@ -110,7 +114,10 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
       {confirmDeleteModalVisible && (
         <ConfirmDeleteModal
-          onConfirm={handleConfirmDelete}
+          onConfirm={() => {
+            handleConfirmDelete();
+            setConfirmDeleteModalVisible(false);
+          }}
           onCancel={() => setConfirmDeleteModalVisible(false)}
         />
       )}

@@ -1,6 +1,8 @@
-"""file_ops.py
+"""File operations module for OpenHands agent.
 
-This module provides various file manipulation skills for the OpenHands agent.
+This module provides a collection of file manipulation skills that enable the OpenHands
+agent to perform various file operations such as opening, searching, and navigating
+through files and directories.
 
 Functions:
 - open_file(path: str, line_number: int | None = 1, context_lines: int = 100): Opens a file and optionally moves to a specific line.
@@ -10,6 +12,9 @@ Functions:
 - search_dir(search_term: str, dir_path: str = './'): Searches for a term in all files in the specified directory.
 - search_file(search_term: str, file_path: str | None = None): Searches for a term in the specified file or the currently open file.
 - find_file(file_name: str, dir_path: str = './'): Finds all files with the given name in the specified directory.
+
+Note:
+    All functions return string representations of their results.
 """
 
 import os
@@ -81,11 +86,18 @@ def _clamp(value, min_value, max_value):
 
 
 def _lint_file(file_path: str) -> tuple[str | None, int | None]:
-    """Lint the file at the given path and return a tuple with a boolean indicating if there are errors,
+    """Perform linting on a file and identify the first error location.
+
+    Lint the file at the given path and return a tuple with a boolean indicating if there are errors,
     and the line number of the first error, if any.
 
+    Args:
+        file_path: str: The path to the file to lint.
+
     Returns:
-        tuple[str | None, int | None]: (lint_error, first_error_line_number)
+    A tuple containing:
+        - The lint error message if found, None otherwise
+        - The line number of the first error, None if no errors
     """
     linter = DefaultLinter()
     lint_error: list[LintResult] = linter.lint(file_path)
@@ -165,14 +177,18 @@ def _cur_file_header(current_file, total_lines) -> str:
 def open_file(
     path: str, line_number: int | None = 1, context_lines: int | None = WINDOW
 ) -> None:
-    """Opens the file at the given path in the editor. IF the file is to be edited, first use `scroll_down` repeatedly to read the full file!
-    If line_number is provided, the window will be moved to include that line.
-    It only shows the first 100 lines by default! `context_lines` is the max number of lines to be displayed, up to 100. Use `scroll_up` and `scroll_down` to view more content up or down.
+    """Opens a file in the editor and optionally positions at a specific line.
+
+    The function displays a limited window of content, centered around the specified line
+    number if provided. To view the complete file content, the agent should use scroll_down and scroll_up
+    commands iteratively.
 
     Args:
-        path: str: The path to the file to open, preferred absolute path.
-        line_number: int | None = 1: The line number to move to. Defaults to 1.
-        context_lines: int | None = 100: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 100.
+        path: The path to the file to open. Absolute path is recommended.
+        line_number: The target line number to center the view on (if possible).
+            Defaults to 1.
+        context_lines: Maximum number of lines to display in the view window.
+            Limited to 100 lines. Defaults to 100.
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
@@ -316,8 +332,8 @@ def search_file(search_term: str, file_path: str | None = None) -> None:
     """Searches for search_term in file. If file is not provided, searches in the current open file.
 
     Args:
-        search_term: str: The term to search for.
-        file_path: str | None: The path to the file to search.
+        search_term: The term to search for.
+        file_path: The path to the file to search.
     """
     global CURRENT_FILE
     if file_path is None:
