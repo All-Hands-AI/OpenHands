@@ -19,5 +19,4 @@ export default [
       route("served", "routes/app.tsx"),
     ]),
   ]),
-  route("billing", "routes/billing-redirect.tsx"),
 ] satisfies RouteConfig;
