@@ -1,13 +1,8 @@
 import { delay, http, HttpResponse } from "msw";
 import Stripe from "stripe";
 
-export const TEST_STRIPE_SECRET_KEY = "";
-
-const PRICES: Record<number, string> = {
-  "25": "price_1Qk3elK5Ces1YVhflhgIflrx",
-  "50": "price_1Qk2qwK5Ces1YVhfSbLbgNYg",
-  "100": "price_1Qk2mZK5Ces1YVhfu8XNJuxU",
-};
+const TEST_STRIPE_SECRET_KEY = "";
+const PRICE_ID = "";
 
 export const STRIPE_BILLING_HANDLERS = [
   http.get("/api/billing/credits", async () => {
@@ -20,58 +15,22 @@ export const STRIPE_BILLING_HANDLERS = [
     const body = await request.json();
 
     if (body && typeof body === "object" && body.amount) {
-      const price = PRICES[body.amount];
-      if (!price) {
-        return HttpResponse.json(
-          { message: "Invalid amount" },
-          { status: 400 },
-        );
-      }
-
       const stripe = new Stripe(TEST_STRIPE_SECRET_KEY);
       const session = await stripe.checkout.sessions.create({
         line_items: [
           {
-            price,
-            quantity: 1,
+            price: PRICE_ID,
+            quantity: body.amount,
           },
         ],
         mode: "payment",
-        payment_intent_data: {
-          metadata: {
-            // NOTE: This data will be sent on the server via cookie data
-            user_id: "abc-123-test",
-          },
-        },
-        success_url:
-          "http://localhost:3001/api/billing/callback?success=true&session_id={CHECKOUT_SESSION_ID}",
-        cancel_url:
-          "http://localhost:3001/api/billing/callback?canceled=true&session_id={CHECKOUT_SESSION_ID}",
+        success_url: "http://localhost:3001/settings/billing/?checkout=success",
+        cancel_url: "http://localhost:3001/settings/billing/?checkout=cancel",
       });
 
       if (session.url) return HttpResponse.json({ redirect_url: session.url });
     }
 
     return HttpResponse.json({ message: "Invalid request" }, { status: 400 });
-  }),
-
-  http.get("/api/billing/session-status", async ({ request }) => {
-    const url = new URL(request.url);
-    const sessionId = url.searchParams.get("session_id")?.toString();
-
-    if (!sessionId) {
-      return HttpResponse.json(
-        { message: "Session not found" },
-        { status: 404 },
-      );
-    }
-
-    const stripe = new Stripe(TEST_STRIPE_SECRET_KEY);
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-
-    return HttpResponse.json({
-      status: session.status,
-      customer_email: session.customer_details?.email,
-    });
   }),
 ];
