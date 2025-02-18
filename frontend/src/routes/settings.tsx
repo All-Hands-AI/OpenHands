@@ -302,7 +302,7 @@ function SettingsScreen() {
                   defaultIsToggled={!!settings.CONFIRMATION_MODE}
                   isBeta
                 >
-                  Enable confirmation mode
+                  Enable YOLO mode
                 </SettingsSwitch>
               )}
               {llmConfigMode === "advanced" && confirmationModeIsEnabled && (
