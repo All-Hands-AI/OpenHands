@@ -33,7 +33,7 @@ class GitlabIssueHandler(IssueHandlerInterface):
         }
 
     def get_base_url(self):
-        project_path = quote(f'{self.owner}/{self.repo}', safe="")
+        project_path = quote(f'{self.owner}/{self.repo}', safe='')
         return f'https://gitlab.com/api/v4/projects/{project_path}'
 
     def get_authorize_url(self):
