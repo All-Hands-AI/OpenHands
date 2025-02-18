@@ -57,22 +57,29 @@ class LLMSummarizingCondenser(RollingCondenser):
         # Construct prompt for summarization
         prompt = """You are maintaining state history for an LLM-based code agent. Track:
 
+USER_CONTEXT: (Preserve full user messages, requirements, and problem context verbatim - no length limit or structure requirements)
+
 STATE: {File paths, function signatures, data structures}
 TESTS: {Failing cases, error messages, outputs}
 CHANGES: {Code edits, variable updates}
 DEPS: {Dependencies, imports, external calls}
 INTENT: {Why changes were made, acceptance criteria}
 
-SKIP: {Git clones, build logs}
-SUMMARIZE: {File listings}
-MAX_LENGTH: Keep summaries under 1000 words
+PRIORITIZE:
+1. Preserve complete user context and messages
+2. Track implementation state and results
+3. Keep technical details concise
+
+SKIP: {Git clones, build logs, file listings}
 
 Example history format:
+USER_CONTEXT: User reported that FITS card float values have unnecessary precision causing comment truncation. They provided example showing "0.009125" being expanded to "0.009124999999999999". User requested using Python's default str() representation when possible. Later clarified that FITS standard compliance must be maintained.
+
 STATE: mod_float() in card.py updated
 TESTS: test_format() passed
 CHANGES: str(val) replaces f"{val:.16G}"
 DEPS: None modified
-INTENT: Fix float precision overflow"""
+INTENT: Fix precision while maintaining FITS compliance"""
 
         prompt + '\n\n'
 
