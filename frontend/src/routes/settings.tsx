@@ -192,7 +192,7 @@ function SettingsScreen() {
   return (
     <main
       data-testid="settings-screen"
-      className="bg-[#24272E] border border-[#454545] h-full rounded-xl"
+      className="bg-[#262626] border border-[#454545] h-full rounded-xl"
     >
       <form action={formAction} className="flex flex-col h-full">
         <header className="px-3 py-1.5 border-b border-b-[#454545] flex items-center gap-2">
@@ -257,7 +257,9 @@ function SettingsScreen() {
                 label="API Key"
                 type="password"
                 className="w-[680px]"
-                startContent={<KeyStatusIcon isSet={isLLMKeySet} />}
+                startContent={
+                  isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
+                }
                 placeholder={isLLMKeySet ? "**********" : ""}
               />
 
@@ -291,6 +293,7 @@ function SettingsScreen() {
                   label="Runtime Settings"
                   items={REMOTE_RUNTIME_OPTIONS}
                   defaultSelectedKey={settings.REMOTE_RUNTIME_RESOURCE_FACTOR?.toString()}
+                  isDisabled
                   isClearable={false}
                 />
               )}
@@ -348,7 +351,12 @@ function SettingsScreen() {
                     label="GitHub Token"
                     type="password"
                     className="w-[680px]"
-                    startContent={<KeyStatusIcon isSet={!!isGitHubTokenSet} />}
+                    startContent={
+                      isGitHubTokenSet && (
+                        <KeyStatusIcon isSet={!!isGitHubTokenSet} />
+                      )
+                    }
+                    placeholder={isGitHubTokenSet ? "**********" : ""}
                   />
 
                   <HelpLink
