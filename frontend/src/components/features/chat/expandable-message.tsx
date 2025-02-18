@@ -46,55 +46,57 @@ export function ExpandableMessage({
       )}
     >
       <div className="text-sm w-full">
-        {headline && (
-          <div className="flex flex-row justify-between items-center w-full">
-            <span
-              className={cn(
-                "font-bold",
-                type === "error" ? "text-danger" : "text-neutral-300",
-              )}
-            >
-              {headline}
-              <button
-                type="button"
-                onClick={() => setShowDetails(!showDetails)}
-                className="cursor-pointer text-left"
-              >
-                {showDetails ? (
-                  <ArrowUp
-                    className={cn(
-                      "h-4 w-4 ml-2 inline",
-                      type === "error" ? "fill-danger" : "fill-neutral-300",
-                    )}
-                  />
-                ) : (
-                  <ArrowDown
-                    className={cn(
-                      "h-4 w-4 ml-2 inline",
-                      type === "error" ? "fill-danger" : "fill-neutral-300",
-                    )}
-                  />
-                )}
-              </button>
-            </span>
-            {type === "action" && success !== undefined && (
-              <span className="flex-shrink-0">
-                {success ? (
-                  <CheckCircle
-                    data-testid="status-icon"
-                    className={cn(statusIconClasses, "fill-success")}
-                  />
-                ) : (
-                  <XCircle
-                    data-testid="status-icon"
-                    className={cn(statusIconClasses, "fill-danger")}
-                  />
-                )}
-              </span>
+        <div className="flex flex-row justify-between items-center w-full">
+          <span
+            className={cn(
+              headline ? "font-bold" : "",
+              type === "error" ? "text-danger" : "text-neutral-300",
             )}
-          </div>
-        )}
-        {showDetails && (
+          >
+            {headline && (
+              <>
+                {headline}
+                <button
+                  type="button"
+                  onClick={() => setShowDetails(!showDetails)}
+                  className="cursor-pointer text-left"
+                >
+                  {showDetails ? (
+                    <ArrowUp
+                      className={cn(
+                        "h-4 w-4 ml-2 inline",
+                        type === "error" ? "fill-danger" : "fill-neutral-300",
+                      )}
+                    />
+                  ) : (
+                    <ArrowDown
+                      className={cn(
+                        "h-4 w-4 ml-2 inline",
+                        type === "error" ? "fill-danger" : "fill-neutral-300",
+                      )}
+                    />
+                  )}
+                </button>
+              </>
+            )}
+          </span>
+          {type === "action" && success !== undefined && (
+            <span className="flex-shrink-0">
+              {success ? (
+                <CheckCircle
+                  data-testid="status-icon"
+                  className={cn(statusIconClasses, "fill-success")}
+                />
+              ) : (
+                <XCircle
+                  data-testid="status-icon"
+                  className={cn(statusIconClasses, "fill-danger")}
+                />
+              )}
+            </span>
+          )}
+        </div>
+        {(!headline || showDetails) && (
           <Markdown
             className="text-sm overflow-auto"
             components={{

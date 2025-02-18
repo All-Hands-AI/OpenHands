@@ -77,6 +77,7 @@ class AgentController:
         NullObservation,
         ChangeAgentStateAction,
         AgentStateChangedObservation,
+        AgentCondensationObservation,
     )
 
     def __init__(
@@ -213,6 +214,17 @@ class AgentController:
             err_id = ''
             if isinstance(e, litellm.AuthenticationError):
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
+            elif isinstance(
+                e,
+                (
+                    litellm.ServiceUnavailableError,
+                    litellm.APIConnectionError,
+                    litellm.APIError,
+                ),
+            ):
+                err_id = 'STATUS$ERROR_LLM_SERVICE_UNAVAILABLE'
+            elif isinstance(e, litellm.InternalServerError):
+                err_id = 'STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR'
             elif isinstance(e, RateLimitError):
                 await self.set_agent_state_to(AgentState.RATE_LIMITED)
                 return
@@ -235,8 +247,10 @@ class AgentController:
                 f'report this error to the developers. Your session ID is {self.id}. '
                 f'Error type: {e.__class__.__name__}'
             )
-            if isinstance(e, litellm.AuthenticationError) or isinstance(
-                e, litellm.BadRequestError
+            if (
+                isinstance(e, litellm.AuthenticationError)
+                or isinstance(e, litellm.BadRequestError)
+                or isinstance(e, RateLimitError)
             ):
                 reported = e
             await self._react_to_exception(reported)
@@ -530,7 +544,7 @@ class AgentController:
         agent_cls: Type[Agent] = Agent.get_cls(action.agent)
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
-        llm = LLM(config=llm_config)
+        llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
         delegate_agent = agent_cls(llm=llm, config=agent_config)
         state = State(
             inputs=action.inputs or {},
@@ -660,6 +674,7 @@ class AgentController:
                 action = self.agent.step(self.state)
                 if action is None:
                     raise LLMNoActionError('No action was returned')
+                action._source = EventSource.AGENT  # type: ignore [attr-defined]
             except (
                 LLMMalformedActionError,
                 LLMNoActionError,
@@ -718,12 +733,19 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-            self.event_stream.add_event(action, EventSource.AGENT)
+            self.event_stream.add_event(action, action._source)  # type: ignore [attr-defined]
 
         await self.update_state_after_step()
 
         log_level = 'info' if LOG_ALL_EVENTS else 'debug'
         self.log(log_level, str(action), extra={'msg_type': 'ACTION'})
+
+    def _notify_on_llm_retry(self, retries: int, max: int) -> None:
+        if self.status_callback is not None:
+            msg_id = 'STATUS$LLM_RETRY'
+            self.status_callback(
+                'info', msg_id, f'Retrying LLM request, {retries} / {max}'
+            )
 
     async def _handle_traffic_control(
         self, limit_type: str, current_value: float, max_value: float

@@ -52,6 +52,7 @@ async def run_controller(
     headless_mode: bool = True,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
+
     It's only used when you launch openhands backend directly via cmdline.
 
     Args:
@@ -65,6 +66,26 @@ async def run_controller(
         fake_user_response_fn: An optional function that receives the current state
             (could be None) and returns a fake user response.
         headless_mode: Whether the agent is run in headless mode.
+
+    Returns:
+        The final state of the agent, or None if an error occurred.
+
+    Raises:
+        AssertionError: If initial_user_action is not an Action instance.
+        Exception: Various exceptions may be raised during execution and will be logged.
+
+    Notes:
+        - State persistence: If config.file_store is set, the agent's state will be
+          saved between sessions.
+        - Trajectories: If config.trajectories_path is set, execution history will be
+          saved as JSON for analysis.
+        - Budget control: Execution is limited by config.max_iterations and
+          config.max_budget_per_task.
+
+    Example:
+        >>> config = load_app_config()
+        >>> action = MessageAction(content="Write a hello world program")
+        >>> state = await run_controller(config=config, initial_user_action=action)
     """
     sid = sid or generate_sid(config)
 
@@ -204,6 +225,10 @@ def load_replay_log(trajectory_path: str) -> tuple[list[Event] | None, Action]:
             events = []
             for item in data:
                 event = event_from_dict(item)
+                if event.source == EventSource.ENVIRONMENT:
+                    # ignore ENVIRONMENT events as they are not issued by
+                    # the user or agent, and should not be replayed
+                    continue
                 # cannot add an event with _id to event stream
                 event._id = None  # type: ignore[attr-defined]
                 events.append(event)

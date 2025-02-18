@@ -1,13 +1,34 @@
-import { QueryClientConfig, QueryCache } from "@tanstack/react-query";
-import { renderToastIfError } from "./utils/render-toast-if-error";
+import {
+  QueryClientConfig,
+  QueryCache,
+  MutationCache,
+} from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import { retrieveAxiosErrorMessage } from "./utils/retrieve-axios-error-message";
 
-const QUERY_KEYS_TO_IGNORE = ["authenticated", "hosts", "settings"];
-
+const shownErrors = new Set<string>();
 export const queryClientConfig: QueryClientConfig = {
   queryCache: new QueryCache({
     onError: (error, query) => {
-      if (!QUERY_KEYS_TO_IGNORE.some((key) => query.queryKey.includes(key))) {
-        renderToastIfError(error);
+      if (!query.meta?.disableToast) {
+        const errorMessage = retrieveAxiosErrorMessage(error);
+
+        if (!shownErrors.has(errorMessage)) {
+          toast.error(errorMessage || "An error occurred");
+          shownErrors.add(errorMessage);
+
+          setTimeout(() => {
+            shownErrors.delete(errorMessage);
+          }, 3000);
+        }
+      }
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error, _, __, mutation) => {
+      if (!mutation?.meta?.disableToast) {
+        const message = retrieveAxiosErrorMessage(error);
+        toast.error(message);
       }
     },
   }),
@@ -15,11 +36,6 @@ export const queryClientConfig: QueryClientConfig = {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
       gcTime: 1000 * 60 * 15, // 15 minutes
-    },
-    mutations: {
-      onError: (error) => {
-        renderToastIfError(error);
-      },
     },
   },
 };
