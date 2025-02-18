@@ -39,11 +39,11 @@ describe("Home Screen", () => {
           Component: Home,
           path: "/",
         },
+        {
+          Component: SettingsScreen,
+          path: "/settings",
+        },
       ],
-    },
-    {
-      Component: SettingsScreen,
-      path: "/settings",
     },
   ]);
 
@@ -89,12 +89,17 @@ describe("Home Screen", () => {
       expect(settingsModal).toBeInTheDocument();
     });
 
+    it.todo("should not be able to close the settings modal");
+
     it("should navigate to the settings screen when clicking the advanced settings button", async () => {
       const error = createAxiosNotFoundErrorObject();
       getSettingsSpy.mockRejectedValue(error);
 
       const user = userEvent.setup();
       renderWithProviders(<RouterStub initialEntries={["/"]} />);
+
+      const settingsScreen = screen.queryByTestId("settings-screen");
+      expect(settingsScreen).not.toBeInTheDocument();
 
       const settingsModal = await screen.findByTestId("ai-config-modal");
       expect(settingsModal).toBeInTheDocument();
@@ -104,11 +109,11 @@ describe("Home Screen", () => {
       );
       await user.click(advancedSettingsButton);
 
+      const settingsScreenAfter = await screen.findByTestId("settings-screen");
+      expect(settingsScreenAfter).toBeInTheDocument();
+
       const settingsModalAfter = screen.queryByTestId("ai-config-modal");
       expect(settingsModalAfter).not.toBeInTheDocument();
-
-      const settingsScreen = await screen.findByTestId("settings-screen");
-      expect(settingsScreen).toBeInTheDocument();
     });
   });
 });

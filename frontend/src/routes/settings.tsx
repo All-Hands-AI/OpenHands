@@ -131,7 +131,10 @@ function SettingsScreen() {
         user_consents_to_analytics: userConsentsToAnalytics,
         LLM_MODEL: customLlmModel || fullLlmModel,
         LLM_BASE_URL: formData.get("base-url-input")?.toString() || "",
-        LLM_API_KEY: formData.get("llm-api-key-input")?.toString() || undefined,
+        LLM_API_KEY:
+          formData.get("llm-api-key-input")?.toString() || isLLMKeySet
+            ? undefined // don't update if it's already set
+            : "", // reset if it's first time save to avoid 500 error
         AGENT: formData.get("agent-input")?.toString(),
         SECURITY_ANALYZER:
           formData.get("security-analyzer-input")?.toString() || "",
