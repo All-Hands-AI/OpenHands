@@ -1,5 +1,6 @@
 import warnings
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -25,7 +26,7 @@ from openhands.server.shared import conversation_manager
 
 
 @asynccontextmanager
-async def _lifespan(app: FastAPI):
+async def _lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     async with conversation_manager:
         yield
 
@@ -39,7 +40,7 @@ app = FastAPI(
 
 
 @app.get('/health')
-async def health():
+async def health() -> str:
     return 'OK'
 
 
