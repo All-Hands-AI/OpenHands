@@ -60,11 +60,6 @@ export interface GetTrajectoryResponse {
   error?: string;
 }
 
-export interface GetStripePaymentStatusResponse {
-  status: "complete" | "open" | "expired";
-  customer_email: string | undefined;
-}
-
 export interface AuthenticateResponse {
   message?: string;
   error?: string;
