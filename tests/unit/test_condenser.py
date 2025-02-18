@@ -453,18 +453,16 @@ def test_llm_attention_condenser_invalid_config():
     pytest.raises(ValueError, LLMAttentionCondenser.from_config, config)
 
 
-class TestRollingCondenser(RollingCondenser):
-    """Test implementation of RollingCondenser that just returns all events."""
-
-    def condense(self, events: list[Event]) -> list[Event]:
-        return events
-
-
-def test_rolling_condenser_handles_truncation():
+def test_rolling_condenser_handles_truncation(mock_state: State):
     """Test that RollingCondenser correctly handles history truncation."""
+
+    class TestRollingCondenser(RollingCondenser):
+        """Test implementation of RollingCondenser that just returns all events."""
+
+        def condense(self, events: list[Event]) -> list[Event]:
+            return events
+
     condenser = TestRollingCondenser()
-    mock_state = MagicMock(spec=State)
-    mock_state.extra_data = {}
 
     # Initial history with 3 events
     events = [
@@ -479,29 +477,23 @@ def test_rolling_condenser_handles_truncation():
     assert len(results) == 3
     assert [e._id for e in results] == [1, 2, 3]
 
-    # Add 2 more events
-    events.extend([
-        create_test_event('Event 4', id=4),
-        create_test_event('Event 5', id=5),
-    ])
-    mock_state.history = events
+    # Simulate truncation - history is now shorter, and the condensation should
+    # just include the truncated history
+    mock_state.history = mock_state.history[-1:]
 
-    # Second condensation - should return all 5 events
     results = condenser.condensed_history(mock_state)
-    assert len(results) == 5
-    assert [e._id for e in results] == [1, 2, 3, 4, 5]
+    assert len(results) == 1
+    assert results[0]._id == 3
 
-    # Simulate truncation - history is now shorter
-    truncated_events = [
+    # Adding more events and condensing should "rebase" us from the truncated history
+    mock_state.history += [
         create_test_event('Event 4', id=4),
         create_test_event('Event 5', id=5),
     ]
-    mock_state.history = truncated_events
 
-    # Third condensation - should handle truncation gracefully
     results = condenser.condensed_history(mock_state)
-    assert len(results) == 2
-    assert [e._id for e in results] == [4, 5]
+    assert len(results) == 3
+    assert [e._id for e in results] == [3, 4, 5]
 
 
 def test_llm_attention_condenser_keeps_first_events(mock_llm, mock_state):

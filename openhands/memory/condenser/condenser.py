@@ -161,13 +161,13 @@ class RollingCondenser(Condenser, ABC):
 
     @override
     def condensed_history(self, state: State) -> list[Event]:
-        # If history has been truncated, reset the condenser state
+        # The history should grow monotonically -- if it doesn't, something has
+        # truncated the history and we need to reset our tracking.
         if len(state.history) < self._last_history_length:
             self._condensation = []
             self._last_history_length = 0
-            new_events = state.history
-        else:
-            new_events = state.history[self._last_history_length :]
+
+        new_events = state.history[self._last_history_length :]
 
         with self.metadata_batch(state):
             results = self.condense(self._condensation + new_events)
