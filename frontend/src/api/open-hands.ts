@@ -274,6 +274,23 @@ class OpenHands {
     return data.status === 200;
   }
 
+  static async createCheckoutSession(amount: number): Promise<string> {
+    const { data } = await openHands.post(
+      "/api/billing/create-checkout-session",
+      {
+        amount,
+      },
+    );
+    return data.redirect_url;
+  }
+
+  static async getBalance(): Promise<string> {
+    const { data } = await openHands.get<{ credits: string }>(
+      "/api/billing/credits",
+    );
+    return data.credits;
+  }
+
   static async getGitHubUser(): Promise<GitHubUser> {
     const response = await openHands.get<GitHubUser>("/api/github/user");
 
