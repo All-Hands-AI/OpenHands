@@ -5,6 +5,8 @@ import shutil
 import subprocess
 
 import jinja2
+import requests
+from pydantic import SecretStr
 
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -346,6 +348,72 @@ def send_pull_request(
     return url
 
 
+def reply_to_comment(github_token: str, comment_id: str, reply: str) -> None:
+    """Reply to a comment on a GitHub issue or pull request.
+
+    Args:
+        github_token: The GitHub token to use for authentication
+        comment_id: The ID of the comment to reply to
+        reply: The reply message to post
+    """
+    # Opting for graphql as REST API doesn't allow reply to replies in comment threads
+    query = """
+            mutation($body: String!, $pullRequestReviewThreadId: ID!) {
+                addPullRequestReviewThreadReply(input: { body: $body, pullRequestReviewThreadId: $pullRequestReviewThreadId }) {
+                    comment {
+                        id
+                        body
+                        createdAt
+                    }
+                }
+            }
+            """
+
+    # Prepare the reply to the comment
+    comment_reply = f'Openhands fix success summary\n\n\n{reply}'
+    variables = {'body': comment_reply, 'pullRequestReviewThreadId': comment_id}
+    url = 'https://api.github.com/graphql'
+    headers = {
+        'Authorization': f'Bearer {github_token}',
+        'Content-Type': 'application/json',
+    }
+
+    # Send the reply to the comment
+    response = requests.post(
+        url, json={'query': query, 'variables': variables}, headers=headers
+    )
+    response.raise_for_status()
+
+
+def send_comment_msg(
+    base_url: str, issue_number: int, github_token: str, msg: str
+) -> None:
+    """Send a comment message to a GitHub issue or pull request.
+
+    Args:
+        base_url: The base URL of the GitHub repository API
+        issue_number: The issue or pull request number
+        github_token: The GitHub token to use for authentication
+        msg: The message content to post as a comment
+    """
+    # Set up headers for GitHub API
+    headers = {
+        'Authorization': f'token {github_token}',
+        'Accept': 'application/vnd.github.v3+json',
+    }
+
+    # Post a comment on the PR
+    comment_url = f'{base_url}/issues/{issue_number}/comments'
+    comment_data = {'body': msg}
+    comment_response = requests.post(comment_url, headers=headers, json=comment_data)
+    if comment_response.status_code != 201:
+        print(
+            f'Failed to post comment: {comment_response.status_code} {comment_response.text}'
+        )
+    else:
+        print(f'Comment added to the PR: {msg}')
+
+
 def update_existing_pull_request(
     issue: Issue,
     token: str,
@@ -543,7 +611,7 @@ def process_all_successful_issues(
             )
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description='Send a pull request to Github or Gitlab.'
     )
@@ -641,7 +709,7 @@ def main():
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(
         model=my_args.llm_model or os.environ['LLM_MODEL'],
-        api_key=str(api_key) if api_key else None,
+        api_key=SecretStr(api_key) if api_key else None,
         base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
     )
 
