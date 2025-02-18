@@ -101,7 +101,11 @@ class Message(BaseModel):
             # See discussion here for details: https://github.com/BerriAI/litellm/issues/6422#issuecomment-2438765472
             if self.role == 'tool' and item.cache_prompt:
                 role_tool_with_prompt_caching = True
-                d.pop('cache_control')
+                if isinstance(d, dict):
+                    d.pop('cache_control')
+                elif isinstance(d, list):
+                    for d_item in d:
+                        d_item.pop('cache_control')
             if isinstance(item, TextContent):
                 content.append(d)
             elif isinstance(item, ImageContent) and self.vision_enabled:
@@ -118,8 +122,8 @@ class Message(BaseModel):
     def _add_tool_call_keys(self, message_dict: dict) -> dict:
         """Add tool call keys if we have a tool call or response.
 
-        NOTE: this is necessary for both native and non-native tool calling."""
-
+        NOTE: this is necessary for both native and non-native tool calling
+        """
         # an assistant message calling a tool
         if self.tool_calls is not None:
             message_dict['tool_calls'] = [

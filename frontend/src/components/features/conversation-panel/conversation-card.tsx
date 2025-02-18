@@ -58,14 +58,17 @@ export function ConversationCard({
   };
 
   const handleInputClick = (event: React.MouseEvent<HTMLInputElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+    if (titleMode === "edit") {
+      event.preventDefault();
+      event.stopPropagation();
+    }
   };
 
   const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
     onDelete?.();
+    setContextMenuVisible(false);
   };
 
   const handleEdit = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -101,17 +104,26 @@ export function ConversationCard({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 w-full">
           {isActive && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
-          <input
-            ref={inputRef}
-            disabled={titleMode === "view"}
-            data-testid="conversation-card-title"
-            onClick={handleInputClick}
-            onBlur={handleBlur}
-            onKeyUp={handleKeyUp}
-            type="text"
-            defaultValue={title}
-            className="text-sm leading-6 font-semibold bg-transparent w-full"
-          />
+          {titleMode === "edit" && (
+            <input
+              ref={inputRef}
+              data-testid="conversation-card-title"
+              onClick={handleInputClick}
+              onBlur={handleBlur}
+              onKeyUp={handleKeyUp}
+              type="text"
+              defaultValue={title}
+              className="text-sm leading-6 font-semibold bg-transparent w-full"
+            />
+          )}
+          {titleMode === "view" && (
+            <p
+              data-testid="conversation-card-title"
+              className="text-sm leading-6 font-semibold bg-transparent w-full"
+            >
+              {title}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2 relative">

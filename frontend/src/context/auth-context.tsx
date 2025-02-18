@@ -5,10 +5,16 @@ interface AuthContextType {
   setGitHubTokenIsSet: (value: boolean) => void;
 }
 
+interface AuthContextProps extends React.PropsWithChildren {
+  initialGithubTokenIsSet?: boolean;
+}
+
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
-function AuthProvider({ children }: React.PropsWithChildren) {
-  const [githubTokenIsSet, setGitHubTokenIsSet] = React.useState(false);
+function AuthProvider({ children, initialGithubTokenIsSet }: AuthContextProps) {
+  const [githubTokenIsSet, setGitHubTokenIsSet] = React.useState(
+    !!initialGithubTokenIsSet,
+  );
 
   const value = React.useMemo(
     () => ({
