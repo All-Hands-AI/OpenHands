@@ -10,6 +10,7 @@ import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { PostApiSettings } from "#/types/settings";
 import * as ConsentHandlers from "#/utils/handle-capture-consent";
+import AccountSettings from "#/routes/account-settings";
 
 const toggleAdvancedSettings = async (user: UserEvent) => {
   const advancedSwitch = await screen.findByTestId("advanced-settings-switch");
@@ -36,6 +37,7 @@ describe("Settings Screen", () => {
     {
       Component: SettingsScreen,
       path: "/settings",
+      children: [{ Component: AccountSettings, path: "/settings" }],
     },
   ]);
 
@@ -76,7 +78,8 @@ describe("Settings Screen", () => {
       });
     });
 
-    it("should render an indicator if the GitHub token is not set", async () => {
+    // TODO: Set a better unset indicator
+    it.skip("should render an indicator if the GitHub token is not set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         github_token_is_set: false,
@@ -94,6 +97,20 @@ describe("Settings Screen", () => {
         } else {
           throw new Error("GitHub token input parent not found");
         }
+      });
+    });
+
+    it("should set asterik placeholder if the GitHub token is set", async () => {
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        github_token_is_set: true,
+      });
+
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        const input = screen.getByTestId("github-token-input");
+        expect(input).toHaveProperty("placeholder", "**********");
       });
     });
 
@@ -314,7 +331,8 @@ describe("Settings Screen", () => {
       // screen.getByTestId("security-analyzer-input");
     });
 
-    it("should render an indicator if the LLM API key is not set", async () => {
+    // TODO: Set a better unset indicator
+    it.skip("should render an indicator if the LLM API key is not set", async () => {
       getSettingsSpy.mockResolvedValueOnce({
         ...MOCK_DEFAULT_USER_SETTINGS,
         llm_api_key: null,
@@ -443,7 +461,22 @@ describe("Settings Screen", () => {
         expect(input).toHaveValue("1x (2 core, 8G)");
       });
 
-      it("should save the runtime settings when the 'Save Changes' button is clicked", async () => {
+      it("should always have the runtime input disabled", async () => {
+        getConfigSpy.mockResolvedValue({
+          APP_MODE: "saas",
+          GITHUB_CLIENT_ID: "123",
+          POSTHOG_CLIENT_KEY: "456",
+        });
+
+        renderSettingsScreen();
+
+        await toggleAdvancedSettings(userEvent.setup());
+
+        const input = await screen.findByTestId("runtime-settings-input");
+        expect(input).toBeDisabled();
+      });
+
+      it.skip("should save the runtime settings when the 'Save Changes' button is clicked", async () => {
         const user = userEvent.setup();
         getConfigSpy.mockResolvedValue({
           APP_MODE: "saas",
@@ -665,7 +698,7 @@ describe("Settings Screen", () => {
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          llm_api_key: undefined,
+          llm_api_key: "", // empty because it's not set previously
           github_token: undefined,
           language: "no",
         }),
@@ -704,7 +737,7 @@ describe("Settings Screen", () => {
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           github_token: undefined,
-          llm_api_key: undefined,
+          llm_api_key: "", // empty because it's not set previously
           llm_model: "openai/gpt-4o",
         }),
       );
@@ -867,6 +900,56 @@ describe("Settings Screen", () => {
         expect.objectContaining({
           enable_default_condenser: true,
         }),
+      );
+    });
+
+    it("should send an empty LLM API Key if the user submits an empty string", async () => {
+      const user = userEvent.setup();
+      renderSettingsScreen();
+
+      const input = await screen.findByTestId("llm-api-key-input");
+      expect(input).toHaveValue("");
+
+      const saveButton = screen.getByText("Save Changes");
+      await user.click(saveButton);
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ llm_api_key: "" }),
+      );
+    });
+
+    it("should not send an empty LLM API Key if the user submits an empty string but already has it set", async () => {
+      const user = userEvent.setup();
+      getSettingsSpy.mockResolvedValue({
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        llm_api_key: "**********",
+      });
+
+      renderSettingsScreen();
+
+      const input = await screen.findByTestId("llm-api-key-input");
+      expect(input).toHaveValue("");
+
+      const saveButton = screen.getByText("Save Changes");
+      await user.click(saveButton);
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ llm_api_key: undefined }),
+      );
+    });
+
+    it("should submit the LLM API Key if it is the first time the user sets it", async () => {
+      const user = userEvent.setup();
+      renderSettingsScreen();
+
+      const input = await screen.findByTestId("llm-api-key-input");
+      await user.type(input, "new-api-key");
+
+      const saveButton = screen.getByText("Save Changes");
+      await user.click(saveButton);
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ llm_api_key: "new-api-key" }),
       );
     });
   });

@@ -75,7 +75,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
     }
   };
 
-  const isLLMKeySet = settings.LLM_API_KEY !== "**********";
+  const isLLMKeySet = settings.LLM_API_KEY === "**********";
 
   return (
     <div>
@@ -97,7 +97,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
             label="API Key"
             type="password"
             className="w-[680px]"
-            startContent={<KeyStatusIcon isSet={isLLMKeySet} />}
+            startContent={isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />}
           />
 
           <HelpLink

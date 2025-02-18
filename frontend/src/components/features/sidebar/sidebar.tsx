@@ -3,7 +3,7 @@ import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import toast from "react-hot-toast";
-import { NavLink } from "react-router";
+import { NavLink, useLocation } from "react-router";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
@@ -22,8 +22,10 @@ import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
+import { cn } from "#/utils/utils";
 
 export function Sidebar() {
+  const location = useLocation();
   const dispatch = useDispatch();
   const endSession = useEndSession();
   const user = useGitHubUser();
@@ -42,20 +44,27 @@ export function Sidebar() {
     React.useState(false);
 
   React.useEffect(() => {
-    // We don't show toast errors for settings in the global error handler
-    // because we have a special case for 404 errors
-    if (
+    if (location.pathname === "/settings") {
+      setSettingsModalIsOpen(false);
+    } else if (
       !isFetchingSettings &&
       settingsIsError &&
       settingsError?.status !== 404
     ) {
+      // We don't show toast errors for settings in the global error handler
+      // because we have a special case for 404 errors
       toast.error(
         "Something went wrong while fetching settings. Please reload the page.",
       );
     } else if (settingsError?.status === 404) {
       setSettingsModalIsOpen(true);
     }
-  }, [settingsError?.status, settingsError, isFetchingSettings]);
+  }, [
+    settingsError?.status,
+    settingsError,
+    isFetchingSettings,
+    location.pathname,
+  ]);
 
   const handleEndSession = () => {
     dispatch(setCurrentAgentState(AgentState.LOADING));
@@ -83,7 +92,12 @@ export function Sidebar() {
               ariaLabel="Conversations"
               onClick={() => setConversationPanelIsOpen((prev) => !prev)}
             >
-              <FaListUl size={22} />
+              <FaListUl
+                size={22}
+                className={cn(
+                  conversationPanelIsOpen ? "text-white" : "text-[#9099AC]",
+                )}
+              />
             </TooltipButton>
             <DocsButton />
           </div>
