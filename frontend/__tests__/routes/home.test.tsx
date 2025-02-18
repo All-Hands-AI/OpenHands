@@ -89,8 +89,6 @@ describe("Home Screen", () => {
       expect(settingsModal).toBeInTheDocument();
     });
 
-    it.todo("should not be able to close the settings modal");
-
     it("should navigate to the settings screen when clicking the advanced settings button", async () => {
       const error = createAxiosNotFoundErrorObject();
       getSettingsSpy.mockRejectedValue(error);

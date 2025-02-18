@@ -43,7 +43,7 @@ export function Sidebar() {
     React.useState(false);
 
   React.useEffect(() => {
-    if (location.pathname.startsWith("/settings")) {
+    if (location.pathname === "/settings") {
       setSettingsModalIsOpen(false);
     } else if (
       !isFetchingSettings &&
