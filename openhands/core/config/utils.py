@@ -125,16 +125,27 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
 
     # if there was an exception or core is not in the toml, try to use the old-style toml
     if 'core' not in toml_config:
-        # re-use the env loader to set the config from env-style vars
-        load_from_env(cfg, toml_config)
-        return
-
-    core_config = toml_config['core']
+        # Even without [core], we should still process other sections normally
+        logger.openhands_logger.debug(
+            'No [core] section found in TOML, but continuing with other sections'
+        )
+    else:
+        core_config = toml_config['core']
 
     # load llm configs and agent configs
     for key, value in toml_config.items():
         if isinstance(value, dict):
             try:
+                if key.lower() == 'extended':
+                    # For ExtendedConfig (RootModel), pass the entire dict as the root value
+                    logger.openhands_logger.debug(
+                        f'Loading extended config with value: {value}'
+                    )
+                    cfg.extended = ExtendedConfig(value)
+                    logger.openhands_logger.debug(
+                        f'Extended config root after loading: {cfg.extended.root}'
+                    )
+                    continue
                 if key is not None and key.lower() == 'agent':
                     # Every entry here is either a field for the default `agent` config group, or itself a group
                     # The best way to tell the difference is to try to parse it as an AgentConfig object
@@ -211,12 +222,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
                     )
                     security_config = SecurityConfig(**value)
                     cfg.security = security_config
-                elif key is not None and key.lower() == 'extended':
-                    logger.openhands_logger.debug(
-                        'Attempt to load extended config from config toml'
-                    )
-                    extended_config = ExtendedConfig.from_dict(value)
-                    cfg.extended = extended_config
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.openhands_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'

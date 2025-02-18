@@ -19,6 +19,20 @@ def test_extended_config_from_dict():
     assert ext_cfg.foo == 'bar'
     assert ext_cfg['baz'] == 123
     assert ext_cfg.flag is True
+    # Verify the root dictionary contains all keys
+    assert ext_cfg.root == data
+
+
+def test_extended_config_empty():
+    """
+    Test that an empty ExtendedConfig can be created and accessed.
+    """
+    ext_cfg = ExtendedConfig.from_dict({})
+    assert ext_cfg.root == {}
+
+    # Creating directly should also work
+    ext_cfg2 = ExtendedConfig({})
+    assert ext_cfg2.root == {}
 
 
 def test_extended_config_str_and_repr():
@@ -63,6 +77,9 @@ def test_extended_config_invalid_key():
     with pytest.raises(AttributeError):
         _ = ext_cfg.nonexistent
 
+    with pytest.raises(KeyError):
+        _ = ext_cfg['nonexistent']
+
 
 def test_app_config_extended_from_toml(tmp_path: os.PathLike) -> None:
     """
@@ -71,6 +88,9 @@ def test_app_config_extended_from_toml(tmp_path: os.PathLike) -> None:
     """
     # Create a temporary TOML file with multiple sections including [extended]
     config_content = """
+[core]
+workspace_base = "/tmp/workspace"
+
 [llm]
 model = "test-model"
 api_key = "toml-api-key"
@@ -103,6 +123,9 @@ def test_app_config_extended_default(tmp_path: os.PathLike) -> None:
     AppConfig.extended remains its default (empty) ExtendedConfig.
     """
     config_content = """
+[core]
+workspace_base = "/tmp/workspace"
+
 [llm]
 model = "test-model"
 api_key = "toml-api-key"
@@ -116,8 +139,8 @@ memory_enabled = true
     config = AppConfig()
     load_from_toml(config, str(config_file))
 
-    # Extended config should be the default instance with no extra keys.
-    assert config.extended.model_dump() == {}
+    # Extended config should be empty
+    assert config.extended.root == {}
 
 
 def test_app_config_extended_random_keys(tmp_path: os.PathLike) -> None:
@@ -126,6 +149,9 @@ def test_app_config_extended_random_keys(tmp_path: os.PathLike) -> None:
     including ones not defined in any schema.
     """
     config_content = """
+[core]
+workspace_base = "/tmp/workspace"
+
 [extended]
 random_key = "random_value"
 another_key = 3.14
@@ -139,3 +165,5 @@ another_key = 3.14
     # Verify that extended config holds the arbitrary keys with correct values.
     assert config.extended.random_key == 'random_value'
     assert config.extended.another_key == 3.14
+    # Verify the root dictionary contains all keys
+    assert config.extended.root == {'random_key': 'random_value', 'another_key': 3.14}

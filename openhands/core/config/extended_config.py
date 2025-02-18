@@ -1,50 +1,39 @@
-from pydantic import BaseModel
+from pydantic import RootModel
 
 
-class ExtendedConfig(BaseModel):
+class ExtendedConfig(RootModel[dict]):
     """Configuration for extended functionalities.
 
-    Attributes:
-        Values depend on the defined section
+    This is implemented as a root model so that the entire input is stored
+    as the root value. This allows arbitrary keys to be stored and later
+    accessed via attribute or dictionary-style access.
     """
 
-    # No explicit fields are defined; extra keys will be allowed via the model configuration.
-
-    class Config:
-        extra = 'allow'  # allow arbitrary extra fields
-
-    def _dump_all(self) -> dict:
-        # Get defined fields via model_dump() and merge in extra fields if any.
-        data = self.model_dump()  # type: ignore
-        # __pydantic_extra__ contains extra fields when extra = "allow"
-        extra = getattr(self, '__pydantic_extra__', {})
-        if isinstance(extra, dict):
-            data.update(extra)
-        return data
+    @property
+    def root(self) -> dict:  # type annotation to help mypy
+        return super().root
 
     def __str__(self) -> str:
-        # Build string representation using all attributes (declared + extra)
-        data = self._dump_all()
-        attr_str = [f'{k}={repr(v)}' for k, v in data.items()]
+        # Use the root dict to build a string representation.
+        attr_str = [f'{k}={repr(v)}' for k, v in self.root.items()]
         return f"ExtendedConfig({', '.join(attr_str)})"
-
-    @classmethod
-    def from_dict(cls, extended_config_dict: dict) -> 'ExtendedConfig':
-        # Create an instance using Pydantic V2's model validation
-        return cls.model_validate(extended_config_dict)
 
     def __repr__(self) -> str:
         return self.__str__()
 
+    @classmethod
+    def from_dict(cls, data: dict) -> 'ExtendedConfig':
+        # Create an instance directly by wrapping the input dict.
+        return cls(data)
+
     def __getitem__(self, key: str) -> object:
-        # Allow dictionary-like access by retrieving all keys (declared and extra)
-        return self._dump_all()[key]
+        # Provide dictionary-like access via the root dict.
+        return self.root[key]
 
     def __getattr__(self, key: str) -> object:
-        # Fallback for attribute access if the attribute is not found normally
-        data = self._dump_all()
+        # Fallback for attribute access using the root dict.
         try:
-            return data[key]
+            return self.root[key]
         except KeyError as e:
             raise AttributeError(
                 f"'ExtendedConfig' object has no attribute '{key}'"
