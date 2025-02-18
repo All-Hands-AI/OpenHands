@@ -156,11 +156,13 @@ class RollingLogger:
     max_lines: int
     char_limit: int
     log_lines: list[str]
+    all_lines: str
 
     def __init__(self, max_lines=10, char_limit=80):
         self.max_lines = max_lines
         self.char_limit = char_limit
         self.log_lines = [''] * self.max_lines
+        self.all_lines = ''
 
     def is_enabled(self):
         return DEBUG and sys.stdout.isatty()
@@ -175,6 +177,7 @@ class RollingLogger:
         self.log_lines.pop(0)
         self.log_lines.append(line[: self.char_limit])
         self.print_lines()
+        self.all_lines += line + '\n'
 
     def write_immediately(self, line):
         self._write(line)
@@ -214,7 +217,21 @@ class RollingLogger:
 
 class SensitiveDataFilter(logging.Filter):
     def filter(self, record):
-        # start with attributes
+        # Gather sensitive values which should not ever appear in the logs.
+        sensitive_values = []
+        for key, value in os.environ.items():
+            key_upper = key.upper()
+            if len(value) > 2 and any(
+                s in key_upper for s in ('SECRET', 'KEY', 'CODE', 'TOKEN')
+            ):
+                sensitive_values.append(value)
+
+        # Replace sensitive values from env!
+        msg = record.getMessage()
+        for sensitive_value in sensitive_values:
+            msg = msg.replace(sensitive_value, '******')
+
+        # Replace obvious sensitive values from log itself...
         sensitive_patterns = [
             'api_key',
             'aws_access_key_id',
@@ -224,28 +241,22 @@ class SensitiveDataFilter(logging.Filter):
             'jwt_secret',
             'modal_api_token_id',
             'modal_api_token_secret',
+            'llm_api_key',
+            'sandbox_env_github_token',
         ]
 
         # add env var names
         env_vars = [attr.upper() for attr in sensitive_patterns]
         sensitive_patterns.extend(env_vars)
 
-        # and some special cases
-        sensitive_patterns.append('JWT_SECRET')
-        sensitive_patterns.append('LLM_API_KEY')
-        sensitive_patterns.append('GITHUB_TOKEN')
-        sensitive_patterns.append('SANDBOX_ENV_GITHUB_TOKEN')
-
-        # this also formats the message with % args
-        msg = record.getMessage()
-        record.args = ()
-
         for attr in sensitive_patterns:
             pattern = rf"{attr}='?([\w-]+)'?"
             msg = re.sub(pattern, f"{attr}='******'", msg)
 
-        # passed with msg
+        # Update the record
         record.msg = msg
+        record.args = ()
+
         return True
 
 

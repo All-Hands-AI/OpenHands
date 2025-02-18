@@ -1,7 +1,6 @@
 """Memory monitoring utilities for the runtime."""
 
 import threading
-from typing import Optional
 
 from memory_profiler import memory_usage
 
@@ -22,7 +21,7 @@ class LogStream:
 class MemoryMonitor:
     def __init__(self, enable: bool = False):
         """Memory monitor for the runtime."""
-        self._monitoring_thread: Optional[threading.Thread] = None
+        self._monitoring_thread: threading.Thread | None = None
         self._stop_monitoring = threading.Event()
         self.log_stream = LogStream()
         self.enable = enable
