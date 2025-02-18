@@ -235,7 +235,9 @@ function AccountSettings() {
               label="API Key"
               type="password"
               className="w-[680px]"
-              startContent={<KeyStatusIcon isSet={isLLMKeySet} />}
+              startContent={
+                isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
+              }
               placeholder={isLLMKeySet ? "**********" : ""}
             />
 
@@ -269,6 +271,7 @@ function AccountSettings() {
                 label="Runtime Settings"
                 items={REMOTE_RUNTIME_OPTIONS}
                 defaultSelectedKey={settings.REMOTE_RUNTIME_RESOURCE_FACTOR?.toString()}
+                isDisabled
                 isClearable={false}
               />
             )}
@@ -326,7 +329,12 @@ function AccountSettings() {
                   label="GitHub Token"
                   type="password"
                   className="w-[680px]"
-                  startContent={<KeyStatusIcon isSet={!!isGitHubTokenSet} />}
+                  startContent={
+                    isGitHubTokenSet && (
+                      <KeyStatusIcon isSet={!!isGitHubTokenSet} />
+                    )
+                  }
+                  placeholder={isGitHubTokenSet ? "**********" : ""}
                 />
 
                 <HelpLink

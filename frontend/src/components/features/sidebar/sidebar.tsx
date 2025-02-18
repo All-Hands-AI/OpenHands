@@ -22,6 +22,7 @@ import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
+import { cn } from "#/utils/utils";
 
 export function Sidebar() {
   const dispatch = useDispatch();
@@ -83,7 +84,12 @@ export function Sidebar() {
               ariaLabel="Conversations"
               onClick={() => setConversationPanelIsOpen((prev) => !prev)}
             >
-              <FaListUl size={22} />
+              <FaListUl
+                size={22}
+                className={cn(
+                  conversationPanelIsOpen ? "text-white" : "text-[#9099AC]",
+                )}
+              />
             </TooltipButton>
             <DocsButton />
           </div>
