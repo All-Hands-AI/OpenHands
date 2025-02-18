@@ -5,7 +5,6 @@ import shutil
 import subprocess
 
 import jinja2
-import requests
 from pydantic import SecretStr
 
 from openhands.core.config import LLMConfig
@@ -346,8 +345,6 @@ def send_pull_request(
     )
 
     return url
-
-
 
 
 def update_existing_pull_request(
