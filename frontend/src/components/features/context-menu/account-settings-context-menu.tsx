@@ -22,7 +22,7 @@ export function AccountSettingsContextMenu({
     <ContextMenu
       testId="account-settings-context-menu"
       ref={ref}
-      className="absolute left-full -top-1 z-10"
+      className="absolute right-full md:left-full -top-1 z-10"
     >
       <ContextMenuListItem onClick={onLogout} isDisabled={!isLoggedIn}>
         {t(I18nKey.ACCOUNT_SETTINGS$LOGOUT)}

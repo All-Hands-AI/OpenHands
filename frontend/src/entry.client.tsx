@@ -46,7 +46,7 @@ async function prepareApp() {
   }
 }
 
-const queryClient = new QueryClient(queryClientConfig);
+export const queryClient = new QueryClient(queryClientConfig);
 
 prepareApp().then(() =>
   startTransition(() => {
