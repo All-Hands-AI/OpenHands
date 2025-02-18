@@ -1,5 +1,4 @@
 import React from "react";
-import toast from "react-hot-toast";
 import { Link } from "react-router";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { HelpLink } from "#/components/features/settings/help-link";
@@ -22,35 +21,15 @@ import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import { isCustomModel } from "#/utils/is-custom-model";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
+import {
+  displayErrorToast,
+  displaySuccessToast,
+} from "#/utils/custom-toast-handlers";
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },
   { key: 2, label: "2x (4 core, 16G)" },
 ];
-
-const displayErrorToast = (error: string) => {
-  toast.error(error, {
-    position: "top-right",
-    style: {
-      background: "#454545",
-      border: "1px solid #717888",
-      color: "#fff",
-      borderRadius: "4px",
-    },
-  });
-};
-
-const displaySuccessToast = (message: string) => {
-  toast.success(message, {
-    position: "top-right",
-    style: {
-      background: "#454545",
-      border: "1px solid #717888",
-      color: "#fff",
-      borderRadius: "4px",
-    },
-  });
-};
 
 function AccountSettings() {
   const {
