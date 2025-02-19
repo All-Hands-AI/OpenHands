@@ -362,3 +362,4 @@ def test_ps1_metadata_empty_fields():
     assert metadata.hostname == 'host'
     assert metadata.working_dir == 'dir'
     assert metadata.py_interpreter_path == 'path'
+
