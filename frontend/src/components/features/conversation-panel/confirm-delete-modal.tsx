@@ -1,10 +1,10 @@
-import { ModalButton } from "#/components/shared/buttons/modal-button";
 import {
   BaseModalDescription,
   BaseModalTitle,
 } from "#/components/shared/modals/confirmation-modals/base-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
+import { BrandButton } from "../settings/brand-button";
 
 interface ConfirmDeleteModalProps {
   onConfirm: () => void;
@@ -26,16 +26,22 @@ export function ConfirmDeleteModal({
           className="flex flex-col gap-2 w-full"
           onClick={(event) => event.stopPropagation()}
         >
-          <ModalButton
+          <BrandButton
+            type="button"
+            variant="primary"
             onClick={onConfirm}
-            className="bg-danger font-bold"
-            text="Confirm"
-          />
-          <ModalButton
+            className="w-full"
+          >
+            Confirm
+          </BrandButton>
+          <BrandButton
+            type="button"
+            variant="secondary"
             onClick={onCancel}
-            className="bg-neutral-500 font-bold"
-            text="Cancel"
-          />
+            className="w-full"
+          >
+            Cancel
+          </BrandButton>
         </div>
       </ModalBody>
     </ModalBackdrop>

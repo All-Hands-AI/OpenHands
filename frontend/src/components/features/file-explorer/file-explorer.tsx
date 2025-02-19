@@ -10,7 +10,7 @@ import { useListFiles } from "#/hooks/query/use-list-files";
 import { cn } from "#/utils/utils";
 import { FileExplorerHeader } from "./file-explorer-header";
 import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
-import { OpenVSCodeButton } from "#/components/shared/buttons/open-vscode-button";
+import { BrandButton } from "../settings/brand-button";
 
 interface FileExplorerProps {
   isOpen: boolean;
@@ -77,10 +77,16 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
             </div>
           )}
           {isOpen && (
-            <OpenVSCodeButton
-              onClick={handleOpenVSCode}
+            <BrandButton
+              testId="open-vscode-button"
+              type="button"
+              variant="primary"
+              className="w-full"
               isDisabled={RUNTIME_INACTIVE_STATES.includes(curAgentState)}
-            />
+              onClick={handleOpenVSCode}
+            >
+              {t(I18nKey.VSCODE$OPEN)}
+            </BrandButton>
           )}
         </div>
       </div>
