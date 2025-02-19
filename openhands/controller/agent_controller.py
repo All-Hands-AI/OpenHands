@@ -203,6 +203,10 @@ class AgentController:
     async def update_state_after_step(self):
         # update metrics especially for cost. Use deepcopy to avoid it being modified by agent._reset()
         self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
+        
+        # Add logging for metrics update
+        accumulated_cost = self.state.local_metrics.accumulated_cost if self.state.local_metrics else None
+        logger.info(f"After update_state_after_step - State Local Metrics Accumulated Cost: {accumulated_cost}")
 
     async def _react_to_exception(
         self,

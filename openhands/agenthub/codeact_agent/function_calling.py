@@ -16,6 +16,7 @@ from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
 )
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -540,27 +541,26 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     raise FunctionCallValidationError(
                         f'Missing required argument "path" in tool call {tool_call.function.name}'
                     )
-                path = arguments['path']
-                command = arguments['command']
-                other_kwargs = {
-                    k: v for k, v in arguments.items() if k not in ['command', 'path']
-                }
 
-                if command == 'view':
+                # We implement this in agent_skills, which can be used via Jupyter
+                # convert tool_call.function.arguments to kwargs that can be passed to file_editor
+                code = f'print(file_editor(**{arguments}))'
+                logger.debug(
+                    f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
+                )
+
+                if arguments['command'] == 'view':
                     action = FileReadAction(
-                        path=path,
+                        path=arguments['path'],
+                        translated_ipython_code=code,
                         impl_source=FileReadSource.OH_ACI,
-                        view_range=other_kwargs.get('view_range', None),
                     )
                 else:
-                    if 'view_range' in other_kwargs:
-                        # Remove view_range from other_kwargs since it is not needed for FileEditAction
-                        other_kwargs.pop('view_range')
                     action = FileEditAction(
-                        path=path,
-                        command=command,
+                        path=arguments['path'],
+                        content='',  # dummy value -- we don't need it
+                        translated_ipython_code=code,
                         impl_source=FileEditSource.OH_ACI,
-                        **other_kwargs,
                     )
             elif tool_call.function.name == 'browser':
                 if 'code' not in arguments:
@@ -590,6 +590,12 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 total_calls_in_response=len(assistant_msg.tool_calls),
             )
             actions.append(action)
+
+        # Add logging for each created action
+        for action in actions:
+            accumulated_cost = action.llm_metrics.accumulated_cost if action.llm_metrics else None
+            logger.info(f"Action created - Accumulated Cost: {accumulated_cost}")
+            logger.info(f"Action type: {type(action)}")
     else:
         actions.append(
             MessageAction(content=assistant_msg.content, wait_for_response=True)
