@@ -9,9 +9,10 @@ We follow format from: https://docs.litellm.ai/docs/completion/function_call
 import copy
 import json
 import re
-from typing import Iterable
+from typing import Any, Iterable, TypedDict
 
 from litellm import ChatCompletionToolParam
+from litellm.types.completion_response import ChatCompletionToolParamFunctionChunk
 
 from openhands.core.exceptions import (
     FunctionCallConversionError,
@@ -265,7 +266,7 @@ def convert_tool_call_to_string(tool_call: dict) -> str:
     return ret
 
 
-def convert_tools_to_description(tools: list[dict]) -> str:
+def convert_tools_to_description(tools: list[ChatCompletionToolParam]) -> str:
     ret = ''
     for i, tool in enumerate(tools):
         assert tool['type'] == 'function'
@@ -474,8 +475,8 @@ def convert_fncall_messages_to_non_fncall_messages(
 
 
 def _extract_and_validate_params(
-    matching_tool: dict, param_matches: Iterable[re.Match], fn_name: str
-) -> dict:
+    matching_tool: dict[str, Any], param_matches: Iterable[re.Match], fn_name: str
+) -> dict[str, Any]:
     params = {}
     # Parse and validate parameters
     required_params = set()
@@ -712,7 +713,7 @@ def convert_non_fncall_messages_to_fncall_messages(
                 # Parse parameters
                 param_matches = re.finditer(FN_PARAM_REGEX_PATTERN, fn_body, re.DOTALL)
                 params = _extract_and_validate_params(
-                    matching_tool, param_matches, fn_name
+                    dict(matching_tool), param_matches, fn_name
                 )
 
                 # Create tool call with unique ID

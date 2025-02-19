@@ -13,13 +13,16 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 
-from litellm import ChatCompletionMessageToolCall, ModelInfo, PromptTokensDetails
+from litellm import ChatCompletionMessageToolCall, PromptTokensDetails
+from litellm.types.router import ModelInfo as RouterModelInfo
+from litellm.types.utils import ModelInfo as UtilsModelInfo
 from litellm import Message as LiteLLMMessage
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     RateLimitError,
 )
+from litellm.types.completion_response import Choices, StreamingChoices
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
 
@@ -104,7 +107,7 @@ class LLM(RetryMixin, DebugMixin):
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
 
-        self.model_info: ModelInfo | None = None
+        self.model_info: RouterModelInfo | UtilsModelInfo | None = None
         self.retry_listener = retry_listener
         if self.config.log_completions:
             if self.config.log_completions_folder is None:
@@ -170,7 +173,7 @@ class LLM(RetryMixin, DebugMixin):
             retry_multiplier=self.config.retry_multiplier,
             retry_listener=self.retry_listener,
         )
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> ModelResponse:
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             from openhands.core.utils import json
 
@@ -244,18 +247,16 @@ class LLM(RetryMixin, DebugMixin):
             # if we mocked function calling, and we have tools, convert the response back to function calling format
             if mock_function_calling and mock_fncall_tools is not None:
                 assert len(resp.choices) == 1
-                non_fncall_response_message = resp.choices[0].message
-                fn_call_messages_with_response = (
-                    convert_non_fncall_messages_to_fncall_messages(
-                        messages + [non_fncall_response_message], mock_fncall_tools
+                if isinstance(resp.choices[0], (Choices, StreamingChoices)):
+                    non_fncall_response_message = resp.choices[0].message
+                    fn_call_messages_with_response = (
+                        convert_non_fncall_messages_to_fncall_messages(
+                            messages + [dict(non_fncall_response_message)], mock_fncall_tools
+                        )
                     )
-                )
-                fn_call_response_message = fn_call_messages_with_response[-1]
-                if not isinstance(fn_call_response_message, LiteLLMMessage):
-                    fn_call_response_message = LiteLLMMessage(
-                        **fn_call_response_message
-                    )
-                resp.choices[0].message = fn_call_response_message
+                    fn_call_response_message = fn_call_messages_with_response[-1]
+                    fn_call_response_message = dict(fn_call_response_message)
+                    resp.choices[0].message = fn_call_response_message
 
             message_back: str = resp['choices'][0]['message']['content'] or ''
             tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
@@ -305,17 +306,17 @@ class LLM(RetryMixin, DebugMixin):
 
             return resp
 
-        self._completion = wrapper
+        self._completion = partial(wrapper)
 
     @property
-    def completion(self):
+    def completion(self) -> Callable[..., ModelResponse]:
         """Decorator for the litellm completion function.
 
         Check the complete documentation at https://litellm.vercel.app/docs/completion
         """
         return self._completion
 
-    def init_model_info(self):
+    def init_model_info(self) -> None:
         if self._tried_model_info:
             return
         self._tried_model_info = True
@@ -443,11 +444,11 @@ class LLM(RetryMixin, DebugMixin):
         # remove when litellm is updated to fix https://github.com/BerriAI/litellm/issues/5608
         # Check both the full model name and the name after proxy prefix for vision support
         return (
-            litellm.supports_vision(self.config.model)
-            or litellm.supports_vision(self.config.model.split('/')[-1])
+            bool(litellm.supports_vision(self.config.model))
+            or bool(litellm.supports_vision(self.config.model.split('/')[-1]))
             or (
                 self.model_info is not None
-                and self.model_info.get('supports_vision', False)
+                and bool(self.model_info.get('supports_vision', False))
             )
         )
 
@@ -592,7 +593,7 @@ class LLM(RetryMixin, DebugMixin):
                 return True
         return False
 
-    def _completion_cost(self, response) -> float:
+    def _completion_cost(self, response: ModelResponse) -> float:
         """Calculate completion cost and update metrics with running total.
 
         Calculate the cost of a completion response based on the model. Local models are treated as free.
@@ -631,35 +632,39 @@ class LLM(RetryMixin, DebugMixin):
         try:
             if cost is None:
                 try:
-                    cost = litellm_completion_cost(
-                        completion_response=response, **extra_kwargs
-                    )
+                    cost = float(litellm_completion_cost(
+                        completion_response=response,
+                        custom_cost_per_token=extra_kwargs.get('custom_cost_per_token'),
+                    ))
                 except Exception as e:
                     logger.error(f'Error getting cost from litellm: {e}')
 
             if cost is None:
                 _model_name = '/'.join(self.config.model.split('/')[1:])
-                cost = litellm_completion_cost(
-                    completion_response=response, model=_model_name, **extra_kwargs
-                )
+                cost = float(litellm_completion_cost(
+                    completion_response=response,
+                    model=_model_name,
+                    custom_cost_per_token=extra_kwargs.get('custom_cost_per_token'),
+                ))
                 logger.debug(
                     f'Using fallback model name {_model_name} to get cost: {cost}'
                 )
-            self.metrics.add_cost(cost)
-            return cost
+            cost_float = float(cost)
+            self.metrics.add_cost(cost_float)
+            return cost_float
         except Exception:
             self.cost_metric_supported = False
             logger.debug('Cost calculation not supported for this model.')
         return 0.0
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.config.api_version:
             return f'LLM(model={self.config.model}, api_version={self.config.api_version}, base_url={self.config.base_url})'
         elif self.config.base_url:
             return f'LLM(model={self.config.model}, base_url={self.config.base_url})'
         return f'LLM(model={self.config.model})'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
     def reset(self) -> None:
