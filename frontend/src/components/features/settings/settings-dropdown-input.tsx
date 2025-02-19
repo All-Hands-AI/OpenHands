@@ -38,12 +38,12 @@ export function SettingsDropdownInput({
         isDisabled={isDisabled}
         className="w-full"
         classNames={{
-          popoverContent: "bg-[#454545] rounded-xl border border-[#717888]",
+          popoverContent: "bg-subtle rounded-xl border border-[#717888]",
         }}
         inputProps={{
           classNames: {
             inputWrapper:
-              "bg-[#454545] border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
+              "bg-subtle border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
           },
         }}
       >

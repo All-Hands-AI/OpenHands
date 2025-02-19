@@ -388,7 +388,7 @@ function AccountSettings() {
         </div>
       </form>
 
-      <footer className="flex gap-6 p-6 justify-end border-t border-t-[#454545]">
+      <footer className="flex gap-6 p-6 justify-end border-t border-t-subtle">
         <BrandButton
           type="button"
           variant="secondary"
@@ -411,7 +411,7 @@ function AccountSettings() {
         <ModalBackdrop>
           <div
             data-testid="reset-modal"
-            className="bg-root-primary p-4 rounded-xl flex flex-col gap-4"
+            className="bg-root p-4 rounded-xl flex flex-col gap-4"
           >
             <p>Are you sure you want to reset all settings?</p>
             <div className="w-full flex gap-2">

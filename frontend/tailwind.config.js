@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 import { heroui } from "@heroui/react";
-import typography from '@tailwindcss/typography';
+import typography from "@tailwindcss/typography";
 export default {
   content: [
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -9,11 +9,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        'root-primary': '#171717',
-        'root-secondary': '#262626',
-        'hyperlink': '#007AFF',
-        'danger': '#EF3744',
-        'success': '#4CAF50',
+        primary: "#C9B974",
+        root: "#171717",
+        sub: "#262626",
+        danger: "#E76A5E",
+        success: "#A5E75E",
+        subtle: "#454545",
+        "subtle-alt": "#B7BDC2",
       },
     },
   },
@@ -32,8 +34,8 @@ export default {
           colors: {
             primary: "#4465DB",
           },
-        }
-      }
+        },
+      },
     }),
     typography,
   ],
