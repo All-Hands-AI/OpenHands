@@ -920,7 +920,7 @@ version = "3.4.0"
 description = "Validate configuration and produce human readable error messages."
 optional = false
 python-versions = ">=3.8"
-groups = ["main", "dev", "evaluation"]
+groups = ["dev", "evaluation"]
 files = [
     {file = "cfgv-3.4.0-py2.py3-none-any.whl", hash = "sha256:b7265b1f29fd3316bfcd2b330d63d024f2bfd8bcb8b0272f8e19a504856c48f9"},
     {file = "cfgv-3.4.0.tar.gz", hash = "sha256:e52591d4c5f5dead8e0f673fb16db7949d2cfb3f7da4582893288f0ded8fe560"},
@@ -1634,7 +1634,7 @@ version = "0.3.9"
 description = "Distribution utilities"
 optional = false
 python-versions = "*"
-groups = ["main", "dev", "evaluation"]
+groups = ["dev", "evaluation"]
 files = [
     {file = "distlib-0.3.9-py2.py3-none-any.whl", hash = "sha256:47f8c22fd27c27e25a65601af709b38e4f0a45ea4fc2e710f65755fa8caaaf87"},
     {file = "distlib-0.3.9.tar.gz", hash = "sha256:a60f20dea646b8a33f3e7772f74dc0b2d0772d2837ee1342a00645c81edf9403"},
@@ -3199,7 +3199,7 @@ version = "2.6.7"
 description = "File identification library for Python"
 optional = false
 python-versions = ">=3.9"
-groups = ["main", "dev", "evaluation"]
+groups = ["dev", "evaluation"]
 files = [
     {file = "identify-2.6.7-py2.py3-none-any.whl", hash = "sha256:155931cb617a401807b09ecec6635d6c692d180090a1cedca8ef7d58ba5b6aa0"},
     {file = "identify-2.6.7.tar.gz", hash = "sha256:3fa266b42eba321ee0b2bb0936a6a6b9e36a1351cbb69055b3082f4193035684"},
@@ -3303,7 +3303,7 @@ version = "2.0.0"
 description = "brain-dead simple config-ini parsing"
 optional = false
 python-versions = ">=3.7"
-groups = ["main", "evaluation", "test"]
+groups = ["evaluation", "test"]
 files = [
     {file = "iniconfig-2.0.0-py3-none-any.whl", hash = "sha256:b6a85871a79d2e3b22d2d1b94ac2824226a63c6b741c88f7ae975f18b6778374"},
     {file = "iniconfig-2.0.0.tar.gz", hash = "sha256:2d91e135bf72d31a410b17c16da610a82cb55f6b0477d1a902134b24a455b8b3"},
@@ -5503,7 +5503,7 @@ version = "1.9.1"
 description = "Node.js virtual environment builder"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
-groups = ["main", "dev", "evaluation"]
+groups = ["dev", "evaluation"]
 files = [
     {file = "nodeenv-1.9.1-py2.py3-none-any.whl", hash = "sha256:ba11c9782d29c27c70ffbdda2d7415098754709be8a7056d79a737cd901155c9"},
     {file = "nodeenv-1.9.1.tar.gz", hash = "sha256:6ec12890a2dab7946721edbfbcd91f3319c6ccc9aec47be7c7e6b7011ee6645f"},
@@ -5912,8 +5912,6 @@ litellm = "*"
 networkx = "*"
 numpy = "*"
 pandas = "*"
-pre-commit = "^4.1.0"
-pytest = "^8.3.4"
 scipy = "*"
 tree-sitter = "^0.24.0"
 tree-sitter-javascript = "^0.23.1"
@@ -5925,8 +5923,8 @@ whatthepatch = "^1.0.6"
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/openhands-aci.git"
-reference = "fix-memory-issue"
-resolved_reference = "d906bdd60b397fd8c30033a59d8f47f343d6ede4"
+reference = "fix-file-history-manager"
+resolved_reference = "00f169a97c84249439a60e948c775c7cb317faad"
 
 [[package]]
 name = "opentelemetry-api"
@@ -6484,7 +6482,7 @@ version = "1.5.0"
 description = "plugin and hook calling mechanisms for python"
 optional = false
 python-versions = ">=3.8"
-groups = ["main", "evaluation", "test"]
+groups = ["evaluation", "test"]
 files = [
     {file = "pluggy-1.5.0-py3-none-any.whl", hash = "sha256:44e1ad92c8ca002de6377e165f3e0f1be63266ab4d554740532335b9d75ea669"},
     {file = "pluggy-1.5.0.tar.gz", hash = "sha256:2cffa88e94fdc978c4c574f15f9e59b7f4201d439195c3715ca9e2486f1d0cf1"},
@@ -6545,7 +6543,7 @@ version = "4.1.0"
 description = "A framework for managing and maintaining multi-language pre-commit hooks."
 optional = false
 python-versions = ">=3.9"
-groups = ["main", "dev", "evaluation"]
+groups = ["dev", "evaluation"]
 files = [
     {file = "pre_commit-4.1.0-py2.py3-none-any.whl", hash = "sha256:d29e7cb346295bcc1cc75fc3e92e343495e3ea0196c9ec6ba53f49f10ab6ae7b"},
     {file = "pre_commit-4.1.0.tar.gz", hash = "sha256:ae3f018575a588e30dfddfab9a05448bfbd6b73d78709617b5a2b853549716d4"},
@@ -7357,7 +7355,7 @@ version = "8.3.4"
 description = "pytest: simple powerful testing with Python"
 optional = false
 python-versions = ">=3.8"
-groups = ["main", "evaluation", "test"]
+groups = ["evaluation", "test"]
 files = [
     {file = "pytest-8.3.4-py3-none-any.whl", hash = "sha256:50e16d954148559c9a74109af1eaf0c945ba2d8f30f0a3d3335edde19788b6f6"},
     {file = "pytest-8.3.4.tar.gz", hash = "sha256:965370d062bce11e73868e0335abac31b4d3de0e82f4007408d242b4f8610761"},
@@ -8877,7 +8875,7 @@ files = [
 
 [package.dependencies]
 greenlet = [
-    {version = "!=0.4.17", markers = "python_version < \"3.14\" and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\")"},
+    {version = "!=0.4.17", optional = true, markers = "python_version < \"3.14\" and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\") or extra == \"asyncio\""},
     {version = "!=0.4.17", optional = true, markers = "python_version < \"3.14\" and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\") or extra == \"asyncio\""},
 ]
 typing-extensions = ">=4.6.0"
@@ -10016,7 +10014,7 @@ version = "20.29.2"
 description = "Virtual Python Environment builder"
 optional = false
 python-versions = ">=3.8"
-groups = ["main", "dev", "evaluation"]
+groups = ["dev", "evaluation"]
 files = [
     {file = "virtualenv-20.29.2-py3-none-any.whl", hash = "sha256:febddfc3d1ea571bdb1dc0f98d7b45d24def7428214d4fb73cc486c9568cce6a"},
     {file = "virtualenv-20.29.2.tar.gz", hash = "sha256:fdaabebf6d03b5ba83ae0a02cfe96f48a716f4fae556461d180825866f75b728"},
@@ -10795,4 +10793,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "395c20a1f1bda924c1177369ce9c1ae27d12966da64b9fa60d91ca7895995c17"
+content-hash = "e5d5006b1a1b5b9187e9c19ee063340195e70568cbc6f108289087071c048344"
