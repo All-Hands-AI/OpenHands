@@ -1629,18 +1629,6 @@ files = [
 ]
 
 [[package]]
-name = "diskcache"
-version = "5.6.3"
-description = "Disk Cache -- Disk and file backed persistent cache."
-optional = false
-python-versions = ">=3"
-groups = ["main"]
-files = [
-    {file = "diskcache-5.6.3-py3-none-any.whl", hash = "sha256:5e31b2d5fbad117cc363ebaf6b689474db18a1f6438bc82358b024abd4c2ca19"},
-    {file = "diskcache-5.6.3.tar.gz", hash = "sha256:2c3a3fa2743d8535d832ec61c2054a1641f41775aa7c556758a109941e33e4fc"},
-]
-
-[[package]]
 name = "distlib"
 version = "0.3.9"
 description = "Distribution utilities"
@@ -5907,19 +5895,18 @@ realtime = ["websockets (>=13,<15)"]
 
 [[package]]
 name = "openhands-aci"
-version = "0.2.3"
+version = "0.2.5"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
 python-versions = "<4.0,>=3.12"
 groups = ["main"]
 files = [
-    {file = "openhands_aci-0.2.3-py3-none-any.whl", hash = "sha256:6c5479c41f3bad460a0ac078418260851166a8d4e641e0072b26459a34ef4442"},
-    {file = "openhands_aci-0.2.3.tar.gz", hash = "sha256:6b8031751ec3e6d1da54969b2ec19dcbc3192676e5386cbb48d04458f8021148"},
+    {file = "openhands_aci-0.2.5-py3-none-any.whl", hash = "sha256:775a3ea9eacf090ff6fa6819dcc449a359a770f2d25232890441a799b0bd3c2e"},
+    {file = "openhands_aci-0.2.5.tar.gz", hash = "sha256:cfa51834771fb7f35cc754f04ee3b6d8d985df79a6fa4bdd0f57a8a20e9f0883"},
 ]
 
 [package.dependencies]
 binaryornot = ">=0.4.4,<0.5.0"
-diskcache = ">=5.6.3,<6.0.0"
 flake8 = "*"
 gitpython = "*"
 grep-ast = "0.3.3"
@@ -10802,4 +10789,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "a663ed31b71b4307c9f9665a8af4d5fbb8e1a4f0a5a562055df5ec981e5bdc16"
+content-hash = "583a46735c1704428110581400333ce35cd7f6a3f22e5831beb7315ebeeb377a"
