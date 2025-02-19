@@ -100,31 +100,3 @@ def test_convert_to_settings():
 
     assert settings.llm_api_key.get_secret_value() == 'test-key'
     assert settings.github_token.get_secret_value() == 'test-token'
-
-
-def test_reset_settings():
-    settings = Settings(
-        language='no',
-        agent='test-agent',
-        max_iterations=100,
-        security_analyzer='test-analyzer',
-        confirmation_mode=True,
-        llm_model='test-model',
-        llm_api_key='test-key',
-        llm_base_url='https://test.example.com',
-        remote_runtime_resource_factor=2,
-        github_token='test-token',
-    )
-
-    reset_settings = settings.reset()
-
-    assert reset_settings.language == 'en'
-    assert reset_settings.agent == 'CodeActAgent'
-    assert reset_settings.max_iterations == 100
-    assert reset_settings.security_analyzer == ''
-    assert reset_settings.confirmation_mode is False
-    assert reset_settings.llm_model == 'anthropic/claude-3-5-sonnet-20241022'
-    assert reset_settings.llm_api_key.get_secret_value() == ''
-    assert reset_settings.llm_base_url == ''
-    assert reset_settings.remote_runtime_resource_factor == 1
-    assert reset_settings.github_token.get_secret_value() == 'test-token'

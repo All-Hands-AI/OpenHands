@@ -116,15 +116,7 @@ async def reset_settings(request: Request) -> JSONResponse:
         settings_store = await SettingsStoreImpl.get_instance(
             config, get_user_id(request)
         )
-        existing_settings = await settings_store.load()
-
-        if existing_settings:
-            await settings_store.store(existing_settings.reset())
-        else:
-            return JSONResponse(
-                status_code=status.HTTP_404_NOT_FOUND,
-                content={'error': 'Settings not found'},
-            )
+        await settings_store.reset()
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
