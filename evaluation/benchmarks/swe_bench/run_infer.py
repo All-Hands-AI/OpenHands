@@ -142,6 +142,7 @@ def get_config(
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
+        save_trajectory_path=os.path.join(metadata.eval_output_dir, 'trajectories', f"{instance['instance_id']}.json"),
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(
