@@ -107,4 +107,4 @@ class LLMConfig(BaseModel):
         # While it doesn't seem required, the format supported by the API without version seems old and will likely break.
         # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
         if self.model.startswith('azure') and self.api_version is None:
-            self.api_version = '2024-02-15-preview'
+            self.api_version = '2024-08-01-preview'
