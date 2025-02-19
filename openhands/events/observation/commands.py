@@ -56,7 +56,9 @@ class CmdOutputMetadata(BaseModel):
         matches = []
         for match in CMD_OUTPUT_METADATA_PS1_REGEX.finditer(string):
             try:
-                json.loads(match.group(1).strip())  # Try to parse as JSON
+                # Unescape the quotes before parsing
+                json_str = match.group(1).strip().replace(r'\"', '"')
+                json.loads(json_str)  # Try to parse as JSON
                 matches.append(match)
             except json.JSONDecodeError:
                 logger.warning(
@@ -69,7 +71,9 @@ class CmdOutputMetadata(BaseModel):
     @classmethod
     def from_ps1_match(cls, match: re.Match[str]) -> Self:
         """Extract the required metadata from a PS1 prompt."""
-        metadata = json.loads(match.group(1))
+        # Unescape the quotes before parsing
+        json_str = match.group(1).strip().replace(r'\"', '"')
+        metadata = json.loads(json_str)
         # Create a copy of metadata to avoid modifying the original
         processed = metadata.copy()
         # Convert numeric fields
