@@ -1,5 +1,6 @@
 import os
-from typing import Any
+import json
+from typing import Any, Dict, List
 
 import httpx
 from pydantic import SecretStr
@@ -9,6 +10,8 @@ from openhands.integrations.github.github_types import (
     GHUnknownException,
     GitHubRepository,
     GitHubUser,
+    TaskType,
+    SuggestedTask,
 )
 from openhands.utils.import_utils import get_impl
 
@@ -135,6 +138,134 @@ class GitHubService:
         ]
 
         return repos
+
+    async def execute_graphql_query(self, query: str, variables: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute a GraphQL query against the GitHub API."""
+        try:
+            async with httpx.AsyncClient() as client:
+                github_headers = await self._get_github_headers()
+                response = await client.post(
+                    f"{self.BASE_URL}/graphql",
+                    headers=github_headers,
+                    json={"query": query, "variables": variables}
+                )
+                response.raise_for_status()
+                
+                result = response.json()
+                if "errors" in result:
+                    raise GHUnknownException(f"GraphQL query error: {json.dumps(result['errors'])}")
+                
+                return result
+                
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 401:
+                raise GhAuthenticationError('Invalid Github token')
+            raise GHUnknownException('Unknown error')
+
+        except httpx.HTTPError:
+            raise GHUnknownException('Unknown error')
+
+    async def get_suggested_tasks(self, repo_full_name: str) -> List[SuggestedTask]:
+        """
+        Get suggested tasks for a repository, including:
+        - PRs with merge conflicts
+        - PRs with failing GitHub Actions
+        - PRs with unresolved comments
+        - Issues with specific labels (help wanted, chore, documentation, good first issue)
+        """
+        query = """
+        query GetSuggestedTasks($owner: String!, $name: String!) {
+          repository(owner: $owner, name: $name) {
+            pullRequests(first: 100, states: [OPEN]) {
+              nodes {
+                number
+                title
+                mergeable
+                commits(last: 1) {
+                  nodes {
+                    commit {
+                      statusCheckRollup {
+                        state
+                      }
+                    }
+                  }
+                }
+                reviews(first: 100, states: [CHANGES_REQUESTED, COMMENTED]) {
+                  nodes {
+                    state
+                  }
+                }
+              }
+            }
+            issues(first: 100, states: [OPEN], labels: ["help wanted", "chore", "documentation", "good first issue"]) {
+              nodes {
+                number
+                title
+                labels(first: 10) {
+                  nodes {
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+        """
+
+        owner, name = repo_full_name.split("/")
+        variables = {
+            "owner": owner,
+            "name": name
+        }
+
+        response = await self.execute_graphql_query(query, variables)
+        data = response["data"]["repository"]
+        tasks: List[SuggestedTask] = []
+
+        # Process pull requests
+        for pr in data["pullRequests"]["nodes"]:
+            # Check for merge conflicts
+            if pr["mergeable"] == "CONFLICTING":
+                tasks.append(SuggestedTask(
+                    task_type=TaskType.MERGE_CONFLICTS,
+                    repo=repo_full_name,
+                    issue_number=pr["number"],
+                    title=pr["title"]
+                ))
+
+            # Check for failing checks
+            if pr["commits"]["nodes"] and pr["commits"]["nodes"][0]["commit"]["statusCheckRollup"]:
+                if pr["commits"]["nodes"][0]["commit"]["statusCheckRollup"]["state"] == "FAILURE":
+                    tasks.append(SuggestedTask(
+                        task_type=TaskType.FAILING_CHECKS,
+                        repo=repo_full_name,
+                        issue_number=pr["number"],
+                        title=pr["title"]
+                    ))
+
+            # Check for unresolved comments
+            has_unresolved_comments = any(
+                review["state"] in ["CHANGES_REQUESTED", "COMMENTED"]
+                for review in pr["reviews"]["nodes"]
+            )
+            if has_unresolved_comments:
+                tasks.append(SuggestedTask(
+                    task_type=TaskType.UNRESOLVED_COMMENTS,
+                    repo=repo_full_name,
+                    issue_number=pr["number"],
+                    title=pr["title"]
+                ))
+
+        # Process issues
+        for issue in data["issues"]["nodes"]:
+            tasks.append(SuggestedTask(
+                task_type=TaskType.OPEN_ISSUE,
+                repo=repo_full_name,
+                issue_number=issue["number"],
+                title=issue["title"]
+            ))
+
+        return tasks
 
 
 github_service_cls = os.environ.get(
