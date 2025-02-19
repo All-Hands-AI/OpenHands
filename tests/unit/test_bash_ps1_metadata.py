@@ -15,7 +15,11 @@ def test_ps1_metadata_format():
     print(prompt)
     assert prompt.startswith('\n###PS1JSON###\n')
     assert prompt.endswith('\n###PS1END###\n')
-    assert r'\"exit_code\"' in prompt, 'PS1 prompt should contain escaped double quotes'
+    # The JSON string should be properly formatted with quotes but not escaped
+    assert '"exit_code"' in prompt, 'PS1 prompt should contain proper JSON with quotes'
+    # Shell variables should be present
+    assert r'\u' in prompt, 'PS1 prompt should contain shell variables'
+    assert r'\h' in prompt, 'PS1 prompt should contain shell variables'
 
 
 def test_ps1_metadata_json_structure():
@@ -23,11 +27,9 @@ def test_ps1_metadata_json_structure():
     prompt = CmdOutputMetadata.to_ps1_prompt()
     # Extract JSON content between markers
     json_str = prompt.replace('###PS1JSON###\n', '').replace('\n###PS1END###\n', '')
-    # Remove escaping before parsing
-    json_str = json_str.replace(r'\"', '"')
     # Remove any trailing content after the JSON
     json_str = json_str.split('###PS1END###')[0].strip()
-    data = json.loads(json_str)
+    data = json.loads(json_str)  # Should parse without any unescaping needed
 
     # Check required fields
     expected_fields = {
@@ -39,6 +41,10 @@ def test_ps1_metadata_json_structure():
         'py_interpreter_path',
     }
     assert set(data.keys()) == expected_fields
+
+    # Check that shell variables are present
+    assert data['username'] == r'\u'
+    assert data['hostname'] == r'\h'
 
 
 def test_ps1_metadata_parsing():
@@ -289,6 +295,29 @@ def test_cmd_output_observation_properties():
     assert 'exit code 1' in obs.message
     assert 'invalid' in obs.message
     assert 'error' in str(obs)
+
+
+def test_ps1_metadata_no_double_escaping():
+    """Test that PS1 metadata JSON doesn't have doubly escaped quotes.
+    This test specifically checks for the issue where quotes were being
+    doubly escaped, causing JSON parsing to fail."""
+    prompt = CmdOutputMetadata.to_ps1_prompt()
+    # Extract the JSON part
+    json_str = prompt.replace('###PS1JSON###\n', '').replace('\n###PS1END###\n', '')
+    
+    # The JSON string should not have escaped quotes around field names
+    assert not any(
+        line.strip().startswith(r'\"') for line in json_str.splitlines()
+    ), 'JSON field names should not have escaped quotes'
+    
+    # It should parse as valid JSON
+    data = json.loads(json_str)
+    assert isinstance(data, dict)
+    assert 'pid' in data
+    assert 'exit_code' in data
+    
+    # The shell command should still have its quotes properly escaped
+    assert data['py_interpreter_path'].endswith('"")')
 
 
 def test_ps1_metadata_empty_fields():

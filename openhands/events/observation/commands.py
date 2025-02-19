@@ -45,9 +45,8 @@ class CmdOutputMetadata(BaseModel):
             },
             indent=2,
         )
-        # Make sure we escape double quotes in the JSON string
-        # So that PS1 will keep them as part of the output
-        prompt += json_str.replace('"', r'\"')
+        # No need to escape quotes since json.dumps() already does that
+        prompt += json_str
         prompt += CMD_OUTPUT_PS1_END + '\n'  # Ensure there's a newline at the end
         return prompt
 
