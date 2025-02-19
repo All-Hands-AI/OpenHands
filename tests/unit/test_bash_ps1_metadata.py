@@ -291,6 +291,31 @@ def test_cmd_output_observation_properties():
     assert 'error' in str(obs)
 
 
+def test_ps1_metadata_escaped_backslashes():
+    """Test that backslashes in PS1 metadata are properly escaped and parsed.
+    
+    This test verifies that backslashes in fields like username (\\u) and hostname (\\h)
+    are properly escaped in the JSON and can be parsed correctly, even when sending
+    an empty command.
+    """
+    # Create an empty command observation
+    empty_cmd = CmdOutputObservation(content="", command="")
+
+    # Get the PS1 prompt string that would be used
+    ps1_prompt = CmdOutputMetadata.to_ps1_prompt()
+
+    # Try to parse it - this should not raise any JSON parsing errors
+    matches = CmdOutputMetadata.matches_ps1_metadata(ps1_prompt)
+    assert len(matches) == 1  # Should find exactly one match
+
+    # Create metadata from the match - this should not raise any JSON parsing errors
+    metadata = CmdOutputMetadata.from_ps1_match(matches[0])
+
+    # The metadata should have the expected values with properly escaped backslashes
+    assert metadata.username == '\\u'  # Should be a literal backslash followed by 'u'
+    assert metadata.hostname == '\\h'  # Should be a literal backslash followed by 'h'
+
+
 def test_ps1_metadata_empty_fields():
     """Test handling of empty fields in PS1 metadata"""
     # Test with empty strings
