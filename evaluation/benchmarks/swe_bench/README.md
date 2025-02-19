@@ -2,6 +2,8 @@
 
 This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)).
 
+**UPDATE (2/18/2025): We now support running SWE-Gym using the same evaluation harness here. For more details, checkout [this README](./SWE-Gym.md).
+
 **UPDATE (7/1/2024): We now support the official SWE-Bench dockerized evaluation as announced [here](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md).**
 
 The evaluation consists of three steps:

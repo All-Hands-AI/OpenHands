@@ -75,7 +75,7 @@ def load_completions(instance_id: str):
     # create messages
     messages = result['messages']
     messages.append(result['response']['choices'][0]['message'])
-    tools = result['kwargs']['tools']
+    tools = result['kwargs'].get('tools', None)
     return {
         'messages': messages,
         'tools': tools,
