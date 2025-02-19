@@ -6,22 +6,27 @@ import multiprocessing as mp
 import os
 import pathlib
 import subprocess
-from typing import Awaitable, TextIO
+from typing import Any, Awaitable, TextIO
 
+from pydantic import SecretStr
 from tqdm import tqdm
 
 import openhands
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.resolver.github_issue import GithubIssue
+from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.resolve_issue import (
     issue_handler_factory,
     process_issue,
 )
 from openhands.resolver.resolver_output import ResolverOutput
+from openhands.resolver.utils import (
+    Platform,
+    identify_token,
+)
 
 
-def cleanup():
+def cleanup() -> None:
     print('Cleaning up child processes...')
     for process in mp.active_children():
         print(f'Terminating child process: {process.name}')
@@ -51,6 +56,7 @@ async def resolve_issues(
     repo: str,
     token: str,
     username: str,
+    platform: Platform,
     max_iterations: int,
     limit_issues: int | None,
     num_workers: int,
@@ -62,13 +68,13 @@ async def resolve_issues(
     repo_instruction: str | None,
     issue_numbers: list[int] | None,
 ) -> None:
-    """Resolve multiple github issues.
+    """Resolve multiple github or gitlab issues.
 
     Args:
-        owner: Github owner of the repo.
-        repo: Github repository to resolve issues in form of `owner/repo`.
-        token: Github token to access the repository.
-        username: Github username to access the repository.
+        owner: Github or Gitlab owner of the repo.
+        repo: Github or Gitlab repository to resolve issues in form of `owner/repo`.
+        token: Github or Gitlab token to access the repository.
+        username: Github or Gitlab username to access the repository.
         max_iterations: Maximum number of iterations to run.
         limit_issues: Limit the number of issues to resolve.
         num_workers: Number of workers to use for parallel processing.
@@ -80,10 +86,12 @@ async def resolve_issues(
         repo_instruction: Repository instruction to use.
         issue_numbers: List of issue numbers to resolve.
     """
-    issue_handler = issue_handler_factory(issue_type, owner, repo, token, llm_config)
+    issue_handler = issue_handler_factory(
+        issue_type, owner, repo, token, llm_config, platform
+    )
 
     # Load dataset
-    issues: list[GithubIssue] = issue_handler.get_converted_issues(
+    issues: list[Issue] = issue_handler.get_converted_issues(
         issue_numbers=issue_numbers
     )
 
@@ -107,7 +115,7 @@ async def resolve_issues(
             [
                 'git',
                 'clone',
-                f'https://{username}:{token}@github.com/{owner}/{repo}',
+                issue_handler.get_clone_url(),
                 f'{output_dir}/repo',
             ]
         ).decode('utf-8')
@@ -188,6 +196,7 @@ async def resolve_issues(
             task = update_progress(
                 process_issue(
                     issue,
+                    platform,
                     base_commit,
                     max_iterations,
                     llm_config,
@@ -206,7 +215,7 @@ async def resolve_issues(
         # Use asyncio.gather with a semaphore to limit concurrency
         sem = asyncio.Semaphore(num_workers)
 
-        async def run_with_semaphore(task):
+        async def run_with_semaphore(task: Awaitable[Any]) -> Any:
             async with sem:
                 return await task
 
@@ -220,25 +229,27 @@ async def resolve_issues(
     logger.info('Finished.')
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Resolve multiple issues from Github.')
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description='Resolve multiple issues from Github or Gitlab.'
+    )
     parser.add_argument(
         '--repo',
         type=str,
         required=True,
-        help='Github repository to resolve issues in form of `owner/repo`.',
+        help='Github or Gitlab repository to resolve issues in form of `owner/repo`.',
     )
     parser.add_argument(
         '--token',
         type=str,
         default=None,
-        help='Github token to access the repository.',
+        help='Github or Gitlab token to access the repository.',
     )
     parser.add_argument(
         '--username',
         type=str,
         default=None,
-        help='Github username to access the repository.',
+        help='Github or Gitlab username to access the repository.',
     )
     parser.add_argument(
         '--runtime-container-image',
@@ -323,18 +334,23 @@ def main():
         )
 
     owner, repo = my_args.repo.split('/')
-    token = my_args.token if my_args.token else os.getenv('GITHUB_TOKEN')
-    username = my_args.username if my_args.username else os.getenv('GITHUB_USERNAME')
+    token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
+    username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
     if not username:
-        raise ValueError('Github username is required.')
+        raise ValueError('Username is required.')
 
     if not token:
-        raise ValueError('Github token is required.')
+        raise ValueError('Token is required.')
+
+    platform = identify_token(token)
+    if platform == Platform.INVALID:
+        raise ValueError('Token is invalid.')
 
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
+
     llm_config = LLMConfig(
         model=my_args.llm_model or os.environ['LLM_MODEL'],
-        api_key=str(api_key) if api_key else None,
+        api_key=SecretStr(api_key) if api_key else None,
         base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
     )
 
@@ -369,6 +385,7 @@ def main():
             repo=repo,
             token=token,
             username=username,
+            platform=platform,
             runtime_container_image=runtime_container_image,
             max_iterations=my_args.max_iterations,
             limit_issues=my_args.limit_issues,

@@ -10,3 +10,4 @@ class ConversationInitData(Settings):
 
     github_token: SecretStr | None = Field(default=None)
     selected_repository: str | None = Field(default=None)
+    selected_branch: str | None = Field(default=None)

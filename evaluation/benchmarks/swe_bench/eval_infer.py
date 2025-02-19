@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 import tempfile
 import time
 from functools import partial
@@ -21,13 +22,14 @@ from evaluation.benchmarks.swe_bench.run_infer import get_instance_docker_image
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    get_default_sandbox_config_for_eval,
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
 from openhands.core.config import (
     AppConfig,
-    SandboxConfig,
+    LLMConfig,
     get_parser,
 )
 from openhands.core.logger import openhands_logger as logger
@@ -79,22 +81,16 @@ def get_config(metadata: EvalMetadata, instance: pd.Series) -> AppConfig:
         f'Please make sure this image exists. '
         f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
     )
+    sandbox_config = get_default_sandbox_config_for_eval()
+    sandbox_config.base_container_image = base_container_image
+    sandbox_config.remote_runtime_resource_factor = get_instance_resource_factor(
+        dataset_name=metadata.dataset,
+        instance_id=instance['instance_id'],
+    )
     config = AppConfig(
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'docker'),
-        sandbox=SandboxConfig(
-            base_container_image=base_container_image,
-            use_host_network=False,
-            # large enough timeout, since some testcases take very long to run
-            timeout=600,
-            api_key=os.environ.get('ALLHANDS_API_KEY', None),
-            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
-            remote_runtime_init_timeout=3600,
-            remote_runtime_resource_factor=get_instance_resource_factor(
-                dataset_name=metadata.dataset,
-                instance_id=instance['instance_id'],
-            ),
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
@@ -415,13 +411,17 @@ if __name__ == '__main__':
     else:
         # Initialize with a dummy metadata when file doesn't exist
         metadata = EvalMetadata(
-            agent_class="dummy_agent",  # Placeholder agent class
-            llm_config=LLMConfig(model="dummy_model"),  # Minimal LLM config
+            agent_class='dummy_agent',  # Placeholder agent class
+            llm_config=LLMConfig(model='dummy_model'),  # Minimal LLM config
             max_iterations=1,  # Minimal iterations
-            eval_output_dir=os.path.dirname(args.input_file),  # Use input file dir as output dir
+            eval_output_dir=os.path.dirname(
+                args.input_file
+            ),  # Use input file dir as output dir
             start_time=time.strftime('%Y-%m-%d %H:%M:%S'),  # Current time
-            git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8').strip(),  # Current commit
-            dataset=args.dataset  # Dataset name from args
+            git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+            .decode('utf-8')
+            .strip(),  # Current commit
+            dataset=args.dataset,  # Dataset name from args
         )
 
     # The evaluation harness constrains the signature of `process_instance_func` but we need to
