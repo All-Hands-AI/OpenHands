@@ -277,7 +277,7 @@ class StandaloneConversationManager(ConversationManager):
 
     async def _status_message_callback(self, sid: str, msg_type: str, id: str):
         if msg_type == 'error' and id == 'STATUS$ERROR_RUNTIME_DISCONNECTED':
-            # If there is no runtime, stop the agent loop. We may need to delete the runtime in question...
+            # If there is no runtime, stop the agent loop.
             asyncio.create_task(self._close_session(sid))
 
     @classmethod
