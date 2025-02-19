@@ -25,6 +25,7 @@ import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
+import { useResetSettings } from "#/hooks/mutation/use-reset-settings";
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },
@@ -45,6 +46,7 @@ function AccountSettings() {
     isSuccess: isSuccessfulResources,
   } = useAIConfigOptions();
   const { mutate: saveSettings } = useSaveSettings();
+  const { mutate: resetSettings } = useResetSettings();
   const { handleLogout } = useAppLogout();
 
   const isFetching = isFetchingSettings || isFetchingResources;
@@ -139,19 +141,13 @@ function AccountSettings() {
   };
 
   const handleReset = () => {
-    saveSettings(
-      {
-        ...DEFAULT_SETTINGS,
-        LLM_API_KEY: "", // reset LLM API key
+    resetSettings(undefined, {
+      onSuccess: () => {
+        displaySuccessToast("Settings reset");
+        setResetSettingsModalIsOpen(false);
+        setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
       },
-      {
-        onSuccess: () => {
-          displaySuccessToast("Settings reset");
-          setResetSettingsModalIsOpen(false);
-          setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
-        },
-      },
-    );
+    });
   };
 
   React.useEffect(() => {
