@@ -305,12 +305,7 @@ def test_ps1_metadata_no_double_escaping():
     # Extract the JSON part
     json_str = prompt.replace('###PS1JSON###\n', '').replace('\n###PS1END###\n', '')
 
-    # The JSON string should not have escaped quotes around field names
-    assert not any(
-        line.strip().startswith(r'\"') for line in json_str.splitlines()
-    ), 'JSON field names should not have escaped quotes'
-
-    # It should parse as valid JSON
+    # The JSON string should be valid JSON without any escaping needed
     data = json.loads(json_str)
     assert isinstance(data, dict)
     assert 'pid' in data

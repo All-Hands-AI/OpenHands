@@ -46,6 +46,7 @@ class CmdOutputMetadata(BaseModel):
             indent=2,
         )
         # No need to escape quotes since json.dumps() already does that
+        # The JSON string will be inside single quotes in PS1, so bash won't interpret backslashes
         prompt += json_str
         prompt += CMD_OUTPUT_PS1_END + '\n'  # Ensure there's a newline at the end
         return prompt
