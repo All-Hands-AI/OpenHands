@@ -1,6 +1,6 @@
 import os
 import json
-from typing import Any, Dict, List
+from typing import Any
 
 import httpx
 from pydantic import SecretStr
@@ -139,7 +139,7 @@ class GitHubService:
 
         return repos
 
-    async def execute_graphql_query(self, query: str, variables: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute_graphql_query(self, query: str, variables: dict[str, Any]) -> dict[str, Any]:
         """Execute a GraphQL query against the GitHub API."""
         try:
             async with httpx.AsyncClient() as client:
@@ -165,7 +165,7 @@ class GitHubService:
         except httpx.HTTPError:
             raise GHUnknownException('Unknown error')
 
-    async def get_suggested_tasks(self, repo_full_name: str) -> List[SuggestedTask]:
+    async def get_suggested_tasks(self, repo_full_name: str) -> list[SuggestedTask]:
         """
         Get suggested tasks for a repository, including:
         - PRs with merge conflicts
@@ -220,7 +220,7 @@ class GitHubService:
 
         response = await self.execute_graphql_query(query, variables)
         data = response["data"]["repository"]
-        tasks: List[SuggestedTask] = []
+        tasks: list[SuggestedTask] = []
 
         # Process pull requests
         for pr in data["pullRequests"]["nodes"]:
