@@ -34,20 +34,19 @@ class CmdOutputMetadata(BaseModel):
     def to_ps1_prompt(cls) -> str:
         """Convert the required metadata into a PS1 prompt."""
         prompt = CMD_OUTPUT_PS1_BEGIN
-        # First, escape backslashes in the values
+        # Create the JSON string with proper escaping
         json_str = json.dumps(
             {
                 'pid': '$!',
                 'exit_code': '$?',
-                'username': '\\u',  # Double backslash to escape it in JSON
-                'hostname': '\\h',  # Double backslash to escape it in JSON
+                'username': r'\u',  # Raw string to avoid double escaping
+                'hostname': r'\h',  # Raw string to avoid double escaping
                 'working_dir': '$(pwd)',
                 'py_interpreter_path': '$(which python 2>/dev/null || echo "")',
             },
             indent=2,
         )
-        # Then escape double quotes for PS1
-        prompt += json_str.replace('"', r'\"')
+        prompt += json_str
         prompt += CMD_OUTPUT_PS1_END + '\n'  # Ensure there's a newline at the end
         return prompt
 
@@ -56,9 +55,8 @@ class CmdOutputMetadata(BaseModel):
         matches = []
         for match in CMD_OUTPUT_METADATA_PS1_REGEX.finditer(string):
             try:
-                # Unescape the quotes before parsing
-                json_str = match.group(1).strip().replace(r'\"', '"')
-                json.loads(json_str)  # Try to parse as JSON
+                # Parse the JSON as is
+                json.loads(match.group(1).strip())
                 matches.append(match)
             except json.JSONDecodeError:
                 logger.warning(
@@ -71,9 +69,8 @@ class CmdOutputMetadata(BaseModel):
     @classmethod
     def from_ps1_match(cls, match: re.Match[str]) -> Self:
         """Extract the required metadata from a PS1 prompt."""
-        # Unescape the quotes before parsing
-        json_str = match.group(1).strip().replace(r'\"', '"')
-        metadata = json.loads(json_str)
+        # Parse the JSON as is
+        metadata = json.loads(match.group(1).strip())
         # Create a copy of metadata to avoid modifying the original
         processed = metadata.copy()
         # Convert numeric fields
