@@ -27,7 +27,6 @@ from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.events.serialization import event_from_dict
-from openhands.events.serialization.event import event_to_trajectory
 from openhands.io import read_input, read_task
 from openhands.runtime.base import Runtime
 
