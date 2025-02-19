@@ -5895,16 +5895,18 @@ realtime = ["websockets (>=13,<15)"]
 
 [[package]]
 name = "openhands-aci"
-version = "0.2.4"
+version = "0.2.5"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
-python-versions = "^3.12"
+python-versions = "<4.0,>=3.12"
 groups = ["main"]
-files = []
-develop = false
+files = [
+    {file = "openhands_aci-0.2.5-py3-none-any.whl", hash = "sha256:775a3ea9eacf090ff6fa6819dcc449a359a770f2d25232890441a799b0bd3c2e"},
+    {file = "openhands_aci-0.2.5.tar.gz", hash = "sha256:cfa51834771fb7f35cc754f04ee3b6d8d985df79a6fa4bdd0f57a8a20e9f0883"},
+]
 
 [package.dependencies]
-binaryornot = "^0.4.4"
+binaryornot = ">=0.4.4,<0.5.0"
 flake8 = "*"
 gitpython = "*"
 grep-ast = "0.3.3"
@@ -5913,18 +5915,12 @@ networkx = "*"
 numpy = "*"
 pandas = "*"
 scipy = "*"
-tree-sitter = "^0.24.0"
-tree-sitter-javascript = "^0.23.1"
-tree-sitter-python = "^0.23.6"
-tree-sitter-ruby = "^0.23.1"
-tree-sitter-typescript = "^0.23.2"
-whatthepatch = "^1.0.6"
-
-[package.source]
-type = "git"
-url = "https://github.com/All-Hands-AI/openhands-aci.git"
-reference = "fix-file-history-manager"
-resolved_reference = "00f169a97c84249439a60e948c775c7cb317faad"
+tree-sitter = ">=0.24.0,<0.25.0"
+tree-sitter-javascript = ">=0.23.1,<0.24.0"
+tree-sitter-python = ">=0.23.6,<0.24.0"
+tree-sitter-ruby = ">=0.23.1,<0.24.0"
+tree-sitter-typescript = ">=0.23.2,<0.24.0"
+whatthepatch = ">=1.0.6,<2.0.0"
 
 [[package]]
 name = "opentelemetry-api"
@@ -8875,7 +8871,7 @@ files = [
 
 [package.dependencies]
 greenlet = [
-    {version = "!=0.4.17", optional = true, markers = "python_version < \"3.14\" and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\") or extra == \"asyncio\""},
+    {version = "!=0.4.17", markers = "python_version < \"3.14\" and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\")"},
     {version = "!=0.4.17", optional = true, markers = "python_version < \"3.14\" and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\") or extra == \"asyncio\""},
 ]
 typing-extensions = ">=4.6.0"
@@ -10793,4 +10789,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "e5d5006b1a1b5b9187e9c19ee063340195e70568cbc6f108289087071c048344"
+content-hash = "583a46735c1704428110581400333ce35cd7f6a3f22e5831beb7315ebeeb377a"
