@@ -23,38 +23,38 @@ class GitlabIssueHandler(IssueHandlerInterface):
         self.clone_url = self.get_clone_url()
         self.headers = self.get_headers()
 
-    def set_owner(self, owner: str):
+    def set_owner(self, owner: str) -> None:
         self.owner = owner
 
-    def get_headers(self):
+    def get_headers(self) -> dict[str, str]:
         return {
             'Authorization': f'Bearer {self.token}',
             'Accept': 'application/json',
         }
 
-    def get_base_url(self):
-        project_path = quote(f'{self.owner}/{self.repo}', safe="")
+    def get_base_url(self) -> str:
+        project_path = quote(f'{self.owner}/{self.repo}', safe='')
         return f'https://gitlab.com/api/v4/projects/{project_path}'
 
-    def get_authorize_url(self):
+    def get_authorize_url(self) -> str:
         return f'https://{self.username}:{self.token}@gitlab.com/'
 
-    def get_branch_url(self, branch_name: str):
+    def get_branch_url(self, branch_name: str) -> str:
         return self.get_base_url() + f'/repository/branches/{branch_name}'
 
-    def get_download_url(self):
+    def get_download_url(self) -> str:
         return f'{self.base_url}/issues'
 
-    def get_clone_url(self):
+    def get_clone_url(self) -> str:
         username_and_token = self.token
         if self.username:
             username_and_token = f'{self.username}:{self.token}'
         return f'https://{username_and_token}@gitlab.com/{self.owner}/{self.repo}.git'
 
-    def get_graphql_url(self):
+    def get_graphql_url(self) -> str:
         return 'https://gitlab.com/api/graphql'
 
-    def get_compare_url(self, branch_name: str):
+    def get_compare_url(self, branch_name: str) -> str:
         return f'https://gitlab.com/{self.owner}/{self.repo}/-/compare/{self.get_default_branch_name()}...{branch_name}'
 
     def get_converted_issues(
@@ -189,7 +189,7 @@ class GitlabIssueHandler(IssueHandlerInterface):
         print(f'Branch {branch_name} exists: {exists}')
         return exists
 
-    def get_branch_name(self, base_branch_name: str):
+    def get_branch_name(self, base_branch_name: str) -> str:
         branch_name = base_branch_name
         attempt = 1
         while self.branch_exists(branch_name):
@@ -197,7 +197,7 @@ class GitlabIssueHandler(IssueHandlerInterface):
             branch_name = f'{base_branch_name}-try{attempt}'
         return branch_name
 
-    def reply_to_comment(self, pr_number: int, comment_id: str, reply: str):
+    def reply_to_comment(self, pr_number: int, comment_id: str, reply: str) -> None:
         response = requests.get(
             f'{self.base_url}/merge_requests/{pr_number}/discussions/{comment_id.split('/')[-1]}',
             headers=self.headers,
@@ -216,7 +216,7 @@ class GitlabIssueHandler(IssueHandlerInterface):
             )
             response.raise_for_status()
 
-    def get_pull_url(self, pr_number: int):
+    def get_pull_url(self, pr_number: int) -> str:
         return (
             f'https://gitlab.com/{self.owner}/{self.repo}/-/merge_requests/{pr_number}'
         )
@@ -224,9 +224,12 @@ class GitlabIssueHandler(IssueHandlerInterface):
     def get_default_branch_name(self) -> str:
         response = requests.get(f'{self.base_url}', headers=self.headers)
         response.raise_for_status()
-        return response.json()['default_branch']
+        data = response.json()
+        return str(data['default_branch'])
 
-    def create_pull_request(self, data=dict) -> dict:
+    def create_pull_request(self, data: dict[str, Any] | None = None) -> dict[str, Any]:
+        if data is None:
+            data = {}
         response = requests.post(
             f'{self.base_url}/merge_requests', headers=self.headers, json=data
         )
@@ -243,9 +246,9 @@ class GitlabIssueHandler(IssueHandlerInterface):
         if 'iid' in pr_data:
             pr_data['number'] = pr_data['iid']
 
-        return pr_data
+        return dict(pr_data)
 
-    def request_reviewers(self, reviewer: str, pr_number: int):
+    def request_reviewers(self, reviewer: str, pr_number: int) -> None:
         response = requests.get(
             f'https://gitlab.com/api/v4/users?username={reviewer}',
             headers=self.headers,
@@ -264,7 +267,7 @@ class GitlabIssueHandler(IssueHandlerInterface):
                     f'Warning: Failed to request review from {reviewer}: {review_response.text}'
                 )
 
-    def send_comment_msg(self, issue_number: int, msg: str):
+    def send_comment_msg(self, issue_number: int, msg: str) -> None:
         """Send a comment message to a GitHub issue or pull request.
 
         Args:
@@ -292,8 +295,8 @@ class GitlabIssueHandler(IssueHandlerInterface):
         review_comments: list[str] | None,
         review_threads: list[ReviewThread],
         thread_comments: list[str] | None,
-    ):
-        pass
+    ) -> list[str]:
+        return []
 
 
 class GitlabPRHandler(GitlabIssueHandler):
@@ -479,7 +482,7 @@ class GitlabPRHandler(GitlabIssueHandler):
         review_comments: list[str] | None,
         review_threads: list[ReviewThread],
         thread_comments: list[str] | None,
-    ):
+    ) -> list[str]:
         new_issue_references = []
 
         if issue_body:

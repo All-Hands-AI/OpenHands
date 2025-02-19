@@ -15,7 +15,7 @@ class ConversationStore(ABC):
     """
 
     @abstractmethod
-    async def save_metadata(self, metadata: ConversationMetadata):
+    async def save_metadata(self, metadata: ConversationMetadata) -> None:
         """Store conversation metadata"""
 
     @abstractmethod
