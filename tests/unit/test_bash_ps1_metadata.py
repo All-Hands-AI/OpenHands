@@ -304,18 +304,18 @@ def test_ps1_metadata_no_double_escaping():
     prompt = CmdOutputMetadata.to_ps1_prompt()
     # Extract the JSON part
     json_str = prompt.replace('###PS1JSON###\n', '').replace('\n###PS1END###\n', '')
-    
+
     # The JSON string should not have escaped quotes around field names
     assert not any(
         line.strip().startswith(r'\"') for line in json_str.splitlines()
     ), 'JSON field names should not have escaped quotes'
-    
+
     # It should parse as valid JSON
     data = json.loads(json_str)
     assert isinstance(data, dict)
     assert 'pid' in data
     assert 'exit_code' in data
-    
+
     # The shell command should still have its quotes properly escaped
     assert data['py_interpreter_path'].endswith('"")')
 
