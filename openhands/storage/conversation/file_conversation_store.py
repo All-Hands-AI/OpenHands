@@ -29,7 +29,7 @@ conversation_metadata_type_adapter = TypeAdapter(ConversationMetadata)
 class FileConversationStore(ConversationStore):
     file_store: FileStore
 
-    async def save_metadata(self, metadata: ConversationMetadata):
+    async def save_metadata(self, metadata: ConversationMetadata) -> None:
         json_str = conversation_metadata_type_adapter.dump_json(metadata)
         path = self.get_conversation_metadata_filename(metadata.conversation_id)
         await call_sync_from_async(self.file_store.write, path, json_str)

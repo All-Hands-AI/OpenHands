@@ -9,7 +9,9 @@ from openhands.core.config import (
     AppConfig,
     LLMConfig,
     finalize_config,
+    get_agent_config_arg,
     get_llm_config_arg,
+    load_app_config,
     load_from_env,
     load_from_toml,
 )
@@ -781,3 +783,58 @@ memory_max_threads = 10
     assert codeact_config.memory_enabled is True
     browsing_config = default_config.get_agent_configs().get('BrowsingAgent')
     assert browsing_config.memory_max_threads == 10
+
+
+def test_get_agent_config_arg(temp_toml_file):
+    temp_toml = """
+[core]
+max_iterations = 100
+max_budget_per_task = 4.0
+
+[agent.CodeActAgent]
+memory_enabled = true
+enable_prompt_extensions = false
+
+[agent.BrowsingAgent]
+memory_enabled = false
+enable_prompt_extensions = true
+memory_max_threads = 10
+"""
+
+    with open(temp_toml_file, 'w') as f:
+        f.write(temp_toml)
+
+    agent_config = get_agent_config_arg('CodeActAgent', temp_toml_file)
+    assert agent_config.memory_enabled
+    assert not agent_config.enable_prompt_extensions
+
+    agent_config2 = get_agent_config_arg('BrowsingAgent', temp_toml_file)
+    assert not agent_config2.memory_enabled
+    assert agent_config2.enable_prompt_extensions
+    assert agent_config2.memory_max_threads == 10
+
+
+def test_agent_config_custom_group_name(temp_toml_file):
+    temp_toml = """
+[core]
+max_iterations = 99
+
+[agent.group1]
+memory_enabled = true
+
+[agent.group2]
+memory_enabled = false
+"""
+    with open(temp_toml_file, 'w') as f:
+        f.write(temp_toml)
+
+    # just a sanity check that load app config wouldn't fail
+    app_config = load_app_config(config_file=temp_toml_file)
+    assert app_config.max_iterations == 99
+
+    # run_infer in evaluation can use `get_agent_config_arg` to load custom
+    # agent configs with any group name (not just agent name)
+    agent_config1 = get_agent_config_arg('group1', temp_toml_file)
+    assert agent_config1.memory_enabled
+    agent_config2 = get_agent_config_arg('group2', temp_toml_file)
+    assert not agent_config2.memory_enabled
