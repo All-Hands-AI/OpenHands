@@ -10,6 +10,7 @@ import subprocess
 from typing import Any
 from uuid import uuid4
 
+from pydantic import SecretStr
 from termcolor import colored
 
 import openhands
@@ -18,6 +19,7 @@ from openhands.core.config import AgentConfig, AppConfig, LLMConfig, SandboxConf
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
+from openhands.events.event import Event
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
@@ -48,7 +50,7 @@ AGENT_CLASS = 'CodeActAgent'
 def initialize_runtime(
     runtime: Runtime,
     platform: Platform,
-):
+) -> None:
     """Initialize the runtime for the agent.
 
     This function is called before the runtime is used to run the agent.
@@ -192,26 +194,28 @@ async def process_issue(
     # This code looks unnecessary because these are default values in the config class
     # they're set by default if nothing else overrides them
     # FIXME we should remove them here
-    kwargs = {}
+    sandbox_config = SandboxConfig(
+        runtime_container_image=runtime_container_image,
+        enable_auto_lint=False,
+        use_host_network=False,
+        # large enough timeout, since some testcases take very long to run
+        timeout=300,
+    )
+
     if os.getenv('GITLAB_CI') == 'True':
-        kwargs['local_runtime_url'] = os.getenv('LOCAL_RUNTIME_URL', 'http://localhost')
+        sandbox_config.local_runtime_url = os.getenv(
+            'LOCAL_RUNTIME_URL', 'http://localhost'
+        )
         user_id = os.getuid() if hasattr(os, 'getuid') else 1000
         if user_id == 0:
-            kwargs['user_id'] = get_unique_uid()
+            sandbox_config.user_id = get_unique_uid()
 
     config = AppConfig(
         default_agent='CodeActAgent',
         runtime='docker',
         max_budget_per_task=4,
         max_iterations=max_iterations,
-        sandbox=SandboxConfig(
-            runtime_container_image=runtime_container_image,
-            enable_auto_lint=False,
-            use_host_network=False,
-            # large enough timeout, since some testcases take very long to run
-            timeout=300,
-            **kwargs,
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=workspace_base,
         workspace_mount_path=workspace_base,
@@ -222,7 +226,7 @@ async def process_issue(
     runtime = create_runtime(config)
     await runtime.connect()
 
-    def on_event(evt):
+    def on_event(evt: Event) -> None:
         logger.info(evt)
 
     runtime.event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
@@ -524,10 +528,10 @@ async def resolve_issue(
         logger.info('Finished.')
 
 
-def main():
+def main() -> None:
     import argparse
 
-    def int_or_none(value):
+    def int_or_none(value: str) -> int | None:
         if value.lower() == 'none':
             return None
         else:
@@ -654,7 +658,7 @@ def main():
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(
         model=my_args.llm_model or os.environ['LLM_MODEL'],
-        api_key=str(api_key) if api_key else None,
+        api_key=SecretStr(api_key) if api_key else None,
         base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
     )
 

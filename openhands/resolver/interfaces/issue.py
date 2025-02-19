@@ -26,7 +26,7 @@ class Issue(BaseModel):
 
 class IssueHandlerInterface(ABC):
     @abstractmethod
-    def set_owner(self, owner: str):
+    def set_owner(self, owner: str) -> None:
         pass
 
     @abstractmethod
@@ -40,43 +40,43 @@ class IssueHandlerInterface(ABC):
         pass
 
     @abstractmethod
-    def get_base_url(self):
+    def get_base_url(self) -> str:
         pass
 
     @abstractmethod
-    def get_branch_url(self, branch_name):
+    def get_branch_url(self, branch_name: str) -> str:
         pass
 
     @abstractmethod
-    def get_download_url(self):
+    def get_download_url(self) -> str:
         pass
 
     @abstractmethod
-    def get_clone_url(self):
+    def get_clone_url(self) -> str:
         pass
 
     @abstractmethod
-    def get_pull_url(self, pr_number: int):
+    def get_pull_url(self, pr_number: int) -> str:
         pass
 
     @abstractmethod
-    def get_graphql_url(self):
+    def get_graphql_url(self) -> str:
         pass
 
     @abstractmethod
-    def get_headers(self):
+    def get_headers(self) -> dict[str, str]:
         pass
 
     @abstractmethod
-    def get_compare_url(self, branch_name):
+    def get_compare_url(self, branch_name: str) -> str:
         pass
 
     @abstractmethod
-    def get_branch_name(self, base_branch_name: str):
+    def get_branch_name(self, base_branch_name: str) -> str:
         pass
 
     @abstractmethod
-    def get_default_branch_name(self):
+    def get_default_branch_name(self) -> str:
         pass
 
     @abstractmethod
@@ -84,23 +84,25 @@ class IssueHandlerInterface(ABC):
         pass
 
     @abstractmethod
-    def reply_to_comment(self, pr_number: int, comment_id: str, reply: str):
+    def reply_to_comment(self, pr_number: int, comment_id: str, reply: str) -> None:
         pass
 
     @abstractmethod
-    def send_comment_msg(self, issue_number: int, msg: str):
+    def send_comment_msg(self, issue_number: int, msg: str) -> None:
         pass
 
     @abstractmethod
-    def get_authorize_url(self):
+    def get_authorize_url(self) -> str:
         pass
 
     @abstractmethod
-    def create_pull_request(self, data=dict) -> dict:
-        pass
+    def create_pull_request(self, data: dict[str, Any] | None = None) -> dict[str, Any]:
+        if data is None:
+            data = {}
+        raise NotImplementedError
 
     @abstractmethod
-    def request_reviewers(self, reviewer: str, pr_number: int):
+    def request_reviewers(self, reviewer: str, pr_number: int) -> None:
         pass
 
     @abstractmethod
@@ -112,7 +114,7 @@ class IssueHandlerInterface(ABC):
         review_comments: list[str] | None,
         review_threads: list[ReviewThread],
         thread_comments: list[str] | None,
-    ):
+    ) -> list[str]:
         pass
 
     @abstractmethod
