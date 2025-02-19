@@ -254,6 +254,9 @@ class Runtime(FileEditRuntimeMixin):
 
         # this might be unnecessary, since source should be set by the event stream when we're here
         source = event.source if event.source else EventSource.AGENT
+        if isinstance(observation, NullObservation):
+            # don't add null observations to the event stream
+            return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
     def clone_repo(
