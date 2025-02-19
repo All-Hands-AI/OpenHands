@@ -155,7 +155,7 @@ describe("PaymentForm", () => {
       renderPaymentForm();
 
       const topUpInput = await screen.findByTestId("top-up-input");
-      await user.type(topUpInput, "20"); // test assumes the minimum is 25
+      await user.type(topUpInput, "9"); // test assumes the minimum is 10
 
       const topUpButton = screen.getByText("Add credit");
       await user.click(topUpButton);
