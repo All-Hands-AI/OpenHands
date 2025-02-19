@@ -16,7 +16,7 @@ some flags being passed to `docker run` that make this possible:
 
 ```
 docker run # ...
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.24-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.25-nikolaik \
     -v /var/run/docker.sock:/var/run/docker.sock \
     # ...
 ```
