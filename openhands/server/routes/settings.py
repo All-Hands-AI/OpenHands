@@ -110,6 +110,34 @@ async def store_settings(
         )
 
 
+@app.post('/settings/reset')
+async def reset_settings(request: Request) -> JSONResponse:
+    try:
+        settings_store = await SettingsStoreImpl.get_instance(
+            config, get_user_id(request)
+        )
+        existing_settings = await settings_store.load()
+
+        if existing_settings:
+            await settings_store.store(existing_settings.reset())
+        else:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Settings not found'},
+            )
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings reset'},
+        )
+    except Exception as e:
+        logger.warning(f'Something went wrong resetting settings: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong resetting settings'},
+        )
+
+
 def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings:
     settings_data = settings_with_token_data.model_dump()
 

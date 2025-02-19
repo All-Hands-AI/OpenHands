@@ -76,6 +76,22 @@ class Settings(BaseModel):
         )
         return settings
 
+    def reset(self):
+        settings = Settings(
+            language='en',
+            agent='CodeActAgent',
+            max_iterations=100,
+            security_analyzer='',
+            confirmation_mode=False,
+            llm_model='anthropic/claude-3-5-sonnet-20241022',
+            llm_api_key=SecretStr(''),
+            llm_base_url='',
+            remote_runtime_resource_factor=1,
+            github_token=self.github_token,
+            user_consents_to_analytics=self.user_consents_to_analytics,
+        )
+        return settings
+
 
 class POSTSettingsModel(Settings):
     """

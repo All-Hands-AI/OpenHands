@@ -829,32 +829,6 @@ describe("Settings Screen", () => {
       expect(handleCaptureConsentSpy).toHaveBeenCalledWith(false);
     });
 
-    it.skip("should not reset analytics consent when resetting to defaults", async () => {
-      const user = userEvent.setup();
-      getSettingsSpy.mockResolvedValue({
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        user_consents_to_analytics: true,
-      });
-
-      renderSettingsScreen();
-
-      const analyticsConsentInput = await screen.findByTestId(
-        "enable-analytics-switch",
-      );
-      expect(analyticsConsentInput).toBeChecked();
-
-      const resetButton = await screen.findByText("Reset to defaults");
-      await user.click(resetButton);
-
-      const modal = await screen.findByTestId("reset-modal");
-      const confirmButton = within(modal).getByText("Reset");
-      await user.click(confirmButton);
-
-      expect(saveSettingsSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ user_consents_to_analytics: undefined }),
-      );
-    });
-
     it("should render the security analyzer input if the confirmation mode is enabled", async () => {
       const user = userEvent.setup();
       renderSettingsScreen();
