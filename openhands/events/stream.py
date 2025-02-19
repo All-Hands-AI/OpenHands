@@ -40,7 +40,7 @@ async def session_exists(sid: str, file_store: FileStore) -> bool:
 
 
 class AsyncEventStreamWrapper:
-    def __init__(self, event_stream: EventStream, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, event_stream: 'EventStream', *args: Any, **kwargs: Any) -> None:
         self.event_stream = event_stream
         self.args = args
         self.kwargs = kwargs
@@ -51,8 +51,9 @@ class AsyncEventStreamWrapper:
         # Create an async generator that yields events
         for event in self.event_stream.get_events(*self.args, **self.kwargs):
             # Run the blocking get_events() in a thread pool
-            def get_event() -> Event:
-                return event
+            def get_event(e: Event = event) -> Event:
+                return e
+
             yield await loop.run_in_executor(None, get_event)
 
 
@@ -236,7 +237,10 @@ class EventStream:
         return self._cur_id - 1
 
     def subscribe(
-        self, subscriber_id: EventStreamSubscriber, callback: Callable[[Event], None], callback_id: str
+        self,
+        subscriber_id: EventStreamSubscriber,
+        callback: Callable[[Event], None],
+        callback_id: str,
     ) -> None:
         initializer = partial(self._init_thread_loop, subscriber_id, callback_id)
         pool = ThreadPoolExecutor(max_workers=1, initializer=initializer)
@@ -252,7 +256,9 @@ class EventStream:
         self._subscribers[subscriber_id][callback_id] = callback
         self._thread_pools[subscriber_id][callback_id] = pool
 
-    def unsubscribe(self, subscriber_id: EventStreamSubscriber, callback_id: str) -> None:
+    def unsubscribe(
+        self, subscriber_id: EventStreamSubscriber, callback_id: str
+    ) -> None:
         if subscriber_id not in self._subscribers:
             logger.warning(f'Subscriber not found during unsubscribe: {subscriber_id}')
             return
@@ -321,7 +327,9 @@ class EventStream:
                     future = pool.submit(callback, event)
                     future.add_done_callback(self._make_error_handler(callback_id, key))
 
-    def _make_error_handler(self, callback_id: str, subscriber_id: str) -> Callable[[Any], None]:
+    def _make_error_handler(
+        self, callback_id: str, subscriber_id: str
+    ) -> Callable[[Any], None]:
         def _handle_callback_error(fut: Any) -> None:
             try:
                 # This will raise any exception that occurred during callback execution
