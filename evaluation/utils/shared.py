@@ -17,6 +17,7 @@ from tqdm import tqdm
 
 from openhands.controller.state.state import State
 from openhands.core.config import LLMConfig, SandboxConfig
+from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.condenser_config import (
     CondenserConfig,
     NoOpCondenserConfig,
@@ -43,6 +44,7 @@ from openhands.memory.condenser import get_condensation_metadata
 class EvalMetadata(BaseModel):
     agent_class: str
     llm_config: LLMConfig
+    agent_config: AgentConfig | None = None
     max_iterations: int
     eval_output_dir: str
     start_time: str
@@ -167,6 +169,7 @@ def make_metadata(
     eval_output_dir: str,
     data_split: str | None = None,
     details: dict[str, Any] | None = None,
+    agent_config: AgentConfig | None = None,
     condenser_config: CondenserConfig | None = None,
 ) -> EvalMetadata:
     model_name = llm_config.model.split('/')[-1]
@@ -189,6 +192,7 @@ def make_metadata(
     metadata = EvalMetadata(
         agent_class=agent_class,
         llm_config=llm_config,
+        agent_config=agent_config,
         max_iterations=max_iterations,
         eval_output_dir=eval_output_path,
         start_time=time.strftime('%Y-%m-%d %H:%M:%S'),

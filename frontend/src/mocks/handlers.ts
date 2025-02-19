@@ -5,6 +5,7 @@ import {
   ResultSet,
 } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
@@ -144,6 +145,7 @@ const openHandsHandlers = [
 ];
 
 export const handlers = [
+  ...STRIPE_BILLING_HANDLERS,
   ...openHandsHandlers,
   http.get("/api/github/repositories", () =>
     HttpResponse.json([
@@ -170,8 +172,9 @@ export const handlers = [
     HttpResponse.json(null, { status: 200 }),
   ),
   http.get("/api/options/config", () => {
+    const mockSaas = import.meta.env.VITE_MOCK_SAAS === "true";
     const config: GetConfigResponse = {
-      APP_MODE: "oss",
+      APP_MODE: mockSaas ? "saas" : "oss",
       GITHUB_CLIENT_ID: "fake-github-client-id",
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
     };
@@ -179,8 +182,10 @@ export const handlers = [
     return HttpResponse.json(config);
   }),
   http.get("/api/settings", async () => {
+    await delay();
     const settings: ApiSettings = {
       ...MOCK_USER_PREFERENCES.settings,
+      language: "no",
     };
     // @ts-expect-error - mock types
     if (settings.github_token) settings.github_token_is_set = true;
@@ -290,4 +295,6 @@ export const handlers = [
 
     return HttpResponse.json(null, { status: 404 });
   }),
+
+  http.post("/api/logout", () => HttpResponse.json(null, { status: 200 })),
 ];

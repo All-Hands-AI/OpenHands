@@ -46,7 +46,7 @@ class S3FileStore(FileStore):
         try:
             response = self.client.get_object(Bucket=self.bucket, Key=path)
             with response['Body'] as stream:
-                return stream.read().decode('utf-8')
+                return str(stream.read().decode('utf-8'))
         except botocore.exceptions.ClientError as e:
             # Catch all S3-related errors
             if e.response['Error']['Code'] == 'NoSuchBucket':
