@@ -29,7 +29,6 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
     FileEditObservation,
-    NullObservation,
 )
 
 
@@ -143,19 +142,18 @@ async def main(loop: asyncio.AbstractEventLoop):
                 AgentState.FINISHED,
             ]:
                 await prompt_for_next_task()
-        if (
-            isinstance(event, NullObservation)
-            and controller.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION
-        ):
-            user_confirmed = await prompt_for_user_confirmation()
-            if user_confirmed:
-                event_stream.add_event(
-                    ChangeAgentStateAction(AgentState.USER_CONFIRMED), EventSource.USER
-                )
-            else:
-                event_stream.add_event(
-                    ChangeAgentStateAction(AgentState.USER_REJECTED), EventSource.USER
-                )
+            if event.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
+                user_confirmed = await prompt_for_user_confirmation()
+                if user_confirmed:
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_CONFIRMED),
+                        EventSource.USER,
+                    )
+                else:
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_REJECTED),
+                        EventSource.USER,
+                    )
 
     def on_event(event: Event) -> None:
         loop.create_task(on_event_async(event))
