@@ -25,7 +25,7 @@ class ServiceContext:
         if llm_config is not None:
             self.llm = LLM(llm_config)
 
-    def set_strategy(self, strategy):
+    def set_strategy(self, strategy: IssueHandlerInterface) -> None:
         self._strategy = strategy
 
 
@@ -36,7 +36,7 @@ class ServiceContextPR(ServiceContext):
     def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig):
         super().__init__(strategy, llm_config)
 
-    def get_clone_url(self):
+    def get_clone_url(self) -> str:
         return self._strategy.get_clone_url()
 
     def download_issues(self) -> list[Any]:
@@ -266,31 +266,31 @@ class ServiceContextIssue(ServiceContext):
     def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig | None):
         super().__init__(strategy, llm_config)
 
-    def get_base_url(self):
+    def get_base_url(self) -> str:
         return self._strategy.get_base_url()
 
-    def get_branch_url(self, branch_name):
+    def get_branch_url(self, branch_name: str) -> str:
         return self._strategy.get_branch_url(branch_name)
 
-    def get_download_url(self):
+    def get_download_url(self) -> str:
         return self._strategy.get_download_url()
 
-    def get_clone_url(self):
+    def get_clone_url(self) -> str:
         return self._strategy.get_clone_url()
 
-    def get_graphql_url(self):
+    def get_graphql_url(self) -> str:
         return self._strategy.get_graphql_url()
 
-    def get_headers(self):
+    def get_headers(self) -> dict[str, str]:
         return self._strategy.get_headers()
 
-    def get_authorize_url(self):
+    def get_authorize_url(self) -> str:
         return self._strategy.get_authorize_url()
 
-    def get_pull_url(self, pr_number: int):
+    def get_pull_url(self, pr_number: int) -> str:
         return self._strategy.get_pull_url(pr_number)
 
-    def get_compare_url(self, branch_name: str):
+    def get_compare_url(self, branch_name: str) -> str:
         return self._strategy.get_compare_url(branch_name)
 
     def download_issues(self) -> list[Any]:
@@ -299,25 +299,27 @@ class ServiceContextIssue(ServiceContext):
     def get_branch_name(
         self,
         base_branch_name: str,
-    ):
+    ) -> str:
         return self._strategy.get_branch_name(base_branch_name)
 
-    def branch_exists(self, branch_name: str):
+    def branch_exists(self, branch_name: str) -> bool:
         return self._strategy.branch_exists(branch_name)
 
     def get_default_branch_name(self) -> str:
         return self._strategy.get_default_branch_name()
 
-    def create_pull_request(self, data=dict):
+    def create_pull_request(self, data: dict[str, Any] | None = None) -> dict[str, Any]:
+        if data is None:
+            data = {}
         return self._strategy.create_pull_request(data)
 
-    def request_reviewers(self, reviewer: str, pr_number: int):
+    def request_reviewers(self, reviewer: str, pr_number: int) -> None:
         return self._strategy.request_reviewers(reviewer, pr_number)
 
-    def reply_to_comment(self, pr_number, comment_id, reply):
+    def reply_to_comment(self, pr_number: int, comment_id: str, reply: str) -> None:
         return self._strategy.reply_to_comment(pr_number, comment_id, reply)
 
-    def send_comment_msg(self, issue_number: int, msg: str):
+    def send_comment_msg(self, issue_number: int, msg: str) -> None:
         return self._strategy.send_comment_msg(issue_number, msg)
 
     def get_issue_comments(
