@@ -119,10 +119,9 @@ async def search_github_repositories(
         )
 
 
-@app.get('/repository/{owner}/{name}/suggested-tasks')
+@app.get('/repository/suggested-tasks')
 async def get_repository_suggested_tasks(
-    owner: str,
-    name: str,
+    repository: str,
     github_user_id: str | None = Depends(get_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
 ):
@@ -135,7 +134,7 @@ async def get_repository_suggested_tasks(
     """
     client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
     try:
-        tasks: list[SuggestedTask] = await client.get_suggested_tasks(f"{owner}/{name}")
+        tasks: list[SuggestedTask] = await client.get_suggested_tasks(repository)
         return tasks
 
     except GhAuthenticationError as e:
