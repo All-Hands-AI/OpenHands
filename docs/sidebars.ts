@@ -66,7 +66,7 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: 'doc',
-          label: 'Github Actions',
+          label: 'Github Action',
           id: 'usage/how-to/github-action',
         },
         {
