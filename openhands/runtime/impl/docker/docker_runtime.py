@@ -255,7 +255,6 @@ class DockerRuntime(ActionExecutionClient):
             server_port=self._container_port,
             plugins=self.plugins,
             app_config=self.config,
-            use_nice_for_root=False,
         )
 
         try:
