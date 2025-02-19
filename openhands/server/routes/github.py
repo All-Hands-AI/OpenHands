@@ -8,6 +8,7 @@ from openhands.integrations.github.github_types import (
     GHUnknownException,
     GitHubRepository,
     GitHubUser,
+    SuggestedTask,
 )
 from openhands.server.auth import get_github_token, get_user_id
 
@@ -104,6 +105,38 @@ async def search_github_repositories(
             query, per_page, sort, order
         )
         return repos
+
+    except GhAuthenticationError as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=401,
+        )
+
+    except GHUnknownException as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=500,
+        )
+
+
+@app.get('/repository/{owner}/{name}/suggested-tasks')
+async def get_repository_suggested_tasks(
+    owner: str,
+    name: str,
+    github_user_id: str | None = Depends(get_user_id),
+    github_user_token: SecretStr | None = Depends(get_github_token),
+):
+    """
+    Get suggested tasks for a repository, including:
+    - PRs with merge conflicts
+    - PRs with failing GitHub Actions
+    - PRs with unresolved comments
+    - Issues with specific labels (help wanted, chore, documentation, good first issue)
+    """
+    client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
+    try:
+        tasks: list[SuggestedTask] = await client.get_suggested_tasks(f"{owner}/{name}")
+        return tasks
 
     except GhAuthenticationError as e:
         return JSONResponse(
