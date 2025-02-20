@@ -44,7 +44,7 @@ export function SettingsInput({
         defaultValue={defaultValue}
         placeholder={placeholder}
         className={cn(
-          "bg-subtle border border-[#717888] h-10 w-full rounded p-2 placeholder:italic placeholder:text-subtle-alt",
+          "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
           "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
         )}
       />

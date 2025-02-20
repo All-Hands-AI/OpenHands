@@ -10,12 +10,12 @@ export default {
     extend: {
       colors: {
         primary: "#C9B974",
-        root: "#171717",
-        sub: "#262626",
+        base: "#171717",
+        "base-secondary": "#262626",
         danger: "#E76A5E",
         success: "#A5E75E",
-        subtle: "#454545",
-        "subtle-alt": "#B7BDC2",
+        tertiary: "#454545",
+        "tertiary-light": "#B7BDC2",
       },
     },
   },

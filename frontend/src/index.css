@@ -9,7 +9,7 @@
   --bg-editor-sidebar: #24272e;
   --bg-editor-active: #31343d;
   --border-editor-sidebar: #3c3c4a;
-  background-color: var(--root) !important;
+  background-color: var(--base) !important;
   --bg-neutral-muted: #afb8c133;
 }
 
