@@ -686,6 +686,7 @@ def test_api_keys_repr_str():
         modal_api_token_id='my_modal_api_token_id',
         modal_api_token_secret='my_modal_api_token_secret',
         runloop_api_key='my_runloop_api_key',
+        daytona_api_key='my_daytona_api_key',
     )
     assert 'my_e2b_api_key' not in repr(app_config)
     assert 'my_e2b_api_key' not in str(app_config)
@@ -697,6 +698,8 @@ def test_api_keys_repr_str():
     assert 'my_modal_api_token_secret' not in str(app_config)
     assert 'my_runloop_api_key' not in repr(app_config)
     assert 'my_runloop_api_key' not in str(app_config)
+    assert 'my_daytona_api_key' not in repr(app_config)
+    assert 'my_daytona_api_key' not in str(app_config)
 
     # Check that no other attrs in AppConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
@@ -705,6 +708,7 @@ def test_api_keys_repr_str():
         'modal_api_token_id',
         'modal_api_token_secret',
         'runloop_api_key',
+        'daytona_api_key',
     ]
     for attr_name in AppConfig.model_fields.keys():
         if (
