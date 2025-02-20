@@ -38,6 +38,7 @@ from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
 from openhands.utils.http_session import HttpSession
+from openhands.core.logger import openhands_logger as logger
 
 
 class ActionExecutionClient(Runtime):
@@ -217,6 +218,11 @@ class ActionExecutionClient(Runtime):
             return ''
 
     def send_action_for_execution(self, action: Action) -> Observation:
+        # Log: check if incoming action has metrics
+        logger.info(f"Action type before execution: {type(action)}")
+        if hasattr(action, 'llm_metrics') and action.llm_metrics:
+            logger.info(f"Action llm_metrics before execution - accumulated cost: {action.llm_metrics.accumulated_cost}")
+
         if (
             isinstance(action, FileEditAction)
             and action.impl_source == FileEditSource.LLM_BASED_EDIT
