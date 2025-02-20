@@ -399,7 +399,6 @@ function AccountSettings() {
             >
               Enable analytics
             </SettingsSwitch>
-
           </section>
         </div>
       </form>
