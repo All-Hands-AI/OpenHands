@@ -262,10 +262,6 @@ class EventStream:
         self._clean_up_subscriber(subscriber_id, callback_id)
 
     def add_event(self, event: Event, source: EventSource):
-        # Add logs for accumulated cost debugging.
-        accumulated_cost = event.llm_metrics.accumulated_cost if event.llm_metrics else None
-        logger.info(f"Adding event to stream - Accumulated Cost: {accumulated_cost}")
-        
         if hasattr(event, '_id') and event.id is not None:
             raise ValueError(
                 f'Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop.'
