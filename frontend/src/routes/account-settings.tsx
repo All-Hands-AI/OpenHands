@@ -102,6 +102,8 @@ function AccountSettings() {
 
     const userConsentsToAnalytics =
       formData.get("enable-analytics-switch")?.toString() === "on";
+    const enableMemoryCondenser =
+      formData.get("enable-memory-condenser-switch")?.toString() === "on";
 
     saveSettings(
       {
@@ -109,6 +111,7 @@ function AccountSettings() {
           formData.get("github-token-input")?.toString() || undefined,
         LANGUAGE: languageValue,
         user_consents_to_analytics: userConsentsToAnalytics,
+        ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
         LLM_MODEL: customLlmModel || fullLlmModel,
         LLM_BASE_URL: formData.get("base-url-input")?.toString() || "",
         LLM_API_KEY:
@@ -383,6 +386,14 @@ function AccountSettings() {
               defaultIsToggled={!!isAnalyticsEnabled}
             >
               Enable analytics
+            </SettingsSwitch>
+
+            <SettingsSwitch
+              testId="enable-memory-condenser-switch"
+              name="enable-memory-condenser-switch"
+              defaultIsToggled={!!settings.ENABLE_DEFAULT_CONDENSER}
+            >
+              Enable memory condenser
             </SettingsSwitch>
           </section>
         </div>
