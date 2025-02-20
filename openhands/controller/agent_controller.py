@@ -473,8 +473,10 @@ class AgentController:
             await self.update_state_after_step()
             self.state.metrics.merge(self.state.local_metrics)
             # Send C-c to stop any running process
-            if self._pending_action is not None and isinstance(self._pending_action, CmdRunAction):
-                stop_action = CmdRunAction(command="C-c", is_input="true")
+            if self._pending_action is not None and isinstance(
+                self._pending_action, CmdRunAction
+            ):
+                stop_action = CmdRunAction(command='C-c', is_input=True)
                 self.event_stream.add_event(stop_action, EventSource.AGENT)
             self._reset()
         elif (
