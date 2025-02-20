@@ -476,8 +476,10 @@ class AgentController:
             if self._pending_action is not None and isinstance(
                 self._pending_action, CmdRunAction
             ):
-                stop_action = CmdRunAction(command='C-c', is_input=True)
-                self.event_stream.add_event(stop_action, EventSource.AGENT)
+                # Send C-c as a user action to avoid tool call metadata requirement
+                stop_action = CmdRunAction(command='C-c', is_input=True, _source='user')
+                # Add as a user event to avoid tool call metadata requirement
+                self.event_stream.add_event(stop_action, EventSource.USER)
             self._reset()
         elif (
             new_state == AgentState.RUNNING
