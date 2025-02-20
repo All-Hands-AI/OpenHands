@@ -57,8 +57,8 @@ def test_bash_session_stop_command():
     session.initialize()
 
     # Start a long-running process that will timeout
-    action = CmdRunAction(command='sleep 10')
-    action.set_hard_timeout(2)  # Set a timeout so test doesn't hang
+    action = CmdRunAction(command='sleep 30')  # Make it longer to be more obvious
+    action.set_hard_timeout(5)  # Set a timeout so test doesn't hang
     action.blocking = False  # Allow no-change timeout
 
     # Execute the command and wait for timeout
@@ -69,15 +69,25 @@ def test_bash_session_stop_command():
         or 'no new output' in result.metadata.suffix.lower()
     )
 
-    # Send C-c to stop the process
+    # Send C-c and measure how long it takes for the process to actually stop
+    import time
+    start_time = time.time()
     stop_action = CmdRunAction(command='C-c', is_input=True)
     stop_result = session.execute(stop_action)
     assert isinstance(stop_result, CmdOutputObservation)
     assert stop_result.metadata.exit_code == 130  # 130 is the exit code for SIGINT
+    stop_time = time.time() - start_time
+    print(f"\nTime taken to stop process: {stop_time:.3f} seconds")
 
-    # Now we should be able to run a new command
+    # Try to run a new command immediately to see if the process is actually stopped
     new_action = CmdRunAction(command='echo test')
     new_result = session.execute(new_action)
+    assert isinstance(new_result, CmdOutputObservation)
+    if 'previous command is still running' in new_result.metadata.suffix.lower():
+        print("Process is still running!")
+        assert False, "Process is still running after sending C-c"
+    else:
+        print("Process has been stopped")
     assert isinstance(new_result, CmdOutputObservation)
     assert new_result.metadata.exit_code == 0
     assert 'test' in new_result.content
@@ -127,19 +137,20 @@ def test_agent_controller_stop():
     )
 
     # Set up a pending action
-    pending_action = CmdRunAction(command='sleep 10')
+    pending_action = CmdRunAction(command='sleep 30')  # Make it longer to be more obvious
     controller._pending_action = pending_action
 
-    # Change state to STOPPED
+    # Change state to STOPPED and measure how long it takes for the process to be killed
+    import time
+    start_time = time.time()
     asyncio.get_event_loop().run_until_complete(
         controller.set_agent_state_to(AgentState.STOPPED)
     )
 
     # Give the event stream time to process the event
-
     time.sleep(0.1)
 
-    # Verify that C-c was sent
+    # Verify that C-c was sent and process was killed quickly
     stop_events = [
         e
         for e in events
