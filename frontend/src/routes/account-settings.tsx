@@ -293,6 +293,14 @@ function AccountSettings() {
                 Enable confirmation mode
               </SettingsSwitch>
             )}
+            {llmConfigMode === "advanced" && <SettingsSwitch
+              testId="enable-memory-condenser-switch"
+              name="enable-memory-condenser-switch"
+              defaultIsToggled={!!settings.ENABLE_DEFAULT_CONDENSER}
+              isBeta
+            >
+              Enable memory condensation
+            </SettingsSwitch>}
             {llmConfigMode === "advanced" && confirmationModeIsEnabled && (
               <div>
                 <SettingsDropdownInput
@@ -388,13 +396,6 @@ function AccountSettings() {
               Enable analytics
             </SettingsSwitch>
 
-            <SettingsSwitch
-              testId="enable-memory-condenser-switch"
-              name="enable-memory-condenser-switch"
-              defaultIsToggled={!!settings.ENABLE_DEFAULT_CONDENSER}
-            >
-              Enable memory condenser
-            </SettingsSwitch>
           </section>
         </div>
       </form>
