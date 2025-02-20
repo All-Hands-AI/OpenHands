@@ -379,6 +379,14 @@ class AgentController:
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
 
+        # Check if we've hit the iteration limit before processing the observation
+        if self.state.iteration >= self.state.max_iterations:
+            stop_step = await self._handle_traffic_control(
+                'iteration', self.state.iteration, self.state.max_iterations
+            )
+            if stop_step:
+                return
+
         if self._pending_action and self._pending_action.id == observation.cause:
             if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
                 return
@@ -779,6 +787,7 @@ class AgentController:
                     f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
                 )
                 await self._react_to_exception(e)
+                return True
             else:
                 e = RuntimeError(
                     f'Agent reached maximum {limit_type}. '
