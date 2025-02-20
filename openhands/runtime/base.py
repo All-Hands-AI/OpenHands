@@ -6,8 +6,10 @@ import os
 import random
 import shutil
 import string
+import subprocess
 import tempfile
-from abc import abstractmethod
+import threading
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Callable
 from zipfile import ZipFile
@@ -97,6 +99,9 @@ class Runtime(FileEditRuntimeMixin):
         headless_mode: bool = False,
         github_user_id: str | None = None,
     ):
+        # Process tracking
+        self.processes: dict[int, subprocess.Popen] = {}
+        self.process_lock = threading.Lock()
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(
@@ -137,6 +142,16 @@ class Runtime(FileEditRuntimeMixin):
         self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
+
+    def _track_process(self, pid: int, process: subprocess.Popen) -> None:
+        """Track a process that should be terminated when stop is clicked."""
+        with self.process_lock:
+            self.processes[pid] = process
+
+    @abstractmethod
+    async def terminate_processes(self) -> None:
+        """Terminate all processes in this runtime environment."""
+        pass
 
     def close(self) -> None:
         """

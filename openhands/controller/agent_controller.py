@@ -472,6 +472,9 @@ class AgentController:
             # sync existing metrics BEFORE resetting the agent
             await self.update_state_after_step()
             self.state.metrics.merge(self.state.local_metrics)
+            if new_state == AgentState.STOPPED:
+                # Terminate processes through runtime
+                await self.runtime.terminate_processes()
             self._reset()
         elif (
             new_state == AgentState.RUNNING

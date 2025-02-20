@@ -346,6 +346,30 @@ class DockerRuntime(ActionExecutionClient):
 
         self.check_if_alive()
 
+    async def terminate_processes(self) -> None:
+        """Terminate all tracked processes started by this runtime."""
+        with self.process_lock:
+            # First try SIGTERM
+            for pid in self.processes:
+                self.container.exec_run(f'kill -15 {pid}')
+            
+            # Wait for processes to terminate gracefully
+            start_time = time.time()
+            remaining = list(self.processes.keys())
+            while remaining and (time.time() - start_time < 10):
+                ps_output = self.container.exec_run(
+                    f"ps -p {','.join(map(str, remaining))} -o pid="
+                ).output.decode()
+                remaining = [pid for pid in remaining if str(pid) in ps_output]
+                if remaining:
+                    await asyncio.sleep(0.1)
+            
+            # Force kill any remaining processes
+            for pid in remaining:
+                self.container.exec_run(f'kill -9 {pid}')
+            
+            self.processes.clear()
+
     def close(self, rm_all_containers: bool | None = None):
         """Closes the DockerRuntime and associated objects
 
