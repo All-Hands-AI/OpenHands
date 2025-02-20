@@ -12,10 +12,14 @@ import {
 } from "#/state/chat-slice";
 
 export function handleObservationMessage(message: ObservationMessage) {
+  console.log("Processing observation message:", message);
+  
   // Handle llm_metrics and usage together
   if (message.llm_metrics || message.tool_call_metadata?.model_response?.usage) {
     const usage = message.tool_call_metadata?.model_response?.usage;
     const metrics = message.llm_metrics;
+    console.log("Processing metrics:", metrics);
+    console.log("Processing usage:", usage);
     
     alert([
       'LLM Information',
