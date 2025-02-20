@@ -1,7 +1,19 @@
+import asyncio
+import time
+
+from openhands.controller.agent import Agent
+from openhands.controller.agent_controller import AgentController
+from openhands.controller.state.state import State
+from openhands.core.config import AgentConfig, LLMConfig
+from openhands.core.message_utils import events_to_messages
+from openhands.core.schema import AgentState
+from openhands.events import EventStream
 from openhands.events.action import CmdRunAction
 from openhands.events.event import EventSource
 from openhands.events.observation import CmdOutputObservation
+from openhands.llm.llm import LLM
 from openhands.runtime.utils.bash import BashSession
+from openhands.storage.local import LocalFileStore
 
 
 def test_bash_session_stop_behavior():
@@ -76,16 +88,7 @@ def test_bash_session_stop_command():
 
 def test_agent_controller_stop():
     """Test that the agent controller sends C-c when stopping and the agent can process it."""
-    from openhands.controller.agent import Agent
-    from openhands.controller.agent_controller import AgentController
-    from openhands.core.config import AgentConfig, LLMConfig
-    from openhands.core.message_utils import events_to_messages
-    from openhands.core.schema import AgentState
-    from openhands.events import EventStream
-    from openhands.llm.llm import LLM
-
     # Create a mock event stream to capture events
-    from openhands.storage.local import LocalFileStore
 
     file_store = LocalFileStore('/tmp')
     event_stream = EventStream(sid='test', file_store=file_store)
@@ -128,14 +131,11 @@ def test_agent_controller_stop():
     controller._pending_action = pending_action
 
     # Change state to STOPPED
-    import asyncio
-
     asyncio.get_event_loop().run_until_complete(
         controller.set_agent_state_to(AgentState.STOPPED)
     )
 
     # Give the event stream time to process the event
-    import time
 
     time.sleep(0.1)
 
@@ -171,8 +171,6 @@ def test_agent_controller_stop():
     # Verify that the agent can process the event history without error
     try:
         # Create a state with the stop event in history
-        from openhands.controller.state.state import State
-
         state = State()
         state.history = stop_events
         # Try to process the history - this would fail if the event is not properly marked as a user action
