@@ -11,6 +11,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
+    get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -20,7 +21,6 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AppConfig,
-    SandboxConfig,
     get_llm_config_arg,
     parse_arguments,
 )
@@ -55,32 +55,29 @@ def get_config(
     assert base_url is not None, 'VISUALWEBARENA_BASE_URL must be set'
     assert openai_api_key is not None, 'OPENAI_API_KEY must be set'
     assert openai_base_url is not None, 'OPENAI_BASE_URL must be set'
+
+    sandbox_config = get_default_sandbox_config_for_eval()
+    sandbox_config.base_container_image = 'python:3.12-bookworm'
+    sandbox_config.browsergym_eval_env = env_id
+    sandbox_config.runtime_startup_env_vars = {
+        'BASE_URL': base_url,
+        'OPENAI_API_KEY': openai_api_key,
+        'OPENAI_BASE_URL': openai_base_url,
+        'VWA_CLASSIFIEDS': f'{base_url}:9980',
+        'VWA_CLASSIFIEDS_RESET_TOKEN': '4b61655535e7ed388f0d40a93600254c',
+        'VWA_SHOPPING': f'{base_url}:7770',
+        'VWA_SHOPPING_ADMIN': f'{base_url}:7780/admin',
+        'VWA_REDDIT': f'{base_url}:9999',
+        'VWA_GITLAB': f'{base_url}:8023',
+        'VWA_WIKIPEDIA': f'{base_url}:8888',
+        'VWA_HOMEPAGE': f'{base_url}:4399',
+    }
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime='docker',
         max_iterations=metadata.max_iterations,
-        sandbox=SandboxConfig(
-            base_container_image='python:3.12-bookworm',
-            enable_auto_lint=True,
-            use_host_network=False,
-            browsergym_eval_env=env_id,
-            runtime_startup_env_vars={
-                'BASE_URL': base_url,
-                'OPENAI_API_KEY': openai_api_key,
-                'OPENAI_BASE_URL': openai_base_url,
-                'VWA_CLASSIFIEDS': f'{base_url}:9980',
-                'VWA_CLASSIFIEDS_RESET_TOKEN': '4b61655535e7ed388f0d40a93600254c',
-                'VWA_SHOPPING': f'{base_url}:7770',
-                'VWA_SHOPPING_ADMIN': f'{base_url}:7780/admin',
-                'VWA_REDDIT': f'{base_url}:9999',
-                'VWA_GITLAB': f'{base_url}:8023',
-                'VWA_WIKIPEDIA': f'{base_url}:8888',
-                'VWA_HOMEPAGE': f'{base_url}:4399',
-            },
-            timeout=300,
-            remote_runtime_enable_retries=True,
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,

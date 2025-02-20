@@ -6,8 +6,9 @@ import multiprocessing as mp
 import os
 import pathlib
 import subprocess
-from typing import Awaitable, TextIO
+from typing import Any, Awaitable, TextIO
 
+from pydantic import SecretStr
 from tqdm import tqdm
 
 import openhands
@@ -25,7 +26,7 @@ from openhands.resolver.utils import (
 )
 
 
-def cleanup():
+def cleanup() -> None:
     print('Cleaning up child processes...')
     for process in mp.active_children():
         print(f'Terminating child process: {process.name}')
@@ -214,7 +215,7 @@ async def resolve_issues(
         # Use asyncio.gather with a semaphore to limit concurrency
         sem = asyncio.Semaphore(num_workers)
 
-        async def run_with_semaphore(task):
+        async def run_with_semaphore(task: Awaitable[Any]) -> Any:
             async with sem:
                 return await task
 
@@ -228,7 +229,7 @@ async def resolve_issues(
     logger.info('Finished.')
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description='Resolve multiple issues from Github or Gitlab.'
     )
@@ -349,7 +350,7 @@ def main():
 
     llm_config = LLMConfig(
         model=my_args.llm_model or os.environ['LLM_MODEL'],
-        api_key=str(api_key) if api_key else None,
+        api_key=SecretStr(api_key) if api_key else None,
         base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
     )
 
