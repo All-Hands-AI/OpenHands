@@ -1,8 +1,8 @@
-from typing import Any
-
+"""GitHub issue handler implementation."""
 import requests
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.microagent.microagent import KnowledgeMicroAgent
 from openhands.resolver.interfaces.issue import (
     Issue,
     IssueHandlerInterface,
@@ -286,7 +286,34 @@ class GithubIssueHandler(IssueHandlerInterface):
         review_threads: list[ReviewThread],
         thread_comments: list[str] | None,
     ) -> list[str]:
-        return []
+        """Get context from external issues and microagents.
+        
+        This method:
+        1. Gets context from referenced issues
+        2. Checks issue content against microagent triggers
+        3. Includes relevant microagent knowledge
+        """
+        contexts = []
+        
+        # Get all content to check for triggers
+        content_parts = [issue_body]
+        if review_comments:
+            content_parts.extend(review_comments)
+        if thread_comments:
+            content_parts.extend(thread_comments)
+        if review_threads:
+            content_parts.extend(thread.comment for thread in review_threads)
+        content = ' '.join(content_parts)
+        
+        # Add knowledge from microagents that have matching triggers
+        from openhands.agenthub.micro.registry import all_microagents
+
+        for agent in all_microagents.values():
+            if isinstance(agent, KnowledgeMicroAgent):
+                if agent.match_trigger(content):
+                    contexts.append(agent.content)
+        
+        return contexts
 
 
 class GithubPRHandler(GithubIssueHandler):
@@ -422,17 +449,11 @@ class GithubPRHandler(GithubIssueHandler):
                             message += '---\n'  # Add "---" before the last message if there's more than one thread
                         message += 'latest feedback:\n' + review_thread['body'] + '\n'
                     else:
-                        message += (
-                            review_thread['body'] + '\n'
-                        )  # Add each thread in a new line
-
-                    file = review_thread.get('path')
-                    if file and file not in files:
-                        files.append(file)
+                        message += review_thread['body'] + '\n'
+                    files.append(review_thread['path'])
 
                 if comment_id is None or thread_contains_comment_id:
-                    unresolved_thread = ReviewThread(comment=message, files=files)
-                    review_threads.append(unresolved_thread)
+                    review_threads.append(ReviewThread(comment=message, files=files))
                     thread_ids.append(id)
 
         return (
@@ -443,150 +464,61 @@ class GithubPRHandler(GithubIssueHandler):
             thread_ids,
         )
 
-    # Override processing of downloaded issues
-    def get_pr_comments(
-        self, pr_number: int, comment_id: int | None = None
-    ) -> list[str] | None:
-        """Download comments for a specific pull request from Github."""
-        url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{pr_number}/comments'
-        headers = {
-            'Authorization': f'token {self.token}',
-            'Accept': 'application/vnd.github.v3+json',
-        }
-        params = {'per_page': 100, 'page': 1}
-        all_comments = []
-
-        while True:
-            response = requests.get(url, headers=headers, params=params)
-            response.raise_for_status()
-            comments = response.json()
-
-            if not comments:
-                break
-
-            if comment_id is not None:
-                matching_comment = next(
-                    (
-                        comment['body']
-                        for comment in comments
-                        if comment['id'] == comment_id
-                    ),
-                    None,
-                )
-                if matching_comment:
-                    return [matching_comment]
-            else:
-                all_comments.extend([comment['body'] for comment in comments])
-
-            params['page'] += 1
-
-        return all_comments if all_comments else None
-
-    def get_context_from_external_issues_references(
-        self,
-        closing_issues: list[str],
-        closing_issue_numbers: list[int],
-        issue_body: str,
-        review_comments: list[str] | None,
-        review_threads: list[ReviewThread],
-        thread_comments: list[str] | None,
-    ) -> list[str]:
-        new_issue_references = []
-
-        if issue_body:
-            new_issue_references.extend(extract_issue_references(issue_body))
-
-        if review_comments:
-            for comment in review_comments:
-                new_issue_references.extend(extract_issue_references(comment))
-
-        if review_threads:
-            for review_thread in review_threads:
-                new_issue_references.extend(
-                    extract_issue_references(review_thread.comment)
-                )
-
-        if thread_comments:
-            for thread_comment in thread_comments:
-                new_issue_references.extend(extract_issue_references(thread_comment))
-
-        non_duplicate_references = set(new_issue_references)
-        unique_issue_references = non_duplicate_references.difference(
-            closing_issue_numbers
-        )
-
-        for issue_number in unique_issue_references:
-            try:
-                url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}'
-                headers = {
-                    'Authorization': f'Bearer {self.token}',
-                    'Accept': 'application/vnd.github.v3+json',
-                }
-                response = requests.get(url, headers=headers)
-                response.raise_for_status()
-                issue_data = response.json()
-                issue_body = issue_data.get('body', '')
-                if issue_body:
-                    closing_issues.append(issue_body)
-            except requests.exceptions.RequestException as e:
-                logger.warning(f'Failed to fetch issue {issue_number}: {str(e)}')
-
-        return closing_issues
-
     def get_converted_issues(
         self, issue_numbers: list[int] | None = None, comment_id: int | None = None
     ) -> list[Issue]:
+        """Download issues from Github."""
         if not issue_numbers:
-            raise ValueError('Unspecified issue numbers')
+            raise ValueError('Unspecified issue number')
 
         all_issues = self.download_issues()
         logger.info(f'Limiting resolving to issues {issue_numbers}.')
-        all_issues = [issue for issue in all_issues if issue['number'] in issue_numbers]
+        all_issues = [
+            issue for issue in all_issues if issue['number'] in issue_numbers
+        ]
+
+        if len(issue_numbers) == 1 and not all_issues:
+            raise ValueError(f'Issue {issue_numbers[0]} not found')
 
         converted_issues = []
         for issue in all_issues:
-            # For PRs, body can be None
+            # Check for required fields (number and title)
             if any([issue.get(key) is None for key in ['number', 'title']]):
-                logger.warning(f'Skipping #{issue} as it is missing number or title.')
+                logger.warning(
+                    f'Skipping issue {issue} as it is missing number or title.'
+                )
                 continue
 
-            # Handle None body for PRs
-            body = issue.get('body') if issue.get('body') is not None else ''
+            # Handle empty body by using empty string
+            if issue.get('body') is None:
+                issue['body'] = ''
+
+            # Get issue thread comments
+            thread_comments = self.get_issue_comments(
+                issue['number'], comment_id=comment_id
+            )
+
+            # Get PR metadata
             (
                 closing_issues,
-                closing_issues_numbers,
+                closing_issue_numbers,
                 review_comments,
                 review_threads,
                 thread_ids,
             ) = self.download_pr_metadata(issue['number'], comment_id=comment_id)
-            head_branch = issue['head']['ref']
 
-            # Get PR thread comments
-            thread_comments = self.get_pr_comments(
-                issue['number'], comment_id=comment_id
-            )
-
-            closing_issues = self.get_context_from_external_issues_references(
-                closing_issues,
-                closing_issues_numbers,
-                body,
-                review_comments,
-                review_threads,
-                thread_comments,
-            )
-
+            # Convert empty lists to None for optional fields
             issue_details = Issue(
                 owner=self.owner,
                 repo=self.repo,
                 number=issue['number'],
                 title=issue['title'],
-                body=body,
+                body=issue['body'],
+                thread_comments=thread_comments,
                 closing_issues=closing_issues,
                 review_comments=review_comments,
                 review_threads=review_threads,
                 thread_ids=thread_ids,
-                head_branch=head_branch,
-                thread_comments=thread_comments,
             )
 
             converted_issues.append(issue_details)
