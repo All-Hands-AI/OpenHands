@@ -12,6 +12,20 @@ import {
 } from "#/state/chat-slice";
 
 export function handleObservationMessage(message: ObservationMessage) {
+  // Handle llm_metrics and usage together
+  if (message.llm_metrics || message.tool_call_metadata?.model_response?.usage) {
+    const usage = message.tool_call_metadata?.model_response?.usage;
+    const metrics = message.llm_metrics;
+    
+    alert([
+      'LLM Information',
+      metrics ? `Accumulated Cost: $${metrics.accumulated_cost.toFixed(4)}` : '',
+      usage ? `Prompt Tokens: ${usage.prompt_tokens}` : '',
+      usage ? `Completion Tokens: ${usage.completion_tokens}` : '',
+      usage ? `Total Tokens: ${usage.total_tokens}` : ''
+    ].filter(line => line !== '').join('\n'));  // Filter out empty lines
+  }
+
   switch (message.observation) {
     case ObservationType.RUN:
       if (message.extras.hidden) break;
@@ -23,16 +37,6 @@ export function handleObservationMessage(message: ObservationMessage) {
       }
 
       store.dispatch(appendOutput(content));
-
-      const usage = message.tool_call_metadata?.model_response?.usage;
-      if (usage) {
-        alert([
-          'Model Usage Information',
-          `Prompt Tokens: ${usage.prompt_tokens}`,
-          `Completion Tokens: ${usage.completion_tokens}`,
-          `Total Tokens: ${usage.total_tokens}`
-        ].join('\n'));
-      }
       break;
     case ObservationType.RUN_IPYTHON:
       store.dispatch(appendJupyterOutput(message.content));

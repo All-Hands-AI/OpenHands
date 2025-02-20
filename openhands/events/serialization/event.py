@@ -20,6 +20,7 @@ TOP_KEYS = [
     'action',
     'observation',
     'tool_call_metadata',
+    'llm_metrics'
 ]
 UNDERSCORE_KEYS = ['id', 'timestamp', 'source', 'cause', 'tool_call_metadata']
 
@@ -81,6 +82,8 @@ def event_to_dict(event: 'Event') -> dict:
             d['source'] = d['source'].value
         if key == 'tool_call_metadata' and 'tool_call_metadata' in d:
             d['tool_call_metadata'] = d['tool_call_metadata'].model_dump()
+        if key == 'llm_metrics' and event.llm_metrics:
+            d['llm_metrics'] = event.llm_metrics.get()
         props.pop(key, None)
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')

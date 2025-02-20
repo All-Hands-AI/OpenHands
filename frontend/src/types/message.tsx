@@ -49,6 +49,14 @@ export interface ObservationMessage {
       };
     };
   };
+
+  llm_metrics?: {
+    accumulated_cost: number;
+    response_latencies: Array<{
+      latency: number;
+      timestamp: string;
+    }>;
+  };
 }
 
 export interface StatusMessage {
