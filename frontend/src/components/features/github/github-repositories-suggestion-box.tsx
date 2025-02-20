@@ -10,6 +10,7 @@ import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { sanitizeQuery } from "#/utils/sanitize-query";
 import { useDebounce } from "#/hooks/use-debounce";
 import { BrandButton } from "../settings/brand-button";
+import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 
 interface GitHubRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;
@@ -67,6 +68,7 @@ export function GitHubRepositoriesSuggestionBox({
             variant="primary"
             className="w-full"
             onClick={handleConnectToGitHub}
+            startContent={<GitHubLogo width={20} height={20} />}
           >
             {t(I18nKey.GITHUB$CONNECT)}
           </BrandButton>

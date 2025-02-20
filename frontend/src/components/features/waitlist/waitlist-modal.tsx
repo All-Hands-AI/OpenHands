@@ -7,6 +7,7 @@ import { ModalBody } from "#/components/shared/modals/modal-body";
 import { TOSCheckbox } from "./tos-checkbox";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { BrandButton } from "../settings/brand-button";
+import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 
 interface WaitlistModalProps {
   ghTokenIsSet: boolean;
@@ -41,6 +42,7 @@ export function WaitlistModal({
             variant="primary"
             onClick={handleGitHubAuth}
             className="w-full"
+            startContent={<GitHubLogo width={20} height={20} />}
           >
             Connect to GitHub
           </BrandButton>
