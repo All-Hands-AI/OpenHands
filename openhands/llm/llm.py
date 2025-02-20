@@ -144,6 +144,8 @@ class LLM(RetryMixin, DebugMixin):
                 'temperature'
             )  # temperature is not supported for reasoning models
 
+        logger.info(f'TRACE:LLM_CONFIG:{self.config.api_key}:{self.config}')
+
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
