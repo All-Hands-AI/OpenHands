@@ -9,13 +9,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#C9B974",
-        base: "#171717",
-        "base-secondary": "#262626",
+        primary: "#C9B974", // nice yellow
+        base: "#171717", // dark background (neutral-900)
+        "base-secondary": "#262626", // lighter background (neutral-800); also used for tooltips
         danger: "#E76A5E",
         success: "#A5E75E",
-        tertiary: "#454545",
-        "tertiary-light": "#B7BDC2",
+        tertiary: "#454545", // gray, used for inputs
+        "tertiary-light": "#B7BDC2", // lighter gray, used for borders and placeholder text
       },
     },
   },
