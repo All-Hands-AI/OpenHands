@@ -9,7 +9,7 @@ from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.observation import observation_from_dict
 from openhands.events.serialization.utils import remove_fields
 from openhands.events.tool import ToolCallMetadata
-from openhands.utils.logger import logger
+from openhands.core.logger import openhands_logger as logger
 
 # TODO: move `content` into `extras`
 TOP_KEYS = [
