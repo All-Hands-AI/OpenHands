@@ -380,6 +380,9 @@ class AgentController:
             log_level, str(observation_to_print), extra={'msg_type': 'OBSERVATION'}
         )
 
+        if observation.llm_metrics is not None:
+            self.agent.llm.metrics.merge(observation.llm_metrics)
+
         logger.info("Mark the position of _handle_observation")
         # Log state metrics before assignment
         if self.state and self.state.local_metrics:
@@ -390,9 +393,6 @@ class AgentController:
             observation.llm_metrics = copy.deepcopy(self.state.local_metrics)
             # Log observation metrics after assignment
             logger.info(f"Observation metrics after assignment - accumulated cost: {observation.llm_metrics.accumulated_cost}")
-        
-        if observation.llm_metrics is not None:
-            self.agent.llm.metrics.merge(observation.llm_metrics)
 
         if self._pending_action and self._pending_action.id == observation.cause:
             if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:

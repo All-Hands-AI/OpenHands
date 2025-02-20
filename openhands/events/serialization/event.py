@@ -9,7 +9,7 @@ from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.observation import observation_from_dict
 from openhands.events.serialization.utils import remove_fields
 from openhands.events.tool import ToolCallMetadata
-from openhands.core.logger import openhands_logger as logger
+from openhands.utils.logger import logger
 
 # TODO: move `content` into `extras`
 TOP_KEYS = [
@@ -83,9 +83,10 @@ def event_to_dict(event: 'Event') -> dict:
             d['source'] = d['source'].value
         if key == 'tool_call_metadata' and 'tool_call_metadata' in d:
             d['tool_call_metadata'] = d['tool_call_metadata'].model_dump()
-        if key == 'llm_metrics' and event.llm_metrics:
-            d['llm_metrics'] = event.llm_metrics.get()
-            logger.info(f"Event serialization - llm_metrics: {d['llm_metrics']}")
+        if key == 'llm_metrics' and 'llm_metrics' in d:
+            logger.info(f"Before llm_metrics processing - metrics in d: {d['llm_metrics']}")
+            d['llm_metrics'] = d['llm_metrics'].get()
+            logger.info(f"After llm_metrics processing - metrics result: {d['llm_metrics']}")
         props.pop(key, None)
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')
