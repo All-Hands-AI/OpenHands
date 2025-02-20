@@ -65,3 +65,52 @@ def test_bash_session_stop_command():
 
     # Clean up
     session.close()
+
+def test_agent_controller_stop():
+    """Test that the agent controller sends C-c when stopping."""
+    from openhands.controller.agent_controller import AgentController
+    from openhands.controller.agent import Agent
+    from openhands.core.schema import AgentState
+    from openhands.events import EventStream
+    from openhands.llm.llm import LLM
+    from openhands.core.config import AppConfig, LLMConfig, AgentConfig
+
+    # Create a mock event stream to capture events
+    from openhands.storage.local import LocalFileStore
+    file_store = LocalFileStore("/tmp")
+    event_stream = EventStream(sid="test", file_store=file_store)
+    events = []
+    def on_event(event):
+        events.append(event)
+    event_stream.subscribe("test", on_event, "test")
+
+    # Create a mock agent
+    class MockAgent(Agent):
+        def step(self, history):
+            return None
+
+    # Create a mock agent controller
+    llm = LLM(config=LLMConfig())
+    agent = MockAgent(llm=llm, config=AgentConfig())
+    controller = AgentController(
+        agent=agent,
+        event_stream=event_stream,
+        max_iterations=10,
+        agent_configs={},
+        agent_to_llm_config={},
+        sid="test",
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Set up a pending action
+    pending_action = CmdRunAction(command="sleep 10")
+    controller._pending_action = pending_action
+
+    # Change state to STOPPED
+    import asyncio
+    asyncio.get_event_loop().run_until_complete(controller.set_agent_state_to(AgentState.STOPPED))
+
+    # Verify that C-c was sent
+    stop_events = [e for e in events if isinstance(e, CmdRunAction) and e.command == "C-c" and e.is_input == "true"]
+    assert len(stop_events) == 1, "Expected exactly one C-c command to be sent"
