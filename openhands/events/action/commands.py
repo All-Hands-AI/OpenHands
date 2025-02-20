@@ -24,7 +24,6 @@ class CmdRunAction(Action):
     runnable: ClassVar[bool] = True
     confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
     security_risk: ActionSecurityRisk | None = None
-    _source: str = 'agent'  # Default source is 'agent'
 
     @property
     def message(self) -> str:
