@@ -3,6 +3,7 @@ import os
 import pathlib
 import platform
 import sys
+from ast import literal_eval
 from types import UnionType
 from typing import Any, MutableMapping, get_args, get_origin
 from uuid import uuid4
@@ -28,9 +29,14 @@ JWT_SECRET = '.jwt_secret'
 load_dotenv()
 
 
-def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, str]):
-    """Reads the env-style vars and sets config attributes based on env vars or a config.toml dict.
-    Compatibility with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED, SANDBOX_TIMEOUT and others.
+def load_from_env(
+    cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, str]
+) -> None:
+    """Sets config attributes from environment variables or TOML dictionary.
+
+    Reads environment-style variables and updates the config attributes accordingly.
+    Supports configuration of LLM settings (e.g., LLM_BASE_URL), agent settings
+    (e.g., AGENT_MEMORY_ENABLED), sandbox settings (e.g., SANDBOX_TIMEOUT), and more.
 
     Args:
         cfg: The AppConfig object to set attributes on.
@@ -43,7 +49,7 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
         return next((t for t in types if t is not type(None)), None)
 
     # helper function to set attributes based on env vars
-    def set_attr_from_env(sub_config: BaseModel, prefix=''):
+    def set_attr_from_env(sub_config: BaseModel, prefix='') -> None:
         """Set attributes of a config model based on environment variables."""
         for field_name, field_info in sub_config.model_fields.items():
             field_value = getattr(sub_config, field_name)
@@ -72,6 +78,9 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
                     # Attempt to cast the env var to type hinted in the dataclass
                     if field_type is bool:
                         cast_value = str(value).lower() in ['true', '1']
+                    # parse dicts like SANDBOX_RUNTIME_STARTUP_ENV_VARS
+                    elif get_origin(field_type) is dict:
+                        cast_value = literal_eval(value)
                     else:
                         cast_value = field_type(value)
                     setattr(sub_config, field_name, cast_value)
@@ -91,7 +100,7 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
     set_attr_from_env(default_agent_config, 'AGENT_')
 
 
-def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
+def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     """Load the config from the toml file. Supports both styles of config vars.
 
     Args:
@@ -99,8 +108,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         toml_file: The path to the toml file. Defaults to 'config.toml'.
 
     See Also:
-    - `config.template.toml` for the full list of config options.
-    - `SandboxConfig` for the sandbox-specific config options.
+    - config.template.toml for the full list of config options.
     """
     # try to read the config.toml file into the config object
     try:
@@ -294,7 +302,59 @@ def finalize_config(cfg: AppConfig):
         )
 
 
-# Utility function for command line --group argument
+def get_agent_config_arg(
+    agent_config_arg: str, toml_file: str = 'config.toml'
+) -> AgentConfig | None:
+    """Get a group of agent settings from the config file.
+
+    A group in config.toml can look like this:
+
+    ```
+    [agent.default]
+    enable_prompt_extensions = false
+    ```
+
+    The user-defined group name, like "default", is the argument to this function. The function will load the AgentConfig object
+    with the settings of this group, from the config file, and set it as the AgentConfig object for the app.
+
+    Note that the group must be under "agent" group, or in other words, the group name must start with "agent.".
+
+    Args:
+        agent_config_arg: The group of agent settings to get from the config.toml file.
+        toml_file: Path to the configuration file to read from. Defaults to 'config.toml'.
+
+    Returns:
+        AgentConfig: The AgentConfig object with the settings from the config file.
+    """
+    # keep only the name, just in case
+    agent_config_arg = agent_config_arg.strip('[]')
+
+    # truncate the prefix, just in case
+    if agent_config_arg.startswith('agent.'):
+        agent_config_arg = agent_config_arg[6:]
+
+    logger.openhands_logger.debug(f'Loading agent config from {agent_config_arg}')
+
+    # load the toml file
+    try:
+        with open(toml_file, 'r', encoding='utf-8') as toml_contents:
+            toml_config = toml.load(toml_contents)
+    except FileNotFoundError as e:
+        logger.openhands_logger.error(f'Config file not found: {e}')
+        return None
+    except toml.TomlDecodeError as e:
+        logger.openhands_logger.error(
+            f'Cannot parse agent group from {agent_config_arg}. Exception: {e}'
+        )
+        return None
+
+    # update the agent config with the specified section
+    if 'agent' in toml_config and agent_config_arg in toml_config['agent']:
+        return AgentConfig(**toml_config['agent'][agent_config_arg])
+    logger.openhands_logger.debug(f'Loading from toml failed for {agent_config_arg}')
+    return None
+
+
 def get_llm_config_arg(
     llm_config_arg: str, toml_file: str = 'config.toml'
 ) -> LLMConfig | None:
@@ -438,6 +498,12 @@ def get_parser() -> argparse.ArgumentParser:
         default=None,
         type=str,
         help='Replace default LLM ([llm] section in config.toml) config with the specified LLM config, e.g. "llama3" for [llm.llama3] section in config.toml',
+    )
+    parser.add_argument(
+        '--agent-config',
+        default=None,
+        type=str,
+        help='Replace default Agent ([agent] section in config.toml) config with the specified Agent config, e.g. "CodeAct" for [agent.CodeAct] section in config.toml',
     )
     parser.add_argument(
         '-n',

@@ -16,7 +16,8 @@ def get_action_execution_server_startup_command(
     plugins: list[PluginRequirement],
     app_config: AppConfig,
     python_prefix: list[str] = DEFAULT_PYTHON_PREFIX,
-    use_nice_for_root: bool = True,
+    override_user_id: int | None = None,
+    override_username: str | None = None,
 ):
     sandbox_config = app_config.sandbox
 
@@ -32,7 +33,12 @@ def get_action_execution_server_startup_command(
             '--browsergym-eval-env'
         ] + sandbox_config.browsergym_eval_env.split(' ')
 
-    is_root = not app_config.run_as_openhands
+    username = override_username or (
+        'openhands' if app_config.run_as_openhands else 'root'
+    )
+    user_id = override_user_id or (
+        sandbox_config.user_id if app_config.run_as_openhands else 0
+    )
 
     base_cmd = [
         *python_prefix,
@@ -45,23 +51,10 @@ def get_action_execution_server_startup_command(
         app_config.workspace_mount_path_in_sandbox,
         *plugin_args,
         '--username',
-        'openhands' if app_config.run_as_openhands else 'root',
+        username,
         '--user-id',
-        str(sandbox_config.user_id),
+        str(user_id),
         *browsergym_args,
     ]
 
-    if is_root and use_nice_for_root:
-        # If running as root, set highest priority and lowest OOM score
-        cmd_str = ' '.join(base_cmd)
-        return [
-            'nice',
-            '-n',
-            '-20',  # Highest priority
-            'sh',
-            '-c',
-            f'echo -1000 > /proc/self/oom_score_adj && exec {cmd_str}',
-        ]
-    else:
-        # If not root OR not using nice for root, run with normal priority
-        return base_cmd
+    return base_cmd
