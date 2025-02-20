@@ -1,6 +1,6 @@
 from openhands.events.action import CmdRunAction
-from openhands.events.observation import CmdOutputObservation
 from openhands.events.event import EventSource
+from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.utils.bash import BashSession
 
 
@@ -79,10 +79,10 @@ def test_agent_controller_stop():
     from openhands.controller.agent import Agent
     from openhands.controller.agent_controller import AgentController
     from openhands.core.config import AgentConfig, LLMConfig
+    from openhands.core.message_utils import events_to_messages
     from openhands.core.schema import AgentState
     from openhands.events import EventStream
     from openhands.llm.llm import LLM
-    from openhands.core.message_utils import events_to_messages
 
     # Create a mock event stream to capture events
     from openhands.storage.local import LocalFileStore
@@ -101,7 +101,8 @@ def test_agent_controller_stop():
         def step(self, state):
             # This is where the error would occur in the real agent
             # Try to process all events into messages
-            messages = self._get_messages(state)
+            # Process messages but don't use them - we just want to verify no error occurs
+            _ = self._get_messages(state)
             return None
 
         def _get_messages(self, state):
@@ -135,24 +136,31 @@ def test_agent_controller_stop():
 
     # Give the event stream time to process the event
     import time
+
     time.sleep(0.1)
 
     # Verify that C-c was sent
     stop_events = [
         e
         for e in events
-        if isinstance(e, CmdRunAction) and e.command == 'C-c' and e.is_input is True and e.source == EventSource.USER
+        if isinstance(e, CmdRunAction)
+        and e.command == 'C-c'
+        and e.is_input is True
+        and e.source == EventSource.USER
     ]
     assert len(stop_events) == 1, 'Expected exactly one C-c command to be sent'
-    
+
     # Print all events for debugging
-    print("\nAll events:")
+    print('\nAll events:')
     for e in events:
-        print(f"Event: {type(e).__name__}, source={e.source}, command={getattr(e, 'command', None)}, is_input={getattr(e, 'is_input', None)}")
+        print(
+            f"Event: {type(e).__name__}, source={e.source}, command={getattr(e, 'command', None)}, is_input={getattr(e, 'is_input', None)}"
+        )
 
     # Verify that the stop event can be converted to messages without error
     try:
-        messages = events_to_messages(stop_events)
+        # Process messages but don't use them - we just want to verify no error occurs
+        _ = events_to_messages(stop_events)
     except AssertionError as e:
         if 'Tool call metadata should NOT be None' in str(e):
             raise AssertionError(
@@ -164,6 +172,7 @@ def test_agent_controller_stop():
     try:
         # Create a state with the stop event in history
         from openhands.controller.state.state import State
+
         state = State()
         state.history = stop_events
         # Try to process the history - this would fail if the event is not properly marked as a user action
