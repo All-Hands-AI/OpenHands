@@ -29,8 +29,8 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
     FileEditObservation,
-    NullObservation,
 )
+from openhands.io import read_input, read_task
 
 
 def display_message(message: str):
@@ -83,21 +83,6 @@ def display_event(event: Event, config: AppConfig):
         display_confirmation(event.confirmation_state)
 
 
-def read_input(config: AppConfig) -> str:
-    """Read input from user based on config settings."""
-    if config.cli_multiline_input:
-        print('Enter your message (enter "/exit" on a new line to finish):')
-        lines = []
-        while True:
-            line = input('>> ').rstrip()
-            if line == '/exit':  # finish input
-                break
-            lines.append(line)
-        return '\n'.join(lines)
-    else:
-        return input('>> ').rstrip()
-
-
 async def main(loop: asyncio.AbstractEventLoop):
     """Runs the agent in CLI mode."""
 
@@ -105,7 +90,14 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     logger.setLevel(logging.WARNING)
 
-    config = setup_config_from_args(args)
+    # Load config from toml and override with command line arguments
+    config: AppConfig = setup_config_from_args(args)
+
+    # Read task from file, CLI args, or stdin
+    task_str = read_task(args, config.cli_multiline_input)
+
+    # If we have a task, create initial user action
+    initial_user_action = MessageAction(content=task_str) if task_str else None
 
     sid = str(uuid4())
 
@@ -118,7 +110,9 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     async def prompt_for_next_task():
         # Run input() in a thread pool to avoid blocking the event loop
-        next_message = await loop.run_in_executor(None, read_input, config)
+        next_message = await loop.run_in_executor(
+            None, read_input, config.cli_multiline_input
+        )
         if not next_message.strip():
             await prompt_for_next_task()
         if next_message == 'exit':
@@ -143,19 +137,18 @@ async def main(loop: asyncio.AbstractEventLoop):
                 AgentState.FINISHED,
             ]:
                 await prompt_for_next_task()
-        if (
-            isinstance(event, NullObservation)
-            and controller.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION
-        ):
-            user_confirmed = await prompt_for_user_confirmation()
-            if user_confirmed:
-                event_stream.add_event(
-                    ChangeAgentStateAction(AgentState.USER_CONFIRMED), EventSource.USER
-                )
-            else:
-                event_stream.add_event(
-                    ChangeAgentStateAction(AgentState.USER_REJECTED), EventSource.USER
-                )
+            if event.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
+                user_confirmed = await prompt_for_user_confirmation()
+                if user_confirmed:
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_CONFIRMED),
+                        EventSource.USER,
+                    )
+                else:
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_REJECTED),
+                        EventSource.USER,
+                    )
 
     def on_event(event: Event) -> None:
         loop.create_task(on_event_async(event))
@@ -164,7 +157,12 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     await runtime.connect()
 
-    asyncio.create_task(prompt_for_next_task())
+    if initial_user_action:
+        # If there's an initial user action, enqueue it and do not prompt again
+        event_stream.add_event(initial_user_action, EventSource.USER)
+    else:
+        # Otherwise prompt for the user's first message right away
+        asyncio.create_task(prompt_for_next_task())
 
     await run_agent_until_done(
         controller, runtime, [AgentState.STOPPED, AgentState.ERROR]
