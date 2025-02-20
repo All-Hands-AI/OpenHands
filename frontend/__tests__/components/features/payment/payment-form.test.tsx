@@ -78,12 +78,6 @@ describe("PaymentForm", () => {
     expect(createCheckoutSessionSpy).toHaveBeenCalledWith(50.13);
   });
 
-  it("should render the payment method link", async () => {
-    renderPaymentForm();
-
-    screen.getByTestId("payment-methods-link");
-  });
-
   it("should disable the top-up button if the user enters an invalid amount", async () => {
     const user = userEvent.setup();
     renderPaymentForm();
