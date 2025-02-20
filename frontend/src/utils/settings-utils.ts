@@ -43,6 +43,7 @@ const extractAdvancedFormData = (formData: FormData) => {
     LLM_BASE_URL,
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
+    ENABLE_DEFAULT_CONDENSER
   };
 };
 
@@ -55,6 +56,7 @@ export const extractSettings = (formData: FormData): Partial<Settings> => {
     LLM_BASE_URL,
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
+    ENABLE_DEFAULT_CONDENSER
   } = extractAdvancedFormData(formData);
 
   return {
@@ -65,5 +67,6 @@ export const extractSettings = (formData: FormData): Partial<Settings> => {
     LLM_BASE_URL,
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
+    ENABLE_DEFAULT_CONDENSER
   };
 };
