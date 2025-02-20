@@ -127,13 +127,10 @@ class CodeActAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
-        try:
-            response = self.llm.completion(**params)
-        except Exception:
-            logger.info('==== START TRACE BROKEN LLM PARAMS ====')
-            logger.info(str(params))
-            logger.info('==== END TRACE BROKEN LLM PARAMS ====')
-            raise
+        logger.info('==== START TRACE LLM PARAMS ====')
+        logger.info(str(params))
+        logger.info('==== END TRACE LLM PARAMS ====')
+        response = self.llm.completion(**params)
         actions = codeact_function_calling.response_to_actions(response)
         for action in actions:
             self.pending_actions.append(action)
