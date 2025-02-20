@@ -380,7 +380,7 @@ class AgentController:
             log_level, str(observation_to_print), extra={'msg_type': 'OBSERVATION'}
         )
 
-        logger.loginfo("Mark the position of _handle_observation")
+        logger.info("Mark the position of _handle_observation")
         # Log state metrics before assignment
         if self.state and self.state.local_metrics:
             logger.info(f"State local_metrics before assignment - accumulated cost: {self.state.local_metrics.accumulated_cost}")
