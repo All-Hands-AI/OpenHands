@@ -29,7 +29,7 @@ function Home() {
   const latestConversation = localStorage.getItem("latest_conversation_id");
 
   return (
-    <div className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto px-2">
+    <div className="bg-base-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto px-2">
       <HeroHeading />
       <div className="flex flex-col gap-8 w-full md:w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
