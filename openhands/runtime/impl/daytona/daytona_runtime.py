@@ -1,5 +1,5 @@
 import json
-from typing import Callable, Optional
+from typing import Callable
 
 import tenacity
 from daytona_sdk import (
@@ -45,7 +45,7 @@ class DaytonaRuntime(ActionExecutionClient):
         self.config = config
         self.sid = sid
         self.workspace_id = WORKSPACE_PREFIX + sid
-        self.workspace: Optional[Workspace] = None
+        self.workspace: Workspace | None = None
         self._vscode_url: str | None = None
 
         daytona_config = DaytonaConfig(
@@ -73,7 +73,7 @@ class DaytonaRuntime(ActionExecutionClient):
             headless_mode,
         )
 
-    def _get_workspace(self) -> Optional[Workspace]:
+    def _get_workspace(self) -> Workspace | None:
         try:
             workspace = self.daytona.get_current_workspace(self.workspace_id)
             self.log(
