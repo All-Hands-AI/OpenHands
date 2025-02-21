@@ -272,7 +272,15 @@ function AccountSettings() {
               <SettingsDropdownInput
                 testId="runtime-settings-input"
                 name="runtime-settings-input"
-                label="Runtime Settings"
+                label={
+                  <>
+                    Runtime Settings (
+                    <a href="mailto:contact@all-hands.dev">
+                      get in touch for access
+                    </a>
+                    )
+                  </>
+                }
                 items={REMOTE_RUNTIME_OPTIONS}
                 defaultSelectedKey={settings.REMOTE_RUNTIME_RESOURCE_FACTOR?.toString()}
                 isDisabled
