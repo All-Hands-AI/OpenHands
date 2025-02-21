@@ -149,12 +149,13 @@ class AgentController:
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
 
-    async def close(self) -> None:
+    async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
 
         Note that it's fairly important that this closes properly, otherwise the state is incomplete.
         """
-        await self.set_agent_state_to(AgentState.STOPPED)
+        if set_stop_state:
+            await self.set_agent_state_to(AgentState.STOPPED)
 
         # we made history, now is the time to rewrite it!
         # the final state.history will be used by external scripts like evals, tests, etc.

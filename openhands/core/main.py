@@ -166,7 +166,7 @@ async def run_controller(
         # NOTE: the saved state does not include delegates events
         end_state.save_to_session(event_stream.sid, event_stream.file_store)
 
-    await controller.close()
+    await controller.close(set_stop_state=False)
 
     state = controller.get_state()
 
