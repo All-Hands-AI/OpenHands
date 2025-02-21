@@ -4,18 +4,19 @@
   --bg-input: #393939;
   --bg-workspace: #1f2228;
   --border: #3c3c4a;
-  --text-editor-base: #9099AC;
-  --text-editor-active:#C4CBDA;
-  --bg-editor-sidebar: #24272E;
-  --bg-editor-active: #31343D;
-  --border-editor-sidebar: #3C3C4A;
-  background-color: var(--neutral-900) !important;
+  --text-editor-base: #9099ac;
+  --text-editor-active: #c4cbda;
+  --bg-editor-sidebar: #24272e;
+  --bg-editor-active: #31343d;
+  --border-editor-sidebar: #3c3c4a;
+  background-color: var(--base) !important;
   --bg-neutral-muted: #afb8c133;
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, "SF Pro", BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+  font-family:
+    -apple-system, "SF Pro", BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
     "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -23,8 +24,8 @@ body {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
+  font-family:
+    source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
 .markdown-body code {
@@ -52,6 +53,7 @@ code {
   text-align: left;
 }
 
-.markdown-body th, .markdown-body td {
+.markdown-body th,
+.markdown-body td {
   padding: 0.1rem 1rem;
 }
