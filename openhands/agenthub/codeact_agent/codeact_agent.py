@@ -127,6 +127,8 @@ class CodeActAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
+        logger.info('==== START TRACE LLM EVENTS ====')
+        logger.info(str(state.history))
         logger.info('==== START TRACE LLM PARAMS ====')
         logger.info(str(params))
         logger.info('==== END TRACE LLM PARAMS ====')
