@@ -1,4 +1,4 @@
-SHELL=/bin/bash
+SHELL=/usr/bin/env bash
 # Makefile for OpenHands project
 
 # Variables
