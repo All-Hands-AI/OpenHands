@@ -10,7 +10,9 @@ from openhands.events.observation import (
 
 
 def get_pairs_from_events(events: list[Event]) -> list[tuple[Action, Observation]]:
-    """Return the history as a list of tuples (action, observation)."""
+    """Return the history as a list of tuples (action, observation).
+
+    This function is a compatibility function for evals reading and visualization working with old histories."""
     tuples: list[tuple[Action, Observation]] = []
     action_map: dict[int, Action] = {}
     observation_map: dict[int, Observation] = {}
