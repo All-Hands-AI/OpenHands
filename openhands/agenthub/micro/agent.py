@@ -32,7 +32,9 @@ class MicroAgent(Agent):
     prompt = ''
     agent_definition: dict = {}
 
-    def history_to_json(self, history: list[Event], max_events: int = 20, **kwargs: dict) -> str:
+    def history_to_json(
+        self, history: list[Event], max_events: int = 20, **kwargs: dict
+    ) -> str:
         """
         Serialize and simplify history to str format
         """

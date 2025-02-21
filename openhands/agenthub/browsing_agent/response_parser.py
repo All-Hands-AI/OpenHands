@@ -16,11 +16,18 @@ class BrowsingResponseParser(ResponseParser):
         self.action_parsers = [BrowsingActionParserMessage()]
         self.default_parser = BrowsingActionParserBrowseInteractive()
 
-    def parse(self, response: str) -> Action:
-        action_str = self.parse_response(response)
+    def parse(
+        self, response: str | dict[str, list[dict[str, dict[str, str | None]]]]
+    ) -> Action:
+        if isinstance(response, str):
+            action_str = response
+        else:
+            action_str = self.parse_response(response)
         return self.parse_action(action_str)
 
-    def parse_response(self, response: dict[str, list[dict[str, dict[str, str | None]]]]) -> str:
+    def parse_response(
+        self, response: dict[str, list[dict[str, dict[str, str | None]]]]
+    ) -> str:
         action_str = response['choices'][0]['message']['content']
         if action_str is None:
             return ''

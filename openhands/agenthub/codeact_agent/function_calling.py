@@ -476,10 +476,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]
-    if isinstance(choice, StreamingChoices):
-        assistant_msg = choice.delta
-    else:
-        assistant_msg = choice.message
+    assistant_msg = choice.message
     if hasattr(assistant_msg, 'tool_calls') and assistant_msg.tool_calls:
         # Check if there's assistant_msg.content. If so, add it to the thought
         thought = ''
@@ -596,7 +593,10 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             actions.append(action)
     else:
         actions.append(
-            MessageAction(content=str(assistant_msg.content) if assistant_msg.content else "", wait_for_response=True)
+            MessageAction(
+                content=str(assistant_msg.content) if assistant_msg.content else '',
+                wait_for_response=True,
+            )
         )
 
     assert len(actions) >= 1

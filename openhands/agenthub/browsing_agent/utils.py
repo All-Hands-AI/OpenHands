@@ -22,7 +22,9 @@ def yaml_parser(message: str) -> tuple[dict, bool, str]:
     return value, valid, retry_message
 
 
-def _compress_chunks(text: str, identifier: str, skip_list: list[str], split_regex: str = '\n\n+') -> tuple[dict[str, str], str]:
+def _compress_chunks(
+    text: str, identifier: str, skip_list: list[str], split_regex: str = '\n\n+'
+) -> tuple[dict[str, str], str]:
     """Compress a string by replacing redundant chunks by identifiers. Chunks are defined by the split_regex."""
     text_list = re.split(split_regex, text)
     text_list = [chunk.strip() for chunk in text_list]
@@ -102,7 +104,12 @@ class ParseError(Exception):
     pass
 
 
-def parse_html_tags_raise(text: str, keys: list[str] = [], optional_keys: list[str] = [], merge_multiple: bool = False) -> dict[str, str]:
+def parse_html_tags_raise(
+    text: str,
+    keys: list[str] | None = None,
+    optional_keys: list[str] | None = None,
+    merge_multiple: bool = False,
+) -> dict[str, str]:
     """A version of parse_html_tags that raises an exception if the parsing is not successful."""
     content_dict, valid, retry_message = parse_html_tags(
         text, keys, optional_keys, merge_multiple=merge_multiple
@@ -112,7 +119,12 @@ def parse_html_tags_raise(text: str, keys: list[str] = [], optional_keys: list[s
     return content_dict
 
 
-def parse_html_tags(text: str, keys: list[str] = [], optional_keys: list[str] = [], merge_multiple: bool = False) -> tuple[dict[str, str], bool, str]:
+def parse_html_tags(
+    text: str,
+    keys: list[str] | None = None,
+    optional_keys: list[str] | None = None,
+    merge_multiple: bool = False,
+) -> tuple[dict[str, str], bool, str]:
     """Satisfy the parse api, extracts 1 match per key and validates that all keys are present
 
     Parameters
@@ -133,6 +145,8 @@ def parse_html_tags(text: str, keys: list[str] = [], optional_keys: list[str] = 
     str
         A message to be displayed to the agent if the parsing was not successful.
     """
+    keys = keys or []
+    optional_keys = optional_keys or []
     all_keys = list(keys) + list(optional_keys)
     content_dict = extract_html_tags(text, all_keys)
     retry_messages = []
