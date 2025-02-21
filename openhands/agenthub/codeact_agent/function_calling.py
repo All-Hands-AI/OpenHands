@@ -475,8 +475,9 @@ def combine_thought(action: Action, thought: str) -> Action:
 def response_to_actions(response: ModelResponse) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
-    assistant_msg = response.choices[0].message
-    if assistant_msg.tool_calls:
+    choice = response.choices[0]
+    assistant_msg = choice.message
+    if hasattr(assistant_msg, 'tool_calls') and assistant_msg.tool_calls:
         # Check if there's assistant_msg.content. If so, add it to the thought
         thought = ''
         if isinstance(assistant_msg.content, str):
@@ -592,7 +593,10 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             actions.append(action)
     else:
         actions.append(
-            MessageAction(content=assistant_msg.content, wait_for_response=True)
+            MessageAction(
+                content=str(assistant_msg.content) if assistant_msg.content else '',
+                wait_for_response=True,
+            )
         )
 
     assert len(actions) >= 1
