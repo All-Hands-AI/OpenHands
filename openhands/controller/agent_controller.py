@@ -21,6 +21,7 @@ from openhands.core.exceptions import (
     AgentStuckInLoopError,
     FunctionCallNotExistsError,
     FunctionCallValidationError,
+    LLMContextWindowExceedError,
     LLMMalformedActionError,
     LLMNoActionError,
     LLMResponseError,
@@ -251,6 +252,7 @@ class AgentController:
                 isinstance(e, litellm.AuthenticationError)
                 or isinstance(e, litellm.BadRequestError)
                 or isinstance(e, RateLimitError)
+                or isinstance(e, LLMContextWindowExceedError)
             ):
                 reported = e
             await self._react_to_exception(reported)
@@ -698,24 +700,28 @@ class AgentController:
                     or 'prompt is too long' in error_str
                     or isinstance(e, ContextWindowExceededError)
                 ):
-                    # When context window is exceeded, keep roughly half of agent interactions
-                    self.state.history = self._apply_conversation_window(
-                        self.state.history
-                    )
+                    if self.agent.config.enable_history_truncation:
+                        # When context window is exceeded, keep roughly half of agent interactions
+                        self.state.history = self._apply_conversation_window(
+                            self.state.history
+                        )
 
-                    # Save the ID of the first event in our truncated history for future reloading
-                    if self.state.history:
-                        self.state.start_id = self.state.history[0].id
+                        # Save the ID of the first event in our truncated history for future reloading
+                        if self.state.history:
+                            self.state.start_id = self.state.history[0].id
 
-                    # Add an error event to trigger another step by the agent
-                    self.event_stream.add_event(
-                        AgentCondensationObservation(
-                            content='Trimming prompt to meet context window limitations'
-                        ),
-                        EventSource.AGENT,
-                    )
-                    return
-                raise e
+                        # Add an error event to trigger another step by the agent
+                        self.event_stream.add_event(
+                            AgentCondensationObservation(
+                                content='Trimming prompt to meet context window limitations'
+                            ),
+                            EventSource.AGENT,
+                        )
+                        return
+                    else:
+                        raise LLMContextWindowExceedError()
+                else:
+                    raise e
 
         if action.runnable:
             if self.state.confirmation_mode and (
