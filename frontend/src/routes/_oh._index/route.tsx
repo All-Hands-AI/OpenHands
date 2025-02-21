@@ -1,8 +1,6 @@
 import React from "react";
 import { useDispatch } from "react-redux";
-import { useTranslation } from "react-i18next";
 import posthog from "posthog-js";
-import { I18nKey } from "#/i18n/declaration";
 import { setImportedProjectZip } from "#/state/initial-query-slice";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
@@ -14,7 +12,6 @@ import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
 
 function Home() {
-  const { t } = useTranslation();
   const dispatch = useDispatch();
   const formRef = React.useRef<HTMLFormElement>(null);
 
@@ -25,8 +22,6 @@ function Home() {
     appMode: config?.APP_MODE || null,
     gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   });
-
-  const latestConversation = localStorage.getItem("latest_conversation_id");
 
   return (
     <div className="bg-base-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto px-2">
@@ -56,19 +51,6 @@ function Home() {
           />
         </div>
       </div>
-      {latestConversation && (
-        <div className="flex gap-4 w-full text-center mt-8">
-          <p className="text-center w-full">
-            {t(I18nKey.LANDING$OR)}&nbsp;
-            <a
-              className="underline"
-              href={`/conversations/${latestConversation}`}
-            >
-              {t(I18nKey.LANDING$RECENT_CONVERSATION)}
-            </a>
-          </p>
-        </div>
-      )}
     </div>
   );
 }

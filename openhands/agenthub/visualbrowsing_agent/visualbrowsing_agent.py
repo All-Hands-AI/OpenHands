@@ -29,7 +29,9 @@ def get_error_prefix(obs: BrowserOutputObservation) -> str:
     return f'## Error from previous action:\n{obs.last_browser_action_error}\n'
 
 
-def create_goal_prompt(goal: str, image_urls: list[str] | None):
+def create_goal_prompt(
+    goal: str, image_urls: list[str] | None
+) -> tuple[str, list[str]]:
     goal_txt: str = f"""\
 # Instructions
 Review the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
@@ -52,7 +54,7 @@ def create_observation_prompt(
     focused_element: str,
     error_prefix: str,
     som_screenshot: str | None,
-):
+) -> tuple[str, str | None]:
     txt_observation = f"""
 # Observation of current step:
 {tabs}{axtree_txt}{focused_element}{error_prefix}
@@ -273,7 +275,9 @@ Note:
         observation_txt, som_screenshot = create_observation_prompt(
             cur_axtree_txt, tabs, focused_element, error_prefix, set_of_marks
         )
-        human_prompt = [TextContent(type='text', text=goal_txt)]
+        human_prompt: list[TextContent | ImageContent] = [
+            TextContent(type='text', text=goal_txt)
+        ]
         if len(goal_images) > 0:
             human_prompt.append(ImageContent(image_urls=goal_images))
         human_prompt.append(TextContent(type='text', text=observation_txt))
