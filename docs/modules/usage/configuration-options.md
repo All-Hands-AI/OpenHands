@@ -340,6 +340,11 @@ The agent configuration options are defined in the `[agent]` and `[agent.<agent_
   - Default: `false`
   - Description: Whether Jupyter is enabled in the action space
 
+- `enable_history_truncation`
+  - Type: `bool`
+  - Default: `true`
+  - Description: Whether history should be truncated to continue the session when hitting LLM context length limit
+
 ### Microagent Usage
 - `enable_prompt_extensions`
   - Type: `bool`

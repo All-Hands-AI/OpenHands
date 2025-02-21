@@ -21,6 +21,7 @@ from openhands.core.exceptions import (
     AgentStuckInLoopError,
     FunctionCallNotExistsError,
     FunctionCallValidationError,
+    LLMContextWindowExceedError,
     LLMMalformedActionError,
     LLMNoActionError,
     LLMResponseError,
@@ -251,6 +252,7 @@ class AgentController:
                 isinstance(e, litellm.AuthenticationError)
                 or isinstance(e, litellm.BadRequestError)
                 or isinstance(e, RateLimitError)
+                or isinstance(e, LLMContextWindowExceedError)
             ):
                 reported = e
             await self._react_to_exception(reported)
@@ -698,9 +700,13 @@ class AgentController:
                     or 'prompt is too long' in error_str
                     or isinstance(e, ContextWindowExceededError)
                 ):
-                    self._handle_long_context_error()
-                    return
-                raise e
+                    if self.agent.config.enable_history_truncation:
+                        self._handle_long_context_error()
+                        return
+                    else:
+                        raise LLMContextWindowExceedError()
+                else:
+                    raise e
 
         if action.runnable:
             if self.state.confirmation_mode and (
