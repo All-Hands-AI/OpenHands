@@ -33,3 +33,4 @@ class AgentConfig(BaseModel):
     disabled_microagents: list[str] | None = Field(default=None)
     condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
     enable_history_truncation: bool = Field(default=True)
+    enable_plan_routing: bool = Field(default=False)

@@ -6,7 +6,7 @@ import openhands
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
-from openhands.core.config import AgentConfig
+from openhands.core.config import AgentConfig, ModelRoutingConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
 from openhands.core.message_utils import (
@@ -19,12 +19,14 @@ from openhands.events.action import (
 )
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
+from openhands.router import BaseRouter, LLMBasedPlanRouter
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
     PluginRequirement,
 )
 from openhands.utils.prompt import PromptManager
+from openhands.utils.trajectory import format_trajectory
 
 
 class CodeActAgent(Agent):
@@ -60,11 +62,14 @@ class CodeActAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
+        model_routing_config: ModelRoutingConfig | None = None,
+        routing_llms: dict[str, LLM] | None = None,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
+        - routing_llms (dict[str, LLM]): The llms to be selected for routing
         """
         super().__init__(llm, config)
         self.pending_actions: deque[Action] = deque()
@@ -92,6 +97,18 @@ class CodeActAgent(Agent):
 
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {self.condenser}')
+
+        self.router: BaseRouter | None = None
+
+        if config.enable_plan_routing:
+            assert model_routing_config is not None and routing_llms is not None
+            self.router = LLMBasedPlanRouter(
+                llm=self.llm,
+                routing_llms=routing_llms or dict(),
+                model_routing_config=model_routing_config,
+            )
+
+        self.active_llm: LLM | None = None  # The LLM chosen by the router
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
@@ -121,13 +138,30 @@ class CodeActAgent(Agent):
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
-        # prepare what we want to send to the LLM
-        messages = self._get_messages(state)
-        params: dict = {
-            'messages': self.llm.format_messages_for_llm(messages),
-        }
+        params: dict = {}
+
+        # check if model routing is needed
+        if self.router:
+            messages = self._get_messages(state)
+            formatted_trajectory = format_trajectory(messages)
+            self.active_llm = self.router.should_route_to(formatted_trajectory)
+
+            if self.active_llm != self.llm:
+                logger.warning(f'🧭 Routing to custom model: {self.active_llm}')
+        else:
+            self.active_llm = self.llm
+
         params['tools'] = self.tools
-        response = self.llm.completion(**params)
+        if not self.active_llm.is_function_calling_active():
+            params['mock_function_calling'] = True
+
+        # prepare what we want to send to the LLM
+        # NOTE: We need to call this here when self.active_llm is correctly set
+        messages = self._get_messages(state)
+        params['messages'] = self.active_llm.format_messages_for_llm(messages)
+
+        response = self.active_llm.completion(**params)
+
         actions = codeact_function_calling.response_to_actions(response)
         for action in actions:
             self.pending_actions.append(action)
@@ -168,6 +202,8 @@ class CodeActAgent(Agent):
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
 
+        active_llm_ = self.active_llm or self.llm
+
         messages: list[Message] = self._initial_messages()
 
         # Condense the events from the state.
@@ -175,14 +211,14 @@ class CodeActAgent(Agent):
 
         messages += events_to_messages(
             events,
-            max_message_chars=self.llm.config.max_message_chars,
-            vision_is_active=self.llm.vision_is_active(),
+            max_message_chars=active_llm_.config.max_message_chars,
+            vision_is_active=active_llm_.vision_is_active(),
             enable_som_visual_browsing=self.config.enable_som_visual_browsing,
         )
 
         messages = self._enhance_messages(messages)
 
-        if self.llm.is_caching_prompt_active():
+        if active_llm_.is_caching_prompt_active():
             apply_prompt_caching(messages)
 
         return messages
@@ -191,13 +227,15 @@ class CodeActAgent(Agent):
         """Creates the initial messages (including the system prompt) for the LLM conversation."""
         assert self.prompt_manager, 'Prompt Manager not instantiated.'
 
+        active_llm_ = self.active_llm or self.llm
+
         return [
             Message(
                 role='system',
                 content=[
                     TextContent(
                         text=self.prompt_manager.get_system_message(),
-                        cache_prompt=self.llm.is_caching_prompt_active(),
+                        cache_prompt=active_llm_.is_caching_prompt_active(),
                     )
                 ],
             )
