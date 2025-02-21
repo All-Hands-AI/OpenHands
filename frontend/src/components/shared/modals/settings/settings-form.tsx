@@ -10,7 +10,6 @@ import { useEndSession } from "#/hooks/use-end-session";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
 import { useCurrentSettings } from "#/context/settings-context";
-import { MEMORY_CONDENSER } from "#/utils/feature-flags";
 import { Settings } from "#/types/settings";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
@@ -43,9 +42,6 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
 
   const handleFormSubmission = async (formData: FormData) => {
     const newSettings = extractSettings(formData);
-
-    // Inject the condenser config from the current feature flag value
-    newSettings.ENABLE_DEFAULT_CONDENSER = MEMORY_CONDENSER;
 
     await saveUserSettings(newSettings);
     onClose();
