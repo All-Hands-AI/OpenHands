@@ -109,7 +109,7 @@ class PromptManager:
                 if name not in self.disabled_microagents:
                     self.repo_microagents[name] = microagent
 
-    def load_microagents(self, microagents: list[BaseMicroAgent]):
+    def load_microagents(self, microagents: list[BaseMicroAgent]) -> None:
         """Load microagents from a list of BaseMicroAgents.
 
         This is typically used when loading microagents from inside a repo.
@@ -135,7 +135,7 @@ class PromptManager:
     def get_system_message(self) -> str:
         return self.system_template.render().strip()
 
-    def set_runtime_info(self, runtime: Runtime):
+    def set_runtime_info(self, runtime: Runtime) -> None:
         self.runtime_info.available_hosts = runtime.web_hosts
 
     def set_repository_info(

@@ -8,7 +8,6 @@ NOTE: this will be executed inside the docker sandbox.
 import argparse
 import asyncio
 import base64
-import io
 import mimetypes
 import os
 import shutil
@@ -21,12 +20,13 @@ from zipfile import ZipFile
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
 from pydantic import BaseModel
+from starlette.background import BackgroundTask
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
 
@@ -631,7 +631,7 @@ if __name__ == '__main__':
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get('/download_files')
-    async def download_file(path: str):
+    def download_file(path: str):
         logger.debug('Downloading files')
         try:
             if not os.path.isabs(path):
@@ -642,7 +642,7 @@ if __name__ == '__main__':
             if not os.path.exists(path):
                 raise HTTPException(status_code=404, detail='File not found')
 
-            with tempfile.TemporaryFile() as temp_zip:
+            with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp_zip:
                 with ZipFile(temp_zip, 'w') as zipf:
                     for root, _, files in os.walk(path):
                         for file in files:
@@ -650,15 +650,11 @@ if __name__ == '__main__':
                             zipf.write(
                                 file_path, arcname=os.path.relpath(file_path, path)
                             )
-                temp_zip.seek(0)  # Rewind the file to the beginning after writing
-                content = temp_zip.read()
-                # Good for small to medium-sized files. For very large files, streaming directly from the
-                # file chunks may be more memory-efficient.
-                zip_stream = io.BytesIO(content)
-                return StreamingResponse(
-                    content=zip_stream,
+                return FileResponse(
+                    path=temp_zip.name,
                     media_type='application/zip',
-                    headers={'Content-Disposition': f'attachment; filename={path}.zip'},
+                    filename=f'{os.path.basename(path)}.zip',
+                    background=BackgroundTask(lambda: os.unlink(temp_zip.name)),
                 )
 
         except Exception as e:
