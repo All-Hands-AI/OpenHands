@@ -12,7 +12,7 @@ class LLMBasedPlanRouter(BaseRouter):
     Router that routes the prompt that is judged by a LLM as complex and requires a step-by-step plan.
     """
 
-    NUM_TURNS_GAP = 5
+    NUM_TURNS_GAP = 1
 
     def __init__(
         self,

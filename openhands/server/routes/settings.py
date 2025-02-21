@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
+from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.auth import get_user_id
-from openhands.server.services.github_service import GitHubService
+from openhands.integrations.github.github_service import GithubServiceImpl
+from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
 
@@ -22,7 +23,7 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
                 content={'error': 'Settings not found'},
             )
 
-        token_is_set = bool(user_id) or bool(request.state.github_token)
+        token_is_set = bool(user_id) or bool(get_github_token(request))
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(),
             github_token_is_set=token_is_set,
@@ -50,8 +51,10 @@ async def store_settings(
         try:
             # We check if the token is valid by getting the user
             # If the token is invalid, this will raise an exception
-            github = GitHubService(None)
-            await github.validate_user(settings.github_token)
+            github = GithubServiceImpl(
+                user_id=None, token=SecretStr(settings.github_token)
+            )
+            await github.get_user()
 
         except Exception as e:
             logger.warning(f'Invalid GitHub token: {e}')

@@ -83,7 +83,9 @@ export interface FileReadAction extends OpenHandsActionEvent<"read"> {
   args: {
     path: string;
     thought: string;
-    translated_ipython_code: string | null;
+    security_risk: ActionSecurityRisk | null;
+    impl_source?: string;
+    view_range?: number[] | null;
   };
 }
 
@@ -100,7 +102,18 @@ export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
   source: "agent";
   args: {
     path: string;
-    translated_ipython_code: string;
+    command?: string;
+    file_text?: string | null;
+    view_range?: number[] | null;
+    old_str?: string | null;
+    new_str?: string | null;
+    insert_line?: number | null;
+    content?: string;
+    start?: number;
+    end?: number;
+    thought: string;
+    security_risk: ActionSecurityRisk | null;
+    impl_source?: string;
   };
 }
 

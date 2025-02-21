@@ -1,4 +1,4 @@
-import { useDisclosure } from "@nextui-org/react";
+import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
@@ -34,7 +34,6 @@ import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
-import { MULTI_CONVERSATION_UI } from "#/utils/feature-flags";
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 
@@ -66,7 +65,7 @@ function AppContent() {
   );
 
   React.useEffect(() => {
-    if (MULTI_CONVERSATION_UI && isFetched && !conversation) {
+    if (isFetched && !conversation) {
       toast.error(
         "This conversation does not exist, or you do not have permission to access it.",
       );
@@ -128,7 +127,7 @@ function AppContent() {
         orientation={Orientation.HORIZONTAL}
         className="grow h-full min-h-0 min-w-0"
         initialSize={500}
-        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-neutral-800"
+        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary"
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
         secondChild={
