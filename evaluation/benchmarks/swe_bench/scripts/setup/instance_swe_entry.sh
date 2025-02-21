@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 source ~/.bashrc
 SWEUTIL_DIR=/swe_util

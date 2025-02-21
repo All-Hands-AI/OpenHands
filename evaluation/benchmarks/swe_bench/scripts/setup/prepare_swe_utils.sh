@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e
 EVAL_WORKSPACE="evaluation/benchmarks/swe_bench/eval_workspace"
