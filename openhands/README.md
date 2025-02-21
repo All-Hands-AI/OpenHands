@@ -6,6 +6,7 @@ This diagram provides an overview of the roles of each component and how they co
 ![OpenHands System Architecture Diagram (July 4, 2024)](../docs/static/img/system_architecture_overview.png)
 
 ## Classes
+
 The key classes in OpenHands are:
 
 * LLM: brokers all interactions with large language models. Works with any underlying completion model, thanks to LiteLLM.
@@ -23,7 +24,9 @@ The key classes in OpenHands are:
     * ConversationManager: keeps a list of active sessions, and ensures requests are routed to the correct Session
 
 ## Control Flow
+
 Here's the basic loop (in pseudocode) that drives agents.
+
 ```python
 while True:
   prompt = agent.generate_prompt(state)

@@ -75,6 +75,8 @@ class RemoteRuntime(ActionExecutionClient):
                 'remote_runtime_api_url is required in the remote runtime.'
             )
 
+        assert self.config.sandbox.remote_runtime_class in (None, 'sysbox', 'gvisor')
+
         self.runtime_builder = RemoteRuntimeBuilder(
             self.config.sandbox.remote_runtime_api_url,
             self.config.sandbox.api_key,
@@ -92,8 +94,9 @@ class RemoteRuntime(ActionExecutionClient):
     async def connect(self):
         try:
             await call_sync_from_async(self._start_or_attach_to_runtime)
-        except AgentRuntimeNotReadyError:
-            self.log('error', 'Runtime failed to start, timed out before ready')
+        except Exception:
+            self.close()
+            self.log('error', 'Runtime failed to start')
             raise
         await call_sync_from_async(self.setup_initial_env)
         self._runtime_initialized = True
@@ -149,6 +152,12 @@ class RemoteRuntime(ActionExecutionClient):
             if e.response.status_code == 404:
                 return False
             self.log('debug', f'Error while looking for remote runtime: {e}')
+            raise
+        except requests.exceptions.JSONDecodeError as e:
+            self.log(
+                'error',
+                f'Invalid JSON response from runtime API: {e}. URL: {self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}. Response: {response}',
+            )
             raise
 
         if status == 'running':
@@ -212,11 +221,9 @@ class RemoteRuntime(ActionExecutionClient):
             plugins=self.plugins,
             app_config=self.config,
         )
-        environment = {
-            'DEBUG': 'true'
-            if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
-            else {},
-        }
+        environment = {}
+        if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true':
+            environment['DEBUG'] = 'true'
         environment.update(self.config.sandbox.runtime_startup_env_vars)
         start_request = {
             'image': self.container_image,
@@ -226,6 +233,9 @@ class RemoteRuntime(ActionExecutionClient):
             'session_id': self.sid,
             'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
         }
+        if self.config.sandbox.remote_runtime_class == 'sysbox':
+            start_request['runtime_class'] = 'sysbox-runc'
+        # We ignore other runtime classes for now, because both None and 'gvisor' map to 'gvisor'
 
         # Start the sandbox using the /start endpoint
         try:
@@ -309,7 +319,7 @@ class RemoteRuntime(ActionExecutionClient):
         self.log('debug', f'Waiting for runtime to be alive at url: {self.runtime_url}')
         with self._send_runtime_api_request(
             'GET',
-            f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
+            f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
         ) as runtime_info_response:
             runtime_data = runtime_info_response.json()
         assert 'runtime_id' in runtime_data

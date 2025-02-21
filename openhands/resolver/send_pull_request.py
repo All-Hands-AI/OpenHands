@@ -5,18 +5,25 @@ import shutil
 import subprocess
 
 import jinja2
-import requests
+from pydantic import SecretStr
 
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import LLM
-from openhands.resolver.github_issue import GithubIssue
+from openhands.resolver.interfaces.github import GithubIssueHandler
+from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
+from openhands.resolver.interfaces.issue import Issue
+from openhands.resolver.interfaces.issue_definitions import ServiceContextIssue
 from openhands.resolver.io_utils import (
     load_all_resolver_outputs,
     load_single_resolver_output,
 )
 from openhands.resolver.patching import apply_diff, parse_patch
 from openhands.resolver.resolver_output import ResolverOutput
+from openhands.resolver.utils import (
+    Platform,
+    identify_token,
+)
 
 
 def apply_patch(repo_dir: str, patch: str) -> None:
@@ -153,7 +160,7 @@ def initialize_repo(
     return dest_dir
 
 
-def make_commit(repo_dir: str, issue: GithubIssue, issue_type: str) -> None:
+def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
     """Make a commit with the changes to the repository.
 
     Args:
@@ -214,25 +221,11 @@ def make_commit(repo_dir: str, issue: GithubIssue, issue_type: str) -> None:
         raise RuntimeError(f'Failed to commit changes: {result}')
 
 
-def branch_exists(base_url: str, branch_name: str, headers: dict) -> bool:
-    """Check if a branch exists in the GitHub repository.
-
-    Args:
-        base_url: The base URL of the GitHub repository API
-        branch_name: The name of the branch to check
-        headers: The HTTP headers to use for authentication
-    """
-    print(f'Checking if branch {branch_name} exists...')
-    response = requests.get(f'{base_url}/branches/{branch_name}', headers=headers)
-    exists = response.status_code == 200
-    print(f'Branch {branch_name} exists: {exists}')
-    return exists
-
-
 def send_pull_request(
-    github_issue: GithubIssue,
-    github_token: str,
-    github_username: str | None,
+    issue: Issue,
+    token: str,
+    username: str | None,
+    platform: Platform,
     patch_dir: str,
     pr_type: str,
     fork_owner: str | None = None,
@@ -241,53 +234,49 @@ def send_pull_request(
     reviewer: str | None = None,
     pr_title: str | None = None,
 ) -> str:
-    """Send a pull request to a GitHub repository.
+    """Send a pull request to a GitHub or Gitlab repository.
 
     Args:
-        github_issue: The issue to send the pull request for
-        github_token: The GitHub token to use for authentication
-        github_username: The GitHub username, if provided
+        issue: The issue to send the pull request for
+        token: The GitHub or Gitlab token to use for authentication
+        username: The GitHub or Gitlab username, if provided
+        platform: The platform of the repository.
         patch_dir: The directory containing the patches to apply
         pr_type: The type: branch (no PR created), draft or ready (regular PR created)
         fork_owner: The owner of the fork to push changes to (if different from the original repo owner)
         additional_message: The additional messages to post as a comment on the PR in json list format
         target_branch: The target branch to create the pull request against (defaults to repository default branch)
-        reviewer: The GitHub username of the reviewer to assign
+        reviewer: The GitHub or Gitlab username of the reviewer to assign
         pr_title: Custom title for the pull request (optional)
     """
     if pr_type not in ['branch', 'draft', 'ready']:
         raise ValueError(f'Invalid pr_type: {pr_type}')
 
-    # Set up headers and base URL for GitHub API
-    headers = {
-        'Authorization': f'token {github_token}',
-        'Accept': 'application/vnd.github.v3+json',
-    }
-    base_url = f'https://api.github.com/repos/{github_issue.owner}/{github_issue.repo}'
+    handler = None
+    if platform == Platform.GITHUB:
+        handler = ServiceContextIssue(
+            GithubIssueHandler(issue.owner, issue.repo, token, username), None
+        )
+    else:  # platform == Platform.GITLAB
+        handler = ServiceContextIssue(
+            GitlabIssueHandler(issue.owner, issue.repo, token, username), None
+        )
 
     # Create a new branch with a unique name
-    base_branch_name = f'openhands-fix-issue-{github_issue.number}'
-    branch_name = base_branch_name
-    attempt = 1
-
-    # Find a unique branch name
-    print('Checking if branch exists...')
-    while branch_exists(base_url, branch_name, headers):
-        attempt += 1
-        branch_name = f'{base_branch_name}-try{attempt}'
+    base_branch_name = f'openhands-fix-issue-{issue.number}'
+    branch_name = handler.get_branch_name(
+        base_branch_name=base_branch_name,
+    )
 
     # Get the default branch or use specified target branch
     print('Getting base branch...')
     if target_branch:
         base_branch = target_branch
-        # Verify the target branch exists
-        response = requests.get(f'{base_url}/branches/{target_branch}', headers=headers)
-        if response.status_code != 200:
+        exists = handler.branch_exists(branch_name=target_branch)
+        if not exists:
             raise ValueError(f'Target branch {target_branch} does not exist')
     else:
-        response = requests.get(f'{base_url}', headers=headers)
-        response.raise_for_status()
-        base_branch = response.json()['default_branch']
+        base_branch = handler.get_default_branch_name()
     print(f'Base branch: {base_branch}')
 
     # Create and checkout the new branch
@@ -304,16 +293,12 @@ def send_pull_request(
         )
 
     # Determine the repository to push to (original or fork)
-    push_owner = fork_owner if fork_owner else github_issue.owner
-    push_repo = github_issue.repo
+    push_owner = fork_owner if fork_owner else issue.owner
+
+    handler._strategy.set_owner(push_owner)
 
     print('Pushing changes...')
-    username_and_token = (
-        f'{github_username}:{github_token}'
-        if github_username
-        else f'x-auth-token:{github_token}'
-    )
-    push_url = f'https://{username_and_token}@github.com/{push_owner}/{push_repo}.git'
+    push_url = handler.get_clone_url()
     result = subprocess.run(
         ['git', '-C', patch_dir, 'push', push_url, branch_name],
         capture_output=True,
@@ -325,11 +310,9 @@ def send_pull_request(
 
     # Prepare the PR data: title and body
     final_pr_title = (
-        pr_title
-        if pr_title
-        else f'Fix issue #{github_issue.number}: {github_issue.title}'
+        pr_title if pr_title else f'Fix issue #{issue.number}: {issue.title}'
     )
-    pr_body = f'This pull request fixes #{github_issue.number}.'
+    pr_body = f'This pull request fixes #{issue.number}.'
     if additional_message:
         pr_body += f'\n\n{additional_message}'
     pr_body += '\n\nAutomatic fix generated by [OpenHands](https://github.com/All-Hands-AI/OpenHands/) 🙌'
@@ -337,41 +320,25 @@ def send_pull_request(
     # If we are not sending a PR, we can finish early and return the
     # URL for the user to open a PR manually
     if pr_type == 'branch':
-        url = f'https://github.com/{push_owner}/{github_issue.repo}/compare/{branch_name}?expand=1'
+        url = handler.get_compare_url(branch_name)
     else:
         # Prepare the PR for the GitHub API
         data = {
-            'title': final_pr_title,  # No need to escape title for GitHub API
-            'body': pr_body,
-            'head': branch_name,
-            'base': base_branch,
+            'title': final_pr_title,
+            ('body' if platform == Platform.GITHUB else 'description'): pr_body,
+            ('head' if platform == Platform.GITHUB else 'source_branch'): branch_name,
+            ('base' if platform == Platform.GITHUB else 'target_branch'): base_branch,
             'draft': pr_type == 'draft',
         }
 
-        # Send the PR and get its URL to tell the user
-        response = requests.post(f'{base_url}/pulls', headers=headers, json=data)
-        if response.status_code == 403:
-            raise RuntimeError(
-                'Failed to create pull request due to missing permissions. '
-                'Make sure that the provided token has push permissions for the repository.'
-            )
-        response.raise_for_status()
-        pr_data = response.json()
+        pr_data = handler.create_pull_request(data)
+        url = pr_data['html_url']
 
+        print(pr_data)
         # Request review if a reviewer was specified
         if reviewer and pr_type != 'branch':
-            review_data = {'reviewers': [reviewer]}
-            review_response = requests.post(
-                f'{base_url}/pulls/{pr_data["number"]}/requested_reviewers',
-                headers=headers,
-                json=review_data,
-            )
-            if review_response.status_code != 201:
-                print(
-                    f'Warning: Failed to request review from {reviewer}: {review_response.text}'
-                )
-
-        url = pr_data['html_url']
+            number = pr_data['number']
+            handler.request_reviewers(reviewer, number)
 
     print(
         f'{pr_type} created: {url}\n\n--- Title: {final_pr_title}\n\n--- Body:\n{pr_body}'
@@ -380,74 +347,11 @@ def send_pull_request(
     return url
 
 
-def reply_to_comment(github_token: str, comment_id: str, reply: str):
-    """Reply to a comment on a GitHub issue or pull request.
-
-    Args:
-        github_token: The GitHub token to use for authentication
-        comment_id: The ID of the comment to reply to
-        reply: The reply message to post
-    """
-    # Opting for graphql as REST API doesn't allow reply to replies in comment threads
-    query = """
-            mutation($body: String!, $pullRequestReviewThreadId: ID!) {
-                addPullRequestReviewThreadReply(input: { body: $body, pullRequestReviewThreadId: $pullRequestReviewThreadId }) {
-                    comment {
-                        id
-                        body
-                        createdAt
-                    }
-                }
-            }
-            """
-
-    # Prepare the reply to the comment
-    comment_reply = f'Openhands fix success summary\n\n\n{reply}'
-    variables = {'body': comment_reply, 'pullRequestReviewThreadId': comment_id}
-    url = 'https://api.github.com/graphql'
-    headers = {
-        'Authorization': f'Bearer {github_token}',
-        'Content-Type': 'application/json',
-    }
-
-    # Send the reply to the comment
-    response = requests.post(
-        url, json={'query': query, 'variables': variables}, headers=headers
-    )
-    response.raise_for_status()
-
-
-def send_comment_msg(base_url: str, issue_number: int, github_token: str, msg: str):
-    """Send a comment message to a GitHub issue or pull request.
-
-    Args:
-        base_url: The base URL of the GitHub repository API
-        issue_number: The issue or pull request number
-        github_token: The GitHub token to use for authentication
-        msg: The message content to post as a comment
-    """
-    # Set up headers for GitHub API
-    headers = {
-        'Authorization': f'token {github_token}',
-        'Accept': 'application/vnd.github.v3+json',
-    }
-
-    # Post a comment on the PR
-    comment_url = f'{base_url}/issues/{issue_number}/comments'
-    comment_data = {'body': msg}
-    comment_response = requests.post(comment_url, headers=headers, json=comment_data)
-    if comment_response.status_code != 201:
-        print(
-            f'Failed to post comment: {comment_response.status_code} {comment_response.text}'
-        )
-    else:
-        print(f'Comment added to the PR: {msg}')
-
-
 def update_existing_pull_request(
-    github_issue: GithubIssue,
-    github_token: str,
-    github_username: str | None,
+    issue: Issue,
+    token: str,
+    username: str | None,
+    platform: Platform,
     patch_dir: str,
     llm_config: LLMConfig,
     comment_message: str | None = None,
@@ -456,23 +360,34 @@ def update_existing_pull_request(
     """Update an existing pull request with the new patches.
 
     Args:
-        github_issue: The issue to update.
-        github_token: The GitHub token to use for authentication.
-        github_username: The GitHub username to use for authentication.
+        issue: The issue to update.
+        token: The  token to use for authentication.
+        username: The username to use for authentication.
+        platform: The platform of the repository.
         patch_dir: The directory containing the patches to apply.
         llm_config: The LLM configuration to use for summarizing changes.
         comment_message: The main message to post as a comment on the PR.
         additional_message: The additional messages to post as a comment on the PR in json list format.
     """
-    # Set up base URL for GitHub API
-    base_url = f'https://api.github.com/repos/{github_issue.owner}/{github_issue.repo}'
-    branch_name = github_issue.head_branch
+    # Set up headers and base URL for GitHub or GitLab API
+
+    handler = None
+    if platform == Platform.GITHUB:
+        handler = ServiceContextIssue(
+            GithubIssueHandler(issue.owner, issue.repo, token, username), llm_config
+        )
+    else:  # platform == Platform.GITLAB
+        handler = ServiceContextIssue(
+            GitlabIssueHandler(issue.owner, issue.repo, token, username), llm_config
+        )
+
+    branch_name = issue.head_branch
 
     # Prepare the push command
     push_command = (
         f'git -C {patch_dir} push '
-        f'https://{github_username}:{github_token}@github.com/'
-        f'{github_issue.owner}/{github_issue.repo}.git {branch_name}'
+        f'{handler.get_authorize_url()}'
+        f'{issue.owner}/{issue.repo}.git {branch_name}'
     )
 
     # Push the changes to the existing branch
@@ -481,7 +396,7 @@ def update_existing_pull_request(
         print(f'Error pushing changes: {result.stderr}')
         raise RuntimeError('Failed to push changes to the remote repository')
 
-    pr_url = f'https://github.com/{github_issue.owner}/{github_issue.repo}/pull/{github_issue.number}'
+    pr_url = handler.get_pull_url(issue.number)
     print(f'Updated pull request {pr_url} with new patches.')
 
     # Generate a summary of all comment success indicators for PR message
@@ -517,18 +432,18 @@ def update_existing_pull_request(
 
     # Post a comment on the PR
     if comment_message:
-        send_comment_msg(base_url, github_issue.number, github_token, comment_message)
+        handler.send_comment_msg(issue.number, comment_message)
 
     # Reply to each unresolved comment thread
-    if additional_message and github_issue.thread_ids:
+    if additional_message and issue.thread_ids:
         try:
             explanations = json.loads(additional_message)
             for count, reply_comment in enumerate(explanations):
-                comment_id = github_issue.thread_ids[count]
-                reply_to_comment(github_token, comment_id, reply_comment)
+                comment_id = issue.thread_ids[count]
+                handler.reply_to_comment(issue.number, comment_id, reply_comment)
         except (json.JSONDecodeError, TypeError):
             msg = f'Error occured when replying to threads; success explanations {additional_message}'
-            send_comment_msg(base_url, github_issue.number, github_token, msg)
+            handler.send_comment_msg(issue.number, msg)
 
     return pr_url
 
@@ -536,8 +451,9 @@ def update_existing_pull_request(
 def process_single_issue(
     output_dir: str,
     resolver_output: ResolverOutput,
-    github_token: str,
-    github_username: str,
+    token: str,
+    username: str,
+    platform: Platform,
     pr_type: str,
     llm_config: LLMConfig,
     fork_owner: str | None,
@@ -577,18 +493,20 @@ def process_single_issue(
 
     if issue_type == 'pr':
         update_existing_pull_request(
-            github_issue=resolver_output.issue,
-            github_token=github_token,
-            github_username=github_username,
+            issue=resolver_output.issue,
+            token=token,
+            username=username,
+            platform=platform,
             patch_dir=patched_repo_dir,
             additional_message=resolver_output.result_explanation,
             llm_config=llm_config,
         )
     else:
         send_pull_request(
-            github_issue=resolver_output.issue,
-            github_token=github_token,
-            github_username=github_username,
+            issue=resolver_output.issue,
+            token=token,
+            username=username,
+            platform=platform,
             patch_dir=patched_repo_dir,
             pr_type=pr_type,
             fork_owner=fork_owner,
@@ -601,8 +519,9 @@ def process_single_issue(
 
 def process_all_successful_issues(
     output_dir: str,
-    github_token: str,
-    github_username: str,
+    token: str,
+    username: str,
+    platform: Platform,
     pr_type: str,
     llm_config: LLMConfig,
     fork_owner: str | None,
@@ -614,8 +533,9 @@ def process_all_successful_issues(
             process_single_issue(
                 output_dir,
                 resolver_output,
-                github_token,
-                github_username,
+                token,
+                username,
+                platform,
                 pr_type,
                 llm_config,
                 fork_owner,
@@ -624,19 +544,21 @@ def process_all_successful_issues(
             )
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Send a pull request to Github.')
-    parser.add_argument(
-        '--github-token',
-        type=str,
-        default=None,
-        help='Github token to access the repository.',
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description='Send a pull request to Github or Gitlab.'
     )
     parser.add_argument(
-        '--github-username',
+        '--token',
         type=str,
         default=None,
-        help='Github username to access the repository.',
+        help='token to access the repository.',
+    )
+    parser.add_argument(
+        '--username',
+        type=str,
+        default=None,
+        help='username to access the repository.',
     )
     parser.add_argument(
         '--output-dir',
@@ -695,7 +617,7 @@ def main():
     parser.add_argument(
         '--reviewer',
         type=str,
-        help='GitHub username of the person to request review from',
+        help='GitHub or GitLab username of the person to request review from',
         default=None,
     )
     parser.add_argument(
@@ -706,23 +628,21 @@ def main():
     )
     my_args = parser.parse_args()
 
-    github_token = (
-        my_args.github_token if my_args.github_token else os.getenv('GITHUB_TOKEN')
-    )
-    if not github_token:
+    token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
+    if not token:
         raise ValueError(
-            'Github token is not set, set via --github-token or GITHUB_TOKEN environment variable.'
+            'token is not set, set via --token or GITHUB_TOKEN or GITLAB_TOKEN environment variable.'
         )
-    github_username = (
-        my_args.github_username
-        if my_args.github_username
-        else os.getenv('GITHUB_USERNAME')
-    )
+    username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
+
+    platform = identify_token(token)
+    if platform == Platform.INVALID:
+        raise ValueError('Token is invalid.')
 
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(
         model=my_args.llm_model or os.environ['LLM_MODEL'],
-        api_key=str(api_key) if api_key else None,
+        api_key=SecretStr(api_key) if api_key else None,
         base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
     )
 
@@ -730,12 +650,13 @@ def main():
         raise ValueError(f'Output directory {my_args.output_dir} does not exist.')
 
     if my_args.issue_number == 'all_successful':
-        if not github_username:
-            raise ValueError('Github username is required.')
+        if not username:
+            raise ValueError('username is required.')
         process_all_successful_issues(
             my_args.output_dir,
-            github_token,
-            github_username,
+            token,
+            username,
+            platform,
             my_args.pr_type,
             llm_config,
             my_args.fork_owner,
@@ -746,13 +667,14 @@ def main():
         issue_number = int(my_args.issue_number)
         output_path = os.path.join(my_args.output_dir, 'output.jsonl')
         resolver_output = load_single_resolver_output(output_path, issue_number)
-        if not github_username:
-            raise ValueError('Github username is required.')
+        if not username:
+            raise ValueError('username is required.')
         process_single_issue(
             my_args.output_dir,
             resolver_output,
-            github_token,
-            github_username,
+            token,
+            username,
+            platform,
             my_args.pr_type,
             llm_config,
             my_args.fork_owner,
