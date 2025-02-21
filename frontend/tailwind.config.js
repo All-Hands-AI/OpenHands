@@ -10,7 +10,7 @@ export default {
     extend: {
       colors: {
         primary: "#C9B974", // nice yellow
-        base: "#0D0F11", // dark background also used for tooltips
+        base: "#090D15", // dark background also used for tooltips
         "base-secondary": "#24272E", // lighter background
         danger: "#E76A5E",
         success: "#A5E75E",

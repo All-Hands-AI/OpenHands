@@ -81,7 +81,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
             <BrandButton
               testId="open-vscode-button"
               type="button"
-              variant="primary"
+              variant="secondary"
               className="w-full"
               isDisabled={RUNTIME_INACTIVE_STATES.includes(curAgentState)}
               onClick={handleOpenVSCode}
