@@ -12,7 +12,7 @@ import re
 from typing import Any, Iterable, TypedDict
 
 from litellm import ChatCompletionToolParam
-from litellm.types.completion_response import ChatCompletionToolParamFunctionChunk
+from openai.types.chat import ChatCompletionToolParam as ChatCompletionToolParamFunctionChunk
 
 from openhands.core.exceptions import (
     FunctionCallConversionError,
