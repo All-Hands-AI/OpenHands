@@ -1,6 +1,7 @@
 import asyncio
 import time
 from copy import deepcopy
+from typing import Callable
 
 import socketio
 
@@ -49,6 +50,7 @@ class Session:
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,
+        status_message_callback: Callable | None = None,
     ):
         self.sid = sid
         self.sio = sio
@@ -67,6 +69,7 @@ class Session:
         self.config = deepcopy(config)
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
+        self._status_message_callback = status_message_callback
 
     async def close(self):
         if self.sio:
@@ -242,7 +245,11 @@ class Session:
     async def _send_status_message(self, msg_type: str, id: str, message: str):
         """Sends a status message to the client."""
         if msg_type == 'error':
-            await self.agent_session.stop_agent_loop_for_error()
+            controller = self.agent_session.controller
+            if controller is not None:
+                await controller.set_agent_state_to(AgentState.ERROR)
+        if self._status_message_callback:
+            await self._status_message_callback(self.sid, msg_type, id)
         await self.send(
             {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
         )

@@ -10,6 +10,7 @@ from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
+from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.stream import EventStream, session_exists
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
@@ -95,6 +96,15 @@ class StandaloneConversationManager(ConversationManager):
         event_stream = await self._get_event_stream(sid)
         if not event_stream:
             return await self.maybe_start_agent_loop(sid, settings, user_id)
+        for event in event_stream.get_events(reverse=True):
+            if isinstance(event, AgentStateChangedObservation):
+                if event.agent_state in (
+                    AgentState.STOPPED.value,
+                    AgentState.ERROR.value,
+                ):
+                    await self.close_session(sid)
+                    return await self.maybe_start_agent_loop(sid, settings, user_id)
+                break
         return event_stream
 
     async def detach_from_conversation(self, conversation: Conversation):
@@ -208,6 +218,7 @@ class StandaloneConversationManager(ConversationManager):
                 config=self.config,
                 sio=self.sio,
                 user_id=user_id,
+                status_message_callback=self._status_message_callback,
             )
             self._local_agent_loops_by_sid[sid] = session
             asyncio.create_task(session.initialize_agent(settings, initial_user_msg))
@@ -273,6 +284,12 @@ class StandaloneConversationManager(ConversationManager):
         logger.info(f'closing_session:{session.sid}')
         await session.close()
         logger.info(f'closed_session:{session.sid}')
+
+    async def _status_message_callback(self, sid: str, msg_type: str, id: str):
+        if msg_type == 'error' and id == 'STATUS$ERROR_RUNTIME_DISCONNECTED':
+            logger.info('TRACE:I_WOULD_HAVE_STOPPED_THE_AGENT_LOOP_HERE')
+            # If there is no runtime, stop the agent loop.
+            # asyncio.create_task(self._close_session(sid))
 
     @classmethod
     def get_instance(
