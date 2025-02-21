@@ -19,4 +19,6 @@ export default [
       route("served", "routes/app.tsx"),
     ]),
   ]),
+
+  route("editor", "routes/editor.tsx"),
 ] satisfies RouteConfig;
