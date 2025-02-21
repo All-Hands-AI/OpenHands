@@ -14,11 +14,10 @@ export default [
     ]),
     route("conversations/:conversationId", "routes/_oh.app/route.tsx", [
       index("routes/_oh.app._index/route.tsx"),
+      route("editor", "routes/editor.tsx"),
       route("browser", "routes/_oh.app.browser.tsx"),
       route("jupyter", "routes/_oh.app.jupyter.tsx"),
       route("served", "routes/app.tsx"),
     ]),
   ]),
-
-  route("editor", "routes/editor.tsx"),
 ] satisfies RouteConfig;

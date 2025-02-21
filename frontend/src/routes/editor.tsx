@@ -1,4 +1,4 @@
-import { DiffEditor } from "@monaco-editor/react";
+import { FileDiffViewer } from "#/components/features/diff-viewer/file-diff-viewer";
 
 const original = `
 import { DiffEditor } from "@monaco-editor/react";
@@ -130,20 +130,10 @@ function EditorScreen() {
 function EditorScreen() {
   return (
     <main className="h-screen">
-      <DiffEditor
-        className="w-full h-full"
-        language="typescript"
+      <FileDiffViewer
+        label="openhands/core/config/llm_config.py"
         original={original}
         modified={modified}
-        theme="vs-dark"
-        options={{
-          renderValidationDecorations: "off",
-          readOnly: true,
-          renderSideBySide: true,
-          hideUnchangedRegions: {
-            enabled: true,
-          },
-        }}
       />
     </main>
   );
