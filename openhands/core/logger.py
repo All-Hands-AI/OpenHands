@@ -221,8 +221,10 @@ class SensitiveDataFilter(logging.Filter):
         sensitive_values = []
         for key, value in os.environ.items():
             key_upper = key.upper()
-            if len(value) >= 8 and any(
-                s in key_upper for s in ('SECRET', 'KEY', 'CODE', 'TOKEN')
+            if (
+                len(value) > 2
+                and value != 'default'
+                and any(s in key_upper for s in ('SECRET', 'KEY', 'CODE', 'TOKEN'))
             ):
                 sensitive_values.append(value)
 
