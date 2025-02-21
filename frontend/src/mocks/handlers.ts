@@ -7,6 +7,7 @@ import {
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { SETTINGS_HANDLERS } from "./settings-handlers";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
@@ -21,12 +22,6 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   github_token_is_set: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
-};
-
-const MOCK_USER_PREFERENCES: {
-  settings: ApiSettings | PostApiSettings;
-} = {
-  settings: MOCK_DEFAULT_USER_SETTINGS,
 };
 
 const conversations: Conversation[] = [
@@ -146,6 +141,7 @@ const openHandsHandlers = [
 
 export const handlers = [
   ...STRIPE_BILLING_HANDLERS,
+  ...SETTINGS_HANDLERS,
   ...openHandsHandlers,
   http.get("/api/github/repositories", () =>
     HttpResponse.json([
@@ -181,42 +177,6 @@ export const handlers = [
 
     return HttpResponse.json(config);
   }),
-  http.get("/api/settings", async () => {
-    await delay();
-    const settings: ApiSettings = {
-      ...MOCK_USER_PREFERENCES.settings,
-      language: "no",
-    };
-    // @ts-expect-error - mock types
-    if (settings.github_token) settings.github_token_is_set = true;
-
-    return HttpResponse.json(settings);
-  }),
-  http.post("/api/settings", async ({ request }) => {
-    const body = await request.json();
-
-    if (body) {
-      let newSettings: Partial<PostApiSettings> = {};
-      if (typeof body === "object") {
-        newSettings = { ...body };
-        if (newSettings.unset_github_token) {
-          newSettings.github_token = undefined;
-          newSettings.github_token_is_set = false;
-          delete newSettings.unset_github_token;
-        }
-      }
-
-      MOCK_USER_PREFERENCES.settings = {
-        ...MOCK_USER_PREFERENCES.settings,
-        ...newSettings,
-      };
-
-      return HttpResponse.json(null, { status: 200 });
-    }
-
-    return HttpResponse.json(null, { status: 400 });
-  }),
-
   http.post("/api/authenticate", async () =>
     HttpResponse.json({ message: "Authenticated" }),
   ),

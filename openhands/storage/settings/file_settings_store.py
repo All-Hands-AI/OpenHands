@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
+from pydantic import SecretStr
+
 from openhands.core.config.app_config import AppConfig
 from openhands.server.settings import Settings
 from openhands.storage import get_file_store
@@ -28,6 +30,24 @@ class FileSettingsStore(SettingsStore):
     async def store(self, settings: Settings) -> None:
         json_str = settings.model_dump_json(context={'expose_secrets': True})
         await call_sync_from_async(self.file_store.write, self.path, json_str)
+
+    async def reset(self) -> None:
+        existing_settings = await self.load()
+        if existing_settings:
+            reset_settings = Settings(
+                language='en',
+                agent='CodeActAgent',
+                max_iterations=100,
+                security_analyzer='',
+                confirmation_mode=False,
+                llm_model='anthropic/claude-3-5-sonnet-20241022',
+                llm_api_key=SecretStr(''),
+                llm_base_url='',
+                remote_runtime_resource_factor=1,
+                github_token=existing_settings.github_token,
+                user_consents_to_analytics=existing_settings.user_consents_to_analytics,
+            )
+            await self.store(reset_settings)
 
     @classmethod
     async def get_instance(
