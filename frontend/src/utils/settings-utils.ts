@@ -25,7 +25,7 @@ const extractAdvancedFormData = (formData: FormData) => {
   let LLM_BASE_URL: string | undefined;
   let CONFIRMATION_MODE = false;
   let SECURITY_ANALYZER: string | undefined;
-  let ENABLE_DEFAULT_CONDENSER = false;
+  let ENABLE_DEFAULT_CONDENSER = true;
 
   if (isUsingAdvancedOptions) {
     CUSTOM_LLM_MODEL = formData.get("custom-model")?.toString();
