@@ -40,7 +40,7 @@ export function SettingsSwitch({
       <div className="flex items-center gap-1">
         <span className="text-sm">{children}</span>
         {isBeta && (
-          <span className="text-[11px] leading-4 text-[#0D0F11] font-[500] tracking-tighter bg-[#C9B974] px-1 rounded-full">
+          <span className="text-[11px] leading-4 text-[#0D0F11] font-[500] tracking-tighter bg-primary px-1 rounded-full">
             Beta
           </span>
         )}

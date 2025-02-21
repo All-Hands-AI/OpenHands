@@ -130,8 +130,9 @@ async def _create_new_conversation(
 @app.post('/conversations')
 async def new_conversation(request: Request, data: InitSessionRequest):
     """Initialize a new session or join an existing one.
+
     After successful initialization, the client should connect to the WebSocket
-    using the returned conversation ID
+    using the returned conversation ID.
     """
     logger.info('Initializing new conversation')
     user_id = get_user_id(request)
@@ -188,10 +189,19 @@ async def search_conversations(
         config, get_user_id(request)
     )
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
+    
+    # Filter out conversations older than max_age
+    now = datetime.now(timezone.utc)
+    max_age = config.conversation_max_age_seconds
+    filtered_results = [
+        conversation for conversation in conversation_metadata_result_set.results
+        if hasattr(conversation, 'created_at') and 
+        (now - conversation.created_at.replace(tzinfo=timezone.utc)).total_seconds() <= max_age
+    ]
+    
     conversation_ids = set(
         conversation.conversation_id
-        for conversation in conversation_metadata_result_set.results
-        if hasattr(conversation, 'created_at')
+        for conversation in filtered_results
     )
     running_conversations = await conversation_manager.get_running_agent_loops(
         get_user_id(request), set(conversation_ids)
@@ -202,7 +212,7 @@ async def search_conversations(
                 conversation=conversation,
                 is_running=conversation.conversation_id in running_conversations,
             )
-            for conversation in conversation_metadata_result_set.results
+            for conversation in filtered_results
         ),
         next_page_id=conversation_metadata_result_set.next_page_id,
     )

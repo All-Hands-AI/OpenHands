@@ -247,7 +247,7 @@ function SecurityInvariant() {
 
   return (
     <div className="flex flex-1 w-full h-full">
-      <div className="w-60 bg-neutral-800 border-r border-r-neutral-600 p-4 flex-shrink-0">
+      <div className="w-60 bg-base-secondary border-r border-r-neutral-600 p-4 flex-shrink-0">
         <div className="text-center mb-2">
           <InvariantLogoIcon className="mx-auto mb-1" />
           <b>{t(I18nKey.INVARIANT$INVARIANT_ANALYZER_LABEL)}</b>
@@ -285,7 +285,7 @@ function SecurityInvariant() {
           </div>
         </ul>
       </div>
-      <div className="flex flex-col min-h-0 w-full overflow-y-auto bg-neutral-900">
+      <div className="flex flex-col min-h-0 w-full overflow-y-auto bg-base">
         {sections[activeSection as SectionType]}
       </div>
     </div>
