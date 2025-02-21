@@ -57,18 +57,19 @@ export function ChatMessage({
         onClick={handleCopyToClipboard}
         mode={isCopy ? "copied" : "copy"}
       />
-      <Markdown
-        className="text-sm overflow-auto break-words"
-        components={{
-          code,
-          ul,
-          ol,
-          a: anchor,
-        }}
-        remarkPlugins={[remarkGfm]}
-      >
-        {message}
-      </Markdown>
+      <div className="text-sm overflow-auto break-words">
+        <Markdown
+          components={{
+            code,
+            ul,
+            ol,
+            a: anchor,
+          }}
+          remarkPlugins={[remarkGfm]}
+        >
+          {message}
+        </Markdown>
+      </div>
       {children}
     </article>
   );
