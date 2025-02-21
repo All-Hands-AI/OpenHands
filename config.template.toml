@@ -234,6 +234,10 @@ codeact_enable_jupyter = true
 # List of microagents to disable
 #disabled_microagents = []
 
+# Whether history should be truncated to continue the session when hitting LLM context
+# length limit
+enable_history_truncation = true
+
 [agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially
 # useful when an agent doesn't demand high quality but uses a lot of tokens
