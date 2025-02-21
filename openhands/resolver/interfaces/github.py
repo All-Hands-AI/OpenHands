@@ -3,6 +3,7 @@ from typing import Any
 import requests
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.microagent.microagent import KnowledgeMicroAgent
 from openhands.resolver.interfaces.issue import (
     Issue,
     IssueHandlerInterface,
@@ -286,7 +287,34 @@ class GithubIssueHandler(IssueHandlerInterface):
         review_threads: list[ReviewThread],
         thread_comments: list[str] | None,
     ) -> list[str]:
-        return []
+        """Get context from external issues and microagents.
+
+        This method:
+        1. Gets context from referenced issues
+        2. Checks issue content against microagent triggers
+        3. Includes relevant microagent knowledge
+        """
+        contexts = []
+
+        # Get all content to check for triggers
+        content_parts = [issue_body]
+        if review_comments:
+            content_parts.extend(review_comments)
+        if thread_comments:
+            content_parts.extend(thread_comments)
+        if review_threads:
+            content_parts.extend(thread.comment for thread in review_threads)
+        content = ' '.join(content_parts)
+
+        # Add knowledge from microagents that have matching triggers
+        from openhands.agenthub.micro.registry import all_microagents
+
+        for agent in all_microagents.values():
+            if isinstance(agent, KnowledgeMicroAgent):
+                if agent.match_trigger(content):
+                    contexts.append(agent.content)
+
+        return contexts
 
 
 class GithubPRHandler(GithubIssueHandler):
