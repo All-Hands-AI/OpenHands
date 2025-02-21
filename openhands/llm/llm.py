@@ -20,6 +20,7 @@ from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     RateLimitError,
 )
+from litellm.llms.custom_httpx.http_handler import HTTPHandler
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
 
@@ -235,8 +236,17 @@ class LLM(RetryMixin, DebugMixin):
             # Record start time for latency measurement
             start_time = time.time()
 
-            # we don't support streaming here, thus we get a ModelResponse
-            resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+            # LiteLLM currently have an issue where HttpHandlers are being created but not
+            # closed. We have submitted a PR to them, (https://github.com/BerriAI/litellm/pull/8711)
+            # and their dev team say they are in the process of a refactor that will fix this.
+            # In the meantime, we manage the lifecycle of the HTTPHandler manually.
+            handler = HTTPHandler(timeout=self.config.timeout)
+            kwargs['client'] = handler
+            try:
+                # we don't support streaming here, thus we get a ModelResponse
+                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+            finally:
+                handler.close()
 
             # Calculate and record latency
             latency = time.time() - start_time

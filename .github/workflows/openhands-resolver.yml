@@ -88,12 +88,10 @@ jobs:
         run: |
           python -m pip index versions openhands-ai > openhands_versions.txt
           OPENHANDS_VERSION=$(head -n 1 openhands_versions.txt | awk '{print $2}' | tr -d '()')
-          # Ensure requirements.txt ends with newline before appending
-          if [ -f requirements.txt ] && [ -s requirements.txt ]; then
-            sed -i -e '$a\' requirements.txt
-          fi
-          echo "openhands-ai==${OPENHANDS_VERSION}" >> requirements.txt
-          cat requirements.txt
+
+          # Create a new requirements.txt locally within the workflow, ensuring no reference to the repo's file
+          echo "openhands-ai==${OPENHANDS_VERSION}" > /tmp/requirements.txt
+          cat /tmp/requirements.txt
 
       - name: Cache pip dependencies
         if: |
@@ -111,9 +109,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.pythonLocation }}/lib/python3.12/site-packages/*
-          key: ${{ runner.os }}-pip-openhands-resolver-${{ hashFiles('requirements.txt') }}
+          key: ${{ runner.os }}-pip-openhands-resolver-${{ hashFiles('/tmp/requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-pip-openhands-resolver-${{ hashFiles('requirements.txt') }}
+            ${{ runner.os }}-pip-openhands-resolver-${{ hashFiles('/tmp/requirements.txt') }}
 
       - name: Check required environment variables
         env:
@@ -225,7 +223,7 @@ jobs:
             } else {
               console.log("Installing from requirements.txt...");
               await exec.exec("python -m pip install --upgrade pip");
-              await exec.exec("pip install -r requirements.txt");
+              await exec.exec("pip install -r /tmp/requirements.txt");
             }
 
       - name: Attempt to resolve issue
