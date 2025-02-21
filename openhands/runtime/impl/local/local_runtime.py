@@ -2,11 +2,14 @@
 This runtime runs the action_execution_server directly on the local machine without Docker.
 """
 
+import asyncio
 import os
 import shutil
+import signal
 import subprocess
 import tempfile
 import threading
+import time
 from typing import Callable, Optional
 
 import requests
@@ -309,6 +312,53 @@ class LocalRuntime(ActionExecutionClient):
                 return observation_from_dict(response.json())
             except requests.exceptions.ConnectionError:
                 raise AgentRuntimeDisconnectedError('Server connection lost')
+
+    async def terminate_processes(self) -> None:
+        """Terminate all tracked processes started by this runtime."""
+        with self.process_lock:
+            # First try SIGTERM
+            for process in self.processes.values():
+                process.terminate()
+            
+            # Wait for processes to terminate gracefully
+            start_time = time.time()
+            remaining = list(self.processes.values())
+            while remaining and (time.time() - start_time < 10):
+                remaining = [p for p in remaining if p.poll() is None]
+                if remaining:
+                    await asyncio.sleep(0.1)
+            
+            # Force kill any remaining processes
+            for process in remaining:
+                process.kill()
+            
+            self.processes.clear()
+
+    async def terminate_processes(self) -> None:
+        """Terminate all processes in this runtime environment."""
+        # First try SIGTERM
+        ps_output = subprocess.check_output(['ps', '-o', 'pid', '--no-headers']).decode()
+        pids = [int(pid) for pid in ps_output.split()]
+        for pid in pids:
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+        
+        # Wait for processes to terminate gracefully
+        start_time = time.time()
+        remaining = pids
+        while remaining and (time.time() - start_time < 10):
+            remaining = [pid for pid in remaining if os.path.exists(f'/proc/{pid}')]
+            if remaining:
+                await asyncio.sleep(0.1)
+        
+        # Force kill any remaining processes
+        for pid in remaining:
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
 
     def close(self):
         """Stop the server process."""
