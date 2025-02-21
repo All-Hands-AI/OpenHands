@@ -30,7 +30,7 @@ export function SettingsDropdownInput({
         {showOptionalTag && <OptionalTag />}
       </div>
       <Autocomplete
-        aria-label={typeof label === "string" ? label : "Runtime Settings"}
+        aria-label={typeof label === "string" ? label : name}
         data-testid={testId}
         name={name}
         defaultItems={items}
