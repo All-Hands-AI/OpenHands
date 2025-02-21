@@ -1,4 +1,3 @@
-import { ModalButton } from "#/components/shared/buttons/modal-button";
 import {
   BaseModalTitle,
   BaseModalDescription,
@@ -7,6 +6,7 @@ import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { useCurrentSettings } from "#/context/settings-context";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
+import { BrandButton } from "../settings/brand-button";
 
 interface AnalyticsConsentFormModalProps {
   onClose: () => void;
@@ -53,12 +53,14 @@ export function AnalyticsConsentFormModal({
             Send anonymous usage data
           </label>
 
-          <ModalButton
+          <BrandButton
             testId="confirm-preferences"
             type="submit"
-            text="Confirm Preferences"
-            className="bg-primary text-white w-full hover:opacity-80"
-          />
+            variant="primary"
+            className="w-full"
+          >
+            Confirm Preferences
+          </BrandButton>
         </ModalBody>
       </form>
     </ModalBackdrop>
