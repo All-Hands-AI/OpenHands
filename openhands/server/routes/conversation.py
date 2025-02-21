@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
@@ -40,11 +40,13 @@ async def get_vscode_url(request: Request):
         runtime: Runtime = request.state.conversation.runtime
         logger.debug(f'Runtime type: {type(runtime)}')
         logger.debug(f'Runtime VSCode URL: {runtime.vscode_url}')
-        return JSONResponse(status_code=200, content={'vscode_url': runtime.vscode_url})
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content={'vscode_url': runtime.vscode_url}
+        )
     except Exception as e:
         logger.error(f'Error getting VSCode URL: {e}')
         return JSONResponse(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
                 'vscode_url': None,
                 'error': f'Error getting VSCode URL: {e}',

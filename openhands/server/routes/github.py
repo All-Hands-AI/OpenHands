@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
@@ -33,13 +33,13 @@ async def get_github_repositories(
     except GhAuthenticationError as e:
         return JSONResponse(
             content=str(e),
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
     except GHUnknownException as e:
         return JSONResponse(
             content=str(e),
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
@@ -56,13 +56,13 @@ async def get_github_user(
     except GhAuthenticationError as e:
         return JSONResponse(
             content=str(e),
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
     except GHUnknownException as e:
         return JSONResponse(
             content=str(e),
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
@@ -79,13 +79,13 @@ async def get_github_installation_ids(
     except GhAuthenticationError as e:
         return JSONResponse(
             content=str(e),
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
     except GHUnknownException as e:
         return JSONResponse(
             content=str(e),
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
@@ -108,11 +108,11 @@ async def search_github_repositories(
     except GhAuthenticationError as e:
         return JSONResponse(
             content=str(e),
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
     except GHUnknownException as e:
         return JSONResponse(
             content=str(e),
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
