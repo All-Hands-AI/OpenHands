@@ -16,6 +16,7 @@ from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
 )
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -590,6 +591,13 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 total_calls_in_response=len(assistant_msg.tool_calls),
             )
             actions.append(action)
+
+        # Add logging for each created action
+        for action in actions:
+            accumulated_cost = action.llm_metrics.accumulated_cost if action.llm_metrics else None
+            logger.info(f"Action created - Accumulated Cost: {accumulated_cost}")
+            logger.info(f"Action type: {type(action)}")
+
     else:
         actions.append(
             MessageAction(content=assistant_msg.content, wait_for_response=True)

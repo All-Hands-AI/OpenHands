@@ -38,6 +38,25 @@ export interface ObservationMessage {
 
   // The timestamp of the message
   timestamp: string;
+
+  // 添加 tool_call_metadata 字段
+  tool_call_metadata?: {
+    model_response?: {
+      usage?: {
+        prompt_tokens: number;
+        completion_tokens: number;
+        total_tokens: number;
+      };
+    };
+  };
+
+  llm_metrics?: {
+    accumulated_cost: number;
+    response_latencies: Array<{
+      latency: number;
+      timestamp: string;
+    }>;
+  };
 }
 
 export interface StatusMessage {

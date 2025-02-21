@@ -32,6 +32,7 @@ export function TaskForm({ ref }: TaskFormProps) {
   });
   const [inputIsFocused, setInputIsFocused] = React.useState(false);
   const { mutate: createConversation, isPending } = useCreateConversation();
+  const [estimateCost, setEstimateCost] = React.useState(false);
 
   const onRefreshSuggestion = () => {
     const suggestions = SUGGESTIONS["non-repo"];
@@ -102,6 +103,31 @@ export function TaskForm({ ref }: TaskFormProps) {
               disabled={navigation.state === "submitting"}
             />
           )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-neutral-400">Estimate cost</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={estimateCost}
+            onClick={() => setEstimateCost(!estimateCost)}
+            className={cn(
+              "relative inline-flex h-6 w-11 items-center rounded-full",
+              "transition-colors duration-200 ease-in-out",
+              estimateCost ? "bg-green-500" : "bg-neutral-600",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
+            )}
+          >
+            <span className="sr-only">Enable cost estimation</span>
+            <span
+              className={cn(
+                "inline-block h-4 w-4 transform rounded-full bg-white",
+                "transition duration-200 ease-in-out",
+                "shadow-lg",
+                estimateCost ? "translate-x-6" : "translate-x-1"
+              )}
+            />
+          </button>
         </div>
       </form>
       <UploadImageInput

@@ -205,6 +205,10 @@ class AgentController:
     async def update_state_after_step(self):
         # update metrics especially for cost. Use deepcopy to avoid it being modified by agent._reset()
         self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
+        
+        # Add logging for metrics update
+        accumulated_cost = self.state.local_metrics.accumulated_cost if self.state.local_metrics else None
+        logger.info(f"After update_state_after_step - State Local Metrics Accumulated Cost: {accumulated_cost}")
 
     async def _react_to_exception(
         self,
@@ -381,6 +385,17 @@ class AgentController:
 
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
+
+        logger.info("Mark the position of _handle_observation")
+        # Log state metrics before assignment
+        if self.state and self.state.local_metrics:
+            logger.info(f"State local_metrics before assignment - accumulated cost: {self.state.local_metrics.accumulated_cost}")
+        
+        # Add local metrics to observation
+        if self.state and self.state.local_metrics:
+            observation.llm_metrics = copy.deepcopy(self.state.local_metrics)
+            # Log observation metrics after assignment
+            logger.info(f"Observation metrics after assignment - accumulated cost: {observation.llm_metrics.accumulated_cost}")
 
         if self._pending_action and self._pending_action.id == observation.cause:
             if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:

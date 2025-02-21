@@ -50,6 +50,10 @@ class AsyncEventStreamWrapper:
 
         # Create an async generator that yields events
         for event in self.event_stream.get_events(*self.args, **self.kwargs):
+            # Log event type and metrics if present
+            logger.info(f"AsyncEventStreamWrapper - Event type: {type(event)}")
+            if hasattr(event, 'llm_metrics') and event.llm_metrics:
+                logger.info(f"AsyncEventStreamWrapper - Accumulated Cost: {event.llm_metrics.accumulated_cost}")
             # Run the blocking get_events() in a thread pool
             yield await loop.run_in_executor(None, lambda e=event: e)  # type: ignore
 
@@ -262,6 +266,10 @@ class EventStream:
         self._clean_up_subscriber(subscriber_id, callback_id)
 
     def add_event(self, event: Event, source: EventSource):
+        # Add logs for accumulated cost debugging.
+        accumulated_cost = event.llm_metrics.accumulated_cost if event.llm_metrics else None
+        logger.info(f"Adding event to stream - Accumulated Cost: {accumulated_cost}")
+
         if hasattr(event, '_id') and event.id is not None:
             raise ValueError(
                 f'Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop.'
