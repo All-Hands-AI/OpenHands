@@ -98,7 +98,7 @@ class OperationCancelled(Exception):
         super().__init__(message)
 
 
-class LLMContextWindowExceedError(Exception):
+class LLMContextWindowExceedError(RuntimeError):
     def __init__(
         self,
         message='Conversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error',

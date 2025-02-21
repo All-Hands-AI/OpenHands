@@ -252,6 +252,7 @@ class AgentController:
                 isinstance(e, litellm.AuthenticationError)
                 or isinstance(e, litellm.BadRequestError)
                 or isinstance(e, RateLimitError)
+                or isinstance(e, LLMContextWindowExceedError)
             ):
                 reported = e
             await self._react_to_exception(reported)
