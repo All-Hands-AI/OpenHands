@@ -41,6 +41,7 @@ class SandboxConfig(BaseModel):
     remote_runtime_api_url: str | None = Field(default='http://localhost:8000')
     local_runtime_url: str = Field(default='http://localhost')
     keep_runtime_alive: bool = Field(default=False)
+    pause_closed_runtimes: bool = Field(default=True)
     rm_all_containers: bool = Field(default=False)
     api_key: str | None = Field(default=None)
     base_container_image: str = Field(
