@@ -358,11 +358,10 @@ def apply_prompt_caching(messages: list[Message]) -> None:
     breakpoints_remaining = 3  # remaining 1 for system/tool
     for message in reversed(messages):
         if message.role in ('user', 'tool'):
-            if message.tool_call_id:
-                continue
-            message.content[
-                -1
-            ].cache_prompt = True  # Last item inside the message content
-            breakpoints_remaining -= 1
-            if not breakpoints_remaining:
-                return
+            if breakpoints_remaining > 0:
+                message.content[
+                    -1
+                ].cache_prompt = True  # Last item inside the message content
+                breakpoints_remaining -= 1
+            else:
+                break
