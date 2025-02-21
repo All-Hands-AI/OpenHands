@@ -73,7 +73,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     <div
       ref={ref}
       data-testid="conversation-panel"
-      className="w-[350px] h-full border border-neutral-700 bg-neutral-800 rounded-xl overflow-y-auto absolute"
+      className="w-[350px] h-full border border-neutral-700 bg-base-secondary rounded-xl overflow-y-auto absolute"
     >
       <div className="w-full h-full absolute flex justify-center items-center">
         {isFetching && <LoadingSpinner size="small" />}
