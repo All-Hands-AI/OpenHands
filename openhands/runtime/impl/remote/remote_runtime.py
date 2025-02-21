@@ -45,6 +45,7 @@ class RemoteRuntime(ActionExecutionClient):
         status_callback: Optional[Callable] = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        github_user_id: str | None = None,
     ):
         super().__init__(
             config,
@@ -55,6 +56,7 @@ class RemoteRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
+            github_user_id,
         )
         if self.config.sandbox.api_key is None:
             raise ValueError(
@@ -73,6 +75,8 @@ class RemoteRuntime(ActionExecutionClient):
                 'remote_runtime_api_url is required in the remote runtime.'
             )
 
+        assert self.config.sandbox.remote_runtime_class in (None, 'sysbox', 'gvisor')
+
         self.runtime_builder = RemoteRuntimeBuilder(
             self.config.sandbox.remote_runtime_api_url,
             self.config.sandbox.api_key,
@@ -90,8 +94,9 @@ class RemoteRuntime(ActionExecutionClient):
     async def connect(self):
         try:
             await call_sync_from_async(self._start_or_attach_to_runtime)
-        except AgentRuntimeNotReadyError:
-            self.log('error', 'Runtime failed to start, timed out before ready')
+        except Exception:
+            self.close()
+            self.log('error', 'Runtime failed to start')
             raise
         await call_sync_from_async(self.setup_initial_env)
         self._runtime_initialized = True
@@ -147,6 +152,12 @@ class RemoteRuntime(ActionExecutionClient):
             if e.response.status_code == 404:
                 return False
             self.log('debug', f'Error while looking for remote runtime: {e}')
+            raise
+        except requests.exceptions.JSONDecodeError as e:
+            self.log(
+                'error',
+                f'Invalid JSON response from runtime API: {e}. URL: {self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}. Response: {response}',
+            )
             raise
 
         if status == 'running':
@@ -210,16 +221,21 @@ class RemoteRuntime(ActionExecutionClient):
             plugins=self.plugins,
             app_config=self.config,
         )
+        environment = {}
+        if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true':
+            environment['DEBUG'] = 'true'
+        environment.update(self.config.sandbox.runtime_startup_env_vars)
         start_request = {
             'image': self.container_image,
             'command': command,
             'working_dir': '/openhands/code/',
-            'environment': {'DEBUG': 'true'}
-            if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
-            else {},
+            'environment': environment,
             'session_id': self.sid,
             'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
         }
+        if self.config.sandbox.remote_runtime_class == 'sysbox':
+            start_request['runtime_class'] = 'sysbox-runc'
+        # We ignore other runtime classes for now, because both None and 'gvisor' map to 'gvisor'
 
         # Start the sandbox using the /start endpoint
         try:
@@ -291,7 +307,8 @@ class RemoteRuntime(ActionExecutionClient):
             stop=tenacity.stop_after_delay(
                 self.config.sandbox.remote_runtime_init_timeout
             )
-            | stop_if_should_exit() | self._stop_if_closed,
+            | stop_if_should_exit()
+            | self._stop_if_closed,
             reraise=True,
             retry=tenacity.retry_if_exception_type(AgentRuntimeNotReadyError),
             wait=tenacity.wait_fixed(2),
@@ -302,7 +319,7 @@ class RemoteRuntime(ActionExecutionClient):
         self.log('debug', f'Waiting for runtime to be alive at url: {self.runtime_url}')
         with self._send_runtime_api_request(
             'GET',
-            f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
+            f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
         ) as runtime_info_response:
             runtime_data = runtime_info_response.json()
         assert 'runtime_id' in runtime_data
@@ -394,10 +411,14 @@ class RemoteRuntime(ActionExecutionClient):
 
         retry_decorator = tenacity.retry(
             retry=tenacity.retry_if_exception_type(ConnectionError),
-            stop=tenacity.stop_after_attempt(3) | stop_if_should_exit() | self._stop_if_closed,
+            stop=tenacity.stop_after_attempt(3)
+            | stop_if_should_exit()
+            | self._stop_if_closed,
             wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
         )
-        return retry_decorator(self._send_action_server_request_impl)(method, url, **kwargs)
+        return retry_decorator(self._send_action_server_request_impl)(
+            method, url, **kwargs
+        )
 
     def _send_action_server_request_impl(self, method, url, **kwargs):
         try:
@@ -430,6 +451,6 @@ class RemoteRuntime(ActionExecutionClient):
                     ) from e
             else:
                 raise e
-            
+
     def _stop_if_closed(self, retry_state: tenacity.RetryCallState) -> bool:
         return self._runtime_closed
