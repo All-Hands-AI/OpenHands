@@ -3,9 +3,13 @@ import os
 import sys
 import yaml
 import shutil
+import asyncio
 import tempfile
-import subprocess
 from pathlib import Path
+
+from openhands.core.config import AppConfig, setup_config_from_args
+from openhands.core.main import run_controller, auto_continue_response
+from openhands.events.action import MessageAction
 
 
 def run_test_case(case_dir: Path) -> bool:
@@ -43,40 +47,70 @@ def run_test_case(case_dir: Path) -> bool:
                 if config and "git" in config:
                     repo = config["git"]
                     commit = config.get("commit-ish", "main")
-                    subprocess.run(["git", "clone", repo, temp_dir], check=True)
-                    subprocess.run(["git", "checkout", commit], cwd=temp_dir, check=True)
+                    os.system(f"git clone {repo} {temp_dir}")
+                    os.system(f"cd {temp_dir} && git checkout {commit}")
 
         # Copy prompt and test script
         shutil.copy2(case_dir / "prompt.txt", temp_path / "prompt.txt")
         shutil.copy2(case_dir / "test.sh", temp_path / "test.sh")
         os.chmod(temp_path / "test.sh", 0o755)  # Make test.sh executable
 
-        # Run the agent in headless mode with timeout
-        try:
-            process = subprocess.run(
-                ["python3", "-m", "openhands.core.main", "--headless"],
-                input=(case_dir / "prompt.txt").read_text(),
-                text=True,
-                timeout=timeout,
-                cwd=temp_dir
-            )
-            process.check_returncode()
-        except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as e:
-            print(f"Agent failed for test case {case_name}: {str(e)}")
-            if required:
-                return False
-            return True
+        # Read the prompt
+        with open(case_dir / "prompt.txt") as f:
+            task_str = f.read()
 
-        # Run the test script
+        # Set up OpenHands configuration
+        class Args:
+            def __init__(self):
+                self.no_auto_continue = False
+                self.name = case_name
+                self.model = "gpt-4"
+                self.headless = True
+                self.agent = "default"
+                self.max_budget_per_task = 100
+                self.max_iterations = 100
+                self.cli_multiline_input = False
+                self.file_store = None
+                self.save_trajectory_path = None
+                self.replay_trajectory_path = None
+
+        config = setup_config_from_args(Args())
+        initial_user_action = MessageAction(content=task_str)
+
+        # Change to temp directory for test execution
+        original_cwd = os.getcwd()
+        os.chdir(temp_dir)
+
         try:
-            subprocess.run(["./test.sh"], check=True, cwd=temp_dir)
-            print(f"Test case {case_name} passed")
-            return True
-        except subprocess.CalledProcessError:
-            print(f"Test case {case_name} failed")
+            # Run OpenHands
+            asyncio.run(
+                run_controller(
+                    config=config,
+                    initial_user_action=initial_user_action,
+                    fake_user_response_fn=auto_continue_response,
+                    headless_mode=True,
+                )
+            )
+
+            # Run the test script
+            test_result = os.system("./test.sh")
+            if test_result != 0:
+                print(f"Test case {case_name} failed")
+                if required:
+                    return False
+            else:
+                print(f"Test case {case_name} passed")
+                return True
+
+        except Exception as e:
+            print(f"Error running test case {case_name}: {e}")
             if required:
                 return False
             return True
+        finally:
+            os.chdir(original_cwd)
+
+    return True
 
 
 def main():
