@@ -25,7 +25,7 @@ class TokensUsage(BaseModel):
     completion_tokens: int
     cache_read_tokens: int
     cache_write_tokens: int
-    timestamp: float = Field(default_factory=time.time)
+    response_id: str
 
 
 class Metrics:
@@ -90,6 +90,7 @@ class Metrics:
         completion_tokens: int,
         cache_read_tokens: int,
         cache_write_tokens: int,
+        response_id: str,
     ) -> None:
         # accumulate
         self._accumulated_prompt_tokens += prompt_tokens
@@ -105,6 +106,7 @@ class Metrics:
                 completion_tokens=completion_tokens,
                 cache_read_tokens=cache_read_tokens,
                 cache_write_tokens=cache_write_tokens,
+                response_id=response_id,
             )
         )
 

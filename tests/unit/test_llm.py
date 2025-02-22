@@ -429,3 +429,38 @@ def test_get_token_count_error_handling(
     mock_logger.error.assert_called_once_with(
         'Error getting token count for\n model gpt-4o\nToken counting failed'
     )
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_llm_token_usage(mock_litellm_completion, default_config):
+    # This mock response includes usage details with prompt_tokens,
+    # completion_tokens, prompt_tokens_details.cached_tokens, and model_extra.cache_creation_input_tokens
+    mock_response = {
+        'id': 'test-response-usage',
+        'choices': [{'message': {'content': 'Usage test response'}}],
+        'usage': {
+            'prompt_tokens': 12,
+            'completion_tokens': 3,
+            'prompt_tokens_details': {'cached_tokens': 2},
+            'model_extra': {'cache_creation_input_tokens': 5},
+        },
+    }
+    mock_litellm_completion.return_value = mock_response
+
+    llm = LLM(config=default_config)
+    _ = llm.completion(messages=[{'role': 'user', 'content': 'Hello usage!'}])
+
+    # Check that the metrics tracked these tokens
+    assert llm.metrics.get()['accumulated_prompt_tokens'] == 12
+    assert llm.metrics.get()['accumulated_completion_tokens'] == 3
+    assert llm.metrics.get()['accumulated_cache_read_tokens'] == 2
+    assert llm.metrics.get()['accumulated_cache_write_tokens'] == 5
+
+    # Also verify tokens_usages has a single entry with the exact usage
+    tokens_usage_list = llm.metrics.get()['tokens_usages']
+    assert len(tokens_usage_list) == 1
+    usage_entry = tokens_usage_list[0]
+    assert usage_entry['prompt_tokens'] == 12
+    assert usage_entry['completion_tokens'] == 3
+    assert usage_entry['cache_read_tokens'] == 2
+    assert usage_entry['cache_write_tokens'] == 5

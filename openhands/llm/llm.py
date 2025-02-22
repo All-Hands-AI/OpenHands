@@ -497,6 +497,7 @@ class LLM(RetryMixin, DebugMixin):
             stats += 'Response Latency: %.3f seconds\n' % latest_latency.latency
 
         usage: Usage | None = response.get('usage')
+        response_id = response.get('id', 'unknown')
 
         if usage:
             # keep track of the input and output tokens
@@ -539,6 +540,7 @@ class LLM(RetryMixin, DebugMixin):
                 completion_tokens=completion_tokens,
                 cache_read_tokens=cache_hit_tokens,
                 cache_write_tokens=cache_write_tokens,
+                response_id=response_id,
             )
 
         # log the stats
