@@ -48,9 +48,8 @@ def run_test_case(case_dir: Path) -> bool:
         temp_dir_ctx = tempfile.TemporaryDirectory()
         temp_dir = temp_dir_ctx.name
         temp_path = Path(temp_dir)
-        
-    try:
 
+    try:
         # Check if git repo and commit-ish are specified
         if case_yaml.exists():
             with open(case_yaml) as f:
@@ -126,8 +125,9 @@ def run_test_case(case_dir: Path) -> bool:
             return True
         finally:
             os.chdir(original_cwd)
-            if not os.getenv('NO_CLEANUP'):
-                temp_dir_ctx.cleanup()
+    finally:
+        if not os.getenv('NO_CLEANUP'):
+            temp_dir_ctx.cleanup()
 
     return True
 
