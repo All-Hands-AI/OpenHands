@@ -38,8 +38,18 @@ def run_test_case(case_dir: Path) -> bool:
                 required = config.get("required", required)
 
     # Create temp directory
-    with tempfile.TemporaryDirectory() as temp_dir:
+    if os.getenv('NO_CLEANUP'):
+        # Create a directory in /tmp that won't be automatically cleaned up
+        temp_dir = tempfile.mkdtemp(prefix=f'openhands_regression_{case_name}_')
+        print(f"Test directory (NO_CLEANUP): {temp_dir}")
         temp_path = Path(temp_dir)
+    else:
+        # Use context manager which will clean up automatically
+        temp_dir_ctx = tempfile.TemporaryDirectory()
+        temp_dir = temp_dir_ctx.name
+        temp_path = Path(temp_dir)
+        
+    try:
 
         # Check if git repo and commit-ish are specified
         if case_yaml.exists():
@@ -112,6 +122,8 @@ def run_test_case(case_dir: Path) -> bool:
             return True
         finally:
             os.chdir(original_cwd)
+            if not os.getenv('NO_CLEANUP'):
+                temp_dir_ctx.cleanup()
 
     return True
 
