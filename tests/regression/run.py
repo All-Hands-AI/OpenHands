@@ -86,6 +86,10 @@ def run_test_case(case_dir: Path) -> bool:
                 self.replay_trajectory_path = None
                 self.config_file = str(Path(__file__).parent.parent.parent / "config.toml")
                 self.llm_config = None
+                # Set workspace paths for Docker mounting
+                self.workspace_base = str(temp_path)
+                self.workspace_mount_path = str(temp_path)
+                self.workspace_mount_path_in_sandbox = "/workspace"
 
         config = setup_config_from_args(Args())
         initial_user_action = MessageAction(content=task_str)
