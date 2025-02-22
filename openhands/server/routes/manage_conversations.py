@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Callable
 
-from fastapi import APIRouter, Body, Request
+from fastapi import APIRouter, Body, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, SecretStr
 
@@ -165,7 +165,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 'message': str(e),
                 'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND',
             },
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
         )
 
     except LLMAuthenticationError as e:
@@ -175,7 +175,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 'message': str(e),
                 'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
             },
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
         )
 
 
@@ -189,19 +189,20 @@ async def search_conversations(
         config, get_user_id(request)
     )
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
-    
+
     # Filter out conversations older than max_age
     now = datetime.now(timezone.utc)
     max_age = config.conversation_max_age_seconds
     filtered_results = [
-        conversation for conversation in conversation_metadata_result_set.results
-        if hasattr(conversation, 'created_at') and 
-        (now - conversation.created_at.replace(tzinfo=timezone.utc)).total_seconds() <= max_age
+        conversation
+        for conversation in conversation_metadata_result_set.results
+        if hasattr(conversation, 'created_at')
+        and (now - conversation.created_at.replace(tzinfo=timezone.utc)).total_seconds()
+        <= max_age
     ]
-    
+
     conversation_ids = set(
-        conversation.conversation_id
-        for conversation in filtered_results
+        conversation.conversation_id for conversation in filtered_results
     )
     running_conversations = await conversation_manager.get_running_agent_loops(
         get_user_id(request), set(conversation_ids)
