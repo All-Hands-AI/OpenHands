@@ -1,5 +1,10 @@
 #!/bin/bash
 set -e
+set +x
+
+echo "checking hello world"
+pwd
+ls -lah
 
 # Check if hello.sh exists
 if [ ! -f hello.sh ]; then
