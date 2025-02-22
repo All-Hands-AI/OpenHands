@@ -20,9 +20,9 @@ class MemoryManager:
         self.microagents_dir = microagents_dir
         # Subscribe to events
         self.event_stream.subscribe(
-            EventStreamSubscriber.MAIN,
+            EventStreamSubscriber.MEMORY,
             self.on_event,
-            'MemorySubscriber',
+            'Memory',
         )
         # Load any knowledge microagents from the given directory
         # If your directory is empty or none found, self.knowledge_microagents is just {}
