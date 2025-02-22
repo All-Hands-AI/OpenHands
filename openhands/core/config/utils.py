@@ -588,4 +588,37 @@ def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
     if args.max_budget_per_task is not None:
         config.max_budget_per_task = args.max_budget_per_task
 
+    # Set workspace paths if provided
+    if hasattr(args, 'workspace_base') and args.workspace_base is not None:
+        config.workspace_base = args.workspace_base
+    if hasattr(args, 'workspace_mount_path') and args.workspace_mount_path is not None:
+        config.workspace_mount_path = args.workspace_mount_path
+    if hasattr(args, 'workspace_mount_path_in_sandbox') and args.workspace_mount_path_in_sandbox is not None:
+        config.workspace_mount_path_in_sandbox = args.workspace_mount_path_in_sandbox
+
+    # Set file store settings if provided
+    if hasattr(args, 'file_store') and args.file_store is not None:
+        config.file_store = args.file_store
+    if hasattr(args, 'file_store_path') and args.file_store_path is not None:
+        config.file_store_path = args.file_store_path
+
+    # Set trajectory paths if provided
+    if hasattr(args, 'save_trajectory_path') and args.save_trajectory_path is not None:
+        config.save_trajectory_path = args.save_trajectory_path
+    if hasattr(args, 'replay_trajectory_path') and args.replay_trajectory_path is not None:
+        config.replay_trajectory_path = args.replay_trajectory_path
+
+    # Set CLI settings if provided
+    if hasattr(args, 'cli_multiline_input'):
+        config.cli_multiline_input = args.cli_multiline_input
+
+    # Set model name if provided
+    if hasattr(args, 'model') and args.model is not None:
+        llm_config = config.get_llm_config()
+        llm_config.model = args.model
+
+    # Set headless mode if provided
+    if hasattr(args, 'headless'):
+        config.sandbox.headless = args.headless
+
     return config
