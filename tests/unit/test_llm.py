@@ -435,7 +435,7 @@ def test_get_token_count_error_handling(
 def test_llm_token_usage(mock_litellm_completion, default_config):
     # This mock response includes usage details with prompt_tokens,
     # completion_tokens, prompt_tokens_details.cached_tokens, and model_extra.cache_creation_input_tokens
-    mock_response = {
+    mock_response_1 = {
         'id': 'test-response-usage',
         'choices': [{'message': {'content': 'Usage test response'}}],
         'usage': {
@@ -445,12 +445,28 @@ def test_llm_token_usage(mock_litellm_completion, default_config):
             'model_extra': {'cache_creation_input_tokens': 5},
         },
     }
-    mock_litellm_completion.return_value = mock_response
+
+    # Create a second usage scenario to test accumulation and a different response_id
+    mock_response_2 = {
+        'id': 'test-response-usage-2',
+        'choices': [{'message': {'content': 'Second usage test response'}}],
+        'usage': {
+            'prompt_tokens': 7,
+            'completion_tokens': 2,
+            'prompt_tokens_details': {'cached_tokens': 1},
+            'model_extra': {'cache_creation_input_tokens': 3},
+        },
+    }
+
+    # We'll make mock_litellm_completion return these responses in sequence
+    mock_litellm_completion.side_effect = [mock_response_1, mock_response_2]
 
     llm = LLM(config=default_config)
+
+    # First call: usage_1
     _ = llm.completion(messages=[{'role': 'user', 'content': 'Hello usage!'}])
 
-    # Check that the metrics tracked these tokens
+    # Check that the metrics tracked these tokens for the first response
     assert llm.metrics.get()['accumulated_prompt_tokens'] == 12
     assert llm.metrics.get()['accumulated_completion_tokens'] == 3
     assert llm.metrics.get()['accumulated_cache_read_tokens'] == 2
@@ -464,3 +480,29 @@ def test_llm_token_usage(mock_litellm_completion, default_config):
     assert usage_entry['completion_tokens'] == 3
     assert usage_entry['cache_read_tokens'] == 2
     assert usage_entry['cache_write_tokens'] == 5
+    # Check the response_id
+    assert usage_entry['response_id'] == 'test-response-usage'
+
+    # Second call: usage_2
+    _ = llm.completion(messages=[{'role': 'user', 'content': 'Hello again!'}])
+
+    # Now check accumulated totals
+    metrics_dict = llm.metrics.get()
+    # Prompt tokens = 12 + 7 = 19
+    assert metrics_dict['accumulated_prompt_tokens'] == 19
+    # Completion tokens = 3 + 2 = 5
+    assert metrics_dict['accumulated_completion_tokens'] == 5
+    # Cache read = 2 + 1 = 3
+    assert metrics_dict['accumulated_cache_read_tokens'] == 3
+    # Cache write = 5 + 3 = 8
+    assert metrics_dict['accumulated_cache_write_tokens'] == 8
+
+    # Also verify we have two usage records now
+    tokens_usage_list = metrics_dict['tokens_usages']
+    assert len(tokens_usage_list) == 2
+    latest_entry = tokens_usage_list[-1]
+    assert latest_entry['prompt_tokens'] == 7
+    assert latest_entry['completion_tokens'] == 2
+    assert latest_entry['cache_read_tokens'] == 1
+    assert latest_entry['cache_write_tokens'] == 3
+    assert latest_entry['response_id'] == 'test-response-usage-2'
