@@ -8,7 +8,7 @@ from openhands.memory.condenser.condenser import Condenser
 class RecentEventsCondenser(Condenser):
     """A condenser that only keeps a certain number of the most recent events."""
 
-    def __init__(self, keep_first: int = 0, max_events: int = 10):
+    def __init__(self, keep_first: int = 1, max_events: int = 10):
         self.keep_first = keep_first
         self.max_events = max_events
 

@@ -27,7 +27,7 @@ class RecentEventsCondenserConfig(BaseModel):
 
     type: Literal['recent'] = Field('recent')
     keep_first: int = Field(
-        default=0,
+        default=1,
         description='The number of initial events to condense.',
         ge=0,
     )
@@ -63,7 +63,7 @@ class AmortizedForgettingCondenserConfig(BaseModel):
         ge=2,
     )
     keep_first: int = Field(
-        default=0,
+        default=1,
         description='Number of initial events to always keep in history.',
         ge=0,
     )
@@ -82,7 +82,7 @@ class LLMAttentionCondenserConfig(BaseModel):
         ge=2,
     )
     keep_first: int = Field(
-        default=0,
+        default=1,
         description='Number of initial events to always keep in history.',
         ge=0,
     )
