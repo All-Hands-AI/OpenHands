@@ -25,3 +25,14 @@ class AgentCondensationObservation(Observation):
     @property
     def message(self) -> str:
         return self.content
+
+
+@dataclass
+class AgentRecallObservation(Observation):
+    """The output of a recall action."""
+
+    observation: str = ObservationType.RECALL
+
+    @property
+    def message(self) -> str:
+        return self.content
