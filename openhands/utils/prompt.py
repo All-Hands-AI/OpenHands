@@ -168,29 +168,6 @@ class PromptManager:
 
         return self.user_template.render().strip()
 
-    def enhance_message(self, message: Message) -> None:
-        """Enhance the user message with additional context.
-
-        This method is used to enhance the user message with additional context
-        about the user's task. The additional context will convert the current
-        generic agent into a more specialized agent that is tailored to the user's task.
-        """
-        if not message.content:
-            return
-        message_content = message.content[0].text
-        for microagent in self.knowledge_microagents.values():
-            trigger = microagent.match_trigger(message_content)
-            if trigger:
-                openhands_logger.info(
-                    "Microagent '%s' triggered by keyword '%s'",
-                    microagent.name,
-                    trigger,
-                )
-                micro_text = f'<extra_info>\nThe following information has been included based on a keyword match for "{trigger}". It may or may not be relevant to the user\'s request.'
-                micro_text += '\n\n' + microagent.content
-                micro_text += '\n</extra_info>'
-                message.content.append(TextContent(text=micro_text))
-
     def add_examples_to_initial_message(self, message: Message) -> None:
         """Add example_message to the first user message."""
         example_message = self.get_example_user_message() or None

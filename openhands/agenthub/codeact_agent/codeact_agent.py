@@ -222,14 +222,8 @@ class CodeActAgent(Agent):
                 is_first_message_handled = True
                 # compose the first user message with examples
                 self.prompt_manager.add_examples_to_initial_message(msg)
-
-                # and/or repo/runtime info
                 if self.config.enable_prompt_extensions:
                     self.prompt_manager.add_info_to_initial_message(msg)
-
-            # enhance the user message with additional context based on keywords matched
-            if msg.role == 'user':
-                self.prompt_manager.enhance_message(msg)
 
             results.append(msg)
 

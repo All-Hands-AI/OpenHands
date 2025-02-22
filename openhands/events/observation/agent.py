@@ -28,7 +28,7 @@ class AgentCondensationObservation(Observation):
 
 
 @dataclass
-class AgentRecallObservation(Observation):
+class RecallObservation(Observation):
     """The output of a recall action."""
 
     observation: str = ObservationType.RECALL

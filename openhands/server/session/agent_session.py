@@ -14,6 +14,7 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
+from openhands.memory.memory_manager import MemoryManager
 from openhands.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
@@ -118,6 +119,11 @@ class AgentSession:
                 agent_to_llm_config=agent_to_llm_config,
                 agent_configs=agent_configs,
             )
+
+            self.memory_manager = MemoryManager(
+                event_stream=self.event_stream, microagents_dir='/path/to/microagents'
+            )
+
             if github_token:
                 self.event_stream.set_secrets(
                     {
