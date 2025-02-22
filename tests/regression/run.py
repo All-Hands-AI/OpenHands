@@ -7,6 +7,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
+import openhands.agenthub  # noqa: F401 - import to register agents
 from openhands.core.config import AppConfig, setup_config_from_args
 from openhands.core.main import run_controller, auto_continue_response
 from openhands.events.action import MessageAction
@@ -66,13 +67,15 @@ def run_test_case(case_dir: Path) -> bool:
                 self.name = case_name
                 self.model = "gpt-4"
                 self.headless = True
-                self.agent = "default"
+                self.agent_cls = "CodeActAgent"
                 self.max_budget_per_task = 100
                 self.max_iterations = 100
                 self.cli_multiline_input = False
                 self.file_store = None
                 self.save_trajectory_path = None
                 self.replay_trajectory_path = None
+                self.config_file = str(Path(__file__).parent.parent.parent / "config.toml")
+                self.llm_config = None
 
         config = setup_config_from_args(Args())
         initial_user_action = MessageAction(content=task_str)
