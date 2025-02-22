@@ -218,7 +218,6 @@ class StandaloneConversationManager(ConversationManager):
                 config=self.config,
                 sio=self.sio,
                 user_id=user_id,
-                status_message_callback=self._status_message_callback,
             )
             self._local_agent_loops_by_sid[sid] = session
             asyncio.create_task(session.initialize_agent(settings, initial_user_msg))
@@ -284,12 +283,6 @@ class StandaloneConversationManager(ConversationManager):
         logger.info(f'closing_session:{session.sid}')
         await session.close()
         logger.info(f'closed_session:{session.sid}')
-
-    async def _status_message_callback(self, sid: str, msg_type: str, id: str):
-        if msg_type == 'error' and id == 'STATUS$ERROR_RUNTIME_DISCONNECTED':
-            logger.info('TRACE:I_WOULD_HAVE_STOPPED_THE_AGENT_LOOP_HERE')
-            # If there is no runtime, stop the agent loop.
-            # asyncio.create_task(self._close_session(sid))
 
     @classmethod
     def get_instance(
