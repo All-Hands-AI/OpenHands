@@ -121,7 +121,8 @@ class AgentSession:
             )
 
             self.memory_manager = MemoryManager(
-                event_stream=self.event_stream, microagents_dir='/path/to/microagents'
+                event_stream=self.event_stream,
+                microagents_dir=config.microagents_dir,
             )
 
             if github_token:
