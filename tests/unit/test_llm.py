@@ -463,46 +463,28 @@ def test_llm_token_usage(mock_litellm_completion, default_config):
 
     llm = LLM(config=default_config)
 
-    # First call: usage_1
-    _ = llm.completion(messages=[{'role': 'user', 'content': 'Hello usage!'}])
+    # First call
+    llm.completion(messages=[{'role': 'user', 'content': 'Hello usage!'}])
 
-    # Check that the metrics tracked these tokens for the first response
-    assert llm.metrics.get()['accumulated_prompt_tokens'] == 12
-    assert llm.metrics.get()['accumulated_completion_tokens'] == 3
-    assert llm.metrics.get()['accumulated_cache_read_tokens'] == 2
-    assert llm.metrics.get()['accumulated_cache_write_tokens'] == 5
-
-    # Also verify tokens_usages has a single entry with the exact usage
+    # Verify we have exactly one usage record after first call
     tokens_usage_list = llm.metrics.get()['tokens_usages']
     assert len(tokens_usage_list) == 1
-    usage_entry = tokens_usage_list[0]
-    assert usage_entry['prompt_tokens'] == 12
-    assert usage_entry['completion_tokens'] == 3
-    assert usage_entry['cache_read_tokens'] == 2
-    assert usage_entry['cache_write_tokens'] == 5
-    # Check the response_id
-    assert usage_entry['response_id'] == 'test-response-usage'
+    usage_entry_1 = tokens_usage_list[0]
+    assert usage_entry_1['prompt_tokens'] == 12
+    assert usage_entry_1['completion_tokens'] == 3
+    assert usage_entry_1['cache_read_tokens'] == 2
+    assert usage_entry_1['cache_write_tokens'] == 5
+    assert usage_entry_1['response_id'] == 'test-response-usage'
 
-    # Second call: usage_2
-    _ = llm.completion(messages=[{'role': 'user', 'content': 'Hello again!'}])
+    # Second call
+    llm.completion(messages=[{'role': 'user', 'content': 'Hello again!'}])
 
-    # Now check accumulated totals
-    metrics_dict = llm.metrics.get()
-    # Prompt tokens = 12 + 7 = 19
-    assert metrics_dict['accumulated_prompt_tokens'] == 19
-    # Completion tokens = 3 + 2 = 5
-    assert metrics_dict['accumulated_completion_tokens'] == 5
-    # Cache read = 2 + 1 = 3
-    assert metrics_dict['accumulated_cache_read_tokens'] == 3
-    # Cache write = 5 + 3 = 8
-    assert metrics_dict['accumulated_cache_write_tokens'] == 8
-
-    # Also verify we have two usage records now
-    tokens_usage_list = metrics_dict['tokens_usages']
+    # Now we expect two usage records total
+    tokens_usage_list = llm.metrics.get()['tokens_usages']
     assert len(tokens_usage_list) == 2
-    latest_entry = tokens_usage_list[-1]
-    assert latest_entry['prompt_tokens'] == 7
-    assert latest_entry['completion_tokens'] == 2
-    assert latest_entry['cache_read_tokens'] == 1
-    assert latest_entry['cache_write_tokens'] == 3
-    assert latest_entry['response_id'] == 'test-response-usage-2'
+    usage_entry_2 = tokens_usage_list[-1]
+    assert usage_entry_2['prompt_tokens'] == 7
+    assert usage_entry_2['completion_tokens'] == 2
+    assert usage_entry_2['cache_read_tokens'] == 1
+    assert usage_entry_2['cache_write_tokens'] == 3
+    assert usage_entry_2['response_id'] == 'test-response-usage-2'

@@ -30,10 +30,10 @@ class TokensUsage(BaseModel):
 
 class Metrics:
     """Metrics class can record various metrics during running and evaluation.
-    Currently, we define the following metrics:
-        accumulated_cost: the total cost (USD $) of the current LLM.
-        response_latency: the time taken for each LLM completion call.
-        accrued token usage: the total tokens used across all completions.
+    We track:
+      - accumulated_cost and costs
+      - A list of ResponseLatency
+      - A list of TokensUsage (one per call).
     """
 
     def __init__(self, model_name: str = 'default') -> None:
@@ -41,10 +41,6 @@ class Metrics:
         self._costs: list[Cost] = []
         self._response_latencies: list[ResponseLatency] = []
         self.model_name = model_name
-        self._accumulated_prompt_tokens = 0
-        self._accumulated_completion_tokens = 0
-        self._accumulated_cache_read_tokens = 0
-        self._accumulated_cache_write_tokens = 0
         self._tokens_usages: list[TokensUsage] = []
 
     @property
@@ -92,13 +88,7 @@ class Metrics:
         cache_write_tokens: int,
         response_id: str,
     ) -> None:
-        # accumulate
-        self._accumulated_prompt_tokens += prompt_tokens
-        self._accumulated_completion_tokens += completion_tokens
-        self._accumulated_cache_read_tokens += cache_read_tokens
-        self._accumulated_cache_write_tokens += cache_write_tokens
-
-        # record this individual usage
+        """Add a single usage record."""
         self._tokens_usages.append(
             TokensUsage(
                 model=self.model_name,
@@ -111,13 +101,10 @@ class Metrics:
         )
 
     def merge(self, other: 'Metrics') -> None:
+        """Merge 'other' metrics into this one."""
         self._accumulated_cost += other.accumulated_cost
         self._costs += other._costs
         self._response_latencies += other._response_latencies
-        self._accumulated_prompt_tokens += other._accumulated_prompt_tokens
-        self._accumulated_completion_tokens += other._accumulated_completion_tokens
-        self._accumulated_cache_read_tokens += other._accumulated_cache_read_tokens
-        self._accumulated_cache_write_tokens += other._accumulated_cache_write_tokens
         self._tokens_usages += other._tokens_usages
 
     def get(self) -> dict:
@@ -125,24 +112,16 @@ class Metrics:
         return {
             'accumulated_cost': self._accumulated_cost,
             'costs': [cost.model_dump() for cost in self._costs],
-            'accumulated_prompt_tokens': self._accumulated_prompt_tokens,
-            'accumulated_completion_tokens': self._accumulated_completion_tokens,
-            'accumulated_cache_read_tokens': self._accumulated_cache_read_tokens,
-            'accumulated_cache_write_tokens': self._accumulated_cache_write_tokens,
-            'tokens_usages': [usage.model_dump() for usage in self._tokens_usages],
             'response_latencies': [
                 latency.model_dump() for latency in self._response_latencies
             ],
+            'tokens_usages': [usage.model_dump() for usage in self._tokens_usages],
         }
 
     def reset(self):
         self._accumulated_cost = 0.0
         self._costs = []
         self._response_latencies = []
-        self._accumulated_prompt_tokens = 0
-        self._accumulated_completion_tokens = 0
-        self._accumulated_cache_read_tokens = 0
-        self._accumulated_cache_write_tokens = 0
         self._tokens_usages = []
 
     def log(self):
