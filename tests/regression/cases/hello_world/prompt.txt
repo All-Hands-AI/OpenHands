@@ -1,0 +1,1 @@
+Create a bash script called hello.sh that prints "hello world"
