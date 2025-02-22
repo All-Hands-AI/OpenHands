@@ -120,9 +120,10 @@ class AgentSession:
                 agent_configs=agent_configs,
             )
 
-            self.memory_manager = MemoryManager(
-                event_stream=self.event_stream,
+            self.memory_manager = await self._create_memory(
                 microagents_dir=config.microagents_dir,
+                agent=agent,
+                selected_repository=selected_repository,
             )
 
             if github_token:
@@ -247,25 +248,13 @@ class AgentSession:
                 )
             return
 
-        repo_directory = None
         if selected_repository:
-            repo_directory = await call_sync_from_async(
+            await call_sync_from_async(
                 self.runtime.clone_repo,
                 github_token,
                 selected_repository,
                 selected_branch,
             )
-
-        if agent.prompt_manager:
-            agent.prompt_manager.set_runtime_info(self.runtime)
-            microagents: list[BaseMicroAgent] = await call_sync_from_async(
-                self.runtime.get_microagents_from_selected_repo, selected_repository
-            )
-            agent.prompt_manager.load_microagents(microagents)
-            if selected_repository and repo_directory:
-                agent.prompt_manager.set_repository_info(
-                    selected_repository, repo_directory
-                )
 
         logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
@@ -327,6 +316,33 @@ class AgentSession:
         )
 
         return controller
+
+    async def _create_memory(
+        self, microagents_dir: str, agent: Agent, selected_repository: str | None = None
+    ) -> MemoryManager:
+        memory = MemoryManager(
+            event_stream=self.event_stream,
+            microagents_dir=microagents_dir,
+        )
+
+        if agent.prompt_manager and self.runtime:
+            # sets available hosts
+            agent.prompt_manager.set_runtime_info(self.runtime)
+
+            # loads microagents from repo/.openhands/microagents
+            microagents: list[BaseMicroAgent] = await call_sync_from_async(
+                self.runtime.get_microagents_from_selected_repo, selected_repository
+            )
+            agent.prompt_manager.load_microagents(microagents)
+
+            # saves repository info on prompt manager
+            if selected_repository:
+                repo_directory = selected_repository.split('/')[1]
+                if repo_directory:
+                    agent.prompt_manager.set_repository_info(
+                        selected_repository, repo_directory
+                    )
+        return memory
 
     def _maybe_restore_state(self) -> State | None:
         """Helper method to handle state restore logic."""
