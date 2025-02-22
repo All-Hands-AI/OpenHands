@@ -67,6 +67,16 @@ class Metrics:
     def response_latencies(self, value: list[ResponseLatency]) -> None:
         self._response_latencies = value
 
+    @property
+    def tokens_usages(self) -> list[TokensUsage]:
+        if not hasattr(self, '_tokens_usages'):
+            self._tokens_usages = []
+        return self._tokens_usages
+
+    @tokens_usages.setter
+    def tokens_usages(self, value: list[TokensUsage]) -> None:
+        self._tokens_usages = value
+
     def add_cost(self, value: float) -> None:
         if value < 0:
             raise ValueError('Added cost cannot be negative.')
@@ -104,8 +114,9 @@ class Metrics:
         """Merge 'other' metrics into this one."""
         self._accumulated_cost += other.accumulated_cost
         self._costs += other._costs
-        self._response_latencies += other._response_latencies
-        self._tokens_usages += other._tokens_usages
+        # use the property so older picked objects that lack the field won't crash
+        self.tokens_usages += other.tokens_usages
+        self.response_latencies += other.response_latencies
 
     def get(self) -> dict:
         """Return the metrics in a dictionary."""
