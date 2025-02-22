@@ -9,10 +9,9 @@ We follow format from: https://docs.litellm.ai/docs/completion/function_call
 import copy
 import json
 import re
-from typing import Any, Iterable, TypedDict
+from typing import Any, Iterable
 
 from litellm import ChatCompletionToolParam
-from openai.types.chat import ChatCompletionToolParam as ChatCompletionToolParamFunctionChunk
 
 from openhands.core.exceptions import (
     FunctionCallConversionError,

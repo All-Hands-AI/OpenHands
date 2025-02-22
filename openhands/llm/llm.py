@@ -14,17 +14,16 @@ with warnings.catch_warnings():
     import litellm
 
 from litellm import ChatCompletionMessageToolCall, PromptTokensDetails
-from litellm.types.router import ModelInfo as RouterModelInfo
-from litellm.types.utils import ModelInfo as UtilsModelInfo
-from litellm import Message as LiteLLMMessage
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     RateLimitError,
 )
-from openai.types.chat import ChatCompletion, ChatCompletionChunk
+from litellm.types.router import ModelInfo as RouterModelInfo
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
+from litellm.types.utils import ModelInfo as UtilsModelInfo
 from litellm.utils import create_pretrained_tokenizer
+from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
@@ -247,11 +246,14 @@ class LLM(RetryMixin, DebugMixin):
             # if we mocked function calling, and we have tools, convert the response back to function calling format
             if mock_function_calling and mock_fncall_tools is not None:
                 assert len(resp.choices) == 1
-                if isinstance(resp.choices[0], (ChatCompletion.Choice, ChatCompletionChunk.Choice)):
+                if isinstance(
+                    resp.choices[0], (ChatCompletion.Choice, ChatCompletionChunk.Choice)
+                ):
                     non_fncall_response_message = resp.choices[0].message
                     fn_call_messages_with_response = (
                         convert_non_fncall_messages_to_fncall_messages(
-                            messages + [dict(non_fncall_response_message)], mock_fncall_tools
+                            messages + [dict(non_fncall_response_message)],
+                            mock_fncall_tools,
                         )
                     )
                     fn_call_response_message = fn_call_messages_with_response[-1]
@@ -632,20 +634,26 @@ class LLM(RetryMixin, DebugMixin):
         try:
             if cost is None:
                 try:
-                    cost = float(litellm_completion_cost(
-                        completion_response=response,
-                        custom_cost_per_token=extra_kwargs.get('custom_cost_per_token'),
-                    ))
+                    cost = float(
+                        litellm_completion_cost(
+                            completion_response=response,
+                            custom_cost_per_token=extra_kwargs.get(
+                                'custom_cost_per_token'
+                            ),
+                        )
+                    )
                 except Exception as e:
                     logger.error(f'Error getting cost from litellm: {e}')
 
             if cost is None:
                 _model_name = '/'.join(self.config.model.split('/')[1:])
-                cost = float(litellm_completion_cost(
-                    completion_response=response,
-                    model=_model_name,
-                    custom_cost_per_token=extra_kwargs.get('custom_cost_per_token'),
-                ))
+                cost = float(
+                    litellm_completion_cost(
+                        completion_response=response,
+                        model=_model_name,
+                        custom_cost_per_token=extra_kwargs.get('custom_cost_per_token'),
+                    )
+                )
                 logger.debug(
                     f'Using fallback model name {_model_name} to get cost: {cost}'
                 )
