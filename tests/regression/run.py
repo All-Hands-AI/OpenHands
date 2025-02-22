@@ -4,14 +4,40 @@ import os
 import shutil
 import sys
 import tempfile
+from argparse import Namespace
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import Any, Dict, Optional
 
 import yaml
 
 import openhands.agenthub  # noqa: F401 - import to register agents
-from openhands.core.config import setup_config_from_args
+from openhands.core.config import AppConfig, setup_config_from_args
 from openhands.core.main import auto_continue_response, run_controller
 from openhands.events.action import MessageAction
+
+
+class TestArgs(Namespace):
+    """Arguments for OpenHands configuration."""
+
+    def __init__(self, case_name: str, temp_path: Path) -> None:
+        super().__init__()
+        self.no_auto_continue: bool = False
+        self.name: str = case_name
+        self.model: str = 'gpt-4'
+        self.agent_cls: str = 'CodeActAgent'
+        self.max_budget_per_task: int = 100
+        self.max_iterations: int = 100
+        self.cli_multiline_input: bool = False
+        self.file_store: Optional[str] = None
+        self.save_trajectory_path: Optional[str] = None
+        self.replay_trajectory_path: Optional[str] = None
+        self.config_file: str = str(Path(__file__).parent.parent.parent / 'config.toml')
+        self.llm_config: Optional[str] = None
+        # Set workspace paths for Docker mounting
+        self.workspace_base: str = str(temp_path)
+        self.workspace_mount_path: str = str(temp_path)
+        self.workspace_mount_path_in_sandbox: str = '/workspace'
 
 
 def run_test_case(case_dir: Path) -> bool:
@@ -33,7 +59,7 @@ def run_test_case(case_dir: Path) -> bool:
 
     if case_yaml.exists():
         with open(case_yaml) as f:
-            config = yaml.safe_load(f)
+            config: Optional[Dict[str, Any]] = yaml.safe_load(f)
             if config:
                 timeout = config.get('timeout', timeout)
                 required = config.get('required', required)
@@ -44,9 +70,10 @@ def run_test_case(case_dir: Path) -> bool:
         temp_dir = tempfile.mkdtemp(prefix=f'openhands_regression_{case_name}_')
         print(f'Test directory (NO_CLEANUP): {temp_dir}')
         temp_path = Path(temp_dir)
+        temp_dir_ctx = None
     else:
         # Use context manager which will clean up automatically
-        temp_dir_ctx = tempfile.TemporaryDirectory()
+        temp_dir_ctx = TemporaryDirectory()
         temp_dir = temp_dir_ctx.name
         temp_path = Path(temp_dir)
 
@@ -71,29 +98,8 @@ def run_test_case(case_dir: Path) -> bool:
             task_str = f.read()
 
         # Set up OpenHands configuration
-        class Args:
-            def __init__(self):
-                self.no_auto_continue = False
-                self.name = case_name
-                self.model = 'gpt-4'
-                self.headless = True
-                self.agent_cls = 'CodeActAgent'
-                self.max_budget_per_task = 100
-                self.max_iterations = 100
-                self.cli_multiline_input = False
-                self.file_store = None
-                self.save_trajectory_path = None
-                self.replay_trajectory_path = None
-                self.config_file = str(
-                    Path(__file__).parent.parent.parent / 'config.toml'
-                )
-                self.llm_config = None
-                # Set workspace paths for Docker mounting
-                self.workspace_base = str(temp_path)
-                self.workspace_mount_path = str(temp_path)
-                self.workspace_mount_path_in_sandbox = '/workspace'
-
-        config = setup_config_from_args(Args())
+        args = TestArgs(case_name, temp_path)
+        config: AppConfig = setup_config_from_args(args)
         initial_user_action = MessageAction(content=task_str)
 
         # Change to temp directory for test execution
@@ -129,13 +135,14 @@ def run_test_case(case_dir: Path) -> bool:
         finally:
             os.chdir(original_cwd)
     finally:
-        if not os.getenv('NO_CLEANUP'):
+        if temp_dir_ctx is not None:
             temp_dir_ctx.cleanup()
 
     return True
 
 
-def main():
+def main() -> None:
+    """Run all regression tests."""
     # Find and run all test cases
     regression_dir = Path(__file__).parent
     cases_dir = regression_dir / 'cases'
