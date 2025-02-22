@@ -2,6 +2,7 @@ from fastapi import (
     APIRouter,
     HTTPException,
     Request,
+    status,
 )
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
@@ -23,7 +24,10 @@ async def security_api(request: Request):
         HTTPException: If the security analyzer is not initialized.
     """
     if not request.state.conversation.security_analyzer:
-        raise HTTPException(status_code=404, detail='Security analyzer not initialized')
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Security analyzer not initialized',
+        )
 
     return await request.state.conversation.security_analyzer.handle_api_request(
         request
