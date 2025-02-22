@@ -315,7 +315,7 @@ def test_get_single_tokens_usage_for_event():
     assert found.response_id == 'test-response-id'
 
     # If we change the event's response ID, we won't find anything
-    mock_tool_call_metadata.model_response['id'] = 'some-other-id'
+    mock_tool_call_metadata.model_response.id = 'some-other-id'
     found2 = get_single_tokens_usage_for_event(event, metrics)
     assert found2 is None
 

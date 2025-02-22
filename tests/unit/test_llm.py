@@ -2,6 +2,7 @@ import copy
 from unittest.mock import MagicMock, patch
 
 import pytest
+from litellm import PromptTokensDetails
 from litellm.exceptions import (
     RateLimitError,
 )
@@ -441,7 +442,7 @@ def test_llm_token_usage(mock_litellm_completion, default_config):
         'usage': {
             'prompt_tokens': 12,
             'completion_tokens': 3,
-            'prompt_tokens_details': {'cached_tokens': 2},
+            'prompt_tokens_details': PromptTokensDetails(cached_tokens=2),
             'model_extra': {'cache_creation_input_tokens': 5},
         },
     }
@@ -453,7 +454,7 @@ def test_llm_token_usage(mock_litellm_completion, default_config):
         'usage': {
             'prompt_tokens': 7,
             'completion_tokens': 2,
-            'prompt_tokens_details': {'cached_tokens': 1},
+            'prompt_tokens_details': PromptTokensDetails(cached_tokens=1),
             'model_extra': {'cache_creation_input_tokens': 3},
         },
     }
