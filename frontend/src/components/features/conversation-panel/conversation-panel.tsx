@@ -75,9 +75,11 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       data-testid="conversation-panel"
       className="w-[350px] h-full border border-neutral-700 bg-base-secondary rounded-xl overflow-y-auto absolute"
     >
-      <div className="w-full h-full absolute flex justify-center items-center">
-        {isFetching && <LoadingSpinner size="small" />}
-      </div>
+      {isFetching && (
+        <div className="w-full h-full absolute flex justify-center items-center">
+          <LoadingSpinner size="small" />
+        </div>
+      )}
       {error && (
         <div className="flex flex-col items-center justify-center h-full">
           <p className="text-danger">{error.message}</p>
