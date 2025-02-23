@@ -297,7 +297,11 @@ class LLM(RetryMixin, DebugMixin):
                     'messages': messages,
                     'response': resp,
                     'args': args,
-                    'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
+                    'kwargs': {
+                        k: v
+                        for k, v in kwargs.items()
+                        if k not in ('messages', 'client')
+                    },
                     'timestamp': time.time(),
                     'cost': cost,
                 }
