@@ -3,41 +3,15 @@ import asyncio
 import os
 import shutil
 import sys
-from argparse import Namespace
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import yaml
 
 import openhands.agenthub  # noqa: F401 - import to register agents
-from openhands.core.config import AppConfig, setup_config_from_args
+from openhands.core.config import AppConfig
 from openhands.core.main import auto_continue_response, run_controller
 from openhands.events.action import MessageAction
-
-
-class TestArgs(Namespace):
-    """Arguments for OpenHands configuration."""
-
-    def __init__(self, case_name: str, temp_path: Path) -> None:
-        super().__init__()
-        self.no_auto_continue: bool = False
-        self.name: str = case_name
-        # Let environment variables or config file set the model
-        self.model: Optional[str] = None
-        self.agent_cls: str = 'CodeActAgent'
-        self.max_budget_per_task: int = 100
-        self.max_iterations: int = 100
-        self.cli_multiline_input: bool = False
-        self.file_store: Optional[str] = None
-        self.save_trajectory_path: Optional[str] = None
-        self.replay_trajectory_path: Optional[str] = None
-        self.config_file: str = str(Path(__file__).parent.parent.parent / 'config.toml')
-        self.llm_config: Optional[str] = None
-        # Set workspace paths for Docker mounting
-        self.workspace_base: str = str(temp_path)
-        self.workspace_mount_path: str = str(temp_path)
-        self.workspace_mount_path_in_sandbox: str = '/workspace'
-        self.workspace_mount_rewrite: Optional[str] = None
 
 
 def run_test_case(case_dir: Path) -> bool:
@@ -107,9 +81,16 @@ def run_test_case(case_dir: Path) -> bool:
             task_str = f.read()
 
         # Set up OpenHands configuration
-        args = TestArgs(case_name, temp_path)
-        config: AppConfig = setup_config_from_args(args)
-        # Make sure Docker containers are cleaned up
+        config = AppConfig()
+        config.name = case_name
+        config.agent_cls = 'CodeActAgent'
+        config.max_budget_per_task = 100
+        config.max_iterations = 100
+        config.cli_multiline_input = False
+        config.config_file = str(Path(__file__).parent.parent.parent / 'config.toml')
+        config.workspace_base = str(temp_path)
+        config.workspace_mount_path = str(temp_path)
+        config.workspace_mount_path_in_sandbox = '/workspace'
         config.sandbox.keep_runtime_alive = False
         initial_user_action = MessageAction(content=task_str)
 

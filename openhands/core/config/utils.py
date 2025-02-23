@@ -268,7 +268,6 @@ def get_or_create_jwt_secret(file_store: FileStore) -> str:
 
 def finalize_config(cfg: AppConfig):
     """More tweaks to the config after it's been loaded."""
-    print('FINALIZE', cfg.workspace_mount_path)
     if cfg.workspace_base is not None:
         cfg.workspace_base = os.path.abspath(cfg.workspace_base)
         if cfg.workspace_mount_path is None:
@@ -278,7 +277,6 @@ def finalize_config(cfg: AppConfig):
             base = cfg.workspace_base or os.getcwd()
             parts = cfg.workspace_mount_rewrite.split(':')
             cfg.workspace_mount_path = base.replace(parts[0], parts[1])
-            print('chagne path', cfg.workspace_mount_path)
 
     # make sure log_completions_folder is an absolute path
     for llm in cfg.llms.values():
@@ -590,46 +588,4 @@ def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
     if args.max_budget_per_task is not None:
         config.max_budget_per_task = args.max_budget_per_task
 
-    # Set workspace paths if provided
-    if hasattr(args, 'workspace_base') and args.workspace_base is not None:
-        config.workspace_base = args.workspace_base
-    if hasattr(args, 'workspace_mount_path') and args.workspace_mount_path is not None:
-        config.workspace_mount_path = args.workspace_mount_path
-    if (
-        hasattr(args, 'workspace_mount_path_in_sandbox')
-        and args.workspace_mount_path_in_sandbox is not None
-    ):
-        config.workspace_mount_path_in_sandbox = args.workspace_mount_path_in_sandbox
-
-    if (
-        hasattr(args, 'workspace_mount_rewrite')
-        and args.workspace_mount_rewrite is not None
-    ):
-        config.workspace_mount_rewrite = args.workspace_mount_rewrite
-
-    # Set file store settings if provided
-    if hasattr(args, 'file_store') and args.file_store is not None:
-        config.file_store = args.file_store
-    if hasattr(args, 'file_store_path') and args.file_store_path is not None:
-        config.file_store_path = args.file_store_path
-
-    # Set trajectory paths if provided
-    if hasattr(args, 'save_trajectory_path') and args.save_trajectory_path is not None:
-        config.save_trajectory_path = args.save_trajectory_path
-    if (
-        hasattr(args, 'replay_trajectory_path')
-        and args.replay_trajectory_path is not None
-    ):
-        config.replay_trajectory_path = args.replay_trajectory_path
-
-    # Set CLI settings if provided
-    if hasattr(args, 'cli_multiline_input'):
-        config.cli_multiline_input = args.cli_multiline_input
-
-    # Set model name if provided
-    if hasattr(args, 'model') and args.model is not None:
-        llm_config = config.get_llm_config()
-        llm_config.model = args.model
-
-    finalize_config(config)
     return config
