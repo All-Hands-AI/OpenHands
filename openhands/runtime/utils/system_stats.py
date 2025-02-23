@@ -26,37 +26,37 @@ def get_system_stats() -> dict:
         memory_info = process.memory_info()
         memory_percent = process.memory_percent()
 
-    disk_usage = psutil.disk_usage('/')
+    disk_usage = psutil.disk_usage("/")
 
     # Get I/O stats directly from /proc/[pid]/io to avoid psutil's field name assumptions
     try:
-        with open(f'/proc/{process.pid}/io', 'rb') as f:
+        with open(f"/proc/{process.pid}/io", "rb") as f:
             io_stats = {}
             for line in f:
                 if line:
                     try:
-                        name, value = line.strip().split(b': ')
-                        io_stats[name.decode('ascii')] = int(value)
+                        name, value = line.strip().split(b": ")
+                        io_stats[name.decode("ascii")] = int(value)
                     except (ValueError, UnicodeDecodeError):
                         continue
     except (FileNotFoundError, PermissionError):
-        io_stats = {'read_bytes': 0, 'write_bytes': 0}
+        io_stats = {"read_bytes": 0, "write_bytes": 0}
 
     return {
-        'cpu_percent': cpu_percent,
-        'memory': {
-            'rss': memory_info.rss,
-            'vms': memory_info.vms,
-            'percent': memory_percent,
+        "cpu_percent": cpu_percent,
+        "memory": {
+            "rss": memory_info.rss,
+            "vms": memory_info.vms,
+            "percent": memory_percent,
         },
-        'disk': {
-            'total': disk_usage.total,
-            'used': disk_usage.used,
-            'free': disk_usage.free,
-            'percent': disk_usage.percent,
+        "disk": {
+            "total": disk_usage.total,
+            "used": disk_usage.used,
+            "free": disk_usage.free,
+            "percent": disk_usage.percent,
         },
-        'io': {
-            'read_bytes': io_stats.get('read_bytes', 0),
-            'write_bytes': io_stats.get('write_bytes', 0),
+        "io": {
+            "read_bytes": io_stats.get("read_bytes", 0),
+            "write_bytes": io_stats.get("write_bytes", 0),
         },
     }

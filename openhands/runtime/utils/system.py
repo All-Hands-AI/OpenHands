@@ -6,7 +6,7 @@ import time
 def check_port_available(port: int) -> bool:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.bind(('localhost', port))
+        sock.bind(("localhost", port))
         return True
     except OSError:
         time.sleep(0.1)  # Short delay to further reduce chance of collisions
@@ -15,7 +15,9 @@ def check_port_available(port: int) -> bool:
         sock.close()
 
 
-def find_available_tcp_port(min_port: int = 30000, max_port: int = 39999, max_attempts: int = 10) -> int:
+def find_available_tcp_port(
+    min_port: int = 30000, max_port: int = 39999, max_attempts: int = 10
+) -> int:
     """Find an available TCP port in a specified range.
 
     Args:
@@ -42,16 +44,16 @@ def display_number_matrix(number: int) -> str | None:
 
     # Define the matrix representation for each digit
     digits = {
-        '0': ['###', '# #', '# #', '# #', '###'],
-        '1': ['  #', '  #', '  #', '  #', '  #'],
-        '2': ['###', '  #', '###', '#  ', '###'],
-        '3': ['###', '  #', '###', '  #', '###'],
-        '4': ['# #', '# #', '###', '  #', '  #'],
-        '5': ['###', '#  ', '###', '  #', '###'],
-        '6': ['###', '#  ', '###', '# #', '###'],
-        '7': ['###', '  #', '  #', '  #', '  #'],
-        '8': ['###', '# #', '###', '# #', '###'],
-        '9': ['###', '# #', '###', '  #', '###'],
+        "0": ["###", "# #", "# #", "# #", "###"],
+        "1": ["  #", "  #", "  #", "  #", "  #"],
+        "2": ["###", "  #", "###", "#  ", "###"],
+        "3": ["###", "  #", "###", "  #", "###"],
+        "4": ["# #", "# #", "###", "  #", "  #"],
+        "5": ["###", "#  ", "###", "  #", "###"],
+        "6": ["###", "#  ", "###", "# #", "###"],
+        "7": ["###", "  #", "  #", "  #", "  #"],
+        "8": ["###", "# #", "###", "# #", "###"],
+        "9": ["###", "# #", "###", "  #", "###"],
     }
 
     # alternatively, with leading zeros: num_str = f"{number:03d}"
@@ -59,8 +61,8 @@ def display_number_matrix(number: int) -> str | None:
 
     result = []
     for row in range(5):
-        line = ' '.join(digits[digit][row] for digit in num_str)
+        line = " ".join(digits[digit][row] for digit in num_str)
         result.append(line)
 
-    matrix_display = '\n'.join(result)
-    return f'\n{matrix_display}\n'
+    matrix_display = "\n".join(result)
+    return f"\n{matrix_display}\n"
