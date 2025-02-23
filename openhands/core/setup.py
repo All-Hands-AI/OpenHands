@@ -67,9 +67,13 @@ def create_memory(
     event_stream: EventStream,
     selected_repository: str | None = None,
 ) -> Memory:
+    # If the agent config has disabled microagents, use them
+    disabled_microagents = agent.config.disabled_microagents
+
     mem = Memory(
         event_stream=event_stream,
         microagents_dir=microagents_dir,
+        disabled_microagents=disabled_microagents,
     )
 
     if agent.prompt_manager and runtime:

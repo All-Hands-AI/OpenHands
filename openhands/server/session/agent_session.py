@@ -320,9 +320,13 @@ class AgentSession:
     async def _create_memory(
         self, microagents_dir: str, agent: Agent, selected_repository: str | None
     ) -> Memory:
+        # If the agent config has disabled microagents, use them
+        disabled = agent.config.disabled_microagents
+
         mem = Memory(
             event_stream=self.event_stream,
             microagents_dir=microagents_dir,
+            disabled_microagents=disabled,
         )
 
         if agent.prompt_manager and self.runtime:
