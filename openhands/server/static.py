@@ -2,7 +2,7 @@ from fastapi.staticfiles import StaticFiles
 
 
 class SPAStaticFiles(StaticFiles):
-    async def get_response(self, path: str, scope: dict) -> object:
+    async def get_response(self, path: str, scope):
         try:
             return await super().get_response(path, scope)
         except Exception:
