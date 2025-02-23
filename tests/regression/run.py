@@ -39,6 +39,15 @@ class TestArgs(Namespace):
         self.workspace_base: str = str(temp_path)
         self.workspace_mount_path: str = str(temp_path)
         self.workspace_mount_path_in_sandbox: str = '/workspace'
+        self.workspace_mount_rewrite: Optional[str] = None
+
+        # Handle workspace mount replacement
+        if mount_repl := os.getenv('WORKSPACE_MOUNT_REPLACEMENT'):
+            try:
+                host_path, container_path = mount_repl.split(':', 1)
+                self.workspace_mount_rewrite = f"{host_path}:{container_path}"
+            except ValueError:
+                print(f'Warning: Invalid WORKSPACE_MOUNT_REPLACEMENT format: {mount_repl}. Expected format: host_path:container_path')
 
 
 def run_test_case(case_dir: Path) -> bool:
