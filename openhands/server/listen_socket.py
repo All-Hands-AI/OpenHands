@@ -93,8 +93,16 @@ async def connect(connection_id: str, environ, auth):
         elif isinstance(event, AgentStateChangedObservation):
             agent_state_changed = event
         else:
+            # Log accumulated cost before sending event
+            accumulated_cost = event.llm_metrics.accumulated_cost if event.llm_metrics else None
+            logger.info(f"Position: listen socket. Event before sending to client - Accumulated Cost: {accumulated_cost}")
+            
             await sio.emit('oh_event', event_to_dict(event), to=connection_id)
     if agent_state_changed:
+        # Log accumulated cost for agent state changed event
+        accumulated_cost = agent_state_changed.llm_metrics.accumulated_cost if agent_state_changed.llm_metrics else None
+        logger.info(f"Position: listen socket. Agent state changed event before sending - Accumulated Cost: {accumulated_cost}")
+        
         await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
 
 

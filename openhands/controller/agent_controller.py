@@ -689,6 +689,8 @@ class AgentController:
                 action = self.agent.step(self.state)
                 if action is None:
                     raise LLMNoActionError('No action was returned')
+                action.llm_metrics = copy.deepcopy(self.state.metrics)
+                logger.info(f"After agent.step - State Local Metrics Accumulated Cost: {self.state.metrics.accumulated_cost}")
                 action._source = EventSource.AGENT  # type: ignore [attr-defined]
             except (
                 LLMMalformedActionError,
