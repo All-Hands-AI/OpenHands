@@ -9,9 +9,9 @@ from openhands.events.stream import EventStream, EventStreamSubscriber
 from openhands.microagent import KnowledgeMicroAgent, load_microagents_from_dir
 
 
-class MemoryManager:
+class Memory:
     """
-    MemoryManager listens to the EventStream for either user MessageAction (to create
+    Memory is a component that listens to the EventStream for either user MessageAction (to create
     a RecallAction) or a RecallAction (to produce a RecallObservation).
     """
 
