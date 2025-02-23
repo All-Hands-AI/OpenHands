@@ -65,18 +65,22 @@ def run_test_case(case_dir: Path) -> bool:
                 timeout = config.get('timeout', timeout)
                 required = config.get('required', required)
 
-    # Create temp directory
-    if os.getenv('NO_CLEANUP'):
-        # Create a directory in /tmp that won't be automatically cleaned up
-        temp_dir = tempfile.mkdtemp(prefix=f'openhands_regression_{case_name}_')
-        print(f'Test directory (NO_CLEANUP): {temp_dir}')
-        temp_path = Path(temp_dir)
-        temp_dir_ctx = None
-    else:
-        # Use context manager which will clean up automatically
-        temp_dir_ctx = TemporaryDirectory()
-        temp_dir = temp_dir_ctx.name
-        temp_path = Path(temp_dir)
+    # Create workspace directory
+    workspace_dir = case_dir / 'workspace'
+    if workspace_dir.exists():
+        # Clean up any existing workspace
+        shutil.rmtree(workspace_dir)
+    workspace_dir.mkdir(exist_ok=True)
+    temp_path = workspace_dir
+    temp_dir = str(workspace_dir)
+    temp_dir_ctx = None
+
+    if not os.getenv('NO_CLEANUP'):
+        # Register cleanup function
+        def cleanup_workspace():
+            if workspace_dir.exists():
+                shutil.rmtree(workspace_dir)
+        temp_dir_ctx = type('TempDirCtx', (), {'cleanup': cleanup_workspace})()
 
     try:
         # Check if git repo and commit-ish are specified
