@@ -14,8 +14,8 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
-from openhands.memory.memory_manager import MemoryManager
-from openhands.microagent import BaseMicroAgent
+from openhands.memory.memory import Memory
+from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
@@ -120,7 +120,7 @@ class AgentSession:
                 agent_configs=agent_configs,
             )
 
-            self.memory_manager = await self._create_memory(
+            self.memory = await self._create_memory(
                 microagents_dir=config.microagents_dir,
                 agent=agent,
                 selected_repository=selected_repository,
@@ -318,9 +318,9 @@ class AgentSession:
         return controller
 
     async def _create_memory(
-        self, microagents_dir: str, agent: Agent, selected_repository: str | None = None
-    ) -> MemoryManager:
-        memory = MemoryManager(
+        self, microagents_dir: str, agent: Agent, selected_repository: str | None
+    ) -> Memory:
+        mem = Memory(
             event_stream=self.event_stream,
             microagents_dir=microagents_dir,
         )
@@ -333,16 +333,15 @@ class AgentSession:
             microagents: list[BaseMicroAgent] = await call_sync_from_async(
                 self.runtime.get_microagents_from_selected_repo, selected_repository
             )
-            agent.prompt_manager.load_microagents(microagents)
+            mem.load_user_workspace_microagents(microagents)
 
-            # saves repository info on prompt manager
             if selected_repository:
                 repo_directory = selected_repository.split('/')[1]
                 if repo_directory:
                     agent.prompt_manager.set_repository_info(
                         selected_repository, repo_directory
                     )
-        return memory
+        return mem
 
     def _maybe_restore_state(self) -> State | None:
         """Helper method to handle state restore logic."""

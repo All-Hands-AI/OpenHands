@@ -6,7 +6,13 @@ from openhands.events.observation.agent import (
     RecallObservation,
 )
 from openhands.events.stream import EventStream, EventStreamSubscriber
-from openhands.microagent import KnowledgeMicroAgent, load_microagents_from_dir
+from openhands.microagent import (
+    BaseMicroAgent,
+    KnowledgeMicroAgent,
+    RepoMicroAgent,
+    load_microagents_from_dir,
+)
+from openhands.utils.prompt import PromptManager
 
 
 class Memory:
@@ -24,13 +30,27 @@ class Memory:
             self.on_event,
             'Memory',
         )
-        # Load any knowledge microagents from the given directory
-        # If your directory is empty or none found, self.knowledge_microagents is just {}
-        _repo_agents, knowledge_agents, _task_agents = load_microagents_from_dir(
+        # Load global microagents (Knowledge + Repo).
+        self._load_global_microagents()
+
+        # Additional placeholders to store user workspace microagents if needed
+        self.repo_microagents: dict[str, RepoMicroAgent] = {}
+        self.knowledge_microagents: dict[str, KnowledgeMicroAgent] = {}
+
+    def _load_global_microagents(self) -> None:
+        """
+        Loads microagents from the global microagents_dir.
+        This is effectively what used to happen in PromptManager.
+        """
+        repo_agents, knowledge_agents, _task_agents = load_microagents_from_dir(
             self.microagents_dir
         )
-        # We assume knowledge_agents is a dict[str, KnowledgeMicroAgent]
-        self.knowledge_microagents: dict[str, KnowledgeMicroAgent] = knowledge_agents
+        for name, agent in knowledge_agents.items():
+            if isinstance(agent, KnowledgeMicroAgent):
+                self.knowledge_microagents[name] = agent
+        for name, agent in repo_agents.items():
+            if isinstance(agent, RepoMicroAgent):
+                self.repo_microagents[name] = agent
 
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
@@ -103,3 +123,22 @@ class Memory:
                     )
                     matched_texts.append(block)
         return '\n'.join(matched_texts)
+
+    def load_user_workspace_microagents(
+        self, user_microagents: list[BaseMicroAgent]
+    ) -> None:
+        """
+        If you want to load microagents from a user's cloned repo or workspace directory,
+        call this from agent_session or setup once the workspace is cloned.
+        """
+        logger.info(
+            'Loading user workspace microagents: %s', [m.name for m in user_microagents]
+        )
+        for ma in user_microagents:
+            if isinstance(ma, KnowledgeMicroAgent):
+                self.knowledge_microagents[ma.name] = ma
+            elif isinstance(ma, RepoMicroAgent):
+                self.repo_microagents[ma.name] = ma
+
+    def set_prompt_manager(self, prompt_manager: PromptManager):
+        self.prompt_manager = prompt_manager

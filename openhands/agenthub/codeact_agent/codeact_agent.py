@@ -2,7 +2,6 @@ import json
 import os
 from collections import deque
 
-import openhands
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -80,14 +79,7 @@ class CodeActAgent(Agent):
             f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2, ensure_ascii=False).replace("\\n", "\n")}'
         )
         self.prompt_manager = PromptManager(
-            microagent_dir=os.path.join(
-                os.path.dirname(os.path.dirname(openhands.__file__)),
-                'microagents',
-            )
-            if self.config.enable_prompt_extensions
-            else None,
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
-            disabled_microagents=self.config.disabled_microagents,
         )
 
         self.condenser = Condenser.from_config(self.config.condenser)

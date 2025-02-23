@@ -5,14 +5,8 @@ from itertools import islice
 from jinja2 import Template
 
 from openhands.controller.state.state import State
-from openhands.core.logger import openhands_logger
 from openhands.core.message import Message, TextContent
-from openhands.microagent import (
-    BaseMicroAgent,
-    KnowledgeMicroAgent,
-    RepoMicroAgent,
-    load_microagents_from_dir,
-)
+from openhands.microagent.microagent import RepoMicroAgent
 from openhands.runtime.base import Runtime
 
 
@@ -59,71 +53,24 @@ be accessed from any host (e.g. 0.0.0.0).
 
 class PromptManager:
     """
-    Manages prompt templates and micro-agents for AI interactions.
+    Manages prompt templates and includes information from the user's workspace micro-agents and global micro-agents.
 
-    This class handles loading and rendering of system and user prompt templates,
-    as well as loading micro-agent specifications. It provides methods to access
-    rendered system and initial user messages for AI interactions.
+    This class is dedicated toloading and rendering prompts (system prompt, user prompt).
 
     Attributes:
         prompt_dir (str): Directory containing prompt templates.
-        microagent_dir (str): Directory containing microagent specifications.
-        disabled_microagents (list[str] | None): List of microagents to disable. If None, all microagents are enabled.
     """
 
     def __init__(
         self,
         prompt_dir: str,
-        microagent_dir: str | None = None,
-        disabled_microagents: list[str] | None = None,
     ):
-        self.disabled_microagents: list[str] = disabled_microagents or []
         self.prompt_dir: str = prompt_dir
         self.repository_info: RepositoryInfo | None = None
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
         self.runtime_info = RuntimeInfo(available_hosts={})
-
-        self.knowledge_microagents: dict[str, KnowledgeMicroAgent] = {}
         self.repo_microagents: dict[str, RepoMicroAgent] = {}
-
-        if microagent_dir:
-            # This loads micro-agents from the microagent_dir
-            # which is typically the OpenHands/microagents (i.e., the PUBLIC microagents)
-
-            # Only load KnowledgeMicroAgents
-            repo_microagents, knowledge_microagents, _ = load_microagents_from_dir(
-                microagent_dir
-            )
-            assert all(
-                isinstance(microagent, KnowledgeMicroAgent)
-                for microagent in knowledge_microagents.values()
-            )
-            for name, microagent in knowledge_microagents.items():
-                if name not in self.disabled_microagents:
-                    self.knowledge_microagents[name] = microagent
-            assert all(
-                isinstance(microagent, RepoMicroAgent)
-                for microagent in repo_microagents.values()
-            )
-            for name, microagent in repo_microagents.items():
-                if name not in self.disabled_microagents:
-                    self.repo_microagents[name] = microagent
-
-    def load_microagents(self, microagents: list[BaseMicroAgent]) -> None:
-        """Load microagents from a list of BaseMicroAgents.
-
-        This is typically used when loading microagents from inside a repo.
-        """
-        openhands_logger.info('Loading microagents: %s', [m.name for m in microagents])
-        # Only keep KnowledgeMicroAgents and RepoMicroAgents
-        for microagent in microagents:
-            if microagent.name in self.disabled_microagents:
-                continue
-            if isinstance(microagent, KnowledgeMicroAgent):
-                self.knowledge_microagents[microagent.name] = microagent
-            elif isinstance(microagent, RepoMicroAgent):
-                self.repo_microagents[microagent.name] = microagent
 
     def _load_template(self, template_name: str) -> Template:
         if self.prompt_dir is None:
