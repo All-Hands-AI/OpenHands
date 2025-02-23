@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from openhands.core.cli import main
-from openhands.core.schema import AgentState
 
 
 @pytest.fixture
