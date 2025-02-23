@@ -100,6 +100,8 @@ def run_test_case(case_dir: Path) -> bool:
         # Set up OpenHands configuration
         args = TestArgs(case_name, temp_path)
         config: AppConfig = setup_config_from_args(args)
+        # Make sure Docker containers are cleaned up
+        config.sandbox.keep_runtime_alive = False
         initial_user_action = MessageAction(content=task_str)
 
         # Change to temp directory for test execution
