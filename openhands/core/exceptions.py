@@ -10,12 +10,12 @@ class AgentError(Exception):
 
 
 class AgentNoInstructionError(AgentError):
-    def __init__(self, message: str = 'Instruction must be provided') -> None:
+    def __init__(self, message: str = "Instruction must be provided") -> None:
         super().__init__(message)
 
 
 class AgentEventTypeError(AgentError):
-    def __init__(self, message: str = 'Event must be a dictionary') -> None:
+    def __init__(self, message: str = "Event must be a dictionary") -> None:
         super().__init__(message)
 
 
@@ -24,7 +24,7 @@ class AgentAlreadyRegisteredError(AgentError):
         if name is not None:
             message = f"Agent class already registered under '{name}'"
         else:
-            message = 'Agent class already registered'
+            message = "Agent class already registered"
         super().__init__(message)
 
 
@@ -33,12 +33,12 @@ class AgentNotRegisteredError(AgentError):
         if name is not None:
             message = f"No agent class registered under '{name}'"
         else:
-            message = 'No agent class registered'
+            message = "No agent class registered"
         super().__init__(message)
 
 
 class AgentStuckInLoopError(AgentError):
-    def __init__(self, message: str = 'Agent got stuck in a loop') -> None:
+    def __init__(self, message: str = "Agent got stuck in a loop") -> None:
         super().__init__(message)
 
 
@@ -50,9 +50,9 @@ class AgentStuckInLoopError(AgentError):
 class TaskInvalidStateError(Exception):
     def __init__(self, state: str | None = None) -> None:
         if state is not None:
-            message = f'Invalid state {state}'
+            message = f"Invalid state {state}"
         else:
-            message = 'Invalid state'
+            message = "Invalid state"
         super().__init__(message)
 
 
@@ -64,7 +64,7 @@ class TaskInvalidStateError(Exception):
 # This exception gets sent back to the LLM
 # It might be malformed JSON
 class LLMMalformedActionError(Exception):
-    def __init__(self, message: str = 'Malformed response') -> None:
+    def __init__(self, message: str = "Malformed response") -> None:
         self.message = message
         super().__init__(message)
 
@@ -75,33 +75,35 @@ class LLMMalformedActionError(Exception):
 # This exception gets sent back to the LLM
 # For some reason, the agent did not return an action
 class LLMNoActionError(Exception):
-    def __init__(self, message: str = 'Agent must return an action') -> None:
+    def __init__(self, message: str = "Agent must return an action") -> None:
         super().__init__(message)
 
 
 # This exception gets sent back to the LLM
 # The LLM output did not include an action, or the action was not the expected type
 class LLMResponseError(Exception):
-    def __init__(self, message: str = 'Failed to retrieve action from LLM response') -> None:
+    def __init__(
+        self, message: str = "Failed to retrieve action from LLM response"
+    ) -> None:
         super().__init__(message)
 
 
 class UserCancelledError(Exception):
-    def __init__(self, message: str = 'User cancelled the request') -> None:
+    def __init__(self, message: str = "User cancelled the request") -> None:
         super().__init__(message)
 
 
 class OperationCancelled(Exception):
     """Exception raised when an operation is cancelled (e.g. by a keyboard interrupt)."""
 
-    def __init__(self, message: str = 'Operation was cancelled') -> None:
+    def __init__(self, message: str = "Operation was cancelled") -> None:
         super().__init__(message)
 
 
 class LLMContextWindowExceedError(RuntimeError):
     def __init__(
         self,
-        message: str = 'Conversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error',
+        message: str = "Conversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error",
     ) -> None:
         super().__init__(message)
 
@@ -191,14 +193,16 @@ class AgentRuntimeNotFoundError(AgentRuntimeUnavailableError):
 
 
 class BrowserInitException(Exception):
-    def __init__(self, message: str = 'Failed to initialize browser environment') -> None:
+    def __init__(
+        self, message: str = "Failed to initialize browser environment"
+    ) -> None:
         super().__init__(message)
 
 
 class BrowserUnavailableException(Exception):
     def __init__(
         self,
-        message: str = 'Browser environment is not available, please check if has been initialized',
+        message: str = "Browser environment is not available, please check if has been initialized",
     ) -> None:
         super().__init__(message)
 
@@ -217,5 +221,5 @@ class MicroAgentError(Exception):
 class MicroAgentValidationError(MicroAgentError):
     """Raised when there's a validation error in microagent metadata."""
 
-    def __init__(self, message: str = 'Micro agent validation failed') -> None:
+    def __init__(self, message: str = "Micro agent validation failed") -> None:
         super().__init__(message)
