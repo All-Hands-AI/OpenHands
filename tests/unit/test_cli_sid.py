@@ -5,7 +5,6 @@ from openhands.core.cli import main
 from openhands.core.schema import AgentState
 from openhands.events.action import ChangeAgentStateAction
 
-
 @pytest.fixture
 def mock_runtime():
     with patch("openhands.core.cli.create_runtime") as mock_create_runtime:
