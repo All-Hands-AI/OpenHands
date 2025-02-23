@@ -198,7 +198,7 @@ def get_action_message(
             action.tool_call_metadata = None
         return [
             Message(
-                role='user',
+                role=(role if role in ('user', 'system', 'assistant', 'tool') else raise ValueError(f'Invalid role: {role}')),  # type: ignore[arg-type]
                 content=[TextContent(text=action.thought)],
             )
         ]
@@ -209,7 +209,7 @@ def get_action_message(
             content.append(ImageContent(image_urls=action.image_urls))
         return [
             Message(
-                role='user',
+                role=(role if role in ('user', 'system', 'assistant', 'tool') else raise ValueError(f'Invalid role: {role}')),  # type: ignore[arg-type]
                 content=content,
             )
         ]
@@ -217,7 +217,7 @@ def get_action_message(
         content = [TextContent(text=f'User executed the command:\n{action.command}')]
         return [
             Message(
-                role='user',
+                role='user',  # Always user for CmdRunAction
                 content=content,
             )
         ]
