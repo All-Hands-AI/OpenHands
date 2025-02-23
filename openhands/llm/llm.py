@@ -535,7 +535,7 @@ class LLM(RetryMixin, DebugMixin):
 
             # Record in metrics
             # We'll treat cache_hit_tokens as "cache read" and cache_write_tokens as "cache write"
-            self.metrics.add_tokens_usage(
+            self.metrics.add_token_usage(
                 prompt_tokens=prompt_tokens,
                 completion_tokens=completion_tokens,
                 cache_read_tokens=cache_hit_tokens,
