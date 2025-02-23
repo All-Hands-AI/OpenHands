@@ -14,22 +14,6 @@ import {
 export function handleObservationMessage(message: ObservationMessage) {
   console.log("Processing observation message:", message);
   
-  // Handle llm_metrics and usage together
-  if (message.llm_metrics || message.tool_call_metadata?.model_response?.usage) {
-    const usage = message.tool_call_metadata?.model_response?.usage;
-    const metrics = message.llm_metrics;
-    console.log("Processing metrics:", metrics);
-    console.log("Processing usage:", usage);
-    
-    alert([
-      'LLM Information',
-      metrics ? `Accumulated Cost: $${metrics.accumulated_cost.toFixed(4)}` : '',
-      usage ? `Prompt Tokens: ${usage.prompt_tokens}` : '',
-      usage ? `Completion Tokens: ${usage.completion_tokens}` : '',
-      usage ? `Total Tokens: ${usage.total_tokens}` : ''
-    ].filter(line => line !== '').join('\n'));  // Filter out empty lines
-  }
-
   switch (message.observation) {
     case ObservationType.RUN:
       if (message.extras.hidden) break;

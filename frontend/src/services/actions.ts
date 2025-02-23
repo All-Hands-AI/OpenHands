@@ -59,9 +59,29 @@ const messageActions = {
   },
 };
 
+function showLLMMetricsAlert(message: ActionMessage) {
+  const metrics = message.llm_metrics;
+  const usage = message.tool_call_metadata?.model_response?.usage;
+  
+  if (!metrics && !usage) return;
+  
+  alert([
+    'LLM Information',
+    metrics ? `Accumulated Cost: $${metrics.accumulated_cost.toFixed(4)}` : '',
+    usage ? `Prompt Tokens: ${usage.prompt_tokens}` : '',
+    usage ? `Completion Tokens: ${usage.completion_tokens}` : '',
+    usage ? `Total Tokens: ${usage.total_tokens}` : ''
+  ].filter(line => line !== '').join('\n'));
+}
+
 export function handleActionMessage(message: ActionMessage) {
   if (message.args?.hidden) {
     return;
+  }
+
+  // Handle LLM metrics display
+  if (message.llm_metrics || message.tool_call_metadata?.model_response?.usage) {
+    showLLMMetricsAlert(message);
   }
 
   if (message.action === ActionType.RUN) {
