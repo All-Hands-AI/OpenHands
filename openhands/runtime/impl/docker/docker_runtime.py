@@ -228,7 +228,13 @@ class DockerRuntime(ActionExecutionClient):
         # also update with runtime_startup_env_vars
         environment.update(self.config.sandbox.runtime_startup_env_vars)
 
+        # Log workspace mounting configuration
+        self.log('debug', '=== Workspace Mounting Configuration ===')
         self.log('debug', f'Workspace Base: {self.config.workspace_base}')
+        self.log('debug', f'Workspace Mount Path: {self.config.workspace_mount_path}')
+        self.log('debug', f'Workspace Mount Path in Sandbox: {self.config.workspace_mount_path_in_sandbox}')
+        self.log('debug', f'Workspace Mount Rewrite: {self.config.workspace_mount_rewrite}')
+
         if (
             self.config.workspace_mount_path is not None
             and self.config.workspace_mount_path_in_sandbox is not None
@@ -240,16 +246,17 @@ class DockerRuntime(ActionExecutionClient):
                     'mode': 'rw',
                 }
             }
-            logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
+            self.log('debug', f'Mounting directory: {self.config.workspace_mount_path} -> {self.config.workspace_mount_path_in_sandbox} (rw)')
+            self.log('debug', f'Docker volumes configuration: {volumes}')
         else:
-            logger.debug(
-                'Mount dir is not set, will not mount the workspace directory to the container'
-            )
+            self.log('debug', 'Mount paths not set, will not mount any workspace directory to the container')
+            if self.config.workspace_mount_path is None:
+                self.log('debug', '  - workspace_mount_path is None')
+            if self.config.workspace_mount_path_in_sandbox is None:
+                self.log('debug', '  - workspace_mount_path_in_sandbox is None')
             volumes = None
-        self.log(
-            'debug',
-            f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
-        )
+
+        self.log('debug', '=======================================')
 
         command = get_action_execution_server_startup_command(
             server_port=self._container_port,
