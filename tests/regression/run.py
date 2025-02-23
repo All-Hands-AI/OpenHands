@@ -3,10 +3,8 @@ import asyncio
 import os
 import shutil
 import sys
-import tempfile
 from argparse import Namespace
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Any, Dict, Optional
 
 import yaml
@@ -40,14 +38,6 @@ class TestArgs(Namespace):
         self.workspace_mount_path: str = str(temp_path)
         self.workspace_mount_path_in_sandbox: str = '/workspace'
         self.workspace_mount_rewrite: Optional[str] = None
-
-        # Handle workspace mount replacement
-        if mount_repl := os.getenv('WORKSPACE_MOUNT_REPLACEMENT'):
-            try:
-                host_path, container_path = mount_repl.split(':', 1)
-                self.workspace_mount_rewrite = f"{host_path}:{container_path}"
-            except ValueError:
-                print(f'Warning: Invalid WORKSPACE_MOUNT_REPLACEMENT format: {mount_repl}. Expected format: host_path:container_path')
 
 
 def run_test_case(case_dir: Path) -> bool:
@@ -89,6 +79,7 @@ def run_test_case(case_dir: Path) -> bool:
         def cleanup_workspace():
             if workspace_dir.exists():
                 shutil.rmtree(workspace_dir)
+
         temp_dir_ctx = type('TempDirCtx', (), {'cleanup': cleanup_workspace})()
 
     try:

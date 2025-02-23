@@ -232,8 +232,13 @@ class DockerRuntime(ActionExecutionClient):
         self.log('debug', '=== Workspace Mounting Configuration ===')
         self.log('debug', f'Workspace Base: {self.config.workspace_base}')
         self.log('debug', f'Workspace Mount Path: {self.config.workspace_mount_path}')
-        self.log('debug', f'Workspace Mount Path in Sandbox: {self.config.workspace_mount_path_in_sandbox}')
-        self.log('debug', f'Workspace Mount Rewrite: {self.config.workspace_mount_rewrite}')
+        self.log(
+            'debug',
+            f'Workspace Mount Path in Sandbox: {self.config.workspace_mount_path_in_sandbox}',
+        )
+        self.log(
+            'debug', f'Workspace Mount Rewrite: {self.config.workspace_mount_rewrite}'
+        )
 
         if (
             self.config.workspace_mount_path is not None
@@ -246,14 +251,18 @@ class DockerRuntime(ActionExecutionClient):
                     'mode': 'rw',
                 }
             }
-            self.log('debug', f'Mounting directory: {self.config.workspace_mount_path} -> {self.config.workspace_mount_path_in_sandbox} (rw)')
+            self.log(
+                'debug',
+                f'Mounting directory: {self.config.workspace_mount_path} -> {self.config.workspace_mount_path_in_sandbox} (rw)',
+            )
             self.log('debug', f'Docker volumes configuration: {volumes}')
         else:
-            self.log('debug', 'Mount paths not set, will not mount any workspace directory to the container')
+            self.log(
+                'debug',
+                'Mount paths not set, will not mount any workspace directory to the container',
+            )
             if self.config.workspace_mount_path is None:
                 self.log('debug', '  - workspace_mount_path is None')
-            if self.config.workspace_mount_path_in_sandbox is None:
-                self.log('debug', '  - workspace_mount_path_in_sandbox is None')
             volumes = None
 
         self.log('debug', '=======================================')
