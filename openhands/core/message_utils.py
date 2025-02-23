@@ -196,9 +196,11 @@ def get_action_message(
 
             # remove the tool call metadata
             action.tool_call_metadata = None
+        if role not in ('user', 'system', 'assistant', 'tool'):
+            raise ValueError(f'Invalid role: {role}')
         return [
             Message(
-                role=(role if role in ('user', 'system', 'assistant', 'tool') else raise ValueError(f'Invalid role: {role}')),  # type: ignore[arg-type]
+                role=role,  # type: ignore[arg-type]
                 content=[TextContent(text=action.thought)],
             )
         ]
@@ -207,9 +209,11 @@ def get_action_message(
         content = [TextContent(text=action.content or '')]
         if vision_is_active and action.image_urls:
             content.append(ImageContent(image_urls=action.image_urls))
+        if role not in ('user', 'system', 'assistant', 'tool'):
+            raise ValueError(f'Invalid role: {role}')
         return [
             Message(
-                role=(role if role in ('user', 'system', 'assistant', 'tool') else raise ValueError(f'Invalid role: {role}')),  # type: ignore[arg-type]
+                role=role,  # type: ignore[arg-type]
                 content=content,
             )
         ]
