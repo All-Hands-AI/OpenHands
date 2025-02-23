@@ -372,7 +372,7 @@ def get_single_tokens_usage_for_event(
     Returns at most one token usage record for the `model_response.id` in this event's
     `tool_call_metadata`.
 
-    If no response_id is found, or none match in metrics.tokens_usages, returns [].
+    If no response_id is found, or none match in metrics.tokens_usages, returns None.
     """
     if event.tool_call_metadata and event.tool_call_metadata.model_response:
         response_id = event.tool_call_metadata.model_response.get('id')
