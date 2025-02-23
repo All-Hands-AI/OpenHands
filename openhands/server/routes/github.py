@@ -16,7 +16,7 @@ from openhands.server.auth import get_github_token, get_user_id
 app = APIRouter(prefix='/api/github')
 
 
-@app.get('/repositories')
+@app.get('/repositories', response_model=list[GitHubRepository])
 async def get_github_repositories(
     page: int = 1,
     per_page: int = 10,
@@ -24,7 +24,7 @@ async def get_github_repositories(
     installation_id: int | None = None,
     github_user_id: str | None = Depends(get_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
-) -> Union[list[GitHubRepository], JSONResponse]:
+) -> list[GitHubRepository] | JSONResponse:
     client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
     try:
         repos: list[GitHubRepository] = await client.get_repositories(
@@ -45,11 +45,11 @@ async def get_github_repositories(
         )
 
 
-@app.get('/user')
+@app.get('/user', response_model=GitHubUser)
 async def get_github_user(
     github_user_id: str | None = Depends(get_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
-) -> Union[GitHubUser, JSONResponse]:
+) -> GitHubUser | JSONResponse:
     client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
     try:
         user: GitHubUser = await client.get_user()
@@ -68,11 +68,11 @@ async def get_github_user(
         )
 
 
-@app.get('/installations')
+@app.get('/installations', response_model=list[int])
 async def get_github_installation_ids(
     github_user_id: str | None = Depends(get_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
-) -> Union[list[int], JSONResponse]:
+) -> list[int] | JSONResponse:
     client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
     try:
         installations_ids: list[int] = await client.get_installation_ids()
@@ -91,7 +91,7 @@ async def get_github_installation_ids(
         )
 
 
-@app.get('/search/repositories')
+@app.get('/search/repositories', response_model=list[GitHubRepository])
 async def search_github_repositories(
     query: str,
     per_page: int = 5,
@@ -99,7 +99,7 @@ async def search_github_repositories(
     order: str = 'desc',
     github_user_id: str | None = Depends(get_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
-) -> Union[list[GitHubRepository], JSONResponse]:
+) -> list[GitHubRepository] | JSONResponse:
     client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
     try:
         repos: list[GitHubRepository] = await client.search_repositories(
