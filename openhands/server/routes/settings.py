@@ -1,5 +1,8 @@
-from fastapi import APIRouter, Request, status
+from typing import Annotated, cast
+
+from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
@@ -11,8 +14,15 @@ from openhands.server.shared import SettingsStoreImpl, config
 app = APIRouter(prefix='/api')
 
 
-@app.get('/settings')
-async def load_settings(request: Request) -> GETSettingsModel | None:
+async def get_settings(request: Request) -> Response:
+    """Load user settings.
+
+    Args:
+        request (Request): The incoming FastAPI request object.
+
+    Returns:
+        Response: The user settings or error response.
+    """
     try:
         user_id = get_user_id(request)
         settings_store = await SettingsStoreImpl.get_instance(config, user_id)
@@ -31,7 +41,10 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
         settings_with_token_data.llm_api_key = settings.llm_api_key
 
         del settings_with_token_data.github_token
-        return settings_with_token_data
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=settings_with_token_data.model_dump(),
+        )
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
         return JSONResponse(
@@ -40,13 +53,62 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
         )
 
 
-@app.post('/settings')
+def get_get_route() -> APIRoute:
+    """Get the route for loading settings.
+
+    Returns:
+        APIRoute: The route for loading settings.
+    """
+    return cast(
+        APIRoute,
+        app.get('/settings', response_model=GETSettingsModel),
+    )
+
+
+async def load_settings(
+    response: Annotated[Response, Depends(get_settings)],
+) -> Response:
+    """Load user settings.
+
+    Args:
+        response (Response): The response from get_settings.
+
+    Returns:
+        Response: The user settings or error response.
+    """
+    return response
+
+
+get_route = get_get_route()
+get_route.endpoint = load_settings
+
+
+def get_post_route() -> APIRoute:
+    """Get the route for storing settings.
+
+    Returns:
+        APIRoute: The route for storing settings.
+    """
+    return cast(
+        APIRoute,
+        app.post('/settings', response_model=dict[str, str]),
+    )
+
+
 async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
-) -> JSONResponse:
-    # Check if token is valid
+) -> Response:
+    """Store user settings.
 
+    Args:
+        request (Request): The incoming FastAPI request object.
+        settings (POSTSettingsModel): The settings to store.
+
+    Returns:
+        Response: Success or error response.
+    """
+    # Check if token is valid
     if settings.github_token:
         try:
             # We check if the token is valid by getting the user
@@ -110,7 +172,19 @@ async def store_settings(
         )
 
 
+post_route = get_post_route()
+post_route.endpoint = store_settings
+
+
 def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings:
+    """Convert POSTSettingsModel to Settings.
+
+    Args:
+        settings_with_token_data (POSTSettingsModel): The settings to convert.
+
+    Returns:
+        Settings: The converted settings.
+    """
     settings_data = settings_with_token_data.model_dump()
 
     # Filter out additional fields from `SettingsWithTokenData`
