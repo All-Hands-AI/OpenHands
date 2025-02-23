@@ -79,7 +79,7 @@ class AppConfig(BaseModel):
     cli_multiline_input: bool = Field(default=False)
     conversation_max_age_seconds: int = Field(default=864000)  # 10 days in seconds
     microagents_dir: str = Field(
-        default='openhands/microagents',
+        default='microagents',
         description='Directory containing global microagents',
     )
 
