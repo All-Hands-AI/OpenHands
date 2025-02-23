@@ -6,8 +6,8 @@ from openhands.core.message import ImageContent, TextContent
 from openhands.core.message_utils import (
     get_action_message,
     get_observation_message,
-    get_single_tokens_usage_for_event,
-    get_tokens_usage_for_event_id,
+    get_token_usage_for_event,
+    get_token_usage_for_event_id,
 )
 from openhands.events.action import (
     AgentFinishAction,
@@ -26,7 +26,7 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.files import FileEditObservation, FileReadObservation
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.tool import ToolCallMetadata
-from openhands.llm.metrics import Metrics, TokensUsage
+from openhands.llm.metrics import Metrics, TokenUsage
 
 
 def test_cmd_output_observation_message():
@@ -277,10 +277,10 @@ def test_agent_finish_action_with_tool_metadata():
     assert 'Initial thought\nTask completed' in result.content[0].text
 
 
-def test_get_single_tokens_usage_for_event():
+def test_get_token_usage_for_event():
     """Test that we get the single matching usage record (if any) based on the event's model_response.id."""
     metrics = Metrics(model_name='test-model')
-    usage_record = TokensUsage(
+    usage_record = TokenUsage(
         model='test-model',
         prompt_tokens=10,
         completion_tokens=5,
@@ -288,7 +288,7 @@ def test_get_single_tokens_usage_for_event():
         cache_write_tokens=1,
         response_id='test-response-id',
     )
-    metrics.add_tokens_usage(
+    metrics.add_token_usage(
         prompt_tokens=usage_record.prompt_tokens,
         completion_tokens=usage_record.completion_tokens,
         cache_read_tokens=usage_record.cache_read_tokens,
@@ -309,29 +309,29 @@ def test_get_single_tokens_usage_for_event():
     )
 
     # We should find that usage record
-    found = get_single_tokens_usage_for_event(event, metrics)
+    found = get_token_usage_for_event(event, metrics)
     assert found is not None
     assert found.prompt_tokens == 10
     assert found.response_id == 'test-response-id'
 
     # If we change the event's response ID, we won't find anything
     mock_tool_call_metadata.model_response.id = 'some-other-id'
-    found2 = get_single_tokens_usage_for_event(event, metrics)
+    found2 = get_token_usage_for_event(event, metrics)
     assert found2 is None
 
     # If the event has no tool_call_metadata, also returns None
     event._tool_call_metadata = None
-    found3 = get_single_tokens_usage_for_event(event, metrics)
+    found3 = get_token_usage_for_event(event, metrics)
     assert found3 is None
 
 
-def test_get_tokens_usage_for_event_id():
+def test_get_token_usage_for_event_id():
     """
     Test that we search backward from the event with the given id,
     finding the first usage record that matches a response_id in that or previous events.
     """
     metrics = Metrics(model_name='test-model')
-    usage_1 = TokensUsage(
+    usage_1 = TokenUsage(
         model='test-model',
         prompt_tokens=12,
         completion_tokens=3,
@@ -339,7 +339,7 @@ def test_get_tokens_usage_for_event_id():
         cache_write_tokens=5,
         response_id='resp-1',
     )
-    usage_2 = TokensUsage(
+    usage_2 = TokenUsage(
         model='test-model',
         prompt_tokens=7,
         completion_tokens=2,
@@ -347,8 +347,8 @@ def test_get_tokens_usage_for_event_id():
         cache_write_tokens=3,
         response_id='resp-2',
     )
-    metrics._tokens_usages.append(usage_1)
-    metrics._tokens_usages.append(usage_2)
+    metrics._token_usages.append(usage_1)
+    metrics._token_usages.append(usage_2)
 
     # Build a list of events
     events = []
@@ -373,15 +373,15 @@ def test_get_tokens_usage_for_event_id():
         events.append(e)
 
     # If we ask for event_id=3, we find usage_2 immediately
-    found_3 = get_tokens_usage_for_event_id(events, 3, metrics)
+    found_3 = get_token_usage_for_event_id(events, 3, metrics)
     assert found_3 is not None
     assert found_3.response_id == 'resp-2'
 
     # If we ask for event_id=2, no usage in event2, so we check event1 -> usage_1 found
-    found_2 = get_tokens_usage_for_event_id(events, 2, metrics)
+    found_2 = get_token_usage_for_event_id(events, 2, metrics)
     assert found_2 is not None
     assert found_2.response_id == 'resp-1'
 
     # If we ask for event_id=0, no usage in event0 or earlier, so return None
-    found_0 = get_tokens_usage_for_event_id(events, 0, metrics)
+    found_0 = get_token_usage_for_event_id(events, 0, metrics)
     assert found_0 is None

@@ -468,9 +468,9 @@ def test_llm_token_usage(mock_litellm_completion, default_config):
     llm.completion(messages=[{'role': 'user', 'content': 'Hello usage!'}])
 
     # Verify we have exactly one usage record after first call
-    tokens_usage_list = llm.metrics.get()['tokens_usages']
-    assert len(tokens_usage_list) == 1
-    usage_entry_1 = tokens_usage_list[0]
+    token_usage_list = llm.metrics.get()['token_usages']
+    assert len(token_usage_list) == 1
+    usage_entry_1 = token_usage_list[0]
     assert usage_entry_1['prompt_tokens'] == 12
     assert usage_entry_1['completion_tokens'] == 3
     assert usage_entry_1['cache_read_tokens'] == 2
@@ -481,9 +481,9 @@ def test_llm_token_usage(mock_litellm_completion, default_config):
     llm.completion(messages=[{'role': 'user', 'content': 'Hello again!'}])
 
     # Now we expect two usage records total
-    tokens_usage_list = llm.metrics.get()['tokens_usages']
-    assert len(tokens_usage_list) == 2
-    usage_entry_2 = tokens_usage_list[-1]
+    token_usage_list = llm.metrics.get()['token_usages']
+    assert len(token_usage_list) == 2
+    usage_entry_2 = token_usage_list[-1]
     assert usage_entry_2['prompt_tokens'] == 7
     assert usage_entry_2['completion_tokens'] == 2
     assert usage_entry_2['cache_read_tokens'] == 1

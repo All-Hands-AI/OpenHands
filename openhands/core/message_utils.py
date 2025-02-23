@@ -29,7 +29,7 @@ from openhands.events.observation import (
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
-from openhands.llm.metrics import Metrics, TokensUsage
+from openhands.llm.metrics import Metrics, TokenUsage
 
 
 def events_to_messages(
@@ -365,14 +365,12 @@ def apply_prompt_caching(messages: list[Message]) -> None:
             break
 
 
-def get_single_tokens_usage_for_event(
-    event: Event, metrics: Metrics
-) -> TokensUsage | None:
+def get_token_usage_for_event(event: Event, metrics: Metrics) -> TokenUsage | None:
     """
     Returns at most one token usage record for the `model_response.id` in this event's
     `tool_call_metadata`.
 
-    If no response_id is found, or none match in metrics.tokens_usages, returns [].
+    If no response_id is found, or none match in metrics.token_usages, returns None.
     """
     if event.tool_call_metadata and event.tool_call_metadata.model_response:
         response_id = event.tool_call_metadata.model_response.get('id')
@@ -380,7 +378,7 @@ def get_single_tokens_usage_for_event(
             return next(
                 (
                     usage
-                    for usage in metrics.tokens_usages
+                    for usage in metrics.token_usages
                     if usage.response_id == response_id
                 ),
                 None,
@@ -388,12 +386,12 @@ def get_single_tokens_usage_for_event(
     return None
 
 
-def get_tokens_usage_for_event_id(
+def get_token_usage_for_event_id(
     events: list[Event], event_id: int, metrics: Metrics
-) -> TokensUsage | None:
+) -> TokenUsage | None:
     """
     Starting from the event with .id == event_id and moving backwards in `events`,
-    find the first TokensUsage record (if any) associated with a response_id from
+    find the first TokenUsage record (if any) associated with a response_id from
     tool_call_metadata.model_response.id.
 
     Returns the first match found, or None if none is found.
@@ -405,7 +403,7 @@ def get_tokens_usage_for_event_id(
 
     # search backward from idx down to 0
     for i in range(idx, -1, -1):
-        usage = get_single_tokens_usage_for_event(events[i], metrics)
+        usage = get_token_usage_for_event(events[i], metrics)
         if usage is not None:
             return usage
     return None
