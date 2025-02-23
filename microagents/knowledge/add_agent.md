@@ -7,9 +7,13 @@ triggers:
 - new agent
 - new microagent
 - create agent
+- create an agent
 - create microagent
+- create a microagent
 - add agent
+- add an agent
 - add microagent
+- add a microagent
 - microagent template
 ---
 
