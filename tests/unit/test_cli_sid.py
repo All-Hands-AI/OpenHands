@@ -33,7 +33,7 @@ def mock_controller():
 
 
 @pytest.mark.asyncio
-@patch('builtins.input', return_value="")
+@patch('builtins.input', return_value='')
 async def test_cli_session_id_output(mock_runtime, mock_agent, mock_controller, capsys):
     # display sid in console when starting
     await main(asyncio.get_event_loop())
