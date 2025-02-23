@@ -53,48 +53,20 @@ async def get_settings(request: Request) -> Response:
         )
 
 
-def get_get_route() -> APIRoute:
-    """Get the route for loading settings.
-
-    Returns:
-        APIRoute: The route for loading settings.
-    """
-    return cast(
-        APIRoute,
-        app.get('/settings', response_model=GETSettingsModel),
-    )
-
-
-async def load_settings(
-    response: Annotated[Response, Depends(get_settings)],
-) -> Response:
+@app.get('/settings', response_model=GETSettingsModel)
+async def load_settings(request: Request) -> Response:
     """Load user settings.
 
     Args:
-        response (Response): The response from get_settings.
+        request (Request): The incoming FastAPI request object.
 
     Returns:
         Response: The user settings or error response.
     """
-    return response
+    return await get_settings(request)
 
 
-get_route = get_get_route()
-get_route.endpoint = load_settings
-
-
-def get_post_route() -> APIRoute:
-    """Get the route for storing settings.
-
-    Returns:
-        APIRoute: The route for storing settings.
-    """
-    return cast(
-        APIRoute,
-        app.post('/settings', response_model=dict[str, str]),
-    )
-
-
+@app.post('/settings', response_model=dict[str, str])
 async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
@@ -172,8 +144,7 @@ async def store_settings(
         )
 
 
-post_route = get_post_route()
-post_route.endpoint = store_settings
+
 
 
 def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings:
