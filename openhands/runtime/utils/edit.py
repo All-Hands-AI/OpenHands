@@ -2,6 +2,7 @@ import os
 import re
 import tempfile
 from abc import ABC, abstractmethod
+from typing import Any
 
 from openhands_aci.utils.diff import get_diff
 
@@ -52,12 +53,12 @@ IMPORTANT:
 """.strip()
 
 
-def _extract_code(string):
+def _extract_code(string: str) -> str | None:
     pattern = r'```(?:\w*\n)?(.*?)```'
     matches = re.findall(pattern, string, re.DOTALL)
     if not matches:
         return None
-    return matches[0]
+    return str(matches[0])
 
 
 def get_new_file_contents(
@@ -102,7 +103,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
     # This restricts the number of lines we can edit to avoid exceeding the token limit.
     MAX_LINES_TO_EDIT = 300
 
-    def __init__(self, enable_llm_editor: bool, *args, **kwargs):
+    def __init__(self, enable_llm_editor: bool, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.enable_llm_editor = enable_llm_editor
 
