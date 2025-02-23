@@ -75,12 +75,16 @@ def run_test_case(case_dir: Path) -> bool:
     temp_dir_ctx = None
 
     if not os.getenv('NO_CLEANUP'):
-        # Register cleanup function
-        def cleanup_workspace():
-            if workspace_dir.exists():
-                shutil.rmtree(workspace_dir)
 
-        temp_dir_ctx = type('TempDirCtx', (), {'cleanup': cleanup_workspace})()
+        class WorkspaceCleanup:
+            def __init__(self, workspace_path: Path):
+                self.workspace_path = workspace_path
+
+            def cleanup(self):
+                if self.workspace_path.exists():
+                    shutil.rmtree(self.workspace_path)
+
+        temp_dir_ctx = WorkspaceCleanup(workspace_dir)
 
     try:
         # Check if git repo and commit-ish are specified
