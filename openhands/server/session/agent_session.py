@@ -331,7 +331,7 @@ class AgentSession:
 
         if agent.prompt_manager and self.runtime:
             # sets available hosts
-            agent.prompt_manager.set_runtime_info(self.runtime)
+            mem.set_runtime_info(self.runtime.web_hosts)
 
             # loads microagents from repo/.openhands/microagents
             microagents: list[BaseMicroAgent] = await call_sync_from_async(
@@ -342,9 +342,7 @@ class AgentSession:
             if selected_repository:
                 repo_directory = selected_repository.split('/')[1]
                 if repo_directory:
-                    agent.prompt_manager.set_repository_info(
-                        selected_repository, repo_directory
-                    )
+                    mem.set_repository_info(selected_repository, repo_directory)
         return mem
 
     def _maybe_restore_state(self) -> State | None:

@@ -12,7 +12,7 @@ from openhands.microagent import (
     RepoMicroAgent,
     load_microagents_from_dir,
 )
-from openhands.utils.prompt import PromptManager
+from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
 
 
 class Memory:
@@ -43,12 +43,21 @@ class Memory:
         self.repo_microagents: dict[str, RepoMicroAgent] = {}
         self.knowledge_microagents: dict[str, KnowledgeMicroAgent] = {}
 
+        # Track whether we've seen the first user message
+        self._first_user_message_seen = False
+
+        # Store repository / runtime info to send them to the templating later
+        self.repository_info: RepositoryInfo | None = None
+        self.runtime_info: RuntimeInfo | None = None
+
+        # TODO: enable_prompt_extensions
+
     def _load_global_microagents(self) -> None:
         """
         Loads microagents from the global microagents_dir.
         This is effectively what used to happen in PromptManager.
         """
-        repo_agents, knowledge_agents, _task_agents = load_microagents_from_dir(
+        repo_agents, knowledge_agents, _ = load_microagents_from_dir(
             self.microagents_dir
         )
         for name, agent in knowledge_agents.items():
@@ -62,14 +71,51 @@ class Memory:
             if isinstance(agent, RepoMicroAgent):
                 self.repo_microagents[name] = agent
 
+    def set_repository_info(self, repo_name: str, repo_directory: str) -> None:
+        """Store repository info so we can reference it in an observation."""
+        self.repository_info = RepositoryInfo(repo_name, repo_directory)
+        self.prompt_manager.set_repository_info(self.repository_info)
+
+    def set_runtime_info(self, runtime_hosts: dict[str, int]) -> None:
+        """Store runtime info (web hosts, ports, etc.)."""
+        # e.g. { '127.0.0.1': 8080 }
+        self.runtime_info = RuntimeInfo(available_hosts=runtime_hosts)
+        self.prompt_manager.set_runtime_info(self.runtime_info)
+
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
         if isinstance(event, MessageAction):
-            self.on_user_message_action(event)
+            if event.source == 'user':
+                # If this is the first user message, create and add a RecallObservation
+                # with info about repo and runtime.
+                if not self._first_user_message_seen:
+                    self._first_user_message_seen = True
+                    self._on_first_user_message(event)
+                    # continue with the next handler, to include microagents if suitable for this user message
+            self._on_user_message_action(event)
         elif isinstance(event, RecallAction):
-            self.on_recall_action(event)
+            self._on_recall_action(event)
 
-    def on_user_message_action(self, event: MessageAction):
+    def _on_first_user_message(self, event: MessageAction):
+        """Create and add to the stream a RecallObservation carrying info about repo and runtime."""
+        # Build the same text that used to be appended to the first user message
+        repo_instructions = ''
+        assert (
+            len(self.repo_microagents) <= 1
+        ), f'Expecting at most one repo microagent, but found {len(self.repo_microagents)}: {self.repo_microagents.keys()}'
+        for microagent in self.repo_microagents.values():
+            # We assume these are the repo instructions
+            if repo_instructions:
+                repo_instructions += '\n\n'
+            repo_instructions += microagent.content
+
+        # Now wrap it in a RecallObservation, rather than altering the user message:
+        obs = RecallObservation(
+            content=self.prompt_manager.build_additional_info_text(repo_instructions)
+        )
+        self.event_stream.add_event(obs, EventSource.ENVIRONMENT)
+
+    def _on_user_message_action(self, event: MessageAction):
         """Replicates old microagent logic: if a microagent triggers on user text,
         we embed it in an <extra_info> block and post a RecallObservation."""
         if event.source != 'user':
@@ -102,7 +148,7 @@ class Memory:
                 obs, event.source if event.source else EventSource.ENVIRONMENT
             )
 
-    def on_recall_action(self, event: RecallAction):
+    def _on_recall_action(self, event: RecallAction):
         """If a RecallAction explicitly arrives, handle it."""
         assert isinstance(event, RecallAction)
 

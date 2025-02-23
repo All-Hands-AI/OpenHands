@@ -34,7 +34,7 @@ class CodeActAgent(Agent):
 
     ### Overview
 
-    This agent implements the CodeAct idea ([paper](https://arxiv.org/abs/2402.01030), [tweet](https://twitter.com/xingyaow_/status/1754556835703751087)) that consolidates LLM agents’ **act**ions into a unified **code** action space for both *simplicity* and *performance* (see paper for more details).
+    This agent implements the CodeAct idea ([paper](https://arxiv.org/abs/2402.01030), [tweet](https://twitter.com/xingyaow_/status/1754556835703751087)) that consolidates LLM agents' **act**ions into a unified **code** action space for both *simplicity* and *performance* (see paper for more details).
 
     The conceptual idea is illustrated below. At each turn, the agent can:
 
@@ -214,8 +214,6 @@ class CodeActAgent(Agent):
                 is_first_message_handled = True
                 # compose the first user message with examples
                 self.prompt_manager.add_examples_to_initial_message(msg)
-                if self.config.enable_prompt_extensions:
-                    self.prompt_manager.add_info_to_initial_message(msg)
 
             results.append(msg)
 

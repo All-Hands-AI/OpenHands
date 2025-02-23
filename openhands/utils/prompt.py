@@ -7,7 +7,6 @@ from jinja2 import Template
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
 from openhands.microagent.microagent import RepoMicroAgent
-from openhands.runtime.base import Runtime
 
 
 @dataclass
@@ -58,7 +57,7 @@ class PromptManager:
     This class is dedicated toloading and rendering prompts (system prompt, user prompt).
 
     Attributes:
-        prompt_dir (str): Directory containing prompt templates.
+        prompt_dir: Directory containing prompt templates.
     """
 
     def __init__(
@@ -84,23 +83,17 @@ class PromptManager:
     def get_system_message(self) -> str:
         return self.system_template.render().strip()
 
-    def set_runtime_info(self, runtime: Runtime) -> None:
-        self.runtime_info.available_hosts = runtime.web_hosts
+    def set_runtime_info(self, runtime_info: RuntimeInfo) -> None:
+        self.runtime_info = runtime_info
 
-    def set_repository_info(
-        self,
-        repo_name: str,
-        repo_directory: str,
-    ) -> None:
-        """Sets information about the GitHub repository that has been cloned.
+    def set_repository_info(self, repository_info: RepositoryInfo) -> None:
+        """Stores info about a cloned repository for rendering the template.
 
         Args:
-            repo_name: The name of the GitHub repository (e.g. 'owner/repo')
-            repo_directory: The directory where the repository has been cloned
+            repo_name: The name of the repository.
+            repo_directory: The directory of the repository.
         """
-        self.repository_info = RepositoryInfo(
-            repo_name=repo_name, repo_directory=repo_directory
-        )
+        self.repository_info = repository_info
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent
@@ -127,30 +120,28 @@ class PromptManager:
         self,
         message: Message,
     ) -> None:
-        """Adds information about the repository and runtime to the initial user message.
-
-        Args:
-            message: The initial user message to add information to.
         """
-        repo_instructions = ''
-        assert (
-            len(self.repo_microagents) <= 1
-        ), f'Expecting at most one repo microagent, but found {len(self.repo_microagents)}: {self.repo_microagents.keys()}'
-        for microagent in self.repo_microagents.values():
-            # We assume these are the repo instructions
-            if repo_instructions:
-                repo_instructions += '\n\n'
-            repo_instructions += microagent.content
+        Previously inserted the rendered template at the start of the user's first message.
+        If we've switched to using a separate RecallObservation in Memory, we can safely remove
+        or comment out the direct insertion code below—but we still keep the method for
+        scenarios where we want to read or manipulate the template output.
+        """
+        # Old code that forcibly modified the user message:
+        #
+        # info_block = self.build_additional_info_text(repo_instructions)
+        # if info_block:
+        #     message.content.insert(0, TextContent(text=info_block))
+        #
+        # Now we comment it out or remove to avoid "injecting" directly.
+        pass
 
-        additional_info = ADDITIONAL_INFO_TEMPLATE.render(
-            repository_instructions=repo_instructions,
+    def build_additional_info_text(self, repo_instructions: str = '') -> str:
+        """Renders the ADDITIONAL_INFO_TEMPLATE with the stored repository/runtime info."""
+        return ADDITIONAL_INFO_TEMPLATE.render(
             repository_info=self.repository_info,
+            repository_instructions=repo_instructions,
             runtime_info=self.runtime_info,
         ).strip()
-
-        # Insert the new content at the start of the TextContent list
-        if additional_info:
-            message.content.insert(0, TextContent(text=additional_info))
 
     def add_turns_left_reminder(self, messages: list[Message], state: State) -> None:
         latest_user_message = next(

@@ -78,7 +78,7 @@ def create_memory(
 
     if agent.prompt_manager and runtime:
         # sets available hosts
-        agent.prompt_manager.set_runtime_info(runtime)
+        mem.set_runtime_info(runtime.web_hosts)
 
         # loads microagents from repo/.openhands/microagents
         microagents: list[BaseMicroAgent] = runtime.get_microagents_from_selected_repo(
@@ -89,9 +89,7 @@ def create_memory(
         if selected_repository:
             repo_directory = selected_repository.split('/')[1]
             if repo_directory:
-                agent.prompt_manager.set_repository_info(
-                    selected_repository, repo_directory
-                )
+                mem.set_repository_info(selected_repository, repo_directory)
     return mem
 
 
