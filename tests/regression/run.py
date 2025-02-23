@@ -92,6 +92,7 @@ def run_test_case(case_dir: Path) -> bool:
         config.workspace_mount_path = str(temp_path)
         config.workspace_mount_path_in_sandbox = '/workspace'
         config.sandbox.keep_runtime_alive = False
+        config.save_trajectory_path = str(temp_path / 'trajectory.json')
         initial_user_action = MessageAction(content=task_str)
 
         # Change to temp directory for test execution
