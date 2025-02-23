@@ -25,9 +25,8 @@ def mock_agent():
 @pytest.fixture
 def mock_controller():
     with patch('openhands.core.cli.create_controller') as mock_create_controller:
-        mock_controller_instance = AsyncMock()
+        mock_controller_instance = AsyncMock(status_callback=None)
         mock_create_controller.return_value = (mock_controller_instance, None)
-        assert mock_controller_instance.status_callback is None
         yield mock_controller_instance
 
 
