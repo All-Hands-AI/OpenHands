@@ -24,7 +24,7 @@ class TestArgs(Namespace):
         super().__init__()
         self.no_auto_continue: bool = False
         self.name: str = case_name
-        self.model: str = 'gpt-4'
+        self.model: str = 'gpt-4o'
         self.agent_cls: str = 'CodeActAgent'
         self.max_budget_per_task: int = 100
         self.max_iterations: int = 100
