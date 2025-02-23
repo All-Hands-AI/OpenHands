@@ -5,7 +5,6 @@ import pytest
 
 from openhands.core.cli import main
 from openhands.core.schema import AgentState
-from openhands.events.action import ChangeAgentStateAction
 
 
 @pytest.fixture
