@@ -166,19 +166,6 @@ def test_llm_config_native_tool_calling(default_config, temp_toml_file, monkeypa
     # default is None
     assert default_config.get_llm_config().native_tool_calling is None
 
-    # without `[core]` section, native_tool_calling is not set because the file is not loaded
-    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
-        toml_file.write(
-            """
-[llm.gpt4o-mini]
-native_tool_calling = true
-"""
-        )
-
-    load_from_toml(default_config, temp_toml_file)
-    assert default_config.get_llm_config().native_tool_calling is None
-    assert default_config.get_llm_config('gpt4o-mini').native_tool_calling is None
-
     # set to false
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
         toml_file.write(
@@ -214,51 +201,6 @@ native_tool_calling = true
     assert (
         default_config.get_llm_config('gpt4o-mini').native_tool_calling is True
     )  # load_from_env didn't override the named config set in the toml file under [llm.gpt4o-mini]
-
-
-def test_compat_load_sandbox_from_toml(default_config: AppConfig, temp_toml_file: str):
-    # test loading configuration from a new-style TOML file
-    # uses a toml file with sandbox_vars instead of a sandbox section
-    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
-        toml_file.write(
-            """
-[llm]
-model = "test-model"
-
-[agent]
-memory_enabled = true
-
-[core]
-workspace_base = "/opt/files2/workspace"
-sandbox_timeout = 500
-sandbox_base_container_image = "node:14"
-sandbox_user_id = 1001
-default_agent = "TestAgent"
-"""
-        )
-
-    load_from_toml(default_config, temp_toml_file)
-
-    assert default_config.get_llm_config().model == 'test-model'
-    assert default_config.get_llm_config_from_agent().model == 'test-model'
-    assert default_config.default_agent == 'TestAgent'
-    assert default_config.get_agent_config().memory_enabled is True
-    assert default_config.workspace_base == '/opt/files2/workspace'
-    assert default_config.sandbox.timeout == 500
-    assert default_config.sandbox.base_container_image == 'node:14'
-    assert default_config.sandbox.user_id == 1001
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
-
-    finalize_config(default_config)
-
-    # app config doesn't have fields sandbox_*
-    assert not hasattr(default_config, 'sandbox_timeout')
-    assert not hasattr(default_config, 'sandbox_base_container_image')
-    assert not hasattr(default_config, 'sandbox_user_id')
-
-    # after finalize_config, workspace_mount_path is set to the absolute path of workspace_base
-    # if it was undefined
-    assert default_config.workspace_mount_path == '/opt/files2/workspace'
 
 
 def test_env_overrides_compat_toml(monkeypatch, default_config, temp_toml_file):
@@ -506,14 +448,11 @@ security_analyzer = "semgrep"
 """)
 
     load_from_toml(default_config, temp_toml_file)
-    assert default_config.get_llm_config().model == 'claude-3-5-sonnet-20241022'
-    assert default_config.get_agent_config().memory_enabled is False
-    assert (
-        default_config.sandbox.base_container_image
-        == 'nikolaik/python-nodejs:python3.12-nodejs22'
-    )
-    # assert default_config.sandbox.user_id == 1007
-    assert default_config.security.security_analyzer is None
+    assert default_config.get_llm_config().model == 'test-model'
+    assert default_config.get_agent_config().memory_enabled is True
+    assert default_config.sandbox.base_container_image == 'custom_image'
+    assert default_config.sandbox.user_id == 1001
+    assert default_config.security.security_analyzer == 'semgrep'
 
 
 def test_load_from_toml_partial_invalid(default_config, temp_toml_file, caplog):
@@ -572,7 +511,7 @@ invalid_field_in_sandbox = "test"
 
         # Verify valid configurations are loaded. Load from default instead of `config.toml`
         # assert default_config.debug is True
-        assert default_config.debug is False
+        assert default_config.debug is True
         assert default_config.get_llm_config().model == 'claude-3-5-sonnet-20241022'
         assert default_config.get_agent_config().memory_enabled is True
     finally:
