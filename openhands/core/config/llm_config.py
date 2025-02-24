@@ -130,9 +130,9 @@ class LLMConfig(BaseModel):
         try:
             base_config = cls.model_validate(base_data)
             llm_mapping['llm'] = base_config
-        except ValidationError as e:
+        except ValidationError:
             logger.openhands_logger.warning(
-                f'Invalid base LLM configuration: {e}. Using defaults.'
+                'Cannot parse [llm] config from toml. Continuing with defaults.'
             )
             # If base config fails, create a default one
             base_config = cls()
@@ -146,9 +146,9 @@ class LLMConfig(BaseModel):
                 merged = {**base_config.model_dump(), **overrides}
                 custom_config = cls.model_validate(merged)
                 llm_mapping[name] = custom_config
-            except ValidationError as e:
+            except ValidationError:
                 logger.openhands_logger.warning(
-                    f'Invalid LLM configuration for [{name}]: {e}. This section will be skipped.'
+                    f'Cannot parse [{name}] config from toml. This section will be skipped.'
                 )
                 # Skip this custom section but continue with others
                 continue
