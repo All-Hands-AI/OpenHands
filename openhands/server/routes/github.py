@@ -119,22 +119,20 @@ async def search_github_repositories(
         )
 
 
-@app.get('/repository/suggested-tasks')
-async def get_repository_suggested_tasks(
-    repository: str,
+@app.get('/suggested-tasks')
+async def get_suggested_tasks(
     github_user_id: str | None = Depends(get_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
 ):
     """
-    Get suggested tasks for a repository, including:
-    - PRs with merge conflicts
-    - PRs with failing GitHub Actions
-    - PRs with unresolved comments
-    - Issues with specific labels (help wanted, chore, documentation, good first issue)
+    Get suggested tasks for the authenticated user across their most recently pushed repositories.
+    Returns:
+    - PRs owned by the user
+    - Issues assigned to the user
     """
     client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
     try:
-        tasks: list[SuggestedTask] = await client.get_suggested_tasks(repository)
+        tasks: list[SuggestedTask] = await client.get_suggested_tasks()
         return tasks
 
     except GhAuthenticationError as e:

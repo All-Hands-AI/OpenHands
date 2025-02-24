@@ -7,6 +7,7 @@ class TaskType(str, Enum):
     FAILING_CHECKS = "FAILING_CHECKS"
     UNRESOLVED_COMMENTS = "UNRESOLVED_COMMENTS"
     OPEN_ISSUE = "OPEN_ISSUE"
+    OPEN_PR = "OPEN_PR"
 
 
 class SuggestedTask(BaseModel):
