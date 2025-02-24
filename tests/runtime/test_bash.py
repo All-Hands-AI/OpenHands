@@ -456,6 +456,13 @@ def test_stop_button_terminates_background_process(temp_dir, runtime_cls):
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == -1  # Process still running
         
+        # Send empty command to check output status
+        action = CmdRunAction(command="", is_input=True)
+        action.set_hard_timeout(5)  # Increased timeout
+        obs = runtime.run_action(action)
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == -1  # Process still running
+        
         # Send C-c to terminate
         action = CmdRunAction(command="C-c", is_input=True)
         obs = runtime.run_action(action)
@@ -502,6 +509,13 @@ def test_stop_button_terminates_foreground_process(temp_dir, runtime_cls):
         assert 'running' in obs.content  # Should show the process output
         
         # Check the output to verify process is running
+        action = CmdRunAction(command="", is_input=True)
+        action.set_hard_timeout(5)  # Increased timeout
+        obs = runtime.run_action(action)
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == -1  # Process still running
+        
+        # Send empty command to check output status
         action = CmdRunAction(command="", is_input=True)
         action.set_hard_timeout(5)  # Increased timeout
         obs = runtime.run_action(action)
