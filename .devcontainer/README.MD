@@ -1,0 +1,1 @@
+The files in this directory configure a development container that can be used for development on Windows using Microsoft's "Dev Containers" extension for VS Code.
