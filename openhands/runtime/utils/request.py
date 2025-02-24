@@ -18,7 +18,7 @@ class RequestHTTPError(requests.HTTPError):
     def __str__(self) -> str:
         s = super().__str__()
         if self.detail is not None:
-            s += f"\nDetails: {self.detail}"
+            s += f'\nDetails: {self.detail}'
         return s
 
 
@@ -54,6 +54,6 @@ def send_request(
         raise RequestHTTPError(
             e,
             response=e.response,
-            detail=_json.get("detail") if _json is not None else None,
+            detail=_json.get('detail') if _json is not None else None,
         ) from e
     return response  # type: ignore
