@@ -8,7 +8,7 @@ from typing import Any, Callable
 import requests
 
 from openhands.core.config import LLMConfig
-from openhands.llm.http_handler import EnsureHttpxClose
+from openhands.utils.ensure_httpx_close import EnsureHttpxClose
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
