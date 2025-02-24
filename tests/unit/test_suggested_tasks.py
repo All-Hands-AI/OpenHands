@@ -1,8 +1,8 @@
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 from openhands.integrations.github.github_service import GitHubService
-from openhands.integrations.github.github_types import GitHubUser, GitHubRepository, TaskType
+from openhands.integrations.github.github_types import GitHubUser, TaskType
 
 @pytest.mark.asyncio
 async def test_get_suggested_tasks():
@@ -14,94 +14,68 @@ async def test_get_suggested_tasks():
         name="Test User"
     )
 
-    mock_repos = [
-        GitHubRepository(
-            id=1,
-            full_name="test-org/repo-1",
-            stargazers_count=10
-        ),
-        GitHubRepository(
-            id=2,
-            full_name="test-user/repo-2",
-            stargazers_count=5
-        )
-    ]
-
-    # Mock GraphQL response for each repository
-    mock_graphql_responses = [
-        {
-            "data": {
-                "repository": {
-                    "pullRequests": {
-                        "nodes": [
-                            {
-                                "number": 1,
-                                "title": "PR with conflicts",
-                                "mergeable": "CONFLICTING",
-                                "commits": {
-                                    "nodes": [{"commit": {"statusCheckRollup": None}}]
-                                },
-                                "reviews": {"nodes": []}
+    # Mock GraphQL response
+    mock_graphql_response = {
+        "data": {
+            "user": {
+                "pullRequests": {
+                    "nodes": [
+                        {
+                            "number": 1,
+                            "title": "PR with conflicts",
+                            "repository": {"nameWithOwner": "test-org/repo-1"},
+                            "mergeable": "CONFLICTING",
+                            "commits": {
+                                "nodes": [{"commit": {"statusCheckRollup": None}}]
                             },
-                            {
-                                "number": 2,
-                                "title": "PR with failing checks",
-                                "mergeable": "MERGEABLE",
-                                "commits": {
-                                    "nodes": [{"commit": {"statusCheckRollup": {"state": "FAILURE"}}}]
-                                },
-                                "reviews": {"nodes": []}
+                            "reviews": {"nodes": []}
+                        },
+                        {
+                            "number": 2,
+                            "title": "PR with failing checks",
+                            "repository": {"nameWithOwner": "test-org/repo-1"},
+                            "mergeable": "MERGEABLE",
+                            "commits": {
+                                "nodes": [{"commit": {"statusCheckRollup": {"state": "FAILURE"}}}]
+                            },
+                            "reviews": {"nodes": []}
+                        },
+                        {
+                            "number": 4,
+                            "title": "PR with comments",
+                            "repository": {"nameWithOwner": "test-user/repo-2"},
+                            "mergeable": "MERGEABLE",
+                            "commits": {
+                                "nodes": [{"commit": {"statusCheckRollup": {"state": "SUCCESS"}}}]
+                            },
+                            "reviews": {
+                                "nodes": [{"state": "CHANGES_REQUESTED"}]
                             }
-                        ]
-                    },
-                    "issues": {
-                        "nodes": [
-                            {
-                                "number": 3,
-                                "title": "Assigned issue 1"
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        {
-            "data": {
-                "repository": {
-                    "pullRequests": {
-                        "nodes": [
-                            {
-                                "number": 4,
-                                "title": "PR with comments",
-                                "mergeable": "MERGEABLE",
-                                "commits": {
-                                    "nodes": [{"commit": {"statusCheckRollup": {"state": "SUCCESS"}}}]
-                                },
-                                "reviews": {
-                                    "nodes": [{"state": "CHANGES_REQUESTED"}]
-                                }
-                            }
-                        ]
-                    },
-                    "issues": {
-                        "nodes": [
-                            {
-                                "number": 5,
-                                "title": "Assigned issue 2"
-                            }
-                        ]
-                    }
+                        }
+                    ]
+                },
+                "issues": {
+                    "nodes": [
+                        {
+                            "number": 3,
+                            "title": "Assigned issue 1",
+                            "repository": {"nameWithOwner": "test-org/repo-1"}
+                        },
+                        {
+                            "number": 5,
+                            "title": "Assigned issue 2",
+                            "repository": {"nameWithOwner": "test-user/repo-2"}
+                        }
+                    ]
                 }
             }
         }
-    ]
+    }
 
     # Create service instance with mocked methods
     service = GitHubService()
     service.get_user = AsyncMock(return_value=mock_user)
-    service.get_repositories = AsyncMock(return_value=mock_repos)
-    service.execute_graphql_query = AsyncMock()
-    service.execute_graphql_query.side_effect = mock_graphql_responses
+    service.execute_graphql_query = AsyncMock(return_value=mock_graphql_response)
 
     # Call the function
     tasks = await service.get_suggested_tasks()
