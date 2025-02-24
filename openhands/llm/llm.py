@@ -8,6 +8,7 @@ from typing import Any, Callable
 import requests
 
 from openhands.core.config import LLMConfig
+from openhands.utils.ensure_httpx_close import EnsureHttpxClose
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -230,9 +231,9 @@ class LLM(RetryMixin, DebugMixin):
 
             # Record start time for latency measurement
             start_time = time.time()
-
-            # we don't support streaming here, thus we get a ModelResponse
-            resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+            with EnsureHttpxClose():
+                # we don't support streaming here, thus we get a ModelResponse
+                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
             latency = time.time() - start_time
@@ -287,7 +288,11 @@ class LLM(RetryMixin, DebugMixin):
                     'messages': messages,
                     'response': resp,
                     'args': args,
-                    'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
+                    'kwargs': {
+                        k: v
+                        for k, v in kwargs.items()
+                        if k not in ('messages', 'client')
+                    },
                     'timestamp': time.time(),
                     'cost': cost,
                 }
@@ -497,20 +502,21 @@ class LLM(RetryMixin, DebugMixin):
             stats += 'Response Latency: %.3f seconds\n' % latest_latency.latency
 
         usage: Usage | None = response.get('usage')
+        response_id = response.get('id', 'unknown')
 
         if usage:
             # keep track of the input and output tokens
-            input_tokens = usage.get('prompt_tokens')
-            output_tokens = usage.get('completion_tokens')
+            prompt_tokens = usage.get('prompt_tokens', 0)
+            completion_tokens = usage.get('completion_tokens', 0)
 
-            if input_tokens:
-                stats += 'Input tokens: ' + str(input_tokens)
+            if prompt_tokens:
+                stats += 'Input tokens: ' + str(prompt_tokens)
 
-            if output_tokens:
+            if completion_tokens:
                 stats += (
-                    (' | ' if input_tokens else '')
+                    (' | ' if prompt_tokens else '')
                     + 'Output tokens: '
-                    + str(output_tokens)
+                    + str(completion_tokens)
                     + '\n'
                 )
 
@@ -519,7 +525,7 @@ class LLM(RetryMixin, DebugMixin):
                 'prompt_tokens_details'
             )
             cache_hit_tokens = (
-                prompt_tokens_details.cached_tokens if prompt_tokens_details else None
+                prompt_tokens_details.cached_tokens if prompt_tokens_details else 0
             )
             if cache_hit_tokens:
                 stats += 'Input tokens (cache hit): ' + str(cache_hit_tokens) + '\n'
@@ -528,9 +534,19 @@ class LLM(RetryMixin, DebugMixin):
             # but litellm doesn't separate them in the usage stats
             # so we can read it from the provider-specific extra field
             model_extra = usage.get('model_extra', {})
-            cache_write_tokens = model_extra.get('cache_creation_input_tokens')
+            cache_write_tokens = model_extra.get('cache_creation_input_tokens', 0)
             if cache_write_tokens:
                 stats += 'Input tokens (cache write): ' + str(cache_write_tokens) + '\n'
+
+            # Record in metrics
+            # We'll treat cache_hit_tokens as "cache read" and cache_write_tokens as "cache write"
+            self.metrics.add_token_usage(
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                cache_read_tokens=cache_hit_tokens,
+                cache_write_tokens=cache_write_tokens,
+                response_id=response_id,
+            )
 
         # log the stats
         if stats:
