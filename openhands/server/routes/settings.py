@@ -1,8 +1,5 @@
-from typing import Annotated, cast
-
-from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi import APIRouter, Request, Response, status
 from fastapi.responses import JSONResponse
-from fastapi.routing import APIRoute
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
@@ -142,9 +139,6 @@ async def store_settings(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': 'Something went wrong storing settings'},
         )
-
-
-
 
 
 def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings:

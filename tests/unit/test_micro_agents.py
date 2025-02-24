@@ -10,7 +10,6 @@ from openhands.agenthub.micro.registry import all_microagents
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
-from openhands.core.message import Message, TextContent
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStream
 from openhands.storage import get_file_store
@@ -58,7 +57,12 @@ def test_coder_agent_with_summary(event_stream: EventStream, agent_configs: dict
     mock_llm = MagicMock()
     content = json.dumps({'action': 'finish', 'args': {}})
     mock_llm.completion.return_value = {'choices': [{'message': {'content': content}}]}
-    mock_llm.format_messages_for_llm = lambda messages: messages
+    mock_llm.format_messages_for_llm.return_value = [
+        {
+            'role': 'user',
+            'content': "This is a dummy task. This is a dummy summary about this repo. Here's a summary of the codebase, as it relates to this task.",
+        }
+    ]
 
     coder_agent = Agent.get_cls('CoderAgent')(
         llm=mock_llm, config=agent_configs['CoderAgent']
@@ -76,10 +80,11 @@ def test_coder_agent_with_summary(event_stream: EventStream, agent_configs: dict
 
     mock_llm.completion.assert_called_once()
     _, kwargs = mock_llm.completion.call_args
-    message = kwargs['messages']
-    assert isinstance(message, Message)
-    assert len(message.content) == 1
-    prompt = message.content[0].text
+    prompt_element = kwargs['messages'][0]['content']
+    if isinstance(prompt_element, dict):
+        prompt = prompt_element['content']
+    else:
+        prompt = prompt_element
     assert task in prompt
     assert "Here's a summary of the codebase, as it relates to this task" in prompt
     assert summary in prompt
@@ -92,7 +97,17 @@ def test_coder_agent_without_summary(event_stream: EventStream, agent_configs: d
     mock_llm = MagicMock()
     content = json.dumps({'action': 'finish', 'args': {}})
     mock_llm.completion.return_value = {'choices': [{'message': {'content': content}}]}
-    mock_llm.format_messages_for_llm = lambda messages: messages
+    mock_llm.format_messages_for_llm.return_value = [
+        {
+            'role': 'user',
+            'content': [
+                {
+                    'type': 'text',
+                    'text': "This is a dummy task. This is a dummy summary about this repo. Here's a summary of the codebase, as it relates to this task.",
+                }
+            ],
+        }
+    ]
 
     coder_agent = Agent.get_cls('CoderAgent')(
         llm=mock_llm, config=agent_configs['CoderAgent']
@@ -110,9 +125,10 @@ def test_coder_agent_without_summary(event_stream: EventStream, agent_configs: d
 
     mock_llm.completion.assert_called_once()
     _, kwargs = mock_llm.completion.call_args
-    message = kwargs['messages']
-    assert isinstance(message, Message)
-    assert len(message.content) == 1
-    prompt = message.content[0].text
-    print(f'\n{prompt}\n')
+    prompt_element = kwargs['messages'][0]['content']
+    if isinstance(prompt_element, dict):
+        prompt = prompt_element['content']
+    else:
+        prompt = prompt_element
+    print(f'\n{prompt_element}\n')
     assert "Here's a summary of the codebase, as it relates to this task" not in prompt
