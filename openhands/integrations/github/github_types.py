@@ -1,13 +1,14 @@
 from enum import Enum
+
 from pydantic import BaseModel
 
 
 class TaskType(str, Enum):
-    MERGE_CONFLICTS = "MERGE_CONFLICTS"
-    FAILING_CHECKS = "FAILING_CHECKS"
-    UNRESOLVED_COMMENTS = "UNRESOLVED_COMMENTS"
-    OPEN_ISSUE = "OPEN_ISSUE"
-    OPEN_PR = "OPEN_PR"
+    MERGE_CONFLICTS = 'MERGE_CONFLICTS'
+    FAILING_CHECKS = 'FAILING_CHECKS'
+    UNRESOLVED_COMMENTS = 'UNRESOLVED_COMMENTS'
+    OPEN_ISSUE = 'OPEN_ISSUE'
+    OPEN_PR = 'OPEN_PR'
 
 
 class SuggestedTask(BaseModel):

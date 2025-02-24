@@ -1,5 +1,5 @@
-import os
 import json
+import os
 from typing import Any
 
 import httpx
@@ -10,8 +10,8 @@ from openhands.integrations.github.github_types import (
     GHUnknownException,
     GitHubRepository,
     GitHubUser,
-    TaskType,
     SuggestedTask,
+    TaskType,
 )
 from openhands.utils.import_utils import get_impl
 
@@ -139,24 +139,28 @@ class GitHubService:
 
         return repos
 
-    async def execute_graphql_query(self, query: str, variables: dict[str, Any]) -> dict[str, Any]:
+    async def execute_graphql_query(
+        self, query: str, variables: dict[str, Any]
+    ) -> dict[str, Any]:
         """Execute a GraphQL query against the GitHub API."""
         try:
             async with httpx.AsyncClient() as client:
                 github_headers = await self._get_github_headers()
                 response = await client.post(
-                    f"{self.BASE_URL}/graphql",
+                    f'{self.BASE_URL}/graphql',
                     headers=github_headers,
-                    json={"query": query, "variables": variables}
+                    json={'query': query, 'variables': variables},
                 )
                 response.raise_for_status()
-                
+
                 result = response.json()
-                if "errors" in result:
-                    raise GHUnknownException(f"GraphQL query error: {json.dumps(result['errors'])}")
-                
+                if 'errors' in result:
+                    raise GHUnknownException(
+                        f"GraphQL query error: {json.dumps(result['errors'])}"
+                    )
+
                 return result
-                
+
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
                 raise GhAuthenticationError('Invalid Github token')
@@ -165,7 +169,9 @@ class GitHubService:
         except httpx.HTTPError:
             raise GHUnknownException('Unknown error')
 
-    async def get_suggested_tasks(self, repo_full_name: str | None = None) -> list[SuggestedTask]:
+    async def get_suggested_tasks(
+        self, repo_full_name: str | None = None
+    ) -> list[SuggestedTask]:
         """
         Get suggested tasks for the authenticated user across all repositories.
         Returns:
@@ -216,56 +222,65 @@ class GitHubService:
         }
         """
 
-        variables = {
-            "login": login
-        }
+        variables = {'login': login}
 
         try:
             response = await self.execute_graphql_query(query, variables)
-            print(f"\nGraphQL Response:")
+            print('\nGraphQL Response:')
             print(response)
-            
-            data = response["data"]["user"]
+
+            data = response['data']['user']
             tasks: list[SuggestedTask] = []
 
             # Process pull requests
-            for pr in data["pullRequests"]["nodes"]:
-                repo_name = pr["repository"]["nameWithOwner"]
-                
+            for pr in data['pullRequests']['nodes']:
+                repo_name = pr['repository']['nameWithOwner']
+
                 # Always add open PRs
                 task_type = TaskType.OPEN_PR
-                
+
                 # Check for specific states
-                if pr["mergeable"] == "CONFLICTING":
+                if pr['mergeable'] == 'CONFLICTING':
                     task_type = TaskType.MERGE_CONFLICTS
-                elif (pr["commits"]["nodes"] and 
-                      pr["commits"]["nodes"][0]["commit"]["statusCheckRollup"] and
-                      pr["commits"]["nodes"][0]["commit"]["statusCheckRollup"]["state"] == "FAILURE"):
+                elif (
+                    pr['commits']['nodes']
+                    and pr['commits']['nodes'][0]['commit']['statusCheckRollup']
+                    and pr['commits']['nodes'][0]['commit']['statusCheckRollup'][
+                        'state'
+                    ]
+                    == 'FAILURE'
+                ):
                     task_type = TaskType.FAILING_CHECKS
-                elif any(review["state"] in ["CHANGES_REQUESTED", "COMMENTED"]
-                        for review in pr["reviews"]["nodes"]):
+                elif any(
+                    review['state'] in ['CHANGES_REQUESTED', 'COMMENTED']
+                    for review in pr['reviews']['nodes']
+                ):
                     task_type = TaskType.UNRESOLVED_COMMENTS
 
-                tasks.append(SuggestedTask(
-                    task_type=task_type,
-                    repo=repo_name,
-                    issue_number=pr["number"],
-                    title=pr["title"]
-                ))
+                tasks.append(
+                    SuggestedTask(
+                        task_type=task_type,
+                        repo=repo_name,
+                        issue_number=pr['number'],
+                        title=pr['title'],
+                    )
+                )
 
             # Process issues
-            for issue in data["issues"]["nodes"]:
-                repo_name = issue["repository"]["nameWithOwner"]
-                tasks.append(SuggestedTask(
-                    task_type=TaskType.OPEN_ISSUE,
-                    repo=repo_name,
-                    issue_number=issue["number"],
-                    title=issue["title"]
-                ))
+            for issue in data['issues']['nodes']:
+                repo_name = issue['repository']['nameWithOwner']
+                tasks.append(
+                    SuggestedTask(
+                        task_type=TaskType.OPEN_ISSUE,
+                        repo=repo_name,
+                        issue_number=issue['number'],
+                        title=issue['title'],
+                    )
+                )
 
             return tasks
         except Exception as e:
-            print(f"Error: {str(e)}")
+            print(f'Error: {str(e)}')
             return []
 
 
