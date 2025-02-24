@@ -10,17 +10,17 @@ class AgentError(Exception):
 
 
 class AgentNoInstructionError(AgentError):
-    def __init__(self, message='Instruction must be provided'):
+    def __init__(self, message: str = 'Instruction must be provided') -> None:
         super().__init__(message)
 
 
 class AgentEventTypeError(AgentError):
-    def __init__(self, message='Event must be a dictionary'):
+    def __init__(self, message: str = 'Event must be a dictionary') -> None:
         super().__init__(message)
 
 
 class AgentAlreadyRegisteredError(AgentError):
-    def __init__(self, name=None):
+    def __init__(self, name: str | None = None) -> None:
         if name is not None:
             message = f"Agent class already registered under '{name}'"
         else:
@@ -29,7 +29,7 @@ class AgentAlreadyRegisteredError(AgentError):
 
 
 class AgentNotRegisteredError(AgentError):
-    def __init__(self, name=None):
+    def __init__(self, name: str | None = None) -> None:
         if name is not None:
             message = f"No agent class registered under '{name}'"
         else:
@@ -38,7 +38,7 @@ class AgentNotRegisteredError(AgentError):
 
 
 class AgentStuckInLoopError(AgentError):
-    def __init__(self, message='Agent got stuck in a loop'):
+    def __init__(self, message: str = 'Agent got stuck in a loop') -> None:
         super().__init__(message)
 
 
@@ -48,7 +48,7 @@ class AgentStuckInLoopError(AgentError):
 
 
 class TaskInvalidStateError(Exception):
-    def __init__(self, state=None):
+    def __init__(self, state: str | None = None) -> None:
         if state is not None:
             message = f'Invalid state {state}'
         else:
@@ -64,45 +64,47 @@ class TaskInvalidStateError(Exception):
 # This exception gets sent back to the LLM
 # It might be malformed JSON
 class LLMMalformedActionError(Exception):
-    def __init__(self, message='Malformed response'):
+    def __init__(self, message: str = 'Malformed response') -> None:
         self.message = message
         super().__init__(message)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.message
 
 
 # This exception gets sent back to the LLM
 # For some reason, the agent did not return an action
 class LLMNoActionError(Exception):
-    def __init__(self, message='Agent must return an action'):
+    def __init__(self, message: str = 'Agent must return an action') -> None:
         super().__init__(message)
 
 
 # This exception gets sent back to the LLM
 # The LLM output did not include an action, or the action was not the expected type
 class LLMResponseError(Exception):
-    def __init__(self, message='Failed to retrieve action from LLM response'):
+    def __init__(
+        self, message: str = 'Failed to retrieve action from LLM response'
+    ) -> None:
         super().__init__(message)
 
 
 class UserCancelledError(Exception):
-    def __init__(self, message='User cancelled the request'):
+    def __init__(self, message: str = 'User cancelled the request') -> None:
         super().__init__(message)
 
 
 class OperationCancelled(Exception):
     """Exception raised when an operation is cancelled (e.g. by a keyboard interrupt)."""
 
-    def __init__(self, message='Operation was cancelled'):
+    def __init__(self, message: str = 'Operation was cancelled') -> None:
         super().__init__(message)
 
 
 class LLMContextWindowExceedError(RuntimeError):
     def __init__(
         self,
-        message='Conversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error',
-    ):
+        message: str = 'Conversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error',
+    ) -> None:
         super().__init__(message)
 
 
@@ -117,7 +119,7 @@ class FunctionCallConversionError(Exception):
     This typically happens when there's a malformed message (e.g., missing <function=...> tags). But not due to LLM output.
     """
 
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         super().__init__(message)
 
 
@@ -127,14 +129,14 @@ class FunctionCallValidationError(Exception):
     This typically happens when the LLM outputs unrecognized function call / parameter names / values.
     """
 
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         super().__init__(message)
 
 
 class FunctionCallNotExistsError(Exception):
     """Exception raised when an LLM call a tool that is not registered."""
 
-    def __init__(self, message):
+    def __init__(self, message: str) -> None:
         super().__init__(message)
 
 
@@ -191,15 +193,17 @@ class AgentRuntimeNotFoundError(AgentRuntimeUnavailableError):
 
 
 class BrowserInitException(Exception):
-    def __init__(self, message='Failed to initialize browser environment'):
+    def __init__(
+        self, message: str = 'Failed to initialize browser environment'
+    ) -> None:
         super().__init__(message)
 
 
 class BrowserUnavailableException(Exception):
     def __init__(
         self,
-        message='Browser environment is not available, please check if has been initialized',
-    ):
+        message: str = 'Browser environment is not available, please check if has been initialized',
+    ) -> None:
         super().__init__(message)
 
 
@@ -217,5 +221,5 @@ class MicroAgentError(Exception):
 class MicroAgentValidationError(MicroAgentError):
     """Raised when there's a validation error in microagent metadata."""
 
-    def __init__(self, message='Micro agent validation failed'):
+    def __init__(self, message: str = 'Micro agent validation failed') -> None:
         super().__init__(message)
