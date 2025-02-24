@@ -9,6 +9,7 @@ from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.core.config import AppConfig
+from openhands.core.config.agent_config import AgentConfig
 from openhands.core.main import run_controller
 from openhands.core.schema import AgentState
 from openhands.events import Event, EventSource, EventStream, EventStreamSubscriber
@@ -605,6 +606,7 @@ async def test_context_window_exceeded_error_handling(mock_agent, mock_event_str
 
     state = StepState()
     mock_agent.step = state.step
+    mock_agent.config = AgentConfig()
 
     controller = AgentController(
         agent=mock_agent,
@@ -627,8 +629,10 @@ async def test_context_window_exceeded_error_handling(mock_agent, mock_event_str
 
 
 @pytest.mark.asyncio
-async def test_run_controller_with_context_window_exceeded(mock_agent, mock_runtime):
-    """Tests that the controller can make progress after handling context window exceeded errors."""
+async def test_run_controller_with_context_window_exceeded_with_truncation(
+    mock_agent, mock_runtime
+):
+    """Tests that the controller can make progress after handling context window exceeded errors, as long as enable_history_truncation is ON"""
 
     class StepState:
         def __init__(self):
@@ -650,6 +654,7 @@ async def test_run_controller_with_context_window_exceeded(mock_agent, mock_runt
 
     step_state = StepState()
     mock_agent.step = step_state.step
+    mock_agent.config = AgentConfig()
 
     try:
         state = await asyncio.wait_for(
@@ -678,6 +683,68 @@ async def test_run_controller_with_context_window_exceeded(mock_agent, mock_runt
     assert (
         state.last_error
         == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
+    )
+
+    # Check that the context window exceeded error was raised during the run
+    assert step_state.has_errored
+
+
+@pytest.mark.asyncio
+async def test_run_controller_with_context_window_exceeded_without_truncation(
+    mock_agent, mock_runtime
+):
+    """Tests that the controller would quit upon context window exceeded errors without enable_history_truncation ON."""
+
+    class StepState:
+        def __init__(self):
+            self.has_errored = False
+
+        def step(self, state: State):
+            # If the state has more than one message and we haven't errored yet,
+            # throw the context window exceeded error
+            if len(state.history) > 1 and not self.has_errored:
+                error = ContextWindowExceededError(
+                    message='prompt is too long: 233885 tokens > 200000 maximum',
+                    model='',
+                    llm_provider='',
+                )
+                self.has_errored = True
+                raise error
+
+            return MessageAction(content=f'STEP {len(state.history)}')
+
+    step_state = StepState()
+    mock_agent.step = step_state.step
+    mock_agent.config = AgentConfig()
+    mock_agent.config.enable_history_truncation = False
+
+    try:
+        state = await asyncio.wait_for(
+            run_controller(
+                config=AppConfig(max_iterations=3),
+                initial_user_action=MessageAction(content='INITIAL'),
+                runtime=mock_runtime,
+                sid='test',
+                agent=mock_agent,
+                fake_user_response_fn=lambda _: 'repeat',
+            ),
+            timeout=10,
+        )
+
+    # A timeout error indicates the run_controller entrypoint is not making
+    # progress
+    except asyncio.TimeoutError as e:
+        raise AssertionError(
+            'The run_controller function did not complete in time.'
+        ) from e
+
+    # Hitting the iteration limit indicates the controller is failing for the
+    # expected reason
+    assert state.iteration == 2
+    assert state.agent_state == AgentState.ERROR
+    assert (
+        state.last_error
+        == 'LLMContextWindowExceedError: Conversation history longer than LLM context window limit. Consider turning on enable_history_truncation config to avoid this error'
     )
 
     # Check that the context window exceeded error was raised during the run
