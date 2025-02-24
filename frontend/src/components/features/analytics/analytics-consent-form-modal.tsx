@@ -40,7 +40,7 @@ export function AnalyticsConsentFormModal({
         onSubmit={handleSubmit}
         className="flex flex-col gap-2"
       >
-        <ModalBody>
+        <ModalBody className="border border-tertiary">
           <BaseModalTitle title="Your Privacy Preferences" />
           <BaseModalDescription>
             We use tools to understand how our application is used to improve
