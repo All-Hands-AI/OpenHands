@@ -376,6 +376,22 @@ class RemoteRuntime(ActionExecutionClient):
         )
         raise AgentRuntimeNotReadyError()
 
+    async def terminate_processes(self) -> None:
+        """Terminate all tracked processes started by this runtime."""
+        with self.process_lock:
+            # Send list of PIDs to terminate with wait
+            await call_sync_from_async(
+                lambda: self.session.post(
+                    f"{self.config.sandbox.remote_runtime_api_url}/terminate",
+                    json={
+                        "runtime_id": self.runtime_id,
+                        "pids": list(self.processes.keys()),
+                        "wait": True  # Tell server to wait for processes to terminate
+                    }
+                )
+            )
+            self.processes.clear()
+
     def close(self):
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             super().close()

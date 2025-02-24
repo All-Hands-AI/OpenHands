@@ -176,12 +176,14 @@ class BashSession:
         username: str | None = None,
         no_change_timeout_seconds: int = 30,
         max_memory_mb: int | None = None,
+        runtime: 'Runtime | None' = None,
     ):
         self.NO_CHANGE_TIMEOUT_SECONDS = no_change_timeout_seconds
         self.work_dir = work_dir
         self.username = username
         self._initialized = False
         self.max_memory_mb = max_memory_mb
+        self.runtime = runtime
 
     def initialize(self):
         self.server = libtmux.Server()
@@ -464,6 +466,15 @@ class BashSession:
         logger.debug(f'COMBINED OUTPUT: {combined_output}')
         return combined_output
 
+    def _get_foreground_pid(self) -> int | None:
+        """Get the PID of the foreground process in the pane."""
+        try:
+            # Get the PID of the foreground process group
+            pid_str = self.pane.cmd('list-panes', '-F', '#{pane_pid}').stdout[0]
+            return int(pid_str) if pid_str else None
+        except (ValueError, IndexError):
+            return None
+
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
         """Execute a command in the bash session."""
         if not self._initialized:
@@ -473,6 +484,12 @@ class BashSession:
         logger.debug(f'RECEIVED ACTION: {action}')
         command = action.command.strip()
         is_input: bool = action.is_input
+
+        # Track the process if it's a new command
+        if not is_input and not self._is_special_key(command):
+            pid = self._get_foreground_pid()
+            if pid:
+                self.runtime._track_process(pid, self.pane)
 
         # If the previous command is not completed, we need to check if the command is empty
         if self.prev_status not in {

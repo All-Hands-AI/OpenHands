@@ -248,6 +248,40 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
             self.close()
             raise e
 
+    async def terminate_processes(self) -> None:
+        """Terminate all tracked processes started by this runtime."""
+        with self.process_lock:
+            # First try SIGTERM
+            for pid in self.processes:
+                self.sandbox.run_function(lambda: os.kill(pid, signal.SIGTERM))
+            
+            # Wait for processes to terminate gracefully
+            start_time = time.time()
+            remaining = list(self.processes.keys())
+            while remaining and (time.time() - start_time < 10):
+                # Check which processes are still running
+                def check_processes(pids):
+                    running = []
+                    for pid in pids:
+                        try:
+                            os.kill(pid, 0)  # Check if process exists
+                            running.append(pid)
+                        except ProcessLookupError:
+                            pass
+                    return running
+                
+                remaining = self.sandbox.run_function(
+                    lambda: check_processes(remaining)
+                )
+                if remaining:
+                    await asyncio.sleep(0.1)
+            
+            # Force kill any remaining processes
+            for pid in remaining:
+                self.sandbox.run_function(lambda: os.kill(pid, signal.SIGKILL))
+            
+            self.processes.clear()
+
     def close(self):
         """Closes the ModalRuntime and associated objects."""
         super().close()
