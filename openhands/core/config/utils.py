@@ -123,7 +123,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
         )
         return
 
-    # Check for required core section
+    # Check for the [core] section
     if 'core' not in toml_config:
         logger.openhands_logger.warning(
             f'No [core] section found in {toml_file}. Core settings will use defaults.'
