@@ -41,7 +41,7 @@ export function ExpandableMessage({
   return (
     <div
       className={cn(
-        "flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2",
+        "flex gap-2 items-start justify-start border-l-2 pl-2 my-2 py-2",
         type === "error" ? "border-danger" : "border-neutral-300",
       )}
     >
@@ -98,7 +98,7 @@ export function ExpandableMessage({
         </div>
         {(!headline || showDetails) && (
           <Markdown
-            className="text-sm overflow-auto"
+            className="text-xs overflow-auto whitespace-pre-wrap break-words"
             components={{
               code,
               ul,

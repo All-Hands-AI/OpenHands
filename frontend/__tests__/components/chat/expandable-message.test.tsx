@@ -24,19 +24,19 @@ describe("ExpandableMessage", () => {
     renderWithProviders(<ExpandableMessage message="Hello" type="thought" />);
     const element = screen.getByText("Hello");
     const container = element.closest(
-      "div.flex.gap-2.items-center.justify-start",
+      "div.flex.gap-2.items-start.justify-start",
     );
     expect(container).toHaveClass("border-neutral-300");
     expect(screen.queryByTestId("status-icon")).not.toBeInTheDocument();
   });
 
-  it("should render with neutral border for error messages", () => {
+  it("should render with danger border for error messages", () => {
     renderWithProviders(
       <ExpandableMessage message="Error occurred" type="error" />,
     );
     const element = screen.getByText("Error occurred");
     const container = element.closest(
-      "div.flex.gap-2.items-center.justify-start",
+      "div.flex.gap-2.items-start.justify-start",
     );
     expect(container).toHaveClass("border-danger");
     expect(screen.queryByTestId("status-icon")).not.toBeInTheDocument();
@@ -53,7 +53,7 @@ describe("ExpandableMessage", () => {
     );
     const element = screen.getByText("OBSERVATION_MESSAGE$RUN");
     const container = element.closest(
-      "div.flex.gap-2.items-center.justify-start",
+      "div.flex.gap-2.items-start.justify-start",
     );
     expect(container).toHaveClass("border-neutral-300");
     const icon = screen.getByTestId("status-icon");
@@ -71,7 +71,7 @@ describe("ExpandableMessage", () => {
     );
     const element = screen.getByText("OBSERVATION_MESSAGE$RUN");
     const container = element.closest(
-      "div.flex.gap-2.items-center.justify-start",
+      "div.flex.gap-2.items-start.justify-start",
     );
     expect(container).toHaveClass("border-neutral-300");
     const icon = screen.getByTestId("status-icon");
@@ -88,7 +88,7 @@ describe("ExpandableMessage", () => {
     );
     const element = screen.getByText("OBSERVATION_MESSAGE$RUN");
     const container = element.closest(
-      "div.flex.gap-2.items-center.justify-start",
+      "div.flex.gap-2.items-start.justify-start",
     );
     expect(container).toHaveClass("border-neutral-300");
     expect(screen.queryByTestId("status-icon")).not.toBeInTheDocument();
