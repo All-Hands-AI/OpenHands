@@ -99,6 +99,15 @@ class LLMConfig(BaseModel):
         Then, each key with a dict value is treated as a custom LLM configuration, and its values override
         the default configuration.
 
+        Example:
+        Apply generic LLM config with custom LLM overrides, e.g.
+            [llm]
+            model=...
+            num_retries = 5
+            [llm.claude]
+            model="claude-3-5-sonnet"
+        results in num_retries APPLIED to claude-3-5-sonnet.
+
         Returns:
             dict[str, LLMConfig]: A mapping where the key "llm" corresponds to the default configuration
             and additional keys represent custom configurations.
@@ -111,11 +120,11 @@ class LLMConfig(BaseModel):
             else:
                 base_data[key] = value
         base_config = cls.model_validate(base_data)
-        result: dict[str, LLMConfig] = {'llm': base_config}
+        llm_mapping: dict[str, LLMConfig] = {'llm': base_config}
         for name, overrides in custom_sections.items():
             merged = {**base_config.model_dump(), **overrides}
-            result[name] = cls.model_validate(merged)
-        return result
+            llm_mapping[name] = cls.model_validate(merged)
+        return llm_mapping
 
     def model_post_init(self, __context: Any):
         """Post-initialization hook to assign OpenRouter-related variables to environment variables.

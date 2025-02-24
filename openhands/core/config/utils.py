@@ -162,52 +162,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
                     cfg.set_agent_config(agent_config, 'agent')
 
                 elif key is not None and key.lower() == 'llm':
-                    # Every entry here is either a field for the default `llm` config group, or itself a group
-                    # The best way to tell the difference is to try to parse it as an LLMConfig object
-                    llm_group_ids: set[str] = set()
-                    for nested_key, nested_value in value.items():
-                        if isinstance(nested_value, dict):
-                            try:
-                                llm_config = LLMConfig(**nested_value)
-                            except ValidationError:
-                                continue
-                            llm_group_ids.add(nested_key)
-                            cfg.set_llm_config(llm_config, nested_key)
-
-                    logger.openhands_logger.debug(
-                        'Attempt to load default LLM config from config toml'
-                    )
-
-                    # Extract generic LLM fields, which are not nested LLM configs
-                    generic_llm_fields = {}
-                    for k, v in value.items():
-                        if not isinstance(v, dict):
-                            generic_llm_fields[k] = v
-                    generic_llm_config = LLMConfig(**generic_llm_fields)
-                    cfg.set_llm_config(generic_llm_config, 'llm')
-
-                    # Process custom named LLM configs
-                    for nested_key, nested_value in value.items():
-                        if isinstance(nested_value, dict):
-                            logger.openhands_logger.debug(
-                                f'Processing custom LLM config "{nested_key}":'
-                            )
-                            # Apply generic LLM config with custom LLM overrides, e.g.
-                            # [llm]
-                            # model="..."
-                            # num_retries = 5
-                            # [llm.claude]
-                            # model="claude-3-5-sonnet"
-                            # results in num_retries APPLIED to claude-3-5-sonnet
-                            custom_fields = {}
-                            for k, v in nested_value.items():
-                                if not isinstance(v, dict):
-                                    custom_fields[k] = v
-                            merged_llm_dict = generic_llm_fields.copy()
-                            merged_llm_dict.update(custom_fields)
-
-                            custom_llm_config = LLMConfig(**merged_llm_dict)
-                            cfg.set_llm_config(custom_llm_config, nested_key)
+                    llm_mapping = LLMConfig.from_toml_section(value)
+                    for llm_key, llm_conf in llm_mapping.items():
+                        cfg.set_llm_config(llm_conf, llm_key)
 
                 elif key is not None and key.lower() == 'security':
                     logger.openhands_logger.debug(
