@@ -4,7 +4,7 @@ import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useConfig } from "#/hooks/query/use-config";
-import { Sidebar } from "#/components/features/sidebar/sidebar";
+// import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -93,7 +93,7 @@ export default function MainApp() {
       data-testid="root-layout"
       className="bg-base p-3 h-screen md:min-w-[1024px] overflow-x-hidden flex flex-col md:flex-row gap-3"
     >
-      <Sidebar />
+      {/* <Sidebar /> */}
 
       <div
         id="root-outlet"

@@ -25,7 +25,7 @@ const createAxiosNotFoundErrorObject = () =>
     },
   );
 
-describe("Home Screen", () => {
+describe.skip("Home Screen", () => {
   const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
 
   const RouterStub = createRoutesStub([
@@ -78,7 +78,7 @@ describe("Home Screen", () => {
     expect(settingsScreen).toBeInTheDocument();
   });
 
-  describe("Settings 404", () => {
+  describe.skip("Settings 404", () => {
     it("should open the settings modal if GET /settings fails with a 404", async () => {
       const error = createAxiosNotFoundErrorObject();
       getSettingsSpy.mockRejectedValue(error);

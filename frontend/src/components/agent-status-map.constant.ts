@@ -31,7 +31,7 @@ export const AGENT_STATUS_MAP: {
   },
   [AgentState.LOADING]: {
     message: I18nKey.CHAT_INTERFACE$INITIALIZING_AGENT_LOADING_MESSAGE,
-    indicator: IndicatorColor.DARK_ORANGE,
+    indicator: IndicatorColor.BLUE,
   },
   [AgentState.STOPPED]: {
     message: I18nKey.CHAT_INTERFACE$AGENT_STOPPED_MESSAGE,
