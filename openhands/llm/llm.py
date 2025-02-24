@@ -3,11 +3,12 @@ import os
 import time
 import warnings
 from functools import partial
-from typing import Any
+from typing import Any, Callable
 
 import requests
 
 from openhands.core.config import LLMConfig
+from openhands.utils.ensure_httpx_close import EnsureHttpxClose
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -18,16 +19,11 @@ from litellm import Message as LiteLLMMessage
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
-    APIConnectionError,
-    APIError,
-    InternalServerError,
     RateLimitError,
-    ServiceUnavailableError,
 )
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
 
-from openhands.core.exceptions import CloudFlareBlockageError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.llm.debug_mixin import DebugMixin
@@ -42,15 +38,7 @@ from openhands.llm.retry_mixin import RetryMixin
 __all__ = ['LLM']
 
 # tuple of exceptions to retry on
-LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
-    APIConnectionError,
-    # FIXME: APIError is useful on 502 from a proxy for example,
-    # but it also retries on other errors that are permanent
-    APIError,
-    InternalServerError,
-    RateLimitError,
-    ServiceUnavailableError,
-)
+LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (RateLimitError,)
 
 # cache prompt supporting models
 # remove this when we gemini and deepseek are supported
@@ -71,6 +59,21 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-5-haiku-20241022',
     'gpt-4o-mini',
     'gpt-4o',
+    'o1-2024-12-17',
+    'o3-mini-2025-01-31',
+    'o3-mini',
+]
+
+REASONING_EFFORT_SUPPORTED_MODELS = [
+    'o1-2024-12-17',
+    'o1',
+    'o3-mini-2025-01-31',
+    'o3-mini',
+]
+
+MODELS_WITHOUT_STOP_WORDS = [
+    'o1-mini',
+    'o1-preview',
 ]
 
 
@@ -85,6 +88,7 @@ class LLM(RetryMixin, DebugMixin):
         self,
         config: LLMConfig,
         metrics: Metrics | None = None,
+        retry_listener: Callable[[int, int], None] | None = None,
     ):
         """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
 
@@ -102,7 +106,7 @@ class LLM(RetryMixin, DebugMixin):
         self.config: LLMConfig = copy.deepcopy(config)
 
         self.model_info: ModelInfo | None = None
-
+        self.retry_listener = retry_listener
         if self.config.log_completions:
             if self.config.log_completions_folder is None:
                 raise RuntimeError(
@@ -129,18 +133,32 @@ class LLM(RetryMixin, DebugMixin):
             self.tokenizer = None
 
         # set up the completion function
+        kwargs: dict[str, Any] = {
+            'temperature': self.config.temperature,
+        }
+        if (
+            self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
+            or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
+        ):
+            kwargs['reasoning_effort'] = self.config.reasoning_effort
+            kwargs.pop(
+                'temperature'
+            )  # temperature is not supported for reasoning models
+
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
-            api_key=self.config.api_key,
+            api_key=self.config.api_key.get_secret_value()
+            if self.config.api_key
+            else None,
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens,
+            max_completion_tokens=self.config.max_output_tokens,
             timeout=self.config.timeout,
-            temperature=self.config.temperature,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
+            **kwargs,
         )
 
         self._completion_unwrapped = self._completion
@@ -151,13 +169,14 @@ class LLM(RetryMixin, DebugMixin):
             retry_min_wait=self.config.retry_min_wait,
             retry_max_wait=self.config.retry_max_wait,
             retry_multiplier=self.config.retry_multiplier,
+            retry_listener=self.retry_listener,
         )
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
-            from openhands.core.utils import json
+            from openhands.io import json
 
             messages: list[dict[str, Any]] | dict[str, Any] = []
-            mock_function_calling = kwargs.pop('mock_function_calling', False)
+            mock_function_calling = not self.is_function_calling_active()
 
             # some callers might send the model and messages directly
             # litellm allows positional args, like completion(model, messages, **kwargs)
@@ -176,18 +195,25 @@ class LLM(RetryMixin, DebugMixin):
 
             # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]
+
+            # handle conversion of to non-function calling messages if needed
             original_fncall_messages = copy.deepcopy(messages)
             mock_fncall_tools = None
-            if mock_function_calling:
-                assert (
-                    'tools' in kwargs
-                ), "'tools' must be in kwargs when mock_function_calling is True"
+            # if the agent or caller has defined tools, and we mock via prompting, convert the messages
+            if mock_function_calling and 'tools' in kwargs:
                 messages = convert_fncall_messages_to_non_fncall_messages(
                     messages, kwargs['tools']
                 )
                 kwargs['messages'] = messages
-                kwargs['stop'] = STOP_WORDS
+
+                # add stop words if the model supports it
+                if self.config.model not in MODELS_WITHOUT_STOP_WORDS:
+                    kwargs['stop'] = STOP_WORDS
+
                 mock_fncall_tools = kwargs.pop('tools')
+                kwargs['tool_choice'] = (
+                    'none'  # force no tool calling because we're mocking it - without it, it will cause issue with sglang
+                )
 
             # if we have no messages, something went very wrong
             if not messages:
@@ -198,100 +224,91 @@ class LLM(RetryMixin, DebugMixin):
             # log the entire LLM prompt
             self.log_prompt(messages)
 
-            if self.is_caching_prompt_active():
-                # Anthropic-specific prompt caching
-                if 'claude-3' in self.config.model:
-                    kwargs['extra_headers'] = {
-                        'anthropic-beta': 'prompt-caching-2024-07-31',
-                    }
-
             # set litellm modify_params to the configured value
             # True by default to allow litellm to do transformations like adding a default message, when a message is empty
             # NOTE: this setting is global; unlike drop_params, it cannot be overridden in the litellm completion partial
             litellm.modify_params = self.config.modify_params
 
-            try:
-                # Record start time for latency measurement
-                start_time = time.time()
-
+            # Record start time for latency measurement
+            start_time = time.time()
+            with EnsureHttpxClose():
                 # we don't support streaming here, thus we get a ModelResponse
                 resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
-                # Calculate and record latency
-                latency = time.time() - start_time
-                response_id = resp.get('id', 'unknown')
-                self.metrics.add_response_latency(latency, response_id)
+            # Calculate and record latency
+            latency = time.time() - start_time
+            response_id = resp.get('id', 'unknown')
+            self.metrics.add_response_latency(latency, response_id)
 
-                non_fncall_response = copy.deepcopy(resp)
+            non_fncall_response = copy.deepcopy(resp)
+
+            # if we mocked function calling, and we have tools, convert the response back to function calling format
+            if mock_function_calling and mock_fncall_tools is not None:
+                assert len(resp.choices) == 1
+                non_fncall_response_message = resp.choices[0].message
+                fn_call_messages_with_response = (
+                    convert_non_fncall_messages_to_fncall_messages(
+                        messages + [non_fncall_response_message], mock_fncall_tools
+                    )
+                )
+                fn_call_response_message = fn_call_messages_with_response[-1]
+                if not isinstance(fn_call_response_message, LiteLLMMessage):
+                    fn_call_response_message = LiteLLMMessage(
+                        **fn_call_response_message
+                    )
+                resp.choices[0].message = fn_call_response_message
+
+            message_back: str = resp['choices'][0]['message']['content'] or ''
+            tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
+                'message'
+            ].get('tool_calls', [])
+            if tool_calls:
+                for tool_call in tool_calls:
+                    fn_name = tool_call.function.name
+                    fn_args = tool_call.function.arguments
+                    message_back += f'\nFunction call: {fn_name}({fn_args})'
+
+            # log the LLM response
+            self.log_response(message_back)
+
+            # post-process the response first to calculate cost
+            cost = self._post_completion(resp)
+
+            # log for evals or other scripts that need the raw completion
+            if self.config.log_completions:
+                assert self.config.log_completions_folder is not None
+                log_file = os.path.join(
+                    self.config.log_completions_folder,
+                    # use the metric model name (for draft editor)
+                    f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
+                )
+
+                # set up the dict to be logged
+                _d = {
+                    'messages': messages,
+                    'response': resp,
+                    'args': args,
+                    'kwargs': {
+                        k: v
+                        for k, v in kwargs.items()
+                        if k not in ('messages', 'client')
+                    },
+                    'timestamp': time.time(),
+                    'cost': cost,
+                }
+
+                # if non-native function calling, save messages/response separately
                 if mock_function_calling:
-                    assert len(resp.choices) == 1
-                    assert mock_fncall_tools is not None
-                    non_fncall_response_message = resp.choices[0].message
-                    fn_call_messages_with_response = (
-                        convert_non_fncall_messages_to_fncall_messages(
-                            messages + [non_fncall_response_message], mock_fncall_tools
-                        )
-                    )
-                    fn_call_response_message = fn_call_messages_with_response[-1]
-                    if not isinstance(fn_call_response_message, LiteLLMMessage):
-                        fn_call_response_message = LiteLLMMessage(
-                            **fn_call_response_message
-                        )
-                    resp.choices[0].message = fn_call_response_message
+                    # Overwrite response as non-fncall to be consistent with messages
+                    _d['response'] = non_fncall_response
 
-                message_back: str = resp['choices'][0]['message']['content'] or ''
-                tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
-                    'message'
-                ].get('tool_calls', [])
-                if tool_calls:
-                    for tool_call in tool_calls:
-                        fn_name = tool_call.function.name
-                        fn_args = tool_call.function.arguments
-                        message_back += f'\nFunction call: {fn_name}({fn_args})'
+                    # Save fncall_messages/response separately
+                    _d['fncall_messages'] = original_fncall_messages
+                    _d['fncall_response'] = resp
+                with open(log_file, 'w') as f:
+                    f.write(json.dumps(_d))
 
-                # log the LLM response
-                self.log_response(message_back)
-
-                # post-process the response first to calculate cost
-                cost = self._post_completion(resp)
-
-                # log for evals or other scripts that need the raw completion
-                if self.config.log_completions:
-                    assert self.config.log_completions_folder is not None
-                    log_file = os.path.join(
-                        self.config.log_completions_folder,
-                        # use the metric model name (for draft editor)
-                        f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
-                    )
-
-                    # set up the dict to be logged
-                    _d = {
-                        'messages': messages,
-                        'response': resp,
-                        'args': args,
-                        'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
-                        'timestamp': time.time(),
-                        'cost': cost,
-                    }
-
-                    # if non-native function calling, save messages/response separately
-                    if mock_function_calling:
-                        # Overwrite response as non-fncall to be consistent with messages
-                        _d['response'] = non_fncall_response
-
-                        # Save fncall_messages/response separately
-                        _d['fncall_messages'] = original_fncall_messages
-                        _d['fncall_response'] = resp
-                    with open(log_file, 'w') as f:
-                        f.write(json.dumps(_d))
-
-                return resp
-            except APIError as e:
-                if 'Attention Required! | Cloudflare' in str(e):
-                    raise CloudFlareBlockageError(
-                        'Request blocked by CloudFlare'
-                    ) from e
-                raise
+            return resp
 
         self._completion = wrapper
 
@@ -318,7 +335,9 @@ class LLM(RetryMixin, DebugMixin):
             # GET {base_url}/v1/model/info with litellm_model_id as path param
             response = requests.get(
                 f'{self.config.base_url}/v1/model/info',
-                headers={'Authorization': f'Bearer {self.config.api_key}'},
+                headers={
+                    'Authorization': f'Bearer {self.config.api_key.get_secret_value() if self.config.api_key else None}'
+                },
             )
             resp_json = response.json()
             if 'data' not in resp_json:
@@ -355,7 +374,7 @@ class LLM(RetryMixin, DebugMixin):
             # noinspection PyBroadException
             except Exception:
                 pass
-        from openhands.core.utils import json
+        from openhands.io import json
 
         logger.debug(f'Model info: {json.dumps(self.model_info, indent=2)}')
 
@@ -392,6 +411,25 @@ class LLM(RetryMixin, DebugMixin):
                     self.model_info['max_tokens'], int
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
+
+        # Initialize function calling capability
+        # Check if model name is in our supported list
+        model_name_supported = (
+            self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
+            or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
+            or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
+        )
+
+        # Handle native_tool_calling user-defined configuration
+        if self.config.native_tool_calling is None:
+            self._function_calling_active = model_name_supported
+        elif self.config.native_tool_calling is False:
+            self._function_calling_active = False
+        else:
+            # try to enable native tool calling if supported by the model
+            self._function_calling_active = litellm.supports_function_calling(
+                model=self.config.model
+            )
 
     def vision_is_active(self) -> bool:
         with warnings.catch_warnings():
@@ -434,24 +472,11 @@ class LLM(RetryMixin, DebugMixin):
         )
 
     def is_function_calling_active(self) -> bool:
-        # Check if model name is in our supported list
-        model_name_supported = (
-            self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
-            or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
-        )
+        """Returns whether function calling is supported and enabled for this LLM instance.
 
-        # Handle native_tool_calling user-defined configuration
-        if self.config.native_tool_calling is None:
-            return model_name_supported
-        elif self.config.native_tool_calling is False:
-            return False
-        else:
-            # try to enable native tool calling if supported by the model
-            supports_fn_call = litellm.supports_function_calling(
-                model=self.config.model
-            )
-            return supports_fn_call
+        The result is cached during initialization for performance.
+        """
+        return self._function_calling_active
 
     def _post_completion(self, response: ModelResponse) -> float:
         """Post-process the completion response.
@@ -477,20 +502,21 @@ class LLM(RetryMixin, DebugMixin):
             stats += 'Response Latency: %.3f seconds\n' % latest_latency.latency
 
         usage: Usage | None = response.get('usage')
+        response_id = response.get('id', 'unknown')
 
         if usage:
             # keep track of the input and output tokens
-            input_tokens = usage.get('prompt_tokens')
-            output_tokens = usage.get('completion_tokens')
+            prompt_tokens = usage.get('prompt_tokens', 0)
+            completion_tokens = usage.get('completion_tokens', 0)
 
-            if input_tokens:
-                stats += 'Input tokens: ' + str(input_tokens)
+            if prompt_tokens:
+                stats += 'Input tokens: ' + str(prompt_tokens)
 
-            if output_tokens:
+            if completion_tokens:
                 stats += (
-                    (' | ' if input_tokens else '')
+                    (' | ' if prompt_tokens else '')
                     + 'Output tokens: '
-                    + str(output_tokens)
+                    + str(completion_tokens)
                     + '\n'
                 )
 
@@ -499,7 +525,7 @@ class LLM(RetryMixin, DebugMixin):
                 'prompt_tokens_details'
             )
             cache_hit_tokens = (
-                prompt_tokens_details.cached_tokens if prompt_tokens_details else None
+                prompt_tokens_details.cached_tokens if prompt_tokens_details else 0
             )
             if cache_hit_tokens:
                 stats += 'Input tokens (cache hit): ' + str(cache_hit_tokens) + '\n'
@@ -508,9 +534,19 @@ class LLM(RetryMixin, DebugMixin):
             # but litellm doesn't separate them in the usage stats
             # so we can read it from the provider-specific extra field
             model_extra = usage.get('model_extra', {})
-            cache_write_tokens = model_extra.get('cache_creation_input_tokens')
+            cache_write_tokens = model_extra.get('cache_creation_input_tokens', 0)
             if cache_write_tokens:
                 stats += 'Input tokens (cache write): ' + str(cache_write_tokens) + '\n'
+
+            # Record in metrics
+            # We'll treat cache_hit_tokens as "cache read" and cache_write_tokens as "cache write"
+            self.metrics.add_token_usage(
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                cache_read_tokens=cache_hit_tokens,
+                cache_write_tokens=cache_write_tokens,
+                response_id=response_id,
+            )
 
         # log the stats
         if stats:
@@ -573,7 +609,9 @@ class LLM(RetryMixin, DebugMixin):
         return False
 
     def _completion_cost(self, response) -> float:
-        """Calculate the cost of a completion response based on the model.  Local models are treated as free.
+        """Calculate completion cost and update metrics with running total.
+
+        Calculate the cost of a completion response based on the model. Local models are treated as free.
         Add the current cost into total cost in metrics.
 
         Args:
@@ -597,17 +635,16 @@ class LLM(RetryMixin, DebugMixin):
             logger.debug(f'Using custom cost per token: {cost_per_token}')
             extra_kwargs['custom_cost_per_token'] = cost_per_token
 
-        try:
-            # try directly get response_cost from response
-            _hidden_params = getattr(response, '_hidden_params', {})
-            cost = _hidden_params.get('response_cost', None)
-            if cost is None:
-                cost = float(
-                    _hidden_params.get('additional_headers', {}).get(
-                        'llm_provider-x-litellm-response-cost', 0.0
-                    )
-                )
+        # try directly get response_cost from response
+        _hidden_params = getattr(response, '_hidden_params', {})
+        cost = _hidden_params.get('additional_headers', {}).get(
+            'llm_provider-x-litellm-response-cost', None
+        )
+        if cost is not None:
+            cost = float(cost)
+            logger.debug(f'Got response_cost from response: {cost}')
 
+        try:
             if cost is None:
                 try:
                     cost = litellm_completion_cost(

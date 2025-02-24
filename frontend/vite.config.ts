@@ -51,6 +51,9 @@ export default defineConfig(({ mode }) => {
           // rewriteWsOrigin: true,
         },
       },
+      watch: {
+        ignored: ['**/node_modules/**', '**/.git/**'],
+      },
     },
     ssr: {
       noExternal: ["react-syntax-highlighter"],
@@ -59,7 +62,6 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: "jsdom",
       setupFiles: ["vitest.setup.ts"],
-      reporters: "basic",
       exclude: [...configDefaults.exclude, "tests"],
       coverage: {
         reporter: ["text", "json", "html", "lcov", "text-summary"],

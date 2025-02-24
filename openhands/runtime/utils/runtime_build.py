@@ -69,7 +69,6 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
     Returns:
     - tuple[str, str]: The Docker repo and tag of the Docker image
     """
-
     if get_runtime_image_repo() in base_image:
         logger.debug(
             f'The provided image [{base_image}] is already a valid runtime image.\n'
@@ -115,6 +114,7 @@ def build_runtime_image(
     extra_build_args: List[str] | None = None,
 ) -> str:
     """Prepares the final docker build folder.
+
     If dry_run is False, it will also build the OpenHands runtime Docker image using the docker build folder.
 
     Parameters:
@@ -349,7 +349,7 @@ def _build_sandbox_image(
     platform: str | None = None,
     extra_build_args: List[str] | None = None,
 ):
-    """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist"""
+    """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist."""
     names = [
         f'{runtime_image_repo}:{source_tag}',
         f'{runtime_image_repo}:{lock_tag}',

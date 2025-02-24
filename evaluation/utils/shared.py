@@ -16,7 +16,8 @@ from pydantic import BaseModel
 from tqdm import tqdm
 
 from openhands.controller.state.state import State
-from openhands.core.config import LLMConfig
+from openhands.core.config import LLMConfig, SandboxConfig
+from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.condenser_config import (
     CondenserConfig,
     NoOpCondenserConfig,
@@ -43,6 +44,7 @@ from openhands.memory.condenser import get_condensation_metadata
 class EvalMetadata(BaseModel):
     agent_class: str
     llm_config: LLMConfig
+    agent_config: AgentConfig | None = None
     max_iterations: int
     eval_output_dir: str
     start_time: str
@@ -51,30 +53,6 @@ class EvalMetadata(BaseModel):
     data_split: str | None = None
     details: dict[str, Any] | None = None
     condenser_config: CondenserConfig | None = None
-
-    def model_dump(self, *args, **kwargs):
-        dumped_dict = super().model_dump(*args, **kwargs)
-        # avoid leaking sensitive information
-        dumped_dict['llm_config'] = self.llm_config.to_safe_dict()
-        if hasattr(self.condenser_config, 'llm_config'):
-            dumped_dict['condenser_config']['llm_config'] = (
-                self.condenser_config.llm_config.to_safe_dict()
-            )
-
-        return dumped_dict
-
-    def model_dump_json(self, *args, **kwargs):
-        dumped = super().model_dump_json(*args, **kwargs)
-        dumped_dict = json.loads(dumped)
-        # avoid leaking sensitive information
-        dumped_dict['llm_config'] = self.llm_config.to_safe_dict()
-        if hasattr(self.condenser_config, 'llm_config'):
-            dumped_dict['condenser_config']['llm_config'] = (
-                self.condenser_config.llm_config.to_safe_dict()
-            )
-
-        logger.debug(f'Dumped metadata: {dumped_dict}')
-        return json.dumps(dumped_dict)
 
 
 class EvalOutput(BaseModel):
@@ -97,23 +75,6 @@ class EvalOutput(BaseModel):
 
     # Optionally save the input test instance
     instance: dict[str, Any] | None = None
-
-    def model_dump(self, *args, **kwargs):
-        dumped_dict = super().model_dump(*args, **kwargs)
-        # Remove None values
-        dumped_dict = {k: v for k, v in dumped_dict.items() if v is not None}
-        # Apply custom serialization for metadata (to avoid leaking sensitive information)
-        if self.metadata is not None:
-            dumped_dict['metadata'] = self.metadata.model_dump()
-        return dumped_dict
-
-    def model_dump_json(self, *args, **kwargs):
-        dumped = super().model_dump_json(*args, **kwargs)
-        dumped_dict = json.loads(dumped)
-        # Apply custom serialization for metadata (to avoid leaking sensitive information)
-        if 'metadata' in dumped_dict:
-            dumped_dict['metadata'] = json.loads(self.metadata.model_dump_json())
-        return json.dumps(dumped_dict)
 
 
 class EvalException(Exception):
@@ -208,6 +169,7 @@ def make_metadata(
     eval_output_dir: str,
     data_split: str | None = None,
     details: dict[str, Any] | None = None,
+    agent_config: AgentConfig | None = None,
     condenser_config: CondenserConfig | None = None,
 ) -> EvalMetadata:
     model_name = llm_config.model.split('/')[-1]
@@ -230,6 +192,7 @@ def make_metadata(
     metadata = EvalMetadata(
         agent_class=agent_class,
         llm_config=llm_config,
+        agent_config=agent_config,
         max_iterations=max_iterations,
         eval_output_dir=eval_output_path,
         start_time=time.strftime('%Y-%m-%d %H:%M:%S'),
@@ -314,7 +277,7 @@ def update_progress(
     logger.info(
         f'Finished evaluation for instance {result.instance_id}: {str(result.test_result)[:300]}...\n'
     )
-    output_fp.write(json.dumps(result.model_dump()) + '\n')
+    output_fp.write(result.model_dump_json() + '\n')
     output_fp.flush()
 
 
@@ -371,7 +334,6 @@ def _process_instance_wrapper(
             error = str(e)
             stacktrace = traceback.format_exc()
             if attempt == max_retries:
-                logger.exception(e)
                 msg = (
                     '-' * 10
                     + '\n'
@@ -395,19 +357,15 @@ def _process_instance_wrapper(
                 + '-' * 10
                 + '\n'
             )
-            if isinstance(
-                e,
-                (
-                    AgentRuntimeDisconnectedError,
-                    AgentRuntimeUnavailableError,
-                    AgentRuntimeNotFoundError,
-                ),
-            ):
+            # e is likely an EvalException, so we can't directly infer it from type
+            # but rather check if it's a fatal error
+            # But it can also be AgentRuntime**Error (e.g., swe_bench/eval_infer.py)
+            _error_str = type(e).__name__ + ': ' + str(e)
+            if is_fatal_runtime_error(_error_str):
                 runtime_failure_count += 1
                 msg += f'Runtime disconnected error detected for instance {instance.instance_id}, runtime failure count: {runtime_failure_count}'
+                msg += '\n' + '-' * 10 + '\n'
             logger.error(msg)
-            if use_mp:
-                print(msg)  # use print to directly print to console
             time.sleep(5)
 
 
@@ -564,10 +522,29 @@ def is_fatal_evaluation_error(error: str | None) -> bool:
         AgentRuntimeNotReadyError,
         AgentRuntimeDisconnectedError,
         AgentRuntimeNotFoundError,
+        ConnectionError,
     ]
 
     if any(exception.__name__ in error for exception in FATAL_EXCEPTIONS):
         logger.error(f'Fatal evaluation error detected: {error}')
+        return True
+
+    return False
+
+
+def is_fatal_runtime_error(error: str | None) -> bool:
+    if not error:
+        return False
+
+    FATAL_RUNTIME_ERRORS = [
+        AgentRuntimeTimeoutError,
+        AgentRuntimeUnavailableError,
+        AgentRuntimeDisconnectedError,
+        AgentRuntimeNotFoundError,
+    ]
+
+    if any(exception.__name__ in error for exception in FATAL_RUNTIME_ERRORS):
+        logger.error(f'Fatal runtime error detected: {error}')
         return True
 
     return False
@@ -578,3 +555,18 @@ def get_metrics(state: State) -> dict[str, Any]:
     metrics = state.metrics.get() if state.metrics else {}
     metrics['condenser'] = get_condensation_metadata(state)
     return metrics
+
+
+def get_default_sandbox_config_for_eval() -> SandboxConfig:
+    return SandboxConfig(
+        use_host_network=False,
+        # large enough timeout, since some testcases take very long to run
+        timeout=300,
+        api_key=os.environ.get('ALLHANDS_API_KEY', None),
+        remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+        keep_runtime_alive=False,
+        remote_runtime_init_timeout=3600,
+        remote_runtime_api_timeout=120,
+        remote_runtime_enable_retries=True,
+        remote_runtime_class='sysbox',
+    )

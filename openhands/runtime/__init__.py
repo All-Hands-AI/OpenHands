@@ -1,8 +1,10 @@
 from openhands.core.logger import openhands_logger as logger
+from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
 from openhands.runtime.impl.docker.docker_runtime import (
     DockerRuntime,
 )
 from openhands.runtime.impl.e2b.sandbox import E2BBox
+from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.modal.modal_runtime import ModalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
@@ -21,6 +23,10 @@ def get_runtime_cls(name: str):
         return ModalRuntime
     elif name == 'runloop':
         return RunloopRuntime
+    elif name == 'local':
+        return LocalRuntime
+    elif name == 'daytona':
+        return DaytonaRuntime
     else:
         raise ValueError(f'Runtime {name} not supported')
 

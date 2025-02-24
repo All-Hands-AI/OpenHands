@@ -1,11 +1,8 @@
-import posthog from "posthog-js";
 import React from "react";
 import { io, Socket } from "socket.io-client";
 import EventLogger from "#/utils/event-logger";
-import {
-  handleAssistantMessage,
-  handleStatusMessage,
-} from "#/services/actions";
+import { handleAssistantMessage } from "#/services/actions";
+import { showChatError } from "#/utils/error-handler";
 import { useRate } from "#/hooks/use-rate";
 import { OpenHandsParsedEvent } from "#/types/core";
 import {
@@ -81,20 +78,24 @@ export function updateStatusWhenErrorMessagePresent(data: ErrorArg | unknown) {
     !!val && typeof val === "object";
   const isString = (val: unknown): val is string => typeof val === "string";
   if (isObject(data) && "message" in data && isString(data.message)) {
-    let msgId: string | undefined;
-    if (
-      "data" in data &&
-      isObject(data.data) &&
-      "msg_id" in data.data &&
-      isString(data.data.msg_id)
-    ) {
-      msgId = data.data.msg_id;
+    if (data.message === "websocket error") {
+      return;
     }
-    handleStatusMessage({
-      type: "error",
+    let msgId: string | undefined;
+    let metadata: Record<string, unknown> = {};
+
+    if ("data" in data && isObject(data.data)) {
+      if ("msg_id" in data.data && isString(data.data.msg_id)) {
+        msgId = data.data.msg_id;
+      }
+      metadata = data.data as Record<string, unknown>;
+    }
+
+    showChatError({
       message: data.message,
-      id: msgId,
-      status_update: true,
+      source: "websocket",
+      metadata,
+      msgId,
     });
   }
 }
@@ -150,7 +151,6 @@ export function WsClientProvider({
   function handleError(data: unknown) {
     setStatus(WsClientProviderStatus.DISCONNECTED);
     updateStatusWhenErrorMessagePresent(data);
-    posthog.capture("socket_error");
   }
 
   React.useEffect(() => {

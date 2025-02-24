@@ -10,11 +10,14 @@ import { TOSCheckbox } from "./tos-checkbox";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 
 interface WaitlistModalProps {
-  ghToken: string | null;
+  ghTokenIsSet: boolean;
   githubAuthUrl: string | null;
 }
 
-export function WaitlistModal({ ghToken, githubAuthUrl }: WaitlistModalProps) {
+export function WaitlistModal({
+  ghTokenIsSet,
+  githubAuthUrl,
+}: WaitlistModalProps) {
   const [isTosAccepted, setIsTosAccepted] = React.useState(false);
 
   const handleGitHubAuth = () => {
@@ -28,11 +31,11 @@ export function WaitlistModal({ ghToken, githubAuthUrl }: WaitlistModalProps) {
     <ModalBackdrop>
       <ModalBody>
         <AllHandsLogo width={68} height={46} />
-        <WaitlistMessage content={ghToken ? "waitlist" : "sign-in"} />
+        <WaitlistMessage content={ghTokenIsSet ? "waitlist" : "sign-in"} />
 
         <TOSCheckbox onChange={() => setIsTosAccepted((prev) => !prev)} />
 
-        {!ghToken && (
+        {!ghTokenIsSet && (
           <ModalButton
             disabled={!isTosAccepted}
             text="Connect to GitHub"
@@ -41,7 +44,7 @@ export function WaitlistModal({ ghToken, githubAuthUrl }: WaitlistModalProps) {
             onClick={handleGitHubAuth}
           />
         )}
-        {ghToken && <JoinWaitlistAnchor />}
+        {ghTokenIsSet && <JoinWaitlistAnchor />}
       </ModalBody>
     </ModalBackdrop>
   );

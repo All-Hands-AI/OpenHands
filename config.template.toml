@@ -17,11 +17,20 @@
 #modal_api_token_id = ""
 #modal_api_token_secret = ""
 
+# API key for Daytona
+#daytona_api_key = ""
+
+# Daytona Target
+#daytona_target = ""
+
 # Base path for the workspace
 workspace_base = "./workspace"
 
 # Cache directory path
 #cache_dir = "/tmp/cache"
+
+# Reasoning effort for o1 models (low, medium, high, or not set)
+#reasoning_effort = "medium"
 
 # Debugging enabled
 #debug = false
@@ -35,6 +44,11 @@ workspace_base = "./workspace"
 # Path to store trajectories, can be a folder or a file
 # If it's a folder, the session id will be used as the file name
 #save_trajectory_path="./trajectories"
+
+# Path to replay a trajectory, must be a file path
+# If provided, trajectory will be loaded and replayed before the
+# agent responds to any user instruction
+#replay_trajectory_path = ""
 
 # File store path
 #file_store_path = "/tmp/file_store"
@@ -67,7 +81,7 @@ workspace_base = "./workspace"
 #run_as_openhands = true
 
 # Runtime environment
-#runtime = "eventstream"
+#runtime = "docker"
 
 # Runtime executor
 #runtime_executor = "openhands.runtime.executor:ActionExecutor"
@@ -99,7 +113,7 @@ workspace_base = "./workspace"
 #aws_secret_access_key = ""
 
 # API key to use (For Headless / CLI only -  In Web this is overridden by Session Init)
-api_key = "your-api-key"
+api_key = ""
 
 # API base URL (For Headless / CLI only -  In Web this is overridden by Session Init)
 #base_url = ""
@@ -190,7 +204,7 @@ model = "gpt-4o"
 #native_tool_calling = None
 
 [llm.gpt4o-mini]
-api_key = "your-api-key"
+api_key = ""
 model = "gpt-4o"
 
 
@@ -223,11 +237,15 @@ codeact_enable_jupyter = true
 # LLM config group to use
 #llm_config = 'your-llm-config-group'
 
-# Whether to use microagents at all
-#use_microagents = true
+# Whether to use prompt extension (e.g., microagent, repo/runtime info) at all
+#enable_prompt_extensions = true
 
 # List of microagents to disable
 #disabled_microagents = []
+
+# Whether history should be truncated to continue the session when hitting LLM context
+# length limit
+enable_history_truncation = true
 
 [agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially
