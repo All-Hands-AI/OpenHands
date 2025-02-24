@@ -1,13 +1,13 @@
 import React from "react";
-import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { JoinWaitlistAnchor } from "./join-waitlist-anchor";
 import { WaitlistMessage } from "./waitlist-message";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
-import { ModalButton } from "#/components/shared/buttons/modal-button";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { TOSCheckbox } from "./tos-checkbox";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
+import { BrandButton } from "../settings/brand-button";
+import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 
 interface WaitlistModalProps {
   ghTokenIsSet: boolean;
@@ -29,20 +29,23 @@ export function WaitlistModal({
 
   return (
     <ModalBackdrop>
-      <ModalBody>
+      <ModalBody className="border border-tertiary">
         <AllHandsLogo width={68} height={46} />
         <WaitlistMessage content={ghTokenIsSet ? "waitlist" : "sign-in"} />
 
         <TOSCheckbox onChange={() => setIsTosAccepted((prev) => !prev)} />
 
         {!ghTokenIsSet && (
-          <ModalButton
-            disabled={!isTosAccepted}
-            text="Connect to GitHub"
-            icon={<GitHubLogo width={20} height={20} />}
-            className="bg-[#791B80] w-full"
+          <BrandButton
+            isDisabled={!isTosAccepted}
+            type="button"
+            variant="primary"
             onClick={handleGitHubAuth}
-          />
+            className="w-full"
+            startContent={<GitHubLogo width={20} height={20} />}
+          >
+            Connect to GitHub
+          </BrandButton>
         )}
         {ghTokenIsSet && <JoinWaitlistAnchor />}
       </ModalBody>
