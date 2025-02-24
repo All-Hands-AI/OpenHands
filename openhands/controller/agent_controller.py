@@ -53,6 +53,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
+from openhands.runtime.base import Runtime
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -96,6 +97,7 @@ class AgentController:
         headless_mode: bool = True,
         status_callback: Callable | None = None,
         replay_events: list[Event] | None = None,
+        runtime: Runtime | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -149,6 +151,9 @@ class AgentController:
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
 
+        # runtime
+        self.runtime = runtime
+
     async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
 
@@ -156,6 +161,12 @@ class AgentController:
         """
         if set_stop_state:
             await self.set_agent_state_to(AgentState.STOPPED)
+            if self.runtime:
+                # Send Ctrl+C to terminate any running processes
+                try:
+                    await self.runtime.run(CmdRunAction(command="C-c", is_input="true"))
+                finally:
+                    self.runtime.close()
 
         # we made history, now is the time to rewrite it!
         # the final state.history will be used by external scripts like evals, tests, etc.
