@@ -7,7 +7,7 @@ import pytest
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
-from openhands.memory.memory import LongTermMemory
+from openhands.memory.long_term_memory import LongTermMemory
 from openhands.storage.files import FileStore
 
 
@@ -154,7 +154,7 @@ def test_load_events_into_index_with_invalid_json(
     """Test loading events with malformed event data."""
     # Simulate an event that causes event_to_memory to raise a JSONDecodeError
     with patch(
-        'openhands.memory.memory.event_to_memory',
+        'openhands.memory.long_term_memory.event_to_memory',
         side_effect=json.JSONDecodeError('Expecting value', '', 0),
     ):
         event = _create_action_event('invalid_action')
@@ -190,7 +190,8 @@ def test_search_returns_correct_results(long_term_memory: LongTermMemory):
         MagicMock(get_text=MagicMock(return_value='result2')),
     ]
     with patch(
-        'openhands.memory.memory.VectorIndexRetriever', return_value=mock_retriever
+        'openhands.memory.long_term_memory.VectorIndexRetriever',
+        return_value=mock_retriever,
     ):
         results = long_term_memory.search(query='test query', k=2)
         assert results == ['result1', 'result2']
@@ -201,7 +202,8 @@ def test_search_with_no_results(long_term_memory: LongTermMemory):
     mock_retriever = MagicMock()
     mock_retriever.retrieve.return_value = []
     with patch(
-        'openhands.memory.memory.VectorIndexRetriever', return_value=mock_retriever
+        'openhands.memory.long_term_memory.VectorIndexRetriever',
+        return_value=mock_retriever,
     ):
         results = long_term_memory.search(query='no results', k=5)
         assert results == []
