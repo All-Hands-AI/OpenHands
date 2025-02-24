@@ -160,7 +160,7 @@ def get_action_message(
         )
 
         llm_response: ModelResponse = tool_metadata.model_response
-        assistant_msg = llm_response.choices[0].message
+        assistant_msg = getattr(llm_response.choices[0], 'message')
 
         # Add the LLM message (assistant) that initiated the tool calls
         # (overwrites any previous message with the same response_id)
@@ -168,7 +168,7 @@ def get_action_message(
             f'Tool calls type: {type(assistant_msg.tool_calls)}, value: {assistant_msg.tool_calls}'
         )
         pending_tool_call_action_messages[llm_response.id] = Message(
-            role=assistant_msg.role,
+            role=getattr(assistant_msg, 'role', 'assistant'),
             # tool call content SHOULD BE a string
             content=[TextContent(text=assistant_msg.content or '')]
             if assistant_msg.content is not None
@@ -185,7 +185,7 @@ def get_action_message(
         tool_metadata = action.tool_call_metadata
         if tool_metadata is not None:
             # take the response message from the tool call
-            assistant_msg = tool_metadata.model_response.choices[0].message
+            assistant_msg = getattr(tool_metadata.model_response.choices[0], 'message')
             content = assistant_msg.content or ''
 
             # save content if any, to thought
@@ -197,9 +197,11 @@ def get_action_message(
 
             # remove the tool call metadata
             action.tool_call_metadata = None
+        if role not in ('user', 'system', 'assistant', 'tool'):
+            raise ValueError(f'Invalid role: {role}')
         return [
             Message(
-                role=role,
+                role=role,  # type: ignore[arg-type]
                 content=[TextContent(text=action.thought)],
             )
         ]
@@ -208,9 +210,11 @@ def get_action_message(
         content = [TextContent(text=action.content or '')]
         if vision_is_active and action.image_urls:
             content.append(ImageContent(image_urls=action.image_urls))
+        if role not in ('user', 'system', 'assistant', 'tool'):
+            raise ValueError(f'Invalid role: {role}')
         return [
             Message(
-                role=role,
+                role=role,  # type: ignore[arg-type]
                 content=content,
             )
         ]
@@ -218,7 +222,7 @@ def get_action_message(
         content = [TextContent(text=f'User executed the command:\n{action.command}')]
         return [
             Message(
-                role='user',
+                role='user',  # Always user for CmdRunAction
                 content=content,
             )
         ]
