@@ -141,15 +141,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
                 f'Unknown config key "{key}" in [core] section'
             )
 
-    # Process extended section if present
-    if 'extended' in toml_config:
-        try:
-            cfg.extended = ExtendedConfig(toml_config['extended'])
-        except (TypeError, KeyError, ValidationError) as e:
-            logger.openhands_logger.warning(
-                f'Cannot parse [extended] config from toml, values have not been applied.\nError: {e}'
-            )
-
     # Process agent section if present
     if 'agent' in toml_config:
         try:
@@ -203,12 +194,6 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
                 f'Cannot parse [security] config from toml, values have not been applied.\nError: {e}'
             )
 
-    # Check for unknown sections
-    known_sections = {'core', 'extended', 'agent', 'llm', 'security', 'sandbox'}
-    for key in toml_config:
-        if key.lower() not in known_sections and not key.startswith('sandbox'):
-            logger.openhands_logger.warning(f'Unknown section [{key}] in {toml_file}')
-
     # Process sandbox section if present
     if 'sandbox' in toml_config:
         try:
@@ -221,6 +206,21 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
             logger.openhands_logger.warning(
                 f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}'
             )
+
+    # Process extended section if present
+    if 'extended' in toml_config:
+        try:
+            cfg.extended = ExtendedConfig(toml_config['extended'])
+        except (TypeError, KeyError, ValidationError) as e:
+            logger.openhands_logger.warning(
+                f'Cannot parse [extended] config from toml, values have not been applied.\nError: {e}'
+            )
+
+    # Check for unknown sections
+    known_sections = {'core', 'extended', 'agent', 'llm', 'security', 'sandbox'}
+    for key in toml_config:
+        if key.lower() not in known_sections:
+            logger.openhands_logger.warning(f'Unknown section [{key}] in {toml_file}')
 
 
 def get_or_create_jwt_secret(file_store: FileStore) -> str:
