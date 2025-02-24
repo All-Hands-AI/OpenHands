@@ -169,9 +169,7 @@ class GitHubService:
         except httpx.HTTPError:
             raise GHUnknownException('Unknown error')
 
-    async def get_suggested_tasks(
-        self, repo_full_name: str | None = None
-    ) -> list[SuggestedTask]:
+    async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """
         Get suggested tasks for the authenticated user across all repositories.
         Returns:
@@ -276,7 +274,7 @@ class GitHubService:
                 )
 
             return tasks
-        except Exception as e:
+        except Exception:
             return []
 
 
