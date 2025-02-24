@@ -59,10 +59,11 @@ class LLMConfig(BaseModel):
     aws_region_name: str | None = Field(default=None)
     openrouter_site_url: str = Field(default='https://docs.all-hands.dev/')
     openrouter_app_name: str = Field(default='OpenHands')
-    num_retries: int = Field(default=8)
+    # total wait time: 5 + 10 + 20 + 30 = 65 seconds
+    num_retries: int = Field(default=4)
     retry_multiplier: float = Field(default=2)
-    retry_min_wait: int = Field(default=15)
-    retry_max_wait: int = Field(default=120)
+    retry_min_wait: int = Field(default=5)
+    retry_max_wait: int = Field(default=30)
     timeout: int | None = Field(default=None)
     max_message_chars: int = Field(
         default=30_000
@@ -101,3 +102,9 @@ class LLMConfig(BaseModel):
             os.environ['OR_SITE_URL'] = self.openrouter_site_url
         if self.openrouter_app_name:
             os.environ['OR_APP_NAME'] = self.openrouter_app_name
+
+        # Assign an API version for Azure models
+        # While it doesn't seem required, the format supported by the API without version seems old and will likely break.
+        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
+        if self.model.startswith('azure') and self.api_version is None:
+            self.api_version = '2024-08-01-preview'

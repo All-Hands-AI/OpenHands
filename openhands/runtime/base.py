@@ -225,6 +225,13 @@ class Runtime(FileEditRuntimeMixin):
                         export_cmd = CmdRunAction(
                             f"export GITHUB_TOKEN='{token.get_secret_value()}'"
                         )
+
+                        self.event_stream.update_secrets(
+                            {
+                                'github_token': token.get_secret_value(),
+                            }
+                        )
+
                         await call_sync_from_async(self.run, export_cmd)
 
             observation: Observation = await call_sync_from_async(
@@ -247,6 +254,9 @@ class Runtime(FileEditRuntimeMixin):
 
         # this might be unnecessary, since source should be set by the event stream when we're here
         source = event.source if event.source else EventSource.AGENT
+        if isinstance(observation, NullObservation):
+            # don't add null observations to the event stream
+            return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
     def clone_repo(

@@ -18,11 +18,7 @@ from litellm import Message as LiteLLMMessage
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
-    APIConnectionError,
-    APIError,
-    InternalServerError,
     RateLimitError,
-    ServiceUnavailableError,
 )
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
@@ -41,15 +37,7 @@ from openhands.llm.retry_mixin import RetryMixin
 __all__ = ['LLM']
 
 # tuple of exceptions to retry on
-LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
-    APIConnectionError,
-    # FIXME: APIError is useful on 502 from a proxy for example,
-    # but it also retries on other errors that are permanent
-    APIError,
-    InternalServerError,
-    RateLimitError,
-    ServiceUnavailableError,
-)
+LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (RateLimitError,)
 
 # cache prompt supporting models
 # remove this when we gemini and deepseek are supported
@@ -184,7 +172,7 @@ class LLM(RetryMixin, DebugMixin):
         )
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
-            from openhands.core.utils import json
+            from openhands.io import json
 
             messages: list[dict[str, Any]] | dict[str, Any] = []
             mock_function_calling = not self.is_function_calling_active()
@@ -381,7 +369,7 @@ class LLM(RetryMixin, DebugMixin):
             # noinspection PyBroadException
             except Exception:
                 pass
-        from openhands.core.utils import json
+        from openhands.io import json
 
         logger.debug(f'Model info: {json.dumps(self.model_info, indent=2)}')
 
@@ -509,20 +497,21 @@ class LLM(RetryMixin, DebugMixin):
             stats += 'Response Latency: %.3f seconds\n' % latest_latency.latency
 
         usage: Usage | None = response.get('usage')
+        response_id = response.get('id', 'unknown')
 
         if usage:
             # keep track of the input and output tokens
-            input_tokens = usage.get('prompt_tokens')
-            output_tokens = usage.get('completion_tokens')
+            prompt_tokens = usage.get('prompt_tokens', 0)
+            completion_tokens = usage.get('completion_tokens', 0)
 
-            if input_tokens:
-                stats += 'Input tokens: ' + str(input_tokens)
+            if prompt_tokens:
+                stats += 'Input tokens: ' + str(prompt_tokens)
 
-            if output_tokens:
+            if completion_tokens:
                 stats += (
-                    (' | ' if input_tokens else '')
+                    (' | ' if prompt_tokens else '')
                     + 'Output tokens: '
-                    + str(output_tokens)
+                    + str(completion_tokens)
                     + '\n'
                 )
 
@@ -531,7 +520,7 @@ class LLM(RetryMixin, DebugMixin):
                 'prompt_tokens_details'
             )
             cache_hit_tokens = (
-                prompt_tokens_details.cached_tokens if prompt_tokens_details else None
+                prompt_tokens_details.cached_tokens if prompt_tokens_details else 0
             )
             if cache_hit_tokens:
                 stats += 'Input tokens (cache hit): ' + str(cache_hit_tokens) + '\n'
@@ -540,9 +529,19 @@ class LLM(RetryMixin, DebugMixin):
             # but litellm doesn't separate them in the usage stats
             # so we can read it from the provider-specific extra field
             model_extra = usage.get('model_extra', {})
-            cache_write_tokens = model_extra.get('cache_creation_input_tokens')
+            cache_write_tokens = model_extra.get('cache_creation_input_tokens', 0)
             if cache_write_tokens:
                 stats += 'Input tokens (cache write): ' + str(cache_write_tokens) + '\n'
+
+            # Record in metrics
+            # We'll treat cache_hit_tokens as "cache read" and cache_write_tokens as "cache write"
+            self.metrics.add_token_usage(
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                cache_read_tokens=cache_hit_tokens,
+                cache_write_tokens=cache_write_tokens,
+                response_id=response_id,
+            )
 
         # log the stats
         if stats:
@@ -605,7 +604,9 @@ class LLM(RetryMixin, DebugMixin):
         return False
 
     def _completion_cost(self, response) -> float:
-        """Calculate the cost of a completion response based on the model.  Local models are treated as free.
+        """Calculate completion cost and update metrics with running total.
+
+        Calculate the cost of a completion response based on the model. Local models are treated as free.
         Add the current cost into total cost in metrics.
 
         Args:

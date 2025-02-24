@@ -50,7 +50,7 @@ class InvariantClient:
         return None
 
     class _Policy:
-        def __init__(self, invariant):
+        def __init__(self, invariant: 'InvariantClient') -> None:
             self.server = invariant.server
             self.session_id = invariant.session_id
 
@@ -77,7 +77,7 @@ class InvariantClient:
             except (ConnectionError, Timeout, HTTPError) as err:
                 return None, err
 
-        def from_string(self, rule: str):
+        def from_string(self, rule: str) -> 'InvariantClient._Policy':
             policy_id, err = self._create_policy(rule)
             if err:
                 raise err
@@ -97,7 +97,7 @@ class InvariantClient:
                 return None, err
 
     class _Monitor:
-        def __init__(self, invariant):
+        def __init__(self, invariant: 'InvariantClient') -> None:
             self.server = invariant.server
             self.session_id = invariant.session_id
             self.policy = ''
@@ -114,7 +114,7 @@ class InvariantClient:
             except (ConnectionError, Timeout, HTTPError) as err:
                 return None, err
 
-        def from_string(self, rule: str):
+        def from_string(self, rule: str) -> 'InvariantClient._Monitor':
             monitor_id, err = self._create_monitor(rule)
             if err:
                 raise err

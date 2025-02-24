@@ -18,6 +18,7 @@ from evaluation.utils.shared import (
     EvalOutput,
     assert_and_raise,
     codeact_user_response,
+    get_default_sandbox_config_for_eval,
     get_metrics,
     is_fatal_evaluation_error,
     make_metadata,
@@ -30,7 +31,6 @@ from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
     AppConfig,
-    SandboxConfig,
     get_llm_config_arg,
     get_parser,
 )
@@ -122,30 +122,23 @@ def get_config(
         base_container_image = SWE_BENCH_CONTAINER_IMAGE
         logger.info(f'Using swe-bench container image: {base_container_image}')
 
+    sandbox_config = get_default_sandbox_config_for_eval()
+    sandbox_config.base_container_image = base_container_image
+    sandbox_config.enable_auto_lint = True
+    sandbox_config.use_host_network = False
+    # Add platform to the sandbox config to solve issue 4401
+    sandbox_config.platform = 'linux/amd64'
+    sandbox_config.remote_runtime_resource_factor = get_instance_resource_factor(
+        dataset_name=metadata.dataset,
+        instance_id=instance['instance_id'],
+    )
+
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
         runtime=os.environ.get('RUNTIME', 'docker'),
-        sandbox=SandboxConfig(
-            base_container_image=base_container_image,
-            enable_auto_lint=True,
-            use_host_network=False,
-            # large enough timeout, since some testcases take very long to run
-            timeout=300,
-            # Add platform to the sandbox config to solve issue 4401
-            platform='linux/amd64',
-            api_key=os.environ.get('ALLHANDS_API_KEY', None),
-            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
-            keep_runtime_alive=False,
-            remote_runtime_init_timeout=3600,
-            remote_runtime_api_timeout=120,
-            remote_runtime_resource_factor=get_instance_resource_factor(
-                dataset_name=metadata.dataset,
-                instance_id=instance['instance_id'],
-            ),
-            remote_runtime_enable_retries=True,
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
@@ -331,6 +324,22 @@ def complete_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    if obs.exit_code == -1:
+        # The previous command is still running
+        # We need to kill previous command
+        logger.info('The previous command is still running, trying to kill it...')
+        action = CmdRunAction(command='C-c')
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+        # Then run the command again
+        action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
+        action.set_hard_timeout(600)
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
     assert_and_raise(
         isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
         f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',

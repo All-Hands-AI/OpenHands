@@ -54,13 +54,12 @@ graph TD
 6. Action Execution: The runtime client receives actions from the backend, executes them in the sandboxed environment, and sends back observations
 7. Observation Return: The action execution server sends execution results back to the OpenHands backend as observations
 
-
 The role of the client:
+
 - It acts as an intermediary between the OpenHands backend and the sandboxed environment
 - It executes various types of actions (shell commands, file operations, Python code, etc.) safely within the container
 - It manages the state of the sandboxed environment, including the current working directory and loaded plugins
 - It formats and returns observations to the backend, ensuring a consistent interface for processing results
-
 
 ## How OpenHands builds and maintains OH Runtime images
 
@@ -78,16 +77,15 @@ Tags may be in one of 2 formats:
 - **Source Tag**: `oh_v{openhands_version}_{16_digit_lock_hash}_{16_digit_source_hash}`
   (e.g.: `oh_v0.9.9_1234567890abcdef_1234567890abcdef`)
 
-
 #### Source Tag - Most Specific
 
 This is the first 16 digits of the MD5 of the directory hash for the source directory. This gives a hash
 for only the openhands source
 
-
 #### Lock Tag
 
 This hash is built from the first 16 digits of the MD5 of:
+
 - The name of the base image upon which the image was built (e.g.: `nikolaik/python-nodejs:python3.12-nodejs22`)
 - The content of the `pyproject.toml` included in the image.
 - The content of the `poetry.lock` included in the image.

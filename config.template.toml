@@ -17,6 +17,12 @@
 #modal_api_token_id = ""
 #modal_api_token_secret = ""
 
+# API key for Daytona
+#daytona_api_key = ""
+
+# Daytona Target
+#daytona_target = ""
+
 # Base path for the workspace
 workspace_base = "./workspace"
 
@@ -233,6 +239,10 @@ codeact_enable_jupyter = true
 
 # List of microagents to disable
 #disabled_microagents = []
+
+# Whether history should be truncated to continue the session when hitting LLM context
+# length limit
+enable_history_truncation = true
 
 [agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially
