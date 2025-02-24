@@ -5,7 +5,6 @@ import { cn } from "#/utils/utils";
 import MoneyIcon from "#/icons/money.svg?react";
 import { SettingsInput } from "../settings/settings-input";
 import { BrandButton } from "../settings/brand-button";
-import { HelpLink } from "../settings/help-link";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { amountIsValid } from "#/utils/amount-is-valid";
 
@@ -80,13 +79,6 @@ export function PaymentForm() {
           {isPending && <LoadingSpinner size="small" />}
         </div>
       </div>
-
-      <HelpLink
-        testId="payment-methods-link"
-        href="https://stripe.com/"
-        text="Manage payment methods on"
-        linkText="Stripe"
-      />
     </form>
   );
 }
