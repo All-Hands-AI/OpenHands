@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr, ValidationError
 
 from openhands.core.logger import LOG_DIR
 
@@ -112,6 +112,12 @@ class LLMConfig(BaseModel):
             dict[str, LLMConfig]: A mapping where the key "llm" corresponds to the default configuration
             and additional keys represent custom configurations.
         """
+        from openhands.core import logger
+
+        # Initialize the result mapping
+        llm_mapping: dict[str, LLMConfig] = {}
+
+        # Extract base config data (non-dict values)
         base_data = {}
         custom_sections: dict[str, dict] = {}
         for key, value in data.items():
@@ -119,11 +125,34 @@ class LLMConfig(BaseModel):
                 custom_sections[key] = value
             else:
                 base_data[key] = value
-        base_config = cls.model_validate(base_data)
-        llm_mapping: dict[str, LLMConfig] = {'llm': base_config}
+
+        # Try to create the base config
+        try:
+            base_config = cls.model_validate(base_data)
+            llm_mapping['llm'] = base_config
+        except ValidationError as e:
+            logger.openhands_logger.warning(
+                f'Invalid base LLM configuration: {e}. Using defaults.'
+            )
+            # If base config fails, create a default one
+            base_config = cls()
+            # Still add it to the mapping
+            llm_mapping['llm'] = base_config
+
+        # Process each custom section independently
         for name, overrides in custom_sections.items():
-            merged = {**base_config.model_dump(), **overrides}
-            llm_mapping[name] = cls.model_validate(merged)
+            try:
+                # Merge base config with overrides
+                merged = {**base_config.model_dump(), **overrides}
+                custom_config = cls.model_validate(merged)
+                llm_mapping[name] = custom_config
+            except ValidationError as e:
+                logger.openhands_logger.warning(
+                    f'Invalid LLM configuration for [{name}]: {e}. This section will be skipped.'
+                )
+                # Skip this custom section but continue with others
+                continue
+
         return llm_mapping
 
     def model_post_init(self, __context: Any):
