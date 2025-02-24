@@ -396,6 +396,80 @@ async def test_stop_button_terminates_background_process(mock_agent, mock_event_
     # Verify the process is running
     assert controller.get_agent_state() == AgentState.RUNNING
 
+    # Send empty command to check output status
+    empty_cmd = CmdRunAction(command="", is_input="true")
+    mock_runtime.run.return_value = CmdOutputObservation(
+        content="1\n1\n1\n",  # Process is still outputting numbers
+        command=empty_cmd.command,
+        metadata={"exit_code": -1}  # Still running
+    )
+    await send_event_to_controller(controller, empty_cmd)
+    await mock_runtime.run(empty_cmd)
+
+    # Simulate clicking the stop button
+    await controller.set_agent_state_to(AgentState.STOPPED)
+
+    # Wait for the close() call to complete
+    await controller.close()
+
+    # Verify that close() was called on the runtime
+    mock_runtime.close.assert_called_once()
+
+    # Verify that the runtime sent a C-c to terminate the process
+    mock_runtime.run.assert_called_with(CmdRunAction(command="C-c", is_input="true"))
+
+
+@pytest.mark.asyncio
+async def test_stop_button_terminates_foreground_process(mock_agent, mock_event_stream, mock_runtime):
+    """Test that clicking the stop button properly terminates a foreground process that's being observed."""
+    # Configure the mock runtime to simulate a foreground process
+    mock_runtime.event_stream = mock_event_stream
+    mock_runtime.run = AsyncMock()
+
+    # Create a controller with the mock runtime
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+        runtime=mock_runtime,
+    )
+    controller.state.agent_state = AgentState.RUNNING
+
+    # Start a foreground process that outputs numbers slowly
+    foreground_cmd = CmdRunAction(command='for i in {1..10}; do echo $i; sleep 2; done')
+    mock_runtime.run.return_value = CmdOutputObservation(
+        content="1",  # First number output
+        command=foreground_cmd.command,
+        metadata={
+            "exit_code": -1,  # Process not finished
+            "suffix": "\n[The command has no new output after 2 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
+        }
+    )
+
+    # Send the foreground process command
+    await send_event_to_controller(controller, foreground_cmd)
+    await mock_runtime.run(foreground_cmd)
+
+    # Verify the process is running
+    assert controller.get_agent_state() == AgentState.RUNNING
+
+    # Send empty command to check output status
+    empty_cmd = CmdRunAction(command="", is_input="true")
+    mock_runtime.run.return_value = CmdOutputObservation(
+        content="2",  # Second number output
+        command=empty_cmd.command,
+        metadata={
+            "exit_code": -1,  # Still running
+            "prefix": "[Below is the output of the previous command.]\n",
+            "suffix": "\n[The command has no new output after 2 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
+        }
+    )
+    await send_event_to_controller(controller, empty_cmd)
+    await mock_runtime.run(empty_cmd)
+
     # Simulate clicking the stop button
     await controller.set_agent_state_to(AgentState.STOPPED)
 
