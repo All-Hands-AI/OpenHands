@@ -96,8 +96,8 @@ class LLMConfig(BaseModel):
         Create a mapping of LLMConfig instances from a toml dictionary representing the [llm] section.
 
         The default configuration is built from all non-dict keys in data.
-        Then, each key with a dict value is treated as a custom LLM configuration, and its values override
-        the default configuration.
+        Then, each key with a dict value (e.g. [llm.random_name]) is treated as a custom LLM configuration, 
+        and its values override the default configuration.
 
         Example:
         Apply generic LLM config with custom LLM overrides, e.g.
