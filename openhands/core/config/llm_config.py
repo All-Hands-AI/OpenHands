@@ -90,6 +90,33 @@ class LLMConfig(BaseModel):
 
     model_config = {'extra': 'forbid'}
 
+    @classmethod
+    def from_toml_section(cls, data: dict) -> dict[str, LLMConfig]:
+        """
+        Create a mapping of LLMConfig instances from a toml dictionary representing the [llm] section.
+
+        The default configuration is built from all non-dict keys in data.
+        Then, each key with a dict value is treated as a custom LLM configuration, and its values override
+        the default configuration.
+
+        Returns:
+            dict[str, LLMConfig]: A mapping where the key "llm" corresponds to the default configuration
+            and additional keys represent custom configurations.
+        """
+        base_data = {}
+        custom_sections: dict[str, dict] = {}
+        for key, value in data.items():
+            if isinstance(value, dict):
+                custom_sections[key] = value
+            else:
+                base_data[key] = value
+        base_config = cls.model_validate(base_data)
+        result: dict[str, LLMConfig] = {'llm': base_config}
+        for name, overrides in custom_sections.items():
+            merged = {**base_config.model_dump(), **overrides}
+            result[name] = cls.model_validate(merged)
+        return result
+
     def model_post_init(self, __context: Any):
         """Post-initialization hook to assign OpenRouter-related variables to environment variables.
 
