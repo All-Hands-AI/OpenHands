@@ -226,9 +226,6 @@ class GitHubService:
 
         try:
             response = await self.execute_graphql_query(query, variables)
-            print('\nGraphQL Response:')
-            print(response)
-
             data = response['data']['user']
             tasks: list[SuggestedTask] = []
 
@@ -280,7 +277,6 @@ class GitHubService:
 
             return tasks
         except Exception as e:
-            print(f'Error: {str(e)}')
             return []
 
 
