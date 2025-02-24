@@ -10,6 +10,7 @@ from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
+from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.stream import EventStream, session_exists
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
@@ -95,6 +96,15 @@ class StandaloneConversationManager(ConversationManager):
         event_stream = await self._get_event_stream(sid)
         if not event_stream:
             return await self.maybe_start_agent_loop(sid, settings, user_id)
+        for event in event_stream.get_events(reverse=True):
+            if isinstance(event, AgentStateChangedObservation):
+                if event.agent_state in (
+                    AgentState.STOPPED.value,
+                    AgentState.ERROR.value,
+                ):
+                    await self.close_session(sid)
+                    return await self.maybe_start_agent_loop(sid, settings, user_id)
+                break
         return event_stream
 
     async def detach_from_conversation(self, conversation: Conversation):
