@@ -429,61 +429,63 @@ def test_stop_button_terminates_background_process(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
         # Start a simple background process that writes to a file
-        action = CmdRunAction(command='python3 -c "import time; print(\'started\'); time.sleep(10)" > output.log 2>&1 &')
+        action = CmdRunAction(
+            command='python3 -c "import time; print(\'started\'); time.sleep(10)" > output.log 2>&1 &'
+        )
         action.set_hard_timeout(5)  # Increased timeout
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
-        
+
         # Check the tmux window output immediately after starting the process
-        action = CmdRunAction(command="")  # Empty command to view tmux window
+        action = CmdRunAction(command='')  # Empty command to view tmux window
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
-        
+
         # Wait for process to start and write output
         time.sleep(0.5)
-        
+
         # Get process ID
         action = CmdRunAction(command="ps aux | grep 'python3 -c' | grep -v grep")
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 0
         assert 'python3 -c' in obs.content
-        
+
         # Check the output to verify process is running
-        action = CmdRunAction(command="", is_input=True)
+        action = CmdRunAction(command='', is_input=True)
         action.set_hard_timeout(5)  # Increased timeout
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == -1  # Process still running
-        
+
         # Send empty command to check output status
-        action = CmdRunAction(command="", is_input=True)
+        action = CmdRunAction(command='', is_input=True)
         action.set_hard_timeout(5)  # Increased timeout
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == -1  # Process still running
-        
+
         # Send C-c to terminate
-        action = CmdRunAction(command="C-c", is_input=True)
+        action = CmdRunAction(command='C-c', is_input=True)
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
-        
+
         # Wait for process to terminate
         time.sleep(0.5)
-        
+
         # Verify process was terminated
         action = CmdRunAction(command="ps aux | grep 'python3 -c' | grep -v grep")
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 1  # No process found = terminated
-        
+
         # Check output file exists and contains expected content
-        action = CmdRunAction(command="cat output.log")
+        action = CmdRunAction(command='cat output.log')
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 0
         assert 'started' in obs.content
-        
+
     finally:
         # Cleanup any stray processes
         runtime.run_action(CmdRunAction(command="pkill -f 'python3 -c'"))
@@ -495,56 +497,58 @@ def test_stop_button_terminates_foreground_process(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
         # Start a simple foreground process
-        action = CmdRunAction(command='python3 -c "import time; print(\'running\'); time.sleep(10)"')
+        action = CmdRunAction(
+            command='python3 -c "import time; print(\'running\'); time.sleep(10)"'
+        )
         action.set_hard_timeout(5)  # Increased timeout
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == -1  # Process is running
         assert 'running' in obs.content
-        
+
         # Check the tmux window output immediately after starting the process
-        action = CmdRunAction(command="")  # Empty command to view tmux window
+        action = CmdRunAction(command='')  # Empty command to view tmux window
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert 'running' in obs.content  # Should show the process output
-        
+
         # Check the output to verify process is running
-        action = CmdRunAction(command="", is_input=True)
+        action = CmdRunAction(command='', is_input=True)
         action.set_hard_timeout(5)  # Increased timeout
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == -1  # Process still running
-        
+
         # Send empty command to check output status
-        action = CmdRunAction(command="", is_input=True)
+        action = CmdRunAction(command='', is_input=True)
         action.set_hard_timeout(5)  # Increased timeout
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == -1  # Process still running
-        
+
         # Send C-c to terminate
-        action = CmdRunAction(command="C-c", is_input=True)
+        action = CmdRunAction(command='C-c', is_input=True)
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
-        assert "KeyboardInterrupt" in obs.content  # Python shows this on Ctrl+C
+        assert 'KeyboardInterrupt' in obs.content  # Python shows this on Ctrl+C
         assert obs.exit_code == 0  # Process terminated
-        
+
         # Wait for process to terminate
         time.sleep(0.5)
-        
+
         # Verify process was terminated
         action = CmdRunAction(command="ps aux | grep 'python3 -c' | grep -v grep")
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 1  # No process found = terminated
-        
+
         # Verify we can run new commands
         action = CmdRunAction(command="echo 'Process terminated'")
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 0
-        assert "Process terminated" in obs.content
-        
+        assert 'Process terminated' in obs.content
+
     finally:
         # Cleanup any stray processes
         runtime.run_action(CmdRunAction(command="pkill -f 'python3 -c'"))
