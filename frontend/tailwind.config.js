@@ -17,13 +17,15 @@ export default {
         tertiary: "var(--navy)", // gray, used for inputs
         "tertiary-light": "red", // lighter gray, used for borders and placeholder text
 
-        "navy-extra-extra-dark": "var(--navy-extra-extra-dark)",
-
+        "neutral-1100": "var(--navy-extra-extra-dark)",
+        "neutral-1000": "var(--navy-extra-dark)",
         "neutral-900": "var(--navy-dark)",
         "neutral-800": "var(--navy-darker)",
         "neutral-700": "var(--navy)", 
-        "neutral-600": "var(--navy-lighter)",
-        "neutral-500": "var(--navy-light)",
+        "neutral-600": "var(--navy-a-bit-lighter)",
+        "neutral-500": "var(--navy-lighter)",
+        "neutral-400": "var(--navy-light)",
+        "neutral-300": "var(--navy-extra-light)",
 
         "red-500": "var(--red)"
       },

@@ -117,7 +117,7 @@ function AppContent() {
   function renderMain() {
     if (width <= 640) {
       return (
-        <div className="rounded-xl overflow-hidden border border-neutral-600 w-full">
+        <div className="overflow-hidden w-full">
           <ChatInterface />
         </div>
       );
@@ -127,7 +127,7 @@ function AppContent() {
         orientation={Orientation.HORIZONTAL}
         className="grow h-full min-h-0 min-w-0"
         initialSize={500}
-        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary"
+        firstClassName="overflow-hidden bg-base"
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
         secondChild={
@@ -201,13 +201,14 @@ function AppContent() {
   return (
     <WsClientProvider conversationId={conversationId}>
       <EventHandler>
-        <div data-testid="app-route" className="flex flex-col h-full gap-3">
+        <div data-testid="app-route" className="flex flex-col h-full">
           <div className="flex h-full overflow-auto">{renderMain()}</div>
 
           <Controls
             setSecurityOpen={onSecurityModalOpen}
             showSecurityLock={!!settings?.SECURITY_ANALYZER}
           />
+
           {settings && (
             <Security
               isOpen={securityModalIsOpen}

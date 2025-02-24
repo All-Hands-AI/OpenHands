@@ -1,10 +1,11 @@
 
 :root {
-  --navy-extra-light: rgb(154 169 205);
-  --navy-light: rgb(128 140 169);
+  --navy-extra-light: #9aa9cd;
+  --navy-light: #808ca9;
   --navy-lighter: #2b3343;
-  --navy: rgb(35 41 53);
-  --navy-dark: rgb(30 34 43);
+  --navy-a-bit-lighter: #374153;
+  --navy: #232935;
+  --navy-dark: #1e222b;
   --navy-extra-dark: #181b22;
   --navy-extra-extra-dark: #111318;
   --green: #00d1ca;
@@ -35,6 +36,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--navy);
 }
 
 code {

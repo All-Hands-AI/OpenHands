@@ -19,7 +19,7 @@ function Terminal({ secrets }: TerminalProps) {
   });
 
   return (
-    <div className="bg-navy-extra-extra-dark h-full p-2 min-h-0">
+    <div className="bg-neutral-1100 h-full p-2 min-h-0">
       <div ref={ref} className="h-full w-full" />
     </div>
   );
