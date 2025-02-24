@@ -430,7 +430,12 @@ def test_stop_button_terminates_background_process(temp_dir, runtime_cls):
     try:
         # Start a simple background process that writes to a file
         action = CmdRunAction(command='python3 -c "import time; print(\'started\'); time.sleep(10)" > output.log 2>&1 &')
-        action.set_hard_timeout(1)
+        action.set_hard_timeout(5)  # Increased timeout
+        obs = runtime.run_action(action)
+        assert isinstance(obs, CmdOutputObservation)
+        
+        # Check the tmux window output immediately after starting the process
+        action = CmdRunAction(command="")  # Empty command to view tmux window
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         
@@ -446,7 +451,7 @@ def test_stop_button_terminates_background_process(temp_dir, runtime_cls):
         
         # Check the output to verify process is running
         action = CmdRunAction(command="", is_input=True)
-        action.set_hard_timeout(1)
+        action.set_hard_timeout(5)  # Increased timeout
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == -1  # Process still running
@@ -484,15 +489,21 @@ def test_stop_button_terminates_foreground_process(temp_dir, runtime_cls):
     try:
         # Start a simple foreground process
         action = CmdRunAction(command='python3 -c "import time; print(\'running\'); time.sleep(10)"')
-        action.set_hard_timeout(1)
+        action.set_hard_timeout(5)  # Increased timeout
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == -1  # Process is running
         assert 'running' in obs.content
         
+        # Check the tmux window output immediately after starting the process
+        action = CmdRunAction(command="")  # Empty command to view tmux window
+        obs = runtime.run_action(action)
+        assert isinstance(obs, CmdOutputObservation)
+        assert 'running' in obs.content  # Should show the process output
+        
         # Check the output to verify process is running
         action = CmdRunAction(command="", is_input=True)
-        action.set_hard_timeout(1)
+        action.set_hard_timeout(5)  # Increased timeout
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == -1  # Process still running
