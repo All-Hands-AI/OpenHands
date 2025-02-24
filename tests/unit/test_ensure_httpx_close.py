@@ -1,4 +1,3 @@
-import pytest
 from httpx import Client
 
 from openhands.utils.ensure_httpx_close import EnsureHttpxClose
@@ -65,7 +64,7 @@ def test_ensure_httpx_close_exception():
     try:
         with ctx:
             client = Client()
-            raise ValueError("Test exception")
+            raise ValueError('Test exception')
     except ValueError:
         pass
 
