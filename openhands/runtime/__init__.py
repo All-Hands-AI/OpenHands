@@ -1,4 +1,5 @@
 from openhands.core.logger import openhands_logger as logger
+from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
 from openhands.runtime.impl.docker.docker_runtime import (
     DockerRuntime,
 )
@@ -24,6 +25,8 @@ def get_runtime_cls(name: str):
         return RunloopRuntime
     elif name == 'local':
         return LocalRuntime
+    elif name == 'daytona':
+        return DaytonaRuntime
     else:
         raise ValueError(f'Runtime {name} not supported')
 
