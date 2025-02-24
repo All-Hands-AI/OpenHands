@@ -1,3 +1,5 @@
+@import url('assets/fonts/Circular.css');
+@import url('assets/fonts/inconsolata/inconsolata.css');
 
 :root {
   --navy-extra-light: #9aa9cd;
@@ -30,10 +32,7 @@
 
 body {
   margin: 0;
-  font-family:
-    -apple-system, "SF Pro", BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+  font-family: 'CircularXXWeb', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: var(--navy);

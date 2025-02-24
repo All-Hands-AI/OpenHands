@@ -32,7 +32,7 @@ import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 // import { ServedAppLabel } from "#/components/layout/served-app-label";
-import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
+// import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 import { useSettings } from "#/hooks/query/use-settings";
 import { clearFiles, clearInitialPrompt } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
@@ -131,10 +131,8 @@ function AppContent() {
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
         secondChild={
-          <Container
-            className="h-full overflow-scroll"
-            label={<TerminalStatusLabel />}
-          >
+          <Container className="h-full overflow-scroll">
+            {/* label={<TerminalStatusLabel />} */}
             {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
              * that it loads only in the client-side. */}
             <React.Suspense fallback={<div className="h-full" />}>
