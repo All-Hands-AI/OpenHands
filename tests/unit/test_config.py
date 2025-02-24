@@ -501,7 +501,7 @@ invalid_field_in_sandbox = "test"
         assert 'Cannot parse [llm] config from toml' in log_content
         assert 'values have not been applied' in log_content
         # Error: LLMConfig.__init__() got an unexpected keyword argume
-        assert 'Error: 1 validation error for LLMConfig' in log_content
+        assert 'Cannot parse [llm] config from toml' in log_content
         assert 'invalid_field' in log_content
 
         # invalid [sandbox] config
