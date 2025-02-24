@@ -2,7 +2,7 @@
 LiteLLM currently have an issue where HttpHandlers are being created but not
 closed. We have submitted a PR to them, (https://github.com/BerriAI/litellm/pull/8711)
 and their dev team say they are in the process of a refactor that will fix this, but
-in the meantime, we need to manage the lifecycle of the HTTPHandler manually.
+in the meantime, we need to manage the lifecycle of the httpx.Client manually.
 
 We can't simply pass in our own client object, because all the different implementations use
 different types of client object.
