@@ -61,13 +61,13 @@ def test_get_messages(codeact_agent: CodeActAgent):
     message_action_1._source = 'user'
     history.append(message_action_1)
     message_action_2 = MessageAction('Sure!')
-    message_action_2._source = 'assistant'
+    message_action_2._source = 'agent'
     history.append(message_action_2)
     message_action_3 = MessageAction('Hello, agent!')
     message_action_3._source = 'user'
     history.append(message_action_3)
     message_action_4 = MessageAction('Hello, user!')
-    message_action_4._source = 'assistant'
+    message_action_4._source = 'agent'
     history.append(message_action_4)
     message_action_5 = MessageAction('Laaaaaaaast!')
     message_action_5._source = 'user'
@@ -106,7 +106,7 @@ def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
         message_action_user._source = 'user'
         history.append(message_action_user)
         message_action_agent = MessageAction(f'Agent message {i}')
-        message_action_agent._source = 'assistant'
+        message_action_agent._source = 'agent'
         history.append(message_action_agent)
 
     codeact_agent.reset()

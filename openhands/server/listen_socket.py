@@ -80,6 +80,8 @@ async def connect(connection_id: str, environ, auth):
     )
 
     agent_state_changed = None
+    if event_stream is None:
+        raise ConnectionRefusedError('Failed to join conversation')
     async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
     async for event in async_stream:
         if isinstance(
