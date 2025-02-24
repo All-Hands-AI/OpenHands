@@ -239,9 +239,6 @@ class OpenHands {
       body,
     );
 
-    // TODO: remove this once we have a multi-conversation UI
-    localStorage.setItem("latest_conversation_id", data.conversation_id);
-
     return data;
   }
 

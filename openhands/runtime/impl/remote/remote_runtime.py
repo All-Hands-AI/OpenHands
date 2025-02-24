@@ -153,6 +153,12 @@ class RemoteRuntime(ActionExecutionClient):
                 return False
             self.log('debug', f'Error while looking for remote runtime: {e}')
             raise
+        except requests.exceptions.JSONDecodeError as e:
+            self.log(
+                'error',
+                f'Invalid JSON response from runtime API: {e}. URL: {self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}. Response: {response}',
+            )
+            raise
 
         if status == 'running':
             return True

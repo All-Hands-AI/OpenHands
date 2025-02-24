@@ -24,9 +24,15 @@ describe("amountIsValid", () => {
     });
 
     test("when an amount less than the minimum is passed", () => {
-      // test assumes the minimum is 25
-      expect(amountIsValid("24")).toBe(false);
-      expect(amountIsValid("24.99")).toBe(false);
+      // test assumes the minimum is 10
+      expect(amountIsValid("9")).toBe(false);
+      expect(amountIsValid("9.99")).toBe(false);
+    });
+
+    test("when an amount more than the maximum is passed", () => {
+      // test assumes the minimum is 25000
+      expect(amountIsValid("25001")).toBe(false);
+      expect(amountIsValid("25000.01")).toBe(false);
     });
   });
 });
