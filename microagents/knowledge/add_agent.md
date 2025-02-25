@@ -24,6 +24,9 @@ Microagents are specialized prompts that provide context and capabilities for sp
 When creating a new microagent:
 * Create a markdown file in `.openhands/microagents/` with an appropriate name (e.g., `github.md`, `google_workspace.md`)
 * Include YAML frontmatter with metadata (name, type, version, agent, triggers)
+* type is by DEFAULT knowledge
+* version is DEFAULT 1.0.0
+* agent is by DEFAULT CodeActAgent
 * Document any credentials, environment variables, or API access needed
 * Keep trigger words specific to avoid false activations
 * Include error handling guidance and limitations
