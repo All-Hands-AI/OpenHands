@@ -31,6 +31,7 @@ from openhands.events.observation import (
     FileEditObservation,
 )
 from openhands.io import read_input, read_task
+from openhands.utils.async_utils import call_sync_from_async
 
 
 def display_message(message: str):
@@ -104,6 +105,18 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     runtime = create_runtime(config, sid=sid, headless_mode=True)
     await runtime.connect()
+
+    # Get the selected_repository from config (may be None)
+    selected_repository = config.selected_repository
+
+    # Clone the repository if specified
+    if selected_repository:
+        # TODO: session restore with docker runtime / with local runtime
+        await call_sync_from_async(
+            runtime.clone_repo, config.github_token, selected_repository, None
+        )
+        display_message(f'Cloned repository: {selected_repository}')
+
     agent = create_agent(runtime, config)
     controller, _ = create_controller(agent, runtime, config)
 

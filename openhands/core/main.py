@@ -30,6 +30,7 @@ from openhands.events.observation import AgentStateChangedObservation
 from openhands.events.serialization import event_from_dict
 from openhands.io import read_input, read_task
 from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_sync_from_async
 
 
 class FakeUserResponseFunc(Protocol):
@@ -98,12 +99,22 @@ async def run_controller(
     if agent is None:
         agent = create_agent(runtime, config)
 
+    # Get the selected_repository from config (may be None)
+    selected_repository = config.selected_repository
+
+    # Clone the repository if specified
+    if selected_repository and runtime:
+        # TODO: session restore with docker runtime / with local runtime
+        await call_sync_from_async(
+            runtime.clone_repo, config.github_token, selected_repository, None
+        )
+
     memory = create_memory(
         microagents_dir=config.microagents_dir,
         agent=agent,
         runtime=runtime,
         event_stream=event_stream,
-        selected_repository=None,
+        selected_repository=selected_repository,
     )
 
     # trick for testing
