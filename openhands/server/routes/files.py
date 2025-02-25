@@ -334,3 +334,17 @@ def zip_current_workspace(request: Request, conversation_id: str):
             status_code=500,
             detail='Failed to zip workspace',
         )
+
+
+@app.get('/diffs')
+def get_diffs(request: Request, conversation_id: str):
+    runtime: Runtime = request.state.conversation.runtime
+    try:
+        diffs = runtime.git_diff()
+        return diffs
+    except AgentRuntimeUnavailableError as e:
+        logger.error(f'Error getting diffs: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Error getting diffs: {e}'},
+        )
