@@ -11,7 +11,11 @@ from swebench.harness.run_evaluation import (
     APPLY_PATCH_FAIL,
     APPLY_PATCH_PASS,
 )
-from swebench.harness.test_spec import SWEbenchInstance, TestSpec, make_test_spec
+from swebench.harness.test_spec.test_spec import (
+    SWEbenchInstance,
+    TestSpec,
+    make_test_spec,
+)
 from swebench.harness.utils import load_swebench_dataset
 from tqdm import tqdm
 
