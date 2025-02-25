@@ -22,6 +22,7 @@ from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -381,6 +382,8 @@ class Runtime(FileEditRuntimeMixin):
         If the action is not supported by the current runtime, an ErrorObservation is returned.
         """
         if not action.runnable:
+            if isinstance(action, AgentThinkAction):
+                return NullObservation('Your thought has been logged.')
             return NullObservation('')
         if (
             hasattr(action, 'confirmation_state')

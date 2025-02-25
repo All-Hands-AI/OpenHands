@@ -17,6 +17,7 @@ from openhands.agenthub.codeact_agent.tools import (
     FinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
+    ThinkTool,
     ViewTool,
     WebReadTool,
 )
@@ -28,6 +29,7 @@ from openhands.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
+    AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -43,7 +45,9 @@ from openhands.events.tool import ToolCallMetadata
 def combine_thought(action: Action, thought: str) -> Action:
     if not hasattr(action, 'thought'):
         return action
-    if thought:
+    if thought and action.thought:
+        action.thought = f'{thought}\n{action.thought}'
+    elif thought:
         action.thought = thought
     return action
 
@@ -166,6 +170,12 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     impl_source=FileReadSource.OH_ACI,
                     view_range=other_kwargs.get('view_range', None),
                 )
+
+            # ================================================
+            # AgentThinkAction
+            # ================================================
+            elif tool_call.function.name == ThinkTool.function.name:
+                action = AgentThinkAction(thought=arguments['thought'])
 
             # ================================================
             # BrowserTool
