@@ -7,8 +7,11 @@ import { useRate } from "#/hooks/use-rate";
 import { OpenHandsParsedEvent } from "#/types/core";
 import {
   AssistantMessageAction,
+  FileEditAction,
+  FileWriteAction,
   UserMessageAction,
 } from "#/types/core/actions";
+import { queryClient } from "#/entry.client";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -17,6 +20,14 @@ const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   "source" in event &&
   "message" in event &&
   "timestamp" in event;
+
+const isFileWriteAction = (
+  event: OpenHandsParsedEvent,
+): event is FileWriteAction => "action" in event && event.action === "write";
+
+const isFileEditAction = (
+  event: OpenHandsParsedEvent,
+): event is FileEditAction => "action" in event && event.action === "edit";
 
 const isUserMessage = (
   event: OpenHandsParsedEvent,
@@ -126,9 +137,17 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
-    if (isOpenHandsEvent(event) && isMessageAction(event)) {
-      messageRateHandler.record(new Date().getTime());
+    if (isOpenHandsEvent(event)) {
+      if (isMessageAction(event)) {
+        messageRateHandler.record(new Date().getTime());
+      }
+
+      // Invalidate diffs cache when a file is edited or written
+      if (isFileEditAction(event) || isFileWriteAction(event)) {
+        queryClient.invalidateQueries({ queryKey: ["diffs", conversationId] });
+      }
     }
+
     setEvents((prevEvents) => [...prevEvents, event]);
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
