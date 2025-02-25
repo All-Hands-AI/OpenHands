@@ -8,6 +8,7 @@ from openhands.server.config.server_config import load_server_config
 from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
 )
+from openhands.server.system_event import SystemEventHandler
 from openhands.storage import get_file_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.settings.settings_store import SettingsStore
@@ -44,3 +45,5 @@ ConversationStoreImpl = get_impl(
     ConversationStore,  # type: ignore
     server_config.conversation_store_class,
 )
+
+system_event_handler = SystemEventHandler()
