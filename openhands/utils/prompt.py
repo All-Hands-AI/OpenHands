@@ -19,6 +19,7 @@ from openhands.runtime.base import Runtime
 @dataclass
 class RuntimeInfo:
     available_hosts: dict[str, int]
+    additional_instructions: str
 
 
 @dataclass
@@ -41,8 +42,9 @@ At the user's request, repository {{ repository_info.repo_name }} has been clone
 {{ repository_instructions }}
 </REPOSITORY_INSTRUCTIONS>
 {% endif %}
-{% if runtime_info and runtime_info.available_hosts -%}
+{% if runtime_info and (runtime_info.available_hosts or runtime_info.additional_instructions) -%}
 <RUNTIME_INFORMATION>
+{% if runtime_info.available_hosts %}
 The user has access to the following hosts for accessing a web application,
 each of which has a corresponding port:
 {% for host, port in runtime_info.available_hosts.items() -%}
@@ -51,6 +53,8 @@ each of which has a corresponding port:
 When starting a web server, use the corresponding ports. You should also
 set any options to allow iframes and CORS requests, and allow the server to
 be accessed from any host (e.g. 0.0.0.0).
+{% endif %}
+{{ runtime_info.additional_instructions }}
 </RUNTIME_INFORMATION>
 {% endif %}
 """
@@ -82,7 +86,7 @@ class PromptManager:
         self.repository_info: RepositoryInfo | None = None
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
-        self.runtime_info = RuntimeInfo(available_hosts={})
+        self.runtime_info = RuntimeInfo(available_hosts={}, additional_instructions='')
 
         self.knowledge_microagents: dict[str, KnowledgeMicroAgent] = {}
         self.repo_microagents: dict[str, RepoMicroAgent] = {}
@@ -139,6 +143,7 @@ class PromptManager:
 
     def set_runtime_info(self, runtime: Runtime) -> None:
         self.runtime_info.available_hosts = runtime.web_hosts
+        self.runtime_info.additional_instructions = runtime.additional_instructions
 
     def set_repository_info(
         self,
