@@ -29,6 +29,7 @@ from openhands.events.observation import (
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
+from openhands.llm.metrics import Metrics, TokenUsage
 
 
 def events_to_messages(
@@ -159,7 +160,7 @@ def get_action_message(
         )
 
         llm_response: ModelResponse = tool_metadata.model_response
-        assistant_msg = llm_response.choices[0].message
+        assistant_msg = getattr(llm_response.choices[0], 'message')
 
         # Add the LLM message (assistant) that initiated the tool calls
         # (overwrites any previous message with the same response_id)
@@ -167,7 +168,7 @@ def get_action_message(
             f'Tool calls type: {type(assistant_msg.tool_calls)}, value: {assistant_msg.tool_calls}'
         )
         pending_tool_call_action_messages[llm_response.id] = Message(
-            role=assistant_msg.role,
+            role=getattr(assistant_msg, 'role', 'assistant'),
             # tool call content SHOULD BE a string
             content=[TextContent(text=assistant_msg.content or '')]
             if assistant_msg.content is not None
@@ -184,7 +185,7 @@ def get_action_message(
         tool_metadata = action.tool_call_metadata
         if tool_metadata is not None:
             # take the response message from the tool call
-            assistant_msg = tool_metadata.model_response.choices[0].message
+            assistant_msg = getattr(tool_metadata.model_response.choices[0], 'message')
             content = assistant_msg.content or ''
 
             # save content if any, to thought
@@ -196,9 +197,11 @@ def get_action_message(
 
             # remove the tool call metadata
             action.tool_call_metadata = None
+        if role not in ('user', 'system', 'assistant', 'tool'):
+            raise ValueError(f'Invalid role: {role}')
         return [
             Message(
-                role=role,
+                role=role,  # type: ignore[arg-type]
                 content=[TextContent(text=action.thought)],
             )
         ]
@@ -207,9 +210,11 @@ def get_action_message(
         content = [TextContent(text=action.content or '')]
         if vision_is_active and action.image_urls:
             content.append(ImageContent(image_urls=action.image_urls))
+        if role not in ('user', 'system', 'assistant', 'tool'):
+            raise ValueError(f'Invalid role: {role}')
         return [
             Message(
-                role=role,
+                role=role,  # type: ignore[arg-type]
                 content=content,
             )
         ]
@@ -217,7 +222,7 @@ def get_action_message(
         content = [TextContent(text=f'User executed the command:\n{action.command}')]
         return [
             Message(
-                role='user',
+                role='user',  # Always user for CmdRunAction
                 content=content,
             )
         ]
@@ -351,17 +356,58 @@ def get_observation_message(
 
 
 def apply_prompt_caching(messages: list[Message]) -> None:
-    """Applies caching breakpoints to the messages."""
+    """Applies caching breakpoints to the messages.
+
+    For new Anthropic API, we only need to mark the last user or tool message as cacheable.
+    """
     # NOTE: this is only needed for anthropic
-    # following logic here:
-    # https://github.com/anthropics/anthropic-quickstarts/blob/8f734fd08c425c6ec91ddd613af04ff87d70c5a0/computer-use-demo/computer_use_demo/loop.py#L241-L262
-    breakpoints_remaining = 3  # remaining 1 for system/tool
     for message in reversed(messages):
         if message.role in ('user', 'tool'):
-            if breakpoints_remaining > 0:
-                message.content[
-                    -1
-                ].cache_prompt = True  # Last item inside the message content
-                breakpoints_remaining -= 1
-            else:
-                break
+            message.content[
+                -1
+            ].cache_prompt = True  # Last item inside the message content
+            break
+
+
+def get_token_usage_for_event(event: Event, metrics: Metrics) -> TokenUsage | None:
+    """
+    Returns at most one token usage record for the `model_response.id` in this event's
+    `tool_call_metadata`.
+
+    If no response_id is found, or none match in metrics.token_usages, returns None.
+    """
+    if event.tool_call_metadata and event.tool_call_metadata.model_response:
+        response_id = event.tool_call_metadata.model_response.get('id')
+        if response_id:
+            return next(
+                (
+                    usage
+                    for usage in metrics.token_usages
+                    if usage.response_id == response_id
+                ),
+                None,
+            )
+    return None
+
+
+def get_token_usage_for_event_id(
+    events: list[Event], event_id: int, metrics: Metrics
+) -> TokenUsage | None:
+    """
+    Starting from the event with .id == event_id and moving backwards in `events`,
+    find the first TokenUsage record (if any) associated with a response_id from
+    tool_call_metadata.model_response.id.
+
+    Returns the first match found, or None if none is found.
+    """
+    # find the index of the event with the given id
+    idx = next((i for i, e in enumerate(events) if e.id == event_id), None)
+    if idx is None:
+        return None
+
+    # search backward from idx down to 0
+    for i in range(idx, -1, -1):
+        usage = get_token_usage_for_event(events[i], metrics)
+        if usage is not None:
+            return usage
+    return None

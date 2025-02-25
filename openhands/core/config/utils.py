@@ -19,6 +19,7 @@ from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
 )
+from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
@@ -134,6 +135,10 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     for key, value in toml_config.items():
         if isinstance(value, dict):
             try:
+                if key.lower() == 'extended':
+                    # For ExtendedConfig (RootModel), pass the entire dict as the root value
+                    cfg.extended = ExtendedConfig(value)
+                    continue
                 if key is not None and key.lower() == 'agent':
                     # Every entry here is either a field for the default `agent` config group, or itself a group
                     # The best way to tell the difference is to try to parse it as an AgentConfig object
