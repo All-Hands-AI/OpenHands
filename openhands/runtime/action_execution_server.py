@@ -84,7 +84,6 @@ def _execute_file_editor(
     command: str,
     path: str,
     file_text: str | None = None,
-    view_range: list[int] | None = None,
     old_str: str | None = None,
     new_str: str | None = None,
     insert_line: int | None = None,
@@ -97,7 +96,6 @@ def _execute_file_editor(
         command: Editor command to execute
         path: File path
         file_text: Optional file text content
-        view_range: Optional view range tuple (start, end)
         old_str: Optional string to replace
         new_str: Optional replacement string
         insert_line: Optional line number for insertion
@@ -112,7 +110,6 @@ def _execute_file_editor(
             command=command,
             path=path,
             file_text=file_text,
-            view_range=view_range,
             old_str=old_str,
             new_str=new_str,
             insert_line=insert_line,
@@ -320,7 +317,6 @@ class ActionExecutor:
                 self.file_editor,
                 command='view',
                 path=action.path,
-                view_range=action.view_range,
             )
 
             return FileReadObservation(
