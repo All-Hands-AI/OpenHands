@@ -115,7 +115,7 @@
     "postcss": "^8.5.2",
     "prettier": "^3.5.2",
     "stripe": "^17.7.0",
-    "tailwindcss": "^4.0.8",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
     "vite-plugin-svgr": "^4.2.0",
     "vite-tsconfig-paths": "^5.1.4",
