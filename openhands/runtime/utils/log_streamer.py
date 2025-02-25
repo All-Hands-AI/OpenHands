@@ -17,16 +17,26 @@ class LogStreamer:
         logFn: Callable,
     ):
         self.log = logFn
-        self.log_generator = container.logs(stream=True, follow=True)
+        # Initialize all attributes before starting the thread on this instance
+        self.stdout_thread = None
+        self.log_generator = None
         self._stop_event = threading.Event()
 
-        # Start the stdout streaming thread
-        self.stdout_thread = threading.Thread(target=self._stream_logs)
-        self.stdout_thread.daemon = True
-        self.stdout_thread.start()
+        try:
+            self.log_generator = container.logs(stream=True, follow=True)
+            # Start the stdout streaming thread
+            self.stdout_thread = threading.Thread(target=self._stream_logs)
+            self.stdout_thread.daemon = True
+            self.stdout_thread.start()
+        except Exception as e:
+            self.log('error', f'Failed to initialize log streaming: {e}')
 
     def _stream_logs(self):
         """Stream logs from the Docker container to stdout."""
+        if not self.log_generator:
+            self.log('error', 'Log generator not initialized')
+            return
+
         try:
             for log_line in self.log_generator:
                 if self._stop_event.is_set():
@@ -38,7 +48,7 @@ class LogStreamer:
             self.log('error', f'Error streaming docker logs to stdout: {e}')
 
     def __del__(self):
-        if self.stdout_thread and self.stdout_thread.is_alive():
+        if hasattr(self, 'stdout_thread') and self.stdout_thread and self.stdout_thread.is_alive():
             self.close(timeout=5)
 
     def close(self, timeout: float = 5.0):
@@ -47,5 +57,5 @@ class LogStreamer:
         if self.stdout_thread and self.stdout_thread.is_alive():
             self.stdout_thread.join(timeout)
         # Close the log generator to release the file descriptor
-        if hasattr(self.log_generator, 'close'):
+        if self.log_generator is not None:
             self.log_generator.close()
