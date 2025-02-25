@@ -60,13 +60,14 @@ First, ensure you can run OpenHands by following the instructions in [Developmen
 
 ### Specify the Base Sandbox Image
 
-In the `config.toml` file within the OpenHands directory, set the `sandbox_base_container_image` to the image you want to use.
+In the `config.toml` file within the OpenHands directory, set the `base_container_image` to the image you want to use.
 This can be an image you’ve already pulled or one you’ve built:
 
 ```bash
 [core]
 ...
-sandbox_base_container_image="custom-image"
+[sandbox]
+base_container_image="custom-image"
 ```
 
 ### Additional Configuration Options
