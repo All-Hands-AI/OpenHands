@@ -98,6 +98,10 @@ async def connect(connection_id: str, environ, auth):
             accumulated_cost = event.llm_metrics.accumulated_cost if event.llm_metrics else None
             logger.info(f"Position: listen socket. Event before sending to client - Accumulated Cost: {accumulated_cost}")
             
+            # Print event type
+            event_type = type(event).__name__
+            logger.info(f"Event type in listen socket: {event_type}")
+            
             # Force set accumulated_cost to 0.01
             if not hasattr(event, 'llm_metrics') or event.llm_metrics is None:
                 event.llm_metrics = Metrics()
@@ -108,6 +112,10 @@ async def connect(connection_id: str, environ, auth):
         # Log accumulated cost for agent state changed event
         accumulated_cost = agent_state_changed.llm_metrics.accumulated_cost if agent_state_changed.llm_metrics else None
         logger.info(f"Position: listen socket. Agent state changed event before sending - Accumulated Cost: {accumulated_cost}")
+        
+        # Print event type
+        event_type = type(agent_state_changed).__name__
+        logger.info(f"Event type in listen socket: {event_type}")
         
         # Force set accumulated_cost to 0.02
         if not hasattr(agent_state_changed, 'llm_metrics') or agent_state_changed.llm_metrics is None:

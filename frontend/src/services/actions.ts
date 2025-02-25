@@ -75,6 +75,9 @@ function showLLMMetricsAlert(message: ActionMessage) {
 }
 
 export function handleActionMessage(message: ActionMessage) {
+  // Print the message object
+  console.log("Processing action message:", message);
+  
   if (message.args?.hidden) {
     return;
   }
