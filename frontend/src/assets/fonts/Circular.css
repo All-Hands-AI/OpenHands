@@ -1,0 +1,36 @@
+/*
+ * Legal Disclaimer for Web licence
+ *
+ * Licence to use self-hosted webfonts for displaying dynamic text on specified website domains. Our package includes WOFF and WOFF2 font formats.
+ *
+ * Should the license page views limit be exceeded the license holder will be required to contact Lineto.com for an upgrade.
+ *
+ * It is strictly prohibited to rename the font and to download or use these fonts in any other media.
+ *
+ * These Web fonts are licensed exclusively for the use on the following domain(s) and their subdomains:
+ *
+ * okteto.com (monthly pageviews: <50K)
+ *
+ */
+
+/* complete */
+
+@font-face {
+  font-family: 'CircularXXWeb';
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src:
+    url('./CircularXXWeb-Bold.woff') format('woff'),
+    url('./CircularXXWeb-Bold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'CircularXXWeb';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src:
+    url('./CircularXXWeb-Book.woff') format('woff'),
+    url('./CircularXXWeb-Book.woff2') format('woff2');
+}

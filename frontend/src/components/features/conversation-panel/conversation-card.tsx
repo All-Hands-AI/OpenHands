@@ -96,12 +96,11 @@ export function ConversationCard({
       data-testid="conversation-card"
       onClick={onClick}
       className={cn(
-        "h-[100px] w-full px-[18px] py-4 border-b border-neutral-600 cursor-pointer",
-        variant === "compact" &&
-          "h-auto w-fit rounded-xl border border-[#525252]",
+        "h-[100px] w-full px-[18px] py-4 cursor-pointer bg-base-secondary",
+        variant === "compact" && "h-auto w-fit rounded-xl",
       )}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 w-full">
           {isActive && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
           {titleMode === "edit" && (

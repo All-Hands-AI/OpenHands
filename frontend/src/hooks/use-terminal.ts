@@ -37,10 +37,10 @@ export const useTerminal = ({
 
   const createTerminal = () =>
     new Terminal({
-      fontFamily: "Menlo, Monaco, 'Courier New', monospace",
+      fontFamily: "Inconsolata, monospace",
       fontSize: 14,
       theme: {
-        background: "#262626",
+        background: "#111318",
       },
     });
 

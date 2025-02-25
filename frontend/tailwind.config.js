@@ -9,13 +9,25 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#C9B974", // nice yellow
-        base: "#171717", // dark background (neutral-900)
-        "base-secondary": "#262626", // lighter background (neutral-800); also used for tooltips
-        danger: "#E76A5E",
-        success: "#A5E75E",
-        tertiary: "#454545", // gray, used for inputs
-        "tertiary-light": "#B7BDC2", // lighter gray, used for borders and placeholder text
+        primary: "var(--green)", // nice yellow
+        base: "var(--navy)", // dark background (neutral-900)
+        "base-secondary": "var(--navy-dark)", // lighter background (neutral-800); also used for tooltips
+        danger: "var(--red)",
+        success: "var(--green)",
+        tertiary: "var(--navy)", // gray, used for inputs
+        "tertiary-light": "red", // lighter gray, used for borders and placeholder text
+
+        "neutral-1100": "var(--navy-extra-extra-dark)",
+        "neutral-1000": "var(--navy-extra-dark)",
+        "neutral-900": "var(--navy-dark)",
+        "neutral-800": "var(--navy-darker)",
+        "neutral-700": "var(--navy)", 
+        "neutral-600": "var(--navy-a-bit-lighter)",
+        "neutral-500": "var(--navy-lighter)",
+        "neutral-400": "var(--navy-light)",
+        "neutral-300": "var(--navy-extra-light)",
+
+        "red-500": "var(--red)"
       },
     },
   },
@@ -32,7 +44,7 @@ export default {
       themes: {
         dark: {
           colors: {
-            primary: "#4465DB",
+            primary: "red",
           },
         },
       },
