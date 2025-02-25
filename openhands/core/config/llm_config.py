@@ -6,6 +6,7 @@ from typing import Any
 from pydantic import BaseModel, Field, SecretStr, ValidationError
 
 from openhands.core.logger import LOG_DIR
+from openhands.core.logger import openhands_logger as logger
 
 
 class LLMConfig(BaseModel):
@@ -96,7 +97,7 @@ class LLMConfig(BaseModel):
         Create a mapping of LLMConfig instances from a toml dictionary representing the [llm] section.
 
         The default configuration is built from all non-dict keys in data.
-        Then, each key with a dict value (e.g. [llm.random_name]) is treated as a custom LLM configuration, 
+        Then, each key with a dict value (e.g. [llm.random_name]) is treated as a custom LLM configuration,
         and its values override the default configuration.
 
         Example:
@@ -112,7 +113,6 @@ class LLMConfig(BaseModel):
             dict[str, LLMConfig]: A mapping where the key "llm" corresponds to the default configuration
             and additional keys represent custom configurations.
         """
-        from openhands.core import logger
 
         # Initialize the result mapping
         llm_mapping: dict[str, LLMConfig] = {}
@@ -131,7 +131,7 @@ class LLMConfig(BaseModel):
             base_config = cls.model_validate(base_data)
             llm_mapping['llm'] = base_config
         except ValidationError:
-            logger.openhands_logger.warning(
+            logger.warning(
                 'Cannot parse [llm] config from toml. Continuing with defaults.'
             )
             # If base config fails, create a default one
@@ -147,7 +147,7 @@ class LLMConfig(BaseModel):
                 custom_config = cls.model_validate(merged)
                 llm_mapping[name] = custom_config
             except ValidationError:
-                logger.openhands_logger.warning(
+                logger.warning(
                     f'Cannot parse [{name}] config from toml. This section will be skipped.'
                 )
                 # Skip this custom section but continue with others
