@@ -15,6 +15,7 @@ from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
+from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.utils.async_utils import wait_all
 from openhands.utils.shutdown_listener import should_continue
 
@@ -30,6 +31,7 @@ class StandaloneConversationManager(ConversationManager):
     sio: socketio.AsyncServer
     config: AppConfig
     file_store: FileStore
+    conversation_store: ConversationStore
     _local_agent_loops_by_sid: dict[str, Session] = field(default_factory=dict)
     _local_connection_id_to_session_id: dict[str, str] = field(default_factory=dict)
     _active_conversations: dict[str, tuple[Conversation, int]] = field(
@@ -172,11 +174,15 @@ class StandaloneConversationManager(ConversationManager):
         if user_id:
             items = [item for item in items if item[1].user_id == user_id]
         
-        # Sort by start_time (oldest first)
-        items.sort(key=lambda x: x[1].start_time)
+        # Get metadata for each session
+        sids_with_time = {}  # sid -> last_updated_at
+        for sid, _ in items:
+            metadata = await self.conversation_store.get_metadata(sid)
+            if metadata:
+                sids_with_time[sid] = metadata.last_updated_at
         
-        # Convert to list of sids, maintaining order
-        return [sid for sid, _ in items]
+        # Sort by last_updated_at (oldest first)
+        return sorted(sids_with_time.keys(), key=lambda sid: sids_with_time[sid])
 
     async def get_connections(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
@@ -293,5 +299,6 @@ class StandaloneConversationManager(ConversationManager):
         sio: socketio.AsyncServer,
         config: AppConfig,
         file_store: FileStore,
+        conversation_store: ConversationStore,
     ) -> ConversationManager:
-        return StandaloneConversationManager(sio, config, file_store)
+        return StandaloneConversationManager(sio, config, file_store, conversation_store)

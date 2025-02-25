@@ -32,15 +32,16 @@ sio = socketio.AsyncServer(
     async_mode='asgi', cors_allowed_origins='*', client_manager=client_manager
 )
 
-ConversationManagerImpl = get_impl(
-    ConversationManager,  # type: ignore
-    server_config.conversation_manager_class,
-)
-conversation_manager = ConversationManagerImpl.get_instance(sio, config, file_store)
-
-SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)  # type: ignore
-
 ConversationStoreImpl = get_impl(
     ConversationStore,  # type: ignore
     server_config.conversation_store_class,
 )
+conversation_store = ConversationStoreImpl(file_store)
+
+ConversationManagerImpl = get_impl(
+    ConversationManager,  # type: ignore
+    server_config.conversation_manager_class,
+)
+conversation_manager = ConversationManagerImpl.get_instance(sio, config, file_store, conversation_store)
+
+SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)  # type: ignore
