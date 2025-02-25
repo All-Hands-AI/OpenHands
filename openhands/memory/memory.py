@@ -36,8 +36,6 @@ class Memory:
             self.on_event,
             'Memory',
         )
-        # Load global microagents (Knowledge + Repo).
-        self._load_global_microagents()
 
         # Additional placeholders to store user workspace microagents if needed
         self.repo_microagents: dict[str, RepoMicroAgent] = {}
@@ -50,11 +48,15 @@ class Memory:
         self.repository_info: RepositoryInfo | None = None
         self.runtime_info: RuntimeInfo | None = None
 
+        # Load global microagents (Knowledge + Repo)
+        # from typically OpenHands/microagents (i.e., the PUBLIC microagents)
+        self._load_global_microagents()
+
         # TODO: enable_prompt_extensions
 
     def _load_global_microagents(self) -> None:
         """
-        Loads microagents from the global microagents_dir.
+        Loads microagents from the global microagents_dir
         This is effectively what used to happen in PromptManager.
         """
         repo_agents, knowledge_agents, _ = load_microagents_from_dir(
