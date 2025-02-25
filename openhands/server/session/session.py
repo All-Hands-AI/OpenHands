@@ -26,6 +26,7 @@ from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.settings import Settings
+from openhands.server.system_event import SystemEventHandler, SystemEventType
 from openhands.storage.files import FileStore
 
 ROOM_KEY = 'room:{sid}'
@@ -41,6 +42,7 @@ class Session:
     config: AppConfig
     file_store: FileStore
     user_id: str | None
+    system_event_handler: SystemEventHandler
 
     def __init__(
         self,
@@ -87,7 +89,7 @@ class Session:
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
         )
-
+        self.system_event_handler.on_event(SystemEventType.CONVERSATION_START, self.sid)
         agent_cls = settings.agent or self.config.default_agent
         self.config.security.confirmation_mode = (
             self.config.security.confirmation_mode
@@ -242,6 +244,9 @@ class Session:
     async def _send_status_message(self, msg_type: str, id: str, message: str):
         """Sends a status message to the client."""
         if msg_type == 'error':
+            self.system_event_handler.on_event(
+                SystemEventType.AGENT_STATUS_ERROR, self.sid
+            )
             await self.agent_session.stop_agent_loop_for_error()
         await self.send(
             {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
