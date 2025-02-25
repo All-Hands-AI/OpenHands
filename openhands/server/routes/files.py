@@ -337,10 +337,10 @@ def zip_current_workspace(request: Request, conversation_id: str):
 
 
 @app.get('/diffs')
-def get_diffs(request: Request, conversation_id: str):
+async def git_diffs(request: Request, conversation_id: str):
     runtime: Runtime = request.state.conversation.runtime
     try:
-        diffs = runtime.git_diff()
+        diffs = await call_sync_from_async(runtime.git_diffs)
         return diffs
     except AgentRuntimeUnavailableError as e:
         logger.error(f'Error getting diffs: {e}')

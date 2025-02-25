@@ -465,6 +465,53 @@ class ActionExecutor:
         self.browser.close()
 
 
+class DiffHandler:
+    def __init__(self, work_dir: str):
+        self.bash_session = BashSession(
+            work_dir=work_dir,
+            username=None,
+            no_change_timeout_seconds=int(
+                os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
+            ),
+            max_memory_mb=None,
+        )
+
+    def _is_git_repo(self) -> bool:
+        cmd = 'git rev-parse --is-inside-work-tree'
+        obs = self.bash_session.execute(CmdRunAction(command=cmd))
+        return obs.content.strip() == 'true'
+
+    def _show_untracked_files(self) -> list[str]:
+        cmd = 'git diff --name-only'
+        obs = self.bash_session.execute(CmdRunAction(command=cmd))
+        return obs.content.splitlines()
+
+    def _get_full_content(self, file_path: str) -> str:
+        cmd = f'cat {file_path}'
+        obs = self.bash_session.execute(CmdRunAction(command=cmd))
+        return obs.content
+
+    def _get_last_commit_content(self, file_path: str) -> str:
+        cmd = f'git show HEAD:{file_path}'
+        obs = self.bash_session.execute(CmdRunAction(command=cmd))
+        return obs.content
+
+    def get_all_untracked_diffs(self):
+        if not self._is_git_repo():
+            return {}
+
+        untracked_files = self._show_untracked_files()
+        diffs = {}
+        for file in untracked_files:
+            full_content = self._get_full_content(file)
+            last_commit_content = self._get_last_commit_content(file)
+            diffs[file] = {
+                'full_content': full_content,
+                'last_commit_content': last_commit_content,
+            }
+        return diffs
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
@@ -491,6 +538,7 @@ if __name__ == '__main__':
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
     client: ActionExecutor | None = None
+    diff_handler: DiffHandler | None = None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -503,9 +551,12 @@ if __name__ == '__main__':
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
+
+        diff_handler = DiffHandler(args.working_dir)
         yield
         # Clean up & release the resources
         client.close()
+        diff_handler.bash_session.close()
 
     app = FastAPI(lifespan=lifespan)
 
@@ -760,6 +811,19 @@ if __name__ == '__main__':
         except Exception as e:
             logger.error(f'Error listing files: {e}')
             return []
+
+    # ================================
+    # Git operations
+    # ================================
+
+    @app.get('/git_diffs')
+    async def git_diffs(request: Request):
+        assert diff_handler is not None
+        try:
+            return diff_handler.get_all_untracked_diffs()
+        except Exception as e:
+            logger.error(f'Error getting Git diffs: {e}')
+            return {}
 
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)
