@@ -11,6 +11,11 @@ class SystemEventType(StrEnum):
 class SystemEventListener(ABC):
     @abstractmethod
     def on_event(self, type: SystemEventType, data: dict[str, Any]):
+        """
+        Implementations override this to track events for their metrics.
+        This is expected to be non-blocking (fast).
+        Exceptions raised will be swallowed.
+        """
         pass
 
 
