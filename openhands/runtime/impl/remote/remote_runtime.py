@@ -232,9 +232,10 @@ class RemoteRuntime(ActionExecutionClient):
             'environment': environment,
             'session_id': self.sid,
             'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
+            'runtime_class': 'sysbox-runc',  # TODO: hard-coded for debugging purposes
         }
-        if self.config.sandbox.remote_runtime_class == 'sysbox':
-            start_request['runtime_class'] = 'sysbox-runc'
+        # if self.config.sandbox.remote_runtime_class == 'sysbox':
+        #     start_request['runtime_class'] = 'sysbox-runc'
         # We ignore other runtime classes for now, because both None and 'gvisor' map to 'gvisor'
 
         # Start the sandbox using the /start endpoint
