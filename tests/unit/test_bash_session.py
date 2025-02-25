@@ -240,6 +240,57 @@ def test_ctrl_c():
     session.close()
 
 
+def test_ctrl_c_background_process():
+    """Test that Ctrl+C properly terminates background processes."""
+    session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=2)
+    session.initialize()
+
+    # Create a file to write output to
+    output_file = os.path.join(session.work_dir, "output.log")
+
+    # Start a background process that writes numbers to a file
+    obs = session.execute(
+        CmdRunAction(f'python3 -c "while True: print(1); time.sleep(1)" > {output_file} 2>&1 &')
+    )
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.metadata.exit_code == 0  # Background process started successfully
+
+    # Wait a bit for the process to start writing
+    time.sleep(2)
+
+    # Get the process ID from the background job output
+    assert "[1]" in obs.content  # Background job started
+    job_id = obs.content.split("[1]")[1].split()[0].strip()
+    assert job_id.isdigit()  # Job ID should be a number
+
+    # Verify the process is running by checking the file exists and has content
+    assert os.path.exists(output_file)
+    with open(output_file, "r") as f:
+        content = f.read()
+    assert content.strip() != ""  # File has content
+
+    # Send Ctrl+C
+    obs = session.execute(CmdRunAction('C-c', is_input=True))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    # Wait a bit for the process to be terminated
+    time.sleep(2)
+
+    # Verify the background job is terminated
+    obs = session.execute(CmdRunAction('jobs'))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert "Exit 1" in obs.content  # Background job should be terminated
+
+    # Get the file size after Ctrl+C
+    with open(output_file, "r") as f:
+        content_after = f.read()
+
+    # Verify the file size hasn't changed, indicating the process was terminated
+    assert content == content_after
+
+    session.close()
+
+
 def test_empty_command_errors():
     session = BashSession(work_dir=os.getcwd())
     session.initialize()
