@@ -1,23 +1,54 @@
 {
     "name": "openhands-hello-world",
-    "displayName": "OpenHands Hello World",
-    "description": "A simple hello world extension for OpenHands",
-    "version": "0.0.1",
+    "displayName": "OpenHands Memory Monitor",
+    "description": "A VSCode extension for monitoring system and process memory usage",
+    "version": "0.1.0",
     "publisher": "openhands",
     "engines": {
         "vscode": "^1.94.0"
     },
     "categories": [
-        "Other"
+        "Other",
+        "Monitoring"
     ],
     "activationEvents": [
-        "onCommand:openhands-hello-world.helloWorld"
+        "onStartupFinished"
     ],
     "main": "./extension.js",
     "contributes": {
-        "commands": [{
-            "command": "openhands-hello-world.helloWorld",
-            "title": "Hello World from OpenHands"
-        }]
+        "commands": [
+            {
+                "command": "openhands-hello-world.helloWorld",
+                "title": "Hello World from OpenHands"
+            },
+            {
+                "command": "openhands-hello-world.startMemoryMonitor",
+                "title": "Start Memory Monitor"
+            },
+            {
+                "command": "openhands-hello-world.stopMemoryMonitor",
+                "title": "Stop Memory Monitor"
+            },
+            {
+                "command": "openhands-hello-world.showMemoryDetails",
+                "title": "Show Memory Details"
+            }
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "openhands-hello-world.startMemoryMonitor",
+                    "group": "OpenHands"
+                },
+                {
+                    "command": "openhands-hello-world.stopMemoryMonitor",
+                    "group": "OpenHands"
+                },
+                {
+                    "command": "openhands-hello-world.showMemoryDetails",
+                    "group": "OpenHands"
+                }
+            ]
+        }
     }
 }
