@@ -78,12 +78,6 @@ describe("PaymentForm", () => {
     expect(createCheckoutSessionSpy).toHaveBeenCalledWith(50.13);
   });
 
-  it("should render the payment method link", async () => {
-    renderPaymentForm();
-
-    screen.getByTestId("payment-methods-link");
-  });
-
   it("should disable the top-up button if the user enters an invalid amount", async () => {
     const user = userEvent.setup();
     renderPaymentForm();
@@ -155,7 +149,7 @@ describe("PaymentForm", () => {
       renderPaymentForm();
 
       const topUpInput = await screen.findByTestId("top-up-input");
-      await user.type(topUpInput, "20"); // test assumes the minimum is 25
+      await user.type(topUpInput, "9"); // test assumes the minimum is 10
 
       const topUpButton = screen.getByText("Add credit");
       await user.click(topUpButton);

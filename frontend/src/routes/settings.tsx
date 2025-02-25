@@ -11,9 +11,9 @@ function SettingsScreen() {
   return (
     <main
       data-testid="settings-screen"
-      className="bg-[#24272E] border border-[#454545] h-full rounded-xl flex flex-col"
+      className="bg-base-secondary border border-tertiary h-full rounded-xl flex flex-col"
     >
-      <header className="px-3 py-1.5 border-b border-b-[#454545] flex items-center gap-2">
+      <header className="px-3 py-1.5 border-b border-b-tertiary flex items-center gap-2">
         <SettingsIcon width={16} height={16} />
         <h1 className="text-sm leading-6">Settings</h1>
       </header>
@@ -21,7 +21,7 @@ function SettingsScreen() {
       {isSaas && BILLING_SETTINGS() && (
         <nav
           data-testid="settings-navbar"
-          className="flex items-end gap-12 px-11 border-b border-[#454545]"
+          className="flex items-end gap-12 px-11 border-b border-tertiary"
         >
           {[
             { to: "/settings", text: "Account" },
@@ -34,7 +34,7 @@ function SettingsScreen() {
               className={({ isActive }) =>
                 cn(
                   "border-b-2 border-transparent py-2.5",
-                  isActive && "border-[#C9B974]",
+                  isActive && "border-primary",
                 )
               }
             >
