@@ -71,7 +71,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 raise RuntimeError(
                     f'Failed to parse tool call arguments: {tool_call.function.arguments}'
                 ) from e
-            if tool_call.function.name == 'execute_bash':
+            if tool_call.function.name == CmdRunTool.function.name:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -79,7 +79,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 # convert is_input to boolean
                 is_input = arguments.get('is_input', 'false') == 'true'
                 action = CmdRunAction(command=arguments['command'], is_input=is_input)
-            elif tool_call.function.name == 'execute_ipython_cell':
+            elif tool_call.function.name == IPythonTool.function.name:
                 if 'code' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
@@ -90,9 +90,9 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     agent='BrowsingAgent',
                     inputs=arguments,
                 )
-            elif tool_call.function.name == 'finish':
+            elif tool_call.function.name == FinishTool.function.name:
                 action = AgentFinishAction()
-            elif tool_call.function.name == 'edit_file':
+            elif tool_call.function.name == LLMBasedFileEditTool.function.name:
                 if 'path' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "path" in tool call {tool_call.function.name}'
@@ -107,7 +107,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     start=arguments.get('start', 1),
                     end=arguments.get('end', -1),
                 )
-            elif tool_call.function.name == 'str_replace_editor':
+            elif tool_call.function.name == StrReplaceEditorTool.function.name:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -138,13 +138,13 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         impl_source=FileEditSource.OH_ACI,
                         **other_kwargs,
                     )
-            elif tool_call.function.name == 'browser':
+            elif tool_call.function.name == BrowserTool.function.name:
                 if 'code' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
-            elif tool_call.function.name == 'web_read':
+            elif tool_call.function.name == WebReadTool.function.name:
                 if 'url' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "url" in tool call {tool_call.function.name}'
