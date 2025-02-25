@@ -233,6 +233,15 @@ class Session:
             if not self.is_alive:
                 return False
             if self.sio:
+                # Add llm_metrics with accumulated_cost of 0.03
+                logger.info(f"Before adding llm_metrics in _send, data: {data}")
+                if 'llm_metrics' not in data:
+                    from openhands.llm.metrics import Metrics
+                    metrics_dict = {'accumulated_cost': 0.03}
+                    data['llm_metrics'] = metrics_dict
+                    logger.info(f"Added llm_metrics with accumulated_cost 0.03 to data")
+                logger.info(f"After adding llm_metrics in _send, data: {data}")
+                
                 await self.sio.emit('oh_event', data, to=ROOM_KEY.format(sid=self.sid))
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
