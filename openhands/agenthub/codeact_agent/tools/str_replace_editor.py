@@ -1,8 +1,7 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
-_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating and editing files in plain-text format
+_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for creating and editing files in plain-text format
 * State is persistent across command calls and discussions with the user
-* If `path` is a file, `view` displays the result of applying `cat -n`. If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep
 * The `create` command cannot be used if the specified `path` already exists as a file
 * If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
 * The `undo_edit` command will revert the last edit made to the file at `path`
@@ -22,8 +21,8 @@ StrReplaceEditorTool = ChatCompletionToolParam(
             'type': 'object',
             'properties': {
                 'command': {
-                    'description': 'The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.',
-                    'enum': ['view', 'create', 'str_replace', 'insert', 'undo_edit'],
+                    'description': 'The commands to run. Allowed options are: `create`, `str_replace`, `insert`, `undo_edit`.',
+                    'enum': ['create', 'str_replace', 'insert', 'undo_edit'],
                     'type': 'string',
                 },
                 'path': {
@@ -45,11 +44,6 @@ StrReplaceEditorTool = ChatCompletionToolParam(
                 'insert_line': {
                     'description': 'Required parameter of `insert` command. The `new_str` will be inserted AFTER the line `insert_line` of `path`.',
                     'type': 'integer',
-                },
-                'view_range': {
-                    'description': 'Optional parameter of `view` command when `path` points to a file. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.',
-                    'items': {'type': 'integer'},
-                    'type': 'array',
                 },
             },
             'required': ['command', 'path'],
