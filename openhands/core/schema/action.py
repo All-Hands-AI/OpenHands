@@ -44,6 +44,10 @@ class ActionTypeSchema(BaseModel):
     """Delegates a task to another agent.
     """
 
+    THINK: str = Field(default='think')
+    """Logs a thought.
+    """
+
     FINISH: str = Field(default='finish')
     """If you're absolutely certain that you've completed your task and have tested your work,
     use the finish action to stop working.

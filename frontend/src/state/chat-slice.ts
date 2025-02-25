@@ -115,6 +115,8 @@ export const chatSlice = createSlice({
         ) {
           text += `\n\n${getRiskText(action.payload.args.security_risk as unknown as ActionSecurityRisk)}`;
         }
+      } else if (actionID === "think") {
+        text = action.payload.args.thought;
       }
       const message: Message = {
         type: "action",

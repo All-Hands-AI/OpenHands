@@ -4,6 +4,7 @@ from openhands.events.action.agent import (
     AgentFinishAction,
     AgentRejectAction,
     AgentSummarizeAction,
+    AgentThinkAction,
     ChangeAgentStateAction,
 )
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
@@ -33,4 +34,5 @@ __all__ = [
     'IPythonRunCellAction',
     'MessageAction',
     'ActionConfirmationStatus',
+    'AgentThinkAction',
 ]

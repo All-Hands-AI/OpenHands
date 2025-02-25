@@ -41,6 +41,13 @@ export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
   };
 }
 
+export interface ThinkAction extends OpenHandsActionEvent<"think"> {
+  source: "agent";
+  args: {
+    thought: string;
+  };
+}
+
 export interface FinishAction extends OpenHandsActionEvent<"finish"> {
   source: "agent";
   args: {
@@ -129,6 +136,7 @@ export type OpenHandsAction =
   | AssistantMessageAction
   | CommandAction
   | IPythonAction
+  | ThinkAction
   | FinishAction
   | DelegateAction
   | BrowseAction

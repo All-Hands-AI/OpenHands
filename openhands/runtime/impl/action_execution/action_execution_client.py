@@ -16,6 +16,7 @@ from openhands.core.exceptions import (
 from openhands.events import EventStream
 from openhands.events.action import (
     ActionConfirmationStatus,
+    AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -230,6 +231,8 @@ class ActionExecutionClient(Runtime):
 
         with self.action_semaphore:
             if not action.runnable:
+                if isinstance(action, AgentThinkAction):
+                    return NullObservation('Your thought has been logged.')
                 return NullObservation('')
             if (
                 hasattr(action, 'confirmation_state')
