@@ -9,7 +9,7 @@ _BASH_DESCRIPTION = """Execute a bash command in the terminal.
 CmdRunTool = ChatCompletionToolParam(
     type='function',
     function=ChatCompletionToolParamFunctionChunk(
-        name='execute_bash',
+        name='bash',
         description=_BASH_DESCRIPTION,
         parameters={
             'type': 'object',
