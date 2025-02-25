@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
 SET=$1
 # check set is in ["full", "lite", "verified"]
