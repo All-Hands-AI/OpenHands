@@ -10,6 +10,7 @@ from openhands.events.stream import EventStream
 from openhands.server.session.conversation import Conversation
 from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
+from openhands.storage.conversation.conversation_store import ConversationStore
 
 
 class ConversationManager(ABC):
@@ -23,6 +24,7 @@ class ConversationManager(ABC):
     sio: socketio.AsyncServer
     config: AppConfig
     file_store: FileStore
+    conversation_store: ConversationStore
 
     @abstractmethod
     async def __aenter__(self):
@@ -92,5 +94,6 @@ class ConversationManager(ABC):
         sio: socketio.AsyncServer,
         config: AppConfig,
         file_store: FileStore,
+        conversation_store: ConversationStore,
     ) -> ConversationManager:
-        """Get a store for the user represented by the token given"""
+        """Get a conversation manager instance"""

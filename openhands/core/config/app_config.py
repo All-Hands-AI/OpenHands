@@ -82,6 +82,7 @@ class AppConfig(BaseModel):
     daytona_target: str = Field(default='us')
     cli_multiline_input: bool = Field(default=False)
     conversation_max_age_seconds: int = Field(default=864000)  # 10 days in seconds
+    max_concurrent_conversations: int = Field(default=3)  # Maximum number of concurrent agent loops allowed per user
 
     defaults_dict: ClassVar[dict] = {}
 
