@@ -4,6 +4,7 @@ This is similar to the functionality of `CodeActResponseParser`.
 """
 
 import json
+import shlex
 
 from litellm import (
     ChatCompletionToolParam,
@@ -15,6 +16,8 @@ from openhands.agenthub.codeact_agent.tools import (
     CmdRunTool,
     FileEditorTool,
     FinishTool,
+    GlobTool,
+    GrepTool,
     IPythonTool,
     LLMBasedFileEditTool,
     ThinkTool,
@@ -50,6 +53,60 @@ def combine_thought(action: Action, thought: str) -> Action:
     elif thought:
         action.thought = thought
     return action
+
+
+def grep_to_cmdrun(
+    pattern: str, path: str | None = None, include: str | None = None
+) -> str:
+    """Convert grep tool arguments to a shell command string.
+
+    Args:
+        pattern: The regex pattern to search for in file contents
+        path: The directory to search in (optional)
+        include: Optional file pattern to filter which files to search (e.g., "*.js")
+
+    Returns:
+        A properly escaped shell command string for grep
+    """
+    # Use shlex.quote to properly escape all shell special characters
+    quoted_pattern = shlex.quote(pattern)
+
+    grep_cmd = f'grep -nr {quoted_pattern}'
+
+    if path:
+        quoted_path = shlex.quote(path)
+        grep_cmd += f' {quoted_path}'
+
+    if include:
+        quoted_include = shlex.quote(include)
+        grep_cmd += f' --include={quoted_include}'
+
+    echo_cmd = (
+        f'echo "Below are the execution results of the grep command: {grep_cmd}\n"'
+    )
+    return echo_cmd + '; ' + grep_cmd
+
+
+def glob_to_cmdrun(pattern: str, path: str = '.') -> str:
+    """Convert glob tool arguments to a shell command string.
+
+    Args:
+        pattern: The glob pattern to match files (e.g., "**/*.js")
+        path: The directory to search in (defaults to current directory)
+
+    Returns:
+        A properly escaped shell command string for find (implementing glob)
+    """
+    # Use shlex.quote to properly escape all shell special characters
+    quoted_path = shlex.quote(path)
+    quoted_pattern = shlex.quote(pattern)
+
+    # Use find command with properly quoted parameters
+    glob_cmd = f'find {quoted_path} -type f -name {quoted_pattern} | sort -t "/" -k 1,1'
+    echo_cmd = (
+        f'echo "Below are the execution results of the glob command: {glob_cmd}\n"'
+    )
+    return echo_cmd + '; ' + glob_cmd
 
 
 def response_to_actions(response: ModelResponse) -> list[Action]:
@@ -197,6 +254,37 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     )
                 action = BrowseURLAction(url=arguments['url'])
 
+            # ================================================
+            # GrepTool (file content search)
+            # ================================================
+            elif tool_call.function.name == GrepTool.function.name:
+                if 'pattern' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "pattern" in tool call {tool_call.function.name}'
+                    )
+
+                pattern = arguments['pattern']
+                path = arguments.get('path')
+                include = arguments.get('include')
+
+                grep_cmd = grep_to_cmdrun(pattern, path, include)
+                action = CmdRunAction(command=grep_cmd, is_input=False)
+
+            # ================================================
+            # GlobTool (file pattern matching)
+            # ================================================
+            elif tool_call.function.name == GlobTool.function.name:
+                if 'pattern' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "pattern" in tool call {tool_call.function.name}'
+                    )
+
+                pattern = arguments['pattern']
+                path = arguments.get('path', '.')
+
+                glob_cmd = glob_to_cmdrun(pattern, path)
+                action = CmdRunAction(command=glob_cmd, is_input=False)
+
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
@@ -230,7 +318,7 @@ def get_tools(
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
 ) -> list[ChatCompletionToolParam]:
-    tools = [CmdRunTool, FinishTool]
+    tools = [CmdRunTool, FinishTool, GrepTool, GlobTool]
     if codeact_enable_browsing:
         tools.append(WebReadTool)
         tools.append(BrowserTool)
