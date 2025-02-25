@@ -131,7 +131,7 @@ class StandaloneConversationManager(ConversationManager):
                         sid_to_close.append(sid)
 
                 connections = await self.get_connections(
-                    filter_to_sids=set(sid_to_close)
+                    filter_to_sids=set(sid_to_close)  # get_connections expects a set
                 )
                 connected_sids = {sid for _, sid in connections.items()}
                 sid_to_close = [
@@ -154,8 +154,15 @@ class StandaloneConversationManager(ConversationManager):
 
     async def get_running_agent_loops(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
-    ) -> set[str]:
-        """Get the running session ids. If a user is supplied, then the results are limited to session ids for that user. If a set of filter_to_sids is supplied, then results are limited to these ids of interest."""
+    ) -> list[str]:
+        """Get the running session ids in chronological order (oldest first).
+        
+        If a user is supplied, then the results are limited to session ids for that user.
+        If a set of filter_to_sids is supplied, then results are limited to these ids of interest.
+        
+        Returns:
+            A list of session IDs in chronological order (oldest first).
+        """
         # Get all items and convert to list for sorting
         items: list[tuple[str, Session]] = list(self._local_agent_loops_by_sid.items())
         
@@ -168,8 +175,8 @@ class StandaloneConversationManager(ConversationManager):
         # Sort by start_time (oldest first)
         items.sort(key=lambda x: x[1].start_time)
         
-        # Convert to set of sids
-        return {sid for sid, _ in items}
+        # Convert to list of sids, maintaining order
+        return [sid for sid, _ in items]
 
     async def get_connections(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
@@ -205,7 +212,7 @@ class StandaloneConversationManager(ConversationManager):
                 logger.info('too_many_sessions_for:{user_id}')
                 # Since get_running_agent_loops returns sessions in chronological order,
                 # the first session is the oldest one
-                oldest_session_id = next(iter(response_ids))
+                oldest_session_id = response_ids[0]
                 await self.close_session(oldest_session_id)
 
             session = Session(
