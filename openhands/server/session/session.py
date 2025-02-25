@@ -35,6 +35,7 @@ class Session:
     sid: str
     sio: socketio.AsyncServer | None
     last_active_ts: int = 0
+    start_time: float = 0  # Timestamp when the session started
     is_alive: bool = True
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
@@ -52,7 +53,9 @@ class Session:
     ):
         self.sid = sid
         self.sio = sio
-        self.last_active_ts = int(time.time())
+        current_time = time.time()
+        self.last_active_ts = int(current_time)
+        self.start_time = current_time
         self.file_store = file_store
         self.agent_session = AgentSession(
             sid,

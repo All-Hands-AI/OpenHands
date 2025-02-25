@@ -21,7 +21,6 @@ from openhands.utils.shutdown_listener import should_continue
 from .conversation_manager import ConversationManager
 
 _CLEANUP_INTERVAL = 15
-MAX_RUNNING_CONVERSATIONS = 3
 
 
 @dataclass
@@ -157,13 +156,20 @@ class StandaloneConversationManager(ConversationManager):
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> set[str]:
         """Get the running session ids. If a user is supplied, then the results are limited to session ids for that user. If a set of filter_to_sids is supplied, then results are limited to these ids of interest."""
-        items: Iterable[tuple[str, Session]] = self._local_agent_loops_by_sid.items()
+        # Get all items and convert to list for sorting
+        items: list[tuple[str, Session]] = list(self._local_agent_loops_by_sid.items())
+        
+        # Filter items if needed
         if filter_to_sids is not None:
-            items = (item for item in items if item[0] in filter_to_sids)
+            items = [item for item in items if item[0] in filter_to_sids]
         if user_id:
-            items = (item for item in items if item[1].user_id == user_id)
-        sids = {sid for sid, _ in items}
-        return sids
+            items = [item for item in items if item[1].user_id == user_id]
+        
+        # Sort by start_time (oldest first)
+        items.sort(key=lambda x: x[1].start_time)
+        
+        # Convert to set of sids
+        return {sid for sid, _ in items}
 
     async def get_connections(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
@@ -195,12 +201,12 @@ class StandaloneConversationManager(ConversationManager):
             logger.info(f'start_agent_loop:{sid}')
 
             response_ids = await self.get_running_agent_loops(user_id)
-            if len(response_ids) >= MAX_RUNNING_CONVERSATIONS:
+            if len(response_ids) >= self.config.max_concurrent_conversations:
                 logger.info('too_many_sessions_for:{user_id}')
-                # Order is not guaranteed, but response_ids tend to be in descending chronological order
-                # By reversing, we are likely to pick the oldest (or at least an older) conversation
-                session_id = next(iter(reversed(list(response_ids))))
-                await self.close_session(session_id)
+                # Since get_running_agent_loops returns sessions in chronological order,
+                # the first session is the oldest one
+                oldest_session_id = next(iter(response_ids))
+                await self.close_session(oldest_session_id)
 
             session = Session(
                 sid=sid,
