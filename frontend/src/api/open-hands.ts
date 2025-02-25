@@ -11,6 +11,7 @@ import {
   Conversation,
   ResultSet,
   GetTrajectoryResponse,
+  GetDiffsResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
@@ -338,6 +339,13 @@ class OpenHands {
 
   static async logout(): Promise<void> {
     await openHands.post("/api/logout");
+  }
+
+  static async getDiffs(conversationId: string): Promise<GetDiffsResponse> {
+    const { data } = await openHands.get<GetDiffsResponse>(
+      `/api/conversations/${conversationId}/diffs`,
+    );
+    return data;
   }
 }
 

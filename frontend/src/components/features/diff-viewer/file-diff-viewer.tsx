@@ -17,7 +17,7 @@ export function FileDiffViewer({
   return (
     <div
       data-testid="file-diff-viewer-outer"
-      className="w-full h-full flex flex-col"
+      className="w-full h-fit flex flex-col"
     >
       <div className="flex justify-between items-center px-2.5 py-3.5 border-b border-[#9099AC]">
         <p className="text-sm text-[#F9FBFE]">{label}</p>
@@ -29,7 +29,7 @@ export function FileDiffViewer({
           coll
         </button>
       </div>
-      <div hidden={isCollapsed} className="w-full h-full">
+      <div hidden={isCollapsed} className="w-full h-[700px]">
         <DiffEditor
           data-testid="file-diff-viewer"
           className="w-full h-full"

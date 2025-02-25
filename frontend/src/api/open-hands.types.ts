@@ -78,3 +78,8 @@ export interface ResultSet<T> {
   results: T[];
   next_page_id: string | null;
 }
+
+export type GetDiffsResponse = Record<
+  string, // file path
+  { full_content: string; last_commit_content: string }
+>;
