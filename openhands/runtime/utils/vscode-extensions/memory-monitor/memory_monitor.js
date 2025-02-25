@@ -7,7 +7,7 @@ class MemoryMonitor {
         this.isMonitoring = false;
         this.intervalId = null;
         this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-        this.statusBarItem.command = 'openhands-hello-world.showMemoryDetails';
+        this.statusBarItem.command = 'openhands-memory-monitor.showMemoryDetails';
         this.processMonitor = new ProcessMonitor();
         this.memoryHistory = [];
         this.maxHistoryLength = 60; // Keep 5 minutes of data with 5-second intervals
