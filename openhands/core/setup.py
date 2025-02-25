@@ -13,6 +13,8 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
+from openhands.memory.memory import Memory
+from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
@@ -58,6 +60,39 @@ def create_runtime(
     return runtime
 
 
+def create_memory(
+    microagents_dir: str,
+    agent: Agent,
+    runtime: Runtime,
+    event_stream: EventStream,
+    selected_repository: str | None = None,
+) -> Memory:
+    # If the agent config has disabled microagents, use them
+    disabled_microagents = agent.config.disabled_microagents
+
+    memory = Memory(
+        event_stream=event_stream,
+        microagents_dir=microagents_dir,
+        disabled_microagents=disabled_microagents,
+    )
+
+    if agent.prompt_manager and runtime:
+        # sets available hosts
+        memory.set_runtime_info(runtime.web_hosts)
+
+        # loads microagents from repo/.openhands/microagents
+        microagents: list[BaseMicroAgent] = runtime.get_microagents_from_selected_repo(
+            selected_repository
+        )
+        memory.load_user_workspace_microagents(microagents)
+
+        if selected_repository:
+            repo_directory = selected_repository.split('/')[1]
+            if repo_directory:
+                memory.set_repository_info(selected_repository, repo_directory)
+    return memory
+
+
 def create_agent(runtime: Runtime, config: AppConfig) -> Agent:
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
@@ -66,9 +101,6 @@ def create_agent(runtime: Runtime, config: AppConfig) -> Agent:
         llm=LLM(config=llm_config),
         config=agent_config,
     )
-    if agent.prompt_manager:
-        microagents = runtime.get_microagents_from_selected_repo(None)
-        agent.prompt_manager.load_microagents(microagents)
 
     if config.security.security_analyzer:
         options.SecurityAnalyzers.get(

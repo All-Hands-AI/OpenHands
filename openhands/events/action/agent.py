@@ -78,3 +78,15 @@ class AgentDelegateAction(Action):
     @property
     def message(self) -> str:
         return f"I'm asking {self.agent} for help with this task."
+
+
+@dataclass
+class RecallAction(Action):
+    # This action is used for retrieving data, e.g., from memory or a knowledge base.
+    query: dict[str, Any] = field(default_factory=dict)
+    thought: str = ''
+    action: str = ActionType.RECALL
+
+    @property
+    def message(self) -> str:
+        return f'Retrieved data for: {self.query}'

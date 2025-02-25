@@ -27,6 +27,7 @@ class EventStreamSubscriber(str, Enum):
     RESOLVER = 'openhands_resolver'
     SERVER = 'server'
     RUNTIME = 'runtime'
+    MEMORY = 'memory'
     MAIN = 'main'
     TEST = 'test'
 

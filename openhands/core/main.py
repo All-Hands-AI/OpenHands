@@ -18,6 +18,7 @@ from openhands.core.schema import AgentState
 from openhands.core.setup import (
     create_agent,
     create_controller,
+    create_memory,
     create_runtime,
     generate_sid,
 )
@@ -96,6 +97,21 @@ async def run_controller(
 
     if agent is None:
         agent = create_agent(runtime, config)
+
+    memory = create_memory(
+        microagents_dir=config.microagents_dir,
+        agent=agent,
+        runtime=runtime,
+        event_stream=event_stream,
+        selected_repository=None,
+    )
+
+    # trick for testing
+    if agent.prompt_manager:
+        memory.set_prompt_manager(agent.prompt_manager)
+
+        microagents = runtime.get_microagents_from_selected_repo(None)
+        memory.load_user_workspace_microagents(microagents)
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:

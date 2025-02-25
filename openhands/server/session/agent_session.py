@@ -14,7 +14,8 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
-from openhands.microagent import BaseMicroAgent
+from openhands.memory.memory import Memory
+from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
@@ -118,6 +119,13 @@ class AgentSession:
                 agent_to_llm_config=agent_to_llm_config,
                 agent_configs=agent_configs,
             )
+
+            self.memory = await self._create_memory(
+                microagents_dir=config.microagents_dir,
+                agent=agent,
+                selected_repository=selected_repository,
+            )
+
             if github_token:
                 self.event_stream.set_secrets(
                     {
@@ -240,25 +248,13 @@ class AgentSession:
                 )
             return
 
-        repo_directory = None
         if selected_repository:
-            repo_directory = await call_sync_from_async(
+            await call_sync_from_async(
                 self.runtime.clone_repo,
                 github_token,
                 selected_repository,
                 selected_branch,
             )
-
-        if agent.prompt_manager:
-            agent.prompt_manager.set_runtime_info(self.runtime)
-            microagents: list[BaseMicroAgent] = await call_sync_from_async(
-                self.runtime.get_microagents_from_selected_repo, selected_repository
-            )
-            agent.prompt_manager.load_microagents(microagents)
-            if selected_repository and repo_directory:
-                agent.prompt_manager.set_repository_info(
-                    selected_repository, repo_directory
-                )
 
         logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
@@ -320,6 +316,34 @@ class AgentSession:
         )
 
         return controller
+
+    async def _create_memory(
+        self, microagents_dir: str, agent: Agent, selected_repository: str | None
+    ) -> Memory:
+        # If the agent config has disabled microagents, use them
+        disabled = agent.config.disabled_microagents
+
+        mem = Memory(
+            event_stream=self.event_stream,
+            microagents_dir=microagents_dir,
+            disabled_microagents=disabled,
+        )
+
+        if agent.prompt_manager and self.runtime:
+            # sets available hosts
+            mem.set_runtime_info(self.runtime.web_hosts)
+
+            # loads microagents from repo/.openhands/microagents
+            microagents: list[BaseMicroAgent] = await call_sync_from_async(
+                self.runtime.get_microagents_from_selected_repo, selected_repository
+            )
+            mem.load_user_workspace_microagents(microagents)
+
+            if selected_repository:
+                repo_directory = selected_repository.split('/')[1]
+                if repo_directory:
+                    mem.set_repository_info(selected_repository, repo_directory)
+        return mem
 
     def _maybe_restore_state(self) -> State | None:
         """Helper method to handle state restore logic."""
