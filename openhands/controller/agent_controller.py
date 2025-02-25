@@ -742,6 +742,12 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
+            
+            # Add logging to display action type and accumulated cost
+            action_type = type(action).__name__
+            accumulated_cost = action.llm_metrics.accumulated_cost if hasattr(action, 'llm_metrics') and action.llm_metrics else None
+            logger.info(f"About to add event in the step method - Action type: {action_type}, Accumulated cost: {accumulated_cost}")
+            
             self.event_stream.add_event(action, action._source)  # type: ignore [attr-defined]
 
         await self.update_state_after_step()
