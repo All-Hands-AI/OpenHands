@@ -20,6 +20,7 @@ from evaluation.utils.shared import (
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
+    update_llm_config_for_completions_logging,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -45,6 +46,7 @@ SKIP_NUM = (
 
 
 def get_config(
+    instance: pd.Series,
     metadata: EvalMetadata,
 ) -> AppConfig:
     config = AppConfig(
@@ -67,7 +69,13 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
-    config.set_llm_config(metadata.llm_config)
+    # Update llm_config to enable completions logging
+    llm_config = update_llm_config_for_completions_logging(
+        metadata.llm_config,
+        metadata.eval_output_dir,
+        str(instance.instance_id)
+    )
+    config.set_llm_config(llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
     agent_config.enable_prompt_extensions = False
 
@@ -170,7 +178,7 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ) -> EvalOutput:
-    config = get_config(metadata)
+    config = get_config(instance, metadata)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
