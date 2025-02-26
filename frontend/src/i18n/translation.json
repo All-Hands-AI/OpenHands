@@ -3833,7 +3833,9 @@
         "pt": "Ocorreu um erro ao conectar ao ambiente de execução. Por favor, atualize a página.",
         "tr": "Çalışma zamanına bağlanırken bir hata oluştu. Lütfen sayfayı yenileyin."
     },
-
+    "STATUS$ERROR_LLM_OUT_OF_CREDITS": {
+        "en": "You are out of credits"
+    },
     "STATUS$ERROR_RUNTIME_DISCONNECTED": {
         "en": "There was an error while connecting to the runtime. Please refresh the page.",
         "zh-CN": "运行时已断开连接",
@@ -4558,5 +4560,8 @@
     "SETTINGS_FORM$ENABLE_DEFAULT_CONDENSER_SWITCH_LABEL": {
         "en": "Enable Memory Condenser",
         "zh-TW": "啟用記憶體壓縮器"
+    },
+    "BILLING$CLICK_TO_TOP_UP": {
+        "en": "Click here to top up your account!"
     }
 }
