@@ -276,7 +276,7 @@ This is information related to imagekeyword.
         role='user',
         content=[
             TextContent(text='This is some initial text.'),
-            ImageContent(url='https://example.com/image.jpg'),
+            ImageContent(image_urls=['https://example.com/image.jpg']),
             TextContent(text='This mentions imagekeyword that should match.'),
         ],
     )
@@ -319,8 +319,12 @@ This should not appear in the enhanced message.
     message = Message(
         role='user',
         content=[
-            ImageContent(url='https://example.com/image1.jpg'),
-            ImageContent(url='https://example.com/image2.jpg'),
+            ImageContent(
+                image_urls=[
+                    'https://example.com/image1.jpg',
+                    'https://example.com/image2.jpg',
+                ]
+            ),
         ],
     )
 
@@ -328,7 +332,7 @@ This should not appear in the enhanced message.
     manager.enhance_message(message)
 
     # Should not have added any content
-    assert len(message.content) == 2
+    assert len(message.content) == 1
 
     # Clean up
     os.remove(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'))
@@ -362,9 +366,9 @@ This is specific information about the lasttrigger.
     message = Message(
         role='user',
         content=[
-            ImageContent(url='https://example.com/image1.jpg'),
+            ImageContent(image_urls=['https://example.com/image1.jpg']),
             TextContent(text='This contains the lasttrigger word.'),
-            ImageContent(url='https://example.com/image2.jpg'),
+            ImageContent(image_urls=['https://example.com/image2.jpg']),
         ],
     )
 
