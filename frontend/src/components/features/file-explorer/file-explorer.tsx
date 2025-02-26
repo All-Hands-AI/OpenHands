@@ -82,7 +82,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
               testId="open-vscode-button"
               type="button"
               variant="secondary"
-              className="w-full"
+              className="w-full text-content border-content"
               isDisabled={RUNTIME_INACTIVE_STATES.includes(curAgentState)}
               onClick={handleOpenVSCode}
               startContent={<VSCodeIcon width={20} height={20} />}
