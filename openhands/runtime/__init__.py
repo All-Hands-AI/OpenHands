@@ -1,6 +1,5 @@
 from typing import Type
 
-from openhands.core.config.app_config import AppConfig
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
 from openhands.runtime.impl.docker.docker_runtime import (
@@ -26,27 +25,30 @@ _DEFAULT_RUNTIME_CLASSES: dict[str, Type[Runtime]] = {
 }
 
 
-def get_runtime_cls(config: AppConfig) -> Type[Runtime]:
+def get_runtime_cls(name: str) -> Type[Runtime]:
     """
-    If custom_class_name is supplied, resolve that class.
-    Otherwise use name to select one of the supplied runtime implementations.
+    If name is one of the predefined runtim name (e.g. 'docker'), return its class.
+    Otherwise attempt to resolve name as subclass of Runtime and return it.
     Raise on invalid selections.
     """
-    name = config.runtime
-    if name in config.runtime_custom_classses:
-        # mypy: disable-error-code="type-abstract"
-        return get_impl(Runtime, config.runtime_custom_classses[name])
     if name in _DEFAULT_RUNTIME_CLASSES:
         return _DEFAULT_RUNTIME_CLASSES[name]
-    raise ValueError(f'Runtime {name} not supported')
+    try:
+        return get_impl(Runtime, name)
+    except Exception as e:
+        known_keys = _DEFAULT_RUNTIME_CLASSES.keys()
+        raise ValueError(
+            f'Runtime {name} not supported, known are: {known_keys}'
+        ) from e
 
 
 __all__ = [
     'Runtime',
-    'E2BBox',
+    'E2BRuntime',
     'RemoteRuntime',
     'ModalRuntime',
     'RunloopRuntime',
     'DockerRuntime',
+    'DaytonaRuntime',
     'get_runtime_cls',
 ]

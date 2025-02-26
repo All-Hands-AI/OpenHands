@@ -30,7 +30,7 @@ class Conversation:
                 config.security.security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
-        runtime_cls = get_runtime_cls(config)
+        runtime_cls = get_runtime_cls(self.config.runtime)
         self.runtime = runtime_cls(
             config=config,
             event_stream=self.event_stream,
