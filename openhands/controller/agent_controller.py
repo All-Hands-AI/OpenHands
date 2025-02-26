@@ -431,7 +431,11 @@ class AgentController:
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
-            await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+            if not self.is_delegate:
+                await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+            else:
+                await self.set_agent_state_to(AgentState.FINISHED)
+                self.state.outputs['content'] = action.content
 
     def _reset(self) -> None:
         """Resets the agent controller"""
