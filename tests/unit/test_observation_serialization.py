@@ -1,6 +1,8 @@
+from openhands.events.action.files import FileEditSource
 from openhands.events.observation import (
     CmdOutputMetadata,
     CmdOutputObservation,
+    FileEditObservation,
     Observation,
 )
 from openhands.events.serialization import (
@@ -146,3 +148,88 @@ def test_legacy_serialization():
     assert event_dict['extras']['metadata']['pid'] == 3
     assert event_dict['extras']['command'] == 'ls -l'
     assert event_dict['extras']['hidden'] is False
+
+
+def test_file_edit_observation_serialization():
+    original_observation_dict = {
+        'observation': 'edit',
+        'extras': {
+            '_diff_cache': None,
+            'impl_source': FileEditSource.LLM_BASED_EDIT,
+            'new_content': None,
+            'old_content': None,
+            'path': '',
+            'prev_exist': False,
+        },
+        'message': 'I edited the file .',
+        'content': '[Existing file /path/to/file.txt is edited with 1 changes.]',
+    }
+    serialization_deserialization(original_observation_dict, FileEditObservation)
+
+
+def test_file_edit_observation_new_file_serialization():
+    original_observation_dict = {
+        'observation': 'edit',
+        'content': '[New file /path/to/newfile.txt is created with the provided content.]',
+        'extras': {
+            '_diff_cache': None,
+            'impl_source': FileEditSource.LLM_BASED_EDIT,
+            'new_content': None,
+            'old_content': None,
+            'path': '',
+            'prev_exist': False,
+        },
+        'message': 'I edited the file .',
+    }
+
+    serialization_deserialization(original_observation_dict, FileEditObservation)
+
+
+def test_file_edit_observation_oh_aci_serialization():
+    original_observation_dict = {
+        'observation': 'edit',
+        'content': 'The file /path/to/file.txt is edited with the provided content.',
+        'extras': {
+            '_diff_cache': None,
+            'impl_source': FileEditSource.LLM_BASED_EDIT,
+            'new_content': None,
+            'old_content': None,
+            'path': '',
+            'prev_exist': False,
+        },
+        'message': 'I edited the file .',
+    }
+    serialization_deserialization(original_observation_dict, FileEditObservation)
+
+
+def test_file_edit_observation_legacy_serialization():
+    original_observation_dict = {
+        'observation': 'edit',
+        'content': 'content',
+        'extras': {
+            'path': '/workspace/game_2048.py',
+            'prev_exist': False,
+            'old_content': None,
+            'new_content': 'new content',
+            'impl_source': 'oh_aci',
+            'formatted_output_and_error': 'File created successfully at: /workspace/game_2048.py',
+        },
+    }
+
+    event = event_from_dict(original_observation_dict)
+    assert isinstance(event, Observation)
+    assert isinstance(event, FileEditObservation)
+    assert event.impl_source == FileEditSource.OH_ACI
+    assert event.path == '/workspace/game_2048.py'
+    assert event.prev_exist is False
+    assert event.old_content is None
+    assert event.new_content == 'new content'
+    assert not hasattr(event, 'formatted_output_and_error')
+
+    event_dict = event_to_dict(event)
+    assert event_dict['extras']['impl_source'] == 'oh_aci'
+    assert event_dict['extras']['path'] == '/workspace/game_2048.py'
+    assert event_dict['extras']['prev_exist'] is False
+    assert event_dict['extras']['old_content'] is None
+    assert event_dict['extras']['new_content'] == 'new content'
+    assert 'formatted_output_and_error' not in event_dict['extras']

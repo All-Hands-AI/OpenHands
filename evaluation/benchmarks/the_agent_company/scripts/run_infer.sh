@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ##################################################################################################
 # Adapted from https://github.com/TheAgentCompany/TheAgentCompany/blob/main/evaluation/run_eval.sh
@@ -42,6 +42,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --env-llm-config)
             ENV_LLM_CONFIG="$2"
+            shift 2
+            ;;
+        --agent-config)
+            AGENT_CONFIG="$2"
             shift 2
             ;;
         --outputs-path)
@@ -125,8 +129,6 @@ temp_file="tasks_${START_PERCENTILE}_${END_PERCENTILE}.md"
 sed -n "${start_line},${end_line}p" tasks.md > "$temp_file"
 
 while IFS= read -r task_image; do
-    docker pull $task_image
-
     # Remove prefix using ## to remove longest matching pattern from start
     task_name=${task_image##ghcr.io/theagentcompany/}
 
@@ -140,13 +142,23 @@ while IFS= read -r task_image; do
         continue
     fi
 
-    export PYTHONPATH=evaluation/benchmarks/the_agent_company:\$PYTHONPATH && \
-        poetry run python run_infer.py \
-            --agent-llm-config "$AGENT_LLM_CONFIG" \
-            --env-llm-config "$ENV_LLM_CONFIG" \
-            --outputs-path "$OUTPUTS_PATH" \
-            --server-hostname "$SERVER_HOSTNAME" \
-            --task-image-name "$task_image"
+    docker pull $task_image
+
+    # Build the Python command
+    COMMAND="poetry run python run_infer.py \
+            --agent-llm-config \"$AGENT_LLM_CONFIG\" \
+            --env-llm-config \"$ENV_LLM_CONFIG\" \
+            --outputs-path \"$OUTPUTS_PATH\" \
+            --server-hostname \"$SERVER_HOSTNAME\" \
+            --task-image-name \"$task_image\""
+
+    # Add agent-config if it's defined
+    if [ -n "$AGENT_CONFIG" ]; then
+        COMMAND="$COMMAND --agent-config $AGENT_CONFIG"
+    fi
+
+    export PYTHONPATH=evaluation/benchmarks/the_agent_company:$PYTHONPATH && \
+        eval "$COMMAND"
 
     # Prune unused images and volumes
     docker image rm "$task_image"

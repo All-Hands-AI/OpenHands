@@ -4,86 +4,33 @@ import React from "react";
 import posthog from "posthog-js";
 import { I18nKey } from "#/i18n/declaration";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
-import { getDefaultSettings } from "#/services/settings";
-import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
 import { DangerModal } from "../confirmation-modals/danger-modal";
 import { extractSettings } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
-import { ModalButton } from "../../buttons/modal-button";
-import { AdvancedOptionSwitch } from "../../inputs/advanced-option-switch";
-import { AgentInput } from "../../inputs/agent-input";
-import { APIKeyInput } from "../../inputs/api-key-input";
-import { BaseUrlInput } from "../../inputs/base-url-input";
-import { ConfirmationModeSwitch } from "../../inputs/confirmation-mode-switch";
-import { CustomModelInput } from "../../inputs/custom-model-input";
-import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
-
-import { RuntimeSizeSelector } from "./runtime-size-selector";
-import { useConfig } from "#/hooks/query/use-config";
 import { useCurrentSettings } from "#/context/settings-context";
-import { MEMORY_CONDENSER } from "#/utils/feature-flags";
 import { Settings } from "#/types/settings";
+import { BrandButton } from "#/components/features/settings/brand-button";
+import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
+import { SettingsInput } from "#/components/features/settings/settings-input";
+import { HelpLink } from "#/components/features/settings/help-link";
 
 interface SettingsFormProps {
-  disabled?: boolean;
   settings: Settings;
   models: string[];
-  agents: string[];
-  securityAnalyzers: string[];
   onClose: () => void;
 }
 
-export function SettingsForm({
-  disabled,
-  settings,
-  models,
-  agents,
-  securityAnalyzers,
-  onClose,
-}: SettingsFormProps) {
+export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
   const { saveUserSettings } = useCurrentSettings();
   const endSession = useEndSession();
-  const { data: config } = useConfig();
 
   const location = useLocation();
   const { t } = useTranslation();
 
   const formRef = React.useRef<HTMLFormElement>(null);
 
-  const advancedAlreadyInUse = React.useMemo(() => {
-    if (models.length > 0) {
-      const organizedModels = organizeModelsAndProviders(models);
-      const { provider, model } = extractModelAndProvider(
-        settings.LLM_MODEL || "",
-      );
-      const isKnownModel =
-        provider in organizedModels &&
-        organizedModels[provider].models.includes(model);
-
-      const isUsingSecurityAnalyzer = !!settings.SECURITY_ANALYZER;
-      const isUsingConfirmationMode = !!settings.CONFIRMATION_MODE;
-      const isUsingBaseUrl = !!settings.LLM_BASE_URL;
-      const isUsingCustomModel = !!settings.LLM_MODEL && !isKnownModel;
-      const isUsingDefaultCondenser = !!settings.ENABLE_DEFAULT_CONDENSER;
-
-      return (
-        isUsingSecurityAnalyzer ||
-        isUsingConfirmationMode ||
-        isUsingBaseUrl ||
-        isUsingCustomModel ||
-        isUsingDefaultCondenser
-      );
-    }
-
-    return false;
-  }, [settings, models]);
-
-  const [showAdvancedOptions, setShowAdvancedOptions] =
-    React.useState(advancedAlreadyInUse);
-  const [confirmResetDefaultsModalOpen, setConfirmResetDefaultsModalOpen] =
-    React.useState(false);
   const [confirmEndSessionModalOpen, setConfirmEndSessionModalOpen] =
     React.useState(false);
 
@@ -96,9 +43,6 @@ export function SettingsForm({
   const handleFormSubmission = async (formData: FormData) => {
     const newSettings = extractSettings(formData);
 
-    // Inject the condenser config from the current feature flag value
-    newSettings.ENABLE_DEFAULT_CONDENSER = MEMORY_CONDENSER;
-
     await saveUserSettings(newSettings);
     onClose();
     resetOngoingSession();
@@ -109,13 +53,6 @@ export function SettingsForm({
       REMOTE_RUNTIME_RESOURCE_FACTOR:
         newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     });
-  };
-
-  const handleConfirmResetSettings = async () => {
-    await saveUserSettings(getDefaultSettings());
-    onClose();
-    resetOngoingSession();
-    posthog.capture("settings_reset");
   };
 
   const handleConfirmEndSession = () => {
@@ -134,7 +71,7 @@ export function SettingsForm({
     }
   };
 
-  const isSaasMode = config?.APP_MODE === "saas";
+  const isLLMKeySet = settings.LLM_API_KEY === "**********";
 
   return (
     <div>
@@ -144,115 +81,41 @@ export function SettingsForm({
         className="flex flex-col gap-6"
         onSubmit={handleSubmit}
       >
-        <div className="flex flex-col gap-2">
-          <AdvancedOptionSwitch
-            isDisabled={!!disabled}
-            showAdvancedOptions={showAdvancedOptions}
-            setShowAdvancedOptions={setShowAdvancedOptions}
+        <div className="flex flex-col gap-4">
+          <ModelSelector
+            models={organizeModelsAndProviders(models)}
+            currentModel={settings.LLM_MODEL}
           />
 
-          {showAdvancedOptions && (
-            <>
-              <CustomModelInput
-                isDisabled={!!disabled}
-                defaultValue={settings.LLM_MODEL}
-              />
-
-              <BaseUrlInput
-                isDisabled={!!disabled}
-                defaultValue={settings.LLM_BASE_URL}
-              />
-            </>
-          )}
-
-          {!showAdvancedOptions && (
-            <ModelSelector
-              isDisabled={disabled}
-              models={organizeModelsAndProviders(models)}
-              currentModel={settings.LLM_MODEL}
-            />
-          )}
-
-          <APIKeyInput
-            isDisabled={!!disabled}
-            isSet={settings.LLM_API_KEY === "**********"}
+          <SettingsInput
+            testId="llm-api-key-input"
+            name="llm-api-key-input"
+            label="API Key"
+            type="password"
+            className="w-[680px]"
+            startContent={isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />}
           />
 
-          {showAdvancedOptions && (
-            <>
-              <AgentInput
-                isDisabled={!!disabled}
-                defaultValue={settings.AGENT}
-                agents={agents}
-              />
-
-              {isSaasMode && (
-                <RuntimeSizeSelector
-                  isDisabled={!!disabled}
-                  defaultValue={settings.REMOTE_RUNTIME_RESOURCE_FACTOR}
-                />
-              )}
-
-              <SecurityAnalyzerInput
-                isDisabled={!!disabled}
-                defaultValue={settings.SECURITY_ANALYZER}
-                securityAnalyzers={securityAnalyzers}
-              />
-
-              <ConfirmationModeSwitch
-                isDisabled={!!disabled}
-                defaultSelected={settings.CONFIRMATION_MODE}
-              />
-            </>
-          )}
+          <HelpLink
+            testId="llm-api-key-help-anchor"
+            text="Don't know your API key?"
+            linkText="Click here for instructions"
+            href="https://docs.all-hands.dev/modules/usage/llms"
+          />
         </div>
 
         <div className="flex flex-col gap-2">
-          <div className="flex gap-2">
-            <ModalButton
-              testId="save-settings-button"
-              disabled={disabled}
-              type="submit"
-              text={t(I18nKey.BUTTON$SAVE)}
-              className="bg-[#4465DB] w-full"
-            />
-            <ModalButton
-              text={t(I18nKey.BUTTON$CLOSE)}
-              className="bg-[#737373] w-full"
-              onClick={onClose}
-            />
-          </div>
-          <ModalButton
-            disabled={disabled}
-            text={t(I18nKey.BUTTON$RESET_TO_DEFAULTS)}
-            variant="text-like"
-            className="text-danger self-start"
-            onClick={() => {
-              setConfirmResetDefaultsModalOpen(true);
-            }}
-          />
+          <BrandButton
+            testId="save-settings-button"
+            type="submit"
+            variant="primary"
+            className="w-full"
+          >
+            {t(I18nKey.BUTTON$SAVE)}
+          </BrandButton>
         </div>
       </form>
 
-      {confirmResetDefaultsModalOpen && (
-        <ModalBackdrop>
-          <DangerModal
-            testId="reset-defaults-modal"
-            title={t(I18nKey.MODAL$CONFIRM_RESET_TITLE)}
-            description={t(I18nKey.MODAL$CONFIRM_RESET_MESSAGE)}
-            buttons={{
-              danger: {
-                text: t(I18nKey.BUTTON$RESET_TO_DEFAULTS),
-                onClick: handleConfirmResetSettings,
-              },
-              cancel: {
-                text: t(I18nKey.BUTTON$CANCEL),
-                onClick: () => setConfirmResetDefaultsModalOpen(false),
-              },
-            }}
-          />
-        </ModalBackdrop>
-      )}
       {confirmEndSessionModalOpen && (
         <ModalBackdrop>
           <DangerModal

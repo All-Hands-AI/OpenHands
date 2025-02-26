@@ -52,6 +52,11 @@ There are currently four implementations:
 * Modal (uses the Modal API)
 * Runloop (uses the Runloop API)
 
+You may also add your own `Runtime` subclass to the classpath and configure it like this:
+
+```toml
+runtime = "app.my.CustomRuntime"
+```
 
 ## Workflow Description
 
@@ -145,7 +150,7 @@ Key features:
 - Support for cloud-based deployments
 - Potential for improved security through isolation
 
-At the time of this writing, this is mostly used in parallel evaluation, such as this example for [SWE-Bench](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/swe_bench#run-inference-on-remoteruntime-experimental).
+At the time of this writing, this is mostly used in parallel evaluation, such as this example for [SWE-Bench](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/swe_bench#run-inference-on-remoteruntime-experimental).
 
 ## Related Components
 

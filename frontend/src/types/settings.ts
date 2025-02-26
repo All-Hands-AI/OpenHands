@@ -6,7 +6,7 @@ export type Settings = {
   LLM_API_KEY: string | null;
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
-  REMOTE_RUNTIME_RESOURCE_FACTOR: number;
+  REMOTE_RUNTIME_RESOURCE_FACTOR: number | null;
   GITHUB_TOKEN_IS_SET: boolean;
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
@@ -21,7 +21,7 @@ export type ApiSettings = {
   llm_api_key: string | null;
   confirmation_mode: boolean;
   security_analyzer: string;
-  remote_runtime_resource_factor: number;
+  remote_runtime_resource_factor: number | null;
   github_token_is_set: boolean;
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
