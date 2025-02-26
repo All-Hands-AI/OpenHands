@@ -85,6 +85,9 @@ class ConversationManager(ABC):
     async def close_session(self, sid: str):
         """Close a session."""
 
+    async def validate(self, conversation_id):
+        return None
+
     @classmethod
     @abstractmethod
     def get_instance(
