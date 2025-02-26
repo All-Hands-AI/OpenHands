@@ -18,7 +18,6 @@ from openhands.agenthub.codeact_agent.tools import (
     LLMBasedFileEditTool,
     StrReplaceEditorTool,
     ThinkTool,
-    ViewTool,
     WebReadTool,
 )
 from openhands.core.exceptions import (
@@ -98,10 +97,6 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = IPythonRunCellAction(code=arguments['code'])
-
-            # ================================================
-            # AgentDelegateAction (for Browsing Agent)
-            # ================================================
             elif tool_call.function.name == 'delegate_to_browsing_agent':
                 action = AgentDelegateAction(
                     agent='BrowsingAgent',
@@ -132,10 +127,6 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     start=arguments.get('start', 1),
                     end=arguments.get('end', -1),
                 )
-
-            # ================================================
-            # StrReplaceEditorTool (ACI-based file editor)
-            # ================================================
             elif tool_call.function.name == StrReplaceEditorTool.function.name:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
@@ -150,27 +141,23 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 other_kwargs = {
                     k: v for k, v in arguments.items() if k not in ['command', 'path']
                 }
-                action = FileEditAction(
-                    path=path,
-                    command=command,
-                    impl_source=FileEditSource.OH_ACI,
-                    **other_kwargs,
-                )
 
-            # ================================================
-            # ViewTool (ACI-based file viewer, READ-ONLY)
-            # ================================================
-            elif tool_call.function.name == ViewTool['function']['name']:
-                if 'path' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                if command == 'view':
+                    action = FileReadAction(
+                        path=path,
+                        impl_source=FileReadSource.OH_ACI,
+                        view_range=other_kwargs.get('view_range', None),
                     )
-                action = FileReadAction(
-                    path=arguments['path'],
-                    impl_source=FileReadSource.OH_ACI,
-                    view_range=other_kwargs.get('view_range', None),
-                )
-
+                else:
+                    if 'view_range' in other_kwargs:
+                        # Remove view_range from other_kwargs since it is not needed for FileEditAction
+                        other_kwargs.pop('view_range')
+                    action = FileEditAction(
+                        path=path,
+                        command=command,
+                        impl_source=FileEditSource.OH_ACI,
+                        **other_kwargs,
+                    )
             # ================================================
             # AgentThinkAction
             # ================================================
@@ -180,7 +167,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             # BrowserTool
             # ================================================
-            elif tool_call.function.name == BrowserTool['function']['name']:
+            elif tool_call.function.name == BrowserTool.function.name:
                 if 'code' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
@@ -196,7 +183,6 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         f'Missing required argument "url" in tool call {tool_call.function.name}'
                     )
                 action = BrowseURLAction(url=arguments['url'])
-
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
