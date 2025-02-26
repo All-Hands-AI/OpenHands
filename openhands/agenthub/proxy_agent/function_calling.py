@@ -124,8 +124,9 @@ def response_to_action(response: ModelResponse) -> Action:
         if tool_call.function.name == 'delegate_remote_oh':
             message = (
                 arguments['task']
-                + f'I\'d like {arguments["agent_name"]} to handle this task'
+                + f'\nI\'d like {arguments["agent_name"]} to handle this task'
             )
+            message = message.replace('\n', '\\\n')
             url = arguments['url']
             conversation_id = arguments.get('conversation_id')
 
