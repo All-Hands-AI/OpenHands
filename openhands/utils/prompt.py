@@ -186,8 +186,6 @@ class PromptManager:
             if isinstance(content, TextContent):
                 message_content = content.text
                 break
-            elif isinstance(content, ImageContent):
-                continue
 
         if not message_content:
             return
