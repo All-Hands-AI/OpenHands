@@ -6,7 +6,7 @@ from jinja2 import Template
 
 from openhands.controller.state.state import State
 from openhands.core.logger import openhands_logger
-from openhands.core.message import ImageContent, Message, TextContent
+from openhands.core.message import Message, TextContent
 from openhands.microagent import (
     BaseMicroAgent,
     KnowledgeMicroAgent,
