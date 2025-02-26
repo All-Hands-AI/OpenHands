@@ -92,6 +92,7 @@ async def run_controller(
     if agent is None:
         agent = create_agent(config)
 
+    # when the runtime is created, it will be connected and clone the selected repository
     if runtime is None:
         runtime = create_runtime(
             config,
@@ -103,12 +104,13 @@ async def run_controller(
 
     event_stream = runtime.event_stream
 
+    # when memory is created, it will load the microagents from the selected repository
     memory = create_memory(
         microagents_dir=config.microagents_dir,
         agent=agent,
         runtime=runtime,
         event_stream=event_stream,
-        # selected_repository=selected_repository,
+        selected_repository=config.sandbox.selected_repo,
     )
 
     # trick for testing
