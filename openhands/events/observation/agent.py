@@ -35,7 +35,7 @@ class AgentThinkObservation(Observation):
     acknowledging that the thought has been logged.
     """
 
-    observation: str = ObservationType.NULL  # this essentially is a no-op
+    observation: str = ObservationType.THINK
 
     @property
     def message(self) -> str:
