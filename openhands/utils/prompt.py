@@ -6,7 +6,7 @@ from jinja2 import Template
 
 from openhands.controller.state.state import State
 from openhands.core.logger import openhands_logger
-from openhands.core.message import Message, TextContent
+from openhands.core.message import ImageContent, Message, TextContent
 from openhands.microagent import (
     BaseMicroAgent,
     KnowledgeMicroAgent,
@@ -177,7 +177,22 @@ class PromptManager:
         """
         if not message.content:
             return
-        message_content = message.content[0].text
+
+        # if there were other texts included, they were before the user message
+        # so the last TextContent is the user message
+        # content can be a list of TextContent or ImageContent
+        # we only want the text from the last TextContent
+        message_content = ''
+        for content in reversed(message.content):
+            if isinstance(content, TextContent):
+                message_content = content.text
+                break
+            elif isinstance(content, ImageContent):
+                continue
+
+        if not message_content:
+            return
+
         for microagent in self.knowledge_microagents.values():
             trigger = microagent.match_trigger(message_content)
             if trigger:
