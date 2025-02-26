@@ -6,6 +6,7 @@ import {
   OpenHandsObservation,
   CommandObservation,
   IPythonObservation,
+  DelegateObservation,
 } from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsEventType } from "#/types/core/base";
@@ -147,6 +148,21 @@ export const chatSlice = createSlice({
         return;
       }
       const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
+
+      // Special case for delegate: we don't modify the cause message, but we add a new one
+      if (observationID === "delegate") {
+        const message: Message = {
+          type: "action",
+          sender: "assistant",
+          translationID,
+          eventID: observation.payload.id,
+          content: `**Output:**\n${observation.payload.extras.outputs.content}\n`,
+          imageUrls: [],
+          timestamp: new Date().toISOString(),
+        };
+        state.messages.push(message);
+      }
+
       const causeID = observation.payload.cause;
       const causeMessage = state.messages.find(
         (message) => message.eventID === causeID,

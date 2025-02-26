@@ -4269,6 +4269,21 @@
         "es": "Escribió en un archivo",
         "tr": "Dosyaya yazıldı"
     },
+    "OBSERVATION_MESSAGE$DELEGATE": {
+        "en": "Delegated task completed",
+        "zh-CN": "委派任务已完成",
+        "zh-TW": "委派任務已完成",
+        "ko-KR": "위임된 작업이 완료되었습니다",
+        "ja": "委任されたタスクが完了しました",
+        "no": "Delegert oppgave fullført",
+        "ar": "اكتملت المهمة المفوضة",
+        "de": "Delegierte Aufgabe abgeschlossen",
+        "fr": "Tâche déléguée terminée",
+        "it": "Compito delegato completato",
+        "pt": "Tarefa delegada concluída",
+        "es": "Tarea delegada completada",
+        "tr": "Devredilen görev tamamlandı"
+    },
     "OBSERVATION_MESSAGE$BROWSE": {
         "en": "Browsing completed",
         "zh-CN": "浏览",
