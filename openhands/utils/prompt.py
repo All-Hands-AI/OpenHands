@@ -5,6 +5,7 @@ from itertools import islice
 from jinja2 import Template
 
 from openhands.controller.state.state import State
+from openhands.core.logger import openhands_logger
 from openhands.core.message import Message, TextContent
 from openhands.microagent import (
     BaseMicroAgent,
@@ -109,11 +110,12 @@ class PromptManager:
                 if name not in self.disabled_microagents:
                     self.repo_microagents[name] = microagent
 
-    def load_microagents(self, microagents: list[BaseMicroAgent]):
+    def load_microagents(self, microagents: list[BaseMicroAgent]) -> None:
         """Load microagents from a list of BaseMicroAgents.
 
         This is typically used when loading microagents from inside a repo.
         """
+        openhands_logger.info('Loading microagents: %s', [m.name for m in microagents])
         # Only keep KnowledgeMicroAgents and RepoMicroAgents
         for microagent in microagents:
             if microagent.name in self.disabled_microagents:
@@ -135,7 +137,7 @@ class PromptManager:
     def get_system_message(self) -> str:
         return self.system_template.render().strip()
 
-    def set_runtime_info(self, runtime: Runtime):
+    def set_runtime_info(self, runtime: Runtime) -> None:
         self.runtime_info.available_hosts = runtime.web_hosts
 
     def set_repository_info(
@@ -179,6 +181,11 @@ class PromptManager:
         for microagent in self.knowledge_microagents.values():
             trigger = microagent.match_trigger(message_content)
             if trigger:
+                openhands_logger.info(
+                    "Microagent '%s' triggered by keyword '%s'",
+                    microagent.name,
+                    trigger,
+                )
                 micro_text = f'<extra_info>\nThe following information has been included based on a keyword match for "{trigger}". It may or may not be relevant to the user\'s request.'
                 micro_text += '\n\n' + microagent.content
                 micro_text += '\n</extra_info>'
