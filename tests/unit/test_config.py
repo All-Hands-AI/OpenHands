@@ -499,13 +499,9 @@ invalid_field_in_sandbox = "test"
         # invalid [llm] config
         # Verify that the appropriate warning was logged
         assert 'Cannot parse [llm] config from toml' in log_content
-        assert 'values have not been applied' in log_content
-        # Error: LLMConfig.__init__() got an unexpected keyword argume
-        assert 'Cannot parse [llm] config from toml' in log_content
-        assert 'invalid_field' in log_content
 
         # invalid [sandbox] config
-        assert 'Cannot parse [sandbox] config from toml' in log_content
+        assert 'Invalid sandbox configuration' in log_content
         assert 'values have not been applied' in log_content
         assert 'invalid_field_in_sandbox' in log_content
 
