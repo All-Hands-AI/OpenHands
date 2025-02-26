@@ -11,6 +11,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStream, session_exists
+from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.server.settings import Settings
@@ -138,7 +139,10 @@ class StandaloneConversationManager(ConversationManager):
                 sid_to_close = [
                     sid for sid in sid_to_close if sid not in connected_sids
                 ]
-                await wait_all(self._close_session(sid) for sid in sid_to_close)
+                await wait_all(
+                    (self._close_session(sid) for sid in sid_to_close),
+                    timeout=WAIT_TIME_BEFORE_CLOSE,
+                )
                 await asyncio.sleep(_CLEANUP_INTERVAL)
             except asyncio.CancelledError:
                 async with self._conversations_lock:
