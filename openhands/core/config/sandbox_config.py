@@ -1,6 +1,8 @@
 import os
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
+
+from openhands.core.logger import openhands_logger as logger
 
 
 class SandboxConfig(BaseModel):
@@ -73,3 +75,26 @@ class SandboxConfig(BaseModel):
     docker_runtime_kwargs: str | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
+
+    @classmethod
+    def from_toml_section(cls, data: dict) -> dict[str, 'SandboxConfig']:
+        """
+        Create a mapping of SandboxConfig instances from a toml dictionary representing the [sandbox] section.
+
+        The configuration is built from all keys in data.
+
+        Returns:
+            dict[str, SandboxConfig]: A mapping where the key "sandbox" corresponds to the [sandbox] configuration
+        """
+        # Initialize the result mapping
+        sandbox_mapping: dict[str, SandboxConfig] = {}
+
+        # Try to create the base config
+        try:
+            sandbox_mapping['sandbox'] = cls.model_validate(data)
+        except ValidationError as e:
+            logger.warning(f'Invalid sandbox configuration: {e}. Using defaults.')
+            # If the sandbox config fails, create a default one
+            sandbox_mapping['sandbox'] = cls()
+
+        return sandbox_mapping
