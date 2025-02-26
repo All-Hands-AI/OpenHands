@@ -600,7 +600,7 @@ def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
     if args.max_budget_per_task is not None:
         config.max_budget_per_task = args.max_budget_per_task
 
-    # Store selected repository in config for use by CLI and main.py
+    # Read selected repository in config for use by CLI and main.py
     if args.selected_repo is not None:
         config.sandbox_config.selected_repo = args.selected_repo
 
