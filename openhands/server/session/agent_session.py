@@ -103,6 +103,7 @@ class AgentSession:
         self._starting = True
         started_at = time.time()
         self._started_at = started_at
+        success = False  # For monitoring
         try:
             self._create_security_analyzer(config.security.security_analyzer)
             await self._create_runtime(
@@ -138,8 +139,11 @@ class AgentSession:
                     ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT),
                     EventSource.ENVIRONMENT,
                 )
-            self.monitoring_listener.on_agent_session_start(time.time() - started_at)
+            success = True
         finally:
+            self.monitoring_listener.on_agent_session_start(
+                success, time.time() - started_at
+            )
             self._starting = False
 
     async def close(self):
