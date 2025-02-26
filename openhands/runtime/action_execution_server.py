@@ -479,12 +479,44 @@ class DiffHandler:
     def _is_git_repo(self) -> bool:
         cmd = 'git rev-parse --is-inside-work-tree'
         obs = self.bash_session.execute(CmdRunAction(command=cmd))
-        return obs.content.strip() == 'true'
+        return obs.content.strip() == 'true'  # test
 
-    def _show_untracked_files(self) -> list[str]:
-        cmd = 'git diff --name-only'
-        obs = self.bash_session.execute(CmdRunAction(command=cmd))
-        return obs.content.splitlines()
+    def _retrieve_git_changes(self) -> list[dict[str, str]]:
+        result = []
+        cmd = 'git status --porcelain'
+
+        try:
+            obs = self.bash_session.execute(CmdRunAction(command=cmd))
+            obs_list = obs.content.splitlines()
+            for line in obs_list:
+                status = line[:2].strip()
+                path = line[3:]
+
+                status_map = {
+                    'M': 'M',  # Modified
+                    'A': 'A',  # Added
+                    'D': 'D',  # Deleted
+                    'R': 'R',  # Renamed
+                    '??': 'U',  # Untracked
+                }
+
+                # Get the first non-space character as the primary status
+                primary_status = status.replace(' ', '')[0]
+                mapped_status = status_map.get(primary_status, primary_status)
+                if primary_status == '?':  # Special case for untracked files
+                    mapped_status = 'U'
+
+                result.append(
+                    {
+                        'status': mapped_status,
+                        'path': path,
+                    }
+                )
+        except Exception as e:
+            logger.error(f'Error retrieving git changes: {e}')
+            return []
+
+        return result
 
     def _get_full_content(self, file_path: str) -> str:
         cmd = f'cat {file_path}'
@@ -496,19 +528,25 @@ class DiffHandler:
         obs = self.bash_session.execute(CmdRunAction(command=cmd))
         return obs.content
 
-    def get_all_untracked_diffs(self):
+    def get_all_untracked_diffs(self) -> list:
         if not self._is_git_repo():
-            return {}
+            return []
 
-        untracked_files = self._show_untracked_files()
-        diffs = {}
-        for file in untracked_files:
-            full_content = self._get_full_content(file)
-            last_commit_content = self._get_last_commit_content(file)
-            diffs[file] = {
-                'full_content': full_content,
-                'last_commit_content': last_commit_content,
-            }
+        changes_files = self._retrieve_git_changes()
+        diffs = []
+        for file in changes_files:
+            modified = self._get_full_content(file.get('path', ''))
+            original = self._get_last_commit_content(file.get('path', ''))
+
+            diffs.append(
+                {
+                    'status': file.get('status'),
+                    'path': file.get('path'),
+                    'modified': modified,
+                    'original': original,
+                }
+            )
+
         return diffs
 
 
@@ -818,12 +856,13 @@ if __name__ == '__main__':
 
     @app.get('/git_diffs')
     async def git_diffs(request: Request):
+        logger.info('Getting Git diffs')
         assert diff_handler is not None
         try:
             return diff_handler.get_all_untracked_diffs()
         except Exception as e:
             logger.error(f'Error getting Git diffs: {e}')
-            return {}
+            return []
 
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)

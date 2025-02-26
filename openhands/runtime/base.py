@@ -489,5 +489,5 @@ class Runtime(FileEditRuntimeMixin):
     # ====================================================================
 
     @abstractmethod
-    def git_diffs(self) -> dict[str, dict[str, str]]:
+    def git_diffs(self) -> list[dict[str, str]]:
         raise NotImplementedError('This method is not implemented in the base class.')

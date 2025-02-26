@@ -113,14 +113,14 @@ class DockerRuntime(ActionExecutionClient):
 
     def git_diffs(self):
         """Get the git diffs for the current workspace."""
-        try:
-            response = self.session.get(f'{self.api_url}/git_diffs')
-            response.raise_for_status()
+        self.log('info', 'Getting git diffs')
+        with self._send_action_server_request(
+            'GET',
+            f'{self._get_action_execution_server_host()}/git_diffs',
+            timeout=300,
+        ) as response:
             response_json = response.json()
-            assert isinstance(response_json, dict)
             return response_json
-        except requests.Timeout:
-            raise TimeoutError('Git diff operation timed out')
 
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')

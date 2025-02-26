@@ -22,16 +22,14 @@ function EditorScreen() {
     return <div>Failed to load diffs</div>;
   }
 
-  const paths = Object.keys(diffs);
-
   return (
     <main className="h-full overflow-y-auto px-4">
-      {paths.map((path) => (
+      {diffs.map((diff) => (
         <FileDiffViewer
-          key={path}
-          label={path}
-          modified={diffs[path].full_content}
-          original={diffs[path].last_commit_content}
+          key={diff.path}
+          label={diff.path}
+          modified={diff.modified}
+          original={diff.original}
         />
       ))}
     </main>

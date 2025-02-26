@@ -11,7 +11,7 @@ import {
   Conversation,
   ResultSet,
   GetTrajectoryResponse,
-  GetDiffsResponse,
+  FileDiffObject,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
@@ -341,8 +341,8 @@ class OpenHands {
     await openHands.post("/api/logout");
   }
 
-  static async getDiffs(conversationId: string): Promise<GetDiffsResponse> {
-    const { data } = await openHands.get<GetDiffsResponse>(
+  static async getDiffs(conversationId: string): Promise<FileDiffObject[]> {
+    const { data } = await openHands.get<FileDiffObject[]>(
       `/api/conversations/${conversationId}/diffs`,
     );
     return data;
