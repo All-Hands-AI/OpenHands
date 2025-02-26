@@ -425,7 +425,7 @@ function AccountSettings() {
         <ModalBackdrop>
           <div
             data-testid="reset-modal"
-            className="bg-base p-4 rounded-xl flex flex-col gap-4"
+            className="bg-base-secondary p-4 rounded-xl flex flex-col gap-4 border border-tertiary"
           >
             <p>Are you sure you want to reset all settings?</p>
             <div className="w-full flex gap-2">
