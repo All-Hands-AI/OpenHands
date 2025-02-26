@@ -397,6 +397,7 @@ async def test_unsafe_bash_command(temp_dir: str):
                         arguments={
                             'agent': 'VerifierAgent',
                             'inputs': {'task': 'verify this task'},
+                            'agent_config_override': None,
                         },
                     ),
                 ),
