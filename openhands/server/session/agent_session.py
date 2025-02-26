@@ -19,6 +19,7 @@ from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.security import SecurityAnalyzer, options
+from openhands.server.shared import monitoring_listener
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
@@ -98,7 +99,8 @@ class AgentSession:
             logger.warning('Session closed before starting')
             return
         self._starting = True
-        self._started_at = time.time()
+        started_at = time.time()
+        self._started_at = started_at
         try:
             self._create_security_analyzer(config.security.security_analyzer)
             await self._create_runtime(
@@ -134,6 +136,7 @@ class AgentSession:
                     ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT),
                     EventSource.ENVIRONMENT,
                 )
+            monitoring_listener.on_conversation_start(time.time() - started_at)
         finally:
             self._starting = False
 
