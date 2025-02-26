@@ -102,6 +102,8 @@ function AccountSettings() {
 
     const userConsentsToAnalytics =
       formData.get("enable-analytics-switch")?.toString() === "on";
+    const enableMemoryCondenser =
+      formData.get("enable-memory-condenser-switch")?.toString() === "on";
 
     saveSettings(
       {
@@ -109,6 +111,7 @@ function AccountSettings() {
           formData.get("github-token-input")?.toString() || undefined,
         LANGUAGE: languageValue,
         user_consents_to_analytics: userConsentsToAnalytics,
+        ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
         LLM_MODEL: customLlmModel || fullLlmModel,
         LLM_BASE_URL: formData.get("base-url-input")?.toString() || "",
         LLM_API_KEY:
@@ -290,6 +293,17 @@ function AccountSettings() {
                 Enable confirmation mode
               </SettingsSwitch>
             )}
+
+            {llmConfigMode === "advanced" && (
+              <SettingsSwitch
+                testId="enable-memory-condenser-switch"
+                name="enable-memory-condenser-switch"
+                defaultIsToggled={!!settings.ENABLE_DEFAULT_CONDENSER}
+              >
+                Enable memory condensation
+              </SettingsSwitch>
+            )}
+
             {llmConfigMode === "advanced" && confirmationModeIsEnabled && (
               <div>
                 <SettingsDropdownInput
@@ -388,7 +402,7 @@ function AccountSettings() {
         </div>
       </form>
 
-      <footer className="flex gap-6 p-6 justify-end border-t border-t-[#454545]">
+      <footer className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
         <BrandButton
           type="button"
           variant="secondary"
@@ -411,7 +425,7 @@ function AccountSettings() {
         <ModalBackdrop>
           <div
             data-testid="reset-modal"
-            className="bg-root-primary p-4 rounded-xl flex flex-col gap-4"
+            className="bg-base-secondary p-4 rounded-xl flex flex-col gap-4 border border-tertiary"
           >
             <p>Are you sure you want to reset all settings?</p>
             <div className="w-full flex gap-2">
