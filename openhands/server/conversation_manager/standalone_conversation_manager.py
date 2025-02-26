@@ -32,7 +32,8 @@ class StandaloneConversationManager(ConversationManager):
     sio: socketio.AsyncServer
     config: AppConfig
     file_store: FileStore
-    monitoring_listener: MonitoringListener
+    # Defaulting monitoring_listener for temp backward compatibility.
+    monitoring_listener: MonitoringListener = MonitoringListener()
     _local_agent_loops_by_sid: dict[str, Session] = field(default_factory=dict)
     _local_connection_id_to_session_id: dict[str, str] = field(default_factory=dict)
     _active_conversations: dict[str, tuple[Conversation, int]] = field(
@@ -283,8 +284,8 @@ class StandaloneConversationManager(ConversationManager):
         sio: socketio.AsyncServer,
         config: AppConfig,
         file_store: FileStore,
-        monitoring_listener: MonitoringListener,
+        monitoring_listener: MonitoringListener | None = None,
     ) -> ConversationManager:
         return StandaloneConversationManager(
-            sio, config, file_store, monitoring_listener
+            sio, config, file_store, monitoring_listener or MonitoringListener()
         )
