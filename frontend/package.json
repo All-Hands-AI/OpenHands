@@ -9,6 +9,7 @@
   "dependencies": {
     "@heroui/react": "2.6.14",
     "@monaco-editor/react": "^4.7.0-rc.0",
+    "@nextui-org/react": "^2.6.11",
     "@react-router/node": "^7.1.5",
     "@react-router/serve": "^7.1.5",
     "@react-types/shared": "^3.27.0",
