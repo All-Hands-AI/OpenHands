@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-ai"
-version = "0.25.0"
+version = "0.26.0"
 description = "OpenHands: Code Less, Make More"
 authors = ["OpenHands"]
 license = "MIT"
@@ -76,6 +76,7 @@ stripe = "^11.5.0"
 ipywidgets = "^8.1.5"
 qtconsole = "^5.6.1"
 memory-profiler = "^0.61.0"
+daytona-sdk = "0.9.1"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"

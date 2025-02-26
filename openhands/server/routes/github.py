@@ -8,6 +8,7 @@ from openhands.integrations.github.github_types import (
     GHUnknownException,
     GitHubRepository,
     GitHubUser,
+    SuggestedTask,
 )
 from openhands.server.auth import get_github_token, get_user_id
 
@@ -115,4 +116,33 @@ async def search_github_repositories(
         return JSONResponse(
             content=str(e),
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@app.get('/suggested-tasks')
+async def get_suggested_tasks(
+    github_user_id: str | None = Depends(get_user_id),
+    github_user_token: SecretStr | None = Depends(get_github_token),
+):
+    """
+    Get suggested tasks for the authenticated user across their most recently pushed repositories.
+    Returns:
+    - PRs owned by the user
+    - Issues assigned to the user
+    """
+    client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
+    try:
+        tasks: list[SuggestedTask] = await client.get_suggested_tasks()
+        return tasks
+
+    except GhAuthenticationError as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=401,
+        )
+
+    except GHUnknownException as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=500,
         )
