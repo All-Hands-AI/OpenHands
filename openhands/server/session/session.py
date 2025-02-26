@@ -23,10 +23,10 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
+from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.settings import Settings
-from openhands.server.shared import monitoring_listener
 from openhands.storage.files import FileStore
 
 ROOM_KEY = 'room:{sid}'
@@ -41,6 +41,7 @@ class Session:
     loop: asyncio.AbstractEventLoop
     config: AppConfig
     file_store: FileStore
+    monitoring_listener: MonitoringListener
     user_id: str | None
 
     def __init__(
@@ -48,6 +49,7 @@ class Session:
         sid: str,
         config: AppConfig,
         file_store: FileStore,
+        monitoring_listener: MonitoringListener,
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,
     ):
@@ -60,10 +62,12 @@ class Session:
             file_store,
             status_callback=self.queue_status_message,
             github_user_id=user_id,
+            monitoring_listener=monitoring_listener,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
+        self.monitoring_listener = monitoring_listener
         # Copying this means that when we update variables they are not applied to the shared global configuration!
         self.config = deepcopy(config)
         self.loop = asyncio.get_event_loop()
@@ -175,7 +179,7 @@ class Session:
         Args:
             event: The agent event (Observation or Action).
         """
-        monitoring_listener.on_session_event(event)
+        self.monitoring_listener.on_session_event(event)
         if isinstance(event, NullAction):
             return
         if isinstance(event, NullObservation):

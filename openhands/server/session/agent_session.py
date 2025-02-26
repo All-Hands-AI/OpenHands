@@ -19,7 +19,7 @@ from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.security import SecurityAnalyzer, options
-from openhands.server.shared import monitoring_listener
+from openhands.server.monitoring import MonitoringListener
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
@@ -45,11 +45,13 @@ class AgentSession:
     _started_at: float = 0
     _closed: bool = False
     loop: asyncio.AbstractEventLoop | None = None
+    monitoring_listener: MonitoringListener
 
     def __init__(
         self,
         sid: str,
         file_store: FileStore,
+        monitoring_listener: MonitoringListener,
         status_callback: Optional[Callable] = None,
         github_user_id: str | None = None,
     ):
@@ -136,7 +138,7 @@ class AgentSession:
                     ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT),
                     EventSource.ENVIRONMENT,
                 )
-            monitoring_listener.on_conversation_start(time.time() - started_at)
+            self.monitoring_listener.on_conversation_start(time.time() - started_at)
         finally:
             self._starting = False
 
