@@ -8,7 +8,7 @@ from typing import Any, Callable
 import requests
 
 from openhands.core.config import LLMConfig
-from openhands.utils.ensure_httpx_close import EnsureHttpxClose
+from openhands.utils.ensure_httpx_close import ensure_httpx_close
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -43,6 +43,7 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (RateLimitError,)
 # cache prompt supporting models
 # remove this when we gemini and deepseek are supported
 CACHE_PROMPT_SUPPORTED_MODELS = [
+    'claude-3-7-sonnet-20250219',
     'claude-3-5-sonnet-20241022',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-haiku-20241022',
@@ -52,6 +53,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
 
 # function calling supporting models
 FUNCTION_CALLING_SUPPORTED_MODELS = [
+    'claude-3-7-sonnet-20250219',
     'claude-3-5-sonnet',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-sonnet-20241022',
@@ -231,7 +233,7 @@ class LLM(RetryMixin, DebugMixin):
 
             # Record start time for latency measurement
             start_time = time.time()
-            with EnsureHttpxClose():
+            with ensure_httpx_close():
                 # we don't support streaming here, thus we get a ModelResponse
                 resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
