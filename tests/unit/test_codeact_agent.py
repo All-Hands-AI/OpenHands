@@ -5,16 +5,23 @@ from litellm import ChatCompletionMessageToolCall
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.function_calling import (
-    _BROWSER_DESCRIPTION,
-    _BROWSER_TOOL_DESCRIPTION,
+    get_tools,
+    response_to_actions,
+)
+from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
     CmdRunTool,
     FileEditorTool,
+    GlobTool,
+    GrepTool,
     IPythonTool,
     LLMBasedFileEditTool,
+    ThinkTool,
     WebReadTool,
-    get_tools,
-    response_to_actions,
+)
+from openhands.agenthub.codeact_agent.tools.browser import (
+    _BROWSER_DESCRIPTION,
+    _BROWSER_TOOL_DESCRIPTION,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig
@@ -147,7 +154,7 @@ def test_llm_based_file_edit_tool():
 
 def test_str_replace_editor_tool():
     assert FileEditorTool['type'] == 'function'
-    assert FileEditorTool['function']['name'] == 'str_replace_editor'
+    assert FileEditorTool['function']['name'] == 'file_editor'
 
     properties = FileEditorTool['function']['parameters']['properties']
     assert 'command' in properties
@@ -156,7 +163,6 @@ def test_str_replace_editor_tool():
     assert 'old_str' in properties
     assert 'new_str' in properties
     assert 'insert_line' in properties
-    assert 'view_range' in properties
 
     assert FileEditorTool['function']['parameters']['required'] == [
         'command',
@@ -309,3 +315,36 @@ def test_mismatched_tool_call_events(mock_state: State):
     mock_state.history = [observation]
     messages = agent._get_messages(mock_state)
     assert len(messages) == 1
+
+
+def test_grep_tool():
+    assert GrepTool['type'] == 'function'
+    assert GrepTool['function']['name'] == 'grep'
+
+    properties = GrepTool['function']['parameters']['properties']
+    assert 'pattern' in properties
+    assert 'path' in properties
+    assert 'include' in properties
+
+    assert GrepTool['function']['parameters']['required'] == ['pattern']
+
+
+def test_glob_tool():
+    assert GlobTool['type'] == 'function'
+    assert GlobTool['function']['name'] == 'glob'
+
+    properties = GlobTool['function']['parameters']['properties']
+    assert 'pattern' in properties
+    assert 'path' in properties
+
+    assert GlobTool['function']['parameters']['required'] == ['pattern']
+
+
+def test_think_tool():
+    assert ThinkTool['type'] == 'function'
+    assert ThinkTool['function']['name'] == 'think'
+
+    properties = ThinkTool['function']['parameters']['properties']
+    assert 'thought' in properties
+
+    assert ThinkTool['function']['parameters']['required'] == ['thought']
