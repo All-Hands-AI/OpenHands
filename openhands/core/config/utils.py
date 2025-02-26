@@ -207,6 +207,23 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
                 f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}'
             )
 
+    # Process condenser section if present
+    if 'condenser' in toml_config:
+        try:
+            from openhands.core.config.condenser_config import from_toml_section
+
+            condenser_mapping = from_toml_section(toml_config['condenser'])
+            # Note: We don't currently have a way to use custom condenser configurations
+            # directly in AppConfig. They are typically used within agent configurations.
+            if 'condenser' in condenser_mapping:
+                logger.openhands_logger.debug(
+                    'Default condenser configuration loaded from config toml'
+                )
+        except (TypeError, KeyError, ValidationError) as e:
+            logger.openhands_logger.warning(
+                f'Cannot parse [condenser] config from toml, values have not been applied.\nError: {e}'
+            )
+
     # Process extended section if present
     if 'extended' in toml_config:
         try:
@@ -217,7 +234,15 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
             )
 
     # Check for unknown sections
-    known_sections = {'core', 'extended', 'agent', 'llm', 'security', 'sandbox'}
+    known_sections = {
+        'core',
+        'extended',
+        'agent',
+        'llm',
+        'security',
+        'sandbox',
+        'condenser',
+    }
     for key in toml_config:
         if key.lower() not in known_sections:
             logger.openhands_logger.warning(f'Unknown section [{key}] in {toml_file}')
