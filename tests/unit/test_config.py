@@ -777,3 +777,69 @@ memory_enabled = false
     assert agent_config1.memory_enabled
     agent_config2 = get_agent_config_arg('group2', temp_toml_file)
     assert not agent_config2.memory_enabled
+
+
+def test_agent_config_from_toml_section():
+    """Test that AgentConfig.from_toml_section correctly parses agent configurations from TOML."""
+    from openhands.core.config.agent_config import AgentConfig
+
+    # Test with base config and custom configs
+    agent_section = {
+        'memory_enabled': True,
+        'memory_max_threads': 5,
+        'enable_prompt_extensions': True,
+        'CustomAgent1': {'memory_enabled': False, 'codeact_enable_browsing': False},
+        'CustomAgent2': {'memory_max_threads': 10, 'enable_prompt_extensions': False},
+        'InvalidAgent': {
+            'invalid_field': 'some_value'  # This should be skipped but not affect others
+        },
+    }
+
+    # Parse the section
+    result = AgentConfig.from_toml_section(agent_section)
+
+    # Verify the base config was correctly parsed
+    assert 'agent' in result
+    assert result['agent'].memory_enabled is True
+    assert result['agent'].memory_max_threads == 5
+    assert result['agent'].enable_prompt_extensions is True
+
+    # Verify custom configs were correctly parsed and inherit from base
+    assert 'CustomAgent1' in result
+    assert result['CustomAgent1'].memory_enabled is False  # Overridden
+    assert result['CustomAgent1'].memory_max_threads == 5  # Inherited
+    assert result['CustomAgent1'].codeact_enable_browsing is False  # Overridden
+    assert result['CustomAgent1'].enable_prompt_extensions is True  # Inherited
+
+    assert 'CustomAgent2' in result
+    assert result['CustomAgent2'].memory_enabled is True  # Inherited
+    assert result['CustomAgent2'].memory_max_threads == 10  # Overridden
+    assert result['CustomAgent2'].enable_prompt_extensions is False  # Overridden
+
+    # Verify the invalid config was skipped
+    assert 'InvalidAgent' not in result
+
+
+def test_agent_config_from_toml_section_with_invalid_base():
+    """Test that AgentConfig.from_toml_section handles invalid base configurations gracefully."""
+    from openhands.core.config.agent_config import AgentConfig
+
+    # Test with invalid base config but valid custom configs
+    agent_section = {
+        'invalid_field': 'some_value',  # This should be ignored in base config
+        'memory_max_threads': 'not_an_int',  # This should cause validation error
+        'CustomAgent': {'memory_enabled': True, 'memory_max_threads': 8},
+    }
+
+    # Parse the section
+    result = AgentConfig.from_toml_section(agent_section)
+
+    # Verify a default base config was created despite the invalid fields
+    assert 'agent' in result
+    assert result['agent'].memory_enabled is False  # Default value
+    assert result['agent'].memory_max_threads == 3  # Default value
+
+    # Verify custom config was still processed correctly
+    assert 'CustomAgent' in result
+    assert result['CustomAgent'].memory_enabled is True
+    assert result['CustomAgent'].memory_max_threads == 8
