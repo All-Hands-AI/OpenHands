@@ -71,6 +71,9 @@ class AgentController:
     agent_configs: dict[str, AgentConfig]
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
+    _delegate_action: AgentDelegateAction | None = (
+        None  # the AgentDelegateAction that started the delegate
+    )
     _pending_action: Action | None = None
     _closed: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
@@ -582,6 +585,7 @@ class AgentController:
             is_delegate=True,
             headless_mode=self.headless_mode,
         )
+        self._delegate_action = action
 
     def end_delegate(self) -> None:
         """Ends the currently active delegate (e.g., if it is finished or errored)
@@ -615,6 +619,9 @@ class AgentController:
 
             # emit the delegate result observation
             obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+            if self._delegate_action and self._delegate_action.tool_call_metadata:
+                obs.tool_call_metadata = self._delegate_action.tool_call_metadata
+                obs._cause = self._delegate_action.id  # type: ignore[attr-defined]
             self.event_stream.add_event(obs, EventSource.AGENT)
         else:
             # delegate state is ERROR
@@ -628,11 +635,14 @@ class AgentController:
 
             # emit the delegate result observation
             obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+            if self._delegate_action and self._delegate_action.tool_call_metadata:
+                obs.tool_call_metadata = self._delegate_action.tool_call_metadata
+                obs._cause = self._delegate_action.id  # type: ignore[attr-defined]
             self.event_stream.add_event(obs, EventSource.AGENT)
 
         # unset delegate so parent can resume normal handling
         self.delegate = None
-        self.delegateAction = None
+        self._delegate_action = None
 
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
