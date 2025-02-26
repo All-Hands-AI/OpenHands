@@ -80,7 +80,8 @@ export interface ErrorObservation extends OpenHandsObservationEvent<"error"> {
   };
 }
 
-export interface AgentThinkObservation extends OpenHandsObservationEvent<"think"> {
+export interface AgentThinkObservation
+  extends OpenHandsObservationEvent<"think"> {
   source: "agent";
   extras: {
     thought: string;

@@ -6,7 +6,6 @@ import {
   OpenHandsObservation,
   CommandObservation,
   IPythonObservation,
-  DelegateObservation,
 } from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsEventType } from "#/types/core/base";
@@ -22,7 +21,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "read",
   "browse",
   "edit",
-  "delegate"
+  "delegate",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
