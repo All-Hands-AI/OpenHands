@@ -45,7 +45,7 @@ Remember: when making multiple file edits in a row to the same file, you should 
 FileEditorTool = ChatCompletionToolParam(
     type='function',
     function=ChatCompletionToolParamFunctionChunk(
-        name='edit',
+        name='file_editor',
         description=_STR_REPLACE_EDITOR_DESCRIPTION,
         parameters={
             'type': 'object',

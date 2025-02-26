@@ -231,7 +231,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 action = FileReadAction(
                     path=arguments['path'],
                     impl_source=FileReadSource.OH_ACI,
-                    view_range=other_kwargs.get('view_range', None),
+                    view_range=arguments.get('view_range', None),
                 )
 
             # ================================================
