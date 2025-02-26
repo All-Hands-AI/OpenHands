@@ -529,7 +529,6 @@ def get_parser() -> argparse.ArgumentParser:
         action='store_true',
         default=False,
     )
-    # Add new argument for selected repository
     parser.add_argument(
         '--selected-repo',
         help='GitHub repository to clone (format: owner/repo)',
@@ -601,8 +600,8 @@ def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
     if args.max_budget_per_task is not None:
         config.max_budget_per_task = args.max_budget_per_task
 
-    # Store selected repository in config for use by CLI and main.py
+    # Read selected repository in config for use by CLI and main.py
     if args.selected_repo is not None:
-        config.selected_repository = args.selected_repo
+        config.sandbox.selected_repo = args.selected_repo
 
     return config
