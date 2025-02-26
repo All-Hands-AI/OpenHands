@@ -2,11 +2,10 @@ import json
 
 import pytest
 
+from openhands.storage.conversation.conversation_store import SortOrder
 from openhands.storage.conversation.file_conversation_store import FileConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.memory import InMemoryFileStore
-
-from openhands.storage.conversation.conversation_store import SortOrder
 
 
 @pytest.mark.asyncio
@@ -169,66 +168,90 @@ async def test_search_with_invalid_conversation():
 @pytest.mark.asyncio
 async def test_search_sort_order_title():
     store = FileConversationStore(
-        InMemoryFileStore({
-            'sessions/conv1/metadata.json': json.dumps({
-                'conversation_id': 'conv1',
-                'github_user_id': 'user1',
-                'selected_repository': 'repo1',
-                'title': 'Banana',
-                'created_at': '2025-01-16T19:51:04Z'
-            }),
-            'sessions/conv2/metadata.json': json.dumps({
-                'conversation_id': 'conv2',
-                'github_user_id': 'user1',
-                'selected_repository': 'repo1',
-                'title': 'Apple',
-                'created_at': '2025-01-16T19:51:04Z'
-            }),
-            'sessions/conv3/metadata.json': json.dumps({
-                'conversation_id': 'conv3',
-                'github_user_id': 'user1',
-                'selected_repository': 'repo1',
-                'title': 'Cherry',
-                'created_at': '2025-01-16T19:51:04Z'
-            }),
-        })
+        InMemoryFileStore(
+            {
+                'sessions/conv1/metadata.json': json.dumps(
+                    {
+                        'conversation_id': 'conv1',
+                        'github_user_id': 'user1',
+                        'selected_repository': 'repo1',
+                        'title': 'Banana',
+                        'created_at': '2025-01-16T19:51:04Z',
+                    }
+                ),
+                'sessions/conv2/metadata.json': json.dumps(
+                    {
+                        'conversation_id': 'conv2',
+                        'github_user_id': 'user1',
+                        'selected_repository': 'repo1',
+                        'title': 'Apple',
+                        'created_at': '2025-01-16T19:51:04Z',
+                    }
+                ),
+                'sessions/conv3/metadata.json': json.dumps(
+                    {
+                        'conversation_id': 'conv3',
+                        'github_user_id': 'user1',
+                        'selected_repository': 'repo1',
+                        'title': 'Cherry',
+                        'created_at': '2025-01-16T19:51:04Z',
+                    }
+                ),
+            }
+        )
     )
     result = await store.search(sort_order=SortOrder.title)
     # Expected ascending order by title: Apple, Banana, Cherry
-    assert [conv.conversation_id for conv in result.results] == ['conv2', 'conv1', 'conv3']
+    assert [conv.conversation_id for conv in result.results] == [
+        'conv2',
+        'conv1',
+        'conv3',
+    ]
     result_desc = await store.search(sort_order=SortOrder.title_desc)
     # Expected descending order: Cherry, Banana, Apple
-    assert [conv.conversation_id for conv in result_desc.results] == ['conv3', 'conv1', 'conv2']
+    assert [conv.conversation_id for conv in result_desc.results] == [
+        'conv3',
+        'conv1',
+        'conv2',
+    ]
 
 
 @pytest.mark.asyncio
 async def test_search_sort_order_last_updated():
     store = FileConversationStore(
-        InMemoryFileStore({
-            'sessions/conv1/metadata.json': json.dumps({
-                'conversation_id': 'conv1',
-                'github_user_id': 'user1',
-                'selected_repository': 'repo1',
-                'title': 'A',
-                'created_at': '2025-01-16T19:51:04Z',
-                'last_updated_at': '2025-01-16T19:51:04Z'
-            }),
-            'sessions/conv2/metadata.json': json.dumps({
-                'conversation_id': 'conv2',
-                'github_user_id': 'user1',
-                'selected_repository': 'repo1',
-                'title': 'B',
-                'created_at': '2025-01-16T19:51:04Z',
-                'last_updated_at': '2025-01-17T19:51:04Z'
-            }),
-            'sessions/conv3/metadata.json': json.dumps({
-                'conversation_id': 'conv3',
-                'github_user_id': 'user1',
-                'selected_repository': 'repo1',
-                'title': 'C',
-                'created_at': '2025-01-16T19:51:04Z'
-            }),
-        })
+        InMemoryFileStore(
+            {
+                'sessions/conv1/metadata.json': json.dumps(
+                    {
+                        'conversation_id': 'conv1',
+                        'github_user_id': 'user1',
+                        'selected_repository': 'repo1',
+                        'title': 'A',
+                        'created_at': '2025-01-16T19:51:04Z',
+                        'last_updated_at': '2025-01-16T19:51:04Z',
+                    }
+                ),
+                'sessions/conv2/metadata.json': json.dumps(
+                    {
+                        'conversation_id': 'conv2',
+                        'github_user_id': 'user1',
+                        'selected_repository': 'repo1',
+                        'title': 'B',
+                        'created_at': '2025-01-16T19:51:04Z',
+                        'last_updated_at': '2025-01-17T19:51:04Z',
+                    }
+                ),
+                'sessions/conv3/metadata.json': json.dumps(
+                    {
+                        'conversation_id': 'conv3',
+                        'github_user_id': 'user1',
+                        'selected_repository': 'repo1',
+                        'title': 'C',
+                        'created_at': '2025-01-16T19:51:04Z',
+                    }
+                ),
+            }
+        )
     )
     result_asc = await store.search(sort_order=SortOrder.last_updated_at)
     ids = [conv.conversation_id for conv in result_asc.results]
@@ -238,4 +261,3 @@ async def test_search_sort_order_last_updated():
     ids_desc = [conv.conversation_id for conv in result_desc.results]
     # In descending order, conv2 should come first
     assert ids_desc[0] == 'conv2'
-
