@@ -48,7 +48,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
     session = AgentSession(
         sid='test-session',
         file_store=file_store,
-        monitoring_listener=MonitoringListener,
+        monitoring_listener=MonitoringListener(),
     )
 
     # Create a mock runtime and set it up
@@ -122,7 +122,7 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     session = AgentSession(
         sid='test-session',
         file_store=file_store,
-        monitoring_listener=MonitoringListener,
+        monitoring_listener=MonitoringListener(),
     )
 
     # Create a mock runtime and set it up

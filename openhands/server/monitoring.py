@@ -15,10 +15,10 @@ class MonitoringListener:
         """
         pass
 
-    def on_agent_session_start(self, ok: bool, duration: float) -> None:
+    def on_agent_session_start(self, success: bool, duration: float) -> None:
         """
         Track an agent session start.
-        OK is true if startup completed without error.
+        Success is true if startup completed without error.
         Duration is start time in seconds observed by AgentSession.
         """
         pass

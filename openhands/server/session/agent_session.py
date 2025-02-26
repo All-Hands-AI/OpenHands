@@ -67,6 +67,7 @@ class AgentSession:
         self.file_store = file_store
         self._status_callback = status_callback
         self.github_user_id = github_user_id
+        self._monitoring_listener = monitoring_listener
 
     async def start(
         self,
@@ -141,10 +142,10 @@ class AgentSession:
                 )
             success = True
         finally:
-            self.monitoring_listener.on_agent_session_start(
-                success, time.time() - started_at
-            )
             self._starting = False
+            self._monitoring_listener.on_agent_session_start(
+                success, (time.time() - started_at)
+            )
 
     async def close(self):
         """Closes the Agent session"""
