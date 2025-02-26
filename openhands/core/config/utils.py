@@ -144,27 +144,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     # Process agent section if present
     if 'agent' in toml_config:
         try:
-            value = toml_config['agent']
-            # Every entry here is either a field for the default `agent` config group, or itself a group
-            # The best way to tell the difference is to try to parse it as an AgentConfig object
-            agent_group_ids: set[str] = set()
-            for nested_key, nested_value in value.items():
-                if isinstance(nested_value, dict):
-                    try:
-                        agent_config = AgentConfig(**nested_value)
-                    except ValidationError:
-                        continue
-                    agent_group_ids.add(nested_key)
-                    cfg.set_agent_config(agent_config, nested_key)
-
-            logger.openhands_logger.debug(
-                'Attempt to load default agent config from config toml'
-            )
-            value_without_groups = {
-                k: v for k, v in value.items() if k not in agent_group_ids
-            }
-            agent_config = AgentConfig(**value_without_groups)
-            cfg.set_agent_config(agent_config, 'agent')
+            agent_mapping = AgentConfig.from_toml_section(toml_config['agent'])
+            for agent_key, agent_conf in agent_mapping.items():
+                cfg.set_agent_config(agent_conf, agent_key)
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
                 f'Cannot parse [agent] config from toml, values have not been applied.\nError: {e}'
