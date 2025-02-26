@@ -13,10 +13,10 @@ from litellm import (
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
     CmdRunTool,
-    FileEditorTool,
     FinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
+    StrReplaceEditorTool,
     ThinkTool,
     ViewTool,
     WebReadTool,
@@ -134,9 +134,9 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 )
 
             # ================================================
-            # FileEditorTool (ACI-based file editor)
+            # StrReplaceEditorTool (ACI-based file editor)
             # ================================================
-            elif tool_call.function.name == FileEditorTool['function']['name']:
+            elif tool_call.function.name == StrReplaceEditorTool.function.name:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -239,5 +239,5 @@ def get_tools(
     if codeact_enable_llm_editor:
         tools.append(LLMBasedFileEditTool)
     else:
-        tools.append(FileEditorTool)
+        tools.append(StrReplaceEditorTool)
     return tools

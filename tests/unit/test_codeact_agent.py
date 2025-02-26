@@ -9,9 +9,9 @@ from openhands.agenthub.codeact_agent.function_calling import (
     _BROWSER_TOOL_DESCRIPTION,
     BrowserTool,
     CmdRunTool,
-    FileEditorTool,
     IPythonTool,
     LLMBasedFileEditTool,
+    StrReplaceEditorTool,
     WebReadTool,
     get_tools,
     response_to_actions,
@@ -146,10 +146,10 @@ def test_llm_based_file_edit_tool():
 
 
 def test_str_replace_editor_tool():
-    assert FileEditorTool['type'] == 'function'
-    assert FileEditorTool['function']['name'] == 'str_replace_editor'
+    assert StrReplaceEditorTool['type'] == 'function'
+    assert StrReplaceEditorTool['function']['name'] == 'str_replace_editor'
 
-    properties = FileEditorTool['function']['parameters']['properties']
+    properties = StrReplaceEditorTool['function']['parameters']['properties']
     assert 'command' in properties
     assert 'path' in properties
     assert 'file_text' in properties
@@ -158,7 +158,7 @@ def test_str_replace_editor_tool():
     assert 'insert_line' in properties
     assert 'view_range' in properties
 
-    assert FileEditorTool['function']['parameters']['required'] == [
+    assert StrReplaceEditorTool['function']['parameters']['required'] == [
         'command',
         'path',
     ]
