@@ -472,26 +472,83 @@ class BashSession:
         # Strip the command of any leading/trailing whitespace
         logger.debug(f'RECEIVED ACTION: {action}')
         command = action.command.strip()
-        is_input: bool = action.is_input
+        is_input = action.is_input
 
-        # If the previous command is not completed, we need to check if the command is empty
+        # Handle different command types
+        if command == '':
+            return self._handle_empty_command(action)
+        elif is_input:
+            return self._handle_input_command(action)
+        else:
+            return self._handle_normal_command(action)
+
+    def _handle_empty_command(self, action: CmdRunAction) -> CmdOutputObservation:
+        """Handle an empty command (usually to retrieve more output from a running command)."""
+        command = ''
+
+        # If the previous command is not in a continuing state, return an error
         if self.prev_status not in {
             BashCommandStatus.CONTINUE,
             BashCommandStatus.NO_CHANGE_TIMEOUT,
             BashCommandStatus.HARD_TIMEOUT,
         }:
-            if command == '':
-                return CmdOutputObservation(
-                    content='ERROR: No previous running command to retrieve logs from.',
-                    command='',
-                    metadata=CmdOutputMetadata(),
-                )
-            if is_input:
-                return CmdOutputObservation(
-                    content='ERROR: No previous running command to interact with.',
-                    command='',
-                    metadata=CmdOutputMetadata(),
-                )
+            return CmdOutputObservation(
+                content='ERROR: No previous running command to retrieve logs from.',
+                command='',
+                metadata=CmdOutputMetadata(),
+            )
+
+        # Start polling for command completion
+        return self._poll_for_command_completion(command, action)
+
+    def _handle_input_command(self, action: CmdRunAction) -> CmdOutputObservation:
+        """Handle an input command (sent to a running process)."""
+        command = action.command.strip()
+
+        # If the previous command is not in a continuing state, return an error
+        if self.prev_status not in {
+            BashCommandStatus.CONTINUE,
+            BashCommandStatus.NO_CHANGE_TIMEOUT,
+            BashCommandStatus.HARD_TIMEOUT,
+        }:
+            return CmdOutputObservation(
+                content='ERROR: No previous running command to interact with.',
+                command='',
+                metadata=CmdOutputMetadata(),
+            )
+
+        # Check if it's a special key
+        is_special_key = self._is_special_key(command)
+
+        # Send the input to the pane
+        logger.debug(f'SENDING INPUT TO RUNNING PROCESS: {command!r}')
+        self.pane.send_keys(
+            command,
+            enter=not is_special_key,
+        )
+
+        # Start polling for command completion
+        return self._poll_for_command_completion(command, action)
+
+    def _handle_normal_command(
+        self, action: CmdRunAction
+    ) -> CmdOutputObservation | ErrorObservation:
+        """Handle a normal command."""
+        command = action.command.strip()
+
+        # Check if command is running previous command first
+        last_pane_output = self._get_pane_content()
+        if (
+            self.prev_status
+            in {
+                BashCommandStatus.HARD_TIMEOUT,
+                BashCommandStatus.NO_CHANGE_TIMEOUT,
+            }
+            and not last_pane_output.endswith(
+                CMD_OUTPUT_PS1_END
+            )  # prev command is not completed
+        ):
+            return self._handle_interrupted_command(command, last_pane_output)
 
         # Check if the command is a single command or multiple commands
         splited_commands = split_bash_commands(command)
@@ -504,66 +561,55 @@ class BashSession:
                 )
             )
 
+        # Convert command to raw string and send it
+        is_special_key = self._is_special_key(command)
+        command = escape_bash_special_chars(command)
+        logger.debug(f'SENDING COMMAND: {command!r}')
+        self.pane.send_keys(
+            command,
+            enter=not is_special_key,
+        )
+
+        # Start polling for command completion
+        return self._poll_for_command_completion(command, action)
+
+    def _handle_interrupted_command(
+        self, command: str, last_pane_output: str
+    ) -> CmdOutputObservation:
+        """Handle the case where a new command is sent while a previous command is still running."""
+        _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
+        raw_command_output = self._combine_outputs_between_matches(
+            last_pane_output, _ps1_matches
+        )
+        metadata = CmdOutputMetadata()  # No metadata available
+        metadata.suffix = (
+            f'\n[Your command "{command}" is NOT executed. '
+            f'The previous command is still running - You CANNOT send new commands until the previous command is completed. '
+            'By setting `is_input` to `true`, you can interact with the current process: '
+            "You may wait longer to see additional output of the previous command by sending empty command '', "
+            'send other commands to interact with the current process, '
+            'or send keys ("C-c", "C-z", "C-d") to interrupt/kill the previous command before sending your new command.]'
+        )
+        logger.debug(f'PREVIOUS COMMAND OUTPUT: {raw_command_output}')
+        command_output = self._get_command_output(
+            command,
+            raw_command_output,
+            metadata,
+            continue_prefix='[Below is the output of the previous command.]\n',
+        )
+        return CmdOutputObservation(
+            command=command,
+            content=command_output,
+            metadata=metadata,
+        )
+
+    def _poll_for_command_completion(
+        self, command: str, action: CmdRunAction
+    ) -> CmdOutputObservation:
+        """Poll for command completion and handle timeouts."""
         start_time = time.time()
         last_change_time = start_time
         last_pane_output = self._get_pane_content()
-
-        # When prev command is still running, and we are trying to send a new command
-        if (
-            self.prev_status
-            in {
-                BashCommandStatus.HARD_TIMEOUT,
-                BashCommandStatus.NO_CHANGE_TIMEOUT,
-            }
-            and not last_pane_output.endswith(
-                CMD_OUTPUT_PS1_END
-            )  # prev command is not completed
-            and not is_input
-            and command != ''  # not input and not empty command
-        ):
-            _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
-            raw_command_output = self._combine_outputs_between_matches(
-                last_pane_output, _ps1_matches
-            )
-            metadata = CmdOutputMetadata()  # No metadata available
-            metadata.suffix = (
-                f'\n[Your command "{command}" is NOT executed. '
-                f'The previous command is still running - You CANNOT send new commands until the previous command is completed. '
-                'By setting `is_input` to `true`, you can interact with the current process: '
-                "You may wait longer to see additional output of the previous command by sending empty command '', "
-                'send other commands to interact with the current process, '
-                'or send keys ("C-c", "C-z", "C-d") to interrupt/kill the previous command before sending your new command.]'
-            )
-            logger.debug(f'PREVIOUS COMMAND OUTPUT: {raw_command_output}')
-            command_output = self._get_command_output(
-                command,
-                raw_command_output,
-                metadata,
-                continue_prefix='[Below is the output of the previous command.]\n',
-            )
-            return CmdOutputObservation(
-                command=command,
-                content=command_output,
-                metadata=metadata,
-            )
-
-        # Send actual command/inputs to the pane
-        if command != '':
-            is_special_key = self._is_special_key(command)
-            if is_input:
-                logger.debug(f'SENDING INPUT TO RUNNING PROCESS: {command!r}')
-                self.pane.send_keys(
-                    command,
-                    enter=not is_special_key,
-                )
-            else:
-                # convert command to raw string
-                command = escape_bash_special_chars(command)
-                logger.debug(f'SENDING COMMAND: {command!r}')
-                self.pane.send_keys(
-                    command,
-                    enter=not is_special_key,
-                )
 
         # Loop until the command completes or times out
         while should_continue():
@@ -582,7 +628,6 @@ class BashSession:
                 logger.debug(f'CONTENT UPDATED DETECTED at {last_change_time}')
 
             # 1) Execution completed
-            # if the last command output contains the end marker
             if cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip()):
                 return self._handle_completed_command(
                     command,
@@ -591,8 +636,6 @@ class BashSession:
                 )
 
             # 2) Execution timed out since there's no change in output
-            # for a while (self.NO_CHANGE_TIMEOUT_SECONDS)
-            # We ignore this if the command is *blocking
             time_since_last_change = time.time() - last_change_time
             logger.debug(
                 f'CHECKING NO CHANGE TIMEOUT ({self.NO_CHANGE_TIMEOUT_SECONDS}s): elapsed {time_since_last_change}. Action blocking: {action.blocking}'
