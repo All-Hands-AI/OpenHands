@@ -201,7 +201,7 @@ class AgentSession:
             raise RuntimeError('Runtime already created')
 
         logger.debug(f'Initializing runtime `{runtime_name}` now...')
-        runtime_cls = get_runtime_cls(runtime_name)
+        runtime_cls = get_runtime_cls(config)
         env_vars = (
             {
                 'GITHUB_TOKEN': github_token.get_secret_value(),
@@ -221,6 +221,7 @@ class AgentSession:
             plugins=agent.sandbox_plugins,
             status_callback=self._status_callback,
             headless_mode=False,
+            attach_to_existing=False,
             env_vars=env_vars,
             **kwargs,
         )

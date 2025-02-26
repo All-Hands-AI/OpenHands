@@ -55,6 +55,7 @@ class AppConfig(BaseModel):
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     runtime: str = Field(default='docker')
+    runtime_custom_classses: dict[str, str] = Field(default_factory=dict)
     file_store: str = Field(default='local')
     file_store_path: str = Field(default='/tmp/openhands_file_store')
     save_trajectory_path: str | None = Field(default=None)
