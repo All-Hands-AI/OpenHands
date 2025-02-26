@@ -143,7 +143,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             # CmdRunTool (Bash)
             # ================================================
-            if tool_call.function.name == CmdRunTool.function.name:
+            if tool_call.function.name == CmdRunTool['function']['name']:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -155,7 +155,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             # IPythonTool (Jupyter)
             # ================================================
-            elif tool_call.function.name == IPythonTool.function.name:
+            elif tool_call.function.name == IPythonTool['function']['name']:
                 if 'code' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
@@ -174,13 +174,13 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             # AgentFinishAction
             # ================================================
-            elif tool_call.function.name == FinishTool.function.name:
+            elif tool_call.function.name == FinishTool['function']['name']:
                 action = AgentFinishAction()
 
             # ================================================
             # LLMBasedFileEditTool (LLM-based file editor, deprecated)
             # ================================================
-            elif tool_call.function.name == LLMBasedFileEditTool.function.name:
+            elif tool_call.function.name == LLMBasedFileEditTool['function']['name']:
                 if 'path' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "path" in tool call {tool_call.function.name}'
@@ -199,7 +199,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             # FileEditorTool (ACI-based file editor)
             # ================================================
-            elif tool_call.function.name == FileEditorTool.function.name:
+            elif tool_call.function.name == FileEditorTool['function']['name']:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -223,7 +223,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             # ViewTool (ACI-based file viewer, READ-ONLY)
             # ================================================
-            elif tool_call.function.name == ViewTool.function.name:
+            elif tool_call.function.name == ViewTool['function']['name']:
                 if 'path' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "path" in tool call {tool_call.function.name}'
@@ -237,13 +237,13 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             # AgentThinkAction
             # ================================================
-            elif tool_call.function.name == ThinkTool.function.name:
+            elif tool_call.function.name == ThinkTool['function']['name']:
                 action = AgentThinkAction(thought=arguments['thought'])
 
             # ================================================
             # BrowserTool
             # ================================================
-            elif tool_call.function.name == BrowserTool.function.name:
+            elif tool_call.function.name == BrowserTool['function']['name']:
                 if 'code' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
@@ -253,7 +253,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             # WebReadTool (simplified browsing)
             # ================================================
-            elif tool_call.function.name == WebReadTool.function.name:
+            elif tool_call.function.name == WebReadTool['function']['name']:
                 if 'url' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "url" in tool call {tool_call.function.name}'
@@ -263,7 +263,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             # GrepTool (file content search)
             # ================================================
-            elif tool_call.function.name == GrepTool.function.name:
+            elif tool_call.function.name == GrepTool['function']['name']:
                 if 'pattern' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "pattern" in tool call {tool_call.function.name}'
@@ -279,7 +279,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             # GlobTool (file pattern matching)
             # ================================================
-            elif tool_call.function.name == GlobTool.function.name:
+            elif tool_call.function.name == GlobTool['function']['name']:
                 if 'pattern' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "pattern" in tool call {tool_call.function.name}'
@@ -324,7 +324,7 @@ def get_tools(
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
 ) -> list[ChatCompletionToolParam]:
-    tools = [CmdRunTool, FinishTool, GrepTool, GlobTool]
+    tools = [CmdRunTool, ThinkTool, FinishTool, GrepTool, GlobTool]
     if codeact_enable_browsing:
         tools.append(WebReadTool)
         tools.append(BrowserTool)
