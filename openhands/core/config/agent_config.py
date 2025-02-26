@@ -3,6 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field, ValidationError
 
 from openhands.core.config.condenser_config import CondenserConfig, NoOpCondenserConfig
+from openhands.core.logger import openhands_logger as logger
 
 
 class AgentConfig(BaseModel):
@@ -59,7 +60,6 @@ class AgentConfig(BaseModel):
             dict[str, AgentConfig]: A mapping where the key "agent" corresponds to the default configuration
             and additional keys represent custom configurations.
         """
-        from openhands.core import logger
 
         # Initialize the result mapping
         agent_mapping: dict[str, AgentConfig] = {}
@@ -78,9 +78,7 @@ class AgentConfig(BaseModel):
             base_config = cls.model_validate(base_data)
             agent_mapping['agent'] = base_config
         except ValidationError as e:
-            logger.openhands_logger.warning(
-                f'Invalid base agent configuration: {e}. Using defaults.'
-            )
+            logger.warning(f'Invalid base agent configuration: {e}. Using defaults.')
             # If base config fails, create a default one
             base_config = cls()
             # Still add it to the mapping
@@ -94,7 +92,7 @@ class AgentConfig(BaseModel):
                 custom_config = cls.model_validate(merged)
                 agent_mapping[name] = custom_config
             except ValidationError as e:
-                logger.openhands_logger.warning(
+                logger.warning(
                     f'Invalid agent configuration for [{name}]: {e}. This section will be skipped.'
                 )
                 # Skip this custom section but continue with others
