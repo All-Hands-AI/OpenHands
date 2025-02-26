@@ -35,11 +35,12 @@ def ensure_httpx_close():
         client_constructor: Callable
         args: tuple
         kwargs: dict
-        client: httpx.Client = None
+        client: httpx.Client
 
         def __init__(self, *args, **kwargs):
             self.args = args
             self.kwargs = kwargs
+            self.client = wrapped_class(*self.args, **self.kwargs)
             proxys.append(self)
 
         def __getattr__(self, name):
