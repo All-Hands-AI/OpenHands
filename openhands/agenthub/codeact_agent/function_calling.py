@@ -79,6 +79,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             # CmdRunTool (Bash)
             # ================================================
+
             if tool_call.function.name == CmdRunTool['function']['name']:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
@@ -127,7 +128,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     start=arguments.get('start', 1),
                     end=arguments.get('end', -1),
                 )
-            elif tool_call.function.name == StrReplaceEditorTool.function.name:
+            elif tool_call.function.name == StrReplaceEditorTool['function']['name']:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -167,7 +168,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # ================================================
             # BrowserTool
             # ================================================
-            elif tool_call.function.name == BrowserTool.function.name:
+            elif tool_call.function.name == BrowserTool['function']['name']:
                 if 'code' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
