@@ -97,6 +97,7 @@ async def run_controller(
             sid=sid,
             headless_mode=headless_mode,
             agent=agent,
+            selected_repository=config.sandbox_config.selected_repo,
         )
 
     event_stream = runtime.event_stream
