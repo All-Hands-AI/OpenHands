@@ -4179,6 +4179,21 @@
         "es": "Pensando",
         "tr": "Düşünüyor"
     },
+    "ACTION_MESSAGE$DELEGATE": {
+        "en": "Task delegated to another agent",
+        "zh-CN": "已将任务委托给另一个智能体",
+        "zh-TW": "已將任務委託給另一個智能體",
+        "ko-KR": "작업을 다른 에이전트에게 위임",
+        "ja": "タスクを別のエージェントに委任",
+        "no": "Delegér oppgave til en annen agent",
+        "ar": "تعيين المهمة إلى عامل آخر",
+        "de": "Aufgabe an einen anderen Agenten delegieren",
+        "fr": "Tâche déléguée à un autre agent",
+        "it": "Compito delegato a un altro agente",
+        "pt": "Tarefa delegada a outro agente",
+        "es": "Tarea delegada a otro agente",
+        "tr": "Görev başka bir agente atandı"
+    },
     "OBSERVATION_MESSAGE$RUN": {
         "en": "Ran a bash command",
         "zh-CN": "运行",

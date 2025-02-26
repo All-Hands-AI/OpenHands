@@ -348,7 +348,7 @@ class AgentController:
             if 'task' in action.inputs:
                 self.event_stream.add_event(
                     MessageAction(content='TASK: ' + action.inputs['task']),
-                    EventSource.USER,
+                    EventSource.DELEGATE,
                 )
                 await self.delegate.set_agent_state_to(AgentState.RUNNING)
             return
@@ -548,6 +548,10 @@ class AgentController:
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
+        if action.agent_config_override:
+            for key, value in action.agent_config_override.items():
+                setattr(agent_config, key, value)
+                logger.info(f'Overriding delegate agent config: {key} = {value}')
         delegate_agent = agent_cls(llm=llm, config=agent_config)
         state = State(
             inputs=action.inputs or {},

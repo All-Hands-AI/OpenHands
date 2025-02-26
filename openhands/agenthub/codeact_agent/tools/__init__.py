@@ -1,3 +1,4 @@
+from .agent import AgentTool
 from .bash import CmdRunTool
 from .browser import BrowserTool
 from .file_editor import FileEditorTool
@@ -22,4 +23,14 @@ __all__ = [
     'ThinkTool',
     'GrepTool',
     'GlobTool',
+    'AgentTool',
+]
+
+READ_ONLY_TOOLS = [
+    ThinkTool,
+    ViewTool,
+    GrepTool,
+    GlobTool,
+    FinishTool,
+    WebReadTool,
 ]

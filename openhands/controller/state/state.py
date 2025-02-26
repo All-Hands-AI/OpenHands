@@ -1,4 +1,5 @@
 import base64
+import copy
 import pickle
 from dataclasses import dataclass, field
 from enum import Enum
@@ -167,5 +168,15 @@ class State:
     def get_last_user_message(self) -> MessageAction | None:
         for event in reversed(self.history):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                return event
+            elif (
+                isinstance(event, MessageAction)
+                and event.source == EventSource.DELEGATE
+            ):
+                event = copy.deepcopy(event)
+                event.content = (
+                    "Please complete the following task without sending messages back. When you are done, use 'finish' to end the task.\n\n"
+                    + event.content
+                )
                 return event
         return None

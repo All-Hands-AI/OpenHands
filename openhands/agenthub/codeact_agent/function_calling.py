@@ -12,6 +12,8 @@ from litellm import (
 )
 
 from openhands.agenthub.codeact_agent.tools import (
+    READ_ONLY_TOOLS,
+    AgentTool,
     BrowserTool,
     CmdRunTool,
     FileEditorTool,
@@ -290,7 +292,15 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
 
                 glob_cmd = glob_to_cmdrun(pattern, path)
                 action = CmdRunAction(command=glob_cmd, is_input=False)
-
+            # ================================================
+            # AgentTool
+            # ================================================
+            elif tool_call.function.name == AgentTool['function']['name']:
+                action = AgentDelegateAction(
+                    agent='CodeActAgent',
+                    inputs={'task': arguments['task']},
+                    agent_config_override={'codeact_enable_read_only_tools': True},
+                )
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
@@ -323,8 +333,16 @@ def get_tools(
     codeact_enable_browsing: bool = False,
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
+    codeact_enable_read_only_tools: bool = False,
 ) -> list[ChatCompletionToolParam]:
-    tools = [CmdRunTool, ThinkTool, FinishTool, GrepTool, GlobTool]
+    # update the description of AgentTool first
+    AgentTool['function']['description'] = AgentTool['function']['description'].format(
+        read_only_tools=', '.join(
+            [tool['function']['name'] for tool in READ_ONLY_TOOLS]
+        )
+    )
+
+    tools = [CmdRunTool, ThinkTool, FinishTool, GrepTool, GlobTool, AgentTool]
     if codeact_enable_browsing:
         tools.append(WebReadTool)
         tools.append(BrowserTool)
@@ -334,4 +352,8 @@ def get_tools(
         tools.append(LLMBasedFileEditTool)
     else:
         tools.append(FileEditorTool)
+
+    if codeact_enable_read_only_tools:
+        # filter out tools that are not in READ_ONLY_TOOLS
+        tools = [tool for tool in tools if tool in READ_ONLY_TOOLS]
     return tools

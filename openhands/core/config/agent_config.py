@@ -25,6 +25,7 @@ class AgentConfig(BaseModel):
     enable_som_visual_browsing: bool = Field(default=False)
     codeact_enable_llm_editor: bool = Field(default=False)
     codeact_enable_jupyter: bool = Field(default=True)
+    codeact_enable_read_only_tools: bool = Field(default=False)
     micro_agent_name: str | None = Field(default=None)
     memory_enabled: bool = Field(default=False)
     memory_max_threads: int = Field(default=3)
