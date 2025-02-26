@@ -9,7 +9,7 @@ from pydantic import TypeAdapter
 from openhands.core.config.app_config import AppConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.storage import get_file_store
-from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.conversation.conversation_store import ConversationStore, SortOrder
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_metadata_result_set import (
     ConversationMetadataResultSet,
@@ -66,6 +66,7 @@ class FileConversationStore(ConversationStore):
         self,
         page_id: str | None = None,
         limit: int = 20,
+        sort_order: SortOrder = SortOrder.created_at_desc,
     ) -> ConversationMetadataResultSet:
         conversations: list[ConversationMetadata] = []
         metadata_dir = self.get_conversation_metadata_dir()
@@ -88,7 +89,8 @@ class FileConversationStore(ConversationStore):
                 logger.error(
                     f'Error loading conversation: {conversation_id}',
                 )
-        conversations.sort(key=_sort_key, reverse=True)
+        reverse = sort_order in (SortOrder.created_at_desc, SortOrder.title_desc, SortOrder.last_updated_at_desc)
+        conversations.sort(key=lambda c: _get_sort_key(c, sort_order), reverse=reverse)
         conversations = conversations[start:end]
         next_page_id = offset_to_page_id(end, end < num_conversations)
         return ConversationMetadataResultSet(conversations, next_page_id)
@@ -107,8 +109,14 @@ class FileConversationStore(ConversationStore):
         return FileConversationStore(file_store)
 
 
-def _sort_key(conversation: ConversationMetadata) -> str:
-    created_at = conversation.created_at
-    if created_at:
-        return created_at.isoformat()  # YYYY-MM-DDTHH:MM:SS for sorting
-    return ''
+def _get_sort_key(conversation: ConversationMetadata, sort_order: SortOrder) -> str:
+    if sort_order in (SortOrder.created_at, SortOrder.created_at_desc):
+        return conversation.created_at.isoformat() if conversation.created_at else ""
+    elif sort_order in (SortOrder.title, SortOrder.title_desc):
+        return conversation.title if conversation.title else ""
+    elif sort_order in (SortOrder.last_updated_at, SortOrder.last_updated_at_desc):
+        if hasattr(conversation, 'last_updated_at') and conversation.last_updated_at:
+            return conversation.last_updated_at.isoformat()
+        elif conversation.created_at:
+            return conversation.created_at.isoformat()
+        return ""

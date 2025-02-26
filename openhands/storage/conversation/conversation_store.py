@@ -7,6 +7,16 @@ from openhands.storage.data_models.conversation_metadata import ConversationMeta
 from openhands.storage.data_models.conversation_metadata_result_set import (
     ConversationMetadataResultSet,
 )
+from enum import Enum
+
+class SortOrder(Enum):
+    title = "title"
+    title_desc = "title_desc"
+    created_at = "created_at"
+    created_at_desc = "created_at_desc"
+    last_updated_at = "last_updated_at"
+    last_updated_at_desc = "last_updated_at_desc"
+
 
 
 class ConversationStore(ABC):
@@ -35,6 +45,7 @@ class ConversationStore(ABC):
         self,
         page_id: str | None = None,
         limit: int = 20,
+        sort_order: SortOrder = SortOrder.created_at_desc,
     ) -> ConversationMetadataResultSet:
         """Search conversations"""
 
