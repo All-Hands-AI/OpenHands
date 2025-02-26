@@ -66,25 +66,25 @@ def grep_to_cmdrun(
         include: Optional file pattern to filter which files to search (e.g., "*.js")
 
     Returns:
-        A properly escaped shell command string for grep
+        A properly escaped shell command string for ripgrep
     """
     # Use shlex.quote to properly escape all shell special characters
     quoted_pattern = shlex.quote(pattern)
+    path_arg = shlex.quote(path) if path else '.'
 
-    grep_cmd = f'grep -nr {quoted_pattern}'
-
-    if path:
-        quoted_path = shlex.quote(path)
-        grep_cmd += f' {quoted_path}'
+    # Build ripgrep command
+    rg_cmd = f'rg -li {quoted_pattern} --sortr=modified'
 
     if include:
         quoted_include = shlex.quote(include)
-        grep_cmd += f' --include={quoted_include}'
+        rg_cmd += f' --glob {quoted_include}'
 
-    echo_cmd = (
-        f'echo "Below are the execution results of the grep command: {grep_cmd}\n"'
-    )
-    return echo_cmd + '; ' + grep_cmd
+    # Build the complete command
+    complete_cmd = f'{rg_cmd} {path_arg} | head -n 100'
+
+    # Add a header to the output
+    echo_cmd = f'echo "Below are the execution results of the search command: {complete_cmd}\n"; '
+    return echo_cmd + complete_cmd
 
 
 def glob_to_cmdrun(pattern: str, path: str = '.') -> str:
@@ -95,18 +95,24 @@ def glob_to_cmdrun(pattern: str, path: str = '.') -> str:
         path: The directory to search in (defaults to current directory)
 
     Returns:
-        A properly escaped shell command string for find (implementing glob)
+        A properly escaped shell command string for ripgrep implementing glob
     """
     # Use shlex.quote to properly escape all shell special characters
     quoted_path = shlex.quote(path)
     quoted_pattern = shlex.quote(pattern)
 
-    # Use find command with properly quoted parameters
-    glob_cmd = f'find {quoted_path} -type f -name {quoted_pattern} | sort -t "/" -k 1,1'
-    echo_cmd = (
-        f'echo "Below are the execution results of the glob command: {glob_cmd}\n"'
-    )
-    return echo_cmd + '; ' + glob_cmd
+    # Use ripgrep in a glob-only mode with -g flag and --files to list files
+    # This most closely matches the behavior of the NodeJS glob implementation
+    rg_cmd = f'rg --files {quoted_path} -g {quoted_pattern} --sortr=modified'
+
+    # Sort results and limit to 100 entries (matching the Node.js implementation)
+    sort_and_limit_cmd = ' | head -n 100'
+
+    complete_cmd = f'{rg_cmd}{sort_and_limit_cmd}'
+
+    # Add a header to the output
+    echo_cmd = f'echo "Below are the execution results of the glob command: {complete_cmd}\n"; '
+    return echo_cmd + complete_cmd
 
 
 def response_to_actions(response: ModelResponse) -> list[Action]:

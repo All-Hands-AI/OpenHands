@@ -1,10 +1,11 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
-# * Returns matching file paths sorted by modification time
 _GREP_DESCRIPTION = """Fast content search tool.
 * Searches file contents using regular expressions
 * Supports full regex syntax (eg. "log.*Error", "function\\s+\\w+", etc.)
 * Filter files by pattern with the include parameter (eg. "*.js", "*.{ts,tsx}")
+* Returns matching file paths sorted by modification time.
+* Only the first 100 results are returned. Consider narrowing your search with stricter regex patterns or provide path parameter if you need more results.
 * Use this tool when you need to find files containing specific patterns
 * When you are doing an open ended search that may require multiple rounds of globbing and grepping, use the Agent tool instead
 """
