@@ -473,9 +473,9 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-n',
         '--name',
-        default='',
+        help='Session name',
         type=str,
-        help='Name for the session',
+        default='',
     )
     parser.add_argument(
         '--eval-ids',
@@ -485,8 +485,15 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         '--no-auto-continue',
+        help='Disable auto-continue responses in headless mode (i.e. headless will read from stdin instead of auto-continuing)',
         action='store_true',
-        help='Disable automatic "continue" responses in headless mode. Will read from stdin instead.',
+        default=False,
+    )
+    parser.add_argument(
+        '--selected-repo',
+        help='GitHub repository to clone (format: owner/repo)',
+        type=str,
+        default=None,
     )
     return parser
 
@@ -552,5 +559,9 @@ def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
         config.max_iterations = args.max_iterations
     if args.max_budget_per_task is not None:
         config.max_budget_per_task = args.max_budget_per_task
+
+    # Read selected repository in config for use by CLI and main.py
+    if args.selected_repo is not None:
+        config.sandbox.selected_repo = args.selected_repo
 
     return config

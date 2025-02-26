@@ -35,7 +35,6 @@ from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
@@ -395,7 +394,6 @@ def process_instance(
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     runtime = create_runtime(config)
-    call_async_from_sync(runtime.connect)
     try:
         initialize_runtime(runtime, instance)
 
