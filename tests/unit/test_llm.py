@@ -1,4 +1,6 @@
 import copy
+import tempfile
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -489,3 +491,27 @@ def test_llm_token_usage(mock_litellm_completion, default_config):
     assert usage_entry_2['cache_read_tokens'] == 1
     assert usage_entry_2['cache_write_tokens'] == 3
     assert usage_entry_2['response_id'] == 'test-response-usage-2'
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_completion_with_log_completions(mock_litellm_completion, default_config):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        default_config.log_completions = True
+        default_config.log_completions_folder = temp_dir
+        mock_response = {
+            'choices': [{'message': {'content': 'This is a mocked response.'}}]
+        }
+        mock_litellm_completion.return_value = mock_response
+
+        test_llm = LLM(config=default_config)
+        response = test_llm.completion(
+            messages=[{'role': 'user', 'content': 'Hello!'}],
+            stream=False,
+            drop_params=True,
+        )
+        assert (
+            response['choices'][0]['message']['content'] == 'This is a mocked response.'
+        )
+        files = list(Path(temp_dir).iterdir())
+        # Expect a log to be generated
+        assert len(files) == 1

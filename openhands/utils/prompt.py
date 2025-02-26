@@ -177,7 +177,19 @@ class PromptManager:
         """
         if not message.content:
             return
-        message_content = message.content[0].text
+
+        # if there were other texts included, they were before the user message
+        # so the last TextContent is the user message
+        # content can be a list of TextContent or ImageContent
+        message_content = ''
+        for content in reversed(message.content):
+            if isinstance(content, TextContent):
+                message_content = content.text
+                break
+
+        if not message_content:
+            return
+
         for microagent in self.knowledge_microagents.values():
             trigger = microagent.match_trigger(message_content)
             if trigger:
