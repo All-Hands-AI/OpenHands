@@ -342,7 +342,7 @@ def get_tools(
         )
     )
 
-    tools = [CmdRunTool, ThinkTool, FinishTool, GrepTool, GlobTool, AgentTool]
+    tools = [CmdRunTool, ThinkTool, FinishTool, GrepTool, GlobTool, ViewTool, AgentTool]
     if codeact_enable_browsing:
         tools.append(WebReadTool)
         tools.append(BrowserTool)
