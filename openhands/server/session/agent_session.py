@@ -138,7 +138,7 @@ class AgentSession:
                     ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT),
                     EventSource.ENVIRONMENT,
                 )
-            self.monitoring_listener.on_conversation_start(time.time() - started_at)
+            self.monitoring_listener.on_agent_session_start(time.time() - started_at)
         finally:
             self._starting = False
 

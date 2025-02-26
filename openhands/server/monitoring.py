@@ -15,10 +15,17 @@ class MonitoringListener:
         """
         pass
 
-    def on_conversation_start(self, duration: float) -> None:
+    def on_agent_session_start(self, duration: float) -> None:
         """
-        Track a successful conversation start.
+        Track a successful agent session start.
         Duration is start time in seconds observed by AgentSession.
+        """
+        pass
+
+    def on_create_conversation(self) -> None:
+        """
+        Track the beginning of conversation creation.
+        Does not currently capture whether it succeed.
         """
         pass
 
