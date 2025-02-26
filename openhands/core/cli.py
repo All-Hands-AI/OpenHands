@@ -104,7 +104,13 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     agent = create_agent(config)
 
-    runtime = create_runtime(config, sid=sid, headless_mode=True, agent=agent)
+    runtime = create_runtime(
+        config,
+        sid=sid,
+        headless_mode=True,
+        agent=agent,
+        selected_repository=config.sandbox.selected_repo,
+    )
 
     controller, _ = create_controller(agent, runtime, config)
 
