@@ -35,7 +35,6 @@ from openhands.events.action import (
 )
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
 
 
 def codeact_user_response_mint(state: State, task: Task, task_config: dict[str, int]):
@@ -185,7 +184,6 @@ def process_instance(
     )
 
     runtime = create_runtime(config)
-    call_async_from_sync(runtime.connect)
     initialize_runtime(runtime)
 
     state: State | None = asyncio.run(
