@@ -181,7 +181,6 @@ class PromptManager:
         # if there were other texts included, they were before the user message
         # so the last TextContent is the user message
         # content can be a list of TextContent or ImageContent
-        # we only want the text from the last TextContent
         message_content = ''
         for content in reversed(message.content):
             if isinstance(content, TextContent):
