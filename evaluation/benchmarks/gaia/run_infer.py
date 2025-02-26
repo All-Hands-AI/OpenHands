@@ -31,7 +31,6 @@ from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
 
 DATASET_CACHE_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -149,7 +148,6 @@ def process_instance(
     logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
     runtime = create_runtime(config)
-    call_async_from_sync(runtime.connect)
     initialize_runtime(runtime, instance)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state

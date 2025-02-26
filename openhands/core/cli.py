@@ -102,9 +102,16 @@ async def main(loop: asyncio.AbstractEventLoop):
     sid = str(uuid4())
     display_message(f'Session ID: {sid}')
 
-    runtime = create_runtime(config, sid=sid, headless_mode=True)
-    await runtime.connect()
-    agent = create_agent(runtime, config)
+    agent = create_agent(config)
+
+    runtime = create_runtime(
+        config,
+        sid=sid,
+        headless_mode=True,
+        agent=agent,
+        selected_repository=config.sandbox.selected_repo,
+    )
+
     controller, _ = create_controller(agent, runtime, config)
 
     event_stream = runtime.event_stream
