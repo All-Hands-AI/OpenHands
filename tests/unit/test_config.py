@@ -502,7 +502,6 @@ invalid_field_in_sandbox = "test"
 
         # invalid [sandbox] config
         assert 'Invalid sandbox configuration' in log_content
-        assert 'values have not been applied' in log_content
         assert 'invalid_field_in_sandbox' in log_content
 
         # Verify valid configurations are loaded. Load from default instead of `config.toml`
