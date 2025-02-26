@@ -27,7 +27,7 @@ _DEFAULT_RUNTIME_CLASSES: dict[str, Type[Runtime]] = {
 
 def get_runtime_cls(name: str) -> Type[Runtime]:
     """
-    If name is one of the predefined runtim name (e.g. 'docker'), return its class.
+    If name is one of the predefined runtime names (e.g. 'docker'), return its class.
     Otherwise attempt to resolve name as subclass of Runtime and return it.
     Raise on invalid selections.
     """
