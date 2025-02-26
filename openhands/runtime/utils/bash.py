@@ -484,8 +484,7 @@ class BashSession:
 
     def _handle_empty_command(self, action: CmdRunAction) -> CmdOutputObservation:
         """Handle an empty command (usually to retrieve more output from a running command)."""
-        command = ''
-
+        assert action.command.strip() == ''
         # If the previous command is not in a continuing state, return an error
         if self.prev_status not in {
             BashCommandStatus.CONTINUE,
@@ -499,7 +498,7 @@ class BashSession:
             )
 
         # Start polling for command completion
-        return self._poll_for_command_completion(command, action)
+        return self._poll_for_command_completion('', action)
 
     def _handle_input_command(self, action: CmdRunAction) -> CmdOutputObservation:
         """Handle an input command (sent to a running process)."""
