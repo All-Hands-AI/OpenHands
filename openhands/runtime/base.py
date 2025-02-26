@@ -32,6 +32,7 @@ from openhands.events.action import (
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
+    AgentThinkObservation,
     CmdOutputObservation,
     ErrorObservation,
     FileReadObservation,
@@ -383,7 +384,7 @@ class Runtime(FileEditRuntimeMixin):
         """
         if not action.runnable:
             if isinstance(action, AgentThinkAction):
-                return NullObservation('Your thought has been logged.')
+                return AgentThinkObservation('Your thought has been logged.')
             return NullObservation('')
         if (
             hasattr(action, 'confirmation_state')
