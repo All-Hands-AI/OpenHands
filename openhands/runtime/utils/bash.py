@@ -7,6 +7,7 @@ from enum import Enum
 
 import bashlex
 import libtmux
+import psutil
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
@@ -181,7 +182,6 @@ class BashSession:
         self.work_dir = work_dir
         self.username = username
         self._initialized = False
-        self._closed = False  # Initialize here to avoid issues in __del__
         self.max_memory_mb = max_memory_mb
 
     def initialize(self):
@@ -235,7 +235,7 @@ class BashSession:
         # Store the last command for interactive input handling
         self.prev_status: BashCommandStatus | None = None
         self.prev_output: str = ''
-        # _closed is now initialized in __init__
+        self._closed: bool = False
         logger.debug(f'Bash session initialized with work dir: {self.work_dir}')
 
         # Maintain the current working directory
@@ -259,7 +259,7 @@ class BashSession:
 
     def close(self):
         """Clean up the session."""
-        if self._closed or not hasattr(self, 'session'):
+        if self._closed:
             return
         self.session.kill_session()
         self._closed = True
@@ -446,87 +446,97 @@ class BashSession:
             CMD_OUTPUT_PS1_END.rstrip()
         )
 
-        # Get the shell's PID (parent process)
-        self.pane.send_keys('echo $$', enter=True)
-        time.sleep(0.2)
-        shell_output = self._get_pane_content()
-        shell_pid = None
-        for line in shell_output.split('\n'):
-            if line.strip().isdigit():
-                shell_pid = line.strip()
-                break
+        # Get the shell's PID directly from tmux
+        shell_pid_str = (
+            self.pane.cmd('display-message', '-p', '#{pane_pid}').stdout[0].strip()
+        )
+        shell_pid = int(shell_pid_str)
 
-        # Get the current process info using ps command with full details
-        self.pane.send_keys('ps -eo pid,ppid,stat,cmd --forest', enter=True)
-        time.sleep(0.5)  # Wait for command to execute
-        ps_output = self._get_pane_content()
+        try:
+            # Get process information for the shell
+            shell_process = psutil.Process(shell_pid)
+            process_list = []
+            command_processes = []
+            current_command_pid = None
 
-        # Extract the ps output (between the command and the next PS1 prompt)
-        ps_lines = ps_output.split('\n')
-        start_idx = 0
-        end_idx = len(ps_lines)
+            # Get all child processes recursively
+            children = shell_process.children(recursive=True)
 
-        for i, line in enumerate(ps_lines):
-            if 'ps -eo pid,ppid,stat,cmd --forest' in line:
-                start_idx = i + 1
-                break
+            # Add the shell process first
+            process_str = f"{shell_pid} {shell_process.ppid()} {shell_process.status()[0]} {' '.join(shell_process.cmdline())}"
+            process_list.append(process_str)
 
-        for i in range(start_idx, len(ps_lines)):
-            if '###PS1JSON###' in ps_lines[i]:
-                end_idx = i
-                break
-
-        process_list = ps_lines[start_idx:end_idx]
-
-        # Identify processes that are likely part of the current command
-        # These would be processes whose parent is the shell or are in the same process group
-        command_processes = []
-        current_command_pid = None
-
-        if is_command_running and shell_pid:
-            for line in process_list:
-                if not line.strip():
-                    continue
-
-                parts = line.split(None, 3)
-                if len(parts) >= 3:
-                    pid, ppid, stat = parts[0], parts[1], parts[2]
-
-                    # Skip the ps command itself
-                    if 'ps -eo' in line:
-                        continue
-
-                    # Check if this is a direct child of the shell
-                    if ppid == shell_pid:
-                        # Foreground processes have '+' in stat
-                        is_foreground = '+' in stat
-
-                        # For foreground processes, we're more confident it's our command
-                        if is_foreground:
-                            current_command_pid = pid
-                            command_processes.append(line)
-                        # For background processes, include them if we're confident a command is running
-                        elif is_command_running and 'sleep' in line:
-                            # Background sleep processes are likely part of our command
-                            if not current_command_pid:
-                                current_command_pid = pid
-                            command_processes.append(line)
-
-                    # Also include any children of the identified command process
-                    elif current_command_pid and ppid == current_command_pid:
-                        command_processes.append(line)
-
-            # If we still have is_command_running=True but no command_processes,
-            # it might be a shell builtin or another special case
-            if is_command_running and not command_processes:
-                logger.debug(
-                    'Command appears to be running but no processes detected. '
-                    'This might be a shell builtin or a process in transition.'
+            # Check for foreground process group to identify current command
+            try:
+                shell_pgid = os.getpgid(shell_pid)
+            except (OSError, AttributeError):
+                shell_pgid = (
+                    shell_pid  # Fallback to using shell pid if pgid not available
                 )
 
-        # Clean up by sending a clear command
-        self.pane.send_keys('clear', enter=True)
-        time.sleep(0.2)
+            for child in children:
+                try:
+                    # Skip if no cmdline (might be a kernel process)
+                    cmdline = child.cmdline()
+                    if not cmdline:
+                        continue
+
+                    # Format the process info
+                    status_flag = child.status()[0]
+
+                    # Check if this is a foreground process
+                    is_foreground = False
+                    try:
+                        # Add '+' flag for foreground processes
+                        if child.pgid() == shell_pgid:
+                            status_flag += '+'
+                            is_foreground = True
+                    except (psutil.AccessDenied, psutil.NoSuchProcess, AttributeError):
+                        pass
+
+                    # Build process string (PID PPID STATUS COMMAND)
+                    cmd_str = ' '.join(cmdline)
+                    process_str = f'{child.pid} {child.ppid()} {status_flag} {cmd_str}'
+                    process_list.append(process_str)
+
+                    # Identify processes that are likely part of current command
+                    if is_command_running:
+                        # Direct child of shell and in foreground = likely current command
+                        if child.ppid() == shell_pid and is_foreground:
+                            if not current_command_pid:
+                                current_command_pid = child.pid
+                            command_processes.append(process_str)
+                        # Child of identified command process = part of current command
+                        elif current_command_pid and (
+                            child.ppid() == current_command_pid
+                            or any(
+                                p.pid == child.ppid()
+                                for p in children
+                                if p.pid == current_command_pid
+                                or p.ppid() == current_command_pid
+                            )
+                        ):
+                            command_processes.append(process_str)
+
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    # Process may have terminated while we were examining it
+                    continue
+
+            # If we have a running command but couldn't identify processes, it might be a shell builtin
+            if is_command_running and not command_processes:
+                logger.debug(
+                    'Command appears to be running but no child processes detected. '
+                    'This might be a shell builtin or a command that completed very quickly.'
+                )
+
+        except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+            logger.warning(f'Error accessing process information: {e}')
+            return {
+                'is_command_running': is_command_running,
+                'current_command_pid': None,
+                'processes': [],
+                'command_processes': [],
+            }
 
         return {
             'is_command_running': is_command_running,
@@ -716,9 +726,6 @@ class BashSession:
         last_change_time = start_time
         last_pane_output = self._get_pane_content()
 
-        # For tests, we need to wait a bit to ensure the command has started
-        time.sleep(0.5)
-
         # Loop until the command completes or times out
         while should_continue():
             _start_time = time.time()
@@ -732,14 +739,12 @@ class BashSession:
 
             # Log running processes for debugging
             try:
-                # Skip this in tests to avoid interfering with command output
-                if not os.environ.get('PYTEST_CURRENT_TEST'):
-                    process_info = self.get_running_processes()
-                    logger.debug(
-                        f'RUNNING PROCESSES: is_command_running={process_info["is_command_running"]}, '
-                        f'current_command_pid={process_info["current_command_pid"]}, '
-                        f'command_processes_count={len(process_info["command_processes"])}'
-                    )
+                process_info = self.get_running_processes()
+                logger.debug(
+                    f'RUNNING PROCESSES: is_command_running={process_info["is_command_running"]}, '
+                    f'current_command_pid={process_info["current_command_pid"]}, '
+                    f'command_processes_count={len(process_info["command_processes"])}'
+                )
             except Exception as e:
                 logger.warning(f'Failed to get running processes: {e}')
 

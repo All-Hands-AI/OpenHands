@@ -395,31 +395,28 @@ def test_get_running_processes():
 
     # First check with no running command
     process_info = session.get_running_processes()
-    logger.info(f'Initial process info: {process_info}')
     assert isinstance(process_info, dict)
-    assert (
-        'is_command_running' in process_info
-        and process_info['is_command_running'] is False
-    )
-    assert 'processes' in process_info and len(process_info['processes']) == 0
-    assert (
-        'command_processes' in process_info
-        and len(process_info['command_processes']) == 0
-    )
+    assert 'is_command_running' in process_info
+    assert process_info['is_command_running'] is False
+    assert 'processes' in process_info
+    assert len(process_info['processes']) == 1  # should have the shell process
+    assert 'command_processes' in process_info
+    assert len(process_info['command_processes']) == 0
+    assert 'current_command_pid' in process_info
+    assert process_info['current_command_pid'] is None
 
     # Start a command that will output something and then wait
     obs = session.execute(
         CmdRunAction('echo "Starting test command" && sleep 10', blocking=False)
     )
-    logger.info(f'Command output: {obs.content}')
     assert 'Starting test command' in obs.content
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     # Check running processes
     process_info = session.get_running_processes()
-    logger.info(f'Process info during command: {process_info}')
     assert process_info['is_command_running'] is True
     assert process_info['current_command_pid'] is not None
+    assert len(process_info['command_processes']) > 0
     assert process_info['command_processes_count'] == 1
 
     # Send Ctrl+C to terminate the process
@@ -427,7 +424,8 @@ def test_get_running_processes():
 
     # Verify process is no longer running
     process_info = session.get_running_processes()
-    logger.info(f'Process info after termination: {process_info}')
     assert process_info['is_command_running'] is False
+    assert process_info['current_command_pid'] is None
+    assert len(process_info['command_processes']) == 0
 
     session.close()
