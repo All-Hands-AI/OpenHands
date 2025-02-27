@@ -3,16 +3,17 @@ import random
 import shutil
 import stat
 import time
-from pathlib import Path
 
 import pytest
 from pytest import TempPathFactory
 
-from openhands.core.config import load_app_config
+from openhands.core.config import AppConfig, load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
+from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
@@ -36,13 +37,6 @@ def _get_runtime_sid(runtime: Runtime) -> str:
 
 def _get_host_folder(runtime: Runtime) -> str:
     return runtime.config.workspace_mount_path
-
-
-def _get_sandbox_folder(runtime: Runtime) -> Path | None:
-    sid = _get_runtime_sid(runtime)
-    if sid:
-        return Path(os.path.join(sandbox_test_folder, sid))
-    return None
 
 
 def _remove_folder(folder: str) -> bool:
@@ -131,10 +125,14 @@ def get_runtime_classes() -> list[type[Runtime]]:
     runtime = TEST_RUNTIME
     if runtime.lower() == 'docker' or runtime.lower() == 'eventstream':
         return [DockerRuntime]
+    elif runtime.lower() == 'local':
+        return [LocalRuntime]
     elif runtime.lower() == 'remote':
         return [RemoteRuntime]
     elif runtime.lower() == 'runloop':
         return [RunloopRuntime]
+    elif runtime.lower() == 'daytona':
+        return [DaytonaRuntime]
     else:
         raise ValueError(f'Invalid runtime: {runtime}')
 
@@ -216,7 +214,7 @@ def _load_runtime(
     force_rebuild_runtime: bool = False,
     runtime_startup_env_vars: dict[str, str] | None = None,
     docker_runtime_kwargs: dict[str, str] | None = None,
-) -> Runtime:
+) -> tuple[Runtime, AppConfig]:
     sid = 'rt_' + str(random.randint(100000, 999999))
 
     # AgentSkills need to be initialized **before** Jupyter
@@ -269,13 +267,12 @@ def _load_runtime(
     )
     call_async_from_sync(runtime.connect)
     time.sleep(2)
-    return runtime
+    return runtime, config
 
 
 # Export necessary function
 __all__ = [
     '_load_runtime',
     '_get_host_folder',
-    '_get_sandbox_folder',
     '_remove_folder',
 ]

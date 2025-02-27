@@ -12,6 +12,7 @@ from evaluation.utils.shared import (
     EvalOutput,
     codeact_user_response,
     compatibility_for_eval_history_pairs,
+    get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -21,7 +22,6 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AppConfig,
-    SandboxConfig,
     get_llm_config_arg,
     parse_arguments,
 )
@@ -41,7 +41,6 @@ from openhands.runtime.browser.browser_env import (
     BROWSER_EVAL_GET_GOAL_ACTION,
     BROWSER_EVAL_GET_REWARDS_ACTION,
 )
-from openhands.utils.async_utils import call_async_from_sync
 
 SUPPORTED_AGENT_CLS = {'BrowsingAgent', 'CodeActAgent'}
 
@@ -55,22 +54,14 @@ def get_config(
     metadata: EvalMetadata,
     env_id: str,
 ) -> AppConfig:
+    sandbox_config = get_default_sandbox_config_for_eval()
+    sandbox_config.base_container_image = 'xingyaoww/od-eval-miniwob:v1.0'
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'docker'),
         max_iterations=metadata.max_iterations,
-        sandbox=SandboxConfig(
-            base_container_image='xingyaoww/od-eval-miniwob:v1.0',
-            enable_auto_lint=True,
-            use_host_network=False,
-            browsergym_eval_env=env_id,
-            api_key=os.environ.get('ALLHANDS_API_KEY', None),
-            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
-            remote_runtime_init_timeout=1800,
-            keep_runtime_alive=False,
-            timeout=120,
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
@@ -154,7 +145,6 @@ def process_instance(
         logger.info(f'Starting evaluation for instance {env_id}.')
 
     runtime = create_runtime(config)
-    call_async_from_sync(runtime.connect)
     task_str, obs = initialize_runtime(runtime)
 
     task_str += (

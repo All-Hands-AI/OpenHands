@@ -2,13 +2,14 @@ import uuid
 from datetime import datetime, timezone
 from typing import Callable
 
-from fastapi import APIRouter, Body, Request
+from fastapi import APIRouter, Body, Request, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.events.stream import EventStreamSubscriber
+from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.runtime import get_runtime_cls
 from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.session.conversation_init_data import ConversationInitData
@@ -17,6 +18,7 @@ from openhands.server.shared import (
     SettingsStoreImpl,
     config,
     conversation_manager,
+    monitoring_listener,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_info import ConversationInfo
@@ -37,17 +39,20 @@ UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 class InitSessionRequest(BaseModel):
     selected_repository: str | None = None
+    selected_branch: str | None = None
     initial_user_msg: str | None = None
     image_urls: list[str] | None = None
 
 
 async def _create_new_conversation(
     user_id: str | None,
-    token: str | None,
+    token: SecretStr | None,
     selected_repository: str | None,
+    selected_branch: str | None,
     initial_user_msg: str | None,
     image_urls: list[str] | None,
 ):
+    monitoring_listener.on_create_conversation()
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
@@ -71,8 +76,9 @@ async def _create_new_conversation(
         logger.warn('Settings not present, not starting conversation')
         raise MissingSettingsError('Settings not found')
 
-    session_init_args['github_token'] = token or ''
+    session_init_args['github_token'] = token or SecretStr('')
     session_init_args['selected_repository'] = selected_repository
+    session_init_args['selected_branch'] = selected_branch
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
@@ -96,6 +102,7 @@ async def _create_new_conversation(
             title=conversation_title,
             github_user_id=user_id,
             selected_repository=selected_repository,
+            selected_branch=selected_branch,
         )
     )
 
@@ -125,13 +132,17 @@ async def _create_new_conversation(
 @app.post('/conversations')
 async def new_conversation(request: Request, data: InitSessionRequest):
     """Initialize a new session or join an existing one.
+
     After successful initialization, the client should connect to the WebSocket
-    using the returned conversation ID
+    using the returned conversation ID.
     """
     logger.info('Initializing new conversation')
     user_id = get_user_id(request)
-    github_token = get_github_token(request)
+    gh_client = GithubServiceImpl(user_id=user_id, token=get_github_token(request))
+    github_token = await gh_client.get_latest_token()
+
     selected_repository = data.selected_repository
+    selected_branch = data.selected_branch
     initial_user_msg = data.initial_user_msg
     image_urls = data.image_urls or []
 
@@ -141,6 +152,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             user_id,
             github_token,
             selected_repository,
+            selected_branch,
             initial_user_msg,
             image_urls,
         )
@@ -155,7 +167,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 'message': str(e),
                 'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND',
             },
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
         )
 
     except LLMAuthenticationError as e:
@@ -165,7 +177,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 'message': str(e),
                 'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
             },
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
         )
 
 
@@ -179,10 +191,20 @@ async def search_conversations(
         config, get_user_id(request)
     )
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
-    conversation_ids = set(
-        conversation.conversation_id
+
+    # Filter out conversations older than max_age
+    now = datetime.now(timezone.utc)
+    max_age = config.conversation_max_age_seconds
+    filtered_results = [
+        conversation
         for conversation in conversation_metadata_result_set.results
         if hasattr(conversation, 'created_at')
+        and (now - conversation.created_at.replace(tzinfo=timezone.utc)).total_seconds()
+        <= max_age
+    ]
+
+    conversation_ids = set(
+        conversation.conversation_id for conversation in filtered_results
     )
     running_conversations = await conversation_manager.get_running_agent_loops(
         get_user_id(request), set(conversation_ids)
@@ -193,7 +215,7 @@ async def search_conversations(
                 conversation=conversation,
                 is_running=conversation.conversation_id in running_conversations,
             )
-            for conversation in conversation_metadata_result_set.results
+            for conversation in filtered_results
         ),
         next_page_id=conversation_metadata_result_set.next_page_id,
     )

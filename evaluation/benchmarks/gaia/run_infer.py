@@ -13,6 +13,7 @@ from evaluation.utils.shared import (
     EvalOutput,
     codeact_user_response,
     compatibility_for_eval_history_pairs,
+    get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -21,16 +22,15 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AppConfig,
-    SandboxConfig,
     get_llm_config_arg,
     get_parser,
 )
+from openhands.core.config.utils import get_agent_config_arg
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
 
 DATASET_CACHE_DIR = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -47,23 +47,25 @@ AGENT_CLS_TO_INST_SUFFIX = {
 def get_config(
     metadata: EvalMetadata,
 ) -> AppConfig:
+    sandbox_config = get_default_sandbox_config_for_eval()
+    sandbox_config.base_container_image = 'python:3.12-bookworm'
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime='docker',
         max_iterations=metadata.max_iterations,
-        sandbox=SandboxConfig(
-            base_container_image='python:3.12-bookworm',
-            enable_auto_lint=True,
-            use_host_network=False,
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
-    agent_config = config.get_agent_config(metadata.agent_class)
-    agent_config.enable_prompt_extensions = False
+    if metadata.agent_config:
+        config.set_agent_config(metadata.agent_config, metadata.agent_class)
+    else:
+        logger.info('Agent config not provided, using default settings')
+        agent_config = config.get_agent_config(metadata.agent_class)
+        agent_config.enable_prompt_extensions = False
     return config
 
 
@@ -146,7 +148,6 @@ def process_instance(
     logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
     runtime = create_runtime(config)
-    call_async_from_sync(runtime.connect)
     initialize_runtime(runtime, instance)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
@@ -237,6 +238,10 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
+    agent_config = None
+    if args.agent_config:
+        agent_config = get_agent_config_arg(args.agent_config)
+
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
@@ -255,6 +260,7 @@ if __name__ == '__main__':
         eval_output_dir=args.eval_output_dir,
         data_split=args.data_split,
         details={'gaia-level': args.level},
+        agent_config=agent_config,
     )
 
     dataset = load_dataset('gaia-benchmark/GAIA', args.level)

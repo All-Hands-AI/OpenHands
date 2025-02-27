@@ -8,6 +8,7 @@ from typing import Any, Callable
 import requests
 
 from openhands.core.config import LLMConfig
+from openhands.utils.ensure_httpx_close import ensure_httpx_close
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -18,11 +19,7 @@ from litellm import Message as LiteLLMMessage
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
-    APIConnectionError,
-    APIError,
-    InternalServerError,
     RateLimitError,
-    ServiceUnavailableError,
 )
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
@@ -41,19 +38,12 @@ from openhands.llm.retry_mixin import RetryMixin
 __all__ = ['LLM']
 
 # tuple of exceptions to retry on
-LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
-    APIConnectionError,
-    # FIXME: APIError is useful on 502 from a proxy for example,
-    # but it also retries on other errors that are permanent
-    APIError,
-    InternalServerError,
-    RateLimitError,
-    ServiceUnavailableError,
-)
+LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (RateLimitError,)
 
 # cache prompt supporting models
 # remove this when we gemini and deepseek are supported
 CACHE_PROMPT_SUPPORTED_MODELS = [
+    'claude-3-7-sonnet-20250219',
     'claude-3-5-sonnet-20241022',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-haiku-20241022',
@@ -63,6 +53,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
 
 # function calling supporting models
 FUNCTION_CALLING_SUPPORTED_MODELS = [
+    'claude-3-7-sonnet-20250219',
     'claude-3-5-sonnet',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-sonnet-20241022',
@@ -71,24 +62,20 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'gpt-4o-mini',
     'gpt-4o',
     'o1-2024-12-17',
+    'o3-mini-2025-01-31',
+    'o3-mini',
 ]
-
-# visual browsing tool supported models
-# This flag is needed since gpt-4o and gpt-4o-mini do not allow passing image_urls with role='tool'
-VISUAL_BROWSING_TOOL_SUPPORTED_MODELS = [
-    'claude-3-5-sonnet',
-    'claude-3-5-sonnet-20240620',
-    'claude-3-5-sonnet-20241022',
-    'o1-2024-12-17',
-]
-
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
     'o1-2024-12-17',
+    'o1',
+    'o3-mini-2025-01-31',
+    'o3-mini',
 ]
 
 MODELS_WITHOUT_STOP_WORDS = [
     'o1-mini',
+    'o1-preview',
 ]
 
 
@@ -148,6 +135,23 @@ class LLM(RetryMixin, DebugMixin):
             self.tokenizer = None
 
         # set up the completion function
+        kwargs: dict[str, Any] = {
+            'temperature': self.config.temperature,
+            'max_completion_tokens': self.config.max_output_tokens,
+        }
+        if (
+            self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
+            or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
+        ):
+            kwargs['reasoning_effort'] = self.config.reasoning_effort
+            kwargs.pop(
+                'temperature'
+            )  # temperature is not supported for reasoning models
+        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
+        if self.config.model.startswith('azure'):
+            kwargs['max_tokens'] = self.config.max_output_tokens
+            kwargs.pop('max_completion_tokens')
+
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
@@ -157,17 +161,10 @@ class LLM(RetryMixin, DebugMixin):
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens,
             timeout=self.config.timeout,
-            temperature=self.config.temperature,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
-            # add reasoning_effort, only if the model is supported
-            **(
-                {'reasoning_effort': self.config.reasoning_effort}
-                if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
-                else {}
-            ),
+            **kwargs,
         )
 
         self._completion_unwrapped = self._completion
@@ -182,10 +179,10 @@ class LLM(RetryMixin, DebugMixin):
         )
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
-            from openhands.core.utils import json
+            from openhands.io import json
 
             messages: list[dict[str, Any]] | dict[str, Any] = []
-            mock_function_calling = kwargs.pop('mock_function_calling', False)
+            mock_function_calling = not self.is_function_calling_active()
 
             # some callers might send the model and messages directly
             # litellm allows positional args, like completion(model, messages, **kwargs)
@@ -204,19 +201,25 @@ class LLM(RetryMixin, DebugMixin):
 
             # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]
+
+            # handle conversion of to non-function calling messages if needed
             original_fncall_messages = copy.deepcopy(messages)
             mock_fncall_tools = None
-            if mock_function_calling:
-                assert (
-                    'tools' in kwargs
-                ), "'tools' must be in kwargs when mock_function_calling is True"
+            # if the agent or caller has defined tools, and we mock via prompting, convert the messages
+            if mock_function_calling and 'tools' in kwargs:
                 messages = convert_fncall_messages_to_non_fncall_messages(
                     messages, kwargs['tools']
                 )
                 kwargs['messages'] = messages
+
+                # add stop words if the model supports it
                 if self.config.model not in MODELS_WITHOUT_STOP_WORDS:
                     kwargs['stop'] = STOP_WORDS
+
                 mock_fncall_tools = kwargs.pop('tools')
+                kwargs['tool_choice'] = (
+                    'none'  # force no tool calling because we're mocking it - without it, it will cause issue with sglang
+                )
 
             # if we have no messages, something went very wrong
             if not messages:
@@ -234,9 +237,9 @@ class LLM(RetryMixin, DebugMixin):
 
             # Record start time for latency measurement
             start_time = time.time()
-
-            # we don't support streaming here, thus we get a ModelResponse
-            resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+            with ensure_httpx_close():
+                # we don't support streaming here, thus we get a ModelResponse
+                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
             latency = time.time() - start_time
@@ -244,9 +247,10 @@ class LLM(RetryMixin, DebugMixin):
             self.metrics.add_response_latency(latency, response_id)
 
             non_fncall_response = copy.deepcopy(resp)
-            if mock_function_calling:
+
+            # if we mocked function calling, and we have tools, convert the response back to function calling format
+            if mock_function_calling and mock_fncall_tools is not None:
                 assert len(resp.choices) == 1
-                assert mock_fncall_tools is not None
                 non_fncall_response_message = resp.choices[0].message
                 fn_call_messages_with_response = (
                     convert_non_fncall_messages_to_fncall_messages(
@@ -290,7 +294,11 @@ class LLM(RetryMixin, DebugMixin):
                     'messages': messages,
                     'response': resp,
                     'args': args,
-                    'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
+                    'kwargs': {
+                        k: v
+                        for k, v in kwargs.items()
+                        if k not in ('messages', 'client')
+                    },
                     'timestamp': time.time(),
                     'cost': cost,
                 }
@@ -372,7 +380,7 @@ class LLM(RetryMixin, DebugMixin):
             # noinspection PyBroadException
             except Exception:
                 pass
-        from openhands.core.utils import json
+        from openhands.io import json
 
         logger.debug(f'Model info: {json.dumps(self.model_info, indent=2)}')
 
@@ -476,15 +484,6 @@ class LLM(RetryMixin, DebugMixin):
         """
         return self._function_calling_active
 
-    def is_visual_browser_tool_active(self) -> bool:
-        return (
-            self.config.model in VISUAL_BROWSING_TOOL_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in VISUAL_BROWSING_TOOL_SUPPORTED_MODELS
-            or any(
-                m in self.config.model for m in VISUAL_BROWSING_TOOL_SUPPORTED_MODELS
-            )
-        )
-
     def _post_completion(self, response: ModelResponse) -> float:
         """Post-process the completion response.
 
@@ -509,20 +508,21 @@ class LLM(RetryMixin, DebugMixin):
             stats += 'Response Latency: %.3f seconds\n' % latest_latency.latency
 
         usage: Usage | None = response.get('usage')
+        response_id = response.get('id', 'unknown')
 
         if usage:
             # keep track of the input and output tokens
-            input_tokens = usage.get('prompt_tokens')
-            output_tokens = usage.get('completion_tokens')
+            prompt_tokens = usage.get('prompt_tokens', 0)
+            completion_tokens = usage.get('completion_tokens', 0)
 
-            if input_tokens:
-                stats += 'Input tokens: ' + str(input_tokens)
+            if prompt_tokens:
+                stats += 'Input tokens: ' + str(prompt_tokens)
 
-            if output_tokens:
+            if completion_tokens:
                 stats += (
-                    (' | ' if input_tokens else '')
+                    (' | ' if prompt_tokens else '')
                     + 'Output tokens: '
-                    + str(output_tokens)
+                    + str(completion_tokens)
                     + '\n'
                 )
 
@@ -531,7 +531,7 @@ class LLM(RetryMixin, DebugMixin):
                 'prompt_tokens_details'
             )
             cache_hit_tokens = (
-                prompt_tokens_details.cached_tokens if prompt_tokens_details else None
+                prompt_tokens_details.cached_tokens if prompt_tokens_details else 0
             )
             if cache_hit_tokens:
                 stats += 'Input tokens (cache hit): ' + str(cache_hit_tokens) + '\n'
@@ -540,9 +540,19 @@ class LLM(RetryMixin, DebugMixin):
             # but litellm doesn't separate them in the usage stats
             # so we can read it from the provider-specific extra field
             model_extra = usage.get('model_extra', {})
-            cache_write_tokens = model_extra.get('cache_creation_input_tokens')
+            cache_write_tokens = model_extra.get('cache_creation_input_tokens', 0)
             if cache_write_tokens:
                 stats += 'Input tokens (cache write): ' + str(cache_write_tokens) + '\n'
+
+            # Record in metrics
+            # We'll treat cache_hit_tokens as "cache read" and cache_write_tokens as "cache write"
+            self.metrics.add_token_usage(
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                cache_read_tokens=cache_hit_tokens,
+                cache_write_tokens=cache_write_tokens,
+                response_id=response_id,
+            )
 
         # log the stats
         if stats:
@@ -605,7 +615,9 @@ class LLM(RetryMixin, DebugMixin):
         return False
 
     def _completion_cost(self, response) -> float:
-        """Calculate the cost of a completion response based on the model.  Local models are treated as free.
+        """Calculate completion cost and update metrics with running total.
+
+        Calculate the cost of a completion response based on the model. Local models are treated as free.
         Add the current cost into total cost in metrics.
 
         Args:

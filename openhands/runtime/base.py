@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Callable
 from zipfile import ZipFile
 
+from pydantic import SecretStr
 from requests.exceptions import ConnectionError
 
 from openhands.core.config import AppConfig, SandboxConfig
@@ -38,6 +39,7 @@ from openhands.events.observation import (
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.microagent import (
     BaseMicroAgent,
     load_microagents_from_dir,
@@ -93,6 +95,7 @@ class Runtime(FileEditRuntimeMixin):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
+        github_user_id: str | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
@@ -124,6 +127,8 @@ class Runtime(FileEditRuntimeMixin):
         FileEditRuntimeMixin.__init__(
             self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
         )
+
+        self.github_user_id = github_user_id
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -172,11 +177,14 @@ class Runtime(FileEditRuntimeMixin):
             # Note: we don't log the vars values, they're leaking info
             logger.debug('Added env vars to IPython')
 
-        # Add env vars to the Bash shell
+        # Add env vars to the Bash shell and .bashrc for persistence
         cmd = ''
+        bashrc_cmd = ''
         for key, value in env_vars.items():
             # Note: json.dumps gives us nice escaping for free
             cmd += f'export {key}={json.dumps(value)}; '
+            # Add to .bashrc if not already present
+            bashrc_cmd += f'grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
         if not cmd:
             return
         cmd = cmd.strip()
@@ -190,6 +198,15 @@ class Runtime(FileEditRuntimeMixin):
                 f'Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}'
             )
 
+        # Add to .bashrc for persistence
+        bashrc_cmd = bashrc_cmd.strip()
+        logger.debug(f'Adding env var to .bashrc: {env_vars.keys()}')
+        obs = self.run(CmdRunAction(bashrc_cmd))
+        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+            raise RuntimeError(
+                f'Failed to add env vars [{env_vars.keys()}] to .bashrc: {obs.content}'
+            )
+
     def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
             asyncio.get_event_loop().run_until_complete(self._handle_action(event))
@@ -200,6 +217,23 @@ class Runtime(FileEditRuntimeMixin):
             event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
         assert event.timeout is not None
         try:
+            if isinstance(event, CmdRunAction):
+                if self.github_user_id and '$GITHUB_TOKEN' in event.command:
+                    gh_client = GithubServiceImpl(user_id=self.github_user_id)
+                    token = await gh_client.get_latest_token()
+                    if token:
+                        export_cmd = CmdRunAction(
+                            f"export GITHUB_TOKEN='{token.get_secret_value()}'"
+                        )
+
+                        self.event_stream.update_secrets(
+                            {
+                                'github_token': token.get_secret_value(),
+                            }
+                        )
+
+                        await call_sync_from_async(self.run, export_cmd)
+
             observation: Observation = await call_sync_from_async(
                 self.run_action, event
             )
@@ -220,22 +254,42 @@ class Runtime(FileEditRuntimeMixin):
 
         # this might be unnecessary, since source should be set by the event stream when we're here
         source = event.source if event.source else EventSource.AGENT
+        if isinstance(observation, NullObservation):
+            # don't add null observations to the event stream
+            return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    def clone_repo(self, github_token: str, selected_repository: str) -> str:
+    def clone_repo(
+        self,
+        github_token: SecretStr,
+        selected_repository: str,
+        selected_branch: str | None,
+    ) -> str:
         if not github_token or not selected_repository:
             raise ValueError(
                 'github_token and selected_repository must be provided to clone a repository'
             )
-        url = f'https://{github_token}@github.com/{selected_repository}.git'
+        url = f'https://{github_token.get_secret_value()}@github.com/{selected_repository}.git'
         dir_name = selected_repository.split('/')[1]
-        # add random branch name to avoid conflicts
+
+        # Generate a random branch name to avoid conflicts
         random_str = ''.join(
             random.choices(string.ascii_lowercase + string.digits, k=8)
         )
-        branch_name = f'openhands-workspace-{random_str}'
+        openhands_workspace_branch = f'openhands-workspace-{random_str}'
+
+        # Clone repository command
+        clone_command = f'git clone {url} {dir_name}'
+
+        # Checkout to appropriate branch
+        checkout_command = (
+            f'git checkout {selected_branch}'
+            if selected_branch
+            else f'git checkout -b {openhands_workspace_branch}'
+        )
+
         action = CmdRunAction(
-            command=f'git clone {url} {dir_name} ; cd {dir_name} ; git checkout -b {branch_name}',
+            command=f'{clone_command} ; cd {dir_name} ; {checkout_command}',
         )
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)

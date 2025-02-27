@@ -4,6 +4,8 @@ import OpenHands from "#/api/open-hands";
 import { PostSettings, PostApiSettings } from "#/types/settings";
 
 const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
+  const resetLlmApiKey = settings.LLM_API_KEY === "";
+
   const apiSettings: Partial<PostApiSettings> = {
     llm_model: settings.LLM_MODEL,
     llm_base_url: settings.LLM_BASE_URL,
@@ -11,7 +13,9 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
     language: settings.LANGUAGE || DEFAULT_SETTINGS.LANGUAGE,
     confirmation_mode: settings.CONFIRMATION_MODE,
     security_analyzer: settings.SECURITY_ANALYZER,
-    llm_api_key: settings.LLM_API_KEY?.trim() || undefined,
+    llm_api_key: resetLlmApiKey
+      ? ""
+      : settings.LLM_API_KEY?.trim() || undefined,
     remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     github_token: settings.github_token,
     unset_github_token: settings.unset_github_token,
@@ -29,6 +33,9 @@ export const useSaveSettings = () => {
     mutationFn: saveSettingsMutationFn,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["settings"] });
+    },
+    meta: {
+      disableToast: true,
     },
   });
 };
