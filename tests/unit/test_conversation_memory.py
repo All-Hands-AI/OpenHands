@@ -202,7 +202,7 @@ def test_process_events_with_unknown_observation(conversation_memory, mock_state
         Message(role='system', content=[TextContent(text='System message')])
     ]
 
-    with pytest.raises(ValueError, match='Unknown observation type'):
+    with pytest.raises(ValueError, match='Unknown event type'):
         conversation_memory.process_events(
             state=mock_state,
             condensed_history=[obs],
