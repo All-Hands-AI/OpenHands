@@ -1,4 +1,8 @@
-import { QueryClientConfig, QueryCache } from "@tanstack/react-query";
+import {
+  QueryClientConfig,
+  QueryCache,
+  MutationCache,
+} from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { retrieveAxiosErrorMessage } from "./utils/retrieve-axios-error-message";
 
@@ -20,16 +24,18 @@ export const queryClientConfig: QueryClientConfig = {
       }
     },
   }),
+  mutationCache: new MutationCache({
+    onError: (error, _, __, mutation) => {
+      if (!mutation?.meta?.disableToast) {
+        const message = retrieveAxiosErrorMessage(error);
+        toast.error(message);
+      }
+    },
+  }),
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
       gcTime: 1000 * 60 * 15, // 15 minutes
-    },
-    mutations: {
-      onError: (error) => {
-        const message = retrieveAxiosErrorMessage(error);
-        toast.error(message);
-      },
     },
   },
 };

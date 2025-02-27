@@ -140,6 +140,6 @@ async def write_file(
             )
         except UnicodeDecodeError:
             return ErrorObservation(f'File could not be decoded as utf-8: {path}')
-    except PermissionError:
-        return ErrorObservation(f'Malformed paths not permitted: {path}')
+    except PermissionError as e:
+        return ErrorObservation(f'Permission error on {path}: {e}')
     return FileWriteObservation(content='', path=path)

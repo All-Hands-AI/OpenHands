@@ -12,5 +12,4 @@ function loadFeatureFlag(
   }
 }
 
-export const MULTI_CONVERSATION_UI = loadFeatureFlag("MULTI_CONVERSATION_UI");
-export const MEMORY_CONDENSER = loadFeatureFlag("MEMORY_CONDENSER");
+export const BILLING_SETTINGS = () => loadFeatureFlag("BILLING_SETTINGS");

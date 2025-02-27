@@ -20,6 +20,7 @@ def test_parser_default_values():
     assert args.llm_config is None
     assert args.name == ''
     assert not args.no_auto_continue
+    assert args.selected_repo is None
 
 
 def test_parser_custom_values():
@@ -52,6 +53,8 @@ def test_parser_custom_values():
             '-n',
             'test_session',
             '--no-auto-continue',
+            '--selected-repo',
+            'owner/repo',
         ]
     )
 
@@ -69,6 +72,7 @@ def test_parser_custom_values():
     assert args.name == 'test_session'
     assert args.no_auto_continue
     assert args.version
+    assert args.selected_repo == 'owner/repo'
 
 
 def test_parser_file_overrides_task():
@@ -128,13 +132,22 @@ def test_help_message(capsys):
         '--eval-note EVAL_NOTE',
         '--eval-ids EVAL_IDS',
         '-l LLM_CONFIG, --llm-config LLM_CONFIG',
+        '--agent-config AGENT_CONFIG',
         '-n NAME, --name NAME',
         '--config-file CONFIG_FILE',
         '--no-auto-continue',
+        '--selected-repo SELECTED_REPO',
     ]
 
     for element in expected_elements:
         assert element in help_output, f"Expected '{element}' to be in the help message"
 
     option_count = help_output.count('  -')
-    assert option_count == 17, f'Expected 17 options, found {option_count}'
+    assert option_count == 19, f'Expected 19 options, found {option_count}'
+
+
+def test_selected_repo_format():
+    """Test that the selected-repo argument accepts owner/repo format."""
+    parser = get_parser()
+    args = parser.parse_args(['--selected-repo', 'owner/repo'])
+    assert args.selected_repo == 'owner/repo'

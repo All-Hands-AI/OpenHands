@@ -74,10 +74,11 @@ LOG_COLORS: Mapping[str, ColorType] = {
 
 
 class StackInfoFilter(logging.Filter):
-    def filter(self, record):
+    def filter(self, record: logging.LogRecord) -> bool:
         if record.levelno >= logging.ERROR:
-            record.stack_info = True
-            record.exc_info = True
+            # LogRecord attributes are dynamically typed
+            setattr(record, 'stack_info', True)
+            setattr(record, 'exc_info', sys.exc_info())
         return True
 
 
@@ -86,7 +87,8 @@ class NoColorFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         # Create a deep copy of the record to avoid modifying the original
-        new_record: logging.LogRecord = copy.deepcopy(record)
+        new_record = _fix_record(record)
+
         # Strip ANSI color codes from the message
         new_record.msg = strip_ansi(new_record.msg)
 
@@ -106,9 +108,9 @@ def strip_ansi(s: str) -> str:
 
 
 class ColoredFormatter(logging.Formatter):
-    def format(self, record):
-        msg_type = record.__dict__.get('msg_type')
-        event_source = record.__dict__.get('event_source')
+    def format(self, record: logging.LogRecord) -> str:
+        msg_type = record.__dict__.get('msg_type', '')
+        event_source = record.__dict__.get('event_source', '')
         if event_source:
             new_msg_type = f'{event_source.upper()}_{msg_type}'
             if new_msg_type in LOG_COLORS:
@@ -130,7 +132,19 @@ class ColoredFormatter(logging.Formatter):
                 return f'{msg}'
             else:
                 return record.msg
-        return super().format(record)
+
+        new_record = _fix_record(record)
+        return super().format(new_record)
+
+
+def _fix_record(record: logging.LogRecord) -> logging.LogRecord:
+    new_record = copy.copy(record)
+    # The formatter expects non boolean values, and will raise an exception if there is a boolean - so we fix these
+    # LogRecord attributes are dynamically typed
+    if getattr(new_record, 'exc_info', None) is True:
+        setattr(new_record, 'exc_info', sys.exc_info())
+        setattr(new_record, 'stack_info', None)
+    return new_record
 
 
 file_formatter = NoColorFormatter(
@@ -144,31 +158,34 @@ class RollingLogger:
     max_lines: int
     char_limit: int
     log_lines: list[str]
+    all_lines: str
 
-    def __init__(self, max_lines=10, char_limit=80):
+    def __init__(self, max_lines: int = 10, char_limit: int = 80) -> None:
         self.max_lines = max_lines
         self.char_limit = char_limit
         self.log_lines = [''] * self.max_lines
+        self.all_lines = ''
 
-    def is_enabled(self):
+    def is_enabled(self) -> bool:
         return DEBUG and sys.stdout.isatty()
 
-    def start(self, message=''):
+    def start(self, message: str = '') -> None:
         if message:
             print(message)
         self._write('\n' * self.max_lines)
         self._flush()
 
-    def add_line(self, line):
+    def add_line(self, line: str) -> None:
         self.log_lines.pop(0)
         self.log_lines.append(line[: self.char_limit])
         self.print_lines()
+        self.all_lines += line + '\n'
 
-    def write_immediately(self, line):
+    def write_immediately(self, line: str) -> None:
         self._write(line)
         self._flush()
 
-    def print_lines(self):
+    def print_lines(self) -> None:
         """Display the last n log_lines in the console (not for file logging).
 
         This will create the effect of a rolling display in the console.
@@ -177,32 +194,48 @@ class RollingLogger:
         for line in self.log_lines:
             self.replace_current_line(line)
 
-    def move_back(self, amount=-1):
+    def move_back(self, amount: int = -1) -> None:
         r"""'\033[F' moves the cursor up one line."""
         if amount == -1:
             amount = self.max_lines
         self._write('\033[F' * (self.max_lines))
         self._flush()
 
-    def replace_current_line(self, line=''):
+    def replace_current_line(self, line: str = '') -> None:
         r"""'\033[2K\r' clears the line and moves the cursor to the beginning of the line."""
         self._write('\033[2K' + line + '\n')
         self._flush()
 
-    def _write(self, line):
+    def _write(self, line: str) -> None:
         if not self.is_enabled():
             return
         sys.stdout.write(line)
 
-    def _flush(self):
+    def _flush(self) -> None:
         if not self.is_enabled():
             return
         sys.stdout.flush()
 
 
 class SensitiveDataFilter(logging.Filter):
-    def filter(self, record):
-        # start with attributes
+    def filter(self, record: logging.LogRecord) -> bool:
+        # Gather sensitive values which should not ever appear in the logs.
+        sensitive_values = []
+        for key, value in os.environ.items():
+            key_upper = key.upper()
+            if (
+                len(value) > 2
+                and value != 'default'
+                and any(s in key_upper for s in ('SECRET', 'KEY', 'CODE', 'TOKEN'))
+            ):
+                sensitive_values.append(value)
+
+        # Replace sensitive values from env!
+        msg = record.getMessage()
+        for sensitive_value in sensitive_values:
+            msg = msg.replace(sensitive_value, '******')
+
+        # Replace obvious sensitive values from log itself...
         sensitive_patterns = [
             'api_key',
             'aws_access_key_id',
@@ -212,32 +245,29 @@ class SensitiveDataFilter(logging.Filter):
             'jwt_secret',
             'modal_api_token_id',
             'modal_api_token_secret',
+            'llm_api_key',
+            'sandbox_env_github_token',
+            'daytona_api_key',
         ]
 
         # add env var names
         env_vars = [attr.upper() for attr in sensitive_patterns]
         sensitive_patterns.extend(env_vars)
 
-        # and some special cases
-        sensitive_patterns.append('JWT_SECRET')
-        sensitive_patterns.append('LLM_API_KEY')
-        sensitive_patterns.append('GITHUB_TOKEN')
-        sensitive_patterns.append('SANDBOX_ENV_GITHUB_TOKEN')
-
-        # this also formats the message with % args
-        msg = record.getMessage()
-        record.args = ()
-
         for attr in sensitive_patterns:
             pattern = rf"{attr}='?([\w-]+)'?"
             msg = re.sub(pattern, f"{attr}='******'", msg)
 
-        # passed with msg
+        # Update the record
         record.msg = msg
+        record.args = ()
+
         return True
 
 
-def get_console_handler(log_level: int = logging.INFO, extra_info: str | None = None):
+def get_console_handler(
+    log_level: int = logging.INFO, extra_info: str | None = None
+) -> logging.StreamHandler:
     """Returns a console handler for logging."""
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
@@ -248,7 +278,9 @@ def get_console_handler(log_level: int = logging.INFO, extra_info: str | None = 
     return console_handler
 
 
-def get_file_handler(log_dir: str, log_level: int = logging.INFO):
+def get_file_handler(
+    log_dir: str, log_level: int = logging.INFO
+) -> logging.FileHandler:
     """Returns a file handler for logging."""
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime('%Y-%m-%d')
@@ -322,7 +354,13 @@ logging.getLogger('LiteLLM Proxy').disabled = True
 class LlmFileHandler(logging.FileHandler):
     """LLM prompt and response logging."""
 
-    def __init__(self, filename, mode='a', encoding='utf-8', delay=False):
+    def __init__(
+        self,
+        filename: str,
+        mode: str = 'a',
+        encoding: str = 'utf-8',
+        delay: bool = False,
+    ) -> None:
         """Initializes an instance of LlmFileHandler.
 
         Args:
@@ -353,7 +391,7 @@ class LlmFileHandler(logging.FileHandler):
         self.baseFilename = os.path.join(self.log_directory, filename)
         super().__init__(self.baseFilename, mode, encoding, delay)
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         """Emits a log record.
 
         Args:
@@ -368,7 +406,7 @@ class LlmFileHandler(logging.FileHandler):
         self.message_counter += 1
 
 
-def _get_llm_file_handler(name: str, log_level: int):
+def _get_llm_file_handler(name: str, log_level: int) -> LlmFileHandler:
     # The 'delay' parameter, when set to True, postpones the opening of the log file
     # until the first log message is emitted.
     llm_file_handler = LlmFileHandler(name, delay=True)
@@ -377,7 +415,7 @@ def _get_llm_file_handler(name: str, log_level: int):
     return llm_file_handler
 
 
-def _setup_llm_logger(name: str, log_level: int):
+def _setup_llm_logger(name: str, log_level: int) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.propagate = False
     logger.setLevel(log_level)

@@ -67,7 +67,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         """
         self.docker_client = docker.from_env()
         version_info = self.docker_client.version()
-        server_version = version_info.get('Version', '').replace('-', '.')
+        server_version = version_info.get('Version', '').split('+')[0].replace('-', '.')
         if tuple(map(int, server_version.split('.'))) < (18, 9):
             raise AgentRuntimeBuildError(
                 'Docker server version must be >= 18.09 to use BuildKit'
@@ -168,8 +168,12 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 )
 
         except subprocess.CalledProcessError as e:
-            logger.error(f'Image build failed:\n{e}')
+            logger.error(f'Image build failed:\n{e}')  # TODO: {e} is empty
             logger.error(f'Command output:\n{e.output}')
+            if self.rolling_logger.is_enabled():
+                logger.error(
+                    'Docker build output:\n' + self.rolling_logger.all_lines
+                )  # Show the error
             raise
 
         except subprocess.TimeoutExpired:

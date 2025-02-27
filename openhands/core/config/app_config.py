@@ -9,6 +9,7 @@ from openhands.core.config.config_utils import (
     OH_MAX_ITERATIONS,
     model_defaults_to_dict,
 )
+from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
@@ -52,6 +53,7 @@ class AppConfig(BaseModel):
     default_agent: str = Field(default=OH_DEFAULT_AGENT)
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
+    extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     runtime: str = Field(default='docker')
     file_store: str = Field(default='local')
     file_store_path: str = Field(default='/tmp/openhands_file_store')
@@ -75,7 +77,11 @@ class AppConfig(BaseModel):
     file_uploads_restrict_file_types: bool = Field(default=False)
     file_uploads_allowed_extensions: list[str] = Field(default_factory=lambda: ['.*'])
     runloop_api_key: SecretStr | None = Field(default=None)
+    daytona_api_key: SecretStr | None = Field(default=None)
+    daytona_api_url: str = Field(default='https://app.daytona.io/api')
+    daytona_target: str = Field(default='us')
     cli_multiline_input: bool = Field(default=False)
+    conversation_max_age_seconds: int = Field(default=864000)  # 10 days in seconds
 
     defaults_dict: ClassVar[dict] = {}
 

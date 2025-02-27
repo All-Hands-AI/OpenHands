@@ -8,6 +8,7 @@ from evaluation.integration_tests.tests.base import BaseIntegrationTest, TestRes
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -21,7 +22,6 @@ from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
     AppConfig,
-    SandboxConfig,
     get_llm_config_arg,
     parse_arguments,
 )
@@ -30,7 +30,6 @@ from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import MessageAction
 from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
 
 FAKE_RESPONSES = {
     'CodeActAgent': fake_user_response,
@@ -43,23 +42,14 @@ def get_config(
     metadata: EvalMetadata,
     instance_id: str,
 ) -> AppConfig:
+    sandbox_config = get_default_sandbox_config_for_eval()
+    sandbox_config.platform = 'linux/amd64'
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'docker'),
         max_iterations=metadata.max_iterations,
-        sandbox=SandboxConfig(
-            # use default base_container_image
-            enable_auto_lint=True,
-            use_host_network=False,
-            timeout=300,
-            # Add platform to the sandbox config to solve issue 4401
-            platform='linux/amd64',
-            api_key=os.environ.get('ALLHANDS_API_KEY', None),
-            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
-            keep_runtime_alive=False,
-            remote_runtime_init_timeout=3600,
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
@@ -118,7 +108,6 @@ def process_instance(
     # create sandbox and run the agent
     # =============================================
     runtime: Runtime = create_runtime(config)
-    call_async_from_sync(runtime.connect)
     try:
         test_class.initialize_runtime(runtime)
 

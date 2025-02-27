@@ -1,11 +1,11 @@
 import { Settings } from "#/types/settings";
 
 const extractBasicFormData = (formData: FormData) => {
-  const provider = formData.get("llm-provider")?.toString();
-  const model = formData.get("llm-model")?.toString();
+  const provider = formData.get("llm-provider-input")?.toString();
+  const model = formData.get("llm-model-input")?.toString();
 
   const LLM_MODEL = `${provider}/${model}`.toLowerCase();
-  const LLM_API_KEY = formData.get("api-key")?.toString();
+  const LLM_API_KEY = formData.get("llm-api-key-input")?.toString();
   const AGENT = formData.get("agent")?.toString();
   const LANGUAGE = formData.get("language")?.toString();
 
@@ -25,6 +25,7 @@ const extractAdvancedFormData = (formData: FormData) => {
   let LLM_BASE_URL: string | undefined;
   let CONFIRMATION_MODE = false;
   let SECURITY_ANALYZER: string | undefined;
+  let ENABLE_DEFAULT_CONDENSER = true;
 
   if (isUsingAdvancedOptions) {
     CUSTOM_LLM_MODEL = formData.get("custom-model")?.toString();
@@ -34,6 +35,7 @@ const extractAdvancedFormData = (formData: FormData) => {
       // only set securityAnalyzer if confirmationMode is enabled
       SECURITY_ANALYZER = formData.get("security-analyzer")?.toString();
     }
+    ENABLE_DEFAULT_CONDENSER = keys.includes("enable-default-condenser");
   }
 
   return {
@@ -41,6 +43,7 @@ const extractAdvancedFormData = (formData: FormData) => {
     LLM_BASE_URL,
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
+    ENABLE_DEFAULT_CONDENSER,
   };
 };
 
@@ -53,6 +56,7 @@ export const extractSettings = (formData: FormData): Partial<Settings> => {
     LLM_BASE_URL,
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
+    ENABLE_DEFAULT_CONDENSER,
   } = extractAdvancedFormData(formData);
 
   return {
@@ -63,5 +67,6 @@ export const extractSettings = (formData: FormData): Partial<Settings> => {
     LLM_BASE_URL,
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
+    ENABLE_DEFAULT_CONDENSER,
   };
 };
