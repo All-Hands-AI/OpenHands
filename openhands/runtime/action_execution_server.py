@@ -503,7 +503,6 @@ if __name__ == '__main__':
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
-
         yield
         # Clean up & release the resources
         client.close()
