@@ -77,7 +77,8 @@ class StackInfoFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         if record.levelno >= logging.ERROR:
             # LogRecord attributes are dynamically typed
-            setattr(record, 'stack_info', True)
+
+            setattr(record, 'stack_info', ''.join(traceback.format_stack()))
             setattr(record, 'exc_info', sys.exc_info())
         return True
 
