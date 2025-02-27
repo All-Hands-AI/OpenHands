@@ -193,7 +193,9 @@ def test_process_events_with_error_observation(conversation_memory, mock_state):
     assert 'Error occurred in processing last action' in result.content[0].text
 
 
-def test_process_events_with_unknown_observation(conversation_memory, mock_state, mocker: MockerFixture):
+def test_process_events_with_unknown_observation(
+    conversation_memory, mock_state, mocker: MockerFixture
+):
     # Create a mock that inherits from Event but not Action or Observation
     obs = mocker.MagicMock(spec=Event)
 
