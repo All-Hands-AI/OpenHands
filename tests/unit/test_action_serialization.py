@@ -99,12 +99,7 @@ def test_agent_finish_action_serialization_deserialization():
 def test_agent_reject_action_serialization_deserialization():
     original_action_dict = {
         'action': 'reject',
-        'args': {
-            'outputs': {},
-            'thought': '',
-            'task_completed': None,
-            'message_text': '',
-        },
+        'args': {'outputs': {}, 'thought': ''},
     }
     serialization_deserialization(original_action_dict, AgentRejectAction)
 
