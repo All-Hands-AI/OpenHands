@@ -21,7 +21,7 @@ from openhands.server.shared import (
 
 
 @sio.event
-async def connect(connection_id: str, environ, auth):
+async def connect(connection_id: str, environ):
     logger.info(f'sio:connect: {connection_id}')
     query_params = parse_qs(environ.get('QUERY_STRING', ''))
     latest_event_id = int(query_params.get('latest_event_id', [-1])[0])
