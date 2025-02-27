@@ -66,6 +66,9 @@ RUN if [ -z "${RELEASE_TAG}" ]; then \
     cp ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/openvscode-server ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/code && \
     rm -f ${RELEASE_TAG}-linux-${arch}.tar.gz
 
+{% endmacro %}
+
+{% macro install_vscode_extensions() %}
 # Install our custom extension
 RUN mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-hello-world && \
     cp -r /openhands/code/openhands/runtime/utils/vscode-extensions/hello-world/* ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-hello-world/
@@ -150,6 +153,7 @@ RUN chmod a+rwx /openhands/code/openhands/__init__.py
 # ================================================================
 {% if build_from_versioned %}
 {{ install_dependencies() }}
+{{ install_vscode_extensions() }}
 {% endif %}
 
 # Install extra dependencies if specified
