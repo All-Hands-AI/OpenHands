@@ -4560,36 +4560,6 @@
         "zh-TW": "啟用記憶體壓縮器"
     }
 ,
-    "BUTTON$ENABLE_SOUND": {
-        "en": "Enable sound notifications",
-        "zh-CN": "启用声音通知",
-        "zh-TW": "啟用聲音通知",
-        "de": "Tonbenachrichtigungen aktivieren",
-        "ko-KR": "소리 알림 활성화",
-        "no": "Aktiver lydvarsler",
-        "it": "Abilita notifiche sonore",
-        "pt": "Ativar notificações sonoras",
-        "es": "Habilitar notificaciones sonoras",
-        "ar": "تمكين التنبيهات الصوتية",
-        "fr": "Activer les notifications sonores",
-        "tr": "Ses bildirimlerini etkinleştir",
-        "ja": "サウンド通知を有効にする"
-    },
-    "BUTTON$DISABLE_SOUND": {
-        "en": "Disable sound notifications",
-        "zh-CN": "禁用声音通知",
-        "zh-TW": "禁用聲音通知",
-        "de": "Tonbenachrichtigungen deaktivieren",
-        "ko-KR": "소리 알림 비활성화",
-        "no": "Deaktiver lydvarsler",
-        "it": "Disabilita notifiche sonore",
-        "pt": "Desativar notificações sonoras",
-        "es": "Deshabilitar notificaciones sonoras",
-        "ar": "تعطيل التنبيهات الصوتية",
-        "fr": "Désactiver les notifications sonores",
-        "tr": "Ses bildirimlerini devre dışı bırak",
-        "ja": "サウンド通知を無効にする"
-    },
     "BUTTON$MARK_HELPFUL": {
         "en": "Mark this solution as helpful",
         "zh-CN": "标记此解决方案有帮助",
