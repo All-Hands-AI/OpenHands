@@ -99,8 +99,8 @@ class Memory:
             self._on_recall_action(event)
 
     def _on_first_user_message(self, event: MessageAction):
-        """Create and add to the stream a RecallObservation carrying info about repo and runtime."""
-        # Build the same text that used to be appended to the first user message
+        """Add repository and runtime information to the stream as a RecallObservation."""
+        # Collect raw repository instructions
         repo_instructions = ''
         assert (
             len(self.repo_microagents) <= 1
@@ -110,11 +110,20 @@ class Memory:
             if repo_instructions:
                 repo_instructions += '\n\n'
             repo_instructions += microagent.content
+        
+        # Create observation with structured data, not formatted text
+        obs_data = {
+            "type": "environment_info",
+            "repository_info": self.repository_info.model_dump() if self.repository_info else None,
+            "runtime_info": self.runtime_info.model_dump() if self.runtime_info else None,
+            "repository_instructions": repo_instructions if repo_instructions else None
+        }
 
-        # Now wrap it in a RecallObservation, rather than altering the user message:
+        # Send structured data in the observation
         obs = RecallObservation(
-            content=self.prompt_manager.build_additional_info_text(repo_instructions)
+            content=json.dumps(obs_data)
         )
+
         self.event_stream.add_event(obs, EventSource.ENVIRONMENT)
 
     def _on_user_message_action(self, event: MessageAction):
