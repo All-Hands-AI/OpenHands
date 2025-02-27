@@ -7,6 +7,7 @@ import { useRate } from "#/hooks/use-rate";
 import { OpenHandsParsedEvent } from "#/types/core";
 import {
   AssistantMessageAction,
+  CommandAction,
   FileEditAction,
   FileWriteAction,
   UserMessageAction,
@@ -28,6 +29,9 @@ const isFileWriteAction = (
 const isFileEditAction = (
   event: OpenHandsParsedEvent,
 ): event is FileEditAction => "action" in event && event.action === "edit";
+
+const isCommandAction = (event: OpenHandsParsedEvent): event is CommandAction =>
+  "action" in event && event.action === "run";
 
 const isUserMessage = (
   event: OpenHandsParsedEvent,
@@ -143,17 +147,25 @@ export function WsClientProvider({
       }
 
       // Invalidate diffs cache when a file is edited or written
-      if (isFileEditAction(event) || isFileWriteAction(event)) {
+      if (
+        isFileEditAction(event) ||
+        isFileWriteAction(event) ||
+        isCommandAction(event)
+      ) {
         queryClient.invalidateQueries({
           queryKey: ["file_changes", conversationId],
         });
-        queryClient.invalidateQueries({
-          queryKey: [
-            "file_diff",
-            conversationId,
-            event.args.path.replace("/workspace/", ""),
-          ],
-        });
+
+        // Invalidate file diff cache when a file is edited or written
+        if (!isCommandAction(event)) {
+          queryClient.invalidateQueries({
+            queryKey: [
+              "file_diff",
+              conversationId,
+              event.args.path.replace("/workspace/", ""),
+            ],
+          });
+        }
       }
     }
 
