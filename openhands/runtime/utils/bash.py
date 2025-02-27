@@ -705,6 +705,18 @@ class BashSession:
             )
             logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_output.split("\n")[:10]}')
             logger.debug(f'END OF PANE CONTENT: {cur_pane_output.split("\n")[-10:]}')
+            
+            # Log running processes for debugging
+            try:
+                process_info = self.get_running_processes()
+                logger.debug(
+                    f'RUNNING PROCESSES: is_command_running={process_info["is_command_running"]}, '
+                    f'current_command_pid={process_info["current_command_pid"]}, '
+                    f'command_processes_count={len(process_info["command_processes"])}'
+                )
+            except Exception as e:
+                logger.warning(f'Failed to get running processes: {e}')
+                
             ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
             if cur_pane_output != last_pane_output:
                 last_pane_output = cur_pane_output
