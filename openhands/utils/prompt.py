@@ -60,12 +60,7 @@ class PromptManager:
         self.runtime_info = runtime_info
 
     def set_repository_info(self, repository_info: RepositoryInfo) -> None:
-        """Stores info about a cloned repository for rendering the template.
-
-        Args:
-            repo_name: The name of the repository.
-            repo_directory: The directory of the repository.
-        """
+        """Stores info about a cloned repository for rendering the template."""
         self.repository_info = repository_info
 
     def get_example_user_message(self) -> str:
@@ -89,12 +84,17 @@ class PromptManager:
         if example_message:
             message.content.insert(0, TextContent(text=example_message))
 
-    def build_additional_info_text(self, repo_instructions: str = '') -> str:
+    def build_additional_info_text(
+        self,
+        repository_info: RepositoryInfo | None,
+        runtime_info: RuntimeInfo | None,
+        repo_instructions: str = '',
+    ) -> str:
         """Renders the ADDITIONAL_INFO_TEMPLATE with the stored repository/runtime info."""
         return self.additional_info_template.render(
-            repository_info=self.repository_info,
+            repository_info=repository_info,
             repository_instructions=repo_instructions,
-            runtime_info=self.runtime_info,
+            runtime_info=runtime_info,
         ).strip()
 
     def add_turns_left_reminder(self, messages: list[Message], state: State) -> None:

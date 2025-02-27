@@ -79,13 +79,11 @@ class Memory:
     def set_repository_info(self, repo_name: str, repo_directory: str) -> None:
         """Store repository info so we can reference it in an observation."""
         self.repository_info = RepositoryInfo(repo_name, repo_directory)
-        self.prompt_manager.set_repository_info(self.repository_info)
 
     def set_runtime_info(self, runtime_hosts: dict[str, int]) -> None:
         """Store runtime info (web hosts, ports, etc.)."""
         # e.g. { '127.0.0.1': 8080 }
         self.runtime_info = RuntimeInfo(available_hosts=runtime_hosts)
-        self.prompt_manager.set_runtime_info(self.runtime_info)
 
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
