@@ -1,3 +1,6 @@
+import dataclasses
+import json
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import RecallAction
 from openhands.events.action.message import MessageAction
@@ -100,7 +103,7 @@ class Memory:
 
     def _on_first_user_message(self, event: MessageAction):
         """Add repository and runtime information to the stream as a RecallObservation."""
-        
+
         # Collect raw repository instructions
         repo_instructions = ''
         assert (
@@ -113,19 +116,21 @@ class Memory:
             if repo_instructions:
                 repo_instructions += '\n\n'
             repo_instructions += microagent.content
-        
+
         # Create observation with structured data
         obs_data = {
-            "type": "environment_info",
-            "repository_info": self.repository_info.model_dump() if self.repository_info else None,
-            "runtime_info": self.runtime_info.model_dump() if self.runtime_info else None,
-            "repository_instructions": repo_instructions if repo_instructions else None
+            'type': 'environment_info',
+            'repository_info': dataclasses.asdict(self.repository_info)
+            if self.repository_info
+            else None,
+            'runtime_info': dataclasses.asdict(self.runtime_info)
+            if self.runtime_info
+            else None,
+            'repository_instructions': repo_instructions if repo_instructions else None,
         }
 
         # Send structured data in the observation
-        obs = RecallObservation(
-            content=json.dumps(obs_data)
-        )
+        obs = RecallObservation(content=json.dumps(obs_data))
 
         self.event_stream.add_event(obs, EventSource.ENVIRONMENT)
 
@@ -133,38 +138,38 @@ class Memory:
         """When a user message triggers microagents, create a RecallObservation with structured data."""
         if event.source != 'user':
             return
-    
+
         # If there's no text, do nothing
         user_text = event.content.strip()
         if not user_text:
             return
-        
+
         # Gather all triggered microagents
         triggered_agents = []
         for name, agent in self.knowledge_microagents.items():
             trigger = agent.match_trigger(user_text)
             if trigger:
                 logger.info("Microagent '%s' triggered by keyword '%s'", name, trigger)
-                triggered_agents.append({
-                    "name": name,
-                    "content": agent.content,
-                    "trigger": trigger
-                })
-    
+                triggered_agents.append(
+                    {'name': name, 'content': agent.content, 'trigger': trigger}
+                )
+
         if triggered_agents:
             # Create structured data observation
             obs_data = {
-                "type": "microagent_knowledge",
-                "triggered_agents": triggered_agents
+                'type': 'microagent_knowledge',
+                'triggered_agents': triggered_agents,
             }
             obs = RecallObservation(content=json.dumps(obs_data))
-            self.event_stream.add_event(obs, event.source if event.source else EventSource.ENVIRONMENT)
+            self.event_stream.add_event(
+                obs, event.source if event.source else EventSource.ENVIRONMENT
+            )
 
     def _on_recall_action(self, event: RecallAction):
         """If a RecallAction explicitly arrives, handle it."""
         assert isinstance(event, RecallAction)
 
-        user_query = event.query.get('keywords', [])
+        # user_query = event.query.get('keywords', [])
         matched_content = ''
         # matched_content = self.find_microagent_content(user_query)
         obs = RecallObservation(content=matched_content)
