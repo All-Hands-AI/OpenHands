@@ -336,15 +336,29 @@ def zip_current_workspace(request: Request, conversation_id: str):
         )
 
 
-@app.get('/diffs')
-async def git_diffs(request: Request, conversation_id: str):
+@app.get('/git/changes')
+async def git_changes(request: Request):
     runtime: Runtime = request.state.conversation.runtime
     try:
-        diffs = await call_sync_from_async(runtime.git_diffs)
-        return diffs
+        changes = await call_sync_from_async(runtime.get_git_changes)
+        return changes
     except AgentRuntimeUnavailableError as e:
-        logger.error(f'Error getting diffs: {e}')
+        logger.error(f'Error getting changes: {e}')
         return JSONResponse(
             status_code=500,
-            content={'error': f'Error getting diffs: {e}'},
+            content={'error': f'Error getting changes: {e}'},
+        )
+
+
+@app.get('/git/diff')
+async def git_diff(request: Request, path: str):
+    runtime: Runtime = request.state.conversation.runtime
+    try:
+        diff = await call_sync_from_async(runtime.get_git_diff, path)
+        return diff
+    except AgentRuntimeUnavailableError as e:
+        logger.error(f'Error getting diff: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Error getting diff: {e}'},
         )

@@ -79,9 +79,12 @@ export interface ResultSet<T> {
   next_page_id: string | null;
 }
 
-export interface FileDiffObject {
+export interface GitChange {
   status: "M" | "A" | "D" | "R" | "U";
   path: string;
+}
+
+export interface GitChangeDiff {
   modified: string;
   original: string;
 }

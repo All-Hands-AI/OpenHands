@@ -111,17 +111,6 @@ class DockerRuntime(ActionExecutionClient):
     def _get_action_execution_server_host(self):
         return self.api_url
 
-    def git_diffs(self):
-        """Get the git diffs for the current workspace."""
-        self.log('info', 'Getting git diffs')
-        with self._send_action_server_request(
-            'GET',
-            f'{self._get_action_execution_server_host()}/git_diffs',
-            timeout=300,
-        ) as response:
-            response_json = response.json()
-            return response_json
-
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
         try:

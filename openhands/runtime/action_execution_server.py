@@ -465,91 +465,6 @@ class ActionExecutor:
         self.browser.close()
 
 
-class DiffHandler:
-    def __init__(self, work_dir: str):
-        self.bash_session = BashSession(
-            work_dir=work_dir,
-            username=None,
-            no_change_timeout_seconds=int(
-                os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
-            ),
-            max_memory_mb=None,
-        )
-
-    def _is_git_repo(self) -> bool:
-        cmd = 'git rev-parse --is-inside-work-tree'
-        obs = self.bash_session.execute(CmdRunAction(command=cmd))
-        return obs.content.strip() == 'true'  # test
-
-    def _retrieve_git_changes(self) -> list[dict[str, str]]:
-        result = []
-        cmd = 'git status --porcelain'
-
-        try:
-            obs = self.bash_session.execute(CmdRunAction(command=cmd))
-            obs_list = obs.content.splitlines()
-            for line in obs_list:
-                status = line[:2].strip()
-                path = line[3:]
-
-                status_map = {
-                    'M': 'M',  # Modified
-                    'A': 'A',  # Added
-                    'D': 'D',  # Deleted
-                    'R': 'R',  # Renamed
-                    '??': 'U',  # Untracked
-                }
-
-                # Get the first non-space character as the primary status
-                primary_status = status.replace(' ', '')[0]
-                mapped_status = status_map.get(primary_status, primary_status)
-                if primary_status == '?':  # Special case for untracked files
-                    mapped_status = 'U'
-
-                result.append(
-                    {
-                        'status': mapped_status,
-                        'path': path,
-                    }
-                )
-        except Exception as e:
-            logger.error(f'Error retrieving git changes: {e}')
-            return []
-
-        return result
-
-    def _get_full_content(self, file_path: str) -> str:
-        cmd = f'cat {file_path}'
-        obs = self.bash_session.execute(CmdRunAction(command=cmd))
-        return obs.content
-
-    def _get_last_commit_content(self, file_path: str) -> str:
-        cmd = f'git show HEAD:{file_path}'
-        obs = self.bash_session.execute(CmdRunAction(command=cmd))
-        return obs.content
-
-    def get_all_untracked_diffs(self) -> list:
-        if not self._is_git_repo():
-            return []
-
-        changes_files = self._retrieve_git_changes()
-        diffs = []
-        for file in changes_files:
-            modified = self._get_full_content(file.get('path', ''))
-            original = self._get_last_commit_content(file.get('path', ''))
-
-            diffs.append(
-                {
-                    'status': file.get('status'),
-                    'path': file.get('path'),
-                    'modified': modified,
-                    'original': original,
-                }
-            )
-
-        return diffs
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
@@ -576,7 +491,6 @@ if __name__ == '__main__':
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
     client: ActionExecutor | None = None
-    diff_handler: DiffHandler | None = None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -590,11 +504,9 @@ if __name__ == '__main__':
         )
         await client.ainit()
 
-        diff_handler = DiffHandler(args.working_dir)
         yield
         # Clean up & release the resources
         client.close()
-        diff_handler.bash_session.close()
 
     app = FastAPI(lifespan=lifespan)
 
@@ -848,20 +760,6 @@ if __name__ == '__main__':
 
         except Exception as e:
             logger.error(f'Error listing files: {e}')
-            return []
-
-    # ================================
-    # Git operations
-    # ================================
-
-    @app.get('/git_diffs')
-    async def git_diffs(request: Request):
-        logger.info('Getting Git diffs')
-        assert diff_handler is not None
-        try:
-            return diff_handler.get_all_untracked_diffs()
-        except Exception as e:
-            logger.error(f'Error getting Git diffs: {e}')
             return []
 
     logger.debug(f'Starting action execution API on port {args.port}')

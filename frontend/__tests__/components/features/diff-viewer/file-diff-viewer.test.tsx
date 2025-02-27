@@ -27,7 +27,7 @@ describe("FileDiffViewer", () => {
   it("should render the file diff viewer by default", async () => {
     render(
       <FileDiffViewer
-        label="some/file/path"
+        path="some/file/path"
         original={original}
         modified={modified}
       />,
@@ -42,7 +42,7 @@ describe("FileDiffViewer", () => {
   it("should render the file path", () => {
     render(
       <FileDiffViewer
-        label="some/file/path"
+        path="some/file/path"
         original={original}
         modified={modified}
       />,
@@ -55,7 +55,7 @@ describe("FileDiffViewer", () => {
   it("should collapse the file diff", async () => {
     render(
       <FileDiffViewer
-        label="some/file/path"
+        path="some/file/path"
         original={original}
         modified={modified}
       />,

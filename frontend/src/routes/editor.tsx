@@ -6,31 +6,26 @@ import { useConversation } from "#/context/conversation-context";
 function EditorScreen() {
   const { conversationId } = useConversation();
   const {
-    data: diffs,
+    data: gitChanges,
     isLoading,
     isSuccess,
   } = useQuery({
-    queryKey: ["diffs", conversationId],
-    queryFn: () => OpenHands.getDiffs(conversationId),
+    queryKey: ["file_changes", conversationId],
+    queryFn: () => OpenHands.getGitChanges(conversationId),
   });
 
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
-  if (!isSuccess || !diffs) {
+  if (!isSuccess || !gitChanges) {
     return <div>Failed to load diffs</div>;
   }
 
   return (
     <main className="h-full overflow-y-auto px-4">
-      {diffs.map((diff) => (
-        <FileDiffViewer
-          key={diff.path}
-          label={diff.path}
-          modified={diff.modified}
-          original={diff.original}
-        />
+      {gitChanges.map((change) => (
+        <FileDiffViewer key={change.path} path={change.path} />
       ))}
     </main>
   );

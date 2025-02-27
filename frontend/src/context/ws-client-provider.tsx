@@ -144,7 +144,16 @@ export function WsClientProvider({
 
       // Invalidate diffs cache when a file is edited or written
       if (isFileEditAction(event) || isFileWriteAction(event)) {
-        queryClient.invalidateQueries({ queryKey: ["diffs", conversationId] });
+        queryClient.invalidateQueries({
+          queryKey: ["file_changes", conversationId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: [
+            "file_diff",
+            conversationId,
+            event.args.path.replace("/workspace/", ""),
+          ],
+        });
       }
     }
 

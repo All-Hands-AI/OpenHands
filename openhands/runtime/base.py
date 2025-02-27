@@ -488,6 +488,64 @@ class Runtime(FileEditRuntimeMixin):
     # Git
     # ====================================================================
 
-    @abstractmethod
-    def git_diffs(self) -> list[dict[str, str]]:
-        raise NotImplementedError('This method is not implemented in the base class.')
+    def _is_git_repo(self) -> bool:
+        cmd = 'git rev-parse --is-inside-work-tree'
+        obs = self.run(CmdRunAction(command=cmd))
+        output = obs.content.strip()
+        return output == 'true'
+
+    def _get_full_content(self, file_path: str) -> str:
+        cmd = f'cat {file_path}'
+        obs = self.run(CmdRunAction(command=cmd))
+        return obs.content.strip()
+
+    def _get_last_commit_content(self, file_path: str) -> str:
+        cmd = f'git show HEAD:{file_path}'
+        obs = self.run(CmdRunAction(command=cmd))
+        return obs.content.strip()
+
+    def get_git_changes(self) -> list[dict[str, str]]:
+        result = []
+        cmd = 'git status --porcelain'
+
+        try:
+            obs = self.run(CmdRunAction(command=cmd))
+            obs_list = obs.content.splitlines()
+            for line in obs_list:
+                status = line[:2].strip()
+                path = line[2:].strip()
+
+                status_map = {
+                    'M': 'M',  # Modified
+                    'A': 'A',  # Added
+                    'D': 'D',  # Deleted
+                    'R': 'R',  # Renamed
+                    '??': 'U',  # Untracked
+                }
+
+                # Get the first non-space character as the primary status
+                primary_status = status.replace(' ', '')[0]
+                mapped_status = status_map.get(primary_status, primary_status)
+                if primary_status == '?':  # Special case for untracked files
+                    mapped_status = 'U'
+
+                result.append(
+                    {
+                        'status': mapped_status,
+                        'path': path,
+                    }
+                )
+        except Exception as e:
+            logger.error(f'Error retrieving git changes: {e}')
+            return []
+
+        return result
+
+    def get_git_diff(self, file_path: str) -> dict[str, str]:
+        modified = self._get_full_content(file_path)
+        original = self._get_last_commit_content(file_path)
+
+        return {
+            'modified': modified,
+            'original': original,
+        }
