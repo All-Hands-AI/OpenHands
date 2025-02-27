@@ -23,6 +23,7 @@ class Settings(BaseModel):
     remote_runtime_resource_factor: int | None = None
     github_token: SecretStr | None = None
     enable_default_condenser: bool = False
+    enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
 
     @field_serializer('llm_api_key')
