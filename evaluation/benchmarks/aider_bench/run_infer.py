@@ -34,7 +34,6 @@ from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
 
 # Configure visibility of unit tests to the Agent.
 USE_UNIT_TESTS = os.environ.get('USE_UNIT_TESTS', 'false').lower() == 'true'
@@ -204,7 +203,6 @@ def process_instance(
     # =============================================
 
     runtime: Runtime = create_runtime(config)
-    call_async_from_sync(runtime.connect)
 
     initialize_runtime(runtime, instance=instance)
 

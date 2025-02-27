@@ -3,14 +3,14 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { I18nKey } from "#/i18n/declaration";
 import { SuggestionBox } from "#/components/features/suggestions/suggestion-box";
-import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import { GitHubRepositorySelector } from "./github-repo-selector";
-import { ModalButton } from "#/components/shared/buttons/modal-button";
 import { useAppRepositories } from "#/hooks/query/use-app-repositories";
 import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { sanitizeQuery } from "#/utils/sanitize-query";
 import { useDebounce } from "#/hooks/use-debounce";
+import { BrandButton } from "../settings/brand-button";
+import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 
 interface GitHubRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;
@@ -62,13 +62,16 @@ export function GitHubRepositoriesSuggestionBox({
             userRepositories={repositories}
           />
         ) : (
-          <ModalButton
+          <BrandButton
             testId="connect-to-github"
-            text={t(I18nKey.GITHUB$CONNECT)}
-            icon={<GitHubLogo width={20} height={20} />}
-            className="bg-[#791B80] w-full"
+            type="button"
+            variant="secondary"
+            className="w-full text-content border-content"
             onClick={handleConnectToGitHub}
-          />
+            startContent={<GitHubLogo width={20} height={20} />}
+          >
+            {t(I18nKey.GITHUB$CONNECT)}
+          </BrandButton>
         )
       }
     />
