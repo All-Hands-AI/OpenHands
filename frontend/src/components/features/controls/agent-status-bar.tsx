@@ -49,7 +49,9 @@ export function AgentStatusBar() {
   React.useEffect(() => {
     if (status === WsClientProviderStatus.DISCONNECTED) {
       if (hasPendingMessages) {
-        setStatusMessage(`Connecting... (${pendingMessages.length} pending message${pendingMessages.length !== 1 ? 's' : ''})`);
+        setStatusMessage(
+          `Connecting... (${pendingMessages.length} pending message${pendingMessages.length !== 1 ? "s" : ""})`,
+        );
       } else {
         setStatusMessage("Connecting...");
       }

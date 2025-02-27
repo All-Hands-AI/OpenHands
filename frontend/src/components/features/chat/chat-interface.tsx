@@ -14,7 +14,10 @@ import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { TypingIndicator } from "./typing-indicator";
-import { useWsClient, WsClientProviderStatus } from "#/context/ws-client-provider";
+import {
+  useWsClient,
+  WsClientProviderStatus,
+} from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
@@ -53,7 +56,7 @@ export function ChatInterface() {
   );
   const params = useParams();
   const { mutate: getTrajectory } = useGetTrajectory();
-  
+
   const isClientDisconnected = status === WsClientProviderStatus.DISCONNECTED;
   const hasPendingMessages = pendingMessages.length > 0;
 
@@ -79,10 +82,10 @@ export function ChatInterface() {
     const timestamp = new Date().toISOString();
     const pending = true;
     dispatch(addUserMessage({ content, imageUrls, timestamp, pending }));
-    
+
     // Create the chat message
     const chatMessage = createChatMessage(content, imageUrls, timestamp);
-    
+
     // Send or queue the message depending on connection status
     send(chatMessage);
     setMessageToSend(null);
@@ -146,7 +149,9 @@ export function ChatInterface() {
                 Waiting for client to become ready...
                 {hasPendingMessages && (
                   <div className="text-xs text-neutral-500 mt-1">
-                    {pendingMessages.length} message{pendingMessages.length !== 1 ? 's' : ''} will be sent when connected
+                    {pendingMessages.length} message
+                    {pendingMessages.length !== 1 ? "s" : ""} will be sent when
+                    connected
                   </div>
                 )}
               </div>

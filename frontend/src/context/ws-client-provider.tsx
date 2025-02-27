@@ -115,10 +115,16 @@ export function WsClientProvider({
     WsClientProviderStatus.DISCONNECTED,
   );
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
-  const [pendingMessages, setPendingMessages] = React.useState<Record<string, unknown>[]>([]);
+  const [pendingMessages, setPendingMessages] = React.useState<
+    Record<string, unknown>[]
+  >([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
 
   const messageRateHandler = useRate({ threshold: 250 });
+
+  function queueMessage(event: Record<string, unknown>) {
+    setPendingMessages((prev) => [...prev, event]);
+  }
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -129,16 +135,12 @@ export function WsClientProvider({
     sioRef.current.emit("oh_action", event);
   }
 
-  function queueMessage(event: Record<string, unknown>) {
-    setPendingMessages((prev) => [...prev, event]);
-  }
-
   function handleConnect() {
     setStatus(WsClientProviderStatus.CONNECTED);
-    
+
     // Send any pending messages when connection is established
     if (pendingMessages.length > 0 && sioRef.current) {
-      pendingMessages.forEach(event => {
+      pendingMessages.forEach((event) => {
         sioRef.current?.emit("oh_action", event);
       });
       setPendingMessages([]);
