@@ -7,6 +7,7 @@ from openhands.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
+    AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -19,6 +20,7 @@ from openhands.events.event import Event
 from openhands.events.observation import (
     AgentCondensationObservation,
     AgentDelegateObservation,
+    AgentThinkObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
     FileEditObservation,
@@ -174,6 +176,7 @@ class ConversationMemory:
             action,
             (
                 AgentDelegateAction,
+                AgentThinkAction,
                 IPythonRunCellAction,
                 FileEditAction,
                 FileReadAction,
@@ -354,6 +357,9 @@ class ConversationMemory:
                 obs.outputs['content'] if 'content' in obs.outputs else '',
                 max_message_chars,
             )
+            message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, AgentThinkObservation):
+            text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ErrorObservation):
             text = truncate_content(obs.content, max_message_chars)

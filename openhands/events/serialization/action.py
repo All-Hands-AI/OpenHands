@@ -6,6 +6,7 @@ from openhands.events.action.agent import (
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
+    AgentThinkAction,
     ChangeAgentStateAction,
 )
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
@@ -30,6 +31,7 @@ actions = (
     FileReadAction,
     FileWriteAction,
     FileEditAction,
+    AgentThinkAction,
     AgentFinishAction,
     AgentRejectAction,
     AgentDelegateAction,
