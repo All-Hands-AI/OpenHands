@@ -44,7 +44,6 @@ if os.path.exists(swebench_official_report_json):
         f"- resolved instances: {report['resolved_instances']}\n"
         f"- unresolved instances: {report['unresolved_instances']}\n"
         f"- error instances: {report['error_instances']}\n"
-        f"- unstopped instances: {report['unstopped_instances']}\n"
     )
 
     output_md += '\n## Resolved Instances\n'

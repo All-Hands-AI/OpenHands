@@ -27,7 +27,6 @@ from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.events.serialization import event_from_dict
-from openhands.events.serialization.event import event_to_trajectory
 from openhands.io import read_input, read_task
 from openhands.runtime.base import Runtime
 
@@ -89,14 +88,19 @@ async def run_controller(
     """
     sid = sid or generate_sid(config)
 
+    if agent is None:
+        agent = create_agent(config)
+
     if runtime is None:
-        runtime = create_runtime(config, sid=sid, headless_mode=headless_mode)
-        await runtime.connect()
+        runtime = create_runtime(
+            config,
+            sid=sid,
+            headless_mode=headless_mode,
+            agent=agent,
+            selected_repository=config.sandbox.selected_repo,
+        )
 
     event_stream = runtime.event_stream
-
-    if agent is None:
-        agent = create_agent(runtime, config)
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:
@@ -167,6 +171,8 @@ async def run_controller(
         # NOTE: the saved state does not include delegates events
         end_state.save_to_session(event_stream.sid, event_stream.file_store)
 
+    await controller.close(set_stop_state=False)
+
     state = controller.get_state()
 
     # save trajectories if applicable
@@ -177,7 +183,7 @@ async def run_controller(
         else:
             file_path = config.save_trajectory_path
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        histories = [event_to_trajectory(event) for event in state.history]
+        histories = controller.get_trajectory()
         with open(file_path, 'w') as f:
             json.dump(histories, f)
 
@@ -246,17 +252,18 @@ if __name__ == '__main__':
     # Read task from file, CLI args, or stdin
     task_str = read_task(args, config.cli_multiline_input)
 
+    initial_user_action: Action = NullAction()
     if config.replay_trajectory_path:
         if task_str:
             raise ValueError(
                 'User-specified task is not supported under trajectory replay mode'
             )
+    else:
+        if not task_str:
+            raise ValueError('No task provided. Please specify a task through -t, -f.')
 
-    if not task_str:
-        raise ValueError('No task provided. Please specify a task through -t, -f.')
-
-    # Create initial user action
-    initial_user_action: MessageAction = MessageAction(content=task_str)
+        # Create actual initial user action
+        initial_user_action = MessageAction(content=task_str)
 
     # Set session name
     session_name = args.name

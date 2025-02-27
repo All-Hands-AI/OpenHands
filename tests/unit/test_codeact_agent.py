@@ -5,8 +5,6 @@ from litellm import ChatCompletionMessageToolCall
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.function_calling import (
-    _BROWSER_DESCRIPTION,
-    _BROWSER_TOOL_DESCRIPTION,
     BrowserTool,
     CmdRunTool,
     IPythonTool,
@@ -15,6 +13,10 @@ from openhands.agenthub.codeact_agent.function_calling import (
     WebReadTool,
     get_tools,
     response_to_actions,
+)
+from openhands.agenthub.codeact_agent.tools.browser import (
+    _BROWSER_DESCRIPTION,
+    _BROWSER_TOOL_DESCRIPTION,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig

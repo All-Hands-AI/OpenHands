@@ -27,7 +27,6 @@ from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -105,7 +104,6 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
     runtime = create_runtime(config)
-    call_async_from_sync(runtime.connect)
     initialize_runtime(runtime)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
