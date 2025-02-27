@@ -386,3 +386,40 @@ def test_python_interactive_input():
     assert session.prev_status == BashCommandStatus.COMPLETED
 
     session.close()
+
+
+def test_get_running_processes():
+    """Test the get_running_processes method to detect running processes."""
+    session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=2)
+    session.initialize()
+    
+    # First check with no running command
+    process_info = session.get_running_processes()
+    logger.info(f"Initial process info: {process_info}")
+    assert isinstance(process_info, dict)
+    assert 'is_command_running' in process_info
+    assert 'processes' in process_info
+    assert 'command_processes' in process_info
+    
+    # Start a command that will output something and then wait
+    obs = session.execute(
+        CmdRunAction('echo "Starting test command" && sleep 10', blocking=False)
+    )
+    logger.info(f"Command output: {obs.content}")
+    assert "Starting test command" in obs.content
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
+    
+    # Check running processes
+    process_info = session.get_running_processes()
+    logger.info(f"Process info during command: {process_info}")
+    assert process_info['is_command_running'] is True
+    
+    # Send Ctrl+C to terminate the process
+    session.execute(CmdRunAction('C-c', is_input=True))
+    
+    # Verify process is no longer running
+    process_info = session.get_running_processes()
+    logger.info(f"Process info after termination: {process_info}")
+    assert process_info['is_command_running'] is False
+    
+    session.close()
