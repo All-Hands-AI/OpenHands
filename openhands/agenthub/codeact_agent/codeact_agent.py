@@ -233,7 +233,6 @@ class CodeActAgent(Agent):
                 self.prompt_manager.enhance_message(msg)
 
                 # Add double newline between consecutive user messages
-                # This prevents messages from being "smooshed together" without separation
                 if prev_role == 'user' and len(msg.content) > 0:
                     # Find the first TextContent in the message to add newlines
                     for content_item in msg.content:
