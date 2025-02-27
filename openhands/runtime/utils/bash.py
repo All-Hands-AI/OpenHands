@@ -495,15 +495,33 @@ class BashSession:
                     if 'ps -eo' in line:
                         continue
 
-                    # Check if this is a direct child of the shell and is a foreground process
-                    # '+' in stat indicates a foreground process
-                    if ppid == shell_pid and '+' in stat:
-                        current_command_pid = pid
-                        command_processes.append(line)
+                    # Check if this is a direct child of the shell
+                    if ppid == shell_pid:
+                        # Foreground processes have '+' in stat
+                        is_foreground = '+' in stat
+                        
+                        # For foreground processes, we're more confident it's our command
+                        if is_foreground:
+                            current_command_pid = pid
+                            command_processes.append(line)
+                        # For background processes, include them if we're confident a command is running
+                        elif is_command_running and 'sleep' in line:
+                            # Background sleep processes are likely part of our command
+                            if not current_command_pid:
+                                current_command_pid = pid
+                            command_processes.append(line)
 
                     # Also include any children of the identified command process
                     elif current_command_pid and ppid == current_command_pid:
                         command_processes.append(line)
+                        
+            # If we still have is_command_running=True but no command_processes,
+            # it might be a shell builtin or another special case
+            if is_command_running and not command_processes:
+                logger.debug(
+                    "Command appears to be running but no processes detected. "
+                    "This might be a shell builtin or a process in transition."
+                )
 
         # Clean up by sending a clear command
         self.pane.send_keys('clear', enter=True)
