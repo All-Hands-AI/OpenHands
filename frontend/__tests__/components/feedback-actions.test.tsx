@@ -70,7 +70,6 @@ describe("TrajectoryActions", () => {
     within(actions).getByTestId("positive-feedback");
     within(actions).getByTestId("negative-feedback");
     within(actions).getByTestId("export-trajectory");
-    within(actions).getByTestId("sound-toggle");
   });
 
   it("should call onPositiveFeedback when positive feedback is clicked", async () => {
