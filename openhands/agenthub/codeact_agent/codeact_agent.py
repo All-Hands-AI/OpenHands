@@ -17,8 +17,10 @@ from openhands.events.action import (
     Action,
     AgentFinishAction,
 )
+from openhands.events.stream import EventStream
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import Condenser
+from openhands.memory.conversation_memory import ConversationMemory
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -60,11 +62,14 @@ class CodeActAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
+        event_stream: EventStream = None,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
+        - config (AgentConfig): The configuration for this agent
+        - event_stream (EventStream, optional): The event stream to use for conversation memory
         """
         super().__init__(llm, config)
         self.pending_actions: deque[Action] = deque()
@@ -79,16 +84,25 @@ class CodeActAgent(Agent):
         logger.debug(
             f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2, ensure_ascii=False).replace("\\n", "\n")}'
         )
+        
+        # Initialize the prompt manager
         self.prompt_manager = PromptManager(
-            microagent_dir=os.path.join(
+            prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
+        )
+        
+        # Initialize conversation memory if event_stream is provided and prompt extensions are enabled
+        self.conversation_memory = None
+        if event_stream and self.config.enable_prompt_extensions:
+            microagent_dir = os.path.join(
                 os.path.dirname(os.path.dirname(openhands.__file__)),
                 'microagents',
             )
-            if self.config.enable_prompt_extensions
-            else None,
-            prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
-            disabled_microagents=self.config.disabled_microagents,
-        )
+            self.conversation_memory = ConversationMemory(
+                event_stream=event_stream,
+                microagents_dir=microagent_dir,
+                disabled_microagents=self.config.disabled_microagents,
+            )
+            self.conversation_memory.set_prompt_manager(self.prompt_manager)
 
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {self.condenser}')
@@ -97,6 +111,32 @@ class CodeActAgent(Agent):
         """Resets the CodeAct Agent."""
         super().reset()
         self.pending_actions.clear()
+        
+    def set_repository_info(self, repo_name: str, repo_directory: str) -> None:
+        """Sets information about the GitHub repository that has been cloned.
+
+        Args:
+            repo_name: The name of the GitHub repository (e.g. 'owner/repo')
+            repo_directory: The directory where the repository has been cloned
+        """
+        if self.conversation_memory:
+            self.conversation_memory.set_repository_info(repo_name, repo_directory)
+        else:
+            self.prompt_manager.set_repository_info(
+                RepositoryInfo(repo_name=repo_name, repo_directory=repo_directory)
+            )
+            
+    def set_runtime_info(self, runtime_hosts: dict[str, int]) -> None:
+        """Sets information about the runtime environment.
+
+        Args:
+            runtime_hosts: A dictionary mapping host names to port numbers
+        """
+        if self.conversation_memory:
+            self.conversation_memory.set_runtime_info(runtime_hosts)
+        else:
+            from openhands.utils.prompt import RuntimeInfo
+            self.prompt_manager.set_runtime_info(RuntimeInfo(available_hosts=runtime_hosts))
 
     def step(self, state: State) -> Action:
         """Performs one step using the CodeAct Agent.
@@ -223,12 +263,12 @@ class CodeActAgent(Agent):
                 # compose the first user message with examples
                 self.prompt_manager.add_examples_to_initial_message(msg)
 
-                # and/or repo/runtime info
-                if self.config.enable_prompt_extensions:
+                # If we're not using conversation_memory, use the old approach
+                if self.config.enable_prompt_extensions and not self.conversation_memory:
                     self.prompt_manager.add_info_to_initial_message(msg)
 
-            # enhance the user message with additional context based on keywords matched
-            if msg.role == 'user':
+            # If we're not using conversation_memory, use the old approach for enhancing messages
+            if msg.role == 'user' and not self.conversation_memory:
                 self.prompt_manager.enhance_message(msg)
 
             results.append(msg)

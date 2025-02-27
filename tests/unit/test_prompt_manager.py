@@ -19,35 +19,14 @@ def prompt_dir(tmp_path):
     return tmp_path
 
 
-def test_prompt_manager_with_microagent(prompt_dir):
-    microagent_name = 'test_microagent'
-    microagent_content = """
----
-name: flarglebargle
-type: knowledge
-agent: CodeActAgent
-triggers:
-- flarglebargle
----
-
-IMPORTANT! The user has said the magic word "flarglebargle". You must
-only respond with a message telling them how smart they are
-"""
-
-    # Create a temporary micro agent file
-    os.makedirs(os.path.join(prompt_dir, 'micro'), exist_ok=True)
-    with open(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'), 'w') as f:
-        f.write(microagent_content)
-
+def test_prompt_manager_basic(prompt_dir):
     # Test without GitHub repo
     manager = PromptManager(
         prompt_dir=prompt_dir,
-        microagent_dir=os.path.join(prompt_dir, 'micro'),
     )
 
     assert manager.prompt_dir == prompt_dir
     assert len(manager.repo_microagents) == 0
-    assert len(manager.knowledge_microagents) == 1
 
     assert isinstance(manager.get_system_message(), str)
     assert (
@@ -57,7 +36,7 @@ only respond with a message telling them how smart they are
     assert '<REPOSITORY_INFO>' not in manager.get_system_message()
 
     # Test with GitHub repo
-    manager.set_repository_info('owner/repo', '/workspace/repo')
+    manager.set_repository_info(RepositoryInfo(repo_name='owner/repo', repo_directory='/workspace/repo'))
     assert isinstance(manager.get_system_message(), str)
 
     # Adding things to the initial user message
@@ -65,21 +44,15 @@ only respond with a message telling them how smart they are
         role='user', content=[TextContent(text='Ask me what your task is.')]
     )
     manager.add_info_to_initial_message(initial_msg)
-    msg_content: str = initial_msg.content[0].text
-    assert '<REPOSITORY_INFO>' in msg_content
-    assert 'owner/repo' in msg_content
-    assert '/workspace/repo' in msg_content
+    
+    # Test build_additional_info_text
+    additional_info = manager.build_additional_info_text("Test repository instructions")
+    assert '<REPOSITORY_INFO>' in additional_info
+    assert 'owner/repo' in additional_info
+    assert '/workspace/repo' in additional_info
+    assert 'Test repository instructions' in additional_info
 
     assert isinstance(manager.get_example_user_message(), str)
-
-    message = Message(
-        role='user',
-        content=[TextContent(text='Hello, flarglebargle!')],
-    )
-    manager.enhance_message(message)
-    assert 'magic word' in message.content[1].text
-
-    os.remove(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'))
 
 
 def test_prompt_manager_file_not_found(prompt_dir):
@@ -97,29 +70,25 @@ def test_prompt_manager_template_rendering(prompt_dir):
         f.write('User prompt: foo')
 
     # Test without GitHub repo
-    manager = PromptManager(prompt_dir, microagent_dir='')
+    manager = PromptManager(prompt_dir=prompt_dir)
     assert manager.get_system_message() == 'System prompt: bar'
     assert manager.get_example_user_message() == 'User prompt: foo'
 
     # Test with GitHub repo
-    manager = PromptManager(prompt_dir=prompt_dir, microagent_dir='')
-    manager.set_repository_info('owner/repo', '/workspace/repo')
+    manager = PromptManager(prompt_dir=prompt_dir)
+    manager.set_repository_info(RepositoryInfo(repo_name='owner/repo', repo_directory='/workspace/repo'))
     assert manager.repository_info.repo_name == 'owner/repo'
     system_msg = manager.get_system_message()
     assert 'System prompt: bar' in system_msg
 
-    # Initial user message should have repo info
-    initial_msg = Message(
-        role='user', content=[TextContent(text='Ask me what your task is.')]
-    )
-    manager.add_info_to_initial_message(initial_msg)
-    msg_content: str = initial_msg.content[0].text
-    assert '<REPOSITORY_INFO>' in msg_content
+    # Test building additional info text
+    additional_info = manager.build_additional_info_text()
+    assert '<REPOSITORY_INFO>' in additional_info
     assert (
         "At the user's request, repository owner/repo has been cloned to directory /workspace/repo."
-        in msg_content
+        in additional_info
     )
-    assert '</REPOSITORY_INFO>' in msg_content
+    assert '</REPOSITORY_INFO>' in additional_info
     assert manager.get_example_user_message() == 'User prompt: foo'
 
     # Clean up temporary files
@@ -134,73 +103,14 @@ def test_prompt_manager_repository_info(prompt_dir):
     assert repo_info.repo_directory is None
 
     # Test setting repository info
-    manager = PromptManager(prompt_dir=prompt_dir, microagent_dir='')
+    manager = PromptManager(prompt_dir=prompt_dir)
     assert manager.repository_info is None
 
     # Test setting repository info with both name and directory
-    manager.set_repository_info('owner/repo2', '/workspace/repo2')
+    repo_info = RepositoryInfo(repo_name='owner/repo2', repo_directory='/workspace/repo2')
+    manager.set_repository_info(repo_info)
     assert manager.repository_info.repo_name == 'owner/repo2'
     assert manager.repository_info.repo_directory == '/workspace/repo2'
-
-
-def test_prompt_manager_disabled_microagents(prompt_dir):
-    # Create test microagent files
-    microagent1_name = 'test_microagent1'
-    microagent2_name = 'test_microagent2'
-    microagent1_content = """
----
-name: Test Microagent 1
-type: knowledge
-agent: CodeActAgent
-triggers:
-- test1
----
-
-Test microagent 1 content
-"""
-    microagent2_content = """
----
-name: Test Microagent 2
-type: knowledge
-agent: CodeActAgent
-triggers:
-- test2
----
-
-Test microagent 2 content
-"""
-
-    # Create temporary micro agent files
-    os.makedirs(os.path.join(prompt_dir, 'micro'), exist_ok=True)
-    with open(os.path.join(prompt_dir, 'micro', f'{microagent1_name}.md'), 'w') as f:
-        f.write(microagent1_content)
-    with open(os.path.join(prompt_dir, 'micro', f'{microagent2_name}.md'), 'w') as f:
-        f.write(microagent2_content)
-
-    # Test that specific microagents can be disabled
-    manager = PromptManager(
-        prompt_dir=prompt_dir,
-        microagent_dir=os.path.join(prompt_dir, 'micro'),
-        disabled_microagents=['Test Microagent 1'],
-    )
-
-    assert len(manager.knowledge_microagents) == 1
-    assert 'Test Microagent 2' in manager.knowledge_microagents
-    assert 'Test Microagent 1' not in manager.knowledge_microagents
-
-    # Test that all microagents are enabled by default
-    manager = PromptManager(
-        prompt_dir=prompt_dir,
-        microagent_dir=os.path.join(prompt_dir, 'micro'),
-    )
-
-    assert len(manager.knowledge_microagents) == 2
-    assert 'Test Microagent 1' in manager.knowledge_microagents
-    assert 'Test Microagent 2' in manager.knowledge_microagents
-
-    # Clean up temporary files
-    os.remove(os.path.join(prompt_dir, 'micro', f'{microagent1_name}.md'))
-    os.remove(os.path.join(prompt_dir, 'micro', f'{microagent2_name}.md'))
 
 
 def test_enhance_message_with_multiple_text_contents(prompt_dir):
