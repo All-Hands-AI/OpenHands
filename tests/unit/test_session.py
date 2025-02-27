@@ -7,6 +7,7 @@ from litellm.exceptions import (
 
 from openhands.core.config.app_config import AppConfig
 from openhands.core.config.llm_config import LLMConfig
+from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.session import Session
 from openhands.storage.memory import InMemoryFileStore
 
@@ -45,6 +46,7 @@ async def test_notify_on_llm_retry(
         config=config,
         sio=mock_sio,
         user_id='..uid..',
+        monitoring_listener=MonitoringListener(),
     )
     session.queue_status_message = AsyncMock()
 
