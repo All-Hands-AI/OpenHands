@@ -116,25 +116,6 @@ class PromptManager:
         if example_message:
             message.content.insert(0, TextContent(text=example_message))
 
-    def add_info_to_initial_message(
-        self,
-        message: Message,
-    ) -> None:
-        """
-        Previously inserted the rendered template at the start of the user's first message.
-        If we've switched to using a separate RecallObservation in Memory, we can safely remove
-        or comment out the direct insertion code below—but we still keep the method for
-        scenarios where we want to read or manipulate the template output.
-        """
-        # Old code that forcibly modified the user message:
-        #
-        # info_block = self.build_additional_info_text(repo_instructions)
-        # if info_block:
-        #     message.content.insert(0, TextContent(text=info_block))
-        #
-        # Now we comment it out or remove to avoid "injecting" directly.
-        pass
-
     def build_additional_info_text(self, repo_instructions: str = '') -> str:
         """Renders the ADDITIONAL_INFO_TEMPLATE with the stored repository/runtime info."""
         return ADDITIONAL_INFO_TEMPLATE.render(
