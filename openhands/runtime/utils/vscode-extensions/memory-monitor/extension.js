@@ -5,6 +5,9 @@ function activate(context) {
     // Create memory monitor instance
     const memoryMonitor = new MemoryMonitor();
     
+    // Store the context in the memory monitor
+    memoryMonitor.context = context;
+    
     // Register memory monitor start command
     let startMonitorCommand = vscode.commands.registerCommand('openhands-memory-monitor.startMemoryMonitor', function () {
         memoryMonitor.start();

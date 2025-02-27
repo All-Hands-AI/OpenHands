@@ -11,6 +11,7 @@ class MemoryMonitor {
         this.processMonitor = new ProcessMonitor();
         this.memoryHistory = [];
         this.maxHistoryLength = 60; // Keep 5 minutes of data with 5-second intervals
+        this.context = null; // Will be set in activate
     }
 
     start(interval = 5000) {
@@ -86,6 +87,27 @@ class MemoryMonitor {
             }
         );
         
+        // Set up message handler for real-time updates
+        panel.webview.onDidReceiveMessage(
+            message => {
+                if (message.command === 'requestUpdate') {
+                    this.updateWebviewContent(panel);
+                }
+            },
+            undefined,
+            this.context ? this.context.subscriptions : []
+        );
+        
+        // Initial update
+        this.updateWebviewContent(panel);
+        
+        // Handle panel disposal
+        panel.onDidDispose(() => {
+            // Clean up any resources if needed
+        }, null, this.context ? this.context.subscriptions : []);
+    }
+    
+    updateWebviewContent(panel) {
         // Get system memory info
         const totalMem = os.totalmem();
         const freeMem = os.freemem();
@@ -301,6 +323,16 @@ class MemoryMonitor {
                             }
                         }
                     });
+                    
+                    // Set up real-time updates
+                    const vscode = acquireVsCodeApi();
+                    
+                    // Request updates every 5 seconds
+                    setInterval(() => {
+                        vscode.postMessage({
+                            command: 'requestUpdate'
+                        });
+                    }, 5000);
                 </script>
             </body>
             </html>
