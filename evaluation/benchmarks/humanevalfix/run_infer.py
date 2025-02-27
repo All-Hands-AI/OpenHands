@@ -39,7 +39,6 @@ from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
 
 IMPORT_HELPER = {
     'python': [
@@ -233,7 +232,6 @@ def process_instance(
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     runtime = create_runtime(config)
-    call_async_from_sync(runtime.connect)
     initialize_runtime(runtime, instance)
     state: State | None = asyncio.run(
         run_controller(

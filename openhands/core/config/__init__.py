@@ -5,6 +5,7 @@ from openhands.core.config.config_utils import (
     OH_MAX_ITERATIONS,
     get_field_info,
 )
+from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.model_routing_config import ModelRoutingConfig
 from openhands.core.config.sandbox_config import SandboxConfig
@@ -29,6 +30,7 @@ __all__ = [
     'LLMConfig',
     'SandboxConfig',
     'SecurityConfig',
+    'ExtendedConfig',
     'ModelRoutingConfig',
     'load_app_config',
     'load_from_env',

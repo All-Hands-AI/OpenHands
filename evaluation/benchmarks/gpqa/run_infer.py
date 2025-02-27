@@ -49,7 +49,6 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.observation import Observation
-from openhands.utils.async_utils import call_async_from_sync
 
 ACTION_FORMAT = """
 <<FINAL_ANSWER||
@@ -215,7 +214,6 @@ Ok now its time to start solving the question. Good luck!
 """
 
     runtime = create_runtime(config)
-    call_async_from_sync(runtime.connect)
     state: State | None = asyncio.run(
         run_controller(
             config=config,
