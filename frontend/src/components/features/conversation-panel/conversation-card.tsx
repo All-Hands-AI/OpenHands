@@ -1,5 +1,4 @@
 import React from "react";
-import { Tooltip } from "@heroui/react";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
 import {
