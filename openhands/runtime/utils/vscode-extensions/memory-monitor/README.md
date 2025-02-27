@@ -45,4 +45,4 @@ This extension is part of the OpenHands project. To modify or extend it:
 
 ## License
 
-This extension is licensed under the same terms as the OpenHands project.
+This extension is licensed under the MIT license.
