@@ -174,6 +174,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
             logger.openhands_logger.warning(
                 f'Cannot parse [security] config from toml, values have not been applied.\nError: {e}'
             )
+        except ValueError:
+            # Re-raise ValueError from SecurityConfig.from_toml_section
+            raise ValueError('Error in [security] section in config.toml')
 
     # Process sandbox section if present
     if 'sandbox' in toml_config:
@@ -186,6 +189,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
             logger.openhands_logger.warning(
                 f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}'
             )
+        except ValueError:
+            # Re-raise ValueError from SandboxConfig.from_toml_section
+            raise ValueError('Error in [sandbox] section in config.toml')
 
     # Process extended section if present
     if 'extended' in toml_config:
