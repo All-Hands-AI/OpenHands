@@ -59,20 +59,23 @@ const messageActions = {
   },
   [ActionType.FINISH]: (message: ActionMessage) => {
     store.dispatch(addAssistantMessage(message.args.message_text));
-    let success_prediction = ""
+    let successPrediction = "";
     if (message.args.task_completed === "partial") {
-      success_prediction = "The agent predicts that the task was **completed partially**.";
+      successPrediction =
+        "The agent predicts that the task was **completed partially**.";
     } else if (message.args.task_completed === "false") {
-      success_prediction = "The agent predicts that the task was **not completed**.";
+      successPrediction =
+        "The agent predicts that the task was **not completed**.";
     } else if (message.args.task_completed === "true") {
-      success_prediction = "The agent predicts that the task was **completed successfully**.";
+      successPrediction =
+        "The agent predicts that the task was **completed successfully**.";
     }
-    if (success_prediction) {
+    if (successPrediction) {
       // if message_text is not empty, add a new line before the success prediction
       if (message.args.message_text) {
-        store.dispatch(addAssistantMessage("\n" + success_prediction));
+        store.dispatch(addAssistantMessage(`\n${successPrediction}`));
       } else {
-        store.dispatch(addAssistantMessage(success_prediction));
+        store.dispatch(addAssistantMessage(successPrediction));
       }
     }
   },
