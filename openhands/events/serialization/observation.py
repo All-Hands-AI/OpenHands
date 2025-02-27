@@ -3,6 +3,7 @@ import copy
 from openhands.events.observation.agent import (
     AgentCondensationObservation,
     AgentStateChangedObservation,
+    RecallObservation,
 )
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
@@ -36,6 +37,7 @@ observations = (
     AgentStateChangedObservation,
     UserRejectObservation,
     AgentCondensationObservation,
+    RecallObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {
