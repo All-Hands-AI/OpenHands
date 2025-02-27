@@ -313,7 +313,6 @@ jobs:
           poetry run pip install pytest-rerunfailures
 
           image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
-          image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
           TEST_RUNTIME=docker \
           SANDBOX_USER_ID=$(id -u) \
