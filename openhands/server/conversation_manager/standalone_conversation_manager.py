@@ -11,6 +11,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStream, session_exists
+from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
@@ -32,6 +33,8 @@ class StandaloneConversationManager(ConversationManager):
     sio: socketio.AsyncServer
     config: AppConfig
     file_store: FileStore
+    # Defaulting monitoring_listener for temp backward compatibility.
+    monitoring_listener: MonitoringListener = MonitoringListener()
     _local_agent_loops_by_sid: dict[str, Session] = field(default_factory=dict)
     _local_connection_id_to_session_id: dict[str, str] = field(default_factory=dict)
     _active_conversations: dict[str, tuple[Conversation, int]] = field(
@@ -212,6 +215,7 @@ class StandaloneConversationManager(ConversationManager):
                 config=self.config,
                 sio=self.sio,
                 user_id=user_id,
+                monitoring_listener=self.monitoring_listener,
             )
             self._local_agent_loops_by_sid[sid] = session
             asyncio.create_task(session.initialize_agent(settings, initial_user_msg))
@@ -284,5 +288,8 @@ class StandaloneConversationManager(ConversationManager):
         sio: socketio.AsyncServer,
         config: AppConfig,
         file_store: FileStore,
+        monitoring_listener: MonitoringListener | None = None,
     ) -> ConversationManager:
-        return StandaloneConversationManager(sio, config, file_store)
+        return StandaloneConversationManager(
+            sio, config, file_store, monitoring_listener or MonitoringListener()
+        )
