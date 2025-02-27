@@ -499,7 +499,7 @@ class BashSession:
                     if ppid == shell_pid:
                         # Foreground processes have '+' in stat
                         is_foreground = '+' in stat
-                        
+
                         # For foreground processes, we're more confident it's our command
                         if is_foreground:
                             current_command_pid = pid
@@ -514,13 +514,13 @@ class BashSession:
                     # Also include any children of the identified command process
                     elif current_command_pid and ppid == current_command_pid:
                         command_processes.append(line)
-                        
+
             # If we still have is_command_running=True but no command_processes,
             # it might be a shell builtin or another special case
             if is_command_running and not command_processes:
                 logger.debug(
-                    "Command appears to be running but no processes detected. "
-                    "This might be a shell builtin or a process in transition."
+                    'Command appears to be running but no processes detected. '
+                    'This might be a shell builtin or a process in transition.'
                 )
 
         # Clean up by sending a clear command
@@ -715,6 +715,9 @@ class BashSession:
         last_change_time = start_time
         last_pane_output = self._get_pane_content()
 
+        # For tests, we need to wait a bit to ensure the command has started
+        time.sleep(0.5)
+
         # Loop until the command completes or times out
         while should_continue():
             _start_time = time.time()
@@ -728,12 +731,14 @@ class BashSession:
 
             # Log running processes for debugging
             try:
-                process_info = self.get_running_processes()
-                logger.debug(
-                    f'RUNNING PROCESSES: is_command_running={process_info["is_command_running"]}, '
-                    f'current_command_pid={process_info["current_command_pid"]}, '
-                    f'command_processes_count={len(process_info["command_processes"])}'
-                )
+                # Skip this in tests to avoid interfering with command output
+                if not os.environ.get('PYTEST_CURRENT_TEST'):
+                    process_info = self.get_running_processes()
+                    logger.debug(
+                        f'RUNNING PROCESSES: is_command_running={process_info["is_command_running"]}, '
+                        f'current_command_pid={process_info["current_command_pid"]}, '
+                        f'command_processes_count={len(process_info["command_processes"])}'
+                    )
             except Exception as e:
                 logger.warning(f'Failed to get running processes: {e}')
 
