@@ -18,6 +18,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.event import Event
 from openhands.events.observation import (
     AgentCondensationObservation,
     AgentDelegateObservation,
@@ -44,6 +45,8 @@ class ConversationMemory:
     def process_events(
         self,
         state: State,
+        condensed_history: list[Event],
+        initial_messages: list[Message],
         max_message_chars: int | None = None,
         vision_is_active: bool = False,
         enable_som_visual_browsing: bool = False,
@@ -59,10 +62,14 @@ class ConversationMemory:
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
             enable_som_visual_browsing: Whether to enable visual browsing for the SOM model.
         """
-        events = state.history
+        events = condensed_history
+
+        logger.debug(
+            f'Processing {len(events)} events from a total of {len(state.history)} events'
+        )
 
         # Process special events first (system prompts, etc.)
-        messages = self._process_initial_messages()
+        messages = initial_messages
 
         # Process regular events
         pending_tool_call_action_messages: dict[str, Message] = {}
@@ -117,7 +124,7 @@ class ConversationMemory:
 
         return messages
 
-    def _process_initial_messages(self) -> list[Message]:
+    def process_initial_messages(self, with_caching: bool = False) -> list[Message]:
         """Create the initial messages for the conversation."""
         return [
             Message(
@@ -125,7 +132,7 @@ class ConversationMemory:
                 content=[
                     TextContent(
                         text=self.prompt_manager.get_system_message(),
-                        cache_prompt=True,
+                        cache_prompt=with_caching,
                     )
                 ],
             )
