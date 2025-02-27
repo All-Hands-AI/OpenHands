@@ -188,7 +188,6 @@ class CodeActAgent(Agent):
         messages = self._enhance_messages(messages)
 
         if self.llm.is_caching_prompt_active():
-            # Use conversation_memory to apply caching instead of calling apply_prompt_caching directly
             self.conversation_memory.apply_prompt_caching(messages)
 
         return messages
