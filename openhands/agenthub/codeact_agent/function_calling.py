@@ -91,7 +91,10 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     inputs=arguments,
                 )
             elif tool_call.function.name == FinishTool['function']['name']:
-                action = AgentFinishAction()
+                action = AgentFinishAction(
+                    message_text=arguments.get('message', ''),
+                    task_completed=arguments.get('task_completed', None),
+                )
             elif tool_call.function.name == LLMBasedFileEditTool['function']['name']:
                 if 'path' not in arguments:
                     raise FunctionCallValidationError(

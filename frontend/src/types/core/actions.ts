@@ -44,6 +44,8 @@ export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
 export interface FinishAction extends OpenHandsActionEvent<"finish"> {
   source: "agent";
   args: {
+    message_text: string;
+    task_completed: "success" | "failure" | "partial";
     outputs: Record<string, unknown>;
     thought: string;
   };
