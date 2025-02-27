@@ -4178,6 +4178,21 @@
         "es": "Navegando en la web",
         "tr": "Web'de geziniyor"
     },
+    "ACTION_MESSAGE$THINK": {
+        "en": "Thinking",
+        "zh-CN": "思考",
+        "zh-TW": "思考",
+        "ko-KR": "생각",
+        "ja": "考える",
+        "no": "Tenker",
+        "ar": "يفكر",
+        "de": "Denkt",
+        "fr": "Pensant",
+        "it": "Pensando",
+        "pt": "Pensando",
+        "es": "Pensando",
+        "tr": "Düşünüyor"
+    },
     "OBSERVATION_MESSAGE$RUN": {
         "en": "Ran a bash command",
         "zh-CN": "运行",
