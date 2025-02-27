@@ -15,7 +15,7 @@ from openhands.microagent import (
     RepoMicroAgent,
     load_microagents_from_dir,
 )
-from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import RepositoryInfo, RuntimeInfo
 
 
 class Memory:
@@ -192,6 +192,3 @@ class Memory:
                 self.knowledge_microagents[ma.name] = ma
             elif isinstance(ma, RepoMicroAgent):
                 self.repo_microagents[ma.name] = ma
-
-    def set_prompt_manager(self, prompt_manager: PromptManager):
-        self.prompt_manager = prompt_manager

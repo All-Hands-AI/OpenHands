@@ -340,27 +340,27 @@ class AgentSession:
         # If the agent config has disabled microagents, use them
         disabled = agent.config.disabled_microagents
 
-        mem = Memory(
+        memory = Memory(
             event_stream=self.event_stream,
             microagents_dir=microagents_dir,
             disabled_microagents=disabled,
         )
 
-        if agent.prompt_manager and self.runtime:
+        if self.runtime:
             # sets available hosts
-            mem.set_runtime_info(self.runtime.web_hosts)
+            memory.set_runtime_info(self.runtime.web_hosts)
 
             # loads microagents from repo/.openhands/microagents
             microagents: list[BaseMicroAgent] = await call_sync_from_async(
                 self.runtime.get_microagents_from_selected_repo, selected_repository
             )
-            mem.load_user_workspace_microagents(microagents)
+            memory.load_user_workspace_microagents(microagents)
 
             if selected_repository:
                 repo_directory = selected_repository.split('/')[1]
                 if repo_directory:
-                    mem.set_repository_info(selected_repository, repo_directory)
-        return mem
+                    memory.set_repository_info(selected_repository, repo_directory)
+        return memory
 
     def _maybe_restore_state(self) -> State | None:
         """Helper method to handle state restore logic."""

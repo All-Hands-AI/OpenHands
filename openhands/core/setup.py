@@ -110,7 +110,7 @@ def create_memory(
         disabled_microagents=disabled_microagents,
     )
 
-    if agent.prompt_manager and runtime:
+    if runtime:
         # sets available hosts
         memory.set_runtime_info(runtime.web_hosts)
 
@@ -124,6 +124,7 @@ def create_memory(
             repo_directory = selected_repository.split('/')[1]
             if repo_directory:
                 memory.set_repository_info(selected_repository, repo_directory)
+
     return memory
 
 
