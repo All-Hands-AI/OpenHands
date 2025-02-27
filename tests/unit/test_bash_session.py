@@ -397,9 +397,15 @@ def test_get_running_processes():
     process_info = session.get_running_processes()
     logger.info(f'Initial process info: {process_info}')
     assert isinstance(process_info, dict)
-    assert 'is_command_running' in process_info
-    assert 'processes' in process_info
-    assert 'command_processes' in process_info
+    assert (
+        'is_command_running' in process_info
+        and process_info['is_command_running'] is False
+    )
+    assert 'processes' in process_info and len(process_info['processes']) == 0
+    assert (
+        'command_processes' in process_info
+        and len(process_info['command_processes']) == 0
+    )
 
     # Start a command that will output something and then wait
     obs = session.execute(
@@ -413,6 +419,8 @@ def test_get_running_processes():
     process_info = session.get_running_processes()
     logger.info(f'Process info during command: {process_info}')
     assert process_info['is_command_running'] is True
+    assert process_info['current_command_pid'] is not None
+    assert process_info['command_processes_count'] == 1
 
     # Send Ctrl+C to terminate the process
     session.execute(CmdRunAction('C-c', is_input=True))
