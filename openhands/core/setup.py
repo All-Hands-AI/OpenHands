@@ -78,7 +78,9 @@ def create_runtime(
     call_async_from_sync(runtime.connect)
 
     # clone selected repository if provided
-    github_token = os.environ.get('GITHUB_TOKEN') if not github_token else github_token
+    github_token = (
+        SecretStr(os.environ.get('GITHUB_TOKEN')) if not github_token else github_token
+    )
     if selected_repository and github_token:
         logger.debug(f'Selected repository {selected_repository}.')
         runtime.clone_repo(
