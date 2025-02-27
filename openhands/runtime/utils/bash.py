@@ -428,10 +428,10 @@ class BashSession:
         """Reset the content buffer for a new command."""
         # Clear the current content
         self._clear_screen()
-        
+
     def get_running_processes(self):
         """Get a list of processes that are currently running in the bash session.
-        
+
         Returns:
             dict: A dictionary containing:
                 - 'is_command_running': Boolean indicating if the last command is still running
@@ -441,8 +441,10 @@ class BashSession:
         """
         # Check if a command is running in this session
         pane_content = self._get_pane_content()
-        is_command_running = not pane_content.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip())
-        
+        is_command_running = not pane_content.rstrip().endswith(
+            CMD_OUTPUT_PS1_END.rstrip()
+        )
+
         # Get the shell's PID (parent process)
         self.pane.send_keys('echo $$', enter=True)
         time.sleep(0.2)
@@ -452,66 +454,66 @@ class BashSession:
             if line.strip().isdigit():
                 shell_pid = line.strip()
                 break
-        
+
         # Get the current process info using ps command with full details
         self.pane.send_keys('ps -eo pid,ppid,stat,cmd --forest', enter=True)
         time.sleep(0.5)  # Wait for command to execute
         ps_output = self._get_pane_content()
-        
+
         # Extract the ps output (between the command and the next PS1 prompt)
         ps_lines = ps_output.split('\n')
         start_idx = 0
         end_idx = len(ps_lines)
-        
+
         for i, line in enumerate(ps_lines):
             if 'ps -eo pid,ppid,stat,cmd --forest' in line:
                 start_idx = i + 1
                 break
-        
+
         for i in range(start_idx, len(ps_lines)):
             if '###PS1JSON###' in ps_lines[i]:
                 end_idx = i
                 break
-        
+
         process_list = ps_lines[start_idx:end_idx]
-        
+
         # Identify processes that are likely part of the current command
         # These would be processes whose parent is the shell or are in the same process group
         command_processes = []
         current_command_pid = None
-        
+
         if is_command_running and shell_pid:
             for line in process_list:
                 if not line.strip():
                     continue
-                    
+
                 parts = line.split(None, 3)
                 if len(parts) >= 3:
                     pid, ppid, stat = parts[0], parts[1], parts[2]
-                    
+
                     # Skip the ps command itself
                     if 'ps -eo' in line:
                         continue
-                        
+
                     # Check if this is a direct child of the shell and is a foreground process
                     # '+' in stat indicates a foreground process
                     if ppid == shell_pid and '+' in stat:
                         current_command_pid = pid
                         command_processes.append(line)
-                    
+
                     # Also include any children of the identified command process
                     elif current_command_pid and ppid == current_command_pid:
                         command_processes.append(line)
-        
+
         # Clean up by sending a clear command
         self.pane.send_keys('clear', enter=True)
         time.sleep(0.2)
-        
+
         return {
             'is_command_running': is_command_running,
             'current_command_pid': current_command_pid,
             'processes': process_list,
-            'command_processes': command_processes
+            'command_processes': command_processes,
         }
 
     def _combine_outputs_between_matches(
@@ -705,7 +707,7 @@ class BashSession:
             )
             logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_output.split("\n")[:10]}')
             logger.debug(f'END OF PANE CONTENT: {cur_pane_output.split("\n")[-10:]}')
-            
+
             # Log running processes for debugging
             try:
                 process_info = self.get_running_processes()
@@ -716,7 +718,7 @@ class BashSession:
                 )
             except Exception as e:
                 logger.warning(f'Failed to get running processes: {e}')
-                
+
             ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
             if cur_pane_output != last_pane_output:
                 last_pane_output = cur_pane_output
