@@ -460,11 +460,8 @@ def test_load_from_toml_partial_invalid(default_config, temp_toml_file, caplog):
 
     This ensures that:
     1. Valid configuration sections are properly loaded
-    2. Invalid fields are ignored gracefully
-    3. The config object maintains correct values for valid fields
-    4. Appropriate warnings are logged for invalid fields
-
-    See `openhands/core/schema/config.py` for the list of valid fields.
+    2. Invalid fields in security and sandbox sections raise ValueError
+    4. The config object maintains correct values for valid fields
     """
     with open(temp_toml_file, 'w', encoding='utf-8') as f:
         f.write("""
@@ -472,7 +469,7 @@ def test_load_from_toml_partial_invalid(default_config, temp_toml_file, caplog):
 debug = true
 
 [llm]
-# No set in `openhands/core/schema/config.py`
+# Not set in `openhands/core/schema/config.py`
 invalid_field = "test"
 model = "gpt-4"
 
@@ -484,7 +481,6 @@ invalid_field_in_sandbox = "test"
 """)
 
     # Create a string buffer to capture log output
-    # Referenced from test_logging.py and `mock_logger`
     log_output = StringIO()
     handler = logging.StreamHandler(log_output)
     handler.setLevel(logging.WARNING)
@@ -493,29 +489,40 @@ invalid_field_in_sandbox = "test"
     openhands_logger.addHandler(handler)
 
     try:
-        load_from_toml(default_config, temp_toml_file)
+        # Since sandbox_config.from_toml_section now raises ValueError for invalid fields,
+        # we need to catch that exception
+        with pytest.raises(ValueError) as excinfo:
+            load_from_toml(default_config, temp_toml_file)
+
+        # Verify the error message mentions the invalid sandbox field
+        assert 'Error in [sandbox] section in config.toml' in str(excinfo.value)
+
         log_content = log_output.getvalue()
 
-        # invalid [llm] config
-        # Verify that the appropriate warning was logged
+        # The LLM config should still log a warning but not raise an exception
         assert 'Cannot parse [llm] config from toml' in log_content
-        assert 'values have not been applied' in log_content
-        # Error: LLMConfig.__init__() got an unexpected keyword argume
-        assert 'Cannot parse [llm] config from toml' in log_content
-        assert 'invalid_field' in log_content
 
-        # invalid [sandbox] config
-        assert 'Cannot parse [sandbox] config from toml' in log_content
-        assert 'values have not been applied' in log_content
-        assert 'invalid_field_in_sandbox' in log_content
-
-        # Verify valid configurations are loaded. Load from default instead of `config.toml`
-        # assert default_config.debug is True
+        # Verify valid configurations are loaded before the error was raised
         assert default_config.debug is True
-        assert default_config.get_llm_config().model == 'claude-3-5-sonnet-20241022'
-        assert default_config.get_agent_config().memory_enabled is True
     finally:
         openhands_logger.removeHandler(handler)
+
+
+def test_load_from_toml_security_invalid(default_config, temp_toml_file):
+    """Test that invalid security configuration raises ValueError."""
+    with open(temp_toml_file, 'w', encoding='utf-8') as f:
+        f.write("""
+[core]
+debug = true
+
+[security]
+invalid_security_field = "test"
+""")
+
+    with pytest.raises(ValueError) as excinfo:
+        load_from_toml(default_config, temp_toml_file)
+
+    assert 'Error in [security] section in config.toml' in str(excinfo.value)
 
 
 def test_finalize_config(default_config):
