@@ -3,7 +3,7 @@ import shutil
 
 import pytest
 
-from openhands.core.message import Message, TextContent
+from openhands.core.message import ImageContent, Message, TextContent
 from openhands.microagent import BaseMicroAgent
 from openhands.utils.prompt import PromptManager, RepositoryInfo
 
@@ -201,3 +201,219 @@ Test microagent 2 content
     # Clean up temporary files
     os.remove(os.path.join(prompt_dir, 'micro', f'{microagent1_name}.md'))
     os.remove(os.path.join(prompt_dir, 'micro', f'{microagent2_name}.md'))
+
+
+def test_enhance_message_with_multiple_text_contents(prompt_dir):
+    # Create a test microagent that triggers on a specific keyword
+    microagent_name = 'keyword_microagent'
+    microagent_content = """
+---
+name: KeywordMicroAgent
+type: knowledge
+agent: CodeActAgent
+triggers:
+- triggerkeyword
+---
+
+This is special information about the triggerkeyword.
+"""
+
+    # Create the microagent file
+    os.makedirs(os.path.join(prompt_dir, 'micro'), exist_ok=True)
+    with open(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'), 'w') as f:
+        f.write(microagent_content)
+
+    manager = PromptManager(
+        prompt_dir=prompt_dir, microagent_dir=os.path.join(prompt_dir, 'micro')
+    )
+
+    # Test that it matches the trigger in the last TextContent
+    message = Message(
+        role='user',
+        content=[
+            TextContent(text='This is some initial context.'),
+            TextContent(text='This is a message without triggers.'),
+            TextContent(text='This contains the triggerkeyword that should match.'),
+        ],
+    )
+
+    manager.enhance_message(message)
+
+    # Should have added a TextContent with the microagent info
+    assert len(message.content) == 4
+    assert 'special information about the triggerkeyword' in message.content[3].text
+
+    # Clean up
+    os.remove(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'))
+
+
+def test_enhance_message_with_image_content(prompt_dir):
+    # Create a test microagent that triggers on a specific keyword
+    microagent_name = 'image_test_microagent'
+    microagent_content = """
+---
+name: ImageTestMicroAgent
+type: knowledge
+agent: CodeActAgent
+triggers:
+- imagekeyword
+---
+
+This is information related to imagekeyword.
+"""
+
+    # Create the microagent file
+    os.makedirs(os.path.join(prompt_dir, 'micro'), exist_ok=True)
+    with open(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'), 'w') as f:
+        f.write(microagent_content)
+
+    manager = PromptManager(
+        prompt_dir=prompt_dir, microagent_dir=os.path.join(prompt_dir, 'micro')
+    )
+
+    # Test with mix of ImageContent and TextContent
+    message = Message(
+        role='user',
+        content=[
+            TextContent(text='This is some initial text.'),
+            ImageContent(image_urls=['https://example.com/image.jpg']),
+            TextContent(text='This mentions imagekeyword that should match.'),
+        ],
+    )
+
+    manager.enhance_message(message)
+
+    # Should have added a TextContent with the microagent info
+    assert len(message.content) == 4
+    assert 'information related to imagekeyword' in message.content[3].text
+
+    # Clean up
+    os.remove(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'))
+
+
+def test_enhance_message_with_only_image_content(prompt_dir):
+    # Create a test microagent
+    microagent_name = 'image_only_microagent'
+    microagent_content = """
+---
+name: ImageOnlyMicroAgent
+type: knowledge
+agent: CodeActAgent
+triggers:
+- anytrigger
+---
+
+This should not appear in the enhanced message.
+"""
+
+    # Create the microagent file
+    os.makedirs(os.path.join(prompt_dir, 'micro'), exist_ok=True)
+    with open(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'), 'w') as f:
+        f.write(microagent_content)
+
+    manager = PromptManager(
+        prompt_dir=prompt_dir, microagent_dir=os.path.join(prompt_dir, 'micro')
+    )
+
+    # Test with only ImageContent
+    message = Message(
+        role='user',
+        content=[
+            ImageContent(
+                image_urls=[
+                    'https://example.com/image1.jpg',
+                    'https://example.com/image2.jpg',
+                ]
+            ),
+        ],
+    )
+
+    # Should not raise any exceptions
+    manager.enhance_message(message)
+
+    # Should not have added any content
+    assert len(message.content) == 1
+
+    # Clean up
+    os.remove(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'))
+
+
+def test_enhance_message_with_reversed_order(prompt_dir):
+    # Create a test microagent
+    microagent_name = 'reversed_microagent'
+    microagent_content = """
+---
+name: ReversedMicroAgent
+type: knowledge
+agent: CodeActAgent
+triggers:
+- lasttrigger
+---
+
+This is specific information about the lasttrigger.
+"""
+
+    # Create the microagent file
+    os.makedirs(os.path.join(prompt_dir, 'micro'), exist_ok=True)
+    with open(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'), 'w') as f:
+        f.write(microagent_content)
+
+    manager = PromptManager(
+        prompt_dir=prompt_dir, microagent_dir=os.path.join(prompt_dir, 'micro')
+    )
+
+    # Test where the last text content is not at the end of the list
+    message = Message(
+        role='user',
+        content=[
+            ImageContent(image_urls=['https://example.com/image1.jpg']),
+            TextContent(text='This contains the lasttrigger word.'),
+            ImageContent(image_urls=['https://example.com/image2.jpg']),
+        ],
+    )
+
+    manager.enhance_message(message)
+
+    # Should have added a TextContent with the microagent info
+    assert len(message.content) == 4
+    assert 'specific information about the lasttrigger' in message.content[3].text
+
+    # Clean up
+    os.remove(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'))
+
+
+def test_enhance_message_with_empty_content(prompt_dir):
+    # Create a test microagent
+    microagent_name = 'empty_microagent'
+    microagent_content = """
+---
+name: EmptyMicroAgent
+type: knowledge
+agent: CodeActAgent
+triggers:
+- emptytrigger
+---
+
+This should not appear in the enhanced message.
+"""
+
+    # Create the microagent file
+    os.makedirs(os.path.join(prompt_dir, 'micro'), exist_ok=True)
+    with open(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'), 'w') as f:
+        f.write(microagent_content)
+
+    manager = PromptManager(
+        prompt_dir=prompt_dir, microagent_dir=os.path.join(prompt_dir, 'micro')
+    )
+
+    # Test with empty content
+    message = Message(role='user', content=[])
+
+    # Should not raise any exceptions
+    manager.enhance_message(message)
+
+    # Should not have added any content
+    assert len(message.content) == 0
+
+    # Clean up
+    os.remove(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'))
