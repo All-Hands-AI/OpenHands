@@ -1,5 +1,6 @@
+from unittest.mock import MagicMock, Mock
+
 import pytest
-from pytest_mock import MockerFixture
 
 from openhands.controller.state.state import State
 from openhands.core.message import ImageContent, Message, TextContent
@@ -25,15 +26,15 @@ from openhands.utils.prompt import PromptManager
 
 
 @pytest.fixture
-def conversation_memory(mocker: MockerFixture):
-    prompt_manager = mocker.MagicMock(spec=PromptManager)
+def conversation_memory():
+    prompt_manager = MagicMock(spec=PromptManager)
     prompt_manager.get_system_message.return_value = 'System message'
     return ConversationMemory(prompt_manager)
 
 
 @pytest.fixture
-def mock_state(mocker: MockerFixture):
-    state = mocker.MagicMock(spec=State)
+def mock_state():
+    state = MagicMock(spec=State)
     state.history = []
     return state
 
@@ -193,11 +194,9 @@ def test_process_events_with_error_observation(conversation_memory, mock_state):
     assert 'Error occurred in processing last action' in result.content[0].text
 
 
-def test_process_events_with_unknown_observation(
-    conversation_memory, mock_state, mocker: MockerFixture
-):
+def test_process_events_with_unknown_observation(conversation_memory, mock_state):
     # Create a mock that inherits from Event but not Action or Observation
-    obs = mocker.MagicMock(spec=Event)
+    obs = Mock(spec=Event)
 
     initial_messages = [
         Message(role='system', content=[TextContent(text='System message')])
