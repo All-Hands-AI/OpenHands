@@ -123,142 +123,90 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
         )
         return
 
-    # if there was an exception or core is not in the toml, try to use the old-style toml
+    # Check for the [core] section
     if 'core' not in toml_config:
-        # re-use the env loader to set the config from env-style vars
-        load_from_env(cfg, toml_config)
-        return
-
-    core_config = toml_config['core']
-
-    # load llm configs and agent configs
-    for key, value in toml_config.items():
-        if isinstance(value, dict):
-            try:
-                if key.lower() == 'extended':
-                    # For ExtendedConfig (RootModel), pass the entire dict as the root value
-                    cfg.extended = ExtendedConfig(value)
-                    continue
-                if key is not None and key.lower() == 'agent':
-                    # Every entry here is either a field for the default `agent` config group, or itself a group
-                    # The best way to tell the difference is to try to parse it as an AgentConfig object
-                    agent_group_ids: set[str] = set()
-                    for nested_key, nested_value in value.items():
-                        if isinstance(nested_value, dict):
-                            try:
-                                agent_config = AgentConfig(**nested_value)
-                            except ValidationError:
-                                continue
-                            agent_group_ids.add(nested_key)
-                            cfg.set_agent_config(agent_config, nested_key)
-
-                    logger.openhands_logger.debug(
-                        'Attempt to load default agent config from config toml'
-                    )
-                    value_without_groups = {
-                        k: v for k, v in value.items() if k not in agent_group_ids
-                    }
-                    agent_config = AgentConfig(**value_without_groups)
-                    cfg.set_agent_config(agent_config, 'agent')
-
-                elif key is not None and key.lower() == 'llm':
-                    # Every entry here is either a field for the default `llm` config group, or itself a group
-                    # The best way to tell the difference is to try to parse it as an LLMConfig object
-                    llm_group_ids: set[str] = set()
-                    for nested_key, nested_value in value.items():
-                        if isinstance(nested_value, dict):
-                            try:
-                                llm_config = LLMConfig(**nested_value)
-                            except ValidationError:
-                                continue
-                            llm_group_ids.add(nested_key)
-                            cfg.set_llm_config(llm_config, nested_key)
-
-                    logger.openhands_logger.debug(
-                        'Attempt to load default LLM config from config toml'
-                    )
-
-                    # Extract generic LLM fields, which are not nested LLM configs
-                    generic_llm_fields = {}
-                    for k, v in value.items():
-                        if not isinstance(v, dict):
-                            generic_llm_fields[k] = v
-                    generic_llm_config = LLMConfig(**generic_llm_fields)
-                    cfg.set_llm_config(generic_llm_config, 'llm')
-
-                    # Process custom named LLM configs
-                    for nested_key, nested_value in value.items():
-                        if isinstance(nested_value, dict):
-                            logger.openhands_logger.debug(
-                                f'Processing custom LLM config "{nested_key}":'
-                            )
-                            # Apply generic LLM config with custom LLM overrides, e.g.
-                            # [llm]
-                            # model="..."
-                            # num_retries = 5
-                            # [llm.claude]
-                            # model="claude-3-5-sonnet"
-                            # results in num_retries APPLIED to claude-3-5-sonnet
-                            custom_fields = {}
-                            for k, v in nested_value.items():
-                                if not isinstance(v, dict):
-                                    custom_fields[k] = v
-                            merged_llm_dict = generic_llm_fields.copy()
-                            merged_llm_dict.update(custom_fields)
-
-                            custom_llm_config = LLMConfig(**merged_llm_dict)
-                            cfg.set_llm_config(custom_llm_config, nested_key)
-
-                elif key is not None and key.lower() == 'security':
-                    logger.openhands_logger.debug(
-                        'Attempt to load security config from config toml'
-                    )
-                    security_config = SecurityConfig(**value)
-                    cfg.security = security_config
-                elif not key.startswith('sandbox') and key.lower() != 'core':
-                    logger.openhands_logger.warning(
-                        f'Unknown key in {toml_file}: "{key}"'
-                    )
-            except (TypeError, KeyError, ValidationError) as e:
-                logger.openhands_logger.warning(
-                    f'Cannot parse [{key}] config from toml, values have not been applied.\nError: {e}',
-                )
-        else:
-            logger.openhands_logger.warning(f'Unknown section [{key}] in {toml_file}')
-
-    try:
-        # set sandbox config from the toml file
-        sandbox_config = cfg.sandbox
-
-        # migrate old sandbox configs from [core] section to sandbox config
-        keys_to_migrate = [key for key in core_config if key.startswith('sandbox_')]
-        for key in keys_to_migrate:
-            new_key = key.replace('sandbox_', '')
-            if new_key in sandbox_config.__annotations__:
-                # read the key in sandbox and remove it from core
-                setattr(sandbox_config, new_key, core_config.pop(key))
-            else:
-                logger.openhands_logger.warning(
-                    f'Unknown config key "{key}" in [sandbox] section'
-                )
-
-        # the new style values override the old style values
-        if 'sandbox' in toml_config:
-            sandbox_config = SandboxConfig(**toml_config['sandbox'])
-
-        # update the config object with the new values
-        cfg.sandbox = sandbox_config
-        for key, value in core_config.items():
-            if hasattr(cfg, key):
-                setattr(cfg, key, value)
-            else:
-                logger.openhands_logger.warning(
-                    f'Unknown config key "{key}" in [core] section'
-                )
-    except (TypeError, KeyError, ValidationError) as e:
         logger.openhands_logger.warning(
-            f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}',
+            f'No [core] section found in {toml_file}. Core settings will use defaults.'
         )
+        core_config = {}
+    else:
+        core_config = toml_config['core']
+
+    # Process core section if present
+    for key, value in core_config.items():
+        if hasattr(cfg, key):
+            setattr(cfg, key, value)
+        else:
+            logger.openhands_logger.warning(
+                f'Unknown config key "{key}" in [core] section'
+            )
+
+    # Process agent section if present
+    if 'agent' in toml_config:
+        try:
+            agent_mapping = AgentConfig.from_toml_section(toml_config['agent'])
+            for agent_key, agent_conf in agent_mapping.items():
+                cfg.set_agent_config(agent_conf, agent_key)
+        except (TypeError, KeyError, ValidationError) as e:
+            logger.openhands_logger.warning(
+                f'Cannot parse [agent] config from toml, values have not been applied.\nError: {e}'
+            )
+
+    # Process llm section if present
+    if 'llm' in toml_config:
+        try:
+            llm_mapping = LLMConfig.from_toml_section(toml_config['llm'])
+            for llm_key, llm_conf in llm_mapping.items():
+                cfg.set_llm_config(llm_conf, llm_key)
+        except (TypeError, KeyError, ValidationError) as e:
+            logger.openhands_logger.warning(
+                f'Cannot parse [llm] config from toml, values have not been applied.\nError: {e}'
+            )
+
+    # Process security section if present
+    if 'security' in toml_config:
+        try:
+            security_mapping = SecurityConfig.from_toml_section(toml_config['security'])
+            # We only use the base security config for now
+            if 'security' in security_mapping:
+                cfg.security = security_mapping['security']
+        except (TypeError, KeyError, ValidationError) as e:
+            logger.openhands_logger.warning(
+                f'Cannot parse [security] config from toml, values have not been applied.\nError: {e}'
+            )
+        except ValueError:
+            # Re-raise ValueError from SecurityConfig.from_toml_section
+            raise ValueError('Error in [security] section in config.toml')
+
+    # Process sandbox section if present
+    if 'sandbox' in toml_config:
+        try:
+            sandbox_mapping = SandboxConfig.from_toml_section(toml_config['sandbox'])
+            # We only use the base sandbox config for now
+            if 'sandbox' in sandbox_mapping:
+                cfg.sandbox = sandbox_mapping['sandbox']
+        except (TypeError, KeyError, ValidationError) as e:
+            logger.openhands_logger.warning(
+                f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}'
+            )
+        except ValueError:
+            # Re-raise ValueError from SandboxConfig.from_toml_section
+            raise ValueError('Error in [sandbox] section in config.toml')
+
+    # Process extended section if present
+    if 'extended' in toml_config:
+        try:
+            cfg.extended = ExtendedConfig(toml_config['extended'])
+        except (TypeError, KeyError, ValidationError) as e:
+            logger.openhands_logger.warning(
+                f'Cannot parse [extended] config from toml, values have not been applied.\nError: {e}'
+            )
+
+    # Check for unknown sections
+    known_sections = {'core', 'extended', 'agent', 'llm', 'security', 'sandbox'}
+    for key in toml_config:
+        if key.lower() not in known_sections:
+            logger.openhands_logger.warning(f'Unknown section [{key}] in {toml_file}')
 
 
 def get_or_create_jwt_secret(file_store: FileStore) -> str:
@@ -513,9 +461,9 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-n',
         '--name',
-        default='',
+        help='Session name',
         type=str,
-        help='Name for the session',
+        default='',
     )
     parser.add_argument(
         '--eval-ids',
@@ -525,8 +473,15 @@ def get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         '--no-auto-continue',
+        help='Disable auto-continue responses in headless mode (i.e. headless will read from stdin instead of auto-continuing)',
         action='store_true',
-        help='Disable automatic "continue" responses in headless mode. Will read from stdin instead.',
+        default=False,
+    )
+    parser.add_argument(
+        '--selected-repo',
+        help='GitHub repository to clone (format: owner/repo)',
+        type=str,
+        default=None,
     )
     return parser
 
@@ -592,5 +547,9 @@ def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
         config.max_iterations = args.max_iterations
     if args.max_budget_per_task is not None:
         config.max_budget_per_task = args.max_budget_per_task
+
+    # Read selected repository in config for use by CLI and main.py
+    if args.selected_repo is not None:
+        config.sandbox.selected_repo = args.selected_repo
 
     return config

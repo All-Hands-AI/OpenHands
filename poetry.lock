@@ -181,14 +181,14 @@ files = [
 
 [[package]]
 name = "anthropic"
-version = "0.46.0"
+version = "0.47.2"
 description = "The official Python library for the anthropic API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "anthropic-0.46.0-py3-none-any.whl", hash = "sha256:1445ec9be78d2de7ea51b4d5acd3574e414aea97ef903d0ecbb57bec806aaa49"},
-    {file = "anthropic-0.46.0.tar.gz", hash = "sha256:eac3d43271d02321a57c3ca68aca84c3d58873e8e72d1433288adee2d46b745b"},
+    {file = "anthropic-0.47.2-py3-none-any.whl", hash = "sha256:61b712a56308fce69f04d92ba0230ab2bc187b5bce17811d400843a8976bb67f"},
+    {file = "anthropic-0.47.2.tar.gz", hash = "sha256:452f4ca0c56ffab8b6ce9928bf8470650f88106a7001b250895eb65c54cfa44c"},
 ]
 
 [package.dependencies]
@@ -601,18 +601,18 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.36.25"
+version = "1.37.1"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "boto3-1.36.25-py3-none-any.whl", hash = "sha256:41fb90a516995946563ec91b9d891e2516c58617e9556d5e86dfa62da3fdebe6"},
-    {file = "boto3-1.36.25.tar.gz", hash = "sha256:a057c19adffb48737c192bdb10f9d85e0d9dcecd21327f51520c15db9022a835"},
+    {file = "boto3-1.37.1-py3-none-any.whl", hash = "sha256:4320441f904435a1b85e6ecb81793192e522c737cc9ed6566014e29f0a11cb22"},
+    {file = "boto3-1.37.1.tar.gz", hash = "sha256:96d18f7feb0c1fcb95f8837b74b6c8880e1b4e35ce5f8a8f8cb243a090c278ed"},
 ]
 
 [package.dependencies]
-botocore = ">=1.36.25,<1.37.0"
+botocore = ">=1.37.1,<1.38.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.11.0,<0.12.0"
 
@@ -621,14 +621,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.36.25"
+version = "1.37.1"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "botocore-1.36.25-py3-none-any.whl", hash = "sha256:04c8ff03531e8d92baa8c98d1850bdf01668a805467f4222b65e5325f94aa8af"},
-    {file = "botocore-1.36.25.tar.gz", hash = "sha256:3b0a857d2621c336fb82a36cb6da4b6e062d346451ac46d110b074e5e5fd7cfc"},
+    {file = "botocore-1.37.1-py3-none-any.whl", hash = "sha256:c1db1bfc5d8c6b3b6d1ca6794f605294b4264e82a7e727b88e0fef9c2b9fbb9c"},
+    {file = "botocore-1.37.1.tar.gz", hash = "sha256:b194db8fb2a0ffba53568c364ae26166e7eec0445496b2ac86a6e142f3dd982f"},
 ]
 
 [package.dependencies]
@@ -2455,14 +2455,14 @@ grpcio-gcp = ["grpcio-gcp (>=0.2.2,<1.0.dev0)"]
 
 [[package]]
 name = "google-api-python-client"
-version = "2.161.0"
+version = "2.162.0"
 description = "Google API Client Library for Python"
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "google_api_python_client-2.161.0-py2.py3-none-any.whl", hash = "sha256:9476a5a4f200bae368140453df40f9cda36be53fa7d0e9a9aac4cdb859a26448"},
-    {file = "google_api_python_client-2.161.0.tar.gz", hash = "sha256:324c0cce73e9ea0a0d2afd5937e01b7c2d6a4d7e2579cdb6c384f9699d6c9f37"},
+    {file = "google_api_python_client-2.162.0-py2.py3-none-any.whl", hash = "sha256:49365fa4f7795fe81a747f5544d6528ea94314fa59664e0ea1005f603facf1ec"},
+    {file = "google_api_python_client-2.162.0.tar.gz", hash = "sha256:5f8bc934a5b6eea73a7d12d999e6585c1823179f48340234acb385e2502e735a"},
 ]
 
 [package.dependencies]
@@ -3642,14 +3642,14 @@ files = [
 
 [[package]]
 name = "json-repair"
-version = "0.39.0"
+version = "0.39.1"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "json_repair-0.39.0-py3-none-any.whl", hash = "sha256:a17838801dc2cbaa967ef3ee69ea8b0379819fec320e7e53fd062fda55080e76"},
-    {file = "json_repair-0.39.0.tar.gz", hash = "sha256:d6fb9817e60d923d887814a78b5c174250b542c4b03ea548071b5acdfa8c1408"},
+    {file = "json_repair-0.39.1-py3-none-any.whl", hash = "sha256:3001409a2f319249f13e13d6c622117a5b70ea7e0c6f43864a0233cdffc3a599"},
+    {file = "json_repair-0.39.1.tar.gz", hash = "sha256:e90a489f247e1a8fc86612a5c719872a3dbf9cbaffd6d55f238ec571a77740fa"},
 ]
 
 [[package]]
@@ -4182,14 +4182,14 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.61.13"
+version = "1.61.16"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 groups = ["main"]
 files = [
-    {file = "litellm-1.61.13-py3-none-any.whl", hash = "sha256:184376f26d39fba6975a0c9167166d857bebd0373939605c7181ff296affd2af"},
-    {file = "litellm-1.61.13.tar.gz", hash = "sha256:569102ae22c3df198dc5903f811582d61bf347951cacf67192511e391a1b3293"},
+    {file = "litellm-1.61.16-py3-none-any.whl", hash = "sha256:d241436ac0edf64ec57fb5686f8d84a25998a7e52213d9063adf87df8432701f"},
+    {file = "litellm-1.61.16.tar.gz", hash = "sha256:02df5865f98ea9734a4d27ac7c33aad9a45c4015403d5c0797d3292ade3c5cb5"},
 ]
 
 [package.dependencies]
@@ -4247,20 +4247,20 @@ python-dotenv = ">=1.0.1,<2.0.0"
 
 [[package]]
 name = "llama-index"
-version = "0.12.19"
+version = "0.12.20"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["llama-index"]
 files = [
-    {file = "llama_index-0.12.19-py3-none-any.whl", hash = "sha256:5ff5d3d3ae7a321cfccf16e76f07393e1a84f177d357c650eb9a0c3d1ba8bce7"},
-    {file = "llama_index-0.12.19.tar.gz", hash = "sha256:a13e1f95e78ae4ec8a53019583a6ff67bdadff296e800af85cc276ad748ae799"},
+    {file = "llama_index-0.12.20-py3-none-any.whl", hash = "sha256:461093b03694c6e1342b743b20e35eb2d616749a207f20c154cbd23c075f6f25"},
+    {file = "llama_index-0.12.20.tar.gz", hash = "sha256:f154abba9bfb552478b6822d9b043504523e8af3029002ba61c79828ab6e5703"},
 ]
 
 [package.dependencies]
 llama-index-agent-openai = ">=0.4.0,<0.5.0"
 llama-index-cli = ">=0.4.0,<0.5.0"
-llama-index-core = ">=0.12.19,<0.13.0"
+llama-index-core = ">=0.12.20,<0.13.0"
 llama-index-embeddings-openai = ">=0.3.0,<0.4.0"
 llama-index-indices-managed-llama-cloud = ">=0.4.0"
 llama-index-llms-openai = ">=0.3.0,<0.4.0"
@@ -4307,14 +4307,14 @@ llama-index-llms-openai = ">=0.3.0,<0.4.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.19"
+version = "0.12.20"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["llama-index"]
 files = [
-    {file = "llama_index_core-0.12.19-py3-none-any.whl", hash = "sha256:6dee42a7ed6de8873336f5725ad4e8131fee22c9eb70d98332eb124f5036d754"},
-    {file = "llama_index_core-0.12.19.tar.gz", hash = "sha256:4b5a6b024e7b9ccdfb2bfa471f8b02bef146109600cf5d011669394e97fc028c"},
+    {file = "llama_index_core-0.12.20-py3-none-any.whl", hash = "sha256:1af65cb28cf59e1d1ae49a0268aee0a830141be97a083750754067a1337c67ac"},
+    {file = "llama_index_core-0.12.20.tar.gz", hash = "sha256:c115264aa738f0ee77e60150084940b1e9df7e9d66c80e7c6091064bb20c57e1"},
 ]
 
 [package.dependencies]
@@ -4360,14 +4360,14 @@ llama-index-llms-azure-openai = ">=0.3.0,<0.4.0"
 
 [[package]]
 name = "llama-index-embeddings-huggingface"
-version = "0.5.1"
+version = "0.5.2"
 description = "llama-index embeddings huggingface integration"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["llama-index"]
 files = [
-    {file = "llama_index_embeddings_huggingface-0.5.1-py3-none-any.whl", hash = "sha256:cff600538e9616829d379ced09f08fc6d237e5599975d781ca52b599a419394e"},
-    {file = "llama_index_embeddings_huggingface-0.5.1.tar.gz", hash = "sha256:def1639bab8511e3ac0284520104b0c6dce9bc053b4dce38c127bd62bc28f7fc"},
+    {file = "llama_index_embeddings_huggingface-0.5.2-py3-none-any.whl", hash = "sha256:a8144eb7e644ecd5f2fcf1ad75262c06eebdb22cc31bad26c5f2ced40f399f67"},
+    {file = "llama_index_embeddings_huggingface-0.5.2.tar.gz", hash = "sha256:8427a7b7a1ad25f3d1f1bbd8ade8ff5cc3ddac9eea5553eda7fcf9b3860aec83"},
 ]
 
 [package.dependencies]
@@ -5107,14 +5107,14 @@ type = ["mypy (==1.14.1)"]
 
 [[package]]
 name = "modal"
-version = "0.73.61"
+version = "0.73.71"
 description = "Python client library for Modal"
 optional = false
 python-versions = ">=3.9"
 groups = ["main", "evaluation"]
 files = [
-    {file = "modal-0.73.61-py3-none-any.whl", hash = "sha256:64ea22fcf245c48786fd1efa935425cc6de5cee34fc0cc7cdc6bc6543259bfca"},
-    {file = "modal-0.73.61.tar.gz", hash = "sha256:624e1871b7c2af7a07fb587c1e02bc74fa39fed7c62e9db4996081e0d552e4ab"},
+    {file = "modal-0.73.71-py3-none-any.whl", hash = "sha256:d07882c7d5dddcfa1a61df789d8d5eb5d2617173e97b16ffd67c525b4cc2ec8f"},
+    {file = "modal-0.73.71.tar.gz", hash = "sha256:815d8478ef93eb4100fec4824278b8310094941bccb4a07e4b2ff1c5418f5034"},
 ]
 
 [package.dependencies]
@@ -5932,14 +5932,14 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.63.2"
+version = "1.64.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main", "evaluation", "llama-index", "test"]
 files = [
-    {file = "openai-1.63.2-py3-none-any.whl", hash = "sha256:1f38b27b5a40814c2b7d8759ec78110df58c4a614c25f182809ca52b080ff4d4"},
-    {file = "openai-1.63.2.tar.gz", hash = "sha256:aeabeec984a7d2957b4928ceaa339e2ead19c61cfcf35ae62b7c363368d26360"},
+    {file = "openai-1.64.0-py3-none-any.whl", hash = "sha256:20f85cde9e95e9fbb416e3cb5a6d3119c0b28308afd6e3cc47bf100623dac623"},
+    {file = "openai-1.64.0.tar.gz", hash = "sha256:2861053538704d61340da56e2f176853d19f1dc5704bc306b7597155f850d57a"},
 ]
 
 [package.dependencies]
@@ -7189,14 +7189,14 @@ files = [
 
 [[package]]
 name = "pygithub"
-version = "2.6.0"
+version = "2.6.1"
 description = "Use the full Github API v3"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "PyGithub-2.6.0-py3-none-any.whl", hash = "sha256:22635b245b885413c607bb86393603cadcfdcb67a9b81ce9a64634e64f308084"},
-    {file = "pygithub-2.6.0.tar.gz", hash = "sha256:04784fd6f4acfcaf91df5d3f08ef14153709395a34e706850f92337d9914548f"},
+    {file = "PyGithub-2.6.1-py3-none-any.whl", hash = "sha256:6f2fa6d076ccae475f9fc392cc6cdbd54db985d4f69b8833a28397de75ed6ca3"},
+    {file = "pygithub-2.6.1.tar.gz", hash = "sha256:b5c035392991cca63959e9453286b41b54d83bf2de2daa7d7ff7e4312cebf3bf"},
 ]
 
 [package.dependencies]
@@ -8362,14 +8362,14 @@ files = [
 
 [[package]]
 name = "runloop-api-client"
-version = "0.24.0"
+version = "0.25.0"
 description = "The official Python library for the runloop API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "runloop_api_client-0.24.0-py3-none-any.whl", hash = "sha256:9b7a061b0e110e1b6b66e13cba9fd17ed4cfae2e4846928b3003c6aded76835b"},
-    {file = "runloop_api_client-0.24.0.tar.gz", hash = "sha256:1d47aee8996e18136aad104c5934979c03c56f9df589bd7458c909d0ad92c663"},
+    {file = "runloop_api_client-0.25.0-py3-none-any.whl", hash = "sha256:de27147998f1cc36ff187c1207a1c494eb646db878d960254dcbdda8b60ba7f4"},
+    {file = "runloop_api_client-0.25.0.tar.gz", hash = "sha256:66b10b3cb21cf448bc5aecb396199d0f1e6ae9973ad6559e67ffdbf88c15cab9"},
 ]
 
 [package.dependencies]
@@ -9106,13 +9106,15 @@ files = [
 
 [[package]]
 name = "swebench"
-version = "2.0.13"
+version = "3.0.8"
 description = "The official SWE-bench package - a benchmark for evaluating LMs on software engineering"
 optional = false
 python-versions = ">=3.8"
 groups = ["evaluation"]
-files = []
-develop = false
+files = [
+    {file = "swebench-3.0.8-py3-none-any.whl", hash = "sha256:daea564215dc77fc27998405a68e7b40880d25ed408813fe0ccd890bcc249a02"},
+    {file = "swebench-3.0.8.tar.gz", hash = "sha256:f86f8412690c808592b3accb20c018f9cf480dbafa21525e065a138dd06b6e1f"},
+]
 
 [package.dependencies]
 beautifulsoup4 = "*"
@@ -9121,21 +9123,18 @@ datasets = "*"
 docker = "*"
 ghapi = "*"
 GitPython = "*"
+modal = "*"
 pre-commit = "*"
 python-dotenv = "*"
 requests = "*"
 rich = "*"
+tenacity = "*"
 tqdm = "*"
 unidiff = "*"
 
 [package.extras]
-inference = ["anthropic", "flash_attn", "jedi", "openai", "peft", "protobuf", "sentencepiece", "tenacity", "tiktoken", "torch", "transformers", "triton"]
-
-[package.source]
-type = "git"
-url = "https://github.com/All-Hands-AI/SWE-bench.git"
-reference = "HEAD"
-resolved_reference = "c807c112edc3dcb4fdf5ddac63b34706912d5cdb"
+inference = ["anthropic", "flash_attn", "jedi", "openai", "peft", "protobuf", "sentencepiece", "tiktoken", "torch", "transformers", "triton"]
+test = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "sympy"
@@ -10853,4 +10852,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "39e0f069346a4d1e52193899989b79ea3e02f81d67fbb2ac0fdc87e70bd1008f"
+content-hash = "0aa5dc28564265aa19b0c90e6f65cd2b086a373ecdaa5c521542aa19d3c84ecf"
