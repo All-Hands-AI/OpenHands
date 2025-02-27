@@ -14,9 +14,10 @@ export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const { curStatusMessage } = useSelector((state: RootState) => state.status);
-  const { status } = useWsClient();
+  const { status, pendingMessages } = useWsClient();
 
   const [statusMessage, setStatusMessage] = React.useState<string>("");
+  const hasPendingMessages = pendingMessages.length > 0;
 
   const updateStatusMessage = () => {
     let message = curStatusMessage.message || "";
@@ -47,11 +48,15 @@ export function AgentStatusBar() {
 
   React.useEffect(() => {
     if (status === WsClientProviderStatus.DISCONNECTED) {
-      setStatusMessage("Connecting...");
+      if (hasPendingMessages) {
+        setStatusMessage(`Connecting... (${pendingMessages.length} pending message${pendingMessages.length !== 1 ? 's' : ''})`);
+      } else {
+        setStatusMessage("Connecting...");
+      }
     } else {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
     }
-  }, [curAgentState]);
+  }, [curAgentState, status, pendingMessages.length]);
 
   return (
     <div className="flex flex-col items-center">

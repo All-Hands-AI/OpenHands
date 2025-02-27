@@ -49,13 +49,19 @@ interface UseWsClient {
   isLoadingMessages: boolean;
   events: Record<string, unknown>[];
   send: (event: Record<string, unknown>) => void;
+  queueMessage: (event: Record<string, unknown>) => void;
+  pendingMessages: Record<string, unknown>[];
 }
 
 const WsClientContext = React.createContext<UseWsClient>({
   status: WsClientProviderStatus.DISCONNECTED,
   isLoadingMessages: true,
   events: [],
+  pendingMessages: [],
   send: () => {
+    throw new Error("not connected");
+  },
+  queueMessage: () => {
     throw new Error("not connected");
   },
 });
@@ -109,6 +115,7 @@ export function WsClientProvider({
     WsClientProviderStatus.DISCONNECTED,
   );
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
+  const [pendingMessages, setPendingMessages] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
 
   const messageRateHandler = useRate({ threshold: 250 });
@@ -116,13 +123,26 @@ export function WsClientProvider({
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
       EventLogger.error("WebSocket is not connected.");
+      queueMessage(event);
       return;
     }
     sioRef.current.emit("oh_action", event);
   }
 
+  function queueMessage(event: Record<string, unknown>) {
+    setPendingMessages((prev) => [...prev, event]);
+  }
+
   function handleConnect() {
     setStatus(WsClientProviderStatus.CONNECTED);
+    
+    // Send any pending messages when connection is established
+    if (pendingMessages.length > 0 && sioRef.current) {
+      pendingMessages.forEach(event => {
+        sioRef.current?.emit("oh_action", event);
+      });
+      setPendingMessages([]);
+    }
   }
 
   function handleMessage(event: Record<string, unknown>) {
@@ -210,9 +230,11 @@ export function WsClientProvider({
       status,
       isLoadingMessages: messageRateHandler.isUnderThreshold,
       events,
+      pendingMessages,
       send,
+      queueMessage,
     }),
-    [status, messageRateHandler.isUnderThreshold, events],
+    [status, messageRateHandler.isUnderThreshold, events, pendingMessages],
   );
 
   return <WsClientContext value={value}>{children}</WsClientContext>;
