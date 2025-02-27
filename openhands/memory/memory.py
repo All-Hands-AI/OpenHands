@@ -100,18 +100,21 @@ class Memory:
 
     def _on_first_user_message(self, event: MessageAction):
         """Add repository and runtime information to the stream as a RecallObservation."""
+        
         # Collect raw repository instructions
         repo_instructions = ''
         assert (
             len(self.repo_microagents) <= 1
         ), f'Expecting at most one repo microagent, but found {len(self.repo_microagents)}: {self.repo_microagents.keys()}'
+
+        # Retrieve the context of repo instructions
         for microagent in self.repo_microagents.values():
             # We assume these are the repo instructions
             if repo_instructions:
                 repo_instructions += '\n\n'
             repo_instructions += microagent.content
         
-        # Create observation with structured data, not formatted text
+        # Create observation with structured data
         obs_data = {
             "type": "environment_info",
             "repository_info": self.repository_info.model_dump() if self.repository_info else None,
