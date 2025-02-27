@@ -40,6 +40,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
       - name: Comment on PR if 'integration-test' label is present
         if: github.event_name == 'pull_request' && github.event.label.name == 'integration-test'
         uses: KeisukeYamashita/create-comment@v1

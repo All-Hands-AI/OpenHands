@@ -88,14 +88,19 @@ async def run_controller(
     """
     sid = sid or generate_sid(config)
 
+    if agent is None:
+        agent = create_agent(config)
+
     if runtime is None:
-        runtime = create_runtime(config, sid=sid, headless_mode=headless_mode)
-        await runtime.connect()
+        runtime = create_runtime(
+            config,
+            sid=sid,
+            headless_mode=headless_mode,
+            agent=agent,
+            selected_repository=config.sandbox.selected_repo,
+        )
 
     event_stream = runtime.event_stream
-
-    if agent is None:
-        agent = create_agent(runtime, config)
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:
