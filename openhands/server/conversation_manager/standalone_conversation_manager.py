@@ -1,7 +1,7 @@
 import asyncio
 import time
 from dataclasses import dataclass, field
-from typing import Iterable
+from typing import Iterable, Type
 
 import socketio
 
@@ -11,12 +11,14 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStream, session_exists
+from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.server.settings import Settings
-from openhands.storage.files import FileStore
 from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.files import FileStore
 from openhands.utils.async_utils import wait_all
+from openhands.utils.import_utils import get_impl
 from openhands.utils.shutdown_listener import should_continue
 
 from .conversation_manager import ConversationManager
@@ -31,7 +33,8 @@ class StandaloneConversationManager(ConversationManager):
     sio: socketio.AsyncServer
     config: AppConfig
     file_store: FileStore
-    conversation_store: ConversationStore
+    # Defaulting monitoring_listener for temp backward compatibility.
+    monitoring_listener: MonitoringListener = MonitoringListener()
     _local_agent_loops_by_sid: dict[str, Session] = field(default_factory=dict)
     _local_connection_id_to_session_id: dict[str, str] = field(default_factory=dict)
     _active_conversations: dict[str, tuple[Conversation, int]] = field(
@@ -42,6 +45,7 @@ class StandaloneConversationManager(ConversationManager):
     )
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
+    _conversation_store_class: Type | None = None
 
     async def __aenter__(self):
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
@@ -154,35 +158,47 @@ class StandaloneConversationManager(ConversationManager):
                 logger.error('error_cleaning_stale')
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
+    def _get_conversation_store(self, user_id: str | None):
+        conversation_store_class = self._conversation_store_class
+        if not conversation_store_class:
+            self._conversation_store_class = conversation_store_class = get_impl(
+                ConversationStore,  # type: ignore
+                self.config.conversation_store_class,
+            )
+        store = conversation_store_class.get_instance(self.config, user_id)
+        return store
+
     async def get_running_agent_loops(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> list[str]:
         """Get the running session ids in chronological order (oldest first).
-        
+
         If a user is supplied, then the results are limited to session ids for that user.
         If a set of filter_to_sids is supplied, then results are limited to these ids of interest.
-        
+
         Returns:
             A list of session IDs in chronological order (oldest first).
         """
         # Get all items and convert to list for sorting
-        items: list[tuple[str, Session]] = list(self._local_agent_loops_by_sid.items())
-        
+        items: Iterable[tuple[str, Session]] = self._local_agent_loops_by_sid.items()
+
         # Filter items if needed
         if filter_to_sids is not None:
             items = [item for item in items if item[0] in filter_to_sids]
         if user_id:
             items = [item for item in items if item[1].user_id == user_id]
-        
+
         # Get metadata for each session
-        sids_with_time = {}  # sid -> last_updated_at
-        for sid, _ in items:
-            metadata = await self.conversation_store.get_metadata(sid)
-            if metadata:
-                sids_with_time[sid] = metadata.last_updated_at
-        
+        conversation_store = self._get_conversation_store(user_id)
+        conversations = await conversation_store.get_all_metadata(
+            [item[0] for item in items]
+        )
+
         # Sort by last_updated_at (oldest first)
-        return sorted(sids_with_time.keys(), key=lambda sid: sids_with_time[sid])
+        conversations.sort(key=lambda conversation: conversation.last_updated_at)
+
+        results = [conversation.conversation_id for conversation in conversations]
+        return results
 
     async def get_connections(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
@@ -227,6 +243,7 @@ class StandaloneConversationManager(ConversationManager):
                 config=self.config,
                 sio=self.sio,
                 user_id=user_id,
+                monitoring_listener=self.monitoring_listener,
             )
             self._local_agent_loops_by_sid[sid] = session
             asyncio.create_task(session.initialize_agent(settings, initial_user_msg))
@@ -299,6 +316,11 @@ class StandaloneConversationManager(ConversationManager):
         sio: socketio.AsyncServer,
         config: AppConfig,
         file_store: FileStore,
-        conversation_store: ConversationStore,
+        monitoring_listener: MonitoringListener | None = None,
     ) -> ConversationManager:
-        return StandaloneConversationManager(sio, config, file_store, conversation_store)
+        return StandaloneConversationManager(
+            sio,
+            config,
+            file_store,
+            monitoring_listener or MonitoringListener(),
+        )

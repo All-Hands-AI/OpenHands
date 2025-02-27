@@ -9,8 +9,8 @@ from openhands.events.action import MessageAction
 from openhands.events.stream import EventStream
 from openhands.server.session.conversation import Conversation
 from openhands.server.settings import Settings
-from openhands.storage.files import FileStore
 from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.files import FileStore
 
 
 class ConversationManager(ABC):
@@ -56,7 +56,7 @@ class ConversationManager(ABC):
     @abstractmethod
     async def get_running_agent_loops(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
-    ) -> set[str]:
+    ) -> list[str]:
         """Get all running agent loops, optionally filtered by user ID and session IDs."""
 
     @abstractmethod
@@ -94,6 +94,5 @@ class ConversationManager(ABC):
         sio: socketio.AsyncServer,
         config: AppConfig,
         file_store: FileStore,
-        conversation_store: ConversationStore,
     ) -> ConversationManager:
         """Get a conversation manager instance"""

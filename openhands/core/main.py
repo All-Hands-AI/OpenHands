@@ -88,14 +88,19 @@ async def run_controller(
     """
     sid = sid or generate_sid(config)
 
+    if agent is None:
+        agent = create_agent(config)
+
     if runtime is None:
-        runtime = create_runtime(config, sid=sid, headless_mode=headless_mode)
-        await runtime.connect()
+        runtime = create_runtime(
+            config,
+            sid=sid,
+            headless_mode=headless_mode,
+            agent=agent,
+            selected_repository=config.sandbox.selected_repo,
+        )
 
     event_stream = runtime.event_stream
-
-    if agent is None:
-        agent = create_agent(runtime, config)
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:
@@ -247,17 +252,18 @@ if __name__ == '__main__':
     # Read task from file, CLI args, or stdin
     task_str = read_task(args, config.cli_multiline_input)
 
+    initial_user_action: Action = NullAction()
     if config.replay_trajectory_path:
         if task_str:
             raise ValueError(
                 'User-specified task is not supported under trajectory replay mode'
             )
+    else:
+        if not task_str:
+            raise ValueError('No task provided. Please specify a task through -t, -f.')
 
-    if not task_str:
-        raise ValueError('No task provided. Please specify a task through -t, -f.')
-
-    # Create initial user action
-    initial_user_action: MessageAction = MessageAction(content=task_str)
+        # Create actual initial user action
+        initial_user_action = MessageAction(content=task_str)
 
     # Set session name
     session_name = args.name
