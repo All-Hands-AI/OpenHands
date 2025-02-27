@@ -127,37 +127,35 @@ class Memory:
         self.event_stream.add_event(obs, EventSource.ENVIRONMENT)
 
     def _on_user_message_action(self, event: MessageAction):
-        """Replicates old microagent logic: if a microagent triggers on user text,
-        we embed it in an <extra_info> block and post a RecallObservation."""
+        """When a user message triggers microagents, create a RecallObservation with structured data."""
         if event.source != 'user':
             return
-
+    
         # If there's no text, do nothing
         user_text = event.content.strip()
         if not user_text:
             return
+        
         # Gather all triggered microagents
-        microagent_blocks = []
+        triggered_agents = []
         for name, agent in self.knowledge_microagents.items():
             trigger = agent.match_trigger(user_text)
             if trigger:
                 logger.info("Microagent '%s' triggered by keyword '%s'", name, trigger)
-                micro_text = (
-                    f'<extra_info>\n'
-                    f'The following information has been included based on a keyword match for "{trigger}". '
-                    f"It may or may not be relevant to the user's request.\n\n"
-                    f'{agent.content}\n'
-                    f'</extra_info>'
-                )
-                microagent_blocks.append(micro_text)
-
-        if microagent_blocks:
-            # Combine all triggered microagents into a single RecallObservation
-            combined_text = '\n'.join(microagent_blocks)
-            obs = RecallObservation(content=combined_text)
-            self.event_stream.add_event(
-                obs, event.source if event.source else EventSource.ENVIRONMENT
-            )
+                triggered_agents.append({
+                    "name": name,
+                    "content": agent.content,
+                    "trigger": trigger
+                })
+    
+        if triggered_agents:
+            # Create structured data observation
+            obs_data = {
+                "type": "microagent_knowledge",
+                "triggered_agents": triggered_agents
+            }
+            obs = RecallObservation(content=json.dumps(obs_data))
+            self.event_stream.add_event(obs, event.source if event.source else EventSource.ENVIRONMENT)
 
     def _on_recall_action(self, event: RecallAction):
         """If a RecallAction explicitly arrives, handle it."""
