@@ -104,10 +104,11 @@ class AgentSession:
         self._starting = True
         started_at = time.time()
         self._started_at = started_at
-        success = False  # For monitoring
+        finished = False  # For monitoring
+        runtime_connected = False
         try:
             self._create_security_analyzer(config.security.security_analyzer)
-            await self._create_runtime(
+            runtime_connected = await self._create_runtime(
                 runtime_name=runtime_name,
                 config=config,
                 agent=agent,
@@ -140,9 +141,10 @@ class AgentSession:
                     ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT),
                     EventSource.ENVIRONMENT,
                 )
-            success = True
+            finished = True
         finally:
             self._starting = False
+            success = finished and runtime_connected
             self._monitoring_listener.on_agent_session_start(
                 success, (time.time() - started_at)
             )
@@ -198,13 +200,16 @@ class AgentSession:
         github_token: SecretStr | None = None,
         selected_repository: str | None = None,
         selected_branch: str | None = None,
-    ):
+    ) -> bool:
         """Creates a runtime instance
 
         Parameters:
         - runtime_name: The name of the runtime associated with the session
         - config:
         - agent:
+
+        Return True on successfully connected, False if could not connect.
+        Raises if already created, possibly in other situations.
         """
 
         if self.runtime is not None:
@@ -249,7 +254,7 @@ class AgentSession:
                 self._status_callback(
                     'error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e)
                 )
-            return
+            return False
 
         repo_directory = None
         if selected_repository:
@@ -274,6 +279,7 @@ class AgentSession:
         logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
         )
+        return True
 
     def _create_controller(
         self,

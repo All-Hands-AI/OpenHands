@@ -57,6 +57,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
     # Mock the runtime creation to set up the runtime attribute
     async def mock_create_runtime(*args, **kwargs):
         session.runtime = mock_runtime
+        return True
 
     session._create_runtime = AsyncMock(side_effect=mock_create_runtime)
 
@@ -131,6 +132,7 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     # Mock the runtime creation to set up the runtime attribute
     async def mock_create_runtime(*args, **kwargs):
         session.runtime = mock_runtime
+        return True
 
     session._create_runtime = AsyncMock(side_effect=mock_create_runtime)
 
