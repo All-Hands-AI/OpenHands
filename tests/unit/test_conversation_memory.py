@@ -9,7 +9,7 @@ from openhands.events.action import (
     CmdRunAction,
     MessageAction,
 )
-from openhands.events.event import EventSource, FileEditSource, FileReadSource
+from openhands.events.event import Event, EventSource, FileEditSource, FileReadSource
 from openhands.events.observation import CmdOutputObservation
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
@@ -51,8 +51,10 @@ def test_process_initial_messages(conversation_memory):
 
 
 def test_process_events_with_message_action(conversation_memory, mock_state):
-    user_message = MessageAction(content='Hello', source='user')
-    assistant_message = MessageAction(content='Hi there', source='assistant')
+    user_message = MessageAction(content='Hello')
+    user_message._source = EventSource.USER
+    assistant_message = MessageAction(content='Hi there')
+    assistant_message._source = EventSource.AGENT
 
     initial_messages = [
         Message(role='system', content=[TextContent(text='System message')])
@@ -193,7 +195,8 @@ def test_process_events_with_error_observation(conversation_memory, mock_state):
 
 
 def test_process_events_with_unknown_observation(conversation_memory, mock_state):
-    obs = Mock()
+    # Create a mock that inherits from Event but not Action or Observation
+    obs = Mock(spec=Event)
 
     initial_messages = [
         Message(role='system', content=[TextContent(text='System message')])
