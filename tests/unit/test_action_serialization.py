@@ -84,12 +84,28 @@ def test_message_action_serialization_deserialization():
 
 
 def test_agent_finish_action_serialization_deserialization():
-    original_action_dict = {'action': 'finish', 'args': {'outputs': {}, 'thought': ''}}
+    original_action_dict = {
+        'action': 'finish',
+        'args': {
+            'outputs': {},
+            'thought': '',
+            'task_completed': None,
+            'message_text': '',
+        },
+    }
     serialization_deserialization(original_action_dict, AgentFinishAction)
 
 
 def test_agent_reject_action_serialization_deserialization():
-    original_action_dict = {'action': 'reject', 'args': {'outputs': {}, 'thought': ''}}
+    original_action_dict = {
+        'action': 'reject',
+        'args': {
+            'outputs': {},
+            'thought': '',
+            'task_completed': None,
+            'message_text': '',
+        },
+    }
     serialization_deserialization(original_action_dict, AgentRejectAction)
 
 
