@@ -35,7 +35,7 @@ class CodeActAgent(Agent):
 
     ### Overview
 
-    This agent implements the CodeAct idea ([paper](https://arxiv.org/abs/2402.01030), [tweet](https://twitter.com/xingyaow_/status/1754556835703751087)) that consolidates LLM agents’ **act**ions into a unified **code** action space for both *simplicity* and *performance* (see paper for more details).
+    This agent implements the CodeAct idea ([paper](https://arxiv.org/abs/2402.01030), [tweet](https://twitter.com/xingyaow_/status/1754556835703751087)) that consolidates LLM agents' **act**ions into a unified **code** action space for both *simplicity* and *performance* (see paper for more details).
 
     The conceptual idea is illustrated below. At each turn, the agent can:
 
@@ -216,6 +216,7 @@ class CodeActAgent(Agent):
 
         results: list[Message] = []
         is_first_message_handled = False
+        prev_role = None
 
         for msg in messages:
             if msg.role == 'user' and not is_first_message_handled:
@@ -231,6 +232,17 @@ class CodeActAgent(Agent):
             if msg.role == 'user':
                 self.prompt_manager.enhance_message(msg)
 
+                # Add double newline between consecutive user messages
+                # This prevents messages from being "smooshed together" without separation
+                if prev_role == 'user' and len(msg.content) > 0:
+                    # Find the first TextContent in the message to add newlines
+                    for content_item in msg.content:
+                        if isinstance(content_item, TextContent):
+                            # If the previous message was also from a user, prepend two newlines to ensure separation
+                            content_item.text = '\n\n' + content_item.text
+                            break
+
             results.append(msg)
+            prev_role = msg.role
 
         return results
