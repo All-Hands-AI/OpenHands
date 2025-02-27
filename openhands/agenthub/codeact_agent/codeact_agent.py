@@ -176,8 +176,11 @@ class CodeActAgent(Agent):
         # Condense the events from the state.
         events = self.condenser.condensed_history(state)
 
+        logger.debug(
+            f'Processing {len(events)} events from a total of {len(state.history)} events'
+        )
+
         messages = self.conversation_memory.process_events(
-            state=state,
             condensed_history=events,
             initial_messages=messages,
             max_message_chars=self.llm.config.max_message_chars,

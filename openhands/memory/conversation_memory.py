@@ -1,6 +1,5 @@
 from litellm import ModelResponse
 
-from openhands.controller.state.state import State
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.core.schema import ActionType
@@ -41,7 +40,6 @@ class ConversationMemory:
 
     def process_events(
         self,
-        state: State,
         condensed_history: list[Event],
         initial_messages: list[Message],
         max_message_chars: int | None = None,
@@ -62,10 +60,6 @@ class ConversationMemory:
             enable_som_visual_browsing: Whether to enable visual browsing for the SOM model.
         """
         events = condensed_history
-
-        logger.debug(
-            f'Processing {len(events)} events from a total of {len(state.history)} events'
-        )
 
         # Process special events first (system prompts, etc.)
         messages = initial_messages
