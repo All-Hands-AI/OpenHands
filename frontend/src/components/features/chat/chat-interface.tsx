@@ -88,6 +88,10 @@ export function ChatInterface() {
 
     // Send or queue the message depending on connection status
     send(chatMessage);
+
+    // Set agent state to RUNNING when a message is sent
+    send(generateAgentStateChangeEvent(AgentState.RUNNING));
+
     setMessageToSend(null);
   };
 

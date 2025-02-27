@@ -143,6 +143,15 @@ export function WsClientProvider({
       pendingMessages.forEach((event) => {
         sioRef.current?.emit("oh_action", event);
       });
+
+      // If we had pending messages, also set the agent state to RUNNING
+      // This ensures the agent responds to the messages
+      const agentStateEvent = {
+        action: "change_agent_state",
+        args: { agent_state: "running" },
+      };
+      sioRef.current.emit("oh_action", agentStateEvent);
+
       setPendingMessages([]);
     }
   }
