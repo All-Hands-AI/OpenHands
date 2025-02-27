@@ -162,32 +162,12 @@ class Memory:
         assert isinstance(event, RecallAction)
 
         user_query = event.query.get('keywords', [])
-        matched_content = self.find_microagent_content(user_query)
+        matched_content = ''
+        # matched_content = self.find_microagent_content(user_query)
         obs = RecallObservation(content=matched_content)
         self.event_stream.add_event(
             obs, event.source if event.source else EventSource.ENVIRONMENT
         )
-
-    def find_microagent_content(self, keywords: list[str]) -> str:
-        """Replicate the same microagent logic."""
-        matched_texts: list[str] = []
-        for name, agent in self.knowledge_microagents.items():
-            for kw in keywords:
-                trigger = agent.match_trigger(kw)
-                if trigger:
-                    logger.info(
-                        "Microagent '%s' triggered by explicit RecallAction keyword '%s'",
-                        name,
-                        trigger,
-                    )
-                    block = (
-                        f'<extra_info>\n'
-                        f"(via RecallAction) Included knowledge from microagent '{name}', triggered by '{trigger}'\n\n"
-                        f'{agent.content}\n'
-                        f'</extra_info>'
-                    )
-                    matched_texts.append(block)
-        return '\n'.join(matched_texts)
 
     def load_user_workspace_microagents(
         self, user_microagents: list[BaseMicroAgent]
