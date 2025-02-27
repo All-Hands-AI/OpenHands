@@ -29,10 +29,9 @@ async def connect(connection_id: str, environ):
     if not conversation_id:
         logger.error('No conversation_id in query params')
         raise ConnectionRefusedError('No conversation_id in query params')
-    cookies_str = environ.get('HTTP_COOKIE', '')
-    logger.info(f'connect cookies_str: {cookies_str}')
 
-    user_id = await conversation_manager.validate(conversation_id)
+    cookies_str = environ.get('HTTP_COOKIE', '')
+    user_id = await conversation_manager.validate(conversation_id, cookies_str)
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
 
