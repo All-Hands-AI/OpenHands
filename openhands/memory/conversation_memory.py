@@ -1,5 +1,3 @@
-import json
-
 from litellm import ModelResponse
 
 from openhands.controller.state.state import State
@@ -32,7 +30,7 @@ from openhands.events.observation import (
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
-from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import PromptManager
 
 
 class ConversationMemory:

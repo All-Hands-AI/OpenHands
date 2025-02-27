@@ -8,7 +8,7 @@ from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message, TextContent
+from openhands.core.message import Message
 from openhands.events.action import (
     Action,
     AgentFinishAction,
