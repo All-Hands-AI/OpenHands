@@ -2,8 +2,6 @@ import os
 
 from pydantic import BaseModel, Field, ValidationError
 
-from openhands.core.logger import openhands_logger as logger
-
 
 class SandboxConfig(BaseModel):
     """Configuration for the sandbox.
@@ -90,12 +88,10 @@ class SandboxConfig(BaseModel):
         # Initialize the result mapping
         sandbox_mapping: dict[str, SandboxConfig] = {}
 
-        # Try to create the base config
+        # Try to create the configuration instance
         try:
             sandbox_mapping['sandbox'] = cls.model_validate(data)
         except ValidationError as e:
-            logger.warning(f'Invalid sandbox configuration: {e}. Using defaults.')
-            # If the sandbox config fails, create a default one
-            sandbox_mapping['sandbox'] = cls()
+            raise ValueError(f'Invalid sandbox configuration: {e}')
 
         return sandbox_mapping

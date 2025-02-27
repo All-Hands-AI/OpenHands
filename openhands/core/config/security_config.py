@@ -1,7 +1,5 @@
 from pydantic import BaseModel, Field, ValidationError
 
-from openhands.core.logger import openhands_logger as logger
-
 
 class SecurityConfig(BaseModel):
     """Configuration for security related functionalities.
@@ -30,12 +28,10 @@ class SecurityConfig(BaseModel):
         # Initialize the result mapping
         security_mapping: dict[str, SecurityConfig] = {}
 
-        # Try to create the base config
+        # Try to create the configuration instance
         try:
             security_mapping['security'] = cls.model_validate(data)
         except ValidationError as e:
-            logger.warning(f'Invalid security configuration: {e}. Using defaults.')
-            # If the security config fails, create a default one
-            security_mapping['security'] = cls()
+            raise ValueError(f'Invalid security configuration: {e}')
 
         return security_mapping
