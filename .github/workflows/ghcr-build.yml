@@ -131,7 +131,7 @@ jobs:
         if: github.event.pull_request.head.repo.fork
         uses: docker/build-push-action@v6
         with:
-          tags: ghcr.io/all-hands-ai/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
+          tags: ghcr.io/${{ github.repository_owner }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           outputs: type=docker,dest=/tmp/runtime-${{ matrix.base_image.tag }}.tar
           context: containers/runtime
       - name: Upload runtime image for fork
