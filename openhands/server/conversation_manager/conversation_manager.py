@@ -56,7 +56,7 @@ class ConversationManager(ABC):
     @abstractmethod
     async def get_running_agent_loops(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
-    ) -> list[str]:
+    ) -> set[str]:
         """Get all running agent loops, optionally filtered by user ID and session IDs."""
 
     @abstractmethod

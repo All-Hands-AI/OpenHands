@@ -16,6 +16,7 @@ from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.server.settings import Settings
 from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import wait_all
 from openhands.utils.import_utils import get_impl
@@ -158,7 +159,7 @@ class StandaloneConversationManager(ConversationManager):
                 logger.error('error_cleaning_stale')
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
-    def _get_conversation_store(self, user_id: str | None):
+    def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
         conversation_store_class = self._conversation_store_class
         if not conversation_store_class:
             self._conversation_store_class = conversation_store_class = get_impl(
@@ -170,35 +171,26 @@ class StandaloneConversationManager(ConversationManager):
 
     async def get_running_agent_loops(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
-    ) -> list[str]:
+    ) -> set[str]:
         """Get the running session ids in chronological order (oldest first).
 
         If a user is supplied, then the results are limited to session ids for that user.
         If a set of filter_to_sids is supplied, then results are limited to these ids of interest.
 
         Returns:
-            A list of session IDs in chronological order (oldest first).
+            A set of session IDs
         """
         # Get all items and convert to list for sorting
         items: Iterable[tuple[str, Session]] = self._local_agent_loops_by_sid.items()
 
         # Filter items if needed
         if filter_to_sids is not None:
-            items = [item for item in items if item[0] in filter_to_sids]
+            items = (item for item in items if item[0] in filter_to_sids)
         if user_id:
-            items = [item for item in items if item[1].user_id == user_id]
+            items = (item for item in items if item[1].user_id == user_id)
 
-        # Get metadata for each session
-        conversation_store = self._get_conversation_store(user_id)
-        conversations = await conversation_store.get_all_metadata(
-            [item[0] for item in items]
-        )
-
-        # Sort by last_updated_at (oldest first)
-        conversations.sort(key=lambda conversation: conversation.last_updated_at)
-
-        results = [conversation.conversation_id for conversation in conversations]
-        return results
+        sids = {sid for sid, _ in items}
+        return sids
 
     async def get_connections(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
@@ -232,10 +224,13 @@ class StandaloneConversationManager(ConversationManager):
             response_ids = await self.get_running_agent_loops(user_id)
             if len(response_ids) >= self.config.max_concurrent_conversations:
                 logger.info('too_many_sessions_for:{user_id}')
-                # Since get_running_agent_loops returns sessions in chronological order,
-                # the first session is the oldest one
-                oldest_session_id = response_ids[0]
-                await self.close_session(oldest_session_id)
+                # Get the conversations sorted (oldest first)
+                conversation_store = self._get_conversation_store(user_id)
+                conversations = await conversation_store.get_all_metadata(response_ids)
+                conversations.sort(key=_last_udpated_at_key)
+
+                oldest_conversation_id = conversations[0].conversation_id
+                await self.close_session(oldest_conversation_id)
 
             session = Session(
                 sid=sid,
@@ -324,3 +319,10 @@ class StandaloneConversationManager(ConversationManager):
             file_store,
             monitoring_listener or MonitoringListener(),
         )
+
+
+def _last_udpated_at_key(conversation: ConversationMetadata) -> float:
+    last_updated_at = conversation.last_updated_at
+    if last_updated_at is None:
+        return 0.0
+    return last_updated_at.timestamp()
