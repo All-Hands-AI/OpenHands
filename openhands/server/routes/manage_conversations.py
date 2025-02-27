@@ -12,6 +12,10 @@ from openhands.events.stream import EventStreamSubscriber
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.runtime import get_runtime_cls
 from openhands.server.auth import get_github_token, get_user_id
+from openhands.server.data_models.conversation_info import ConversationInfo
+from openhands.server.data_models.conversation_info_result_set import (
+    ConversationInfoResultSet,
+)
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -21,10 +25,6 @@ from openhands.server.shared import (
     monitoring_listener,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
-from openhands.storage.data_models.conversation_info import ConversationInfo
-from openhands.storage.data_models.conversation_info_result_set import (
-    ConversationInfoResultSet,
-)
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import (
