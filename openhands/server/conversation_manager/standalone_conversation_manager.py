@@ -227,7 +227,7 @@ class StandaloneConversationManager(ConversationManager):
                 # Get the conversations sorted (oldest first)
                 conversation_store = self._get_conversation_store(user_id)
                 conversations = await conversation_store.get_all_metadata(response_ids)
-                conversations.sort(key=_last_udpated_at_key)
+                conversations.sort(key=_last_updated_at_key)
 
                 oldest_conversation_id = conversations[0].conversation_id
                 await self.close_session(oldest_conversation_id)
@@ -321,7 +321,7 @@ class StandaloneConversationManager(ConversationManager):
         )
 
 
-def _last_udpated_at_key(conversation: ConversationMetadata) -> float:
+def _last_updated_at_key(conversation: ConversationMetadata) -> float:
     last_updated_at = conversation.last_updated_at
     if last_updated_at is None:
         return 0.0
