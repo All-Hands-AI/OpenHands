@@ -11,6 +11,7 @@ import XCircle from "#/icons/x-circle-solid.svg?react";
 import { cn } from "#/utils/utils";
 import { useConfig } from "#/hooks/query/use-config";
 import { BILLING_SETTINGS } from "#/utils/feature-flags";
+import { Link } from "react-router";
 
 interface ExpandableMessageProps {
   id?: string;
@@ -52,12 +53,12 @@ export function ExpandableMessage({
           <div className="font-bold text-danger">
             {t("STATUS$ERROR_LLM_OUT_OF_CREDITS")}
           </div>
-          <a
+          <Link
             className="mt-2 mb-2 w-full h-10 rounded flex items-center justify-center gap-2 bg-primary text-[#0D0F11]"
-            href="/settings/billing"
+            to="/settings/billing"
           >
             {t("BILLING$CLICK_TO_TOP_UP")}
-          </a>
+          </Link>
         </div>
       </div>
     );
