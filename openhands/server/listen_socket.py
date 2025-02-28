@@ -18,6 +18,9 @@ from openhands.server.shared import (
     conversation_manager,
     sio,
 )
+from openhands.storage.conversation.conversation_validator import (
+    ConversationValidatorImpl,
+)
 
 
 @sio.event
@@ -31,7 +34,9 @@ async def connect(connection_id: str, environ):
         raise ConnectionRefusedError('No conversation_id in query params')
 
     cookies_str = environ.get('HTTP_COOKIE', '')
-    user_id = await conversation_manager.validate(conversation_id, cookies_str)
+    conversation_validator = ConversationValidatorImpl()
+    user_id = await conversation_validator.validate(conversation_id, cookies_str)
+
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
 
