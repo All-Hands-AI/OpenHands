@@ -15,8 +15,11 @@ app = APIRouter(prefix='/api')
 async def load_settings(request: Request) -> GETSettingsModel | None:
     try:
         user_id = get_user_id(request)
+        print('user_id', user_id)
         settings_store = await SettingsStoreImpl.get_instance(config, user_id)
+        print('got settings')
         settings = await settings_store.load()
+        print('loaded settings')
         if not settings:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -24,13 +27,18 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
             )
 
         token_is_set = bool(user_id) or bool(get_github_token(request))
+        print('token is set', token_is_set)
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(),
             github_token_is_set=token_is_set,
         )
+        print('created settings with tokn data')
         settings_with_token_data.llm_api_key = settings.llm_api_key
 
+        print('set llm api key')
         del settings_with_token_data.github_token
+        print('deteled gh token')
+
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
