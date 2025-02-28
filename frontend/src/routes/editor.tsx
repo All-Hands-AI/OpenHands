@@ -23,7 +23,7 @@ function EditorScreen() {
   }
 
   return (
-    <main className="h-full overflow-y-auto px-4">
+    <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col">
       {gitChanges.map((change) => (
         <FileDiffViewer
           key={change.path}

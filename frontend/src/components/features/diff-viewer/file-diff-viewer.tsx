@@ -5,6 +5,7 @@ import OpenHands from "#/api/open-hands";
 import { useConversation } from "#/context/conversation-context";
 import { GitChangeStatus } from "#/api/open-hands.types";
 import { getLanguageFromPath } from "#/utils/get-language-from-path";
+import { cn } from "#/utils/utils";
 
 export interface FileDiffViewerProps {
   path: string;
@@ -34,8 +35,13 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
       data-testid="file-diff-viewer-outer"
       className="w-full h-fit flex flex-col"
     >
-      <div className="flex justify-between items-center px-2.5 py-3.5 border-b border-[#9099AC]">
-        <p className="text-sm text-[#F9FBFE]">
+      <div
+        className={cn(
+          "flex justify-between items-center px-2.5 py-3.5 border border-basic rounded-xl",
+          !isCollapsed && "border-b-0 rounded-b-none",
+        )}
+      >
+        <p className="text-sm text-content">
           <strong className="text-primary">{type === "U" ? "A" : type}</strong>{" "}
           {path}
         </p>
@@ -50,7 +56,10 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
       {isLoading && <div>Loading...</div>}
       {isRefetching && <div>Getting latest changes...</div>}
       {isSuccess && (
-        <div hidden={isCollapsed} className="w-full h-[700px]">
+        <div
+          hidden={isCollapsed}
+          className="w-full h-[700px] border border-basic"
+        >
           <DiffEditor
             data-testid="file-diff-viewer"
             className="w-full h-full"
