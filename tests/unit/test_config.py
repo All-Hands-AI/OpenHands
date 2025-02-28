@@ -688,9 +688,9 @@ max_size = 50
     )
 
     assert 'condenser' in condenser_mapping
-    assert isinstance(condenser_mapping['condenser'], LLMSummarizingCondenserConfig)
-    # Should use a default LLMConfig when the reference is missing
-    assert condenser_mapping['condenser'].llm_config is not None
+    assert isinstance(condenser_mapping['condenser'], NoOpCondenserConfig)
+    # Should not have a default LLMConfig when the reference is missing
+    assert not hasattr(condenser_mapping['condenser'], 'llm_config')
 
 
 def test_condenser_config_from_toml_with_invalid_config(default_config, temp_toml_file):

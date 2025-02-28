@@ -213,23 +213,15 @@ def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
         ValueError: If the condenser type is unknown.
         ValidationError: If the provided data fails validation for the condenser type.
     """
-    # Dynamically build a mapping of condenser types to their config classes
-    condenser_classes = {}
-
-    # Get all classes defined in this module that end with 'CondenserConfig'
-    for name, cls in globals().items():
-        if (
-            name.endswith('CondenserConfig')
-            and isinstance(cls, type)
-            and issubclass(cls, BaseModel)
-            and name != 'CondenserConfig'
-        ):
-            # Extract the type value from the class
-            if hasattr(cls, 'model_fields') and 'type' in cls.model_fields:
-                field = cls.model_fields['type']
-                if hasattr(field, 'default'):
-                    type_value = field.default
-                    condenser_classes[type_value] = cls
+    # Mapping of condenser types to their config classes
+    condenser_classes = {
+        'noop': NoOpCondenserConfig,
+        'observation_masking': ObservationMaskingCondenserConfig,
+        'recent': RecentEventsCondenserConfig,
+        'llm': LLMSummarizingCondenserConfig,
+        'amortized': AmortizedForgettingCondenserConfig,
+        'llm_attention': LLMAttentionCondenserConfig,
+    }
 
     if condenser_type not in condenser_classes:
         raise ValueError(f'Unknown condenser type: {condenser_type}')
