@@ -176,7 +176,7 @@ def from_toml_section(
                 )
                 # Create a default LLMConfig if the referenced one doesn't exist
                 data_copy = data.copy()
-                data_copy['llm_config'] = LLMConfig()
+                data_copy['llm_config'] = llm_configs.get('llm')
                 config = create_condenser_config(condenser_type, data_copy)
         else:
             config = create_condenser_config(condenser_type, data)
