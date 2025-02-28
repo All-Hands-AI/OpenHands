@@ -40,6 +40,8 @@ class ObservationTypeSchema(BaseModel):
 
     NULL: str = Field(default='null')
 
+    THINK: str = Field(default='think')
+
     AGENT_STATE_CHANGED: str = Field(default='agent_state_changed')
 
     USER_REJECTED: str = Field(default='user_rejected')

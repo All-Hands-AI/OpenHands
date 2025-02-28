@@ -104,6 +104,8 @@ function AccountSettings() {
       formData.get("enable-analytics-switch")?.toString() === "on";
     const enableMemoryCondenser =
       formData.get("enable-memory-condenser-switch")?.toString() === "on";
+    const enableSoundNotifications =
+      formData.get("enable-sound-notifications-switch")?.toString() === "on";
 
     saveSettings(
       {
@@ -112,6 +114,7 @@ function AccountSettings() {
         LANGUAGE: languageValue,
         user_consents_to_analytics: userConsentsToAnalytics,
         ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
+        ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
         LLM_MODEL: customLlmModel || fullLlmModel,
         LLM_BASE_URL: formData.get("base-url-input")?.toString() || "",
         LLM_API_KEY:
@@ -398,6 +401,14 @@ function AccountSettings() {
             >
               Enable analytics
             </SettingsSwitch>
+
+            <SettingsSwitch
+              testId="enable-sound-notifications-switch"
+              name="enable-sound-notifications-switch"
+              defaultIsToggled={!!settings.ENABLE_SOUND_NOTIFICATIONS}
+            >
+              Enable sound notifications
+            </SettingsSwitch>
           </section>
         </div>
       </form>
@@ -425,7 +436,7 @@ function AccountSettings() {
         <ModalBackdrop>
           <div
             data-testid="reset-modal"
-            className="bg-base p-4 rounded-xl flex flex-col gap-4"
+            className="bg-base-secondary p-4 rounded-xl flex flex-col gap-4 border border-tertiary"
           >
             <p>Are you sure you want to reset all settings?</p>
             <div className="w-full flex gap-2">

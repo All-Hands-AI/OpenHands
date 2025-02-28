@@ -6,6 +6,7 @@ from openhands.events.action.agent import (
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
+    AgentThinkAction,
     ChangeAgentStateAction,
     RecallAction,
 )
@@ -31,6 +32,7 @@ actions = (
     FileReadAction,
     FileWriteAction,
     FileEditAction,
+    AgentThinkAction,
     AgentFinishAction,
     AgentRejectAction,
     AgentDelegateAction,

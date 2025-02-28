@@ -55,6 +55,23 @@ class AgentFinishAction(Action):
 
 
 @dataclass
+class AgentThinkAction(Action):
+    """An action where the agent logs a thought.
+
+    Attributes:
+        thought (str): The agent's explanation of its actions.
+        action (str): The action type, namely ActionType.THINK.
+    """
+
+    thought: str = ''
+    action: str = ActionType.THINK
+
+    @property
+    def message(self) -> str:
+        return f'I am thinking...: {self.thought}'
+
+
+@dataclass
 class AgentRejectAction(Action):
     outputs: dict = field(default_factory=dict)
     thought: str = ''

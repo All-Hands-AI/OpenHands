@@ -1,6 +1,6 @@
 import os
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 
 class SandboxConfig(BaseModel):
@@ -41,6 +41,7 @@ class SandboxConfig(BaseModel):
     remote_runtime_api_url: str | None = Field(default='http://localhost:8000')
     local_runtime_url: str = Field(default='http://localhost')
     keep_runtime_alive: bool = Field(default=False)
+    pause_closed_runtimes: bool = Field(default=True)
     rm_all_containers: bool = Field(default=False)
     api_key: str | None = Field(default=None)
     base_container_image: str = Field(
@@ -53,11 +54,11 @@ class SandboxConfig(BaseModel):
     remote_runtime_api_timeout: int = Field(default=10)
     remote_runtime_enable_retries: bool = Field(default=False)
     remote_runtime_class: str | None = Field(
-        default='sysbox'
+        default=None
     )  # can be "None" (default to gvisor) or "sysbox" (support docker inside runtime + more stable)
     enable_auto_lint: bool = Field(
-        default=False  # once enabled, OpenHands would lint files after editing
-    )
+        default=False
+    )  # once enabled, OpenHands would lint files after editing
     use_host_network: bool = Field(default=False)
     runtime_extra_build_args: list[str] | None = Field(default=None)
     initialize_plugins: bool = Field(default=True)
@@ -70,5 +71,27 @@ class SandboxConfig(BaseModel):
     remote_runtime_resource_factor: int = Field(default=1)
     enable_gpu: bool = Field(default=False)
     docker_runtime_kwargs: str | None = Field(default=None)
+    selected_repo: str | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
+
+    @classmethod
+    def from_toml_section(cls, data: dict) -> dict[str, 'SandboxConfig']:
+        """
+        Create a mapping of SandboxConfig instances from a toml dictionary representing the [sandbox] section.
+
+        The configuration is built from all keys in data.
+
+        Returns:
+            dict[str, SandboxConfig]: A mapping where the key "sandbox" corresponds to the [sandbox] configuration
+        """
+        # Initialize the result mapping
+        sandbox_mapping: dict[str, SandboxConfig] = {}
+
+        # Try to create the configuration instance
+        try:
+            sandbox_mapping['sandbox'] = cls.model_validate(data)
+        except ValidationError as e:
+            raise ValueError(f'Invalid sandbox configuration: {e}')
+
+        return sandbox_mapping

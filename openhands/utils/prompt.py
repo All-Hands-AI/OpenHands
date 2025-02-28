@@ -22,34 +22,6 @@ class RepositoryInfo:
     repo_directory: str | None = None
 
 
-ADDITIONAL_INFO_TEMPLATE = Template(
-    """
-{% if repository_info %}
-<REPOSITORY_INFO>
-At the user's request, repository {{ repository_info.repo_name }} has been cloned to directory {{ repository_info.repo_directory }}.
-</REPOSITORY_INFO>
-{% endif %}
-{% if repository_instructions -%}
-<REPOSITORY_INSTRUCTIONS>
-{{ repository_instructions }}
-</REPOSITORY_INSTRUCTIONS>
-{% endif %}
-{% if runtime_info and runtime_info.available_hosts -%}
-<RUNTIME_INFORMATION>
-The user has access to the following hosts for accessing a web application,
-each of which has a corresponding port:
-{% for host, port in runtime_info.available_hosts.items() -%}
-* {{ host }} (port {{ port }})
-{% endfor %}
-When starting a web server, use the corresponding ports. You should also
-set any options to allow iframes and CORS requests, and allow the server to
-be accessed from any host (e.g. 0.0.0.0).
-</RUNTIME_INFORMATION>
-{% endif %}
-"""
-)
-
-
 class PromptManager:
     """
     Manages prompt templates and includes information from the user's workspace micro-agents and global micro-agents.
@@ -68,6 +40,7 @@ class PromptManager:
         self.repository_info: RepositoryInfo | None = None
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
+        self.additional_info_template: Template = self._load_template('additional_info')
         self.runtime_info = RuntimeInfo(available_hosts={})
         self.repo_microagents: dict[str, RepoMicroAgent] = {}
 
@@ -108,6 +81,7 @@ class PromptManager:
 
         return self.user_template.render().strip()
 
+
     def add_examples_to_initial_message(self, message: Message) -> None:
         """Add example_message to the first user message."""
         example_message = self.get_example_user_message() or None
@@ -136,8 +110,8 @@ class PromptManager:
         pass
 
     def build_additional_info_text(self, repo_instructions: str = '') -> str:
-        """Renders the ADDITIONAL_INFO_TEMPLATE with the stored repository/runtime info."""
-        return ADDITIONAL_INFO_TEMPLATE.render(
+        """Renders the additional_info_template with the stored repository/runtime info."""
+        return self.additional_info_template.render(
             repository_info=self.repository_info,
             repository_instructions=repo_instructions,
             runtime_info=self.runtime_info,
