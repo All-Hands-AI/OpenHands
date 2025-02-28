@@ -4178,6 +4178,21 @@
         "es": "Navegando en la web",
         "tr": "Web'de geziniyor"
     },
+    "ACTION_MESSAGE$THINK": {
+        "en": "Thinking",
+        "zh-CN": "思考",
+        "zh-TW": "思考",
+        "ko-KR": "생각",
+        "ja": "考える",
+        "no": "Tenker",
+        "ar": "يفكر",
+        "de": "Denkt",
+        "fr": "Pensant",
+        "it": "Pensando",
+        "pt": "Pensando",
+        "es": "Pensando",
+        "tr": "Düşünüyor"
+    },
     "OBSERVATION_MESSAGE$RUN": {
         "en": "Ran a bash command",
         "zh-CN": "运行",
@@ -4572,6 +4587,51 @@
     "SETTINGS_FORM$ENABLE_DEFAULT_CONDENSER_SWITCH_LABEL": {
         "en": "Enable Memory Condenser",
         "zh-TW": "啟用記憶體壓縮器"
+    },
+    "BUTTON$MARK_HELPFUL": {
+        "en": "Mark this solution as helpful",
+        "zh-CN": "标记此解决方案有帮助",
+        "zh-TW": "標記此解決方案有幫助",
+        "de": "Diese Lösung als hilfreich markieren",
+        "ko-KR": "이 해결책이 도움이 되었다고 표시",
+        "no": "Marker denne løsningen som nyttig",
+        "it": "Segna questa soluzione come utile",
+        "pt": "Marcar esta solução como útil",
+        "es": "Marcar esta solución como útil",
+        "ar": "وضع علامة على هذا الحل كمفيد",
+        "fr": "Marquer cette solution comme utile",
+        "tr": "Bu çözümü yararlı olarak işaretle",
+        "ja": "このソリューションが役立つと評価"
+    },
+    "BUTTON$MARK_NOT_HELPFUL": {
+        "en": "Mark this solution as not helpful",
+        "zh-CN": "标记此解决方案没有帮助",
+        "zh-TW": "標記此解決方案沒有幫助",
+        "de": "Diese Lösung als nicht hilfreich markieren",
+        "ko-KR": "이 해결책이 도움이 되지 않았다고 표시",
+        "no": "Marker denne løsningen som ikke nyttig",
+        "it": "Segna questa soluzione come non utile",
+        "pt": "Marcar esta solução como não útil",
+        "es": "Marcar esta solución como no útil",
+        "ar": "وضع علامة على هذا الحل كغير مفيد",
+        "fr": "Marquer cette solution comme non utile",
+        "tr": "Bu çözümü yararlı değil olarak işaretle",
+        "ja": "このソリューションが役立たないと評価"
+    },
+    "BUTTON$EXPORT_CONVERSATION": {
+        "en": "Export conversation",
+        "zh-CN": "导出对话",
+        "zh-TW": "導出對話",
+        "de": "Konversation exportieren",
+        "ko-KR": "대화 내보내기",
+        "no": "Eksporter samtale",
+        "it": "Esporta conversazione",
+        "pt": "Exportar conversa",
+        "es": "Exportar conversación",
+        "ar": "تصدير المحادثة",
+        "fr": "Exporter la conversation",
+        "tr": "Konuşmayı dışa aktar",
+        "ja": "会話をエクスポート"
     },
     "BILLING$CLICK_TO_TOP_UP": {
         "en": "Add funds to Your Account",
