@@ -1,6 +1,6 @@
 import os
 
-__package_name__ = 'openhands_ai'  # Dummy package name for testing
+__package_name__ = 'openhands_ai'
 
 
 def get_version():
