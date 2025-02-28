@@ -174,9 +174,14 @@ def from_toml_section(
                     f"LLM config '{llm_config_name}' not found for condenser. Using default LLMConfig."
                 )
                 # Create a default LLMConfig if the referenced one doesn't exist
+                from openhands.core.config.llm_config import LLMConfig
+
                 data_copy = data.copy()
-                if llm_configs is not None:
+                # Try to use the default 'llm' config if available, otherwise create a new LLMConfig
+                if llm_configs is not None and 'llm' in llm_configs:
                     data_copy['llm_config'] = llm_configs.get('llm')
+                else:
+                    data_copy['llm_config'] = LLMConfig()
                 config = create_condenser_config(condenser_type, data_copy)
         else:
             config = create_condenser_config(condenser_type, data)
