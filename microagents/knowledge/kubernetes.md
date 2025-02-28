@@ -46,18 +46,3 @@ Create a basic KIND cluster:
 ```bash
 kind create cluster
 ```
-
-For a more customized setup, create a configuration file:
-
-```yaml
-# kind-config.yaml
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-- role: control-plane
-  extraPortMappings:
-  - containerPort: 30000
-    hostPort: 30000
-    protocol: TCP
-- role: worker
-```
