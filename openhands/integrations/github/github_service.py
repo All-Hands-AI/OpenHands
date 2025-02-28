@@ -24,7 +24,7 @@ class GitHubService:
     def __init__(
         self,
         user_id: str | None = None,
-        access_token: SecretStr | None = None,
+        idp_token: SecretStr | None = None,
         token: SecretStr | None = None,
     ):
         self.user_id = user_id
