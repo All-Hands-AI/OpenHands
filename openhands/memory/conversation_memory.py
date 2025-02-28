@@ -9,6 +9,7 @@ from openhands.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
+    AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -21,6 +22,7 @@ from openhands.events.event import Event
 from openhands.events.observation import (
     AgentCondensationObservation,
     AgentDelegateObservation,
+    AgentThinkObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
     FileEditObservation,
@@ -54,7 +56,8 @@ class ConversationMemory:
         Ensures that tool call actions are processed correctly in function calling mode.
 
         Args:
-            state: The state containing the history of events to convert
+            condensed_history: The condensed history of events to convert
+            initial_messages: The initial messages to include in the conversation
             max_message_chars: The maximum number of characters in the content of an event included
                 in the prompt to the LLM. Larger observations are truncated.
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
@@ -175,6 +178,7 @@ class ConversationMemory:
             action,
             (
                 AgentDelegateAction,
+                AgentThinkAction,
                 IPythonRunCellAction,
                 FileEditAction,
                 FileReadAction,
@@ -355,6 +359,9 @@ class ConversationMemory:
                 obs.outputs['content'] if 'content' in obs.outputs else '',
                 max_message_chars,
             )
+            message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, AgentThinkObservation):
+            text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ErrorObservation):
             text = truncate_content(obs.content, max_message_chars)
