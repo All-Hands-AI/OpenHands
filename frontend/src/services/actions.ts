@@ -58,7 +58,7 @@ const messageActions = {
     }
   },
   [ActionType.FINISH]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.args.message_text));
+    store.dispatch(addAssistantMessage(message.args.final_thought));
     let successPrediction = "";
     if (message.args.task_completed === "partial") {
       successPrediction =
@@ -71,8 +71,8 @@ const messageActions = {
         "The agent thinks that the task was **completed successfully**.";
     }
     if (successPrediction) {
-      // if message_text is not empty, add a new line before the success prediction
-      if (message.args.message_text) {
+      // if final_thought is not empty, add a new line before the success prediction
+      if (message.args.final_thought) {
         store.dispatch(addAssistantMessage(`\n${successPrediction}`));
       } else {
         store.dispatch(addAssistantMessage(successPrediction));
