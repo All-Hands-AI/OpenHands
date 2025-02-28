@@ -70,6 +70,7 @@ export interface EditObservation extends OpenHandsObservationEvent<"edit"> {
   source: "agent";
   extras: {
     path: string;
+    diff: string;
   };
 }
 
