@@ -58,54 +58,65 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
 
 def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
-    instruction = (
-        '<uploaded_files>\n'
-        f'/workspace/{workspace_dir_name}\n'
-        '</uploaded_files>\n'
-        f"I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following issue description:\n\n"
-        f'<issue_description>\n'
-        f'{instance.problem_statement}\n'
-        '</issue_description>\n\n'
-        'Can you help me implement the necessary changes to the repository so that the requirements specified in the <issue_description> are met?\n'
-        "I've already taken care of all changes to any of the test files described in the <issue_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!\n"
-        "Also the development Python environment is already set up for you (i.e., all dependencies already installed), so you don't need to install other packages.\n"
-        f'Your task is to make the minimal changes to non-test files in the /workspace/{workspace_dir_name} directory to ensure the <issue_description> is satisfied.\n\n'
-        'Follow these steps to resolve the issue:\n\n'
-        '1. EXPLORATION: First, thoroughly explore the repository structure using tools like `find`, `grep`, and `cat`.\n'
-        '   - Identify all files mentioned in the problem statement\n'
-        '   - Locate where the issue occurs in the codebase\n'
-        '   - Understand the surrounding context and dependencies\n'
-        '   - Use `grep` to search for relevant functions, classes, or error messages\n\n'
-        '2. ANALYSIS: Based on your exploration, think carefully about the problem and propose 2-5 possible approaches to fix the issue.\n'
-        '   - Analyze the root cause of the problem\n'
-        '   - Consider trade-offs between different solutions\n'
-        '   - Select the most promising approach and explain your reasoning\n\n'
-        '3. TEST CREATION: Before implementing any fix, create a script to reproduce and verify the issue.\n'
-        '   - Look at existing test files in the repository to understand the test format/structure\n'
-        '   - Create a minimal reproduction script that demonstrates the issue\n'
-        '   - Run your script to confirm the error exists\n\n'
-        '4. IMPLEMENTATION: Edit the source code to implement your chosen solution.\n'
-        '   - Make minimal, focused changes to fix the issue\n'
-        '5. VERIFICATION: Test your implementation thoroughly.\n'
-        '   - Run your reproduction script to verify the fix works\n'
-        '   - Add edge cases to your test script to ensure comprehensive coverage\n'
-        "   - Run existing tests related to the modified code to ensure you haven't broken anything\n\n"
-        f'6. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["base_commit"]}.\n'
-        "   - Ensure you've fully addressed all requirements\n"
-        '   - Run any tests in the repository related to:\n'
-        '     * The issue you are fixing\n'
-        '     * The files you modified\n'
-        '     * The functions you changed\n'
-        '   - If any tests fail, revise your implementation until all tests pass\n\n'
-        "Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.\n"
-    )
+    instruction = f"""
+<uploaded_files>
+/workspace/{workspace_dir_name}
+</uploaded_files>
+
+I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following issue description:
+
+<issue_description>
+{instance.problem_statement}
+</issue_description>
+
+Can you help me implement the necessary changes to the repository so that the requirements specified in the <issue_description> are met?
+I've already taken care of all changes to any of the test files described in the <issue_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!
+Also the development Python environment is already set up for you (i.e., all dependencies already installed), so you don't need to install other packages.
+Your task is to make the minimal changes to non-test files in the /workspace/{workspace_dir_name} directory to ensure the <issue_description> is satisfied.
+
+Follow these steps to resolve the issue:
+
+1. EXPLORATION: First, thoroughly explore the repository structure using tools like `find` and `grep`.
+   - Identify all files mentioned in the problem statement
+   - Locate where the issue occurs in the codebase
+   - Understand the surrounding context and dependencies
+   - Use `grep` to search for relevant functions, classes, or error messages
+
+2. ANALYSIS: Based on your exploration, think carefully about the problem and propose 2-5 possible approaches to fix the issue.
+   - Analyze the root cause of the problem
+   - Consider trade-offs between different solutions
+   - Select the most promising approach and explain your reasoning
+
+3. TEST CREATION: Before implementing any fix, create a script to reproduce and verify the issue.
+   - Look at existing test files in the repository to understand the test format/structure
+   - Create a minimal reproduction script that demonstrates the issue
+   - Run your script to confirm the error exists
+
+4. IMPLEMENTATION: Edit the source code to implement your chosen solution.
+   - Make minimal, focused changes to fix the issue
+
+5. VERIFICATION: Test your implementation thoroughly.
+   - Run your reproduction script to verify the fix works
+   - Add edge cases to your test script to ensure comprehensive coverage
+   - Run existing tests related to the modified code to ensure you haven't broken anything
+
+6. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["base_commit"]}.
+   - Ensure you've fully addressed all requirements
+   - Run any tests in the repository related to:
+     * The issue you are fixing
+     * The files you modified
+     * The functions you changed
+   - If any tests fail, revise your implementation until all tests pass
+
+Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
+"""
 
     if RUN_WITH_BROWSING:
-        instruction += (
-            '<IMPORTANT!>\n'
-            'You SHOULD NEVER attempt to browse the web. '
-            '</IMPORTANT!>\n'
-        )
+        instruction += """
+<IMPORTANT!>
+You SHOULD NEVER attempt to browse the web.
+</IMPORTANT!>
+"""
     return instruction
 
 
