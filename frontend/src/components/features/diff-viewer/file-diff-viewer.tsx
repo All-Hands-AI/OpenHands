@@ -6,6 +6,7 @@ import { useConversation } from "#/context/conversation-context";
 import { GitChangeStatus } from "#/api/open-hands.types";
 import { getLanguageFromPath } from "#/utils/get-language-from-path";
 import { cn } from "#/utils/utils";
+import ChevronUp from "#/icons/chveron-up.svg?react";
 
 export interface FileDiffViewerProps {
   path: string;
@@ -63,7 +64,12 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
           type="button"
           onClick={() => setIsCollapsed((prev) => !prev)}
         >
-          coll
+          <ChevronUp
+            className={cn(
+              "w-4 h-4 transition-transform",
+              isCollapsed && "transform rotate-180",
+            )}
+          />
         </button>
       </div>
       {isSuccess && (
