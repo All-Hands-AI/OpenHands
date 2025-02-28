@@ -22,7 +22,6 @@ class HttpSession:
             logger.error(
                 'Session is being used after close!', stack_info=True, exc_info=True
             )
-            raise RuntimeError('Session is being used after close!')
         return getattr(self.session, name)
 
     @property
