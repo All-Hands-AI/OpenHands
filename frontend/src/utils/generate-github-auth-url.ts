@@ -5,7 +5,7 @@
  * @returns The URL to redirect to for GitHub OAuth
  */
 export const generateGitHubAuthUrl = (clientId: string, requestUrl: URL) => {
-  const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
+  const redirectUri = `${requestUrl.origin}/oauth/keycloak/callback`;
   const baseUrl = `${requestUrl.origin}`
     .replace("https://", "")
     .replace("http://", "");
