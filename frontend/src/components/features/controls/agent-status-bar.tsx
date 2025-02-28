@@ -9,12 +9,21 @@ import {
   useWsClient,
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
+import { useNotification } from "#/hooks/useNotification";
+import { browserTab } from "#/utils/browser-tab";
+
+const notificationStates = [
+  AgentState.AWAITING_USER_INPUT,
+  AgentState.FINISHED,
+  AgentState.AWAITING_USER_CONFIRMATION,
+];
 
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const { curStatusMessage } = useSelector((state: RootState) => state.status);
   const { status, pendingMessages } = useWsClient();
+  const { notify } = useNotification();
 
   const [statusMessage, setStatusMessage] = React.useState<string>("");
   const hasPendingMessages = pendingMessages.length > 0;
@@ -46,6 +55,21 @@ export function AgentStatusBar() {
     updateStatusMessage();
   }, [curStatusMessage.id]);
 
+  // Handle window focus/blur
+  React.useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const handleFocus = () => {
+      browserTab.stopNotification();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      browserTab.stopNotification();
+    };
+  }, []);
+
   React.useEffect(() => {
     if (status === WsClientProviderStatus.DISCONNECTED) {
       if (hasPendingMessages) {
@@ -57,8 +81,20 @@ export function AgentStatusBar() {
       }
     } else {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
+      if (notificationStates.includes(curAgentState)) {
+        const message = t(AGENT_STATUS_MAP[curAgentState].message);
+        notify(t(AGENT_STATUS_MAP[curAgentState].message), {
+          body: t(`Agent state changed to ${curAgentState}`),
+          playSound: true,
+        });
+
+        // Update browser tab if window exists and is not focused
+        if (typeof document !== "undefined" && !document.hasFocus()) {
+          browserTab.startNotification(message);
+        }
+      }
     }
-  }, [curAgentState, status, pendingMessages.length]);
+  }, [curAgentState, status, pendingMessages.length, notify, t]);
 
   return (
     <div className="flex flex-col items-center">
