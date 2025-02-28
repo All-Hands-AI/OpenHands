@@ -121,7 +121,7 @@ class DockerRuntime(ActionExecutionClient):
                     'error',
                     f'Container {self.container_name} not found.',
                 )
-                raise e
+                raise AgentRuntimeDisconnectedError from e
             if self.runtime_container_image is None:
                 if self.base_container_image is None:
                     raise ValueError(
@@ -201,16 +201,29 @@ class DockerRuntime(ActionExecutionClient):
         port_mapping: dict[str, list[dict[str, str]]] | None = None
         if not use_host_network:
             port_mapping = {
-                f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}],
+                f'{self._container_port}/tcp': [
+                    {
+                        'HostPort': str(self._host_port),
+                        'HostIp': self.config.sandbox.runtime_binding_address,
+                    }
+                ],
             }
 
             if self.vscode_enabled:
                 port_mapping[f'{self._vscode_port}/tcp'] = [
-                    {'HostPort': str(self._vscode_port)}
+                    {
+                        'HostPort': str(self._vscode_port),
+                        'HostIp': self.config.sandbox.runtime_binding_address,
+                    }
                 ]
 
             for port in self._app_ports:
-                port_mapping[f'{port}/tcp'] = [{'HostPort': str(port)}]
+                port_mapping[f'{port}/tcp'] = [
+                    {
+                        'HostPort': str(port),
+                        'HostIp': self.config.sandbox.runtime_binding_address,
+                    }
+                ]
         else:
             self.log(
                 'warn',

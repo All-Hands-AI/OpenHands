@@ -40,7 +40,6 @@ from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
@@ -59,8 +58,6 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
 
 def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
-    # Prepare instruction
-
     # Instruction based on Anthropic's official trajectory
     # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
     instruction = (
@@ -72,14 +69,20 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         f'{instance.problem_statement}\n'
         '</issue_description>\n\n'
         'Can you help me implement the necessary changes to the repository so that the requirements specified in the <issue_description> are met?\n'
-        "I've already taken care of all changes to any of the test files described in the <pr_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!\n"
-        'Your task is to make the minimal changes to non-tests files in the /workspace directory to ensure the <pr_description> is satisfied.\n'
+        "I've already taken care of all changes to any of the test files described in the <issue_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!\n"
+        "Also the development Python environment is already set up for you (i.e., all dependencies already installed), so you don't need to install other packages.\n"
+        'Your task is to make the minimal changes to non-test files in the /workspace directory to ensure the <issue_description> is satisfied.\n'
         'Follow these steps to resolve the issue:\n'
         '1. As a first step, it might be a good idea to explore the repo to familiarize yourself with its structure.\n'
         '2. Create a script to reproduce the error and execute it with `python <filename.py>` using the BashTool, to confirm the error\n'
         '3. Edit the sourcecode of the repo to resolve the issue\n'
         '4. Rerun your reproduce script and confirm that the error is fixed!\n'
-        '5. Think about edgecases and make sure your fix handles them as well\n'
+        '5. Think about edgecases, add comprehensive tests for them in your reproduce script, and run them to make sure your fix handles them as well\n'
+        f'6. Once you are done with the initial implementation, please carefully re-read the problem description and check the difference between the current code and the base commit {instance["base_commit"]}. Do you think that the issue has been completely and comprehensively solved? Write tests to check the correctness of the solution, specifically focusing on tests that may point out any remaining problems that are not yet solved. Run all of the tests in the repo and check if any of them fail, and if they do fix the code. Repeat this process of carefully reading the problem description and current implementation, testing, and fixing any problems until you are confident that the current implementation is correct. Find and run any tests in the repo that are related to:\n'
+        '   - The issue you are fixing\n'
+        '   - The files you modified\n'
+        '   - The functions you changed\n'
+        '   Make sure all these tests pass with your changes.\n'
         "Your thinking should be thorough and so it's fine if it's very long.\n"
     )
 
@@ -97,11 +100,19 @@ DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xing
 logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
 
-def get_instance_docker_image(instance_id: str) -> str:
-    image_name = 'sweb.eval.x86_64.' + instance_id
-    image_name = image_name.replace(
-        '__', '_s_'
-    )  # to comply with docker image naming convention
+def get_instance_docker_image(instance_id: str, official_image: bool = False) -> str:
+    if official_image:
+        # Official SWE-Bench image
+        # swebench/sweb.eval.x86_64.django_1776_django-11333:v1
+        repo, name = instance_id.split('__')
+        image_name = f'sweb.eval.x86_64.{repo}_1776_{name}:latest'
+        logger.warning(f'Using official SWE-Bench image: {image_name}')
+    else:
+        # OpenHands version of the image
+        image_name = 'sweb.eval.x86_64.' + instance_id
+        image_name = image_name.replace(
+            '__', '_s_'
+        )  # to comply with docker image naming convention
     return (DOCKER_IMAGE_PREFIX.rstrip('/') + '/' + image_name).lower()
 
 
@@ -112,7 +123,12 @@ def get_config(
     SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
     if USE_INSTANCE_IMAGE:
         # We use a different instance image for the each instance of swe-bench eval
-        base_container_image = get_instance_docker_image(instance['instance_id'])
+        use_official_image = bool(
+            'verified' in metadata.dataset.lower() or 'lite' in metadata.dataset.lower()
+        )
+        base_container_image = get_instance_docker_image(
+            instance['instance_id'], use_official_image
+        )
         logger.info(
             f'Using instance container image: {base_container_image}. '
             f'Please make sure this image exists. '
@@ -355,6 +371,32 @@ def complete_runtime(
         f'Failed to git config --global core.pager "": {str(obs)}',
     )
 
+    # First check for any git repositories in subdirectories
+    action = CmdRunAction(command='find . -type d -name .git -not -path "./.git"')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+        f'Failed to find git repositories: {str(obs)}',
+    )
+
+    git_dirs = [p for p in obs.content.strip().split('\n') if p]
+    if git_dirs:
+        # Remove all .git directories in subdirectories
+        for git_dir in git_dirs:
+            action = CmdRunAction(command=f'rm -rf "{git_dir}"')
+            action.set_hard_timeout(600)
+            logger.info(action, extra={'msg_type': 'ACTION'})
+            obs = runtime.run_action(action)
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+            assert_and_raise(
+                isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+                f'Failed to remove git directory {git_dir}: {str(obs)}',
+            )
+
+    # add all files
     action = CmdRunAction(command='git add -A')
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -422,7 +464,6 @@ def process_instance(
             f'This is the {runtime_failure_count + 1}th attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
         )
     runtime = create_runtime(config)
-    call_async_from_sync(runtime.connect)
 
     try:
         initialize_runtime(runtime, instance)
