@@ -121,7 +121,9 @@ CondenserConfig = (
 )
 
 
-def from_toml_section(data: dict) -> dict[str, CondenserConfig]:
+def from_toml_section(
+    data: dict, llm_configs: dict | None = None
+) -> dict[str, CondenserConfig]:
     """
     Create a mapping of CondenserConfig instances from a toml dictionary representing the [condenser] section.
 
@@ -137,11 +139,21 @@ def from_toml_section(data: dict) -> dict[str, CondenserConfig]:
         keep_first = 2
         max_events = 20
 
+    For condensers that require an LLM config, you can specify the name of an LLM config:
+        [condenser]
+        type = "llm"
+        llm_config = "my_llm"  # References [llm.my_llm] section
+
+    Args:
+        data: The TOML dictionary representing the [condenser] section.
+        llm_configs: Optional dictionary of LLMConfig objects keyed by name.
+
     Returns:
         dict[str, CondenserConfig]: A mapping where the key "condenser" corresponds to the default configuration
         and additional keys represent custom configurations.
     """
     from openhands.core import logger
+    from openhands.core.config.llm_config import LLMConfig
 
     # Initialize the result mapping
     condenser_mapping: dict[str, CondenserConfig] = {}
@@ -159,7 +171,30 @@ def from_toml_section(data: dict) -> dict[str, CondenserConfig]:
     try:
         # Determine which condenser type to use based on 'type' field
         base_type = base_data.get('type', 'noop')
-        base_config = create_condenser_config(base_type, base_data)
+
+        # Handle LLM config reference if needed
+        if (
+            base_type in ('llm', 'llm_attention')
+            and 'llm_config' in base_data
+            and isinstance(base_data['llm_config'], str)
+        ):
+            llm_config_name = base_data['llm_config']
+            if llm_configs and llm_config_name in llm_configs:
+                # Replace the string reference with the actual LLMConfig object
+                base_data_copy = base_data.copy()
+                base_data_copy['llm_config'] = llm_configs[llm_config_name]
+                base_config = create_condenser_config(base_type, base_data_copy)
+            else:
+                logger.openhands_logger.warning(
+                    f"LLM config '{llm_config_name}' not found for condenser. Using default LLMConfig."
+                )
+                # Create a default LLMConfig if the referenced one doesn't exist
+                base_data_copy = base_data.copy()
+                base_data_copy['llm_config'] = LLMConfig()
+                base_config = create_condenser_config(base_type, base_data_copy)
+        else:
+            base_config = create_condenser_config(base_type, base_data)
+
         condenser_mapping['condenser'] = base_config
     except (ValidationError, ValueError) as e:
         logger.openhands_logger.warning(
@@ -174,7 +209,34 @@ def from_toml_section(data: dict) -> dict[str, CondenserConfig]:
         try:
             # Determine which condenser type to use based on 'type' field
             section_type = section_data.get('type', 'noop')
-            custom_config = create_condenser_config(section_type, section_data)
+
+            # Handle LLM config reference if needed
+            if (
+                section_type in ('llm', 'llm_attention')
+                and 'llm_config' in section_data
+                and isinstance(section_data['llm_config'], str)
+            ):
+                llm_config_name = section_data['llm_config']
+                if llm_configs and llm_config_name in llm_configs:
+                    # Replace the string reference with the actual LLMConfig object
+                    section_data_copy = section_data.copy()
+                    section_data_copy['llm_config'] = llm_configs[llm_config_name]
+                    custom_config = create_condenser_config(
+                        section_type, section_data_copy
+                    )
+                else:
+                    logger.openhands_logger.warning(
+                        f"LLM config '{llm_config_name}' not found for condenser '{name}'. Using default LLMConfig."
+                    )
+                    # Create a default LLMConfig if the referenced one doesn't exist
+                    section_data_copy = section_data.copy()
+                    section_data_copy['llm_config'] = LLMConfig()
+                    custom_config = create_condenser_config(
+                        section_type, section_data_copy
+                    )
+            else:
+                custom_config = create_condenser_config(section_type, section_data)
+
             condenser_mapping[name] = custom_config
         except (ValidationError, ValueError) as e:
             logger.openhands_logger.warning(
@@ -221,8 +283,8 @@ def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
         # Use type casting to help mypy understand the return type
         return cast(CondenserConfig, config_class(**data))
     except ValidationError as e:
-        # Re-raise the ValidationError with more context about which condenser type failed
-        raise ValidationError(
-            f"Validation failed for condenser type '{condenser_type}': {e}",
-            e.errors(),
+        # Just re-raise with a more descriptive message, but don't try to pass the errors
+        # which can cause compatibility issues with different pydantic versions
+        raise ValueError(
+            f"Validation failed for condenser type '{condenser_type}': {e}"
         )
