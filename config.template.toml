@@ -316,44 +316,44 @@ type = "noop"
 # 2. Observation Masking Condenser
 #type = "observation_masking"
 # Number of most-recent events where observations will not be masked
-#attention_window = 50
+#attention_window = 100
 
 # 3. Recent Events Condenser
 #type = "recent"
 # Number of initial events to always keep (typically includes task description)
-#keep_first = 2
+#keep_first = 1
 # Maximum number of events to keep in history
-#max_events = 50
+#max_events = 100
 
 # 4. LLM Summarizing Condenser
 #type = "llm"
 # Reference to an LLM config to use for summarization
 #llm_config = "condenser"
 # Number of initial events to always keep (typically includes task description)
-#keep_first = 2
+#keep_first = 1
 # Maximum size of history before triggering summarization
-#max_size = 50
+#max_size = 100
 
 # 5. Amortized Forgetting Condenser
 #type = "amortized"
 # Number of initial events to always keep (typically includes task description)
-#keep_first = 2
+#keep_first = 1
 # Maximum size of history before triggering forgetting
-#max_size = 50
+#max_size = 100
 
 # 6. LLM Attention Condenser
 #type = "llm_attention"
 # Reference to an LLM config to use for attention scoring
 #llm_config = "condenser"
 # Number of initial events to always keep (typically includes task description)
-#keep_first = 2
+#keep_first = 1
 # Maximum size of history before triggering attention mechanism
-#max_size = 50
+#max_size = 100
 
 # Example of a custom LLM configuration for condensers that require an LLM
 # If not provided, it falls back to the default LLM
 #[llm.condenser]
-#model = "gpt-3.5-turbo"
+#model = "gpt-4o"
 #temperature = 0.1
 #max_tokens = 1024
 

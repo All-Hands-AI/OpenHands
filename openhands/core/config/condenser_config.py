@@ -19,7 +19,7 @@ class ObservationMaskingCondenserConfig(BaseModel):
 
     type: Literal['observation_masking'] = Field('observation_masking')
     attention_window: int = Field(
-        default=10,
+        default=100,
         description='The number of most-recent events where observations will not be masked.',
         ge=1,
     )
@@ -39,7 +39,7 @@ class RecentEventsCondenserConfig(BaseModel):
         ge=0,
     )
     max_events: int = Field(
-        default=10, description='Maximum number of events to keep.', ge=1
+        default=100, description='Maximum number of events to keep.', ge=1
     )
 
     model_config = {'extra': 'forbid'}
