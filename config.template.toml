@@ -95,6 +95,11 @@ workspace_base = "./workspace"
 # List of allowed file extensions for uploads
 #file_uploads_allowed_extensions = [".*"]
 
+# Whether to enable the default LLM summarizing condenser when no condenser is specified in config
+# When true, a LLMSummarizingCondenserConfig will be used as the default condenser
+# When false, a NoOpCondenserConfig (no summarization) will be used
+#enable_default_condenser = true
+
 #################################### LLM #####################################
 # Configuration for LLM models (group name starts with 'llm')
 # use 'llm' for the default LLM config

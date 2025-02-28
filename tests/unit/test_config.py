@@ -568,9 +568,9 @@ def test_cache_dir_creation(default_config, tmpdir):
     assert os.path.exists(default_config.cache_dir)
 
 
-def test_agent_config_condenser_default():
-    """Test that default agent condenser is NoOpCondenser."""
-    config = AppConfig()
+def test_agent_config_condenser_with_no_enabled():
+    """Test default agent condenser with enable_default_condenser=False."""
+    config = AppConfig(enable_default_condenser=False)
     agent_config = config.get_agent_config()
     assert isinstance(agent_config.condenser, NoOpCondenserConfig)
 
@@ -741,6 +741,60 @@ max_events = 0   # Invalid: must be >= 1
     # Should default to NoOpCondenserConfig when validation fails
     assert 'condenser' in condenser_mapping
     assert isinstance(condenser_mapping['condenser'], NoOpCondenserConfig)
+
+
+def test_default_condenser_behavior(default_config, temp_toml_file):
+    """Test the default condenser behavior with enable_default_condenser setting."""
+    # Create a minimal TOML file with no condenser section
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write("""
+[core]
+# Empty core section, no condenser section
+""")
+
+    # Case 1: With enable_default_condenser=True (default)
+    default_config.enable_default_condenser = True
+    load_from_toml(default_config, temp_toml_file)
+
+    # Verify the default agent config has LLMSummarizingCondenserConfig
+    agent_config = default_config.get_agent_config()
+    assert isinstance(agent_config.condenser, LLMSummarizingCondenserConfig)
+    assert agent_config.condenser.keep_first == 2
+    assert agent_config.condenser.max_size == 100
+    assert agent_config.condenser.llm_config == default_config.get_llm_config()
+
+    # Case 2: With enable_default_condenser=False
+    default_config.enable_default_condenser = False
+
+    # Reset first
+    agent_config = default_config.get_agent_config()
+
+    # Load again with enable_default_condenser=False
+    load_from_toml(default_config, temp_toml_file)
+
+    # Verify the default agent config still has NoOpCondenserConfig
+    assert isinstance(agent_config.condenser, NoOpCondenserConfig)
+
+    # Case 3: With enable_default_condenser=True but with explicit condenser in TOML
+    default_config.enable_default_condenser = True
+
+    # Create a TOML file with an explicit condenser section
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write("""
+[condenser]
+type = "recent"
+keep_first = 3
+max_events = 15
+""")
+
+    # Load the config
+    load_from_toml(default_config, temp_toml_file)
+
+    # Verify the explicit condenser from TOML takes precedence
+    agent_config = default_config.get_agent_config()
+    assert isinstance(agent_config.condenser, RecentEventsCondenserConfig)
+    assert agent_config.condenser.keep_first == 3
+    assert agent_config.condenser.max_events == 15
 
 
 def test_api_keys_repr_str():

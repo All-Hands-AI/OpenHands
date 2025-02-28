@@ -214,6 +214,24 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
             logger.openhands_logger.warning(
                 f'Cannot parse [condenser] config from toml, values have not been applied.\nError: {e}'
             )
+    # If no condenser section is in toml but enable_default_condenser is True,
+    # set LLMSummarizingCondenserConfig as default
+    elif cfg.enable_default_condenser:
+        from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
+
+        # Get default agent config
+        default_agent_config = cfg.get_agent_config()
+
+        # Create default LLM summarizing condenser config
+        default_condenser = LLMSummarizingCondenserConfig(
+            llm_config=cfg.get_llm_config(),  # Use default LLM config
+        )
+
+        # Set as default condenser
+        default_agent_config.condenser = default_condenser
+        logger.openhands_logger.debug(
+            'Default LLM summarizing condenser assigned to default agent (no condenser in config)'
+        )
 
     # Process extended section if present
     if 'extended' in toml_config:
