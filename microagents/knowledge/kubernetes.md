@@ -15,6 +15,8 @@ triggers:
 
 KIND (Kubernetes IN Docker) is a tool for running local Kubernetes clusters using Docker containers as nodes. It's designed for testing Kubernetes applications locally.
 
+IMPORTANT: Before you proceed with installation, make sure you have docker installed locally.
+
 ### Installation
 
 To install KIND on a Debian/Ubuntu system:
