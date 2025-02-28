@@ -173,9 +173,10 @@ export const chatSlice = createSlice({
           causeMessage.content
         }\n\nOutput:\n\`\`\`\n${content.trim() || "[Command finished execution with no output]"}\n\`\`\``;
         causeMessage.content = content; // Observation content includes the action
-      } else if (observationID === "read" || observationID === "edit") {
-        const { content } = observation.payload;
-        causeMessage.content = `\`\`\`${observationID === "edit" ? "diff" : "python"}\n${content}\n\`\`\``; // Content is already truncated by the ACI
+      } else if (observationID === "read") {
+        causeMessage.content = `\`\`\`python\n${observation.payload.content}\n\`\`\``; // Content is already truncated by the ACI
+      } else if (observationID === "edit") {
+        causeMessage.content = `\`\`\`diff\n${observation.payload.extras.diff}\n\`\`\``; // Content is already truncated by the ACI
       } else if (observationID === "browse") {
         let content = `**URL:** ${observation.payload.extras.url}\n`;
         if (observation.payload.extras.error) {
