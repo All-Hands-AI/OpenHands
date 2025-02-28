@@ -427,6 +427,10 @@ class AgentController:
                     'debug',
                     f'Extended max iterations to {self.state.max_iterations} after user message',
                 )
+            # try to retrieve microagents relevant to the user message
+            # set pending_action while we search for information
+            self._pending_action = action
+
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
@@ -456,6 +460,7 @@ class AgentController:
                 self.event_stream.add_event(obs, EventSource.AGENT)
 
         # reset the pending action, this will be called when the agent is STOPPED or ERROR
+        # TODO: what about a memory pending action on reset?
         self._pending_action = None
         self.agent.reset()
 

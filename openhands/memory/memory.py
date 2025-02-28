@@ -87,19 +87,30 @@ class Memory:
 
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
+
+        observation: RecallObservation | None = None
         if isinstance(event, MessageAction):
             if event.source == 'user':
                 # If this is the first user message, create and add a RecallObservation
                 # with info about repo and runtime.
                 if not self._first_user_message_seen:
                     self._first_user_message_seen = True
-                    self._on_first_user_message(event)
-                    # continue with the next handler, to include microagents if suitable for this user message
-            self._on_user_message_action(event)
+                    observation = self._on_first_user_message(event)
+
+                # continue with the next handler, to include microagents if suitable for this user message
+                observation = self._on_user_message_action(
+                    event, prev_observation=observation
+                )
+
+                # important: this hint will release the execution flow from waiting for this to complete
+                if observation is not None:
+                    observation._cause = event  # type: ignore[attr-defined]
+
+                    self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
         elif isinstance(event, RecallAction):
             self._on_recall_action(event)
 
-    def _on_first_user_message(self, event: MessageAction):
+    def _on_first_user_message(self, event: MessageAction) -> RecallObservation:
         """Add repository and runtime information to the stream as a RecallObservation."""
 
         # Collect raw repository instructions
@@ -130,17 +141,19 @@ class Memory:
         # Send structured data in the observation
         obs = RecallObservation(content=json.dumps(obs_data))
 
-        self.event_stream.add_event(obs, EventSource.ENVIRONMENT)
+        return obs
 
-    def _on_user_message_action(self, event: MessageAction):
+    def _on_user_message_action(
+        self, event: MessageAction, prev_observation: RecallObservation | None = None
+    ) -> RecallObservation | None:
         """When a user message triggers microagents, create a RecallObservation with structured data."""
         if event.source != 'user':
-            return
+            return prev_observation
 
         # If there's no text, do nothing
         user_text = event.content.strip()
         if not user_text:
-            return
+            return prev_observation
 
         # Gather all triggered microagents
         triggered_agents = []
@@ -158,10 +171,17 @@ class Memory:
                 'type': 'microagent_knowledge',
                 'triggered_agents': triggered_agents,
             }
-            obs = RecallObservation(content=json.dumps(obs_data))
-            self.event_stream.add_event(
-                obs, event.source if event.source else EventSource.ENVIRONMENT
-            )
+
+            if not prev_observation:
+                # if it's not the first user message, we may not have found any information yet
+                obs = RecallObservation(content=json.dumps(obs_data))
+
+                return obs
+            else:
+                # if we already have an observation, update it
+                prev_observation.content += '\n\n' + json.dumps(obs_data)
+
+        return prev_observation
 
     def _on_recall_action(self, event: RecallAction):
         """If a RecallAction explicitly arrives, handle it."""
