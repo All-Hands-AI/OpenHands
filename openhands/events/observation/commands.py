@@ -34,20 +34,15 @@ class CmdOutputMetadata(BaseModel):
     def to_ps1_prompt(cls) -> str:
         """Convert the required metadata into a PS1 prompt."""
         prompt = CMD_OUTPUT_PS1_BEGIN
-        json_str = json.dumps(
-            {
-                'pid': '$!',
-                'exit_code': '$?',
-                'username': r'\u',
-                'hostname': r'\h',
-                'working_dir': r'$(pwd)',
-                'py_interpreter_path': r'$(which python 2>/dev/null || echo "")',
-            },
-            indent=2,
+        # Create a simple key-value format that's easier to parse
+        prompt += (
+            'pid=$!\n'
+            'exit_code=$?\n'
+            'username=\\u\n'
+            'hostname=\\h\n'
+            'working_dir=$(pwd)\n'
+            'py_interpreter_path=$(which python 2>/dev/null || echo "")\n'
         )
-        # Make sure we escape double quotes in the JSON string
-        # So that PS1 will keep them as part of the output
-        prompt += json_str.replace('"', r'\"')
         prompt += CMD_OUTPUT_PS1_END + '\n'  # Ensure there's a newline at the end
         return prompt
 
@@ -56,20 +51,35 @@ class CmdOutputMetadata(BaseModel):
         matches = []
         for match in CMD_OUTPUT_METADATA_PS1_REGEX.finditer(string):
             try:
-                json.loads(match.group(1).strip())  # Try to parse as JSON
+                # Parse key-value pairs
+                metadata = {}
+                for line in match.group(1).strip().splitlines():
+                    if '=' not in line:
+                        continue
+                    key, value = line.split('=', 1)
+                    metadata[key] = value
+                # Convert to JSON string for validation
+                json.dumps(metadata)  # Just to validate the structure
                 matches.append(match)
-            except json.JSONDecodeError:
+            except (ValueError, json.JSONDecodeError):
                 logger.warning(
                     f'Failed to parse PS1 metadata: {match.group(1)}. Skipping.'
                     + traceback.format_exc()
                 )
-                continue  # Skip if not valid JSON
+                continue  # Skip if not valid format
         return matches
 
     @classmethod
     def from_ps1_match(cls, match: re.Match[str]) -> Self:
         """Extract the required metadata from a PS1 prompt."""
-        metadata = json.loads(match.group(1))
+        # Parse key-value pairs
+        metadata = {}
+        for line in match.group(1).strip().splitlines():
+            if '=' not in line:
+                continue
+            key, value = line.split('=', 1)
+            metadata[key] = value
+
         # Create a copy of metadata to avoid modifying the original
         processed = metadata.copy()
         # Convert numeric fields
