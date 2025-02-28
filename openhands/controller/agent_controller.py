@@ -58,6 +58,7 @@ from openhands.llm.llm import LLM
 TRAFFIC_CONTROL_REMINDER = (
     "Please click on resume button if you'd like to continue, or start a new task."
 )
+ERROR_ACTION_NOT_EXECUTED = 'The action has not been executed. This likely occurred because the runtime system crashed due to resource limitations. Note that the OpenHands agent has limited resources available for running commands. The agent can retry this action - the runtime system can be rebooted when retrying. However, be aware that any dependencies, environment variables, or other system state previously set up by the agent might be lost after the reboot process.'
 
 
 class AgentController:
@@ -450,7 +451,7 @@ class AgentController:
 
             # make a new ErrorObservation with the tool call metadata
             if not found_observation:
-                obs = ErrorObservation(content='The action has not been executed.')
+                obs = ErrorObservation(content=ERROR_ACTION_NOT_EXECUTED)
                 obs.tool_call_metadata = self._pending_action.tool_call_metadata
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
                 self.event_stream.add_event(obs, EventSource.AGENT)
