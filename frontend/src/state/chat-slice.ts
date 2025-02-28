@@ -177,9 +177,9 @@ export const chatSlice = createSlice({
         causeMessage.content = `\`\`\`python\n${observation.payload.content}\n\`\`\``; // Content is already truncated by the ACI
       } else if (observationID === "edit") {
         if (causeMessage.success) {
-            causeMessage.content = `\`\`\`diff\n${observation.payload.extras.diff}\n\`\`\``; // Content is already truncated by the ACI
+          causeMessage.content = `\`\`\`diff\n${observation.payload.extras.diff}\n\`\`\``; // Content is already truncated by the ACI
         } else {
-            causeMessage.content = observation.payload.content;
+          causeMessage.content = observation.payload.content;
         }
       } else if (observationID === "browse") {
         let content = `**URL:** ${observation.payload.extras.url}\n`;
