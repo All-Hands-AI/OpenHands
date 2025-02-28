@@ -11,6 +11,7 @@ export const generateGitHubAuthUrl = (clientId: string, requestUrl: URL) => {
     .replace("http://", "");
   const authUrl = baseUrl
     .replace(/(^|\.)staging\.all-hands\.dev$/, "$1auth.staging.all-hands.dev")
-    .replace(/(^|\.)app\.all-hands\.dev$/, "auth.app.all-hands.dev");  const scope = "openid email profile";
+    .replace(/(^|\.)app\.all-hands\.dev$/, "auth.app.all-hands.dev");
+  const scope = "openid email profile";
   return `https://${authUrl}/realms/allhands/protocol/openid-connect/auth?client_id=github&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
 };
