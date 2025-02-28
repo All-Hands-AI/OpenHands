@@ -2,6 +2,7 @@ from typing import Literal, cast
 
 from pydantic import BaseModel, Field, ValidationError
 
+from openhands.core import logger
 from openhands.core.config.llm_config import LLMConfig
 
 
@@ -147,7 +148,6 @@ def condenser_config_from_toml_section(
     Returns:
         dict[str, CondenserConfig]: A mapping where the key "condenser" corresponds to the configuration.
     """
-    from openhands.core import logger
 
     # Initialize the result mapping
     condenser_mapping: dict[str, CondenserConfig] = {}
@@ -174,8 +174,6 @@ def condenser_config_from_toml_section(
                     f"LLM config '{llm_config_name}' not found for condenser. Using default LLMConfig."
                 )
                 # Create a default LLMConfig if the referenced one doesn't exist
-                from openhands.core.config.llm_config import LLMConfig
-
                 data_copy = data.copy()
                 # Try to use the default 'llm' config if available, otherwise create a new LLMConfig
                 if llm_configs is not None and 'llm' in llm_configs:
