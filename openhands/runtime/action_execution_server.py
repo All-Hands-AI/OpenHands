@@ -25,6 +25,7 @@ from fastapi.security import APIKeyHeader
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
+from openhands_aci.utils.diff import get_diff
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -89,7 +90,7 @@ def _execute_file_editor(
     new_str: str | None = None,
     insert_line: int | None = None,
     enable_linting: bool = False,
-) -> str:
+) -> tuple[str, tuple[str | None, str | None]]:
     """Execute file editor command and handle exceptions.
 
     Args:
@@ -104,7 +105,7 @@ def _execute_file_editor(
         enable_linting: Whether to enable linting
 
     Returns:
-        str: Result string from the editor operation
+        tuple: A tuple containing the output string and a tuple of old and new file content
     """
     result: ToolResult | None = None
     try:
@@ -122,13 +123,13 @@ def _execute_file_editor(
         result = ToolResult(error=e.message)
 
     if result.error:
-        return f'ERROR:\n{result.error}'
+        return f'ERROR:\n{result.error}', (None, None)
 
     if not result.output:
         logger.warning(f'No output from file_editor for {path}')
-        return ''
+        return '', (None, None)
 
-    return result.output
+    return result.output, (result.old_content, result.new_content)
 
 
 class ActionExecutor:
@@ -316,7 +317,7 @@ class ActionExecutor:
     async def read(self, action: FileReadAction) -> Observation:
         assert self.bash_session is not None
         if action.impl_source == FileReadSource.OH_ACI:
-            result_str = _execute_file_editor(
+            result_str, _ = _execute_file_editor(
                 self.file_editor,
                 command='view',
                 path=action.path,
@@ -433,7 +434,7 @@ class ActionExecutor:
 
     async def edit(self, action: FileEditAction) -> Observation:
         assert action.impl_source == FileEditSource.OH_ACI
-        result_str = _execute_file_editor(
+        result_str, (old_content, new_content) = _execute_file_editor(
             self.file_editor,
             command=action.command,
             path=action.path,
@@ -450,6 +451,11 @@ class ActionExecutor:
             old_content=action.old_str,
             new_content=action.new_str,
             impl_source=FileEditSource.OH_ACI,
+            diff=get_diff(
+                old_contents=old_content or '',
+                new_contents=new_content or '',
+                filepath=action.path,
+            ),
         )
 
     async def browse(self, action: BrowseURLAction) -> Observation:

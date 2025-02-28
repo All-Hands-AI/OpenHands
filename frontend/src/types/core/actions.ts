@@ -51,6 +51,8 @@ export interface ThinkAction extends OpenHandsActionEvent<"think"> {
 export interface FinishAction extends OpenHandsActionEvent<"finish"> {
   source: "agent";
   args: {
+    final_thought: string;
+    task_completed: "success" | "failure" | "partial";
     outputs: Record<string, unknown>;
     thought: string;
   };
