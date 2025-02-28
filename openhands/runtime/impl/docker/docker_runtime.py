@@ -39,6 +39,7 @@ APP_PORT_RANGE_2 = (55000, 59999)
 
 class DockerRuntime(ActionExecutionClient):
     """This runtime will subscribe the event stream.
+
     When receive an event, it will send the event to runtime-client which run inside the docker environment.
 
     Args:
@@ -120,7 +121,7 @@ class DockerRuntime(ActionExecutionClient):
                     'error',
                     f'Container {self.container_name} not found.',
                 )
-                raise e
+                raise AgentRuntimeDisconnectedError from e
             if self.runtime_container_image is None:
                 if self.base_container_image is None:
                     raise ValueError(
@@ -200,16 +201,29 @@ class DockerRuntime(ActionExecutionClient):
         port_mapping: dict[str, list[dict[str, str]]] | None = None
         if not use_host_network:
             port_mapping = {
-                f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}],
+                f'{self._container_port}/tcp': [
+                    {
+                        'HostPort': str(self._host_port),
+                        'HostIp': self.config.sandbox.runtime_binding_address,
+                    }
+                ],
             }
 
             if self.vscode_enabled:
                 port_mapping[f'{self._vscode_port}/tcp'] = [
-                    {'HostPort': str(self._vscode_port)}
+                    {
+                        'HostPort': str(self._vscode_port),
+                        'HostIp': self.config.sandbox.runtime_binding_address,
+                    }
                 ]
 
             for port in self._app_ports:
-                port_mapping[f'{port}/tcp'] = [{'HostPort': str(port)}]
+                port_mapping[f'{port}/tcp'] = [
+                    {
+                        'HostPort': str(port),
+                        'HostIp': self.config.sandbox.runtime_binding_address,
+                    }
+                ]
         else:
             self.log(
                 'warn',
@@ -254,7 +268,6 @@ class DockerRuntime(ActionExecutionClient):
             server_port=self._container_port,
             plugins=self.plugins,
             app_config=self.config,
-            use_nice_for_root=False,
         )
 
         try:
@@ -410,11 +423,11 @@ class DockerRuntime(ActionExecutionClient):
         """Pause the runtime by stopping the container.
         This is different from container.stop() as it ensures environment variables are properly preserved."""
         if not self.container:
-            raise RuntimeError("Container not initialized")
-        
+            raise RuntimeError('Container not initialized')
+
         # First, ensure all environment variables are properly persisted in .bashrc
         # This is already handled by add_env_vars in base.py
-        
+
         # Stop the container
         self.container.stop()
         self.log('debug', f'Container {self.container_name} paused')
@@ -423,12 +436,12 @@ class DockerRuntime(ActionExecutionClient):
         """Resume the runtime by starting the container.
         This is different from container.start() as it ensures environment variables are properly restored."""
         if not self.container:
-            raise RuntimeError("Container not initialized")
-        
+            raise RuntimeError('Container not initialized')
+
         # Start the container
         self.container.start()
         self.log('debug', f'Container {self.container_name} resumed')
-        
+
         # Wait for the container to be ready
         self._wait_until_alive()
 

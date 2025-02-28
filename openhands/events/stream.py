@@ -8,9 +8,9 @@ from functools import partial
 from typing import Callable, Iterable
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.utils import json
 from openhands.events.event import Event, EventSource
 from openhands.events.serialization.event import event_from_dict, event_to_dict
+from openhands.io import json
 from openhands.storage import FileStore
 from openhands.storage.locations import (
     get_conversation_dir,
@@ -281,6 +281,9 @@ class EventStream:
 
     def set_secrets(self, secrets: dict[str, str]):
         self.secrets = secrets.copy()
+
+    def update_secrets(self, secrets: dict[str, str]):
+        self.secrets.update(secrets)
 
     def _replace_secrets(self, data: dict) -> dict:
         for key in data:

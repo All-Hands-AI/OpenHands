@@ -50,16 +50,24 @@ class FileEditObservation(Observation):
     The observation includes both the old and new content of the file, and can
     generate a diff visualization showing the changes. The diff is computed lazily
     and cached to improve performance.
+
+    The .content property can either be:
+      - Git diff in LLM-based editing mode
+      - the rendered message sent to the LLM in OH_ACI mode (e.g., "The file /path/to/file.txt is created with the provided content.")
     """
 
-    path: str
-    prev_exist: bool
-    old_content: str
-    new_content: str
+    path: str = ''
+    prev_exist: bool = False
+    old_content: str | None = None
+    new_content: str | None = None
     observation: str = ObservationType.EDIT
     impl_source: FileEditSource = FileEditSource.LLM_BASED_EDIT
-    formatted_output_and_error: str = ''
-    _diff_cache: str | None = None  # Cache for the diff visualization
+    diff: str | None = (
+        None  # The raw diff between old and new content, used in OH_ACI mode
+    )
+    _diff_cache: str | None = (
+        None  # Cache for the diff visualization, used in LLM-based editing mode
+    )
 
     @property
     def message(self) -> str:
@@ -75,6 +83,8 @@ class FileEditObservation(Observation):
         Returns:
             A list of edit groups, where each group contains before/after edits.
         """
+        if self.old_content is None or self.new_content is None:
+            return []
         old_lines = self.old_content.split('\n')
         new_lines = self.new_content.split('\n')
         # Borrowed from difflib.unified_diff to directly parse into structured format
@@ -121,7 +131,7 @@ class FileEditObservation(Observation):
         n_context_lines: int = 2,
         change_applied: bool = True,
     ) -> str:
-        """Visualize the diff of the file edit.
+        """Visualize the diff of the file edit. Used in the LLM-based editing mode.
 
         Instead of showing the diff line by line, this function shows each hunk
         of changes as a separate entity.
@@ -173,7 +183,7 @@ class FileEditObservation(Observation):
     def __str__(self) -> str:
         """Get a string representation of the file edit observation."""
         if self.impl_source == FileEditSource.OH_ACI:
-            return self.formatted_output_and_error
+            return self.content
 
         if not self.prev_exist:
             assert (

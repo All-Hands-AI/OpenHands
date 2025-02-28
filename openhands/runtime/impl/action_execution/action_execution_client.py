@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 import threading
 from abc import abstractmethod
@@ -15,6 +16,7 @@ from openhands.core.exceptions import (
 from openhands.events import EventStream
 from openhands.events.action import (
     ActionConfirmationStatus,
+    AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -24,7 +26,9 @@ from openhands.events.action import (
     IPythonRunCellAction,
 )
 from openhands.events.action.action import Action
+from openhands.events.action.files import FileEditSource
 from openhands.events.observation import (
+    AgentThinkObservation,
     ErrorObservation,
     NullObservation,
     Observation,
@@ -142,12 +146,10 @@ class ActionExecutionClient(Runtime):
                 stream=True,
                 timeout=30,
             ) as response:
-                with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-                    total_length = 0
-                    for chunk in response.iter_content(chunk_size=8192):
-                        if chunk:  # filter out keep-alive new chunks
-                            total_length += len(chunk)
-                            temp_file.write(chunk)
+                with tempfile.NamedTemporaryFile(
+                    suffix='.zip', delete=False
+                ) as temp_file:
+                    shutil.copyfileobj(response.raw, temp_file, length=16 * 1024)
                     return Path(temp_file.name)
         except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
@@ -217,8 +219,11 @@ class ActionExecutionClient(Runtime):
             return ''
 
     def send_action_for_execution(self, action: Action) -> Observation:
-        if isinstance(action, FileEditAction):
-            return self.edit(action)
+        if (
+            isinstance(action, FileEditAction)
+            and action.impl_source == FileEditSource.LLM_BASED_EDIT
+        ):
+            return self.llm_based_edit(action)
 
         # set timeout to default if not set
         if action.timeout is None:
@@ -227,6 +232,8 @@ class ActionExecutionClient(Runtime):
 
         with self.action_semaphore:
             if not action.runnable:
+                if isinstance(action, AgentThinkAction):
+                    return AgentThinkObservation('Your thought has been logged.')
                 return NullObservation('')
             if (
                 hasattr(action, 'confirmation_state')
@@ -279,6 +286,9 @@ class ActionExecutionClient(Runtime):
         return self.send_action_for_execution(action)
 
     def write(self, action: FileWriteAction) -> Observation:
+        return self.send_action_for_execution(action)
+
+    def edit(self, action: FileEditAction) -> Observation:
         return self.send_action_for_execution(action)
 
     def browse(self, action: BrowseURLAction) -> Observation:
