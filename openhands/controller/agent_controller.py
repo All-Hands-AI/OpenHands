@@ -697,12 +697,13 @@ class AgentController:
             except (ContextWindowExceededError, BadRequestError, OpenAIError) as e:
                 # FIXME: this is a hack until a litellm fix is confirmed
                 # Check if this is a nested context window error
+                # We have to rely on string-matching because LiteLLM doesn't consistently
+                # wrap the failure in a ContextWindowExceededError
                 error_str = str(e).lower()
                 if (
                     'contextwindowexceedederror' in error_str
                     or 'prompt is too long' in error_str
-                    or 'input length and `max_tokens` exceed context limit'
-                    in error_str
+                    or 'input length and `max_tokens` exceed context limit' in error_str
                     or isinstance(e, ContextWindowExceededError)
                 ):
                     if self.agent.config.enable_history_truncation:
