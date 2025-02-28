@@ -35,6 +35,7 @@ async def connect(connection_id: str, environ):
 
     cookies_str = environ.get('HTTP_COOKIE', '')
     conversation_validator = ConversationValidatorImpl()
+    logger.info(f'validator type: f{type(conversation_validator)}')
     user_id = await conversation_validator.validate(conversation_id, cookies_str)
 
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
