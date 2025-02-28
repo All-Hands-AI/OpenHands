@@ -3,6 +3,7 @@ import copy
 from openhands.events.observation.agent import (
     AgentCondensationObservation,
     AgentStateChangedObservation,
+    AgentThinkObservation,
     RecallObservation,
 )
 from openhands.events.observation.browse import BrowserOutputObservation
@@ -12,7 +13,9 @@ from openhands.events.observation.commands import (
     IPythonRunCellObservation,
 )
 from openhands.events.observation.delegate import AgentDelegateObservation
-from openhands.events.observation.empty import NullObservation
+from openhands.events.observation.empty import (
+    NullObservation,
+)
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.files import (
     FileEditObservation,
@@ -37,6 +40,7 @@ observations = (
     AgentStateChangedObservation,
     UserRejectObservation,
     AgentCondensationObservation,
+    AgentThinkObservation,
     RecallObservation,
 )
 

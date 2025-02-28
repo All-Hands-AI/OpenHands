@@ -7,7 +7,7 @@ from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message
+from openhands.core.message import Message, TextContent
 from openhands.events.action import (
     Action,
     AgentFinishAction,
@@ -78,6 +78,9 @@ class CodeActAgent(Agent):
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
         )
+
+        # Create a ConversationMemory instance
+        self.conversation_memory = ConversationMemory(self.prompt_manager)
 
         # Create a ConversationMemory instance
         self.conversation_memory = ConversationMemory(self.prompt_manager)
@@ -164,12 +167,19 @@ class CodeActAgent(Agent):
         messages = self.conversation_memory.process_initial_messages(
             with_caching=self.llm.is_caching_prompt_active()
         )
+        # Use conversation_memory to process events instead of calling events_to_messages directly
+        messages = self.conversation_memory.process_initial_messages(
+            with_caching=self.llm.is_caching_prompt_active()
+        )
 
         # Condense the events from the state.
         events = self.condenser.condensed_history(state)
 
+        logger.debug(
+            f'Processing {len(events)} events from a total of {len(state.history)} events'
+        )
+
         messages = self.conversation_memory.process_events(
-            state=state,
             condensed_history=events,
             initial_messages=messages,
             max_message_chars=self.llm.config.max_message_chars,
@@ -198,6 +208,7 @@ class CodeActAgent(Agent):
 
         results: list[Message] = []
         is_first_message_handled = False
+        prev_role = None
 
         for msg in messages:
             if msg.role == 'user' and not is_first_message_handled:
@@ -205,6 +216,16 @@ class CodeActAgent(Agent):
                 # compose the first user message with examples
                 self.prompt_manager.add_examples_to_initial_message(msg)
 
+                # Add double newline between consecutive user messages
+                if prev_role == 'user' and len(msg.content) > 0:
+                    # Find the first TextContent in the message to add newlines
+                    for content_item in msg.content:
+                        if isinstance(content_item, TextContent):
+                            # If the previous message was also from a user, prepend two newlines to ensure separation
+                            content_item.text = '\n\n' + content_item.text
+                            break
+
             results.append(msg)
+            prev_role = msg.role
 
         return results

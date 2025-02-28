@@ -50,7 +50,7 @@ def test_process_initial_messages(conversation_memory):
     assert messages[0].content[0].cache_prompt is True
 
 
-def test_process_events_with_message_action(conversation_memory, mock_state):
+def test_process_events_with_message_action(conversation_memory):
     user_message = MessageAction(content='Hello')
     user_message._source = EventSource.USER
     assistant_message = MessageAction(content='Hi there')
@@ -61,7 +61,6 @@ def test_process_events_with_message_action(conversation_memory, mock_state):
     ]
 
     messages = conversation_memory.process_events(
-        state=mock_state,
         condensed_history=[user_message, assistant_message],
         initial_messages=initial_messages,
         max_message_chars=None,
@@ -76,7 +75,7 @@ def test_process_events_with_message_action(conversation_memory, mock_state):
     assert messages[2].content[0].text == 'Hi there'
 
 
-def test_process_events_with_cmd_output_observation(conversation_memory, mock_state):
+def test_process_events_with_cmd_output_observation(conversation_memory):
     obs = CmdOutputObservation(
         command='echo hello',
         content='Command output',
@@ -92,7 +91,6 @@ def test_process_events_with_cmd_output_observation(conversation_memory, mock_st
     ]
 
     messages = conversation_memory.process_events(
-        state=mock_state,
         condensed_history=[obs],
         initial_messages=initial_messages,
         max_message_chars=None,
@@ -110,9 +108,7 @@ def test_process_events_with_cmd_output_observation(conversation_memory, mock_st
     assert '[THIS IS SUFFIX]' in result.content[0].text
 
 
-def test_process_events_with_ipython_run_cell_observation(
-    conversation_memory, mock_state
-):
+def test_process_events_with_ipython_run_cell_observation(conversation_memory):
     obs = IPythonRunCellObservation(
         code='plt.plot()',
         content='IPython output\n![image](data:image/png;base64,ABC123)',
@@ -123,7 +119,6 @@ def test_process_events_with_ipython_run_cell_observation(
     ]
 
     messages = conversation_memory.process_events(
-        state=mock_state,
         condensed_history=[obs],
         initial_messages=initial_messages,
         max_message_chars=None,
@@ -143,9 +138,7 @@ def test_process_events_with_ipython_run_cell_observation(
     assert 'ABC123' not in result.content[0].text
 
 
-def test_process_events_with_agent_delegate_observation(
-    conversation_memory, mock_state
-):
+def test_process_events_with_agent_delegate_observation(conversation_memory):
     obs = AgentDelegateObservation(
         content='Content', outputs={'content': 'Delegated agent output'}
     )
@@ -155,7 +148,6 @@ def test_process_events_with_agent_delegate_observation(
     ]
 
     messages = conversation_memory.process_events(
-        state=mock_state,
         condensed_history=[obs],
         initial_messages=initial_messages,
         max_message_chars=None,
@@ -170,7 +162,7 @@ def test_process_events_with_agent_delegate_observation(
     assert 'Delegated agent output' in result.content[0].text
 
 
-def test_process_events_with_error_observation(conversation_memory, mock_state):
+def test_process_events_with_error_observation(conversation_memory):
     obs = ErrorObservation('Error message')
 
     initial_messages = [
@@ -178,7 +170,6 @@ def test_process_events_with_error_observation(conversation_memory, mock_state):
     ]
 
     messages = conversation_memory.process_events(
-        state=mock_state,
         condensed_history=[obs],
         initial_messages=initial_messages,
         max_message_chars=None,
@@ -194,7 +185,7 @@ def test_process_events_with_error_observation(conversation_memory, mock_state):
     assert 'Error occurred in processing last action' in result.content[0].text
 
 
-def test_process_events_with_unknown_observation(conversation_memory, mock_state):
+def test_process_events_with_unknown_observation(conversation_memory):
     # Create a mock that inherits from Event but not Action or Observation
     obs = Mock(spec=Event)
 
@@ -204,7 +195,6 @@ def test_process_events_with_unknown_observation(conversation_memory, mock_state
 
     with pytest.raises(ValueError, match='Unknown event type'):
         conversation_memory.process_events(
-            state=mock_state,
             condensed_history=[obs],
             initial_messages=initial_messages,
             max_message_chars=None,
@@ -212,7 +202,7 @@ def test_process_events_with_unknown_observation(conversation_memory, mock_state
         )
 
 
-def test_process_events_with_file_edit_observation(conversation_memory, mock_state):
+def test_process_events_with_file_edit_observation(conversation_memory):
     obs = FileEditObservation(
         path='/test/file.txt',
         prev_exist=True,
@@ -227,7 +217,6 @@ def test_process_events_with_file_edit_observation(conversation_memory, mock_sta
     ]
 
     messages = conversation_memory.process_events(
-        state=mock_state,
         condensed_history=[obs],
         initial_messages=initial_messages,
         max_message_chars=None,
@@ -242,7 +231,7 @@ def test_process_events_with_file_edit_observation(conversation_memory, mock_sta
     assert '[Existing file /test/file.txt is edited with' in result.content[0].text
 
 
-def test_process_events_with_file_read_observation(conversation_memory, mock_state):
+def test_process_events_with_file_read_observation(conversation_memory):
     obs = FileReadObservation(
         path='/test/file.txt',
         content='File content',
@@ -254,7 +243,6 @@ def test_process_events_with_file_read_observation(conversation_memory, mock_sta
     ]
 
     messages = conversation_memory.process_events(
-        state=mock_state,
         condensed_history=[obs],
         initial_messages=initial_messages,
         max_message_chars=None,
@@ -269,9 +257,7 @@ def test_process_events_with_file_read_observation(conversation_memory, mock_sta
     assert result.content[0].text == 'File content'
 
 
-def test_process_events_with_browser_output_observation(
-    conversation_memory, mock_state
-):
+def test_process_events_with_browser_output_observation(conversation_memory):
     obs = BrowserOutputObservation(
         url='http://example.com',
         trigger_by_action='browse',
@@ -285,7 +271,6 @@ def test_process_events_with_browser_output_observation(
     ]
 
     messages = conversation_memory.process_events(
-        state=mock_state,
         condensed_history=[obs],
         initial_messages=initial_messages,
         max_message_chars=None,
@@ -300,7 +285,7 @@ def test_process_events_with_browser_output_observation(
     assert '[Current URL: http://example.com]' in result.content[0].text
 
 
-def test_process_events_with_user_reject_observation(conversation_memory, mock_state):
+def test_process_events_with_user_reject_observation(conversation_memory):
     obs = UserRejectObservation('Action rejected')
 
     initial_messages = [
@@ -308,7 +293,6 @@ def test_process_events_with_user_reject_observation(conversation_memory, mock_s
     ]
 
     messages = conversation_memory.process_events(
-        state=mock_state,
         condensed_history=[obs],
         initial_messages=initial_messages,
         max_message_chars=None,
@@ -324,9 +308,7 @@ def test_process_events_with_user_reject_observation(conversation_memory, mock_s
     assert '[Last action has been rejected by the user]' in result.content[0].text
 
 
-def test_process_events_with_function_calling_observation(
-    conversation_memory, mock_state
-):
+def test_process_events_with_function_calling_observation(conversation_memory):
     mock_response = {
         'id': 'mock_id',
         'total_calls_in_response': 1,
@@ -350,7 +332,6 @@ def test_process_events_with_function_calling_observation(
     ]
 
     messages = conversation_memory.process_events(
-        state=mock_state,
         condensed_history=[obs],
         initial_messages=initial_messages,
         max_message_chars=None,
@@ -361,7 +342,7 @@ def test_process_events_with_function_calling_observation(
     assert len(messages) == 1  # Only the initial system message
 
 
-def test_process_events_with_message_action_with_image(conversation_memory, mock_state):
+def test_process_events_with_message_action_with_image(conversation_memory):
     action = MessageAction(
         content='Message with image',
         image_urls=['http://example.com/image.jpg'],
@@ -373,7 +354,6 @@ def test_process_events_with_message_action_with_image(conversation_memory, mock
     ]
 
     messages = conversation_memory.process_events(
-        state=mock_state,
         condensed_history=[action],
         initial_messages=initial_messages,
         max_message_chars=None,
@@ -390,7 +370,7 @@ def test_process_events_with_message_action_with_image(conversation_memory, mock
     assert result.content[1].image_urls == ['http://example.com/image.jpg']
 
 
-def test_process_events_with_user_cmd_action(conversation_memory, mock_state):
+def test_process_events_with_user_cmd_action(conversation_memory):
     action = CmdRunAction(command='ls -l')
     action._source = EventSource.USER
 
@@ -399,7 +379,6 @@ def test_process_events_with_user_cmd_action(conversation_memory, mock_state):
     ]
 
     messages = conversation_memory.process_events(
-        state=mock_state,
         condensed_history=[action],
         initial_messages=initial_messages,
         max_message_chars=None,
@@ -416,7 +395,7 @@ def test_process_events_with_user_cmd_action(conversation_memory, mock_state):
 
 
 def test_process_events_with_agent_finish_action_with_tool_metadata(
-    conversation_memory, mock_state
+    conversation_memory,
 ):
     mock_response = {
         'id': 'mock_id',
@@ -438,7 +417,6 @@ def test_process_events_with_agent_finish_action_with_tool_metadata(
     ]
 
     messages = conversation_memory.process_events(
-        state=mock_state,
         condensed_history=[action],
         initial_messages=initial_messages,
         max_message_chars=None,
