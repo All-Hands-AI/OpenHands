@@ -79,8 +79,10 @@ export interface ResultSet<T> {
   next_page_id: string | null;
 }
 
+export type GitChangeStatus = "M" | "A" | "D" | "R" | "U";
+
 export interface GitChange {
-  status: "M" | "A" | "D" | "R" | "U";
+  status: GitChangeStatus;
   path: string;
 }
 

@@ -25,7 +25,11 @@ function EditorScreen() {
   return (
     <main className="h-full overflow-y-auto px-4">
       {gitChanges.map((change) => (
-        <FileDiffViewer key={change.path} path={change.path} />
+        <FileDiffViewer
+          key={change.path}
+          path={change.path}
+          type={change.status}
+        />
       ))}
     </main>
   );

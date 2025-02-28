@@ -3,15 +3,20 @@ import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import OpenHands from "#/api/open-hands";
 import { useConversation } from "#/context/conversation-context";
+import { GitChangeStatus } from "#/api/open-hands.types";
+import { getLanguageFromPath } from "#/utils/get-language-from-path";
 
 export interface FileDiffViewerProps {
   path: string;
+  type: GitChangeStatus;
 }
 
-export function FileDiffViewer({ path }: FileDiffViewerProps) {
+export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
   const { conversationId } = useConversation();
-
   const [isCollapsed, setIsCollapsed] = React.useState(true);
+
+  const isAdded = type === "A" || type === "U";
+  const isDeleted = type === "D";
 
   const {
     data: diff,
@@ -30,7 +35,10 @@ export function FileDiffViewer({ path }: FileDiffViewerProps) {
       className="w-full h-fit flex flex-col"
     >
       <div className="flex justify-between items-center px-2.5 py-3.5 border-b border-[#9099AC]">
-        <p className="text-sm text-[#F9FBFE]">{path}</p>
+        <p className="text-sm text-[#F9FBFE]">
+          <strong className="text-primary">{type === "U" ? "A" : type}</strong>{" "}
+          {path}
+        </p>
         <button
           data-testid="collapse"
           type="button"
@@ -46,14 +54,18 @@ export function FileDiffViewer({ path }: FileDiffViewerProps) {
           <DiffEditor
             data-testid="file-diff-viewer"
             className="w-full h-full"
-            language="typescript"
-            original={diff.original}
-            modified={diff.modified}
+            language={getLanguageFromPath(path)}
+            original={isAdded ? "" : diff.original}
+            modified={isDeleted ? "" : diff.modified}
             theme="vs-dark"
             options={{
               renderValidationDecorations: "off",
               readOnly: true,
-              renderSideBySide: true,
+              renderSideBySide: !isAdded && !isDeleted,
+              scrollBeyondLastLine: false,
+              minimap: {
+                enabled: false,
+              },
               hideUnchangedRegions: {
                 enabled: true,
               },
