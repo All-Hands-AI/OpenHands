@@ -3,7 +3,10 @@
 from unittest.mock import Mock
 
 import pytest
-from function_calling import (
+from litellm import ChatCompletionMessageToolCall
+
+from openhands.agenthub.codeact_agent import CodeActAgent
+from openhands.agenthub.codeact_agent.function_calling import (
     BrowserTool,
     CmdRunTool,
     IPythonTool,
@@ -13,9 +16,6 @@ from function_calling import (
     get_tools,
     response_to_actions,
 )
-from litellm import ChatCompletionMessageToolCall
-
-from openhands.agenthub.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.tools.browser import (
     _BROWSER_DESCRIPTION,
     _BROWSER_TOOL_DESCRIPTION,
@@ -36,7 +36,6 @@ from openhands.events.tool import ToolCallMetadata
 from openhands.llm.llm import LLM
 
 
-@pytest.fixture
 def agent() -> CodeActAgent:
     config = AgentConfig()
     agent = CodeActAgent(llm=LLM(LLMConfig()), config=config)
@@ -283,5 +282,57 @@ def test_mismatched_tool_call_events(mock_state: State):
 
 
 if __name__ == '__main__':
-    print('ss')
     pass
+    # agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
+    # tool_call_metadata = Mock(
+    #     spec=ToolCallMetadata,
+    #     model_response=Mock(
+    #         id='model_response_0',
+    #         choices=[
+    #             Mock(
+    #                 message=Mock(
+    #                     role='assistant',
+    #                     content='who are u?',
+    #                     tool_calls=[
+    #                         Mock(spec=ChatCompletionMessageToolCall, id='tool_call_0')
+    #                     ],
+    #                 )
+    #             )
+    #         ],
+    #     ),
+    #     tool_call_id='tool_call_0',
+    #     function_name='foo',
+    # )
+
+    # action = CmdRunAction('foo')
+    # # action._source = 'agent'
+    # action.tool_call_metadata = tool_call_metadata
+
+    # observation = CmdOutputObservation(content='', command_id=0, command='foo')
+    # observation.tool_call_metadata = tool_call_metadata
+
+    # # When both events are provided, the agent should get three messages:
+    # # 1. The system message,
+    # # 2. The action message, and
+    # # 3. The observation message
+    # mock_state.history = [action, observation]
+    # messages = agent._get_messages(mock_state)
+    # assert len(messages) == 3
+
+    # # The same should hold if the events are presented out-of-order
+    # mock_state.history = [observation, action]
+    # messages = agent._get_messages(mock_state)
+    # assert len(messages) == 3
+
+    # # If only one of the two events is present, then we should just get the system message
+    # mock_state.history = [action]
+    # messages = agent._get_messages(mock_state)
+    # assert len(messages) == 1
+
+    # mock_state.history = [observation]
+    # messages = agent._get_messages(mock_state)
+    # assert len(messages) == 1
+
+    # test_my_agent()
+    # my_agnet = agent()
+    # test_reset(my_agnet)
