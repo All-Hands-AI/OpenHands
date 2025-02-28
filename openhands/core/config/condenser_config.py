@@ -121,7 +121,7 @@ CondenserConfig = (
 )
 
 
-def from_toml_section(
+def condenser_config_from_toml_section(
     data: dict, llm_configs: dict | None = None
 ) -> dict[str, CondenserConfig]:
     """
@@ -196,6 +196,10 @@ def from_toml_section(
         condenser_mapping['condenser'] = config
 
     return condenser_mapping
+
+
+# For backward compatibility
+from_toml_section = condenser_config_from_toml_section
 
 
 def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:

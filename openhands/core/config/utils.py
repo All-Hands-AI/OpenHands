@@ -196,10 +196,14 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     # Process condenser section if present
     if 'condenser' in toml_config:
         try:
-            from openhands.core.config.condenser_config import from_toml_section
+            from openhands.core.config.condenser_config import (
+                condenser_config_from_toml_section,
+            )
 
             # Pass the LLM configs to the condenser config parser
-            condenser_mapping = from_toml_section(toml_config['condenser'], cfg.llms)
+            condenser_mapping = condenser_config_from_toml_section(
+                toml_config['condenser'], cfg.llms
+            )
             # Note: We don't currently have a way to use custom condenser configurations
             # directly in AppConfig. They are typically used within agent configurations.
             if 'condenser' in condenser_mapping:

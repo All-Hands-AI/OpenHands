@@ -589,11 +589,11 @@ max_events = 15
     # But we can verify that the function works by importing and using it directly
     from openhands.core.config.condenser_config import (
         RecentEventsCondenserConfig,
-        from_toml_section,
+        condenser_config_from_toml_section,
     )
 
     condenser_data = {'type': 'recent', 'keep_first': 3, 'max_events': 15}
-    condenser_mapping = from_toml_section(condenser_data)
+    condenser_mapping = condenser_config_from_toml_section(condenser_data)
 
     assert 'condenser' in condenser_mapping
     assert isinstance(condenser_mapping['condenser'], RecentEventsCondenserConfig)
@@ -625,7 +625,7 @@ max_size = 50
     # Test the condenser config with the LLM reference
     from openhands.core.config.condenser_config import (
         LLMSummarizingCondenserConfig,
-        from_toml_section,
+        condenser_config_from_toml_section,
     )
 
     condenser_data = {
@@ -634,7 +634,9 @@ max_size = 50
         'keep_first': 2,
         'max_size': 50,
     }
-    condenser_mapping = from_toml_section(condenser_data, default_config.llms)
+    condenser_mapping = condenser_config_from_toml_section(
+        condenser_data, default_config.llms
+    )
 
     assert 'condenser' in condenser_mapping
     assert isinstance(condenser_mapping['condenser'], LLMSummarizingCondenserConfig)
@@ -661,7 +663,7 @@ max_size = 50
     # Test the condenser config with a missing LLM reference
     from openhands.core.config.condenser_config import (
         LLMSummarizingCondenserConfig,
-        from_toml_section,
+        condenser_config_from_toml_section,
     )
 
     condenser_data = {
@@ -670,7 +672,9 @@ max_size = 50
         'keep_first': 2,
         'max_size': 50,
     }
-    condenser_mapping = from_toml_section(condenser_data, default_config.llms)
+    condenser_mapping = condenser_config_from_toml_section(
+        condenser_data, default_config.llms
+    )
 
     assert 'condenser' in condenser_mapping
     assert isinstance(condenser_mapping['condenser'], LLMSummarizingCondenserConfig)
@@ -691,11 +695,11 @@ type = "invalid_type"
     # Test the condenser config with an invalid type
     from openhands.core.config.condenser_config import (
         NoOpCondenserConfig,
-        from_toml_section,
+        condenser_config_from_toml_section,
     )
 
     condenser_data = {'type': 'invalid_type'}
-    condenser_mapping = from_toml_section(condenser_data)
+    condenser_mapping = condenser_config_from_toml_section(condenser_data)
 
     # Should default to NoOpCondenserConfig when the type is invalid
     assert 'condenser' in condenser_mapping
@@ -719,11 +723,11 @@ max_events = 0   # Invalid: must be >= 1
     # Test the condenser config with validation errors
     from openhands.core.config.condenser_config import (
         NoOpCondenserConfig,
-        from_toml_section,
+        condenser_config_from_toml_section,
     )
 
     condenser_data = {'type': 'recent', 'keep_first': -1, 'max_events': 0}
-    condenser_mapping = from_toml_section(condenser_data)
+    condenser_mapping = condenser_config_from_toml_section(condenser_data)
 
     # Should default to NoOpCondenserConfig when validation fails
     assert 'condenser' in condenser_mapping
