@@ -16,7 +16,9 @@ from openhands.core.config import (
     load_from_toml,
 )
 from openhands.core.config.condenser_config import (
+    LLMSummarizingCondenserConfig,
     NoOpCondenserConfig,
+    RecentEventsCondenserConfig,
 )
 from openhands.core.logger import openhands_logger
 
@@ -585,10 +587,14 @@ max_events = 15
 
     load_from_toml(default_config, temp_toml_file)
 
-    # We don't have a direct way to access the condenser config from AppConfig
-    # But we can verify that the function works by importing and using it directly
+    # Verify that the condenser config is correctly assigned to the default agent config
+    agent_config = default_config.get_agent_config()
+    assert isinstance(agent_config.condenser, RecentEventsCondenserConfig)
+    assert agent_config.condenser.keep_first == 3
+    assert agent_config.condenser.max_events == 15
+
+    # We can also verify the function works directly
     from openhands.core.config.condenser_config import (
-        RecentEventsCondenserConfig,
         condenser_config_from_toml_section,
     )
 
@@ -622,9 +628,15 @@ max_size = 50
     assert 'condenser_llm' in default_config.llms
     assert default_config.llms['condenser_llm'].model == 'gpt-4'
 
+    # Verify that the condenser config is correctly assigned to the default agent config
+    agent_config = default_config.get_agent_config()
+    assert isinstance(agent_config.condenser, LLMSummarizingCondenserConfig)
+    assert agent_config.condenser.keep_first == 2
+    assert agent_config.condenser.max_size == 50
+    assert agent_config.condenser.llm_config.model == 'gpt-4'
+
     # Test the condenser config with the LLM reference
     from openhands.core.config.condenser_config import (
-        LLMSummarizingCondenserConfig,
         condenser_config_from_toml_section,
     )
 
@@ -662,7 +674,6 @@ max_size = 50
 
     # Test the condenser config with a missing LLM reference
     from openhands.core.config.condenser_config import (
-        LLMSummarizingCondenserConfig,
         condenser_config_from_toml_section,
     )
 
@@ -694,7 +705,6 @@ type = "invalid_type"
 
     # Test the condenser config with an invalid type
     from openhands.core.config.condenser_config import (
-        NoOpCondenserConfig,
         condenser_config_from_toml_section,
     )
 
@@ -722,7 +732,6 @@ max_events = 0   # Invalid: must be >= 1
 
     # Test the condenser config with validation errors
     from openhands.core.config.condenser_config import (
-        NoOpCondenserConfig,
         condenser_config_from_toml_section,
     )
 

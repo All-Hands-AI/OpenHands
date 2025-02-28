@@ -202,11 +202,13 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
             condenser_mapping = condenser_config_from_toml_section(
                 toml_config['condenser'], cfg.llms
             )
-            # Note: We don't currently have a way to use custom condenser configurations
-            # directly in AppConfig. They are typically used within agent configurations.
+            # Assign the default condenser configuration to the default agent configuration
             if 'condenser' in condenser_mapping:
+                # Get the default agent config and assign the condenser config to it
+                default_agent_config = cfg.get_agent_config()
+                default_agent_config.condenser = condenser_mapping['condenser']
                 logger.openhands_logger.debug(
-                    'Default condenser configuration loaded from config toml'
+                    'Default condenser configuration loaded from config toml and assigned to default agent'
                 )
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
