@@ -643,68 +643,6 @@ max_size = 50
     assert condenser_mapping['condenser'].llm_config.model == 'gpt-4'
 
 
-def test_condenser_config_from_toml_with_custom_sections(
-    default_config, temp_toml_file
-):
-    """Test loading condenser configuration with custom sections from TOML."""
-    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
-        toml_file.write("""
-[llm.condenser_llm]
-model = "gpt-4"
-api_key = "test-key"
-
-[condenser]
-type = "noop"
-
-[condenser.agent1]
-type = "recent"
-keep_first = 3
-max_events = 15
-
-[condenser.agent2]
-type = "llm"
-llm_config = "condenser_llm"
-keep_first = 2
-max_size = 50
-""")
-
-    load_from_toml(default_config, temp_toml_file)
-
-    # Test the condenser config with custom sections
-    from openhands.core.config.condenser_config import (
-        LLMSummarizingCondenserConfig,
-        NoOpCondenserConfig,
-        RecentEventsCondenserConfig,
-        from_toml_section,
-    )
-
-    condenser_data = {
-        'type': 'noop',
-        'agent1': {'type': 'recent', 'keep_first': 3, 'max_events': 15},
-        'agent2': {
-            'type': 'llm',
-            'llm_config': 'condenser_llm',
-            'keep_first': 2,
-            'max_size': 50,
-        },
-    }
-    condenser_mapping = from_toml_section(condenser_data, default_config.llms)
-
-    assert 'condenser' in condenser_mapping
-    assert 'agent1' in condenser_mapping
-    assert 'agent2' in condenser_mapping
-
-    assert isinstance(condenser_mapping['condenser'], NoOpCondenserConfig)
-    assert isinstance(condenser_mapping['agent1'], RecentEventsCondenserConfig)
-    assert isinstance(condenser_mapping['agent2'], LLMSummarizingCondenserConfig)
-
-    assert condenser_mapping['agent1'].keep_first == 3
-    assert condenser_mapping['agent1'].max_events == 15
-    assert condenser_mapping['agent2'].keep_first == 2
-    assert condenser_mapping['agent2'].max_size == 50
-    assert condenser_mapping['agent2'].llm_config.model == 'gpt-4'
-
-
 def test_condenser_config_from_toml_with_missing_llm_reference(
     default_config, temp_toml_file
 ):
