@@ -310,7 +310,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         check_result = self.monitor.check(self.input, input)
         self.input.extend(input)
         risk = ActionSecurityRisk.UNKNOWN
-        
+
         if isinstance(check_result, tuple):
             result, err = check_result
             if err:
