@@ -6,7 +6,6 @@ agent: CodeActAgent
 triggers:
 - kubernetes
 - k8s
-- kind
 ---
 
 # Kubernetes Local Development with KIND
