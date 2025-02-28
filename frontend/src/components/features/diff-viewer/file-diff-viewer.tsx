@@ -25,8 +25,13 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
     isSuccess,
     isRefetching,
   } = useQuery({
-    queryKey: ["file_diff", conversationId, path],
-    queryFn: () => OpenHands.getGitChangeDiff(conversationId, path),
+    queryKey: ["file_diff", conversationId, path, type],
+    queryFn: () => {
+      let filePath = path;
+      if (type === "R") filePath = path.split("->")[1].trim();
+
+      return OpenHands.getGitChangeDiff(conversationId, filePath);
+    },
     enabled: !isCollapsed,
   });
 
@@ -38,12 +43,20 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
       <div
         className={cn(
           "flex justify-between items-center px-2.5 py-3.5 border border-basic rounded-xl",
-          !isCollapsed && "border-b-0 rounded-b-none",
+          !isCollapsed && !isLoading && "border-b-0 rounded-b-none",
         )}
       >
         <p className="text-sm text-content">
           <strong className="text-primary">{type === "U" ? "A" : type}</strong>{" "}
-          {path}
+          {path}{" "}
+          {isRefetching && (
+            <span className="text-tertiary-light">
+              | Getting latest changes...
+            </span>
+          )}
+          {isLoading && (
+            <span className="text-tertiary-light">| Loading...</span>
+          )}
         </p>
         <button
           data-testid="collapse"
@@ -53,8 +66,6 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
           coll
         </button>
       </div>
-      {isLoading && <div>Loading...</div>}
-      {isRefetching && <div>Getting latest changes...</div>}
       {isSuccess && (
         <div
           hidden={isCollapsed}

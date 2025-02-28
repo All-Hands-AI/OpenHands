@@ -498,14 +498,18 @@ class Runtime(FileEditRuntimeMixin):
         output = obs.content.strip()
         return output == 'true'
 
-    def _get_full_content(self, file_path: str) -> str:
+    def _get_current_file_content(self, file_path: str) -> str:
         cmd = f'cat {file_path}'
         obs = self.run(CmdRunAction(command=cmd))
+        if hasattr(obs, 'error') and obs.error:
+            return ''
         return obs.content.strip()
 
     def _get_last_commit_content(self, file_path: str) -> str:
         cmd = f'git show HEAD:{file_path}'
         obs = self.run(CmdRunAction(command=cmd))
+        if hasattr(obs, 'error') and obs.error:
+            return ''
         return obs.content.strip()
 
     def get_git_changes(self) -> list[dict[str, str]]:
@@ -546,7 +550,7 @@ class Runtime(FileEditRuntimeMixin):
         return result
 
     def get_git_diff(self, file_path: str) -> dict[str, str]:
-        modified = self._get_full_content(file_path)
+        modified = self._get_current_file_content(file_path)
         original = self._get_last_commit_content(file_path)
 
         return {
