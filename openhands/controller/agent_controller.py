@@ -701,6 +701,8 @@ class AgentController:
                 if (
                     'contextwindowexceedederror' in error_str
                     or 'prompt is too long' in error_str
+                    or 'input length and `max_tokens` exceed context limit in error_str'
+                    in error_str
                     or isinstance(e, ContextWindowExceededError)
                 ):
                     if self.agent.config.enable_history_truncation:
