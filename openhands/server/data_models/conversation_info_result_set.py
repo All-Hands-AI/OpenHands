@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from openhands.storage.data_models.conversation_info import ConversationInfo
+from openhands.server.data_models.conversation_info import ConversationInfo
 
 
 @dataclass

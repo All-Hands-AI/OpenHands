@@ -144,27 +144,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     # Process agent section if present
     if 'agent' in toml_config:
         try:
-            value = toml_config['agent']
-            # Every entry here is either a field for the default `agent` config group, or itself a group
-            # The best way to tell the difference is to try to parse it as an AgentConfig object
-            agent_group_ids: set[str] = set()
-            for nested_key, nested_value in value.items():
-                if isinstance(nested_value, dict):
-                    try:
-                        agent_config = AgentConfig(**nested_value)
-                    except ValidationError:
-                        continue
-                    agent_group_ids.add(nested_key)
-                    cfg.set_agent_config(agent_config, nested_key)
-
-            logger.openhands_logger.debug(
-                'Attempt to load default agent config from config toml'
-            )
-            value_without_groups = {
-                k: v for k, v in value.items() if k not in agent_group_ids
-            }
-            agent_config = AgentConfig(**value_without_groups)
-            cfg.set_agent_config(agent_config, 'agent')
+            agent_mapping = AgentConfig.from_toml_section(toml_config['agent'])
+            for agent_key, agent_conf in agent_mapping.items():
+                cfg.set_agent_config(agent_conf, agent_key)
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
                 f'Cannot parse [agent] config from toml, values have not been applied.\nError: {e}'
@@ -184,28 +166,32 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     # Process security section if present
     if 'security' in toml_config:
         try:
-            logger.openhands_logger.debug(
-                'Attempt to load security config from config toml'
-            )
-            security_config = SecurityConfig(**toml_config['security'])
-            cfg.security = security_config
+            security_mapping = SecurityConfig.from_toml_section(toml_config['security'])
+            # We only use the base security config for now
+            if 'security' in security_mapping:
+                cfg.security = security_mapping['security']
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
                 f'Cannot parse [security] config from toml, values have not been applied.\nError: {e}'
             )
+        except ValueError:
+            # Re-raise ValueError from SecurityConfig.from_toml_section
+            raise ValueError('Error in [security] section in config.toml')
 
     # Process sandbox section if present
     if 'sandbox' in toml_config:
         try:
-            logger.openhands_logger.debug(
-                'Attempt to load sandbox config from config toml'
-            )
-            sandbox_config = SandboxConfig(**toml_config['sandbox'])
-            cfg.sandbox = sandbox_config
+            sandbox_mapping = SandboxConfig.from_toml_section(toml_config['sandbox'])
+            # We only use the base sandbox config for now
+            if 'sandbox' in sandbox_mapping:
+                cfg.sandbox = sandbox_mapping['sandbox']
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
                 f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}'
             )
+        except ValueError:
+            # Re-raise ValueError from SandboxConfig.from_toml_section
+            raise ValueError('Error in [sandbox] section in config.toml')
 
     # Process condenser section if present
     if 'condenser' in toml_config:
