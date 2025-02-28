@@ -512,9 +512,19 @@ class Runtime(FileEditRuntimeMixin):
             return ''
         return obs.content.strip()
 
+    def get_untracked_files(self) -> list[dict[str, str]]:
+        try:
+            cmd = 'git ls-files --others --exclude-standard'
+            obs = self.run(CmdRunAction(command=cmd))
+            obs_list = obs.content.splitlines()
+            return [{'status': 'A', 'path': path} for path in obs_list]
+        except Exception as e:
+            logger.error(f'Error retrieving untracked files: {e}')
+            return []
+
     def get_git_changes(self) -> list[dict[str, str]]:
         result = []
-        cmd = 'git status --porcelain'
+        cmd = 'git diff --name-status HEAD'
 
         try:
             obs = self.run(CmdRunAction(command=cmd))
@@ -528,14 +538,11 @@ class Runtime(FileEditRuntimeMixin):
                     'A': 'A',  # Added
                     'D': 'D',  # Deleted
                     'R': 'R',  # Renamed
-                    '??': 'U',  # Untracked
                 }
 
                 # Get the first non-space character as the primary status
                 primary_status = status.replace(' ', '')[0]
                 mapped_status = status_map.get(primary_status, primary_status)
-                if primary_status == '?':  # Special case for untracked files
-                    mapped_status = 'U'
 
                 result.append(
                     {
@@ -543,6 +550,9 @@ class Runtime(FileEditRuntimeMixin):
                         'path': path,
                     }
                 )
+
+            # join with untracked files
+            result += self.get_untracked_files()
         except Exception as e:
             logger.error(f'Error retrieving git changes: {e}')
             return []

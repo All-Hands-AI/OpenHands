@@ -20,19 +20,23 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
   const isAdded = type === "A" || type === "U";
   const isDeleted = type === "D";
 
+  const filePath = React.useMemo(() => {
+    if (type === "R") {
+      const parts = path.split(/\s+/).slice(1);
+      return parts[parts.length - 1];
+    }
+
+    return path;
+  }, [path, type]);
+
   const {
     data: diff,
     isLoading,
     isSuccess,
     isRefetching,
   } = useQuery({
-    queryKey: ["file_diff", conversationId, path, type],
-    queryFn: () => {
-      let filePath = path;
-      if (type === "R") filePath = path.split("->")[1].trim();
-
-      return OpenHands.getGitChangeDiff(conversationId, filePath);
-    },
+    queryKey: ["file_diff", conversationId, filePath, type],
+    queryFn: () => OpenHands.getGitChangeDiff(conversationId, filePath),
     enabled: !isCollapsed,
   });
 
@@ -49,7 +53,7 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
       >
         <p className="text-sm text-content">
           <strong className="text-primary">{type === "U" ? "A" : type}</strong>{" "}
-          {path}{" "}
+          {filePath}{" "}
           {isRefetching && (
             <span className="text-tertiary-light">
               | Getting latest changes...
