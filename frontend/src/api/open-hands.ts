@@ -342,9 +342,15 @@ class OpenHands {
     await openHands.post("/api/logout");
   }
 
-  static async getGitChanges(conversationId: string): Promise<GitChange[]> {
+  static async getGitChanges(
+    conversationId: string,
+    ref = "HEAD",
+  ): Promise<GitChange[]> {
     const { data } = await openHands.get<GitChange[]>(
       `/api/conversations/${conversationId}/git/changes`,
+      {
+        params: { ref },
+      },
     );
     return data;
   }
@@ -352,11 +358,12 @@ class OpenHands {
   static async getGitChangeDiff(
     conversationId: string,
     path: string,
+    ref = "HEAD",
   ): Promise<GitChangeDiff> {
     const { data } = await openHands.get<GitChangeDiff>(
       `/api/conversations/${conversationId}/git/diff`,
       {
-        params: { path },
+        params: { path, ref },
       },
     );
     return data;

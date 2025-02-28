@@ -505,8 +505,8 @@ class Runtime(FileEditRuntimeMixin):
             return ''
         return obs.content.strip()
 
-    def _get_last_commit_content(self, file_path: str) -> str:
-        cmd = f'git show HEAD:{file_path}'
+    def _get_ref_content(self, file_path: str, ref: str) -> str:
+        cmd = f'git show {ref}:{file_path}'
         obs = self.run(CmdRunAction(command=cmd))
         if hasattr(obs, 'error') and obs.error:
             return ''
@@ -522,9 +522,12 @@ class Runtime(FileEditRuntimeMixin):
             logger.error(f'Error retrieving untracked files: {e}')
             return []
 
-    def get_git_changes(self) -> list[dict[str, str]]:
+    def get_git_changes(self, ref='HEAD') -> list[dict[str, str]]:
+        if not self._is_git_repo():
+            return []
+
         result = []
-        cmd = 'git diff --name-status HEAD'
+        cmd = f'git diff --name-status {ref}'
 
         try:
             obs = self.run(CmdRunAction(command=cmd))
@@ -533,20 +536,11 @@ class Runtime(FileEditRuntimeMixin):
                 status = line[:2].strip()
                 path = line[2:].strip()
 
-                status_map = {
-                    'M': 'M',  # Modified
-                    'A': 'A',  # Added
-                    'D': 'D',  # Deleted
-                    'R': 'R',  # Renamed
-                }
-
                 # Get the first non-space character as the primary status
                 primary_status = status.replace(' ', '')[0]
-                mapped_status = status_map.get(primary_status, primary_status)
-
                 result.append(
                     {
-                        'status': mapped_status,
+                        'status': primary_status,
                         'path': path,
                     }
                 )
@@ -559,9 +553,9 @@ class Runtime(FileEditRuntimeMixin):
 
         return result
 
-    def get_git_diff(self, file_path: str) -> dict[str, str]:
+    def get_git_diff(self, file_path: str, ref='HEAD') -> dict[str, str]:
         modified = self._get_current_file_content(file_path)
-        original = self._get_last_commit_content(file_path)
+        original = self._get_ref_content(file_path, ref)
 
         return {
             'modified': modified,
