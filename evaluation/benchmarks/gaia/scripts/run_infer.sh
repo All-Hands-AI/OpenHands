@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
@@ -53,6 +53,7 @@ fi
 if [ -n "$AGENT_CONFIG" ]; then
   echo "AGENT_CONFIG: $AGENT_CONFIG"
   COMMAND="$COMMAND --agent-config $AGENT_CONFIG"
+fi
 
 # Run the command
 eval $COMMAND

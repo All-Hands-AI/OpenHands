@@ -9,7 +9,7 @@ _browser_action_space = HighLevelActionSet(
 )
 
 
-_BROWSER_DESCRIPTION = """Interact with the browser using Python code. Use it ONLY when you need to interact with a webpage.
+_BROWSER_DESCRIPTION = """Interact with the browser using Python code. Use it whenever you need to interact with webpages.
 
 See the description of "code" parameter for more details.
 

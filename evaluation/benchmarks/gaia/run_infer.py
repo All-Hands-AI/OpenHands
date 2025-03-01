@@ -1,11 +1,17 @@
 import asyncio
+import base64
 import functools
+import io
 import os
 import re
+import shutil
+import zipfile
 
 import huggingface_hub
+import numpy as np
 import pandas as pd
 from datasets import load_dataset
+from PIL import Image
 
 from evaluation.benchmarks.gaia.scorer import question_scorer
 from evaluation.utils.shared import (
@@ -65,7 +71,10 @@ def get_config(
     else:
         logger.info('Agent config not provided, using default settings')
         agent_config = config.get_agent_config(metadata.agent_class)
-        agent_config.enable_prompt_extensions = False
+        print(agent_config)
+        # agent_config.enable_prompt_extensions = False
+        # agent_config.enable_som_visual_browsing = True
+
     return config
 
 
@@ -88,21 +97,37 @@ def initialize_runtime(
     if instance['file_name'] != '':
         # if this question comes with a file, we need to save it to the workspace
         assert metadata.data_split is not None
+        extension_name = instance['file_name'].split('.')[-1]
         src_file = os.path.join(
             DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name']
         )
         assert os.path.exists(src_file)
-        dest_file = os.path.join('/workspace', instance['file_name'])
-        runtime.copy_to(src_file, dest_file)
+        if extension_name == 'zip':
+            temp_dir = os.path.join(
+                DATASET_CACHE_DIR, '2023', metadata.data_split, 'tmp_file'
+            )
+            os.makedirs(temp_dir, exist_ok=True)
+            with zipfile.ZipFile(src_file, 'r') as zip_ref:
+                zip_ref.extractall(temp_dir)
+            filenames = []
+            for root, dirs, files in os.walk(temp_dir):
+                for file in files:
+                    dest_file = '/workspace'
+                    runtime.copy_to(os.path.join(root, file), dest_file)
+                    filenames.append(file)
+                    # rename to file.extension_name
+            shutil.rmtree(temp_dir)
+        elif extension_name not in ['jpg', 'png']:
+            dest_file = '/workspace'
+            runtime.copy_to(src_file, dest_file)
 
-        # rename to file.extension_name
-        extension_name = instance['file_name'].split('.')[-1]
-        action = CmdRunAction(
-            command=f'mv /workspace/{instance["file_name"]} /workspace/file.{extension_name}'
-        )
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        assert obs.exit_code == 0
+            # rename to file.extension_name
+            action = CmdRunAction(
+                command=f'mv /workspace/{instance["file_name"]} /workspace/file.{extension_name}'
+            )
+            logger.info(action, extra={'msg_type': 'ACTION'})
+            obs = runtime.run_action(action)
+            assert obs.exit_code == 0
 
     action = CmdRunAction(command='cd /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -110,6 +135,44 @@ def initialize_runtime(
     assert obs.exit_code == 0
 
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+
+
+def image_to_png_base64_url(
+    image: np.ndarray | Image.Image, add_data_prefix: bool = True
+):
+    """Convert a numpy array to a base64 encoded png image url."""
+    if isinstance(image, np.ndarray):
+        image = Image.fromarray(image)
+    if image.mode in ('RGBA', 'LA'):
+        image = image.convert('RGB')
+    buffered = io.BytesIO()
+    image.save(buffered, format='PNG')
+
+    image_base64 = base64.b64encode(buffered.getvalue()).decode()
+    return (
+        f'data:image/png;base64,{image_base64}'
+        if add_data_prefix
+        else f'{image_base64}'
+    )
+
+
+def image_to_jpg_base64_url(
+    image: np.ndarray | Image.Image, add_data_prefix: bool = True
+):
+    """Convert a numpy array to a base64 encoded jpeg image url."""
+    if isinstance(image, np.ndarray):
+        image = Image.fromarray(image)
+    if image.mode in ('RGBA', 'LA'):
+        image = image.convert('RGB')
+    buffered = io.BytesIO()
+    image.save(buffered, format='JPEG')
+
+    image_base64 = base64.b64encode(buffered.getvalue()).decode()
+    return (
+        f'data:image/jpeg;base64,{image_base64}'
+        if add_data_prefix
+        else f'{image_base64}'
+    )
 
 
 def process_instance(
@@ -133,15 +196,39 @@ def process_instance(
         dest_file = None
 
     # Prepare instruction
-    instruction = f"{instance['Question']}\n"
+    instruction = f"""You have one question to answer. It is paramount that you provide a correct answer.
+Give it all you can: I know for a fact that you have access to all the relevant tools to solve it and find the correct answer (the answer does exist). Failure or 'I cannot answer' or 'None found' will not be tolerated, success will be rewarded.
+Run verification steps if that's needed, you must make sure you find the correct answer! Do not use search engines like Google and Bing as they will block you with CAPTCHAs.
+Here is the task: {instance['Question']}\n"""
     logger.info(f'Instruction: {instruction}')
+    image_urls = []
     if dest_file:
-        instruction += f"\n\nThe mentioned file is provided in the workspace at: {dest_file.split('/')[-1]}"
-
-    instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-    instruction += 'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
+        if extension_name not in ['jpg', 'png', 'zip']:
+            instruction += f"\nThe file required to solve this task is provided in the workspace (present working directory) at: {dest_file.split('/')[-1]}\n\n"
+        elif extension_name == 'zip':
+            filenames = []
+            src_file = os.path.join(
+                DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name']
+            )
+            with zipfile.ZipFile(src_file, 'r') as zip_ref:
+                filenames = zip_ref.namelist()
+            filenames = ', '.join(filenames)
+            instruction += f'\nThe files required to solve this task are provided in the workspace (present working directory) at: {filenames}\n\n'
+        else:
+            src_file = os.path.join(
+                DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name']
+            )
+            instruction += 'f\nImage: The image file required to solve this task is shown below.\n\n'
+            image = Image.open(src_file)
+            if extension_name == 'jpg':
+                image_urls.append(image_to_jpg_base64_url(image))
+            else:
+                image_urls.append(image_to_png_base64_url(image))
+    instruction += """IMPORTANT: When interacting with websites in search for information, you MUST ALWAYS use the provided website interface and its search functionality. DO NOT navigate directly to specific URLs as they may not exist. For example: if you want to search for a research paper on Arxiv, use its search functionality instead of trying out different URLs randomly.\n"""
+    instruction += 'IMPORTANT: You should NEVER ask for Human Help.\n'
+    instruction += 'IMPORTANT: Please encapsulate your final answer (answer ONLY) within <solution> and </solution>. Your answer will be evaluated using string matching approaches so it important that you STRICTLY adhere to the output formatting instructions given by the user.\n'
     instruction += (
-        'For example: The answer to the question is <solution> 42 </solution>.\n'
+        'For example: The answer to the question is <solution> 42 </solution>.\n\n'
     )
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(metadata.agent_class, '')
@@ -154,7 +241,9 @@ def process_instance(
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            initial_user_action=MessageAction(content=instruction),
+            initial_user_action=MessageAction(
+                content=instruction, image_urls=image_urls
+            ),
             runtime=runtime,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 metadata.agent_class
@@ -220,6 +309,7 @@ def process_instance(
         error=state.last_error if state and state.last_error else None,
         test_result=test_result,
     )
+    runtime.close()
     return output
 
 

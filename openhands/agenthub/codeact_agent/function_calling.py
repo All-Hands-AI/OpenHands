@@ -185,7 +185,7 @@ def get_tools(
 ) -> list[ChatCompletionToolParam]:
     tools = [CmdRunTool, FinishTool]
     if codeact_enable_browsing:
-        tools.append(WebReadTool)
+        # tools.append(WebReadTool)
         tools.append(BrowserTool)
     if codeact_enable_jupyter:
         tools.append(IPythonTool)
