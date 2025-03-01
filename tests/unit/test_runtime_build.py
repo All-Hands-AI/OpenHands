@@ -40,7 +40,7 @@ def temp_dir(tmp_path_factory: TempPathFactory) -> str:
 def mock_docker_client():
     mock_client = MagicMock(spec=docker.DockerClient)
     mock_client.version.return_value = {
-        'Version': '20.10.0'
+        'Version': '20.10.0',
         'Components': [
             {'Name': 'Engine', 'Version': '20.10.0'},]
     }  # Ensure version is >= 18.09
@@ -615,7 +615,7 @@ CMD ["sh", "-c", "echo 'Hello, World!'"]
 def test_image_exists_local(docker_runtime_builder):
     mock_client = MagicMock()
     mock_client.version.return_value = {
-        'Version': '20.10.0'
+        'Version': '20.10.0',
         'Components': [
             {'Name': 'Engine', 'Version': '20.10.0'},]
     }  # Ensure version is >= 18.09
@@ -627,7 +627,7 @@ def test_image_exists_local(docker_runtime_builder):
 def test_image_exists_not_found():
     mock_client = MagicMock()
     mock_client.version.return_value = {
-        'Version': '20.10.0'
+        'Version': '20.10.0',
         'Components': [
             {'Name': 'Engine', 'Version': '20.10.0'},]
     }  # Ensure version is >= 18.09
