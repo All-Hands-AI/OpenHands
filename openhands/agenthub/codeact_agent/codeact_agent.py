@@ -216,6 +216,7 @@ class CodeActAgent(Agent):
                 # compose the first user message with examples
                 self.prompt_manager.add_examples_to_initial_message(msg)
 
+            elif msg.role == 'user':
                 # Add double newline between consecutive user messages
                 if prev_role == 'user' and len(msg.content) > 0:
                     # Find the first TextContent in the message to add newlines

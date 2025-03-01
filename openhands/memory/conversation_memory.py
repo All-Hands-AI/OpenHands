@@ -397,9 +397,9 @@ class ConversationMemory:
                         repo_instructions=repo_instructions,
                     )
 
-                    return [
-                        Message(role='user', content=[TextContent(text=formatted_text)])
-                    ]
+                    message = Message(
+                        role='user', content=[TextContent(text=formatted_text)]
+                    )
 
                 # For microagent_knowledge or other structured data
                 text = truncate_content(obs.content, max_message_chars)

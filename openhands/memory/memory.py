@@ -104,7 +104,7 @@ class Memory:
 
                 # important: this hint will release the execution flow from waiting for this to complete
                 if observation is not None:
-                    observation._cause = event  # type: ignore[attr-defined]
+                    observation._cause = event.id  # type: ignore[attr-defined]
 
                     self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
         elif isinstance(event, RecallAction):
