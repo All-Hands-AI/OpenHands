@@ -226,13 +226,22 @@ class BashSession:
         _initial_window.kill_window()
 
         # Configure bash to use simple PS1 and disable PS2
-        # Write PS1 to a file first to avoid escaping issues
-        ps1_file = '/tmp/ps1.txt'
-        self.pane.send_keys(f'cat > {ps1_file} << "EOF"\n{self.PS1}EOF')
-        time.sleep(0.1)  # Wait for file to be written
-        # Now read PS1 from file and set it
+        # First get the current user and hostname
+        self.pane.send_keys('whoami > /tmp/user.txt && hostname > /tmp/host.txt')
+        time.sleep(0.1)  # Wait for commands to complete
+        # Now set PS1 with actual values instead of escape sequences
         self.pane.send_keys(
-            f'export PROMPT_COMMAND=\'export PS1="$(cat {ps1_file})"\'; export PS2=""'
+            'export PROMPT_COMMAND=\'export PS1="\n###PS1JSON###\n'
+            '{\n'
+            '  \\"pid\\": \\"$!\\",\n'
+            '  \\"exit_code\\": \\"$?\\",\n'
+            '  \\"username\\": \\"$(cat /tmp/user.txt)\\",\n'
+            '  \\"hostname\\": \\"$(cat /tmp/host.txt)\\",\n'
+            '  \\"working_dir\\": \\"$(pwd)\\",\n'
+            '  \\"py_interpreter_path\\": \\"$(which python 2>/dev/null || echo \\"\\")\\",\n'
+            '  \\"timestamp\\": \\"$(date +%s)\\"\n'
+            '}\n'
+            '###PS1END###\n"\'; export PS2=""'
         )
         time.sleep(0.1)  # Wait for command to take effect
         self._clear_screen()
