@@ -109,8 +109,8 @@ class AgentDelegateAction(Action):
 
 
 @dataclass
-class RecallAction(Action):
-    # This action is used for retrieving data, e.g., from memory or a knowledge base.
+class AgentRecallAction(Action):
+    # This action is used for retrieving data, e.g., from files or a knowledge base.
     query: dict[str, Any] = field(default_factory=dict)
     thought: str = ''
     action: str = ActionType.RECALL

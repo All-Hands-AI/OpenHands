@@ -2,7 +2,7 @@ import dataclasses
 import json
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action.agent import RecallAction
+from openhands.events.action.agent import AgentRecallAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation.agent import (
@@ -108,7 +108,7 @@ class Memory:
                     observation._cause = event.id  # type: ignore[attr-defined]
 
                     self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
-        elif isinstance(event, RecallAction):
+        elif isinstance(event, AgentRecallAction):
             self._on_recall_action(event)
 
     def _on_first_user_message(self, event: MessageAction) -> RecallObservation:
@@ -188,9 +188,9 @@ class Memory:
 
         return prev_observation
 
-    def _on_recall_action(self, event: RecallAction):
+    def _on_recall_action(self, event: AgentRecallAction):
         """If a RecallAction explicitly arrives, handle it."""
-        assert isinstance(event, RecallAction)
+        assert isinstance(event, AgentRecallAction)
 
         # user_query = event.query.get('keywords', [])
         matched_content = ''
