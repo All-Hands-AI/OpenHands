@@ -77,6 +77,7 @@ ipywidgets = "^8.1.5"
 qtconsole = "^5.6.1"
 memory-profiler = "^0.61.0"
 daytona-sdk = "0.9.1"
+python-json-logger = "^3.2.1"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -109,6 +110,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -136,6 +138,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
