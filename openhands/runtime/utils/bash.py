@@ -282,7 +282,9 @@ class BashSession:
         process_info = self.get_running_processes()
         success = False
         for pid in process_info['process_pids']:
-            if pid != int(self.pane.cmd('display-message', '-p', '#{pane_pid}').stdout[0].strip()):
+            if pid != int(
+                self.pane.cmd('display-message', '-p', '#{pane_pid}').stdout[0].strip()
+            ):
                 if self.kill_process(pid):
                     success = True
         return success
@@ -475,15 +477,38 @@ class BashSession:
         """
         # Check if a command is running in this session
         pane_content = self._get_pane_content()
+        ps1_matches = CmdOutputMetadata.matches_ps1_metadata(pane_content)
         is_command_running = not pane_content.rstrip().endswith(
             CMD_OUTPUT_PS1_END.rstrip()
         )
 
+        # If we have a PS1 prompt and no command is running, we're in a clean state
+        if len(ps1_matches) > 0 and not is_command_running:
+            return {
+                'is_command_running': False,
+                'current_command_pid': None,
+                'processes': [],
+                'command_processes': [],
+                'process_pids': [],
+                'command_pids': [],
+            }
+
         # Get the shell's PID directly from tmux
-        shell_pid_str = (
-            self.pane.cmd('display-message', '-p', '#{pane_pid}').stdout[0].strip()
-        )
-        shell_pid = int(shell_pid_str)
+        try:
+            shell_pid_str = (
+                self.pane.cmd('display-message', '-p', '#{pane_pid}').stdout[0].strip()
+            )
+            shell_pid = int(shell_pid_str)
+        except (IndexError, ValueError):
+            logger.warning('Failed to get shell PID from tmux')
+            return {
+                'is_command_running': is_command_running,
+                'current_command_pid': None,
+                'processes': [],
+                'command_processes': [],
+                'process_pids': [],
+                'command_pids': [],
+            }
 
         try:
             # Get process information for the shell
@@ -499,6 +524,7 @@ class BashSession:
             process_str = f"{shell_pid} {shell_process.ppid()} {shell_process.status()[0]} {' '.join(shell_process.cmdline())}"
             process_list.append(process_str)
 
+            # First pass: identify direct children of the shell
             for child in children:
                 try:
                     # Skip if no cmdline (might be a kernel process)
@@ -514,28 +540,42 @@ class BashSession:
                     process_str = f'{child.pid} {child.ppid()} {status_flag} {cmd_str}'
                     process_list.append(process_str)
 
-                    # Identify processes that are likely part of current command
-                    child_ppid = child.ppid()
-                    if is_command_running:
-                        # Direct child of shell = likely current command
-                        if child_ppid == shell_pid:
-                            if not current_command_pid:
-                                current_command_pid = child.pid
-                            command_processes.append(process_str)
-                        # Child of identified command process = part of current command
-                        elif current_command_pid and (
-                            child_ppid == current_command_pid
-                            or any(
-                                p.pid == child_ppid
-                                for p in children
-                                if p.pid == current_command_pid
-                                or p.ppid() == current_command_pid
-                            )
-                        ):
-                            command_processes.append(process_str)
+                    # Direct child of shell = likely current command
+                    if child.ppid() == shell_pid:
+                        if not current_command_pid:
+                            current_command_pid = child.pid
+                        command_processes.append(process_str)
 
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     # Process may have terminated while we were examining it
+                    continue
+
+            # Second pass: identify children of command processes
+            for child in children:
+                try:
+                    cmdline = child.cmdline()
+                    if not cmdline:
+                        continue
+
+                    # Skip if already identified as command process
+                    if any(
+                        child.pid == int(proc.split()[0]) for proc in command_processes
+                    ):
+                        continue
+
+                    # Format process info
+                    status_flag = child.status()[0]
+                    cmd_str = ' '.join(cmdline)
+                    process_str = f'{child.pid} {child.ppid()} {status_flag} {cmd_str}'
+
+                    # Check if this is a child of any command process
+                    child_ppid = child.ppid()
+                    if any(
+                        child_ppid == int(proc.split()[0]) for proc in command_processes
+                    ):
+                        command_processes.append(process_str)
+
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
 
             # If we have a running command but couldn't identify processes, it might be a shell builtin
@@ -552,6 +592,8 @@ class BashSession:
                 'current_command_pid': None,
                 'processes': [],
                 'command_processes': [],
+                'process_pids': [],
+                'command_pids': [],
             }
 
         # Extract PIDs from process strings
@@ -569,6 +611,12 @@ class BashSession:
                 command_pids.append(pid)
             except (ValueError, IndexError):
                 continue
+
+        # Update is_command_running based on process state
+        if not is_command_running and command_processes:
+            is_command_running = True
+        elif is_command_running and not command_processes:
+            is_command_running = False
 
         return {
             'is_command_running': is_command_running,
@@ -625,14 +673,16 @@ class BashSession:
         if isinstance(action, StopProcessesAction):
             success = self.kill_all_processes()
             return CmdOutputObservation(
-                content="All running processes have been terminated" if success else "No processes were terminated",
-                command="",
+                content='All running processes have been terminated'
+                if success
+                else 'No processes were terminated',
+                command='',
                 metadata=CmdOutputMetadata(),
             )
 
         # Handle CmdRunAction
         if not isinstance(action, CmdRunAction):
-            return ErrorObservation(f"Unsupported action type: {type(action)}")
+            return ErrorObservation(f'Unsupported action type: {type(action)}')
 
         command = action.command.strip()
         is_input = action.is_input
