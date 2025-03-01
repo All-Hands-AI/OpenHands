@@ -16,6 +16,7 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { useAppLogout } from "#/hooks/use-app-logout";
 import { AvailableLanguages } from "#/i18n";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+import { PersonalityType } from "#/types/settings";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import { isCustomModel } from "#/utils/is-custom-model";
@@ -107,6 +108,8 @@ function AccountSettings() {
     const enableSoundNotifications =
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
 
+    const personalityValue = formData.get("personality-input")?.toString();
+
     saveSettings(
       {
         github_token:
@@ -129,6 +132,9 @@ function AccountSettings() {
           remoteRuntimeResourceFactor ||
           DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
         CONFIRMATION_MODE: confirmationModeIsEnabled,
+        PERSONALITY: personalityValue
+          ? (personalityValue as PersonalityType)
+          : null,
       },
       {
         onSuccess: () => {
@@ -391,6 +397,22 @@ function AccountSettings() {
                 label: language.label,
               }))}
               defaultSelectedKey={settings.LANGUAGE}
+              isClearable={false}
+            />
+
+            <SettingsDropdownInput
+              testId="personality-input"
+              name="personality-input"
+              label="Agent Personality"
+              items={[
+                { key: "", label: "Default" },
+                { key: "enthusiastic", label: "Enthusiastic" },
+                { key: "concise", label: "Concise" },
+                { key: "funny", label: "Funny" },
+                { key: "snarky", label: "Snarky" },
+                { key: "disgruntled", label: "Disgruntled" },
+              ]}
+              defaultSelectedKey={settings.PERSONALITY || ""}
               isClearable={false}
             />
 

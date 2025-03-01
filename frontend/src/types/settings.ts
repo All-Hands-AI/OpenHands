@@ -1,3 +1,11 @@
+export type PersonalityType =
+  | "enthusiastic"
+  | "concise"
+  | "funny"
+  | "snarky"
+  | "disgruntled"
+  | null;
+
 export type Settings = {
   LLM_MODEL: string;
   LLM_BASE_URL: string;
@@ -11,6 +19,7 @@ export type Settings = {
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
+  PERSONALITY: PersonalityType;
 };
 
 export type ApiSettings = {
@@ -26,6 +35,7 @@ export type ApiSettings = {
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
   user_consents_to_analytics: boolean | null;
+  personality: PersonalityType;
 };
 
 export type PostSettings = Settings & {

@@ -20,3 +20,8 @@ set any options to allow iframes and CORS requests, and allow the server to
 be accessed from any host (e.g. 0.0.0.0).
 </RUNTIME_INFORMATION>
 {% endif %}
+{% if personality_instructions -%}
+<PERSONALITY>
+{{ personality_instructions }}
+</PERSONALITY>
+{% endif %}
