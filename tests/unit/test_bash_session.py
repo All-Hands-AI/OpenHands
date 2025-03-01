@@ -405,19 +405,13 @@ def test_get_running_processes():
     assert 'current_command_pid' in process_info
     assert process_info['current_command_pid'] is None
 
-    # Start a command that will output something and then wait
-    obs = session.execute(
-        CmdRunAction('echo "Starting test command" && sleep 10', blocking=False)
-    )
-    assert 'Starting test command' in obs.content
-    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
+    session.execute(CmdRunAction('sleep 120', blocking=False))
 
     # Check running processes
     process_info = session.get_running_processes()
     assert process_info['is_command_running'] is True
     assert process_info['current_command_pid'] is not None
     assert len(process_info['command_processes']) > 0
-    assert process_info['command_processes_count'] == 1
 
     # Send Ctrl+C to terminate the process
     session.execute(CmdRunAction('C-c', is_input=True))

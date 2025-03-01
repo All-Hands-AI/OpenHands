@@ -466,14 +466,6 @@ class BashSession:
             process_str = f"{shell_pid} {shell_process.ppid()} {shell_process.status()[0]} {' '.join(shell_process.cmdline())}"
             process_list.append(process_str)
 
-            # Check for foreground process group to identify current command
-            try:
-                shell_pgid = os.getpgid(shell_pid)
-            except (OSError, AttributeError):
-                shell_pgid = (
-                    shell_pid  # Fallback to using shell pid if pgid not available
-                )
-
             for child in children:
                 try:
                     # Skip if no cmdline (might be a kernel process)
@@ -484,33 +476,24 @@ class BashSession:
                     # Format the process info
                     status_flag = child.status()[0]
 
-                    # Check if this is a foreground process
-                    is_foreground = False
-                    try:
-                        # Add '+' flag for foreground processes
-                        if child.pgid() == shell_pgid:
-                            status_flag += '+'
-                            is_foreground = True
-                    except (psutil.AccessDenied, psutil.NoSuchProcess, AttributeError):
-                        pass
-
                     # Build process string (PID PPID STATUS COMMAND)
                     cmd_str = ' '.join(cmdline)
                     process_str = f'{child.pid} {child.ppid()} {status_flag} {cmd_str}'
                     process_list.append(process_str)
 
                     # Identify processes that are likely part of current command
+                    child_ppid = child.ppid()
                     if is_command_running:
-                        # Direct child of shell and in foreground = likely current command
-                        if child.ppid() == shell_pid and is_foreground:
+                        # Direct child of shell = likely current command
+                        if child_ppid == shell_pid:
                             if not current_command_pid:
                                 current_command_pid = child.pid
                             command_processes.append(process_str)
                         # Child of identified command process = part of current command
                         elif current_command_pid and (
-                            child.ppid() == current_command_pid
+                            child_ppid == current_command_pid
                             or any(
-                                p.pid == child.ppid()
+                                p.pid == child_ppid
                                 for p in children
                                 if p.pid == current_command_pid
                                 or p.ppid() == current_command_pid
