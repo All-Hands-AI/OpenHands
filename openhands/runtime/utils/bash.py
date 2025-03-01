@@ -226,11 +226,14 @@ class BashSession:
         _initial_window.kill_window()
 
         # Configure bash to use simple PS1 and disable PS2
-        # Use single quotes for PS1 to prevent bash from expanding variables too early
-        ps1_command = (
-            f"export PROMPT_COMMAND='export PS1=\"{self.PS1}\"'; export PS2=''"
+        # Write PS1 to a file first to avoid escaping issues
+        ps1_file = '/tmp/ps1.txt'
+        self.pane.send_keys(f'cat > {ps1_file} << "EOF"\n{self.PS1}EOF')
+        time.sleep(0.1)  # Wait for file to be written
+        # Now read PS1 from file and set it
+        self.pane.send_keys(
+            f'export PROMPT_COMMAND=\'export PS1="$(cat {ps1_file})"\'; export PS2=""'
         )
-        self.pane.send_keys(ps1_command)
         time.sleep(0.1)  # Wait for command to take effect
         self._clear_screen()
 
