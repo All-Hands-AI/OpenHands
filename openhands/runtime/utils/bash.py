@@ -230,18 +230,27 @@ class BashSession:
         self.pane.send_keys('whoami > /tmp/user.txt && hostname > /tmp/host.txt')
         time.sleep(0.1)  # Wait for commands to complete
         # Now set PS1 with actual values instead of escape sequences
+        # Use a function to generate the PS1 prompt to avoid escaping issues
         self.pane.send_keys(
-            'export PROMPT_COMMAND=\'export PS1="\n###PS1JSON###\n'
-            '{\n'
-            '  "pid": "$!",\n'
-            '  "exit_code": "$?",\n'
-            '  "username": "$(cat /tmp/user.txt)",\n'
-            '  "hostname": "$(cat /tmp/host.txt)",\n'
-            '  "working_dir": "$(pwd)",\n'
-            '  "py_interpreter_path": "$(which python 2>/dev/null || echo \\"\\")",\n'
-            '  "timestamp": "$(date +%s)"\n'
+            'function _openhands_ps1() {\n'
+            '  local pid="$!"\n'
+            '  local exit_code="$?"\n'
+            '  local username="$(cat /tmp/user.txt)"\n'
+            '  local hostname="$(cat /tmp/host.txt)"\n'
+            '  local working_dir="$(pwd)"\n'
+            '  local py_interpreter_path="$(which python 2>/dev/null || echo \\"\\")"\n'
+            '  local timestamp="$(date +%s)"\n'
+            '  echo -e "\\n###PS1JSON###\\n{\\n"\n'
+            '  echo -e "  \\"pid\\": \\"$pid\\",\\n"\n'
+            '  echo -e "  \\"exit_code\\": \\"$exit_code\\",\\n"\n'
+            '  echo -e "  \\"username\\": \\"$username\\",\\n"\n'
+            '  echo -e "  \\"hostname\\": \\"$hostname\\",\\n"\n'
+            '  echo -e "  \\"working_dir\\": \\"$working_dir\\",\\n"\n'
+            '  echo -e "  \\"py_interpreter_path\\": \\"$py_interpreter_path\\",\\n"\n'
+            '  echo -e "  \\"timestamp\\": \\"$timestamp\\"\\n"\n'
+            '  echo -e "}\\n###PS1END###\\n"\n'
             '}\n'
-            '###PS1END###\n"\'; export PS2=""'
+            'export PROMPT_COMMAND=\'export PS1="$(_openhands_ps1)"\'; export PS2=""'
         )
         time.sleep(0.1)  # Wait for command to take effect
         self._clear_screen()
