@@ -62,7 +62,12 @@ class FileEditObservation(Observation):
     new_content: str | None = None
     observation: str = ObservationType.EDIT
     impl_source: FileEditSource = FileEditSource.LLM_BASED_EDIT
-    _diff_cache: str | None = None  # Cache for the diff visualization
+    diff: str | None = (
+        None  # The raw diff between old and new content, used in OH_ACI mode
+    )
+    _diff_cache: str | None = (
+        None  # Cache for the diff visualization, used in LLM-based editing mode
+    )
 
     @property
     def message(self) -> str:
@@ -126,7 +131,7 @@ class FileEditObservation(Observation):
         n_context_lines: int = 2,
         change_applied: bool = True,
     ) -> str:
-        """Visualize the diff of the file edit.
+        """Visualize the diff of the file edit. Used in the LLM-based editing mode.
 
         Instead of showing the diff line by line, this function shows each hunk
         of changes as a separate entity.
