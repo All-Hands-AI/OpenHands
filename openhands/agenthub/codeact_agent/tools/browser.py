@@ -13,6 +13,10 @@ _BROWSER_DESCRIPTION = """Interact with the browser using Python code. Use it wh
 
 See the description of "code" parameter for more details.
 
+Only one action can be executed at once. Each time you submit an action it will be sent to the browser and you will receive a new page.
+"""
+
+"""
 Multiple actions can be provided at once, but will be executed sequentially without any feedback from the page.
 More than 2-3 actions usually leads to failure or unexpected behavior. Example:
 fill('a12', 'example with "quotes"')
@@ -21,7 +25,7 @@ click('48', button='middle', modifiers=['Shift'])
 """
 
 _BROWSER_TOOL_DESCRIPTION = """
-The following 15 functions are available. Nothing else is supported.
+The following 15 functions allow you to interact with the webpage. Most of them are python function executing playwright code. The primary way of referring to elements in the page is through bid which are specified in your observations.
 
 goto(url: str)
     Description: Navigate to a url.
@@ -40,7 +44,7 @@ go_forward()
 
 noop(wait_ms: float = 1000)
     Description: Do nothing, and optionally wait for the given time (in milliseconds).
-    You can use this to get the current page content and/or wait for the page to load.
+    You can use this to wait for the page to load and/or get the current page content.
     Examples:
         noop()
 

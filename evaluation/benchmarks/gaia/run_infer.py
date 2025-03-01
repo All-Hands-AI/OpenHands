@@ -46,7 +46,7 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have solved the question, please first send your answer to user through message and then exit.\n'
+    'CodeActAgent': 'When you think you have solved the question, please first send your answer to user through message and then exit using the finish tool.\n\n'
 }
 
 
@@ -109,13 +109,10 @@ def initialize_runtime(
             os.makedirs(temp_dir, exist_ok=True)
             with zipfile.ZipFile(src_file, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
-            filenames = []
             for root, dirs, files in os.walk(temp_dir):
                 for file in files:
                     dest_file = '/workspace'
                     runtime.copy_to(os.path.join(root, file), dest_file)
-                    filenames.append(file)
-                    # rename to file.extension_name
             shutil.rmtree(temp_dir)
         elif extension_name not in ['jpg', 'png']:
             dest_file = '/workspace'
@@ -198,13 +195,13 @@ def process_instance(
     # Prepare instruction
     instruction = f"""You have one question to answer. It is paramount that you provide a correct answer.
 Give it all you can: I know for a fact that you have access to all the relevant tools to solve it and find the correct answer (the answer does exist). Failure or 'I cannot answer' or 'None found' will not be tolerated, success will be rewarded.
-Run verification steps if that's needed, you must make sure you find the correct answer! Do not use search engines like Google and Bing as they will block you with CAPTCHAs.
-Here is the task: {instance['Question']}\n"""
+Run verification steps if that's needed, you must make sure you find the correct answer! You MUST strictly follow the task-specific formatting instructions for the final answer.
+Here is the task:\n{instance['Question']}\n\n"""
     logger.info(f'Instruction: {instruction}')
     image_urls = []
     if dest_file:
         if extension_name not in ['jpg', 'png', 'zip']:
-            instruction += f"\nThe file required to solve this task is provided in the workspace (present working directory) at: {dest_file.split('/')[-1]}\n\n"
+            instruction += f"To solve this task you will have to use the attached file provided in the workspace (present working directory) at: {dest_file.split('/')[-1]}\n\n"
         elif extension_name == 'zip':
             filenames = []
             src_file = os.path.join(
@@ -213,22 +210,22 @@ Here is the task: {instance['Question']}\n"""
             with zipfile.ZipFile(src_file, 'r') as zip_ref:
                 filenames = zip_ref.namelist()
             filenames = ', '.join(filenames)
-            instruction += f'\nThe files required to solve this task are provided in the workspace (present working directory) at: {filenames}\n\n'
+            instruction += f'To solve this task you will have to use the attached files provided in the workspace (present working directory) at: {filenames}\n\n'
         else:
             src_file = os.path.join(
                 DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name']
             )
-            instruction += 'f\nImage: The image file required to solve this task is shown below.\n\n'
+            instruction += 'Image: To solve this task you will have to use the image shown below.\n\n'
             image = Image.open(src_file)
             if extension_name == 'jpg':
                 image_urls.append(image_to_jpg_base64_url(image))
             else:
                 image_urls.append(image_to_png_base64_url(image))
-    instruction += """IMPORTANT: When interacting with websites in search for information, you MUST ALWAYS use the provided website interface and its search functionality. DO NOT navigate directly to specific URLs as they may not exist. For example: if you want to search for a research paper on Arxiv, use its search functionality instead of trying out different URLs randomly.\n"""
+    instruction += """IMPORTANT: When seeking information from a website, REFRAIN from arbitrary URL navigation. You should utilize the designated search engine tool with precise keywords to obtain relevant URLs or use the specific website's search interface. DO NOT navigate directly to specific URLs as they may not exist.\n\nFor example: if you want to search for a research paper on Arxiv, either use the search engine tool with specific keywords or navigate to arxiv.org and then use its interface.\n"""
     instruction += 'IMPORTANT: You should NEVER ask for Human Help.\n'
-    instruction += 'IMPORTANT: Please encapsulate your final answer (answer ONLY) within <solution> and </solution>. Your answer will be evaluated using string matching approaches so it important that you STRICTLY adhere to the output formatting instructions given by the user.\n'
+    instruction += 'IMPORTANT: Please encapsulate your final answer (answer ONLY) within <solution> and </solution>. Your answer will be evaluated using string matching approaches so it important that you STRICTLY adhere to the output formatting instructions.\n'
     instruction += (
-        'For example: The answer to the question is <solution> 42 </solution>.\n\n'
+        'For example: The answer to the question is <solution> 42 </solution>.\n'
     )
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(metadata.agent_class, '')

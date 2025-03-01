@@ -51,6 +51,7 @@ class BrowserOutputObservation(Observation):
     def get_agent_obs_text(self) -> str:
         """Get a concise text that will be shown to the agent."""
         if self.trigger_by_action == ActionType.BROWSE_INTERACTIVE:
+            text = 'Observation from the previous action:\n'
             text = f'[Current URL: {self.url}]\n'
             text += f'[Focused element bid: {self.focused_element_bid}]\n\n'
             if self.error:
@@ -68,14 +69,13 @@ class BrowserOutputObservation(Observation):
                 # FIXME: handle the case when the web page is too large
                 cur_axtree_txt = self.get_axtree_str(filter_visible_only=False)
                 text += (
+                    f'Note: [bid] is the unique alpha-numeric identifier at the beginning of lines for each element in the AXTree. Always use bid to refer to elements in your actions.\n'
                     f'============== BEGIN accessibility tree ==============\n'
                     f'{cur_axtree_txt}\n'
                     f'============== END accessibility tree ==============\n'
                 )
             except Exception as e:
-                text += (
-                    f'\n[Error encountered when processing the accessibility tree: {e}]'
-                )
+                text += f'\n[Error encountered when processing the accessibility tree: {e}]\n'
             return text
 
         elif self.trigger_by_action == ActionType.BROWSE:
