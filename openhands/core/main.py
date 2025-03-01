@@ -107,7 +107,6 @@ async def run_controller(
     # when memory is created, it will load the microagents from the selected repository
     create_memory(
         microagents_dir=config.microagents_dir,
-        agent=agent,
         runtime=runtime,
         event_stream=event_stream,
         selected_repository=config.sandbox.selected_repo,

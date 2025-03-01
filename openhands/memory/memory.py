@@ -29,11 +29,9 @@ class Memory:
         self,
         event_stream: EventStream,
         microagents_dir: str,
-        disabled_microagents: list[str] | None = None,
     ):
         self.event_stream = event_stream
         self.microagents_dir = microagents_dir
-        self.disabled_microagents = disabled_microagents or []
         # Subscribe to events
         self.event_stream.subscribe(
             EventStreamSubscriber.MEMORY,
@@ -67,13 +65,13 @@ class Memory:
             self.microagents_dir
         )
         for name, agent in knowledge_agents.items():
-            if name in self.disabled_microagents:
-                continue
+            # if name in self.disabled_microagents:
+            #    continue
             if isinstance(agent, KnowledgeMicroAgent):
                 self.knowledge_microagents[name] = agent
         for name, agent in repo_agents.items():
-            if name in self.disabled_microagents:
-                continue
+            # if name in self.disabled_microagents:
+            #    continue
             if isinstance(agent, RepoMicroAgent):
                 self.repo_microagents[name] = agent
 
@@ -211,8 +209,8 @@ class Memory:
             'Loading user workspace microagents: %s', [m.name for m in user_microagents]
         )
         for ma in user_microagents:
-            if ma.name in self.disabled_microagents:
-                continue
+            # if ma.name in self.disabled_microagents:
+            #    continue
             if isinstance(ma, KnowledgeMicroAgent):
                 self.knowledge_microagents[ma.name] = ma
             elif isinstance(ma, RepoMicroAgent):

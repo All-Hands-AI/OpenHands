@@ -129,7 +129,6 @@ class AgentSession:
 
             self.memory = await self._create_memory(
                 microagents_dir=config.microagents_dir,
-                agent=agent,
                 selected_repository=selected_repository,
             )
 
@@ -331,15 +330,11 @@ class AgentSession:
         return controller
 
     async def _create_memory(
-        self, microagents_dir: str, agent: Agent, selected_repository: str | None
+        self, microagents_dir: str, selected_repository: str | None
     ) -> Memory:
-        # If the agent config has disabled microagents, use them
-        disabled = agent.config.disabled_microagents
-
         memory = Memory(
             event_stream=self.event_stream,
             microagents_dir=microagents_dir,
-            disabled_microagents=disabled,
         )
 
         if self.runtime:

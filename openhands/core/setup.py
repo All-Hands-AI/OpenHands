@@ -98,18 +98,13 @@ def create_runtime(
 
 def create_memory(
     microagents_dir: str,
-    agent: Agent,
     runtime: Runtime,
     event_stream: EventStream,
     selected_repository: str | None = None,
 ) -> Memory:
-    # If the agent config has disabled microagents, use them
-    disabled_microagents = agent.config.disabled_microagents
-
     memory = Memory(
         event_stream=event_stream,
         microagents_dir=microagents_dir,
-        disabled_microagents=disabled_microagents,
     )
 
     if runtime:
