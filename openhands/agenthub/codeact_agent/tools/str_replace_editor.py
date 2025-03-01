@@ -7,10 +7,41 @@ _STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating a
 * If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
 * The `undo_edit` command will revert the last edit made to the file at `path`
 
-Notes for using the `str_replace` command:
-* The `old_str` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!
-* If the `old_str` parameter is not unique in the file, the replacement will not be performed. Make sure to include enough context in `old_str` to make it unique
-* The `new_str` parameter should contain the edited lines that should replace the `old_str`
+
+Before using this tool:
+1. Use the view tool to understand the file's contents and context
+2. Verify the directory path is correct (only applicable when creating new files):
+   - Use the view tool to verify the parent directory exists and is the correct location
+
+CRITICAL REQUIREMENTS FOR USING THIS TOOL:
+
+1. UNIQUENESS: The old_string MUST uniquely identify the specific instance you want to change. This means:
+   - Include AT LEAST 3-5 lines of context BEFORE the change point
+   - Include AT LEAST 3-5 lines of context AFTER the change point
+   - Be mindful of whitespaces! Include all whitespace, indentation, and surrounding code exactly as it appears in the file.
+
+2. SINGLE INSTANCE: This tool can only change ONE instance at a time. If you need to change multiple instances:
+   - Make separate calls to this tool for each instance
+   - Each call must uniquely identify its specific instance using extensive context
+
+3. VERIFICATION: Before using this tool:
+   - Check how many instances of the target text exist in the file
+   - If multiple instances exist, gather enough context to uniquely identify each one
+   - Plan separate tool calls for each instance
+
+4. DIFFERENT: The `new_str` parameter should contain the edited lines that replace the `old_str`. `old_str` and `new_str` should be different.
+
+WARNING: If you do not follow these requirements:
+   - The tool will fail if old_str matches multiple locations
+   - The tool will fail if old_str doesn't match exactly (including whitespace)
+   - You may change the wrong instance if you don't include enough context
+
+When making edits:
+   - Ensure the edit results in idiomatic, correct code
+   - Do not leave the code in a broken state
+   - Always use absolute file paths (starting with /)
+
+Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.
 """
 
 StrReplaceEditorTool = ChatCompletionToolParam(
