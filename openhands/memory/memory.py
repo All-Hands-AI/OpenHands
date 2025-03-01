@@ -7,6 +7,7 @@ from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation.agent import (
     RecallObservation,
+    RecallType,
 )
 from openhands.events.stream import EventStream, EventStreamSubscriber
 from openhands.microagent import (
@@ -128,7 +129,6 @@ class Memory:
 
         # Create observation with structured data
         obs_data = {
-            'type': 'environment_info',
             'repository_info': dataclasses.asdict(self.repository_info)
             if self.repository_info
             else None,
@@ -139,7 +139,9 @@ class Memory:
         }
 
         # Send structured data in the observation
-        obs = RecallObservation(content=json.dumps(obs_data))
+        obs = RecallObservation(
+            recall_type=RecallType.ENVIRONMENT_INFO, content=json.dumps(obs_data)
+        )
 
         return obs
 
@@ -174,7 +176,10 @@ class Memory:
 
             if not prev_observation:
                 # if it's not the first user message, we may not have found any information yet
-                obs = RecallObservation(content=json.dumps(obs_data))
+                obs = RecallObservation(
+                    recall_type=RecallType.KNOWLEDGE_MICROAGENT,
+                    content=json.dumps(obs_data),
+                )
 
                 return obs
             else:
@@ -190,7 +195,7 @@ class Memory:
         # user_query = event.query.get('keywords', [])
         matched_content = ''
         # matched_content = self.find_microagent_content(user_query)
-        obs = RecallObservation(content=matched_content)
+        obs = RecallObservation(recall_type=RecallType.DEFAULT, content=matched_content)
         self.event_stream.add_event(
             obs, event.source if event.source else EventSource.ENVIRONMENT
         )

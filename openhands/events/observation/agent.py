@@ -1,7 +1,21 @@
 from dataclasses import dataclass
+from enum import Enum
 
 from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
+
+
+class RecallType(Enum):
+    """The type of information that can be recalled."""
+
+    ENVIRONMENT_INFO = 'environment_info'
+    """environment information (repo instructions, runtime, etc.)"""
+
+    KNOWLEDGE_MICROAGENT = 'knowledge_microagent'
+    """A knowledge microagent."""
+
+    DEFAULT = 'default'
+    """Anything else that doesn't fit into the other categories."""
 
 
 @dataclass
@@ -44,9 +58,10 @@ class AgentThinkObservation(Observation):
 
 @dataclass
 class RecallObservation(Observation):
-    """The output of a recall action."""
+    """The output of a recall action from an agent or from the environment (automatic memory operations)."""
 
     observation: str = ObservationType.RECALL
+    recall_type: RecallType = RecallType.DEFAULT
 
     @property
     def message(self) -> str:
