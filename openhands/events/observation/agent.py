@@ -70,7 +70,7 @@ class RecallObservation(Observation):
     runtime_hosts: dict[str, int] = field(default_factory=dict)
 
     # For knowledge_microagent
-    triggered_agents: list[dict[str, str]] = field(default_factory=list)
+    microagent_knowledge: list[dict[str, str]] = field(default_factory=list)
 
     @property
     def message(self) -> str:
@@ -83,6 +83,6 @@ class RecallObservation(Observation):
             f'repo_name={self.repo_name}',
             f'repo_instructions={self.repo_instructions[:20]}...',
             f'runtime_hosts={self.runtime_hosts}',
-            f'triggered_agents={self.triggered_agents}',
+            f'microagent_knowledge={self.microagent_knowledge}',
         ]
         return f'Recalled: {", ".join(fields)}'

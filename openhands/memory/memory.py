@@ -1,6 +1,3 @@
-import dataclasses
-import json
-
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, EventSource
@@ -8,6 +5,7 @@ from openhands.events.observation.agent import (
     RecallObservation,
     RecallType,
 )
+from openhands.events.observation.empty import NullObservation
 from openhands.events.stream import EventStream, EventStreamSubscriber
 from openhands.microagent import (
     BaseMicroAgent,
@@ -86,27 +84,32 @@ class Memory:
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
 
-        observation: RecallObservation | None = None
+        observation: RecallObservation | NullObservation | None = None
         if isinstance(event, MessageAction):
             if event.source == 'user':
-                # If this is the first user message, create and add a RecallObservation
+                # if this is the first user message, create and add a RecallObservation
                 # with info about repo and runtime.
                 if not self._first_user_message_seen:
                     self._first_user_message_seen = True
                     observation = self._on_first_user_message(event)
 
-                # continue with the next handler, to include microagents if suitable for this user message
+                # continue with the next handler, to include knowledge microagents if suitable for this user message
+                assert observation is None or isinstance(
+                    observation, RecallObservation
+                ), f'Expected a RecallObservation, but got {type(observation)}'
                 observation = self._on_user_message_action(
                     event, prev_observation=observation
                 )
 
-                # important: this hint will release the execution flow from waiting for this to complete
-                if observation is not None:
-                    observation._cause = event.id  # type: ignore[attr-defined]
+                if observation is None:
+                    observation = NullObservation(content='')
 
-                    self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+                # important: this will release the execution flow from waiting for the retrieval to complete
+                observation._cause = event.id  # type: ignore[union-attr]
 
-    def _on_first_user_message(self, event: MessageAction) -> RecallObservation:
+                self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+
+    def _on_first_user_message(self, event: MessageAction) -> RecallObservation | None:
         """Add repository and runtime information to the stream as a RecallObservation."""
 
         # Create ENVIRONMENT_INFO:
@@ -122,35 +125,36 @@ class Memory:
 
         # Retrieve the context of repo instructions
         for microagent in self.repo_microagents.values():
-            # We assume these are the repo instructions
             if repo_instructions:
                 repo_instructions += '\n\n'
             repo_instructions += microagent.content
 
-        # Create observation with structured data
-        obs_data = {
-            'repository_info': dataclasses.asdict(self.repository_info)
-            if self.repository_info
-            else None,
-            'runtime_info': dataclasses.asdict(self.runtime_info)
-            if self.runtime_info
-            else None,
-            'repository_instructions': repo_instructions if repo_instructions else None,
-        }
-
-        # Send structured data in the observation
-        # TODO: use NullObservation if there's no info to send
-        obs = RecallObservation(
-            recall_type=RecallType.ENVIRONMENT_INFO, content=json.dumps(obs_data)
-        )
-
-        return obs
+        # Create observation if we have anything
+        if self.repository_info or self.runtime_info or repo_instructions:
+            obs = RecallObservation(
+                recall_type=RecallType.ENVIRONMENT_INFO,
+                repo_name=self.repository_info.repo_name
+                if self.repository_info and self.repository_info.repo_name is not None
+                else '',
+                repo_directory=self.repository_info.repo_directory
+                if self.repository_info
+                and self.repository_info.repo_directory is not None
+                else '',
+                repo_instructions=repo_instructions if repo_instructions else '',
+                runtime_hosts=self.runtime_info.available_hosts
+                if self.runtime_info and self.runtime_info.available_hosts is not None
+                else {},
+                microagent_knowledge=[],
+                content='Recalled environment info',
+            )
+            return obs
+        return None
 
     def _on_user_message_action(
         self, event: MessageAction, prev_observation: RecallObservation | None = None
     ) -> RecallObservation | None:
         """When a user message triggers microagents, create a RecallObservation with structured data."""
-        if event.source != 'user':
+        if event.source != EventSource.USER:
             return prev_observation
 
         # If there's no text, do nothing
@@ -158,33 +162,40 @@ class Memory:
         if not user_text:
             return prev_observation
 
+        assert prev_observation is None or isinstance(
+            prev_observation, RecallObservation
+        ), f'Expected a RecallObservation, but got {type(prev_observation)}'
+
         # Gather all triggered microagents
-        triggered_agents = []
-        for name, agent in self.knowledge_microagents.items():
-            trigger = agent.match_trigger(user_text)
+        found_microagents = []
+        recalled_content: list[dict[str, str]] = []
+        for name, microagent in self.knowledge_microagents.items():
+            trigger = microagent.match_trigger(user_text)
             if trigger:
                 logger.info("Microagent '%s' triggered by keyword '%s'", name, trigger)
                 # Create a dictionary with the agent and trigger word
-                triggered_agents.append({'agent': agent, 'trigger_word': trigger})
+                found_microagents.append({'agent': microagent, 'trigger_word': trigger})
+                recalled_content.append(
+                    {
+                        'agent_name': microagent.name,
+                        'trigger_word': trigger,
+                        'content': microagent.content,
+                    }
+                )
 
-        if triggered_agents:
-            # Create structured data observation
-            obs_data = {
-                'type': 'microagent_knowledge',
-                'triggered_agents': triggered_agents,
-            }
-
-            if not prev_observation:
-                # if it's not the first user message, we may not have found any information yet
+        if found_microagents:
+            if prev_observation is not None:
+                # it may be on the first user message that already found some repo info etc
+                prev_observation.microagent_knowledge.extend(recalled_content)
+            else:
+                # if it's not the first user message, we may not have found any information this step
                 obs = RecallObservation(
                     recall_type=RecallType.KNOWLEDGE_MICROAGENT,
-                    content=json.dumps(obs_data),
+                    microagent_knowledge=recalled_content,
+                    content='Recalled knowledge from microagents',
                 )
 
                 return obs
-            else:
-                # if we already have an observation, update it
-                prev_observation.content += '\n\n' + json.dumps(obs_data)
 
         return prev_observation
 
@@ -198,10 +209,10 @@ class Memory:
         logger.info(
             'Loading user workspace microagents: %s', [m.name for m in user_microagents]
         )
-        for ma in user_microagents:
-            # if ma.name in self.disabled_microagents:
+        for user_microagent in user_microagents:
+            # if user_microagent.name in self.disabled_microagents:
             #    continue
-            if isinstance(ma, KnowledgeMicroAgent):
-                self.knowledge_microagents[ma.name] = ma
-            elif isinstance(ma, RepoMicroAgent):
-                self.repo_microagents[ma.name] = ma
+            if isinstance(user_microagent, KnowledgeMicroAgent):
+                self.knowledge_microagents[user_microagent.name] = user_microagent
+            elif isinstance(user_microagent, RepoMicroAgent):
+                self.repo_microagents[user_microagent.name] = user_microagent
