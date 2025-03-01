@@ -250,10 +250,13 @@ class BashSession:
             '  printf "  \\"timestamp\\": \\"%s\\"\\n" "$timestamp"\n'
             '  printf "}\\n###PS1END###\\n"\n'
             '}\n'
-            'export PROMPT_COMMAND=\'export PS1="$(_openhands_ps1)"\'; export PS2=""'
+            'export PROMPT_COMMAND=\'export PS1="$(_openhands_ps1)"\'; export PS2=""; history -c'
         )
         time.sleep(0.1)  # Wait for command to take effect
         self._clear_screen()
+        # Send a dummy command to get a clean PS1 prompt
+        self.pane.send_keys('true')
+        time.sleep(0.1)  # Wait for command to complete
 
         # Store the last command for interactive input handling
         self.prev_status: BashCommandStatus | None = None
