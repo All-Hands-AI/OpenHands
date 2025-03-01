@@ -41,6 +41,7 @@ class PromptManager:
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
+        self.microagent_info_template: Template = self._load_template('microagent_info')
         self.runtime_info = RuntimeInfo(available_hosts={})
         self.repo_microagents: dict[str, RepoMicroAgent] = {}
 
@@ -84,7 +85,7 @@ class PromptManager:
         if example_message:
             message.content.insert(0, TextContent(text=example_message))
 
-    def build_additional_info_text(
+    def build_additional_info(
         self,
         repository_info: RepositoryInfo | None,
         runtime_info: RuntimeInfo | None,
@@ -95,6 +96,15 @@ class PromptManager:
             repository_info=repository_info,
             repository_instructions=repo_instructions,
             runtime_info=runtime_info,
+        ).strip()
+
+    def build_microagent_info(
+        self,
+        triggered_agents: list[str],
+    ) -> str:
+        """Renders the microagent info template with the triggered agents."""
+        return self.microagent_info_template.render(
+            triggered_agents=triggered_agents
         ).strip()
 
     def add_turns_left_reminder(self, messages: list[Message], state: State) -> None:

@@ -30,7 +30,7 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     UserRejectObservation,
 )
-from openhands.events.observation.agent import RecallObservation
+from openhands.events.observation.agent import RecallObservation, RecallType
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
@@ -374,37 +374,55 @@ class ConversationMemory:
         elif isinstance(obs, AgentCondensationObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
-        elif isinstance(obs, RecallObservation):
+        elif (
+            isinstance(obs, RecallObservation)
+            and obs.recall_type == RecallType.ENVIRONMENT_INFO
+        ):
             try:
                 data = json.loads(obs.content)
-                if 'type' in data and data['type'] == 'environment_info':
-                    # Use prompt_manager to format the data
-                    repo_info = (
-                        RepositoryInfo(**data['repository_info'])
-                        if data.get('repository_info')
-                        else None
-                    )
-                    runtime_info = (
-                        RuntimeInfo(**data['runtime_info'])
-                        if data.get('runtime_info')
-                        else None
-                    )
-                    repo_instructions = data.get('repository_instructions', '')
+                # Use prompt_manager to format the data
+                repo_info = (
+                    RepositoryInfo(**data['repository_info'])
+                    if data.get('repository_info')
+                    else None
+                )
+                runtime_info = (
+                    RuntimeInfo(**data['runtime_info'])
+                    if data.get('runtime_info')
+                    else None
+                )
+                repo_instructions = data.get('repository_instructions', '')
 
-                    formatted_text = self.prompt_manager.build_additional_info_text(
-                        repository_info=repo_info,
-                        runtime_info=runtime_info,
-                        repo_instructions=repo_instructions,
-                    )
+                formatted_text = self.prompt_manager.build_additional_info(
+                    repository_info=repo_info,
+                    runtime_info=runtime_info,
+                    repo_instructions=repo_instructions,
+                )
 
-                    message = Message(
-                        role='user', content=[TextContent(text=formatted_text)]
-                    )
-
-                # For microagent_knowledge or other structured data
+                message = Message(
+                    role='user', content=[TextContent(text=formatted_text)]
+                )
+            except (json.JSONDecodeError, KeyError, TypeError):
+                # Fall through to default handling for non-JSON content
                 text = truncate_content(obs.content, max_message_chars)
                 message = Message(role='user', content=[TextContent(text=text)])
-
+        elif (
+            isinstance(obs, RecallObservation)
+            and obs.recall_type == RecallType.KNOWLEDGE_MICROAGENT
+        ):
+            try:
+                data = json.loads(obs.content)
+                # Use prompt_manager to format the data
+                triggered_agents = data.get('triggered_agents', [])
+                if triggered_agents:
+                    formatted_text = self.prompt_manager.build_microagent_info(
+                        triggered_agents=triggered_agents,
+                    )
+                else:
+                    formatted_text = ''  # this should not happen
+                message = Message(
+                    role='user', content=[TextContent(text=formatted_text)]
+                )
             except (json.JSONDecodeError, KeyError, TypeError):
                 # Fall through to default handling for non-JSON content
                 text = truncate_content(obs.content, max_message_chars)

@@ -1,0 +1,8 @@
+{% for agent in triggered_agents %}
+<EXTRA_INFO>
+The following information has been included based on a keyword match for "{{ agent.trigger }}".
+It may or may not be relevant to the user's request.
+
+{{ agent.content }}
+</EXTRA_INFO>
+{% endfor %}
