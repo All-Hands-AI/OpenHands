@@ -16,12 +16,12 @@ from openhands.agenthub.codeact_agent.tools import (
     AgentTool,
     BrowserTool,
     CmdRunTool,
-    FileEditorTool,
     FinishTool,
     GlobTool,
     GrepTool,
     IPythonTool,
     LLMBasedFileEditTool,
+    StrReplaceEditorTool,
     ThinkTool,
     ViewTool,
     WebReadTool,
@@ -177,7 +177,10 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # AgentFinishAction
             # ================================================
             elif tool_call.function.name == FinishTool['function']['name']:
-                action = AgentFinishAction()
+                action = AgentFinishAction(
+                    final_thought=arguments.get('message', ''),
+                    task_completed=arguments.get('task_completed', None),
+                )
 
             # ================================================
             # LLMBasedFileEditTool (LLM-based file editor, deprecated)
@@ -197,11 +200,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     start=arguments.get('start', 1),
                     end=arguments.get('end', -1),
                 )
-
-            # ================================================
-            # FileEditorTool (ACI-based file editor)
-            # ================================================
-            elif tool_call.function.name == FileEditorTool['function']['name']:
+            elif tool_call.function.name == StrReplaceEditorTool['function']['name']:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -240,7 +239,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # AgentThinkAction
             # ================================================
             elif tool_call.function.name == ThinkTool['function']['name']:
-                action = AgentThinkAction(thought=arguments['thought'])
+                action = AgentThinkAction(thought=arguments.get('thought', ''))
 
             # ================================================
             # BrowserTool
@@ -351,7 +350,7 @@ def get_tools(
     if codeact_enable_llm_editor:
         tools.append(LLMBasedFileEditTool)
     else:
-        tools.append(FileEditorTool)
+        tools.append(StrReplaceEditorTool)
 
     if codeact_enable_read_only_tools:
         # filter out tools that are not in READ_ONLY_TOOLS

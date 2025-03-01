@@ -57,6 +57,28 @@ const messageActions = {
       store.dispatch(appendJupyterInput(message.args.code));
     }
   },
+  [ActionType.FINISH]: (message: ActionMessage) => {
+    store.dispatch(addAssistantMessage(message.args.final_thought));
+    let successPrediction = "";
+    if (message.args.task_completed === "partial") {
+      successPrediction =
+        "The agent thinks that the task was **completed partially**.";
+    } else if (message.args.task_completed === "false") {
+      successPrediction =
+        "The agent thinks that the task was **not completed**.";
+    } else if (message.args.task_completed === "true") {
+      successPrediction =
+        "The agent thinks that the task was **completed successfully**.";
+    }
+    if (successPrediction) {
+      // if final_thought is not empty, add a new line before the success prediction
+      if (message.args.final_thought) {
+        store.dispatch(addAssistantMessage(`\n${successPrediction}`));
+      } else {
+        store.dispatch(addAssistantMessage(successPrediction));
+      }
+    }
+  },
 };
 
 export function handleActionMessage(message: ActionMessage) {

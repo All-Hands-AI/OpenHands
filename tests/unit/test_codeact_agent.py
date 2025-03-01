@@ -11,11 +11,11 @@ from openhands.agenthub.codeact_agent.function_calling import (
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
     CmdRunTool,
-    FileEditorTool,
     GlobTool,
     GrepTool,
     IPythonTool,
     LLMBasedFileEditTool,
+    StrReplaceEditorTool,
     ThinkTool,
     WebReadTool,
 )
@@ -26,6 +26,7 @@ from openhands.agenthub.codeact_agent.tools.browser import (
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import FunctionCallNotExistsError
+from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
     CmdRunAction,
     MessageAction,
@@ -153,10 +154,10 @@ def test_llm_based_file_edit_tool():
 
 
 def test_str_replace_editor_tool():
-    assert FileEditorTool['type'] == 'function'
-    assert FileEditorTool['function']['name'] == 'file_editor'
+    assert StrReplaceEditorTool['type'] == 'function'
+    assert StrReplaceEditorTool['function']['name'] == 'str_replace_editor'
 
-    properties = FileEditorTool['function']['parameters']['properties']
+    properties = StrReplaceEditorTool['function']['parameters']['properties']
     assert 'command' in properties
     assert 'path' in properties
     assert 'file_text' in properties
@@ -164,7 +165,7 @@ def test_str_replace_editor_tool():
     assert 'new_str' in properties
     assert 'insert_line' in properties
 
-    assert FileEditorTool['function']['parameters']['required'] == [
+    assert StrReplaceEditorTool['function']['parameters']['required'] == [
         'command',
         'path',
     ]
@@ -348,3 +349,66 @@ def test_think_tool():
     assert 'thought' in properties
 
     assert ThinkTool['function']['parameters']['required'] == ['thought']
+
+
+def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
+    agent: CodeActAgent,
+):
+    """Test that _enhance_messages adds newlines between consecutive user messages."""
+    # Set up the prompt manager
+    agent.prompt_manager = Mock()
+    agent.prompt_manager.add_examples_to_initial_message = Mock()
+    agent.prompt_manager.add_info_to_initial_message = Mock()
+    agent.prompt_manager.enhance_message = Mock()
+
+    # Create consecutive user messages with various content types
+    messages = [
+        # First user message with TextContent only
+        Message(role='user', content=[TextContent(text='First user message')]),
+        # Second user message with TextContent only - should get newlines added
+        Message(role='user', content=[TextContent(text='Second user message')]),
+        # Assistant message
+        Message(role='assistant', content=[TextContent(text='Assistant response')]),
+        # Third user message with TextContent only - shouldn't get newlines
+        Message(role='user', content=[TextContent(text='Third user message')]),
+        # Fourth user message with ImageContent first, TextContent second - should get newlines
+        Message(
+            role='user',
+            content=[
+                ImageContent(image_urls=['https://example.com/image.jpg']),
+                TextContent(text='Fourth user message with image'),
+            ],
+        ),
+        # Fifth user message with only ImageContent - no TextContent to modify
+        Message(
+            role='user',
+            content=[
+                ImageContent(image_urls=['https://example.com/another-image.jpg'])
+            ],
+        ),
+    ]
+
+    # Call _enhance_messages
+    enhanced_messages = agent._enhance_messages(messages)
+
+    # Verify newlines were added correctly
+    assert enhanced_messages[1].content[0].text.startswith('\n\n')
+    assert enhanced_messages[1].content[0].text == '\n\nSecond user message'
+
+    # Third message follows assistant, so shouldn't have newlines
+    assert not enhanced_messages[3].content[0].text.startswith('\n\n')
+    assert enhanced_messages[3].content[0].text == 'Third user message'
+
+    # Fourth message follows user, so should have newlines in its TextContent
+    assert enhanced_messages[4].content[1].text.startswith('\n\n')
+    assert enhanced_messages[4].content[1].text == '\n\nFourth user message with image'
+
+    # Fifth message only has ImageContent, no TextContent to modify
+    assert len(enhanced_messages[5].content) == 1
+    assert isinstance(enhanced_messages[5].content[0], ImageContent)
+
+    # Verify prompt manager methods were called as expected
+    assert agent.prompt_manager.add_examples_to_initial_message.call_count == 1
+    assert (
+        agent.prompt_manager.enhance_message.call_count == 5
+    )  # Called for each user message
