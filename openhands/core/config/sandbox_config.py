@@ -17,6 +17,7 @@ class SandboxConfig(BaseModel):
         remote_runtime_api_timeout: The timeout for the remote runtime API requests.
         enable_auto_lint: Whether to enable auto-lint.
         use_host_network: Whether to use the host network.
+        network_name: If not using the host network, the network to use for the runtime container.
         runtime_binding_address: The binding address for the runtime ports.  It specifies which network interface on the host machine Docker should bind the runtime ports to.
         initialize_plugins: Whether to initialize plugins.
         force_rebuild_runtime: Whether to force rebuild the runtime image.
@@ -61,6 +62,7 @@ class SandboxConfig(BaseModel):
         default=False
     )  # once enabled, OpenHands would lint files after editing
     use_host_network: bool = Field(default=False)
+    network_name: str | None = Field(default=None)
     runtime_binding_address: str = Field(default='127.0.0.1')
     runtime_extra_build_args: list[str] | None = Field(default=None)
     initialize_plugins: bool = Field(default=True)

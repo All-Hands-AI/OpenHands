@@ -385,6 +385,11 @@ To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-
   - Default: `false`
   - Description: Use host network
 
+- `network_name`
+  - Type: `str`
+  - Default: `None`
+  - Description: The (docker) network to use for the sandbox. Incompatible with `use_host_network`.
+
 - `runtime_binding_address`
   - Type: `str`
   - Default: `127.0.0.1`

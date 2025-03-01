@@ -196,6 +196,9 @@ class DockerRuntime(ActionExecutionClient):
 
         use_host_network = self.config.sandbox.use_host_network
         network_mode: str | None = 'host' if use_host_network else None
+        network: str | None = None if use_host_network else self.config.sandbox.network_name
+        if network_mode is not None and network is not None:
+            logger.error('Cannot specify both host network mode and a docker network name')
 
         # Initialize port mappings
         port_mapping: dict[str, list[dict[str, str]]] | None = None
