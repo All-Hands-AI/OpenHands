@@ -24,7 +24,8 @@ def mock_docker_client():
         mock_client.return_value.version.return_value = {
         'Version': '20.10.0',
         'Components': [
-            {'Name': 'Engine', 'Version': '20.10.0'},]
+            {'Name': 'Engine', 'Version': '20.10.0'}
+        ]
     }  # Ensure version is >= 18.09
         yield mock_client.return_value
 
