@@ -16,7 +16,7 @@ class SettingsStore(ABC):
         """Load session init data"""
 
     @abstractmethod
-    async def store(self, settings: Settings):
+    async def store(self, settings: Settings) -> None:
         """Store session init data"""
 
     @classmethod

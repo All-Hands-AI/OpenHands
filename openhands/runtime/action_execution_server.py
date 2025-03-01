@@ -8,7 +8,6 @@ NOTE: this will be executed inside the docker sandbox.
 import argparse
 import asyncio
 import base64
-import io
 import mimetypes
 import os
 import shutil
@@ -21,12 +20,14 @@ from zipfile import ZipFile
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
+from openhands_aci.utils.diff import get_diff
 from pydantic import BaseModel
+from starlette.background import BackgroundTask
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
 
@@ -57,6 +58,7 @@ from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
+from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
@@ -88,7 +90,7 @@ def _execute_file_editor(
     new_str: str | None = None,
     insert_line: int | None = None,
     enable_linting: bool = False,
-) -> str:
+) -> tuple[str, tuple[str | None, str | None]]:
     """Execute file editor command and handle exceptions.
 
     Args:
@@ -103,7 +105,7 @@ def _execute_file_editor(
         enable_linting: Whether to enable linting
 
     Returns:
-        str: Result string from the editor operation
+        tuple: A tuple containing the output string and a tuple of old and new file content
     """
     result: ToolResult | None = None
     try:
@@ -121,13 +123,13 @@ def _execute_file_editor(
         result = ToolResult(error=e.message)
 
     if result.error:
-        return f'ERROR:\n{result.error}'
+        return f'ERROR:\n{result.error}', (None, None)
 
     if not result.output:
         logger.warning(f'No output from file_editor for {path}')
-        return ''
+        return '', (None, None)
 
-    return result.output
+    return result.output, (result.old_content, result.new_content)
 
 
 class ActionExecutor:
@@ -171,12 +173,19 @@ class ActionExecutor:
         else:
             logger.info('No max memory limit set, using all available system memory')
 
+        self.memory_monitor = MemoryMonitor(
+            enable=os.environ.get('RUNTIME_MEMORY_MONITOR', 'False').lower()
+            in ['true', '1', 'yes']
+        )
+        self.memory_monitor.start_monitoring()
+
     @property
     def initial_cwd(self):
         return self._initial_cwd
 
     async def ainit(self):
         # bash needs to be initialized first
+        logger.debug('Initializing bash session')
         self.bash_session = BashSession(
             work_dir=self._initial_cwd,
             username=self.username,
@@ -186,15 +195,18 @@ class ActionExecutor:
             max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
         )
         self.bash_session.initialize()
+        logger.debug('Bash session initialized')
 
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
             timeout=30,
         )
+        logger.debug('All plugins initialized')
 
         # This is a temporary workaround
         # TODO: refactor AgentSkills to be part of JupyterPlugin
         # AFTER ServerRuntime is deprecated
+        logger.debug('Initializing AgentSkills')
         if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
             obs = await self.run_ipython(
                 IPythonRunCellAction(
@@ -203,6 +215,7 @@ class ActionExecutor:
             )
             logger.debug(f'AgentSkills initialized: {obs}')
 
+        logger.debug('Initializing bash commands')
         await self._init_bash_commands()
         logger.debug('Runtime client initialized.')
         self._initialized = True
@@ -304,7 +317,7 @@ class ActionExecutor:
     async def read(self, action: FileReadAction) -> Observation:
         assert self.bash_session is not None
         if action.impl_source == FileReadSource.OH_ACI:
-            result_str = _execute_file_editor(
+            result_str, _ = _execute_file_editor(
                 self.file_editor,
                 command='view',
                 path=action.path,
@@ -421,7 +434,7 @@ class ActionExecutor:
 
     async def edit(self, action: FileEditAction) -> Observation:
         assert action.impl_source == FileEditSource.OH_ACI
-        result_str = _execute_file_editor(
+        result_str, (old_content, new_content) = _execute_file_editor(
             self.file_editor,
             command=action.command,
             path=action.path,
@@ -438,6 +451,11 @@ class ActionExecutor:
             old_content=action.old_str,
             new_content=action.new_str,
             impl_source=FileEditSource.OH_ACI,
+            diff=get_diff(
+                old_contents=old_content or '',
+                new_contents=new_content or '',
+                filepath=action.path,
+            ),
         )
 
     async def browse(self, action: BrowseURLAction) -> Observation:
@@ -447,6 +465,7 @@ class ActionExecutor:
         return await browse(action, self.browser)
 
     def close(self):
+        self.memory_monitor.stop_monitoring()
         if self.bash_session is not None:
             self.bash_session.close()
         self.browser.close()
@@ -618,7 +637,7 @@ if __name__ == '__main__':
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get('/download_files')
-    async def download_file(path: str):
+    def download_file(path: str):
         logger.debug('Downloading files')
         try:
             if not os.path.isabs(path):
@@ -629,7 +648,7 @@ if __name__ == '__main__':
             if not os.path.exists(path):
                 raise HTTPException(status_code=404, detail='File not found')
 
-            with tempfile.TemporaryFile() as temp_zip:
+            with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp_zip:
                 with ZipFile(temp_zip, 'w') as zipf:
                     for root, _, files in os.walk(path):
                         for file in files:
@@ -637,15 +656,11 @@ if __name__ == '__main__':
                             zipf.write(
                                 file_path, arcname=os.path.relpath(file_path, path)
                             )
-                temp_zip.seek(0)  # Rewind the file to the beginning after writing
-                content = temp_zip.read()
-                # Good for small to medium-sized files. For very large files, streaming directly from the
-                # file chunks may be more memory-efficient.
-                zip_stream = io.BytesIO(content)
-                return StreamingResponse(
-                    content=zip_stream,
+                return FileResponse(
+                    path=temp_zip.name,
                     media_type='application/zip',
-                    headers={'Content-Disposition': f'attachment; filename={path}.zip'},
+                    filename=f'{os.path.basename(path)}.zip',
+                    background=BackgroundTask(lambda: os.unlink(temp_zip.name)),
                 )
 
         except Exception as e:

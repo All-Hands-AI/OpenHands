@@ -75,6 +75,8 @@ class RemoteRuntime(ActionExecutionClient):
                 'remote_runtime_api_url is required in the remote runtime.'
             )
 
+        assert self.config.sandbox.remote_runtime_class in (None, 'sysbox', 'gvisor')
+
         self.runtime_builder = RemoteRuntimeBuilder(
             self.config.sandbox.remote_runtime_api_url,
             self.config.sandbox.api_key,
@@ -151,6 +153,12 @@ class RemoteRuntime(ActionExecutionClient):
                 return False
             self.log('debug', f'Error while looking for remote runtime: {e}')
             raise
+        except requests.exceptions.JSONDecodeError as e:
+            self.log(
+                'error',
+                f'Invalid JSON response from runtime API: {e}. URL: {self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}. Response: {response}',
+            )
+            raise
 
         if status == 'running':
             return True
@@ -225,6 +233,9 @@ class RemoteRuntime(ActionExecutionClient):
             'session_id': self.sid,
             'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
         }
+        if self.config.sandbox.remote_runtime_class == 'sysbox':
+            start_request['runtime_class'] = 'sysbox-runc'
+        # We ignore other runtime classes for now, because both None and 'gvisor' map to 'gvisor'
 
         # Start the sandbox using the /start endpoint
         try:
@@ -366,7 +377,22 @@ class RemoteRuntime(ActionExecutionClient):
         raise AgentRuntimeNotReadyError()
 
     def close(self):
-        if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
+        if self.attach_to_existing:
+            super().close()
+            return
+        if self.config.sandbox.keep_runtime_alive:
+            if self.config.sandbox.pause_closed_runtimes:
+                try:
+                    if not self._runtime_closed:
+                        with self._send_runtime_api_request(
+                            'POST',
+                            f'{self.config.sandbox.remote_runtime_api_url}/pause',
+                            json={'runtime_id': self.runtime_id},
+                        ):
+                            self.log('debug', 'Runtime paused.')
+                except Exception as e:
+                    self.log('error', f'Unable to pause runtime: {str(e)}')
+                    raise e
             super().close()
             return
         try:

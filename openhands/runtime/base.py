@@ -22,6 +22,7 @@ from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -31,6 +32,7 @@ from openhands.events.action import (
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
+    AgentThinkObservation,
     CmdOutputObservation,
     ErrorObservation,
     FileReadObservation,
@@ -254,6 +256,9 @@ class Runtime(FileEditRuntimeMixin):
 
         # this might be unnecessary, since source should be set by the event stream when we're here
         source = event.source if event.source else EventSource.AGENT
+        if isinstance(observation, NullObservation):
+            # don't add null observations to the event stream
+            return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
     def clone_repo(
@@ -378,6 +383,8 @@ class Runtime(FileEditRuntimeMixin):
         If the action is not supported by the current runtime, an ErrorObservation is returned.
         """
         if not action.runnable:
+            if isinstance(action, AgentThinkAction):
+                return AgentThinkObservation('Your thought has been logged.')
             return NullObservation('')
         if (
             hasattr(action, 'confirmation_state')

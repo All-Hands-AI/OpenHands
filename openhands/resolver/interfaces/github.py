@@ -22,28 +22,28 @@ class GithubIssueHandler(IssueHandlerInterface):
         self.clone_url = self.get_clone_url()
         self.headers = self.get_headers()
 
-    def set_owner(self, owner: str):
+    def set_owner(self, owner: str) -> None:
         self.owner = owner
 
-    def get_headers(self):
+    def get_headers(self) -> dict[str, str]:
         return {
             'Authorization': f'token {self.token}',
             'Accept': 'application/vnd.github.v3+json',
         }
 
-    def get_base_url(self):
+    def get_base_url(self) -> str:
         return f'https://api.github.com/repos/{self.owner}/{self.repo}'
 
-    def get_authorize_url(self):
+    def get_authorize_url(self) -> str:
         return f'https://{self.username}:{self.token}@github.com/'
 
-    def get_branch_url(self, branch_name: str):
+    def get_branch_url(self, branch_name: str) -> str:
         return self.get_base_url() + f'/branches/{branch_name}'
 
-    def get_download_url(self):
+    def get_download_url(self) -> str:
         return f'{self.base_url}/issues'
 
-    def get_clone_url(self):
+    def get_clone_url(self) -> str:
         username_and_token = (
             f'{self.username}:{self.token}'
             if self.username
@@ -51,10 +51,10 @@ class GithubIssueHandler(IssueHandlerInterface):
         )
         return f'https://{username_and_token}@github.com/{self.owner}/{self.repo}.git'
 
-    def get_graphql_url(self):
+    def get_graphql_url(self) -> str:
         return 'https://api.github.com/graphql'
 
-    def get_compare_url(self, branch_name: str):
+    def get_compare_url(self, branch_name: str) -> str:
         return f'https://github.com/{self.owner}/{self.repo}/compare/{branch_name}?expand=1'
 
     def get_converted_issues(
@@ -186,7 +186,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         print(f'Branch {branch_name} exists: {exists}')
         return exists
 
-    def get_branch_name(self, base_branch_name: str):
+    def get_branch_name(self, base_branch_name: str) -> str:
         branch_name = base_branch_name
         attempt = 1
         while self.branch_exists(branch_name):
@@ -194,7 +194,7 @@ class GithubIssueHandler(IssueHandlerInterface):
             branch_name = f'{base_branch_name}-try{attempt}'
         return branch_name
 
-    def reply_to_comment(self, pr_number: int, comment_id: str, reply: str):
+    def reply_to_comment(self, pr_number: int, comment_id: str, reply: str) -> None:
         # Opting for graphql as REST API doesn't allow reply to replies in comment threads
         query = """
             mutation($body: String!, $pullRequestReviewThreadId: ID!) {
@@ -221,15 +221,18 @@ class GithubIssueHandler(IssueHandlerInterface):
         )
         response.raise_for_status()
 
-    def get_pull_url(self, pr_number: int):
+    def get_pull_url(self, pr_number: int) -> str:
         return f'https://github.com/{self.owner}/{self.repo}/pull/{pr_number}'
 
     def get_default_branch_name(self) -> str:
         response = requests.get(f'{self.base_url}', headers=self.headers)
         response.raise_for_status()
-        return response.json()['default_branch']
+        data = response.json()
+        return str(data['default_branch'])
 
-    def create_pull_request(self, data=dict) -> dict:
+    def create_pull_request(self, data: dict[str, Any] | None = None) -> dict[str, Any]:
+        if data is None:
+            data = {}
         response = requests.post(
             f'{self.base_url}/pulls', headers=self.headers, json=data
         )
@@ -240,9 +243,9 @@ class GithubIssueHandler(IssueHandlerInterface):
             )
         response.raise_for_status()
         pr_data = response.json()
-        return pr_data
+        return dict(pr_data)
 
-    def request_reviewers(self, reviewer: str, pr_number: int):
+    def request_reviewers(self, reviewer: str, pr_number: int) -> None:
         review_data = {'reviewers': [reviewer]}
         review_response = requests.post(
             f'{self.base_url}/pulls/{pr_number}/requested_reviewers',
@@ -254,7 +257,7 @@ class GithubIssueHandler(IssueHandlerInterface):
                 f'Warning: Failed to request review from {reviewer}: {review_response.text}'
             )
 
-    def send_comment_msg(self, issue_number: int, msg: str):
+    def send_comment_msg(self, issue_number: int, msg: str) -> None:
         """Send a comment message to a GitHub issue or pull request.
 
         Args:
@@ -282,8 +285,8 @@ class GithubIssueHandler(IssueHandlerInterface):
         review_comments: list[str] | None,
         review_threads: list[ReviewThread],
         thread_comments: list[str] | None,
-    ):
-        pass
+    ) -> list[str]:
+        return []
 
 
 class GithubPRHandler(GithubIssueHandler):
@@ -487,7 +490,7 @@ class GithubPRHandler(GithubIssueHandler):
         review_comments: list[str] | None,
         review_threads: list[ReviewThread],
         thread_comments: list[str] | None,
-    ):
+    ) -> list[str]:
         new_issue_references = []
 
         if issue_body:

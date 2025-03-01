@@ -160,6 +160,7 @@ def test_file_edit_observation_serialization():
             'old_content': None,
             'path': '',
             'prev_exist': False,
+            'diff': None,
         },
         'message': 'I edited the file .',
         'content': '[Existing file /path/to/file.txt is edited with 1 changes.]',
@@ -178,6 +179,7 @@ def test_file_edit_observation_new_file_serialization():
             'old_content': None,
             'path': '',
             'prev_exist': False,
+            'diff': None,
         },
         'message': 'I edited the file .',
     }
@@ -196,6 +198,7 @@ def test_file_edit_observation_oh_aci_serialization():
             'old_content': None,
             'path': '',
             'prev_exist': False,
+            'diff': None,
         },
         'message': 'I edited the file .',
     }

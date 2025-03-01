@@ -5,7 +5,13 @@
  * @returns The URL to redirect to for GitHub OAuth
  */
 export const generateGitHubAuthUrl = (clientId: string, requestUrl: URL) => {
-  const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
-  const scope = "repo,user,workflow,offline_access";
-  return `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
+  const redirectUri = `${requestUrl.origin}/oauth/keycloak/callback`;
+  const baseUrl = `${requestUrl.origin}`
+    .replace("https://", "")
+    .replace("http://", "");
+  const authUrl = baseUrl
+    .replace(/(^|\.)staging\.all-hands\.dev$/, "$1auth.staging.all-hands.dev")
+    .replace(/(^|\.)app\.all-hands\.dev$/, "auth.app.all-hands.dev");
+  const scope = "openid email profile";
+  return `https://${authUrl}/realms/allhands/protocol/openid-connect/auth?client_id=github&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
 };
