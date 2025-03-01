@@ -8,5 +8,5 @@ The following command will generate a `Dockerfile` file for `nikolaik/python-nod
 ```bash
 poetry run python3 openhands/runtime/utils/runtime_build.py \
     --base_image nikolaik/python-nodejs:python3.12-nodejs22 \
-    --build_folder containers/runtime
+    --build_folder containers/runtime/build
 ```
