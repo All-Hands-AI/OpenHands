@@ -175,10 +175,6 @@ class AgentSession:
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
 
-    async def stop_agent_loop_for_error(self):
-        if self.controller is not None:
-            await self.controller.set_agent_state_to(AgentState.ERROR)
-
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
 
