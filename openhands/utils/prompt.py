@@ -100,9 +100,14 @@ class PromptManager:
 
     def build_microagent_info(
         self,
-        triggered_agents: list[str],
+        triggered_agents: list[dict],
     ) -> str:
-        """Renders the microagent info template with the triggered agents."""
+        """Renders the microagent info template with the triggered agents.
+
+        Args:
+            triggered_agents: A list of dictionaries, each containing an "agent"
+                            (KnowledgeMicroAgent) and a "trigger_word" (str).
+        """
         return self.microagent_info_template.render(
             triggered_agents=triggered_agents
         ).strip()

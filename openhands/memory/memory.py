@@ -161,9 +161,8 @@ class Memory:
             trigger = agent.match_trigger(user_text)
             if trigger:
                 logger.info("Microagent '%s' triggered by keyword '%s'", name, trigger)
-                triggered_agents.append(
-                    {'name': name, 'content': agent.content, 'trigger': trigger}
-                )
+                # Create a dictionary with the agent and trigger word
+                triggered_agents.append({'agent': agent, 'trigger_word': trigger})
 
         if triggered_agents:
             # Create structured data observation
