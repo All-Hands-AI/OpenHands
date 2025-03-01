@@ -137,22 +137,26 @@ class TestLogOutput:
 
         logger.info('Test message')
         output = json.loads(string_io.getvalue())
-        assert output == {'message': 'Test message', 'severity': 'INFO'}
+        assert 'timestamp' in output
+        del output['timestamp']
+        assert output == {'message': 'Test message', 'level': 'INFO'}
 
     def test_error(self, json_handler):
         logger, string_io = json_handler
 
         logger.error('Test message')
         output = json.loads(string_io.getvalue())
-        assert output == {'message': 'Test message', 'severity': 'ERROR'}
+        del output['timestamp']
+        assert output == {'message': 'Test message', 'level': 'ERROR'}
 
     def test_extra_fields(self, json_handler):
         logger, string_io = json_handler
 
         logger.info('Test message', extra={'key': '..val..'})
         output = json.loads(string_io.getvalue())
+        del output['timestamp']
         assert output == {
             'key': '..val..',
             'message': 'Test message',
-            'severity': 'INFO',
+            'level': 'INFO',
         }
