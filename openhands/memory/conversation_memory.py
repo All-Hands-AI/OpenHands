@@ -1,5 +1,3 @@
-import json
-
 from litellm import ModelResponse
 
 from openhands.core.logger import openhands_logger as logger
@@ -378,55 +376,42 @@ class ConversationMemory:
             isinstance(obs, RecallObservation)
             and obs.recall_type == RecallType.ENVIRONMENT_INFO
         ):
-            try:
-                data = json.loads(obs.content)
-                # Use prompt_manager to format the data
-                repo_info = (
-                    RepositoryInfo(**data['repository_info'])
-                    if data.get('repository_info')
-                    else None
+            # everything is optional, check if they are present
+            repo_info = (
+                RepositoryInfo(
+                    repo_name=obs.repo_name or '',
+                    repo_directory=obs.repo_directory or '',
                 )
-                runtime_info = (
-                    RuntimeInfo(**data['runtime_info'])
-                    if data.get('runtime_info')
-                    else None
-                )
-                repo_instructions = data.get('repository_instructions', '')
+                if obs.repo_name or obs.repo_directory
+                else None
+            )
+            runtime_info = (
+                RuntimeInfo(available_hosts=obs.runtime_hosts)
+                if obs.runtime_hosts
+                else None
+            )
+            repo_instructions = obs.repo_instructions if obs.repo_instructions else ''
 
-                formatted_text = self.prompt_manager.build_additional_info(
-                    repository_info=repo_info,
-                    runtime_info=runtime_info,
-                    repo_instructions=repo_instructions,
-                )
-
-                message = Message(
-                    role='user', content=[TextContent(text=formatted_text)]
-                )
-            except (json.JSONDecodeError, KeyError, TypeError):
-                # Fall through to default handling for non-JSON content
-                text = truncate_content(obs.content, max_message_chars)
-                message = Message(role='user', content=[TextContent(text=text)])
+            # ok, now we can build the additional info
+            formatted_text = self.prompt_manager.build_additional_info(
+                repository_info=repo_info,
+                runtime_info=runtime_info,
+                repo_instructions=repo_instructions,
+            )
+            message = Message(role='user', content=[TextContent(text=formatted_text)])
         elif (
             isinstance(obs, RecallObservation)
             and obs.recall_type == RecallType.KNOWLEDGE_MICROAGENT
         ):
-            try:
-                data = json.loads(obs.content)
-                # Use prompt_manager to format the data
-                triggered_agents = data.get('triggered_agents', [])
-                if triggered_agents:
-                    formatted_text = self.prompt_manager.build_microagent_info(
-                        triggered_agents=triggered_agents,
-                    )
-                else:
-                    formatted_text = ''  # this should not happen
-                message = Message(
-                    role='user', content=[TextContent(text=formatted_text)]
+            # Use prompt_manager to format the microagent info
+            triggered_agents = obs.microagent_knowledge
+            if triggered_agents:
+                formatted_text = self.prompt_manager.build_microagent_info(
+                    triggered_agents=triggered_agents,
                 )
-            except (json.JSONDecodeError, KeyError, TypeError):
-                # Fall through to default handling for non-JSON content
-                text = truncate_content(obs.content, max_message_chars)
-                message = Message(role='user', content=[TextContent(text=text)])
+            else:
+                formatted_text = ''  # this should not happen
+            message = Message(role='user', content=[TextContent(text=formatted_text)])
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message
