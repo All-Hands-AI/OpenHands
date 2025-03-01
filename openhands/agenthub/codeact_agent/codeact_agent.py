@@ -82,9 +82,6 @@ class CodeActAgent(Agent):
         # Create a ConversationMemory instance
         self.conversation_memory = ConversationMemory(self.prompt_manager)
 
-        # Create a ConversationMemory instance
-        self.conversation_memory = ConversationMemory(self.prompt_manager)
-
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {self.condenser}')
 
@@ -163,11 +160,7 @@ class CodeActAgent(Agent):
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
 
-        # Use conversation_memory to process events instead of calling events_to_messages directly
-        messages = self.conversation_memory.process_initial_messages(
-            with_caching=self.llm.is_caching_prompt_active()
-        )
-        # Use conversation_memory to process events instead of calling events_to_messages directly
+        # Use ConversationMemory to process initial messages
         messages = self.conversation_memory.process_initial_messages(
             with_caching=self.llm.is_caching_prompt_active()
         )
@@ -179,6 +172,7 @@ class CodeActAgent(Agent):
             f'Processing {len(events)} events from a total of {len(state.history)} events'
         )
 
+        # Use ConversationMemory to process events
         messages = self.conversation_memory.process_events(
             condensed_history=events,
             initial_messages=messages,
@@ -190,7 +184,6 @@ class CodeActAgent(Agent):
         messages = self._enhance_messages(messages)
 
         if self.llm.is_caching_prompt_active():
-            # Use conversation_memory to apply caching instead of calling apply_prompt_caching directly
             self.conversation_memory.apply_prompt_caching(messages)
 
         return messages
