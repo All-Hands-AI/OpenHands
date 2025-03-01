@@ -2,7 +2,6 @@ import dataclasses
 import json
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action.agent import AgentRecallAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation.agent import (
@@ -22,7 +21,7 @@ from openhands.utils.prompt import RepositoryInfo, RuntimeInfo
 class Memory:
     """
     Memory is a component that listens to the EventStream for either user MessageAction (to create
-    a RecallAction) or a RecallAction (to produce a RecallObservation).
+    a RecallObservation).
     """
 
     def __init__(
@@ -106,8 +105,6 @@ class Memory:
                     observation._cause = event.id  # type: ignore[attr-defined]
 
                     self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
-        elif isinstance(event, AgentRecallAction):
-            self._on_recall_action(event)
 
     def _on_first_user_message(self, event: MessageAction) -> RecallObservation:
         """Add repository and runtime information to the stream as a RecallObservation."""
@@ -137,6 +134,7 @@ class Memory:
         }
 
         # Send structured data in the observation
+        # TODO: use NullObservation if there's no info to send
         obs = RecallObservation(
             recall_type=RecallType.ENVIRONMENT_INFO, content=json.dumps(obs_data)
         )
@@ -184,18 +182,6 @@ class Memory:
                 prev_observation.content += '\n\n' + json.dumps(obs_data)
 
         return prev_observation
-
-    def _on_recall_action(self, event: AgentRecallAction):
-        """If a RecallAction explicitly arrives, handle it."""
-        assert isinstance(event, AgentRecallAction)
-
-        # user_query = event.query.get('keywords', [])
-        matched_content = ''
-        # matched_content = self.find_microagent_content(user_query)
-        obs = RecallObservation(recall_type=RecallType.DEFAULT, content=matched_content)
-        self.event_stream.add_event(
-            obs, event.source if event.source else EventSource.ENVIRONMENT
-        )
 
     def load_user_workspace_microagents(
         self, user_microagents: list[BaseMicroAgent]
