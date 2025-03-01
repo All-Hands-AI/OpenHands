@@ -4,6 +4,8 @@ from openhands.events.observation import (
     CmdOutputObservation,
     FileEditObservation,
     Observation,
+    RecallObservation,
+    RecallType,
 )
 from openhands.events.serialization import (
     event_from_dict,
@@ -236,3 +238,39 @@ def test_file_edit_observation_legacy_serialization():
     assert event_dict['extras']['old_content'] is None
     assert event_dict['extras']['new_content'] == 'new content'
     assert 'formatted_output_and_error' not in event_dict['extras']
+
+
+def test_recall_observation_serialization():
+    original_observation_dict = {
+        'observation': 'recall',
+        'extras': {
+            'recall_type': RecallType.ENVIRONMENT_INFO,
+            'repo_name': 'some_repo_name',
+            'repo_directory': 'some_repo_directory',
+            'runtime_hosts': ['host1', 'host2'],
+            'repo_instructions': 'complex_repo_instructions',
+        },
+    }
+    serialization_deserialization(original_observation_dict, RecallObservation)
+
+
+def test_recall_observation_microagent_knowledge_serialization():
+    original_observation_dict = {
+        'observation': 'recall',
+        'extras': {
+            'recall_type': RecallType.MICROAGENT_KNOWLEDGE,
+            'microagent_knowledge': [
+                {
+                    'agent_name': 'microagent1',
+                    'trigger_word': 'trigger_word1',
+                    'content': 'content1',
+                },
+                {
+                    'agent_name': 'microagent2',
+                    'trigger_word': 'trigger_word2',
+                    'content': 'content2',
+                },
+            ],
+        },
+    }
+    serialization_deserialization(original_observation_dict, RecallObservation)
