@@ -21,13 +21,13 @@ def test_stop_button_background_process():
     initial_processes = [p for p in process_info["processes"] if "sleep" in p]
     assert len(initial_processes) > 0, "Expected at least one sleep process"
 
-    # Send Ctrl+C to try to stop it
-    obs = session.execute(CmdRunAction("C-c", is_input=True))
-    time.sleep(1)  # Give time for Ctrl+C to take effect
+    # Send StopProcessesAction to stop it
+    obs = session.execute(StopProcessesAction())
+    time.sleep(1)  # Give time for processes to be killed
 
-    # Check if process is still running (it shouldn't be, but it is - this is the bug)
+    # Check if process is still running (it should be terminated)
     process_info = session.get_running_processes()
-    print("Process info after Ctrl+C:", process_info)  # Debug output
-    assert not any("sleep" in p for p in process_info["processes"]), "Background process should be terminated but is still running"
+    print("Process info after StopProcessesAction:", process_info)  # Debug output
+    assert not any("sleep" in p for p in process_info["processes"]), "Background process should be terminated"
 
     session.close()
