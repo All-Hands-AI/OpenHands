@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 from openhands.core.schema import ObservationType
@@ -63,6 +63,26 @@ class RecallObservation(Observation):
     observation: str = ObservationType.RECALL
     recall_type: RecallType = RecallType.DEFAULT
 
+    # For environment_info
+    repo_name: str = ''
+    repo_directory: str = ''
+    repo_instructions: str = ''
+    runtime_hosts: dict[str, int] = field(default_factory=dict)
+
+    # For knowledge_microagent
+    triggered_agents: list[dict[str, str]] = field(default_factory=list)
+
     @property
     def message(self) -> str:
-        return self.content
+        return self.__str__()
+
+    def __str__(self) -> str:
+        # Build a string representation of all fields
+        fields = [
+            f'recall_type={self.recall_type}',
+            f'repo_name={self.repo_name}',
+            f'repo_instructions={self.repo_instructions[:20]}...',
+            f'runtime_hosts={self.runtime_hosts}',
+            f'triggered_agents={self.triggered_agents}',
+        ]
+        return f'Recalled: {", ".join(fields)}'

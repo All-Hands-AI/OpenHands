@@ -109,6 +109,11 @@ class Memory:
     def _on_first_user_message(self, event: MessageAction) -> RecallObservation:
         """Add repository and runtime information to the stream as a RecallObservation."""
 
+        # Create ENVIRONMENT_INFO:
+        # - repository_info
+        # - runtime_info
+        # - repository_instructions
+
         # Collect raw repository instructions
         repo_instructions = ''
         assert (
