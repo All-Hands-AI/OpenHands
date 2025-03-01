@@ -300,8 +300,20 @@ def get_file_handler(
     file_name = f'openhands_{timestamp}.log'
     file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
     file_handler.setLevel(log_level)
-    file_handler.setFormatter(file_formatter)
+    if LOG_JSON:
+        file_handler.setFormatter(json_formatter())
+    else:
+        file_handler.setFormatter(file_formatter)
     return file_handler
+
+
+def json_formatter():
+    return JsonFormatter(
+        '{message}{levelname}',
+        style='{',
+        rename_fields={'levelname': LOG_JSON_LEVEL_KEY},
+        timestamp=True,
+    )
 
 
 def json_log_handler(
@@ -314,15 +326,7 @@ def json_log_handler(
 
     handler = logging.StreamHandler(_out)
     handler.setLevel(level)
-
-    formatter = JsonFormatter(
-        '{message}{levelname}',
-        style='{',
-        rename_fields={'levelname': LOG_JSON_LEVEL_KEY},
-        timestamp=True,
-    )
-
-    handler.setFormatter(formatter)
+    handler.setFormatter(json_formatter())
     return handler
 
 
