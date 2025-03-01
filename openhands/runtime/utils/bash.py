@@ -250,6 +250,12 @@ class BashSession:
             '  printf "  \\"timestamp\\": \\"%s\\"\\n" "$timestamp"\n'
             '  printf "}\\n###PS1END###\\n"\n'
             '}\n'
+            'function _openhands_run() {\n'
+            '  "$@"\n'
+            '  local exit_code="$?"\n'
+            '  _openhands_ps1\n'
+            '  return "$exit_code"\n'
+            '}\n'
             'export PROMPT_COMMAND=\'export PS1="$(_openhands_ps1)"\'; export PS2=""; history -c'
         )
         time.sleep(0.1)  # Wait for command to take effect
@@ -257,6 +263,10 @@ class BashSession:
         # Send a dummy command to get a clean PS1 prompt
         self.pane.send_keys('true')
         time.sleep(0.1)  # Wait for command to complete
+        # Clear the screen again to remove the dummy command output
+        self._clear_screen()
+        # Wait for the PS1 prompt to appear
+        time.sleep(0.1)
 
         # Store the last command for interactive input handling
         self.prev_status: BashCommandStatus | None = None
@@ -803,10 +813,10 @@ class BashSession:
         is_special_key = self._is_special_key(command)
         command = escape_bash_special_chars(command)
         logger.debug(f'SENDING COMMAND: {command!r}')
-        self.pane.send_keys(
-            command,
-            enter=not is_special_key,
-        )
+        if is_special_key:
+            self.pane.send_keys(command, enter=False)
+        else:
+            self.pane.send_keys(f'_openhands_run {command}')
 
         # Start polling for command completion
         return self._poll_for_command_completion(command, action)
