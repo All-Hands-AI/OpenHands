@@ -73,7 +73,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         """
         self.docker_client = docker.from_env()
         version_info = self.docker_client.version()
-        server_version = version_info.get('Version', '').replace('-', '.')
+        server_version = version_info.get('Version', '').split('+')[0].replace('-', '.')
         self.is_podman = version_info.get('Components')[0].get('Name').startswith('Podman')
         if tuple(map(int, server_version.split('.'))) < (18, 9) and not self.is_podman:
             raise AgentRuntimeBuildError(
@@ -180,10 +180,12 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 )
 
         except subprocess.CalledProcessError as e:
-            logger.error(f'Image build failed:\n{e}') # TODO: {e} is empty
+            logger.error(f'Image build failed:\n{e}')  # TODO: {e} is empty
             logger.error(f'Command output:\n{e.output}')
             if self.rolling_logger.is_enabled():
-                logger.error("Docker build output:\n" + self.rolling_logger.all_lines) # Show the error
+                logger.error(
+                    'Docker build output:\n' + self.rolling_logger.all_lines
+                )  # Show the error
             raise
 
         except subprocess.TimeoutExpired:

@@ -5,6 +5,7 @@ from itertools import islice
 from jinja2 import Template
 
 from openhands.controller.state.state import State
+from openhands.core.logger import openhands_logger
 from openhands.core.message import Message, TextContent
 from openhands.microagent import (
     BaseMicroAgent,
@@ -26,34 +27,6 @@ class RepositoryInfo:
 
     repo_name: str | None = None
     repo_directory: str | None = None
-
-
-ADDITIONAL_INFO_TEMPLATE = Template(
-    """
-{% if repository_info %}
-<REPOSITORY_INFO>
-At the user's request, repository {{ repository_info.repo_name }} has been cloned to directory {{ repository_info.repo_directory }}.
-</REPOSITORY_INFO>
-{% endif %}
-{% if repository_instructions -%}
-<REPOSITORY_INSTRUCTIONS>
-{{ repository_instructions }}
-</REPOSITORY_INSTRUCTIONS>
-{% endif %}
-{% if runtime_info and runtime_info.available_hosts -%}
-<RUNTIME_INFORMATION>
-The user has access to the following hosts for accessing a web application,
-each of which has a corresponding port:
-{% for host, port in runtime_info.available_hosts.items() -%}
-* {{ host }} (port {{ port }})
-{% endfor %}
-When starting a web server, use the corresponding ports. You should also
-set any options to allow iframes and CORS requests, and allow the server to
-be accessed from any host (e.g. 0.0.0.0).
-</RUNTIME_INFORMATION>
-{% endif %}
-"""
-)
 
 
 class PromptManager:
@@ -81,6 +54,8 @@ class PromptManager:
         self.repository_info: RepositoryInfo | None = None
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
+        self.additional_info_template: Template = self._load_template('additional_info')
+        self.microagent_info_template: Template = self._load_template('microagent_info')
         self.runtime_info = RuntimeInfo(available_hosts={})
 
         self.knowledge_microagents: dict[str, KnowledgeMicroAgent] = {}
@@ -109,11 +84,12 @@ class PromptManager:
                 if name not in self.disabled_microagents:
                     self.repo_microagents[name] = microagent
 
-    def load_microagents(self, microagents: list[BaseMicroAgent]):
+    def load_microagents(self, microagents: list[BaseMicroAgent]) -> None:
         """Load microagents from a list of BaseMicroAgents.
 
         This is typically used when loading microagents from inside a repo.
         """
+        openhands_logger.info('Loading microagents: %s', [m.name for m in microagents])
         # Only keep KnowledgeMicroAgents and RepoMicroAgents
         for microagent in microagents:
             if microagent.name in self.disabled_microagents:
@@ -135,7 +111,7 @@ class PromptManager:
     def get_system_message(self) -> str:
         return self.system_template.render().strip()
 
-    def set_runtime_info(self, runtime: Runtime):
+    def set_runtime_info(self, runtime: Runtime) -> None:
         self.runtime_info.available_hosts = runtime.web_hosts
 
     def set_repository_info(
@@ -175,14 +151,35 @@ class PromptManager:
         """
         if not message.content:
             return
-        message_content = message.content[0].text
-        for microagent in self.knowledge_microagents.values():
+
+        # if there were other texts included, they were before the user message
+        # so the last TextContent is the user message
+        # content can be a list of TextContent or ImageContent
+        message_content = ''
+        for content in reversed(message.content):
+            if isinstance(content, TextContent):
+                message_content = content.text
+                break
+
+        if not message_content:
+            return
+
+        triggered_agents = []
+        for name, microagent in self.knowledge_microagents.items():
             trigger = microagent.match_trigger(message_content)
             if trigger:
-                micro_text = f'<extra_info>\nThe following information has been included based on a keyword match for "{trigger}". It may or may not be relevant to the user\'s request.'
-                micro_text += '\n\n' + microagent.content
-                micro_text += '\n</extra_info>'
-                message.content.append(TextContent(text=micro_text))
+                openhands_logger.info(
+                    "Microagent '%s' triggered by keyword '%s'",
+                    name,
+                    trigger,
+                )
+                # Create a dictionary with the agent and trigger word
+                triggered_agents.append({'agent': microagent, 'trigger_word': trigger})
+
+        if triggered_agents:
+            formatted_text = self.build_microagent_info(triggered_agents)
+            # Insert the new content at the start of the TextContent list
+            message.content.insert(0, TextContent(text=formatted_text))
 
     def add_examples_to_initial_message(self, message: Message) -> None:
         """Add example_message to the first user message."""
@@ -211,7 +208,7 @@ class PromptManager:
                 repo_instructions += '\n\n'
             repo_instructions += microagent.content
 
-        additional_info = ADDITIONAL_INFO_TEMPLATE.render(
+        additional_info = self.additional_info_template.render(
             repository_instructions=repo_instructions,
             repository_info=self.repository_info,
             runtime_info=self.runtime_info,
@@ -220,6 +217,20 @@ class PromptManager:
         # Insert the new content at the start of the TextContent list
         if additional_info:
             message.content.insert(0, TextContent(text=additional_info))
+
+    def build_microagent_info(
+        self,
+        triggered_agents: list[dict],
+    ) -> str:
+        """Renders the microagent info template with the triggered agents.
+
+        Args:
+            triggered_agents: A list of dictionaries, each containing an "agent"
+                            (KnowledgeMicroAgent) and a "trigger_word" (str).
+        """
+        return self.microagent_info_template.render(
+            triggered_agents=triggered_agents
+        ).strip()
 
     def add_turns_left_reminder(self, messages: list[Message], state: State) -> None:
         latest_user_message = next(
