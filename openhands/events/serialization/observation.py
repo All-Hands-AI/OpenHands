@@ -5,6 +5,7 @@ from openhands.events.observation.agent import (
     AgentStateChangedObservation,
     AgentThinkObservation,
     RecallObservation,
+    RecallType,
 )
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
@@ -111,5 +112,10 @@ def observation_from_dict(observation: dict) -> Observation:
             pass
         else:
             extras['metadata'] = CmdOutputMetadata()
+
+    if observation_class is RecallObservation:
+        # handle the Enum conversion
+        if 'recall_type' in extras:
+            extras['recall_type'] = RecallType(extras['recall_type'])
 
     return observation_class(content=content, **extras)
