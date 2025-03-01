@@ -45,6 +45,7 @@ from openhands.events.action import (
 )
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation import (
+    CmdOutputMetadata,
     CmdOutputObservation,
     ErrorObservation,
     FileEditObservation,
@@ -276,8 +277,10 @@ class ActionExecutor:
         assert self.bash_session is not None
         success = await call_sync_from_async(self.bash_session.kill_all_processes)
         return CmdOutputObservation(
-            content="All running processes have been terminated" if success else "No processes were terminated",
-            command="",
+            content='All running processes have been terminated'
+            if success
+            else 'No processes were terminated',
+            command='',
             metadata=CmdOutputMetadata(),
         )
 
