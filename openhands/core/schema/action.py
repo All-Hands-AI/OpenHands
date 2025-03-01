@@ -82,5 +82,8 @@ class ActionTypeSchema(BaseModel):
     SEND_PR: str = Field(default='send_pr')
     """Send a PR to github."""
 
+    STOP_PROCESSES: str = Field(default='stop_processes')
+    """Stop all running processes in the terminal."""
+
 
 ActionType = ActionTypeSchema()

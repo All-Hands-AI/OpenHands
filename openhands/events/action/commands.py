@@ -60,3 +60,18 @@ class IPythonRunCellAction(Action):
     @property
     def message(self) -> str:
         return f'Running Python code interactively: {self.code}'
+
+
+@dataclass
+class StopProcessesAction(Action):
+    action: str = ActionType.STOP_PROCESSES
+    runnable: ClassVar[bool] = True
+    confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
+    security_risk: ActionSecurityRisk | None = None
+
+    def __str__(self) -> str:
+        return '**StopProcessesAction**\nStopping all running processes'
+
+    @property
+    def message(self) -> str:
+        return 'Stopping all running processes'

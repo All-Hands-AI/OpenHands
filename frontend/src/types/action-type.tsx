@@ -38,6 +38,9 @@ enum ActionType {
 
   // Changes the state of the agent, e.g. to paused or running
   CHANGE_AGENT_STATE = "change_agent_state",
+
+  // Stops all running processes in the terminal
+  STOP_PROCESSES = "stop_processes",
 }
 
 export default ActionType;

@@ -11,6 +11,7 @@ import { addUserMessage } from "#/state/chat-slice";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
+import { getStopProcessesCommand } from "#/services/terminal-service";
 import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { TypingIndicator } from "./typing-indicator";
@@ -82,7 +83,8 @@ export function ChatInterface() {
 
   const handleStop = () => {
     posthog.capture("stop_button_clicked");
-    send(generateAgentStateChangeEvent(AgentState.STOPPED));
+    send(getStopProcessesCommand());  // First kill all processes
+    send(generateAgentStateChangeEvent(AgentState.STOPPED));  // Then change agent state
   };
 
   const handleSendContinueMsg = () => {

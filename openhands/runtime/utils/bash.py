@@ -10,7 +10,7 @@ import libtmux
 import psutil
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action import CmdRunAction
+from openhands.events.action import Action, CmdRunAction, StopProcessesAction
 from openhands.events.observation import ErrorObservation
 from openhands.events.observation.commands import (
     CMD_OUTPUT_PS1_END,
@@ -257,10 +257,41 @@ class BashSession:
         )
         return content
 
+    def kill_process(self, pid: int) -> bool:
+        """Kill a process by its PID.
+
+        Args:
+            pid (int): The PID of the process to kill.
+
+        Returns:
+            bool: True if the process was killed successfully, False otherwise.
+        """
+        try:
+            process = psutil.Process(pid)
+            process.kill()
+            return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            return False
+
+    def kill_all_processes(self) -> bool:
+        """Kill all processes associated with the current command.
+
+        Returns:
+            bool: True if any processes were killed successfully, False otherwise.
+        """
+        process_info = self.get_running_processes()
+        success = False
+        for pid in process_info['process_pids']:
+            if pid != int(self.pane.cmd('display-message', '-p', '#{pane_pid}').stdout[0].strip()):
+                if self.kill_process(pid):
+                    success = True
+        return success
+
     def close(self):
         """Clean up the session."""
         if self._closed:
             return
+        self.kill_all_processes()  # Kill any remaining processes
         self.session.kill_session()
         self._closed = True
 
@@ -439,6 +470,8 @@ class BashSession:
                 - 'current_command_pid': PID of the currently running command (if any)
                 - 'processes': List of all processes visible to this bash session
                 - 'command_processes': List of processes that are likely part of the current command
+                - 'process_pids': List of PIDs of all processes
+                - 'command_pids': List of PIDs of processes that are likely part of the current command
         """
         # Check if a command is running in this session
         pane_content = self._get_pane_content()
@@ -521,11 +554,29 @@ class BashSession:
                 'command_processes': [],
             }
 
+        # Extract PIDs from process strings
+        process_pids = []
+        command_pids = []
+        for proc in process_list:
+            try:
+                pid = int(proc.split()[0])
+                process_pids.append(pid)
+            except (ValueError, IndexError):
+                continue
+        for proc in command_processes:
+            try:
+                pid = int(proc.split()[0])
+                command_pids.append(pid)
+            except (ValueError, IndexError):
+                continue
+
         return {
             'is_command_running': is_command_running,
             'current_command_pid': current_command_pid,
             'processes': process_list,
             'command_processes': command_processes,
+            'process_pids': process_pids,
+            'command_pids': command_pids,
         }
 
     def _combine_outputs_between_matches(
@@ -563,13 +614,26 @@ class BashSession:
         logger.debug(f'COMBINED OUTPUT: {combined_output}')
         return combined_output
 
-    def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
+    def execute(self, action: Action) -> CmdOutputObservation | ErrorObservation:
         """Execute a command in the bash session."""
         if not self._initialized:
             raise RuntimeError('Bash session is not initialized')
 
-        # Strip the command of any leading/trailing whitespace
         logger.debug(f'RECEIVED ACTION: {action}')
+
+        # Handle StopProcessesAction
+        if isinstance(action, StopProcessesAction):
+            success = self.kill_all_processes()
+            return CmdOutputObservation(
+                content="All running processes have been terminated" if success else "No processes were terminated",
+                command="",
+                metadata=CmdOutputMetadata(),
+            )
+
+        # Handle CmdRunAction
+        if not isinstance(action, CmdRunAction):
+            return ErrorObservation(f"Unsupported action type: {type(action)}")
+
         command = action.command.strip()
         is_input = action.is_input
 
