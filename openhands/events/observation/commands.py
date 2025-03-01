@@ -42,12 +42,13 @@ class CmdOutputMetadata(BaseModel):
                 'hostname': r'\h',
                 'working_dir': r'$(pwd)',
                 'py_interpreter_path': r'$(which python 2>/dev/null || echo "")',
+                'timestamp': r'$(date +%s)',
             },
             indent=2,
         )
-        # Make sure we escape double quotes in the JSON string
-        # So that PS1 will keep them as part of the output
-        prompt += json_str.replace('"', r'\"')
+        prompt += (
+            json_str  # No need to escape quotes since we're using single quotes in PS1
+        )
         prompt += CMD_OUTPUT_PS1_END + '\n'  # Ensure there's a newline at the end
         return prompt
 
