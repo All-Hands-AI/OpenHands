@@ -76,6 +76,8 @@ REASONING_EFFORT_SUPPORTED_MODELS = [
 MODELS_WITHOUT_STOP_WORDS = [
     'o1-mini',
     'o1-preview',
+    'o1',
+    'o1-2024-12-17',
 ]
 
 
