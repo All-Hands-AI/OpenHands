@@ -16,7 +16,7 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { useAppLogout } from "#/hooks/use-app-logout";
 import { AvailableLanguages } from "#/i18n";
 import { DEFAULT_SETTINGS } from "#/services/settings";
-import { PersonalityType } from "#/types/settings";
+import { PersonalityType, Settings } from "#/types/settings";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import { isCustomModel } from "#/utils/is-custom-model";
@@ -55,7 +55,7 @@ function AccountSettings() {
     if (isSuccess) {
       return (
         isCustomModel(resources.models, settings.LLM_MODEL) ||
-        hasAdvancedSettingsSet(settings)
+        hasAdvancedSettingsSet(settings as Settings)
       );
     }
 
@@ -412,7 +412,7 @@ function AccountSettings() {
                 { key: "snarky", label: "Snarky" },
                 { key: "disgruntled", label: "Disgruntled" },
               ]}
-              defaultSelectedKey={settings.PERSONALITY || ""}
+              defaultSelectedKey={(settings as Settings).PERSONALITY || ""}
               isClearable={false}
             />
 

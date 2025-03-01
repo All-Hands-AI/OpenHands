@@ -55,7 +55,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   const value = React.useMemo(
     () => ({
       saveUserSettings,
-      settings: userSettings,
+      settings: userSettings as Settings | undefined,
     }),
     [saveUserSettings, userSettings],
   );
