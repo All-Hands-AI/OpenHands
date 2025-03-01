@@ -6,14 +6,20 @@ import sys
 import traceback
 from datetime import datetime
 from types import TracebackType
-from typing import Any, Literal, Mapping
+from typing import Any, Literal, Mapping, TextIO
 
 import litellm
+from pythonjsonlogger.json import JsonFormatter
 from termcolor import colored
 
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
 DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
 DEBUG_LLM = os.getenv('DEBUG_LLM', 'False').lower() in ['true', '1', 'yes']
+
+# Structured logs with JSON, disabled by default
+LOG_JSON = os.getenv('LOG_JSON', 'False').lower() in ['true', '1', 'yes']
+LOG_JSON_LEVEL_KEY = os.getenv('LOG_JSON_LEVEL_KEY', 'level')
+
 
 # Configure litellm logging based on DEBUG_LLM
 if DEBUG_LLM:
@@ -294,8 +300,34 @@ def get_file_handler(
     file_name = f'openhands_{timestamp}.log'
     file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
     file_handler.setLevel(log_level)
-    file_handler.setFormatter(file_formatter)
+    if LOG_JSON:
+        file_handler.setFormatter(json_formatter())
+    else:
+        file_handler.setFormatter(file_formatter)
     return file_handler
+
+
+def json_formatter():
+    return JsonFormatter(
+        '{message}{levelname}',
+        style='{',
+        rename_fields={'levelname': LOG_JSON_LEVEL_KEY},
+        timestamp=True,
+    )
+
+
+def json_log_handler(
+    level: int = logging.INFO,
+    _out: TextIO = sys.stdout,
+) -> logging.Handler:
+    """
+    Configure logger instance for structured logging as json lines.
+    """
+
+    handler = logging.StreamHandler(_out)
+    handler.setLevel(level)
+    handler.setFormatter(json_formatter())
+    return handler
 
 
 # Set up logging
@@ -335,7 +367,11 @@ if current_log_level == logging.DEBUG:
     LOG_TO_FILE = True
     openhands_logger.debug('DEBUG mode enabled.')
 
-openhands_logger.addHandler(get_console_handler(current_log_level))
+if LOG_JSON:
+    openhands_logger.addHandler(json_log_handler(current_log_level))
+else:
+    openhands_logger.addHandler(get_console_handler(current_log_level))
+
 openhands_logger.addFilter(SensitiveDataFilter(openhands_logger.name))
 openhands_logger.propagate = False
 openhands_logger.debug('Logging initialized')

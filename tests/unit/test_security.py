@@ -350,7 +350,7 @@ async def test_unsafe_bash_command(temp_dir: str):
                         arguments={
                             'outputs': {'content': 'outputs content'},
                             'task_completed': None,
-                            'message_text': '',
+                            'final_thought': '',
                         },
                     ),
                 ),

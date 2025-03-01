@@ -45,14 +45,14 @@ class AgentFinishAction(Action):
     """An action where the agent finishes the task.
 
     Attributes:
-        message_text (str): The message to send to the user.
+        final_thought (str): The message to send to the user.
         task_completed (enum): Whether the agent believes the task has been completed.
         outputs (dict): The other outputs of the agent, for instance "content".
         thought (str): The agent's explanation of its actions.
         action (str): The action type, namely ActionType.FINISH.
     """
 
-    message_text: str = ''
+    final_thought: str = ''
     task_completed: AgentFinishTaskCompleted | None = None
     outputs: dict[str, Any] = field(default_factory=dict)
     thought: str = ''

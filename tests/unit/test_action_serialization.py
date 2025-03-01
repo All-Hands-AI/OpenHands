@@ -90,7 +90,7 @@ def test_agent_finish_action_serialization_deserialization():
             'outputs': {},
             'thought': '',
             'task_completed': None,
-            'message_text': '',
+            'final_thought': '',
         },
     }
     serialization_deserialization(original_action_dict, AgentFinishAction)
