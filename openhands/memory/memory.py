@@ -1,7 +1,7 @@
 import asyncio
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action.message import MessageAction
+from openhands.events.action.agent import AgentRecallAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation.agent import (
     RecallObservation,
@@ -20,8 +20,7 @@ from openhands.utils.prompt import RepositoryInfo, RuntimeInfo
 
 class Memory:
     """
-    Memory is a component that listens to the EventStream for either user MessageAction (to create
-    a RecallObservation).
+    Memory is a component that listens to the EventStream for AgentRecallAction (to create a RecallObservation).
     """
 
     def __init__(
@@ -91,23 +90,22 @@ class Memory:
         """Handle an event from the event stream asynchronously."""
 
         observation: RecallObservation | NullObservation | None = None
-        if isinstance(event, MessageAction) and event.source == 'user':
+        # Handle AgentRecallAction
+        if isinstance(event, AgentRecallAction):
             # add a sleep here to allow other things to run
             await asyncio.sleep(0.01)
 
             # if this is the first user message, create and add a RecallObservation
             # with info about repo and runtime.
-            if not self._first_user_message_seen:
+            if not self._first_user_message_seen and event.source == EventSource.USER:
                 self._first_user_message_seen = True
-                observation = self._on_first_user_message(event)
+                observation = self._on_first_recall_action(event)
 
-            # continue with the next handler, to include knowledge microagents if suitable for this user message
+            # continue with the next handler, to include knowledge microagents if suitable for this query
             assert observation is None or isinstance(
                 observation, RecallObservation
             ), f'Expected a RecallObservation, but got {type(observation)}'
-            observation = self._on_user_message_action(
-                event, prev_observation=observation
-            )
+            observation = self._on_recall_action(event, prev_observation=observation)
 
             if observation is None:
                 observation = NullObservation(content='')
@@ -117,7 +115,9 @@ class Memory:
 
             self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
 
-    def _on_first_user_message(self, event: MessageAction) -> RecallObservation | None:
+    def _on_first_recall_action(
+        self, event: AgentRecallAction
+    ) -> RecallObservation | None:
         """Add repository and runtime information to the stream as a RecallObservation."""
 
         # Create ENVIRONMENT_INFO:
@@ -158,27 +158,26 @@ class Memory:
             return obs
         return None
 
-    def _on_user_message_action(
-        self, event: MessageAction, prev_observation: RecallObservation | None = None
+    def _on_recall_action(
+        self,
+        event: AgentRecallAction,
+        prev_observation: RecallObservation | None = None,
     ) -> RecallObservation | None:
-        """When a user message triggers microagents, create a RecallObservation with structured data."""
-        if event.source != EventSource.USER:
-            return prev_observation
-
-        # If there's no text, do nothing
-        user_text = event.content.strip()
-        if not user_text:
+        """When a recall action triggers microagents, create a RecallObservation with structured data."""
+        # If there's no query, do nothing
+        query = event.query.strip()
+        if not query:
             return prev_observation
 
         assert prev_observation is None or isinstance(
             prev_observation, RecallObservation
         ), f'Expected a RecallObservation, but got {type(prev_observation)}'
 
-        # Gather all triggered microagents
+        # Process text to find suitable microagents and create a RecallObservation.
         found_microagents = []
         recalled_content: list[dict[str, str]] = []
         for name, microagent in self.knowledge_microagents.items():
-            trigger = microagent.match_trigger(user_text)
+            trigger = microagent.match_trigger(query)
             if trigger:
                 logger.info("Microagent '%s' triggered by keyword '%s'", name, trigger)
                 # Create a dictionary with the agent and trigger word
