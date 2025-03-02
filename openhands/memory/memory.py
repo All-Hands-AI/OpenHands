@@ -33,7 +33,7 @@ class Memory:
         # Subscribe to events
         self.event_stream.subscribe(
             EventStreamSubscriber.MEMORY,
-            self._on_event,
+            self.on_event,
             'Memory',
         )
 
