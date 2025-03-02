@@ -42,6 +42,7 @@ from openhands.events.action import (
     MessageAction,
     NullAction,
 )
+from openhands.events.action.agent import AgentRecallAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -384,6 +385,7 @@ class AgentController:
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
 
+        # this happens for runnable actions and recall actions
         if self._pending_action and self._pending_action.id == observation.cause:
             if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
                 return
@@ -429,7 +431,10 @@ class AgentController:
                 )
             # try to retrieve microagents relevant to the user message
             # set pending_action while we search for information
-            self._pending_action = action
+            recall_action = AgentRecallAction(query=action.content)
+            self._pending_action = recall_action
+            # this is source=USER because the user message is the trigger for the recall
+            self.event_stream.add_event(recall_action, EventSource.USER)
 
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
@@ -438,6 +443,7 @@ class AgentController:
 
     def _reset(self) -> None:
         """Resets the agent controller"""
+        # Runnable actions need an Observation
         # make sure there is an Observation with the tool call metadata to be recognized by the agent
         # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
         if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata'):
@@ -459,8 +465,30 @@ class AgentController:
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
                 self.event_stream.add_event(obs, EventSource.AGENT)
 
+        # TODO: do RecallActions need an Observation?
+        if isinstance(self._pending_action, AgentRecallAction):
+            # check if there is an observation whose cause is set to pending_action.id
+            found_observation = False
+            for event in reversed(self.state.history):
+                if (
+                    isinstance(event, Observation)
+                    and event.cause == self._pending_action.id
+                ):
+                    found_observation = True
+                    break
+
+            # make a new ErrorObservation caused by the RecallAction
+            if not found_observation:
+                obs = ErrorObservation(content='No information found.')
+                obs._cause = self._pending_action.id  # type: ignore[attr-defined]
+                self.event_stream.add_event(
+                    obs,
+                    self._pending_action.source
+                    if self._pending_action.source
+                    else EventSource.ENVIRONMENT,
+                )
+
         # reset the pending action, this will be called when the agent is STOPPED or ERROR
-        # TODO: what about a memory pending action on reset?
         self._pending_action = None
         self.agent.reset()
 

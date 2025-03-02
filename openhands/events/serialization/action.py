@@ -5,6 +5,7 @@ from openhands.events.action.action import Action
 from openhands.events.action.agent import (
     AgentDelegateAction,
     AgentFinishAction,
+    AgentRecallAction,
     AgentRejectAction,
     AgentThinkAction,
     ChangeAgentStateAction,
@@ -35,6 +36,7 @@ actions = (
     AgentFinishAction,
     AgentRejectAction,
     AgentDelegateAction,
+    AgentRecallAction,
     ChangeAgentStateAction,
     MessageAction,
 )
