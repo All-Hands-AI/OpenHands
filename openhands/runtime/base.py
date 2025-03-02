@@ -487,3 +487,77 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def web_hosts(self) -> dict[str, int]:
         return {}
+
+    # ====================================================================
+    # Git
+    # ====================================================================
+
+    def _is_git_repo(self) -> bool:
+        cmd = 'git rev-parse --is-inside-work-tree'
+        obs = self.run(CmdRunAction(command=cmd))
+        output = obs.content.strip()
+        return output == 'true'
+
+    def _get_current_file_content(self, file_path: str) -> str:
+        cmd = f'cat {file_path}'
+        obs = self.run(CmdRunAction(command=cmd))
+        if hasattr(obs, 'error') and obs.error:
+            return ''
+        return obs.content.strip()
+
+    def _get_ref_content(self, file_path: str, ref: str) -> str:
+        cmd = f'git show {ref}:{file_path}'
+        obs = self.run(CmdRunAction(command=cmd))
+        if hasattr(obs, 'error') and obs.error:
+            return ''
+        return obs.content.strip()
+
+    def get_untracked_files(self) -> list[dict[str, str]]:
+        try:
+            cmd = 'git ls-files --others --exclude-standard'
+            obs = self.run(CmdRunAction(command=cmd))
+            obs_list = obs.content.splitlines()
+            return [{'status': 'A', 'path': path} for path in obs_list]
+        except Exception as e:
+            logger.error(f'Error retrieving untracked files: {e}')
+            return []
+
+    def get_git_changes(self, ref='HEAD') -> list[dict[str, str]]:
+        if not self._is_git_repo():
+            return []
+
+        result = []
+        cmd = f'git diff --name-status {ref}'
+
+        try:
+            obs = self.run(CmdRunAction(command=cmd))
+            obs_list = obs.content.splitlines()
+            for line in obs_list:
+                status = line[:2].strip()
+                path = line[2:].strip()
+
+                # Get the first non-space character as the primary status
+                primary_status = status.replace(' ', '')[0]
+                result.append(
+                    {
+                        'status': primary_status,
+                        'path': path,
+                    }
+                )
+
+            # join with untracked files
+            result += self.get_untracked_files()
+        except Exception as e:
+            logger.error(f'Error retrieving git changes: {e}')
+            return []
+
+        return result
+
+    def get_git_diff(self, file_path: str, ref='HEAD') -> dict[str, str]:
+        modified = self._get_current_file_content(file_path)
+        original = self._get_ref_content(file_path, ref)
+
+        return {
+            'modified': modified,
+            'original': original,
+        }
