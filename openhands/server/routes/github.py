@@ -23,6 +23,7 @@ async def get_github_repositories(
     sort: str = 'pushed',
     installation_id: int | None = None,
     github_user_id: str | None = Depends(get_user_id),
+    github_user_token: SecretStr | None = Depends(get_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ) -> list[GitHubRepository] | JSONResponse:
     token, token_type = get_token(request)
@@ -58,6 +59,7 @@ async def get_github_repositories(
 async def get_github_user(
     request: Request,
     github_user_id: str | None = Depends(get_user_id),
+    github_user_token: SecretStr | None = Depends(get_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ) -> GitHubUser | JSONResponse:
     token, token_type = get_token(request)
@@ -91,6 +93,7 @@ async def get_github_user(
 async def get_github_installation_ids(
     request: Request,
     github_user_id: str | None = Depends(get_user_id),
+    github_user_token: SecretStr | None = Depends(get_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ) -> list[int] | JSONResponse:
     token, token_type = get_token(request)
@@ -128,6 +131,7 @@ async def search_github_repositories(
     sort: str = 'stars',
     order: str = 'desc',
     github_user_id: str | None = Depends(get_user_id),
+    github_user_token: SecretStr | None = Depends(get_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ) -> list[GitHubRepository] | JSONResponse:
     token, token_type = get_token(request)
@@ -163,6 +167,7 @@ async def search_github_repositories(
 async def get_suggested_tasks(
     request: Request,
     github_user_id: str | None = Depends(get_user_id),
+    github_user_token: SecretStr | None = Depends(get_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ) -> list[SuggestedTask] | JSONResponse:
     """Get suggested tasks for the authenticated user across their most recently pushed repositories.
