@@ -2,35 +2,58 @@
 
 [Daytona](https://www.daytona.io/) is a platform that provides a secure and elastic infrastructure for running AI-generated code. It provides all the necessary features for an AI Agent to interact with a codebase. It provides a Daytona SDK with official Python and TypeScript interfaces for interacting with Daytona, enabling you to programmatically manage development environments and execute code.
 
-## Quick start
+## Quick Start
 
-Get your Daytona API key from https://app.daytona.io/dashboard/keys and export it:
+### Step 1: Retrieve Your Daytona API Key
+1. Visit the [Daytona Dashboard](https://app.daytona.io/dashboard/keys).
+2. Click **"Create Key"**.
+3. Enter a name for your key and confirm the creation.
+4. Once the key is generated, copy it.
 
+### Step 2: Set Your API Key as an Environment Variable
+Run the following command in your terminal, replacing `<your-api-key>` with the actual key you copied:
 ```bash
 export DAYTONA_API_KEY="<your-api-key>"
 ```
 
-Use the following command to run the latest OpenHands release locally using Docker:
+This step ensures that OpenHands can authenticate with the Daytona platform when it runs.
 
+### Step 3: Run OpenHands Locally Using Docker
+To start the latest version of OpenHands on your machine, execute the following command in your terminal:
 ```bash
 bash -i <(curl -sL https://get.daytona.io/openhands)
 ```
 
+#### What This Command Does:
+- Downloads the latest OpenHands release script.
+- Runs the script in an interactive Bash session.
+- Automatically pulls and runs the OpenHands container using Docker.
+Once executed, OpenHands should be running locally and ready for use.
 
-## Getting started
 
-1. Sign in at https://app.daytona.io/
+## Manual Initialization
 
-1. Generate and copy your API key
-
-1. Set the `OPENHANDS_VERSION` environment variable to the latest release's version seen in the main README.md file; as well as the `DAYTONA_API_KEY`
+### Step 1: Set the `OPENHANDS_VERSION` Environment Variable
+Run the following command in your terminal, replacing `<openhands-release>` with the latest release's version seen in the [main README.md file](https://github.com/All-Hands-AI/OpenHands?tab=readme-ov-file#-quick-start):
 
 ```bash
-export OPENHANDS_VERSION=<OPENHANDS_RELEASE>  # e.g. 0.27
-export DAYTONA_API_KEY=<your_api_key>
+export OPENHANDS_VERSION="<openhands-release>"  # e.g. 0.27
 ```
 
-1. Run the following `docker` command:
+### Step 2: Retrieve Your Daytona API Key
+1. Visit the [Daytona Dashboard](https://app.daytona.io/dashboard/keys).
+2. Click **"Create Key"**.
+3. Enter a name for your key and confirm the creation.
+4. Once the key is generated, copy it.
+
+### Step 3: Set Your API Key as an Environment Variable:
+Run the following command in your terminal, replacing `<your-api-key>` with the actual key you copied:
+```bash
+export DAYTONA_API_KEY="<your-api-key>"
+```
+
+### Step 4: Run the following `docker` command:
+This command pulls and runs the OpenHands container using Docker. Once executed, OpenHands should be running locally and ready for use.
 
 ```bash
 docker run -it --rm --pull=always \
@@ -43,9 +66,12 @@ docker run -it --rm --pull=always \
     --name openhands-app \
     docker.all-hands.dev/all-hands-ai/openhands:${OPENHANDS_VERSION}
 ```
+
 > **Tip:** If you don't want your sandboxes to default to the US region, you can set the `DAYTONA_TARGET` environment variable to `eu`
 
-Alternatively, if you want to run the OpenHands app on your local machine using `make run` without Docker, set the following environment variables first:
+### Running OpenHands Locally Without Docker
+
+Alternatively, if you want to run the OpenHands app on your local machine using `make run` without Docker, make sure to set the following environment variables first:
 
 ```bash
 export RUNTIME="daytona"
