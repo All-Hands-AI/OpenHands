@@ -20,7 +20,7 @@ async def generate_conversation_title(
     Returns:
         A concise title for the conversation, or None if generation fails.
     """
-    if not message or message.strip() == "":
+    if not message or message.strip() == '':
         return None
 
     # Truncate very long messages to avoid excessive token usage
@@ -28,21 +28,24 @@ async def generate_conversation_title(
 
     try:
         llm = LLM(llm_config)
-        
+
         # Create a simple prompt for the LLM to generate a title
         messages = [
-            {"role": "system", "content": f"Generate a concise, descriptive title (maximum {max_length} characters) for a conversation that starts with the following message. The title should summarize the main topic or request. Return only the title, with no additional text, quotes, or explanations."},
-            {"role": "user", "content": truncated_message}
+            {
+                'role': 'system',
+                'content': f'Generate a concise, descriptive title (maximum {max_length} characters) for a conversation that starts with the following message. The title should summarize the main topic or request. Return only the title, with no additional text, quotes, or explanations.',
+            },
+            {'role': 'user', 'content': truncated_message},
         ]
-        
+
         response = await llm.completion(messages=messages)
         title = response.choices[0].message.content.strip()
-        
+
         # Ensure the title isn't too long
         if len(title) > max_length:
-            title = title[:max_length-3] + "..."
-            
+            title = title[: max_length - 3] + '...'
+
         return title
     except Exception as e:
-        logger.error(f"Error generating conversation title: {e}")
+        logger.error(f'Error generating conversation title: {e}')
         return None
