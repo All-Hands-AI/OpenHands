@@ -257,7 +257,9 @@ class Session:
     async def _send_status_message(self, msg_type: str, id: str, message: str):
         """Sends a status message to the client."""
         if msg_type == 'error':
-            await self.agent_session.stop_agent_loop_for_error()
+            controller = self.agent_session.controller
+            if controller is not None:
+                await controller.set_agent_state_to(AgentState.ERROR)
         await self.send(
             {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
         )

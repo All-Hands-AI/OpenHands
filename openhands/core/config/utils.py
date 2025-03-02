@@ -167,15 +167,17 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     # Process security section if present
     if 'security' in toml_config:
         try:
-            logger.openhands_logger.debug(
-                'Attempt to load security config from config toml'
-            )
-            security_config = SecurityConfig(**toml_config['security'])
-            cfg.security = security_config
+            security_mapping = SecurityConfig.from_toml_section(toml_config['security'])
+            # We only use the base security config for now
+            if 'security' in security_mapping:
+                cfg.security = security_mapping['security']
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
                 f'Cannot parse [security] config from toml, values have not been applied.\nError: {e}'
             )
+        except ValueError:
+            # Re-raise ValueError from SecurityConfig.from_toml_section
+            raise ValueError('Error in [security] section in config.toml')
 
     if 'model_routing' in toml_config:
         # logger.openhands_logger.debug(
@@ -194,15 +196,17 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     # Process sandbox section if present
     if 'sandbox' in toml_config:
         try:
-            logger.openhands_logger.debug(
-                'Attempt to load sandbox config from config toml'
-            )
-            sandbox_config = SandboxConfig(**toml_config['sandbox'])
-            cfg.sandbox = sandbox_config
+            sandbox_mapping = SandboxConfig.from_toml_section(toml_config['sandbox'])
+            # We only use the base sandbox config for now
+            if 'sandbox' in sandbox_mapping:
+                cfg.sandbox = sandbox_mapping['sandbox']
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
                 f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}'
             )
+        except ValueError:
+            # Re-raise ValueError from SandboxConfig.from_toml_section
+            raise ValueError('Error in [sandbox] section in config.toml')
 
     # Process extended section if present
     if 'extended' in toml_config:
