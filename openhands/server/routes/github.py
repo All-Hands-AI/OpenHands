@@ -10,7 +10,7 @@ from openhands.integrations.github.github_types import (
     GitHubUser,
     SuggestedTask,
 )
-from openhands.server.auth import get_token, get_idp_token, get_user_id
+from openhands.server.auth import get_token, get_token_type, get_idp_token, get_user_id
 
 app = APIRouter(prefix='/api/github')
 
@@ -26,7 +26,8 @@ async def get_github_repositories(
     github_user_token: SecretStr | None = Depends(get_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ) -> list[GitHubRepository] | JSONResponse:
-    token, token_type = get_token(request)
+    token = get_token(request)
+    token_type = get_token_type(request)
     if token_type != 'github':
         return JSONResponse(
             content='Invalid token type. GitHub token required.',
@@ -62,7 +63,8 @@ async def get_github_user(
     github_user_token: SecretStr | None = Depends(get_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ) -> GitHubUser | JSONResponse:
-    token, token_type = get_token(request)
+    token = get_token(request)
+    token_type = get_token_type(request)
     if token_type != 'github':
         return JSONResponse(
             content='Invalid token type. GitHub token required.',
@@ -96,7 +98,8 @@ async def get_github_installation_ids(
     github_user_token: SecretStr | None = Depends(get_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ) -> list[int] | JSONResponse:
-    token, token_type = get_token(request)
+    token = get_token(request)
+    token_type = get_token_type(request)
     if token_type != 'github':
         return JSONResponse(
             content='Invalid token type. GitHub token required.',
@@ -134,7 +137,8 @@ async def search_github_repositories(
     github_user_token: SecretStr | None = Depends(get_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ) -> list[GitHubRepository] | JSONResponse:
-    token, token_type = get_token(request)
+    token = get_token(request)
+    token_type = get_token_type(request)
     if token_type != 'github':
         return JSONResponse(
             content='Invalid token type. GitHub token required.',
@@ -176,7 +180,8 @@ async def get_suggested_tasks(
     - PRs owned by the user
     - Issues assigned to the user.
     """
-    token, token_type = get_token(request)
+    token = get_token(request)
+    token_type = get_token_type(request)
     if token_type != 'github':
         return JSONResponse(
             content='Invalid token type. GitHub token required.',
