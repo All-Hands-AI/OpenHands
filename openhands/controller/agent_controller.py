@@ -248,8 +248,9 @@ class AgentController:
             )
             reported = RuntimeError(
                 'There was an unexpected error while running the agent. Please '
-                f'report this error to the developers. Your session ID is {self.id}. '
-                f'Error type: {e.__class__.__name__}'
+                'report this error to the developers by opening an issue at '
+                'https://github.com/All-Hands-AI/OpenHands. Your session ID is '
+                f' {self.id}. Error type: {e.__class__.__name__}'
             )
             if (
                 isinstance(e, litellm.AuthenticationError)
