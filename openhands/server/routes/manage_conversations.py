@@ -97,17 +97,17 @@ async def _create_new_conversation(
 
     # Generate a natural language title if there's an initial user message
     conversation_title = default_title
-    if initial_user_msg:
+    if initial_user_msg and settings:
         from openhands.core.config.llm_config import LLMConfig
         from openhands.utils.conversation_summary import generate_conversation_title
 
         logger.info(f'Generating title for conversation {conversation_id}')
 
-        # Create LLM config from settings
+        # Create LLM config from the original settings
         llm_config = LLMConfig(
-            model=conversation_init_data.llm_model,
-            api_key=conversation_init_data.llm_api_key,
-            base_url=conversation_init_data.llm_base_url,
+            model=settings.llm_model,
+            api_key=settings.llm_api_key,
+            base_url=settings.llm_base_url,
         )
 
         generated_title = await generate_conversation_title(
