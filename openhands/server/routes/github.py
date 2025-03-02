@@ -10,7 +10,7 @@ from openhands.integrations.github.github_types import (
     GitHubUser,
     SuggestedTask,
 )
-from openhands.server.auth import get_token, get_token_type, get_idp_token, get_user_id
+from openhands.server.auth import get_idp_token, get_token, get_token_type, get_user_id
 
 app = APIRouter(prefix='/api/github')
 
@@ -23,10 +23,9 @@ async def get_github_repositories(
     sort: str = 'pushed',
     installation_id: int | None = None,
     github_user_id: str | None = Depends(get_user_id),
-    github_user_token: SecretStr | None = Depends(get_token),
+    token: SecretStr | None = Depends(get_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ) -> list[GitHubRepository] | JSONResponse:
-    token = get_token(request)
     token_type = get_token_type(request)
     if token_type != 'github':
         return JSONResponse(
@@ -34,9 +33,7 @@ async def get_github_repositories(
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
-    client = GithubServiceImpl(
-        user_id=github_user_id, idp_token=idp_token, token=token
-    )
+    client = GithubServiceImpl(user_id=github_user_id, idp_token=idp_token, token=token)
     try:
         repos: list[GitHubRepository] = await client.get_repositories(
             page, per_page, sort, installation_id
@@ -60,10 +57,9 @@ async def get_github_repositories(
 async def get_github_user(
     request: Request,
     github_user_id: str | None = Depends(get_user_id),
-    github_user_token: SecretStr | None = Depends(get_token),
+    token: SecretStr | None = Depends(get_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ) -> GitHubUser | JSONResponse:
-    token = get_token(request)
     token_type = get_token_type(request)
     if token_type != 'github':
         return JSONResponse(
@@ -71,9 +67,7 @@ async def get_github_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
-    client = GithubServiceImpl(
-        user_id=github_user_id, idp_token=idp_token, token=token
-    )
+    client = GithubServiceImpl(user_id=github_user_id, idp_token=idp_token, token=token)
     try:
         user: GitHubUser = await client.get_user()
         return user
@@ -95,10 +89,9 @@ async def get_github_user(
 async def get_github_installation_ids(
     request: Request,
     github_user_id: str | None = Depends(get_user_id),
-    github_user_token: SecretStr | None = Depends(get_token),
+    token: SecretStr | None = Depends(get_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ) -> list[int] | JSONResponse:
-    token = get_token(request)
     token_type = get_token_type(request)
     if token_type != 'github':
         return JSONResponse(
@@ -106,9 +99,7 @@ async def get_github_installation_ids(
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
-    client = GithubServiceImpl(
-        user_id=github_user_id, idp_token=idp_token, token=token
-    )
+    client = GithubServiceImpl(user_id=github_user_id, idp_token=idp_token, token=token)
     try:
         installations_ids: list[int] = await client.get_installation_ids()
         return installations_ids
@@ -134,10 +125,9 @@ async def search_github_repositories(
     sort: str = 'stars',
     order: str = 'desc',
     github_user_id: str | None = Depends(get_user_id),
-    github_user_token: SecretStr | None = Depends(get_token),
+    token: SecretStr | None = Depends(get_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ) -> list[GitHubRepository] | JSONResponse:
-    token = get_token(request)
     token_type = get_token_type(request)
     if token_type != 'github':
         return JSONResponse(
@@ -145,9 +135,7 @@ async def search_github_repositories(
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
-    client = GithubServiceImpl(
-        user_id=github_user_id, idp_token=idp_token, token=token
-    )
+    client = GithubServiceImpl(user_id=github_user_id, idp_token=idp_token, token=token)
     try:
         repos: list[GitHubRepository] = await client.search_repositories(
             query, per_page, sort, order
@@ -171,7 +159,7 @@ async def search_github_repositories(
 async def get_suggested_tasks(
     request: Request,
     github_user_id: str | None = Depends(get_user_id),
-    github_user_token: SecretStr | None = Depends(get_token),
+    token: SecretStr | None = Depends(get_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ) -> list[SuggestedTask] | JSONResponse:
     """Get suggested tasks for the authenticated user across their most recently pushed repositories.
@@ -180,7 +168,6 @@ async def get_suggested_tasks(
     - PRs owned by the user
     - Issues assigned to the user.
     """
-    token = get_token(request)
     token_type = get_token_type(request)
     if token_type != 'github':
         return JSONResponse(
@@ -188,9 +175,7 @@ async def get_suggested_tasks(
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
-    client = GithubServiceImpl(
-        user_id=github_user_id, idp_token=idp_token, token=token
-    )
+    client = GithubServiceImpl(user_id=github_user_id, idp_token=idp_token, token=token)
     try:
         tasks: list[SuggestedTask] = await client.get_suggested_tasks()
         return tasks
