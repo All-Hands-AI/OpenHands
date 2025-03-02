@@ -93,7 +93,21 @@ async def _create_new_conversation(
     repository_title = (
         selected_repository.split('/')[-1] if selected_repository else None
     )
-    conversation_title = f'{repository_title or "Conversation"} {conversation_id[:5]}'
+    default_title = f'{repository_title or "Conversation"} {conversation_id[:5]}'
+
+    # Generate a natural language title if there's an initial user message
+    conversation_title = default_title
+    if initial_user_msg:
+        from openhands.utils.conversation_summary import generate_conversation_title
+
+        logger.info(f'Generating title for conversation {conversation_id}')
+        generated_title = await generate_conversation_title(
+            initial_user_msg, conversation_init_data.llm_config
+        )
+
+        if generated_title:
+            conversation_title = generated_title
+            logger.info(f'Generated title: {conversation_title}')
 
     logger.info(f'Saving metadata for conversation {conversation_id}')
     await conversation_store.save_metadata(
