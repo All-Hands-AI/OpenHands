@@ -92,8 +92,8 @@ class Memory:
 
         observation: RecallObservation | NullObservation | None = None
         if isinstance(event, MessageAction) and event.source == 'user':
-            # add a sleep here to allow the controller and other things to run
-            await asyncio.sleep(0.1)
+            # add a sleep here to allow other things to run
+            await asyncio.sleep(0.01)
 
             # if this is the first user message, create and add a RecallObservation
             # with info about repo and runtime.
