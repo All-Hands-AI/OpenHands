@@ -1,5 +1,6 @@
 from litellm import ModelResponse
 
+from openhands.core.config.agent_config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.core.schema import ActionType
@@ -38,7 +39,8 @@ from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
 class ConversationMemory:
     """Processes event history into a coherent conversation for the agent."""
 
-    def __init__(self, prompt_manager: PromptManager):
+    def __init__(self, config: AgentConfig, prompt_manager: PromptManager):
+        self.agent_config = config
         self.prompt_manager = prompt_manager
 
     def process_events(
@@ -61,6 +63,7 @@ class ConversationMemory:
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
             enable_som_visual_browsing: Whether to enable visual browsing for the SOM model.
         """
+
         events = condensed_history
 
         # Process special events first (system prompts, etc.)
@@ -84,7 +87,7 @@ class ConversationMemory:
                     tool_call_id_to_message=tool_call_id_to_message,
                     max_message_chars=max_message_chars,
                     vision_is_active=vision_is_active,
-                    enable_som_visual_browsing=enable_som_visual_browsing,
+                    enable_som_visual_browsing=self.agent_config.enable_som_visual_browsing,
                 )
             else:
                 raise ValueError(f'Unknown event type: {type(event)}')
@@ -374,44 +377,62 @@ class ConversationMemory:
             message = Message(role='user', content=[TextContent(text=text)])
         elif (
             isinstance(obs, RecallObservation)
-            and obs.recall_type == RecallType.ENVIRONMENT_INFO
+            and self.agent_config.enable_prompt_extensions
         ):
-            # everything is optional, check if they are present
-            repo_info = (
-                RepositoryInfo(
-                    repo_name=obs.repo_name or '',
-                    repo_directory=obs.repo_directory or '',
+            if obs.recall_type == RecallType.ENVIRONMENT_INFO:
+                # everything is optional, check if they are present
+                repo_info = (
+                    RepositoryInfo(
+                        repo_name=obs.repo_name or '',
+                        repo_directory=obs.repo_directory or '',
+                    )
+                    if obs.repo_name or obs.repo_directory
+                    else None
                 )
-                if obs.repo_name or obs.repo_directory
-                else None
-            )
-            runtime_info = (
-                RuntimeInfo(available_hosts=obs.runtime_hosts)
-                if obs.runtime_hosts
-                else None
-            )
-            repo_instructions = obs.repo_instructions if obs.repo_instructions else ''
+                runtime_info = (
+                    RuntimeInfo(available_hosts=obs.runtime_hosts)
+                    if obs.runtime_hosts
+                    else None
+                )
+                repo_instructions = (
+                    obs.repo_instructions if obs.repo_instructions else ''
+                )
 
-            # ok, now we can build the additional info
-            formatted_text = self.prompt_manager.build_additional_info(
-                repository_info=repo_info,
-                runtime_info=runtime_info,
-                repo_instructions=repo_instructions,
-            )
-            message = Message(role='user', content=[TextContent(text=formatted_text)])
+                # ok, now we can build the additional info
+                formatted_text = self.prompt_manager.build_additional_info(
+                    repository_info=repo_info,
+                    runtime_info=runtime_info,
+                    repo_instructions=repo_instructions,
+                )
+                message = Message(
+                    role='user', content=[TextContent(text=formatted_text)]
+                )
+            elif obs.recall_type == RecallType.KNOWLEDGE_MICROAGENT:
+                # Use prompt_manager to format the microagent info
+                triggered_agents = obs.microagent_knowledge
+                if triggered_agents:
+                    # exclude disabled microagents
+                    triggered_agents = [
+                        agent
+                        for agent in triggered_agents
+                        if agent['agent_name']
+                        not in self.agent_config.disabled_microagents
+                    ]
+                    formatted_text = self.prompt_manager.build_microagent_info(
+                        triggered_agents=triggered_agents,
+                    )
+                else:
+                    formatted_text = ''  # this should not happen
+                message = Message(
+                    role='user', content=[TextContent(text=formatted_text)]
+                )
         elif (
             isinstance(obs, RecallObservation)
-            and obs.recall_type == RecallType.KNOWLEDGE_MICROAGENT
+            and not self.agent_config.enable_prompt_extensions
         ):
-            # Use prompt_manager to format the microagent info
-            triggered_agents = obs.microagent_knowledge
-            if triggered_agents:
-                formatted_text = self.prompt_manager.build_microagent_info(
-                    triggered_agents=triggered_agents,
-                )
-            else:
-                formatted_text = ''  # this should not happen
-            message = Message(role='user', content=[TextContent(text=formatted_text)])
+            # If prompt extensions are disabled, we don't add any additional info
+            # TODO: test this
+            return []
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message

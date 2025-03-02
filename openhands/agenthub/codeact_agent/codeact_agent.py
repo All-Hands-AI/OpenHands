@@ -80,7 +80,7 @@ class CodeActAgent(Agent):
         )
 
         # Create a ConversationMemory instance
-        self.conversation_memory = ConversationMemory(self.prompt_manager)
+        self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
 
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {self.condenser}')
@@ -178,7 +178,6 @@ class CodeActAgent(Agent):
             initial_messages=messages,
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),
-            enable_som_visual_browsing=self.config.enable_som_visual_browsing,
         )
 
         messages = self._enhance_messages(messages)
