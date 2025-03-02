@@ -1,3 +1,5 @@
+import asyncio
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, EventSource
@@ -32,7 +34,7 @@ class Memory:
         # Subscribe to events
         self.event_stream.subscribe(
             EventStreamSubscriber.MEMORY,
-            self.on_event,
+            self._on_event,
             'Memory',
         )
 
@@ -83,31 +85,37 @@ class Memory:
 
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
+        asyncio.get_event_loop().run_until_complete(self._on_event(event))
+
+    async def _on_event(self, event: Event):
+        """Handle an event from the event stream asynchronously."""
 
         observation: RecallObservation | NullObservation | None = None
-        if isinstance(event, MessageAction):
-            if event.source == 'user':
-                # if this is the first user message, create and add a RecallObservation
-                # with info about repo and runtime.
-                if not self._first_user_message_seen:
-                    self._first_user_message_seen = True
-                    observation = self._on_first_user_message(event)
+        if isinstance(event, MessageAction) and event.source == 'user':
+            # add a sleep here to allow the controller and other things to run
+            await asyncio.sleep(0.1)
 
-                # continue with the next handler, to include knowledge microagents if suitable for this user message
-                assert observation is None or isinstance(
-                    observation, RecallObservation
-                ), f'Expected a RecallObservation, but got {type(observation)}'
-                observation = self._on_user_message_action(
-                    event, prev_observation=observation
-                )
+            # if this is the first user message, create and add a RecallObservation
+            # with info about repo and runtime.
+            if not self._first_user_message_seen:
+                self._first_user_message_seen = True
+                observation = self._on_first_user_message(event)
 
-                if observation is None:
-                    observation = NullObservation(content='')
+            # continue with the next handler, to include knowledge microagents if suitable for this user message
+            assert observation is None or isinstance(
+                observation, RecallObservation
+            ), f'Expected a RecallObservation, but got {type(observation)}'
+            observation = self._on_user_message_action(
+                event, prev_observation=observation
+            )
 
-                # important: this will release the execution flow from waiting for the retrieval to complete
-                observation._cause = event.id  # type: ignore[union-attr]
+            if observation is None:
+                observation = NullObservation(content='')
 
-                self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+            # important: this will release the execution flow from waiting for the retrieval to complete
+            observation._cause = event.id  # type: ignore[union-attr]
+
+            self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
 
     def _on_first_user_message(self, event: MessageAction) -> RecallObservation | None:
         """Add repository and runtime information to the stream as a RecallObservation."""
