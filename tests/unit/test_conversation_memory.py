@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, Mock
 import pytest
 
 from openhands.controller.state.state import State
+from openhands.core.config.agent_config import AgentConfig
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
     AgentFinishAction,
@@ -11,6 +12,7 @@ from openhands.events.action import (
 )
 from openhands.events.event import Event, EventSource, FileEditSource, FileReadSource
 from openhands.events.observation import CmdOutputObservation
+from openhands.events.observation.agent import RecallObservation, RecallType
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
     CmdOutputMetadata,
@@ -22,14 +24,27 @@ from openhands.events.observation.files import FileEditObservation, FileReadObse
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.tool import ToolCallMetadata
 from openhands.memory.conversation_memory import ConversationMemory
-from openhands.utils.prompt import PromptManager
+from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
 
 
 @pytest.fixture
-def conversation_memory():
+def agent_config():
+    return AgentConfig(
+        enable_prompt_extensions=True,
+        enable_som_visual_browsing=True,
+        disabled_microagents=['disabled_agent'],
+    )
+
+
+@pytest.fixture
+def conversation_memory(agent_config):
     prompt_manager = MagicMock(spec=PromptManager)
     prompt_manager.get_system_message.return_value = 'System message'
-    return ConversationMemory(prompt_manager)
+    prompt_manager.build_additional_info.return_value = (
+        'Formatted repository and runtime info'
+    )
+    prompt_manager.build_microagent_info.return_value = 'Formatted microagent info'
+    return ConversationMemory(agent_config, prompt_manager)
 
 
 @pytest.fixture
@@ -446,3 +461,170 @@ def test_apply_prompt_caching(conversation_memory):
     assert messages[1].content[0].cache_prompt is False
     assert messages[2].content[0].cache_prompt is False
     assert messages[3].content[0].cache_prompt is True
+
+
+def test_process_events_with_environment_info_recall_observation(conversation_memory):
+    """Test processing a RecallObservation with ENVIRONMENT_INFO type."""
+    obs = RecallObservation(
+        recall_type=RecallType.ENVIRONMENT_INFO,
+        repo_name='test-repo',
+        repo_directory='/path/to/repo',
+        repo_instructions='# Test Repository\nThis is a test repository.',
+        runtime_hosts={'localhost': 8080},
+        content='Recalled environment info',
+    )
+
+    initial_messages = [
+        Message(role='system', content=[TextContent(text='System message')])
+    ]
+
+    messages = conversation_memory.process_events(
+        condensed_history=[obs],
+        initial_messages=initial_messages,
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    assert len(messages) == 2
+    result = messages[1]
+    assert result.role == 'user'
+    assert len(result.content) == 1
+    assert isinstance(result.content[0], TextContent)
+    assert result.content[0].text == 'Formatted repository and runtime info'
+
+    # Verify the prompt_manager was called with the correct parameters
+    conversation_memory.prompt_manager.build_additional_info.assert_called_once()
+    call_args = conversation_memory.prompt_manager.build_additional_info.call_args[1]
+    assert isinstance(call_args['repository_info'], RepositoryInfo)
+    assert call_args['repository_info'].repo_name == 'test-repo'
+    assert call_args['repository_info'].repo_directory == '/path/to/repo'
+    assert isinstance(call_args['runtime_info'], RuntimeInfo)
+    assert call_args['runtime_info'].available_hosts == {'localhost': 8080}
+    assert (
+        call_args['repo_instructions']
+        == '# Test Repository\nThis is a test repository.'
+    )
+
+
+def test_process_events_with_knowledge_microagent_recall_observation(
+    conversation_memory,
+):
+    """Test processing a RecallObservation with KNOWLEDGE_MICROAGENT type."""
+    microagent_knowledge = [
+        {
+            'agent_name': 'test_agent',
+            'trigger_word': 'test',
+            'content': 'This is test agent content',
+        },
+        {
+            'agent_name': 'another_agent',
+            'trigger_word': 'another',
+            'content': 'This is another agent content',
+        },
+        {
+            'agent_name': 'disabled_agent',
+            'trigger_word': 'disabled',
+            'content': 'This is disabled agent content',
+        },
+    ]
+
+    obs = RecallObservation(
+        recall_type=RecallType.KNOWLEDGE_MICROAGENT,
+        microagent_knowledge=microagent_knowledge,
+        content='Recalled knowledge from microagents',
+    )
+
+    initial_messages = [
+        Message(role='system', content=[TextContent(text='System message')])
+    ]
+
+    messages = conversation_memory.process_events(
+        condensed_history=[obs],
+        initial_messages=initial_messages,
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    assert len(messages) == 2
+    result = messages[1]
+    assert result.role == 'user'
+    assert len(result.content) == 1
+    assert isinstance(result.content[0], TextContent)
+    assert result.content[0].text == 'Formatted microagent info'
+
+    # Verify the prompt_manager was called with the correct parameters
+    conversation_memory.prompt_manager.build_microagent_info.assert_called_once()
+    call_args = conversation_memory.prompt_manager.build_microagent_info.call_args[1]
+
+    # Check that disabled_agent was filtered out
+    triggered_agents = call_args['triggered_agents']
+    assert len(triggered_agents) == 2
+    agent_names = [agent['agent_name'] for agent in triggered_agents]
+    assert 'test_agent' in agent_names
+    assert 'another_agent' in agent_names
+    assert 'disabled_agent' not in agent_names
+
+
+def test_process_events_with_recall_observation_extensions_disabled(
+    agent_config, conversation_memory
+):
+    """Test processing a RecallObservation when prompt extensions are disabled."""
+    # Modify the agent config to disable prompt extensions
+    agent_config.enable_prompt_extensions = False
+
+    obs = RecallObservation(
+        recall_type=RecallType.ENVIRONMENT_INFO,
+        repo_name='test-repo',
+        repo_directory='/path/to/repo',
+        content='Recalled environment info',
+    )
+
+    initial_messages = [
+        Message(role='system', content=[TextContent(text='System message')])
+    ]
+
+    messages = conversation_memory.process_events(
+        condensed_history=[obs],
+        initial_messages=initial_messages,
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # When prompt extensions are disabled, the RecallObservation should be ignored
+    assert len(messages) == 1  # Only the initial system message
+    assert messages[0].role == 'system'
+
+    # Verify the prompt_manager was not called
+    conversation_memory.prompt_manager.build_additional_info.assert_not_called()
+    conversation_memory.prompt_manager.build_microagent_info.assert_not_called()
+
+
+def test_process_events_with_empty_microagent_knowledge(conversation_memory):
+    """Test processing a RecallObservation with empty microagent knowledge."""
+    obs = RecallObservation(
+        recall_type=RecallType.KNOWLEDGE_MICROAGENT,
+        microagent_knowledge=[],
+        content='Recalled knowledge from microagents',
+    )
+
+    initial_messages = [
+        Message(role='system', content=[TextContent(text='System message')])
+    ]
+
+    messages = conversation_memory.process_events(
+        condensed_history=[obs],
+        initial_messages=initial_messages,
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # The implementation returns an empty string but still creates a message
+    assert len(messages) == 2
+    assert messages[0].role == 'system'
+    assert messages[1].role == 'user'
+    assert len(messages[1].content) == 1
+    assert isinstance(messages[1].content[0], TextContent)
+    assert messages[1].content[0].text == ''
+
+    # When there are no triggered agents, build_microagent_info is not called
+    conversation_memory.prompt_manager.build_microagent_info.assert_not_called()
