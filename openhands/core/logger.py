@@ -82,16 +82,17 @@ LOG_COLORS: Mapping[str, ColorType] = {
 class StackInfoFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         if record.levelno >= logging.ERROR:
-            # LogRecord attributes are dynamically typed
-
-            # Capture the current stack trace as a string
-            stack = traceback.format_stack()
-            # Remove the last entries which are related to the logging machinery
-            stack = stack[:-3]  # Adjust this number if needed
-            # Join the stack frames into a single string
-            stack_str = ''.join(stack)
-            setattr(record, 'stack_info', stack_str)
-            setattr(record, 'exc_info', sys.exc_info())
+            # Only add stack trace info if there's an actual exception
+            exc_info = sys.exc_info()
+            if exc_info and exc_info[0] is not None:
+                # Capture the current stack trace as a string
+                stack = traceback.format_stack()
+                # Remove the last entries which are related to the logging machinery
+                stack = stack[:-3]  # Adjust this number if needed
+                # Join the stack frames into a single string
+                stack_str = ''.join(stack)
+                setattr(record, 'stack_info', stack_str)
+                setattr(record, 'exc_info', exc_info)
         return True
 
 
