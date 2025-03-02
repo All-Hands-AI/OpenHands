@@ -23,7 +23,6 @@ def mock_llm_config() -> LLMConfig:
 @pytest.fixture
 def mock_agent_config() -> AgentConfig:
     config = AgentConfig(
-        micro_agent_name='test_micro_agent',
         memory_enabled=True,
         memory_max_threads=4,
         llm_config='test_llm_config',
