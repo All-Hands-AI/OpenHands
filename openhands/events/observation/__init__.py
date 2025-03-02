@@ -40,4 +40,6 @@ __all__ = [
     'SuccessObservation',
     'UserRejectObservation',
     'AgentCondensationObservation',
+    'RecallObservation',
+    'RecallType',
 ]
