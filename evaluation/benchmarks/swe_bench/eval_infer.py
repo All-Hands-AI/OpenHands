@@ -288,7 +288,7 @@ def process_instance(
                                     'model_patch': model_patch,
                                     'instance_id': instance_id,
                                 },
-                                log_path=test_output_path,
+                                test_log_path=test_output_path,
                                 include_tests_status=True,
                             )
                             report = _report[instance_id]
