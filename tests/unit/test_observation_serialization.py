@@ -245,12 +245,15 @@ def test_file_edit_observation_legacy_serialization():
 def test_recall_observation_serialization():
     original_observation_dict = {
         'observation': 'recall',
+        'content': '',
+        'message': "Recalled: recall_type=RecallType.ENVIRONMENT_INFO, repo_name=some_repo_name, repo_instructions=complex_repo_instruc..., runtime_hosts={'host1': 8080, 'host2': 8081}, microagent_knowledge=[]",
         'extras': {
-            'recall_type': RecallType.ENVIRONMENT_INFO,
+            'recall_type': 'environment_info',
             'repo_name': 'some_repo_name',
             'repo_directory': 'some_repo_directory',
-            'runtime_hosts': ['host1', 'host2'],
+            'runtime_hosts': {'host1': 8080, 'host2': 8081},
             'repo_instructions': 'complex_repo_instructions',
+            'microagent_knowledge': [],
         },
     }
     serialization_deserialization(original_observation_dict, RecallObservation)
@@ -259,8 +262,14 @@ def test_recall_observation_serialization():
 def test_recall_observation_microagent_knowledge_serialization():
     original_observation_dict = {
         'observation': 'recall',
+        'content': '',
+        'message': "Recalled: recall_type=RecallType.KNOWLEDGE_MICROAGENT, repo_name=, repo_instructions=..., runtime_hosts={}, microagent_knowledge=[{'agent_name': 'microagent1', 'trigger_word': 'trigger_word1', 'content': 'content1'}, {'agent_name': 'microagent2', 'trigger_word': 'trigger_word2', 'content': 'content2'}]",
         'extras': {
-            'recall_type': RecallType.MICROAGENT_KNOWLEDGE,
+            'recall_type': 'knowledge_microagent',
+            'repo_name': '',
+            'repo_directory': '',
+            'repo_instructions': '',
+            'runtime_hosts': {},
             'microagent_knowledge': [
                 {
                     'agent_name': 'microagent1',
@@ -280,11 +289,11 @@ def test_recall_observation_microagent_knowledge_serialization():
 
 def test_recall_observation_knowledge_microagent_serialization():
     """Test serialization of a RecallObservation with KNOWLEDGE_MICROAGENT type."""
-    # Create a RecallObservation with triggered microagent content
+    # Create a RecallObservation with microagent knowledge content
     original = RecallObservation(
         content='Knowledge microagent information',
         recall_type=RecallType.KNOWLEDGE_MICROAGENT,
-        triggered_content=[
+        microagent_knowledge=[
             {
                 'agent_name': 'python_best_practices',
                 'trigger_word': 'python',
@@ -305,22 +314,22 @@ def test_recall_observation_knowledge_microagent_serialization():
     assert serialized['observation'] == ObservationType.RECALL
     assert serialized['content'] == 'Knowledge microagent information'
     assert serialized['extras']['recall_type'] == RecallType.KNOWLEDGE_MICROAGENT.value
-    assert len(serialized['extras']['triggered_content']) == 2
-    assert serialized['extras']['triggered_content'][0]['trigger_word'] == 'python'
+    assert len(serialized['extras']['microagent_knowledge']) == 2
+    assert serialized['extras']['microagent_knowledge'][0]['trigger_word'] == 'python'
 
     # Deserialize back to RecallObservation
     deserialized = observation_from_dict(serialized)
 
     # Verify properties are preserved
     assert deserialized.recall_type == RecallType.KNOWLEDGE_MICROAGENT
-    assert deserialized.triggered_content == original.triggered_content
+    assert deserialized.microagent_knowledge == original.microagent_knowledge
     assert deserialized.content == original.content
 
-    # Check that environment info fields are None
-    assert deserialized.repository_name is None
-    assert deserialized.repository_directory is None
-    assert deserialized.repository_instructions is None
-    assert deserialized.runtime_hosts is None
+    # Check that environment info fields are empty
+    assert deserialized.repo_name == ''
+    assert deserialized.repo_directory == ''
+    assert deserialized.repo_instructions == ''
+    assert deserialized.runtime_hosts == {}
 
 
 def test_recall_observation_environment_info_serialization():
@@ -329,9 +338,9 @@ def test_recall_observation_environment_info_serialization():
     original = RecallObservation(
         content='Environment information',
         recall_type=RecallType.ENVIRONMENT_INFO,
-        repository_name='OpenHands',
-        repository_directory='/workspace/openhands',
-        repository_instructions="Follow the project's coding style guide.",
+        repo_name='OpenHands',
+        repo_directory='/workspace/openhands',
+        repo_instructions="Follow the project's coding style guide.",
         runtime_hosts={'127.0.0.1': 8080, 'localhost': 5000},
     )
 
@@ -342,7 +351,7 @@ def test_recall_observation_environment_info_serialization():
     assert serialized['observation'] == ObservationType.RECALL
     assert serialized['content'] == 'Environment information'
     assert serialized['extras']['recall_type'] == RecallType.ENVIRONMENT_INFO.value
-    assert serialized['extras']['repository_name'] == 'OpenHands'
+    assert serialized['extras']['repo_name'] == 'OpenHands'
     assert serialized['extras']['runtime_hosts'] == {
         '127.0.0.1': 8080,
         'localhost': 5000,
@@ -353,13 +362,13 @@ def test_recall_observation_environment_info_serialization():
 
     # Verify properties are preserved
     assert deserialized.recall_type == RecallType.ENVIRONMENT_INFO
-    assert deserialized.repository_name == original.repository_name
-    assert deserialized.repository_directory == original.repository_directory
-    assert deserialized.repository_instructions == original.repository_instructions
+    assert deserialized.repo_name == original.repo_name
+    assert deserialized.repo_directory == original.repo_directory
+    assert deserialized.repo_instructions == original.repo_instructions
     assert deserialized.runtime_hosts == original.runtime_hosts
 
-    # Check that knowledge microagent fields are None
-    assert deserialized.triggered_content is None
+    # Check that knowledge microagent fields are empty
+    assert deserialized.microagent_knowledge == []
 
 
 def test_recall_observation_combined_serialization():
@@ -371,12 +380,12 @@ def test_recall_observation_combined_serialization():
         content='Combined information',
         recall_type=RecallType.ENVIRONMENT_INFO,
         # Environment info
-        repository_name='OpenHands',
-        repository_directory='/workspace/openhands',
-        repository_instructions="Follow the project's coding style guide.",
+        repo_name='OpenHands',
+        repo_directory='/workspace/openhands',
+        repo_instructions="Follow the project's coding style guide.",
         runtime_hosts={'127.0.0.1': 8080},
         # Knowledge microagent info
-        triggered_content=[
+        microagent_knowledge=[
             {
                 'agent_name': 'python_best_practices',
                 'trigger_word': 'python',
@@ -390,9 +399,9 @@ def test_recall_observation_combined_serialization():
 
     # Verify serialized data has both types of fields
     assert serialized['extras']['recall_type'] == RecallType.ENVIRONMENT_INFO.value
-    assert serialized['extras']['repository_name'] == 'OpenHands'
+    assert serialized['extras']['repo_name'] == 'OpenHands'
     assert (
-        serialized['extras']['triggered_content'][0]['agent_name']
+        serialized['extras']['microagent_knowledge'][0]['agent_name']
         == 'python_best_practices'
     )
 
@@ -403,10 +412,10 @@ def test_recall_observation_combined_serialization():
     assert deserialized.recall_type == RecallType.ENVIRONMENT_INFO
 
     # Environment properties
-    assert deserialized.repository_name == original.repository_name
-    assert deserialized.repository_directory == original.repository_directory
-    assert deserialized.repository_instructions == original.repository_instructions
+    assert deserialized.repo_name == original.repo_name
+    assert deserialized.repo_directory == original.repo_directory
+    assert deserialized.repo_instructions == original.repo_instructions
     assert deserialized.runtime_hosts == original.runtime_hosts
 
     # Knowledge microagent properties
-    assert deserialized.triggered_content == original.triggered_content
+    assert deserialized.microagent_knowledge == original.microagent_knowledge
