@@ -4,6 +4,8 @@ from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
+from openhands.integrations.gitlab.gitlab_service import GitLabService
+from openhands.integrations.utils import determine_token_type
 from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
@@ -26,11 +28,11 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
         token_is_set = bool(user_id) or bool(get_github_token(request))
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(),
-            github_token_is_set=token_is_set,
+            token_is_set=token_is_set,
         )
         settings_with_token_data.llm_api_key = settings.llm_api_key
 
-        del settings_with_token_data.github_token
+        del settings_with_token_data.token
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
@@ -45,23 +47,25 @@ async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
 ) -> JSONResponse:
-    # Check if token is valid
-
-    if settings.github_token:
+    # Check if token is valid and determine its type
+    if settings.token:
         try:
-            # We check if the token is valid by getting the user
-            # If the token is invalid, this will raise an exception
-            github = GithubServiceImpl(
-                user_id=None, idp_token=None, token=SecretStr(settings.github_token)
-            )
-            await github.get_user()
+            token_type = await determine_token_type(SecretStr(settings.token))
+            if token_type is None:
+                return JSONResponse(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    content={
+                        'error': 'Invalid token. Please make sure it is a valid GitHub or GitLab token.'
+                    },
+                )
+            settings.token_type = token_type
 
         except Exception as e:
-            logger.warning(f'Invalid GitHub token: {e}')
+            logger.warning(f'Invalid token: {e}')
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 content={
-                    'error': 'Invalid GitHub token. Please make sure it is valid.'
+                    'error': 'Invalid token. Please make sure it is valid.'
                 },
             )
 
@@ -76,8 +80,9 @@ async def store_settings(
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
 
-            if settings.github_token is None:
-                settings.github_token = existing_settings.github_token
+            if settings.token is None:
+                settings.token = existing_settings.token
+                settings.token_type = existing_settings.token_type
 
             if settings.user_consents_to_analytics is None:
                 settings.user_consents_to_analytics = (
@@ -89,8 +94,9 @@ async def store_settings(
             content={'message': 'Settings stored'},
         )
 
-        if settings.unset_github_token:
-            settings.github_token = None
+        if settings.unset_token:
+            settings.token = None
+            settings.token_type = None
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
