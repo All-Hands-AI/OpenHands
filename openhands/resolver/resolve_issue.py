@@ -202,7 +202,7 @@ async def process_issue(
         timeout=300,
     )
 
-    if os.getenv('GITLAB_CI') == 'True':
+    if os.getenv('GITLAB_CI') == 'true':
         sandbox_config.local_runtime_url = os.getenv(
             'LOCAL_RUNTIME_URL', 'http://localhost'
         )
