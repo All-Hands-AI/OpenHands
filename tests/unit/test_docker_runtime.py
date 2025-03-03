@@ -21,7 +21,10 @@ def mock_docker_client():
         mock_client.return_value.containers.get.return_value = container_mock
         mock_client.return_value.containers.run.return_value = container_mock
         # Mock version info for BuildKit check
-        mock_client.return_value.version.return_value = {'Version': '20.10.0'}
+        mock_client.return_value.version.return_value = {
+            'Version': '20.10.0',
+            'Components': [{'Name': 'Engine', 'Version': '20.10.0'}],
+        }  # Ensure version is >= 18.09
         yield mock_client.return_value
 
 
