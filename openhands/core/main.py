@@ -30,6 +30,7 @@ from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.events.serialization import event_from_dict
 from openhands.io import read_input, read_task
+from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
@@ -52,6 +53,7 @@ async def run_controller(
     exit_on_message: bool = False,
     fake_user_response_fn: FakeUserResponseFunc | None = None,
     headless_mode: bool = True,
+    memory: Memory | None = None,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
 
@@ -116,12 +118,13 @@ async def run_controller(
     event_stream = runtime.event_stream
 
     # when memory is created, it will load the microagents from the selected repository
-    create_memory(
-        microagents_dir=config.microagents_dir,
-        runtime=runtime,
-        event_stream=event_stream,
-        selected_repository=config.sandbox.selected_repo,
-    )
+    if memory is None:
+        memory = create_memory(
+            microagents_dir=config.microagents_dir,
+            runtime=runtime,
+            event_stream=event_stream,
+            selected_repository=config.sandbox.selected_repo,
+        )
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:
