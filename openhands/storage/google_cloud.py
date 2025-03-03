@@ -76,3 +76,8 @@ class GoogleCloudFileStore(FileStore):
             blob.delete()
         except NotFound:
             pass
+            
+    def exists(self, path: str) -> bool:
+        """Check if a file exists in the Google Cloud Storage bucket."""
+        blob = self.bucket.blob(path)
+        return blob.exists()
