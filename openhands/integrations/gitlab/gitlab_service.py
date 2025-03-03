@@ -4,10 +4,10 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
-from openhands.integrations.gitlab.gitlab_types import (
-    GlAuthenticationError,
-    GLUnknownException,
-    GitLabUser,
+from openhands.integrations.service_types import (
+    AuthenticationError,
+    UnknownException,
+    User,
 )
 from openhands.utils.import_utils import get_impl
 
@@ -68,23 +68,23 @@ class GitLabService:
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
-                raise GlAuthenticationError('Invalid GitLab token')
-            raise GLUnknownException('Unknown error')
+                raise AuthenticationError('Invalid GitLab token')
+            raise UnknownException('Unknown error')
 
         except httpx.HTTPError:
-            raise GLUnknownException('Unknown error')
+            raise UnknownException('Unknown error')
 
-    async def get_user(self) -> GitLabUser:
+    async def get_user(self) -> User:
         url = f'{self.BASE_URL}/user'
         response, _ = await self._fetch_data(url)
 
-        return GitLabUser(
+        return User(
             id=response.get('id'),
             username=response.get('username'),
             avatar_url=response.get('avatar_url'),
             name=response.get('name'),
             email=response.get('email'),
-            organization=response.get('organization'),
+            company=response.get('organization'),
         )
 
 
