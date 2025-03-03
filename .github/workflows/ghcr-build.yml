@@ -41,6 +41,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Debug info
+        run: |
+          echo "PRINTING DEBUG INFO"
+          echo "cwd: $(pwd)"
+          echo "git commit: $(git rev-parse HEAD)"
+          echo "one dir down: $(ls ..)"
+          echo "listen socket: $(cat ./openhands/server/listen_socket.py)"
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.4.0
         with:
