@@ -14,7 +14,10 @@ import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { TypingIndicator } from "./typing-indicator";
-import { useWsClient } from "#/context/ws-client-provider";
+import {
+  useWsClient,
+  WsClientProviderStatus,
+} from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
@@ -34,7 +37,7 @@ function getEntryPoint(
 }
 
 export function ChatInterface() {
-  const { send, isLoadingMessages } = useWsClient();
+  const { send, isLoadingMessages, status, pendingMessages } = useWsClient();
   const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
@@ -53,6 +56,9 @@ export function ChatInterface() {
   );
   const params = useParams();
   const { mutate: getTrajectory } = useGetTrajectory();
+
+  const isClientDisconnected = status === WsClientProviderStatus.DISCONNECTED;
+  const hasPendingMessages = pendingMessages.length > 0;
 
   const handleSendMessage = async (content: string, files: File[]) => {
     if (messages.length === 0) {
@@ -76,7 +82,16 @@ export function ChatInterface() {
     const timestamp = new Date().toISOString();
     const pending = true;
     dispatch(addUserMessage({ content, imageUrls, timestamp, pending }));
-    send(createChatMessage(content, imageUrls, timestamp));
+
+    // Create the chat message
+    const chatMessage = createChatMessage(content, imageUrls, timestamp);
+
+    // Send or queue the message depending on connection status
+    send(chatMessage);
+
+    // Set agent state to RUNNING when a message is sent
+    send(generateAgentStateChangeEvent(AgentState.RUNNING));
+
     setMessageToSend(null);
   };
 
@@ -131,8 +146,20 @@ export function ChatInterface() {
         className="flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2"
       >
         {isLoadingMessages && (
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-2">
             <LoadingSpinner size="small" />
+            {isClientDisconnected && (
+              <div className="text-sm text-neutral-400">
+                Waiting for client to become ready...
+                {hasPendingMessages && (
+                  <div className="text-xs text-neutral-500 mt-1">
+                    {pendingMessages.length} message
+                    {pendingMessages.length !== 1 ? "s" : ""} will be sent when
+                    connected
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -179,7 +206,7 @@ export function ChatInterface() {
           onSubmit={handleSendMessage}
           onStop={handleStop}
           isDisabled={
-            curAgentState === AgentState.LOADING ||
+            // Allow input even when loading, but not during confirmation
             curAgentState === AgentState.AWAITING_USER_CONFIRMATION
           }
           mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}

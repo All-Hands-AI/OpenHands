@@ -39,6 +39,14 @@ const isMessageAction = (
 ): event is UserMessageAction | AssistantMessageAction =>
   isUserMessage(event) || isAssistantMessage(event);
 
+// Check if an event is an agent state changed observation
+const isAgentStateEvent = (event: Record<string, unknown>): boolean => 
+  isOpenHandsEvent(event) && 
+  "type" in event && 
+  event.type === "observation" && 
+  "observation_id" in event && 
+  event.observation_id === "agent_state_changed";
+
 export enum WsClientProviderStatus {
   CONNECTED,
   DISCONNECTED,
@@ -49,13 +57,19 @@ interface UseWsClient {
   isLoadingMessages: boolean;
   events: Record<string, unknown>[];
   send: (event: Record<string, unknown>) => void;
+  queueMessage: (event: Record<string, unknown>) => void;
+  pendingMessages: Record<string, unknown>[];
 }
 
 const WsClientContext = React.createContext<UseWsClient>({
   status: WsClientProviderStatus.DISCONNECTED,
   isLoadingMessages: true,
   events: [],
+  pendingMessages: [],
   send: () => {
+    throw new Error("not connected");
+  },
+  queueMessage: () => {
     throw new Error("not connected");
   },
 });
@@ -109,26 +123,50 @@ export function WsClientProvider({
     WsClientProviderStatus.DISCONNECTED,
   );
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
+  const [pendingMessages, setPendingMessages] = React.useState<
+    Record<string, unknown>[]
+  >([]);
+  const [backendReady, setBackendReady] = React.useState(false);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
 
   const messageRateHandler = useRate({ threshold: 250 });
 
+  function queueMessage(event: Record<string, unknown>) {
+    setPendingMessages((prev) => [...prev, event]);
+  }
+
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
       EventLogger.error("WebSocket is not connected.");
+      queueMessage(event);
       return;
     }
+    
+    if (!backendReady) {
+      // If backend is not ready yet, queue the message
+      EventLogger.info("Backend not ready, queueing message");
+      queueMessage(event);
+      return;
+    }
+    
     sioRef.current.emit("oh_action", event);
   }
 
   function handleConnect() {
     setStatus(WsClientProviderStatus.CONNECTED);
+    // Don't send queued messages yet - wait for backend ready signal
   }
 
   function handleMessage(event: Record<string, unknown>) {
     if (isOpenHandsEvent(event) && isMessageAction(event)) {
       messageRateHandler.record(new Date().getTime());
     }
+    
+    // Check if this is a state change event indicating backend is ready
+    if (isAgentStateEvent(event)) {
+      setBackendReady(true);
+    }
+    
     setEvents((prevEvents) => [...prevEvents, event]);
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
@@ -139,6 +177,7 @@ export function WsClientProvider({
 
   function handleDisconnect(data: unknown) {
     setStatus(WsClientProviderStatus.DISCONNECTED);
+    setBackendReady(false);
     const sio = sioRef.current;
     if (!sio) {
       return;
@@ -150,11 +189,34 @@ export function WsClientProvider({
 
   function handleError(data: unknown) {
     setStatus(WsClientProviderStatus.DISCONNECTED);
+    setBackendReady(false);
     updateStatusWhenErrorMessagePresent(data);
   }
 
+  // Watch for backend ready state and send queued messages when ready
+  React.useEffect(() => {
+    if (backendReady && pendingMessages.length > 0 && sioRef.current) {
+      // Backend is ready and we have pending messages
+      EventLogger.info(`Sending ${pendingMessages.length} queued messages`);
+      
+      pendingMessages.forEach((event) => {
+        sioRef.current?.emit("oh_action", event);
+      });
+
+      // Also set the agent state to RUNNING if needed
+      const agentStateEvent = {
+        action: "change_agent_state",
+        args: { agent_state: "running" },
+      };
+      sioRef.current.emit("oh_action", agentStateEvent);
+
+      setPendingMessages([]);
+    }
+  }, [backendReady, pendingMessages.length]);
+
   React.useEffect(() => {
     lastEventRef.current = null;
+    setBackendReady(false);
   }, [conversationId]);
 
   React.useEffect(() => {
@@ -210,9 +272,11 @@ export function WsClientProvider({
       status,
       isLoadingMessages: messageRateHandler.isUnderThreshold,
       events,
+      pendingMessages,
       send,
+      queueMessage,
     }),
-    [status, messageRateHandler.isUnderThreshold, events],
+    [status, messageRateHandler.isUnderThreshold, events, pendingMessages],
   );
 
   return <WsClientContext value={value}>{children}</WsClientContext>;
