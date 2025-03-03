@@ -28,7 +28,7 @@ export function HomepageHeader() {
           Welcome to OpenHands, a platform for software development agents powered by AI.
           OpenHands agents can do anything a human developer can: modify code, run commands, browse the web, call APIs, and yes—even copy code snippets from StackOverflow.
           <br/>
-          <Link to="../modules/usage/Installation"
+          <Link to="../../modules/usage/Installation"
             style={{
               textDecoration: 'underline',
               display: 'inline-block',
@@ -38,7 +38,7 @@ export function HomepageHeader() {
             Get started with OpenHands.
           </Link>
           <br/>
-          <Link to="../modules/usage/cloud/openhands-cloud"
+          <Link to="../../modules/usage/cloud/openhands-cloud"
             style={{
               textDecoration: 'underline',
               display: 'inline-block',
