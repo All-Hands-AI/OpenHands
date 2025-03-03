@@ -18,3 +18,4 @@ export const generateGitHubAuthUrl = (clientId: string, requestUrl: URL, offline
   const scope = offline ? "openid email profile offline_access" : "openid email profile";
 
   return `https://${authUrl}/realms/allhands/protocol/openid-connect/auth?client_id=github&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
+};
