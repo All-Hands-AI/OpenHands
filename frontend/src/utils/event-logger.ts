@@ -38,6 +38,16 @@ class EventLogger {
   }
 
   /**
+   * Log an info message
+   * @param info The info message
+   */
+  static info(info: string) {
+    if (this.isDevMode) {
+      console.info(info);
+    }
+  }
+
+  /**
    * Log an error message
    * @param error The error message
    */
