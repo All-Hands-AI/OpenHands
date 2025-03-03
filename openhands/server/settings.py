@@ -40,9 +40,7 @@ class Settings(BaseModel):
         return pydantic_encoder(llm_api_key)
 
     @field_serializer('token')
-    def token_serializer(
-        self, token: SecretStr | None, info: SerializationInfo
-    ):
+    def token_serializer(self, token: SecretStr | None, info: SerializationInfo):
         """Custom serializer for the token.
 
         To serialize the token instead of ********, set expose_secrets to True in the serialization context.
@@ -86,9 +84,7 @@ class POSTSettingsModel(Settings):
     """
 
     unset_token: bool | None = None
-    token: str | None = (
-        None  # This is a string because it's coming from the frontend
-    )
+    token: str | None = None  # This is a string because it's coming from the frontend
 
     # Override the serializer for the token to handle the string input
     @field_serializer('token')
