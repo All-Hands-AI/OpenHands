@@ -192,11 +192,13 @@ class PromptManager:
     def add_info_to_initial_message(
         self,
         message: Message,
+        personality: str | None = None,
     ) -> None:
         """Adds information about the repository and runtime to the initial user message.
 
         Args:
             message: The initial user message to add information to.
+            personality: Optional personality type to include in the prompt.
         """
         repo_instructions = ''
         assert (
@@ -207,11 +209,27 @@ class PromptManager:
             if repo_instructions:
                 repo_instructions += '\n\n'
             repo_instructions += microagent.content
+        
+        # Add personality instructions if specified
+        personality_instructions = ''
+        if personality:
+            # Look for a personality microagent with the matching name
+            personality_microagent_name = f"{personality}_personality"
+            for name, microagent in self.knowledge_microagents.items():
+                if name == personality_microagent_name:
+                    personality_instructions = microagent.content
+                    break
+            
+            if personality_instructions:
+                openhands_logger.info(f"Adding {personality} personality to prompt")
+            else:
+                openhands_logger.warning(f"Personality {personality} requested but no matching microagent found")
 
         additional_info = self.additional_info_template.render(
             repository_instructions=repo_instructions,
             repository_info=self.repository_info,
             runtime_info=self.runtime_info,
+            personality_instructions=personality_instructions,
         ).strip()
 
         # Insert the new content at the start of the TextContent list
