@@ -146,14 +146,3 @@ class S3FileStore(FileStore):
             if not url.startswith('http://'):
                 url = 'http://' + url.removeprefix('https://')
         return url
-        
-    def exists(self, path: str) -> bool:
-        """Check if a file exists in the S3 bucket."""
-        try:
-            self.client.head_object(Bucket=self.bucket, Key=path)
-            return True
-        except botocore.exceptions.ClientError as e:
-            if e.response['Error']['Code'] == '404':
-                return False
-            # For other errors, we'll assume the file doesn't exist
-            return False

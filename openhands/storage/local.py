@@ -49,8 +49,3 @@ class LocalFileStore(FileStore):
                 logger.debug(f'Removed local directory: {full_path}')
         except Exception as e:
             logger.error(f'Error clearing local file store: {str(e)}')
-            
-    def exists(self, path: str) -> bool:
-        """Check if a file or directory exists at the given path."""
-        full_path = self.get_full_path(path)
-        return os.path.exists(full_path)

@@ -17,8 +17,3 @@ class FileStore:
     @abstractmethod
     def delete(self, path: str) -> None:
         pass
-        
-    @abstractmethod
-    def exists(self, path: str) -> bool:
-        """Check if a file or directory exists at the given path."""
-        pass

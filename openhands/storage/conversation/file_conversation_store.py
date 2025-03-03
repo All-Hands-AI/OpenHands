@@ -83,17 +83,10 @@ class FileConversationStore(ConversationStore):
         conversations = []
         for conversation_id in conversation_ids:
             try:
-                # Check if the metadata file exists before trying to load it
-                path = self.get_conversation_metadata_filename(conversation_id)
-                if await call_sync_from_async(self.file_store.exists, path):
-                    conversations.append(await self.get_metadata(conversation_id))
-                else:
-                    logger.warning(
-                        f'Skipping conversation with missing metadata file: {conversation_id}'
-                    )
-            except Exception as e:
+                conversations.append(await self.get_metadata(conversation_id))
+            except Exception:
                 logger.error(
-                    f'Error loading conversation: {conversation_id} - {str(e)}',
+                    f'Error loading conversation: {conversation_id}',
                 )
         conversations.sort(key=_sort_key, reverse=True)
         conversations = conversations[start:end]

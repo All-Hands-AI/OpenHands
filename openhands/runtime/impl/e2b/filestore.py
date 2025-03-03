@@ -16,11 +16,3 @@ class E2BFileStore(FileStore):
 
     def delete(self, path: str) -> None:
         self.filesystem.delete(path)
-        
-    def exists(self, path: str) -> bool:
-        """Check if a file exists in the E2B filesystem."""
-        try:
-            self.filesystem.stat(path)
-            return True
-        except Exception:
-            return False
