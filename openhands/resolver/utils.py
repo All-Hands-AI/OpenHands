@@ -4,7 +4,7 @@ import multiprocessing as mp
 import os
 import re
 from enum import Enum
-from typing import Callable, Optional
+from typing import Callable
 
 import pandas as pd
 import requests
