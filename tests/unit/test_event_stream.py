@@ -156,6 +156,16 @@ def test_get_matching_events_source_filter(temp_dir: str):
         and events[0].source == EventSource.ENVIRONMENT
     )
 
+    # Test that source comparison works correctly with None source
+    null_source_event = NullObservation('test4')
+    event_stream.add_event(null_source_event, EventSource.AGENT)
+    event = event_stream.get_event(event_stream.get_latest_event_id())
+    event._source = None  # type: ignore
+
+    # Verify that source comparison works correctly
+    assert not event_stream._should_filter_event(event, source='agent')  # Should not filter out None source events
+    assert not event_stream._should_filter_event(event, source=None)  # Should not filter out when source filter is None
+
 
 def test_get_matching_events_pagination(temp_dir: str):
     file_store = get_file_store('local', temp_dir)
