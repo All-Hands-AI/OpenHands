@@ -25,32 +25,32 @@ const createAxiosNotFoundErrorObject = () =>
     },
   );
 
+const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+
+const RouterStub = createRoutesStub([
+  {
+    // layout route
+    Component: MainApp,
+    path: "/",
+    children: [
+      {
+        // home route
+        Component: Home,
+        path: "/",
+      },
+      {
+        Component: SettingsScreen,
+        path: "/settings",
+      },
+    ],
+  },
+]);
+
+afterEach(() => {
+  vi.clearAllMocks();
+});
+
 describe("Home Screen", () => {
-  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
-
-  const RouterStub = createRoutesStub([
-    {
-      // layout route
-      Component: MainApp,
-      path: "/",
-      children: [
-        {
-          // home route
-          Component: Home,
-          path: "/",
-        },
-        {
-          Component: SettingsScreen,
-          path: "/settings",
-        },
-      ],
-    },
-  ]);
-
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("should render the home screen", () => {
     renderWithProviders(<RouterStub initialEntries={["/"]} />);
   });
@@ -77,41 +77,41 @@ describe("Home Screen", () => {
     const settingsScreen = await screen.findByTestId("settings-screen");
     expect(settingsScreen).toBeInTheDocument();
   });
+});
 
-  describe("Settings 404", () => {
-    it("should open the settings modal if GET /settings fails with a 404", async () => {
-      const error = createAxiosNotFoundErrorObject();
-      getSettingsSpy.mockRejectedValue(error);
+describe("Settings 404", () => {
+  it("should open the settings modal if GET /settings fails with a 404", async () => {
+    const error = createAxiosNotFoundErrorObject();
+    getSettingsSpy.mockRejectedValue(error);
 
-      renderWithProviders(<RouterStub initialEntries={["/"]} />);
+    renderWithProviders(<RouterStub initialEntries={["/"]} />);
 
-      const settingsModal = await screen.findByTestId("ai-config-modal");
-      expect(settingsModal).toBeInTheDocument();
-    });
+    const settingsModal = await screen.findByTestId("ai-config-modal");
+    expect(settingsModal).toBeInTheDocument();
+  });
 
-    it("should navigate to the settings screen when clicking the advanced settings button", async () => {
-      const error = createAxiosNotFoundErrorObject();
-      getSettingsSpy.mockRejectedValue(error);
+  it("should navigate to the settings screen when clicking the advanced settings button", async () => {
+    const error = createAxiosNotFoundErrorObject();
+    getSettingsSpy.mockRejectedValue(error);
 
-      const user = userEvent.setup();
-      renderWithProviders(<RouterStub initialEntries={["/"]} />);
+    const user = userEvent.setup();
+    renderWithProviders(<RouterStub initialEntries={["/"]} />);
 
-      const settingsScreen = screen.queryByTestId("settings-screen");
-      expect(settingsScreen).not.toBeInTheDocument();
+    const settingsScreen = screen.queryByTestId("settings-screen");
+    expect(settingsScreen).not.toBeInTheDocument();
 
-      const settingsModal = await screen.findByTestId("ai-config-modal");
-      expect(settingsModal).toBeInTheDocument();
+    const settingsModal = await screen.findByTestId("ai-config-modal");
+    expect(settingsModal).toBeInTheDocument();
 
-      const advancedSettingsButton = await screen.findByTestId(
-        "advanced-settings-link",
-      );
-      await user.click(advancedSettingsButton);
+    const advancedSettingsButton = await screen.findByTestId(
+      "advanced-settings-link",
+    );
+    await user.click(advancedSettingsButton);
 
-      const settingsScreenAfter = await screen.findByTestId("settings-screen");
-      expect(settingsScreenAfter).toBeInTheDocument();
+    const settingsScreenAfter = await screen.findByTestId("settings-screen");
+    expect(settingsScreenAfter).toBeInTheDocument();
 
-      const settingsModalAfter = screen.queryByTestId("ai-config-modal");
-      expect(settingsModalAfter).not.toBeInTheDocument();
-    });
+    const settingsModalAfter = screen.queryByTestId("ai-config-modal");
+    expect(settingsModalAfter).not.toBeInTheDocument();
   });
 });
