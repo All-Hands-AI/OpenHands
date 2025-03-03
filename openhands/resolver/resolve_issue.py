@@ -651,7 +651,7 @@ def main() -> None:
     if not token:
         raise ValueError('Token is required.')
 
-    platform = identify_token(token)
+    platform = identify_token(token, repo)
     if platform == Platform.INVALID:
         raise ValueError('Token is invalid.')
 
