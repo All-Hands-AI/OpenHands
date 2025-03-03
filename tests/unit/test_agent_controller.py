@@ -686,7 +686,7 @@ async def test_context_window_exceeded_error_handling(mock_agent, mock_event_str
 
 @pytest.mark.asyncio
 async def test_run_controller_with_context_window_exceeded_with_truncation(
-    mock_agent, mock_runtime, mock_memory
+    mock_agent, mock_runtime, mock_memory, test_event_stream
 ):
     """Tests that the controller can make progress after handling context window exceeded errors, as long as enable_history_truncation is ON"""
 
@@ -718,11 +718,12 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
                 content='Test recall content', recall_type=RecallType.DEFAULT
             )
             recall_obs._cause = event.id
-            mock_runtime.event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
+            test_event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
 
-    mock_runtime.event_stream.subscribe(
+    test_event_stream.subscribe(
         EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
     )
+    mock_runtime.event_stream = test_event_stream
 
     try:
         state = await asyncio.wait_for(
@@ -760,7 +761,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
 
 @pytest.mark.asyncio
 async def test_run_controller_with_context_window_exceeded_without_truncation(
-    mock_agent, mock_runtime, mock_memory
+    mock_agent, mock_runtime, mock_memory, test_event_stream
 ):
     """Tests that the controller would quit upon context window exceeded errors without enable_history_truncation ON."""
 
@@ -793,12 +794,12 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
                 content='Test recall content', recall_type=RecallType.DEFAULT
             )
             recall_obs._cause = event.id
-            mock_runtime.event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
+            test_event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
 
-    mock_runtime.event_stream.subscribe(
+    test_event_stream.subscribe(
         EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
     )
-
+    mock_runtime.event_stream = test_event_stream
     try:
         state = await asyncio.wait_for(
             run_controller(
