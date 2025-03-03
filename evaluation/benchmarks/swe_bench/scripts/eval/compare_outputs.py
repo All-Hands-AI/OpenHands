@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import subprocess
 
 import pandas as pd
 from termcolor import colored
@@ -34,6 +35,23 @@ if args.only_x_instances:
     print(
         f'After removing instances not in X={args.input_file_1}: Y={df2.shape[0]} instances'
     )
+
+
+# Add summarization step for each input file
+def summarize_file(file_path):
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    summarize_script = os.path.join(script_dir, 'summarize_outputs.py')
+
+    print(f'\nSummary for {file_path}:')
+    print('=' * 80)
+    subprocess.run(['python', summarize_script, file_path], check=True)
+    print('=' * 80)
+
+
+# Generate summaries
+summarize_file(args.input_file_1)
+summarize_file(args.input_file_2)
+
 
 # Get the intersection of the instance_ids
 df = pd.merge(df1, df2, on='instance_id', how='inner')

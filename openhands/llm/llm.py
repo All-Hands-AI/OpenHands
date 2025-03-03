@@ -8,6 +8,7 @@ from typing import Any, Callable
 import requests
 
 from openhands.core.config import LLMConfig
+from openhands.utils.ensure_httpx_close import ensure_httpx_close
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -42,6 +43,7 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (RateLimitError,)
 # cache prompt supporting models
 # remove this when we gemini and deepseek are supported
 CACHE_PROMPT_SUPPORTED_MODELS = [
+    'claude-3-7-sonnet-20250219',
     'claude-3-5-sonnet-20241022',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-haiku-20241022',
@@ -51,6 +53,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
 
 # function calling supporting models
 FUNCTION_CALLING_SUPPORTED_MODELS = [
+    'claude-3-7-sonnet-20250219',
     'claude-3-5-sonnet',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-sonnet-20241022',
@@ -73,6 +76,8 @@ REASONING_EFFORT_SUPPORTED_MODELS = [
 MODELS_WITHOUT_STOP_WORDS = [
     'o1-mini',
     'o1-preview',
+    'o1',
+    'o1-2024-12-17',
 ]
 
 
@@ -134,6 +139,7 @@ class LLM(RetryMixin, DebugMixin):
         # set up the completion function
         kwargs: dict[str, Any] = {
             'temperature': self.config.temperature,
+            'max_completion_tokens': self.config.max_output_tokens,
         }
         if (
             self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
@@ -143,6 +149,10 @@ class LLM(RetryMixin, DebugMixin):
             kwargs.pop(
                 'temperature'
             )  # temperature is not supported for reasoning models
+        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
+        if self.config.model.startswith('azure'):
+            kwargs['max_tokens'] = self.config.max_output_tokens
+            kwargs.pop('max_completion_tokens')
 
         self._completion = partial(
             litellm_completion,
@@ -153,7 +163,6 @@ class LLM(RetryMixin, DebugMixin):
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
-            max_completion_tokens=self.config.max_output_tokens,
             timeout=self.config.timeout,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
@@ -210,9 +219,8 @@ class LLM(RetryMixin, DebugMixin):
                     kwargs['stop'] = STOP_WORDS
 
                 mock_fncall_tools = kwargs.pop('tools')
-                kwargs['tool_choice'] = (
-                    'none'  # force no tool calling because we're mocking it - without it, it will cause issue with sglang
-                )
+                # tool_choice should not be specified when mocking function calling
+                kwargs.pop('tool_choice', None)
 
             # if we have no messages, something went very wrong
             if not messages:
@@ -230,9 +238,9 @@ class LLM(RetryMixin, DebugMixin):
 
             # Record start time for latency measurement
             start_time = time.time()
-
-            # we don't support streaming here, thus we get a ModelResponse
-            resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+            with ensure_httpx_close():
+                # we don't support streaming here, thus we get a ModelResponse
+                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
             latency = time.time() - start_time
@@ -287,7 +295,11 @@ class LLM(RetryMixin, DebugMixin):
                     'messages': messages,
                     'response': resp,
                     'args': args,
-                    'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
+                    'kwargs': {
+                        k: v
+                        for k, v in kwargs.items()
+                        if k not in ('messages', 'client')
+                    },
                     'timestamp': time.time(),
                     'cost': cost,
                 }
