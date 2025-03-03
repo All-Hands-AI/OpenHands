@@ -386,3 +386,40 @@ def test_python_interactive_input():
     assert session.prev_status == BashCommandStatus.COMPLETED
 
     session.close()
+
+
+def test_get_running_processes():
+    """Test the get_running_processes method to detect running processes."""
+    session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=2)
+    session.initialize()
+
+    # First check with no running command
+    process_info = session.get_running_processes()
+    assert isinstance(process_info, dict)
+    assert 'is_command_running' in process_info
+    assert process_info['is_command_running'] is False
+    assert 'processes' in process_info
+    assert len(process_info['processes']) == 1  # should have the shell process
+    assert 'command_processes' in process_info
+    assert len(process_info['command_processes']) == 0
+    assert 'current_command_pid' in process_info
+    assert process_info['current_command_pid'] is None
+
+    session.execute(CmdRunAction('sleep 120', blocking=False))
+
+    # Check running processes
+    process_info = session.get_running_processes()
+    assert process_info['is_command_running'] is True
+    assert process_info['current_command_pid'] is not None
+    assert len(process_info['command_processes']) > 0
+
+    # Send Ctrl+C to terminate the process
+    session.execute(CmdRunAction('C-c', is_input=True))
+
+    # Verify process is no longer running
+    process_info = session.get_running_processes()
+    assert process_info['is_command_running'] is False
+    assert process_info['current_command_pid'] is None
+    assert len(process_info['command_processes']) == 0
+
+    session.close()
