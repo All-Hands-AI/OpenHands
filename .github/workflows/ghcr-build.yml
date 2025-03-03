@@ -41,6 +41,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.4.0
         with:
@@ -90,6 +92,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.4.0
         with:
@@ -154,6 +158,8 @@ jobs:
         base_image: ['nikolaik']
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Cache Poetry dependencies
         uses: actions/cache@v4
         with:
