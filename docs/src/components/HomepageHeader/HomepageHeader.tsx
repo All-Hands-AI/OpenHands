@@ -17,6 +17,39 @@ export function HomepageHeader() {
 
         <p className="header-subtitle">{siteConfig.tagline}</p>
 
+        <div style={{
+          textAlign: 'center',
+          fontSize: '1.2rem',
+          maxWidth: '800px',
+          margin: '0 auto',
+          padding: '0rem 0rem 1rem'
+        }}>
+        <p style={{ margin: '0' }}>
+          Welcome to OpenHands, a platform for software development agents powered by AI.
+          OpenHands agents can do anything a human developer can: modify code, run commands, browse the web, call APIs, and yes—even copy code snippets from StackOverflow.
+          <br/>
+          <Link to="/modules/usage/Installation"
+            style={{
+              textDecoration: 'underline',
+              display: 'inline-block',
+              marginTop: '0.5rem'
+            }}
+          >
+            Get started with OpenHands.
+          </Link>
+          <br/>
+          <Link to="/modules/usage/cloud/openhands-cloud"
+            style={{
+              textDecoration: 'underline',
+              display: 'inline-block',
+              marginTop: '0.5rem'
+            }}
+          >
+            Sign up for OpenHands Cloud.
+          </Link>
+        </p>
+      </div>
+
         <div align="center" className="header-links">
           <a href="https://github.com/All-Hands-AI/OpenHands/graphs/contributors"><img src="https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Contributors" /></a>
           <a href="https://github.com/All-Hands-AI/OpenHands/stargazers"><img src="https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Stargazers" /></a>
@@ -31,8 +64,6 @@ export function HomepageHeader() {
           <a href="https://arxiv.org/abs/2407.16741"><img src="https://img.shields.io/badge/Paper%20on%20Arxiv-000?logoColor=FFE165&logo=arxiv&style=for-the-badge" alt="Paper on Arxiv" /></a>
           <a href="https://huggingface.co/spaces/OpenHands/evaluation"><img src="https://img.shields.io/badge/Benchmark%20score-000?logoColor=FFE165&logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark Score" /></a>
         </div>
-
-        <Demo />
       </div>
     </div>
   );
