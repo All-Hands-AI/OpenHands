@@ -22,7 +22,7 @@ class Platform(Enum):
     GITLAB = 2
 
 
-def identify_token(token: str, repo: Optional[str] = None) -> Platform:
+def identify_token(token: str, repo: str | None = None) -> Platform:
     """
     Identifies whether a token belongs to GitHub or GitLab.
 

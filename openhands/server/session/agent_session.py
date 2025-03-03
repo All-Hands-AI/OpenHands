@@ -52,7 +52,7 @@ class AgentSession:
         sid: str,
         file_store: FileStore,
         monitoring_listener: MonitoringListener,
-        status_callback: Optional[Callable] = None,
+        status_callback: Callable | None = None,
         github_user_id: str | None = None,
     ):
         """Initializes a new instance of the Session class
