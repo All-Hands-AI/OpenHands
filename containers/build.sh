@@ -111,6 +111,9 @@ DOCKER_REPOSITORY="$DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE"
 DOCKER_REPOSITORY=${DOCKER_REPOSITORY,,} # lowercase
 echo "Repo: $DOCKER_REPOSITORY"
 echo "Base dir: $DOCKER_BASE_DIR"
+echo "CWD: $(pwd)"
+echo "git commit: $(git rev-parse HEAD)"
+echo "listen_socket: $(cat ./openhands/server/listen_socket.py)"
 
 args=""
 for tag in "${tags[@]}"; do
