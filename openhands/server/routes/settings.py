@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Response, status
+from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
@@ -11,15 +11,8 @@ from openhands.server.shared import SettingsStoreImpl, config
 app = APIRouter(prefix='/api')
 
 
-async def get_settings(request: Request) -> Response:
-    """Load user settings.
-
-    Args:
-        request (Request): The incoming FastAPI request object.
-
-    Returns:
-        Response: The user settings or error response.
-    """
+@app.get('/settings', response_model=GETSettingsModel)
+async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
     try:
         user_id = get_user_id(request)
         settings_store = await SettingsStoreImpl.get_instance(config, user_id)
@@ -38,10 +31,7 @@ async def get_settings(request: Request) -> Response:
         settings_with_token_data.llm_api_key = settings.llm_api_key
 
         del settings_with_token_data.github_token
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content=settings_with_token_data.model_dump(),
-        )
+        return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
         return JSONResponse(
@@ -50,33 +40,11 @@ async def get_settings(request: Request) -> Response:
         )
 
 
-@app.get('/settings', response_model=GETSettingsModel)
-async def load_settings(request: Request) -> Response:
-    """Load user settings.
-
-    Args:
-        request (Request): The incoming FastAPI request object.
-
-    Returns:
-        Response: The user settings or error response.
-    """
-    return await get_settings(request)
-
-
 @app.post('/settings', response_model=dict[str, str])
 async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
-) -> Response:
-    """Store user settings.
-
-    Args:
-        request (Request): The incoming FastAPI request object.
-        settings (POSTSettingsModel): The settings to store.
-
-    Returns:
-        Response: Success or error response.
-    """
+) -> JSONResponse:
     # Check if token is valid
     if settings.github_token:
         try:
@@ -142,14 +110,6 @@ async def store_settings(
 
 
 def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings:
-    """Convert POSTSettingsModel to Settings.
-
-    Args:
-        settings_with_token_data (POSTSettingsModel): The settings to convert.
-
-    Returns:
-        Settings: The converted settings.
-    """
     settings_data = settings_with_token_data.model_dump()
 
     # Filter out additional fields from `SettingsWithTokenData`
