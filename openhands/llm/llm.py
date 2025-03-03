@@ -156,22 +156,26 @@ class LLM(RetryMixin, DebugMixin):
             kwargs['max_tokens'] = self.config.max_output_tokens
             kwargs.pop('max_completion_tokens')
 
-        self._completion = partial(
-            litellm_completion,
-            model=self.config.model,
-            api_key=self.config.api_key.get_secret_value()
-            if self.config.api_key
-            else None,
-            base_url=self.config.base_url,
-            api_version=self.config.api_version,
-            custom_llm_provider=self.config.custom_llm_provider,
-            timeout=self.config.timeout,
-            top_p=self.config.top_p,
-            drop_params=self.config.drop_params,
-            **kwargs,
-        )
+        # Create a wrapper function that captures the config values
+        def completion_with_config(*args: Any, **user_kwargs: Any) -> ModelResponse:
+            """Wrapper for litellm_completion that includes the config values."""
+            merged_kwargs = {
+                'model': self.config.model,
+                'api_key': self.config.api_key.get_secret_value()
+                if self.config.api_key
+                else None,
+                'base_url': self.config.base_url,
+                'api_version': self.config.api_version,
+                'custom_llm_provider': self.config.custom_llm_provider,
+                'timeout': self.config.timeout,
+                'top_p': self.config.top_p,
+                'drop_params': self.config.drop_params,
+                **kwargs,
+                **user_kwargs,
+            }
+            return litellm_completion(*args, **merged_kwargs)
 
-        self._completion_unwrapped = self._completion
+        self._completion_unwrapped = completion_with_config
 
         @self.retry_decorator(
             num_retries=self.config.num_retries,
