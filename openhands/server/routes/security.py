@@ -34,37 +34,3 @@ async def get_response(request: Request) -> Response:
     return await request.state.conversation.security_analyzer.handle_api_request(
         request
     )
-
-
-def get_route() -> APIRoute:
-    """Get the route for the security API.
-
-    Returns:
-        APIRoute: The route for the security API.
-    """
-    return cast(
-        APIRoute,
-        app.api_route(
-            '/security/{path:path}',
-            methods=['GET', 'POST', 'PUT', 'DELETE'],
-            response_model=None,
-        ),
-    )
-
-
-async def security_api(
-    response: Annotated[Response, Depends(get_response)],
-) -> Response:
-    """Catch-all route for security analyzer API requests.
-
-    Args:
-        response (Response): The response from the security analyzer.
-
-    Returns:
-        Response: The response from the security analyzer.
-    """
-    return response
-
-
-route = get_route()
-route.endpoint = security_api
