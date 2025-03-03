@@ -47,7 +47,7 @@ export function ChatMessage({
       className={cn(
         "rounded-xl relative",
         "flex flex-col gap-2",
-        type === "user" && " max-w-[305px] p-4 bg-neutral-700 self-end",
+        type === "user" && " max-w-[305px] p-4 bg-tertiary self-end",
         type === "assistant" && "mt-6 max-w-full bg-tranparent",
       )}
     >
@@ -57,18 +57,19 @@ export function ChatMessage({
         onClick={handleCopyToClipboard}
         mode={isCopy ? "copied" : "copy"}
       />
-      <Markdown
-        className="text-sm overflow-auto break-words"
-        components={{
-          code,
-          ul,
-          ol,
-          a: anchor,
-        }}
-        remarkPlugins={[remarkGfm]}
-      >
-        {message}
-      </Markdown>
+      <div className="text-sm overflow-auto break-words">
+        <Markdown
+          components={{
+            code,
+            ul,
+            ol,
+            a: anchor,
+          }}
+          remarkPlugins={[remarkGfm]}
+        >
+          {message}
+        </Markdown>
+      </div>
       {children}
     </article>
   );
