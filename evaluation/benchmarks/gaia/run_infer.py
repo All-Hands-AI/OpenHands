@@ -34,7 +34,11 @@ from openhands.core.config import (
 from openhands.core.config.utils import get_agent_config_arg
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
+from openhands.events.action import (
+    AgentFinishAction,
+    CmdRunAction,
+    MessageAction,
+)
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
 
@@ -45,16 +49,28 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': functools.partial(codeact_user_response, encapsulate_solution=True),
 }
 
+# TODO: change this message as per the finish tool you are using.
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have solved the question, please first send your answer to user through message and then exit using the finish tool.\n\n'
+    'CodeActAgent': 'When you think you have solved the question, please use the finish tool and include your final answer in the message parameter of the finish tool. Your answer MUST be encapsulated within <solution> and </solution>.\n\n'
 }
+# AGENT_CLS_TO_INST_SUFFIX = {
+#     'CodeActAgent': 'When you think you have solved the question, please first send your answer to user through message and then exit using the finish tool.\n\n'
+# }
 
 
 def get_config(
     metadata: EvalMetadata,
 ) -> AppConfig:
+    brave_search_api_key = os.environ.get('SEARCH_API_KEY', None)
+    assert (
+        brave_search_api_key is not None
+    ), 'Environment variable SEARCH_API_KEY is not set.'
+
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
+    sandbox_config.runtime_startup_env_vars = {
+        'SEARCH_API_KEY': brave_search_api_key,
+    }
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
@@ -195,7 +211,7 @@ def process_instance(
     # Prepare instruction
     instruction = f"""You have one question to answer. It is paramount that you provide a correct answer.
 Give it all you can: I know for a fact that you have access to all the relevant tools to solve it and find the correct answer (the answer does exist). Failure or 'I cannot answer' or 'None found' will not be tolerated, success will be rewarded.
-Run verification steps if that's needed, you must make sure you find the correct answer! You MUST strictly follow the task-specific formatting instructions for the final answer.
+Run verification steps if that's needed, you must make sure you find the correct answer! You MUST strictly follow the task-specific formatting instructions for your final answer.
 Here is the task:\n{instance['Question']}\n\n"""
     logger.info(f'Instruction: {instruction}')
     image_urls = []
@@ -259,7 +275,7 @@ Here is the task:\n{instance['Question']}\n\n"""
     for event in reversed(state.history):
         if event.source == 'agent':
             if isinstance(event, AgentFinishAction):
-                model_answer_raw = event.thought
+                model_answer_raw = event.final_thought
                 break
             elif isinstance(event, CmdRunAction):
                 model_answer_raw = event.thought

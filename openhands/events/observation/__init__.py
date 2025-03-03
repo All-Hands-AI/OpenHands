@@ -21,6 +21,7 @@ from openhands.events.observation.files import (
 )
 from openhands.events.observation.observation import Observation
 from openhands.events.observation.reject import UserRejectObservation
+from openhands.events.observation.search_engine import SearchEngineObservation
 from openhands.events.observation.success import SuccessObservation
 
 __all__ = [
@@ -40,4 +41,5 @@ __all__ = [
     'SuccessObservation',
     'UserRejectObservation',
     'AgentCondensationObservation',
+    'SearchEngineObservation',
 ]

@@ -16,6 +16,7 @@ from openhands.agenthub.codeact_agent.tools import (
     FinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
+    SearchEngineTool,
     StrReplaceEditorTool,
     ThinkTool,
     WebReadTool,
@@ -36,6 +37,7 @@ from openhands.events.action import (
     FileReadAction,
     IPythonRunCellAction,
     MessageAction,
+    SearchAction,
 )
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
@@ -187,6 +189,15 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         f'Missing required argument "url" in tool call {tool_call.function.name}'
                     )
                 action = BrowseURLAction(url=arguments['url'])
+            # ================================================
+            # SearchEngineTool (search the web using text queries)
+            # ================================================
+            elif tool_call.function.name == SearchEngineTool['function']['name']:
+                if 'query' not in arguments:
+                    raise FunctionCallNotExistsError(
+                        f'Missing required argument "query" in tool call {tool_call.function.name}'
+                    )
+                action = SearchAction(query=arguments['query'])
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
@@ -220,7 +231,8 @@ def get_tools(
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
 ) -> list[ChatCompletionToolParam]:
-    tools = [CmdRunTool, ThinkTool, FinishTool]
+    # tools = [CmdRunTool, ThinkTool, FinishTool]
+    tools = [CmdRunTool, SearchEngineTool, FinishTool]
     if codeact_enable_browsing:
         # tools.append(WebReadTool)
         tools.append(BrowserTool)
