@@ -19,7 +19,6 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   remote_runtime_resource_factor:
     DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
   token_is_set: DEFAULT_SETTINGS.TOKEN_IS_SET,
-  token_type: DEFAULT_SETTINGS.TOKEN_TYPE,
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
@@ -204,7 +203,6 @@ export const handlers = [
         if (newSettings.unset_token) {
           newSettings.token = undefined;
           newSettings.token_is_set = false;
-          newSettings.token_type = undefined;
           delete newSettings.unset_token;
         }
       }

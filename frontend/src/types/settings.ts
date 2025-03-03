@@ -8,7 +8,6 @@ export type Settings = {
   SECURITY_ANALYZER: string;
   REMOTE_RUNTIME_RESOURCE_FACTOR: number | null;
   TOKEN_IS_SET: boolean;
-  TOKEN_TYPE: 'github' | 'gitlab' | null;
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
@@ -24,7 +23,6 @@ export type ApiSettings = {
   security_analyzer: string;
   remote_runtime_resource_factor: number | null;
   token_is_set: boolean;
-  token_type: 'github' | 'gitlab' | null;
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
   user_consents_to_analytics: boolean | null;
@@ -32,14 +30,12 @@ export type ApiSettings = {
 
 export type PostSettings = Settings & {
   token: string;
-  token_type: 'github' | 'gitlab' | null;
   unset_token: boolean;
   user_consents_to_analytics: boolean | null;
 };
 
 export type PostApiSettings = ApiSettings & {
   token: string;
-  token_type: 'github' | 'gitlab' | null;
   unset_token: boolean;
   user_consents_to_analytics: boolean | null;
 };

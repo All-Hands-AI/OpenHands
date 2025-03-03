@@ -21,7 +21,6 @@ export interface InitConfig {
     LLM_MODEL: string;
   };
   token?: string;
-  token_type?: 'github' | 'gitlab';
   latest_event_id?: unknown; // Not sure what this is
 }
 

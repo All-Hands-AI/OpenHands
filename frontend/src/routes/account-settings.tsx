@@ -109,8 +109,7 @@ function AccountSettings() {
 
     saveSettings(
       {
-        token:
-          formData.get("token-input")?.toString() || undefined,
+        token: formData.get("token-input")?.toString() || undefined,
         LANGUAGE: languageValue,
         user_consents_to_analytics: userConsentsToAnalytics,
         ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
@@ -347,13 +346,11 @@ function AccountSettings() {
                 <SettingsInput
                   testId="token-input"
                   name="token-input"
-                  label={`${settings.TOKEN_TYPE === 'gitlab' ? 'GitLab' : 'GitHub'} Token`}
+                  label="GitHub Token"
                   type="password"
                   className="w-[680px]"
                   startContent={
-                    isTokenSet && (
-                      <KeyStatusIcon isSet={!!isTokenSet} />
-                    )
+                    isTokenSet && <KeyStatusIcon isSet={!!isTokenSet} />
                   }
                   placeholder={isTokenSet ? "**********" : ""}
                 />

@@ -33,6 +33,7 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
         settings_with_token_data.llm_api_key = settings.llm_api_key
 
         del settings_with_token_data.token
+        del settings_with_token_data.token_type
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
@@ -128,6 +129,6 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
 
     # Convert the `llm_api_key` and `github_token` to a `SecretStr` instance
     filtered_settings_data['llm_api_key'] = settings_with_token_data.llm_api_key
-    filtered_settings_data['github_token'] = settings_with_token_data.github_token
+    filtered_settings_data['token'] = settings_with_token_data.token
 
     return Settings(**filtered_settings_data)

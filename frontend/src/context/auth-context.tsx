@@ -12,9 +12,7 @@ interface AuthContextProps extends React.PropsWithChildren {
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 function AuthProvider({ children, initialTokenIsSet }: AuthContextProps) {
-  const [tokenIsSet, setTokenIsSet] = React.useState(
-    !!initialTokenIsSet,
-  );
+  const [tokenIsSet, setTokenIsSet] = React.useState(!!initialTokenIsSet);
 
   const value = React.useMemo(
     () => ({
