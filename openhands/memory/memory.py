@@ -1,5 +1,3 @@
-import asyncio
-
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import AgentRecallAction
 from openhands.events.event import Event, EventSource
@@ -84,17 +82,10 @@ class Memory:
 
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
-        asyncio.get_event_loop().run_until_complete(self._on_event(event))
-
-    async def _on_event(self, event: Event):
-        """Handle an event from the event stream asynchronously."""
 
         observation: RecallObservation | NullObservation | None = None
         # Handle AgentRecallAction
         if isinstance(event, AgentRecallAction):
-            # add a sleep here to allow other things to run
-            await asyncio.sleep(0.01)
-
             # if this is the first user message, create and add a RecallObservation
             # with info about repo and runtime.
             if not self._first_user_message_seen and event.source == EventSource.USER:
