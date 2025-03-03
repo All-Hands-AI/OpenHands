@@ -20,6 +20,7 @@ from openhands.core.setup import (
     create_controller,
     create_runtime,
     generate_sid,
+    initialize_repository_for_runtime,
 )
 from openhands.events import EventSource, EventStreamSubscriber
 from openhands.events.action import MessageAction, NullAction
@@ -29,6 +30,7 @@ from openhands.events.observation import AgentStateChangedObservation
 from openhands.events.serialization import event_from_dict
 from openhands.io import read_input, read_task
 from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 
 class FakeUserResponseFunc(Protocol):
@@ -97,8 +99,17 @@ async def run_controller(
             sid=sid,
             headless_mode=headless_mode,
             agent=agent,
-            selected_repository=config.sandbox.selected_repo,
         )
+        # Connect to the runtime
+        call_async_from_sync(runtime.connect)
+
+        # Initialize repository if needed
+        if config.sandbox.selected_repo:
+            initialize_repository_for_runtime(
+                runtime,
+                agent=agent,
+                selected_repository=config.sandbox.selected_repo,
+            )
 
     event_stream = runtime.event_stream
 
