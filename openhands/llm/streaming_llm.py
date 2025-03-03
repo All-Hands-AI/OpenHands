@@ -1,6 +1,6 @@
 import asyncio
 from functools import partial
-from typing import Any, AsyncIterator, Coroutine, cast
+from typing import Any, AsyncIterator, Callable, Coroutine
 
 from litellm.types.utils import ModelResponse
 
@@ -12,6 +12,10 @@ from openhands.llm.llm import REASONING_EFFORT_SUPPORTED_MODELS
 
 class StreamingLLM(AsyncLLM):
     """Streaming LLM class."""
+
+    _async_streaming_completion: Callable[
+        ..., Coroutine[Any, Any, AsyncIterator[ModelResponse]]
+    ]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -33,7 +37,9 @@ class StreamingLLM(AsyncLLM):
             stream=True,  # Ensure streaming is enabled
         )
 
-        async_streaming_completion_unwrapped = self._async_streaming_completion
+        async_streaming_completion_unwrapped: Callable[
+            ..., Coroutine[Any, Any, AsyncIterator[ModelResponse]]
+        ] = self._async_streaming_completion
 
         @self.retry_decorator(
             num_retries=self.config.num_retries,
@@ -77,7 +83,7 @@ class StreamingLLM(AsyncLLM):
                 resp = await async_streaming_completion_unwrapped(*args, **kwargs)
 
                 # For streaming we iterate over the chunks
-                async for chunk in resp:  # type: ignore
+                async for chunk in resp:
                     # Check for cancellation before yielding the chunk
                     if (
                         hasattr(self.config, 'on_cancel_requested_fn')
@@ -108,12 +114,11 @@ class StreamingLLM(AsyncLLM):
                 if kwargs.get('stream', False):
                     await asyncio.sleep(0.1)
 
-        self._async_streaming_completion = cast(
-            'partial[Coroutine[Any, Any, AsyncIterator[ModelResponse]]]',
-            async_streaming_completion_wrapper,
-        )
+        self._async_streaming_completion = async_streaming_completion_wrapper
 
     @property
-    def async_streaming_completion(self) -> Any:
+    def async_streaming_completion(
+        self,
+    ) -> Callable[..., Coroutine[Any, Any, AsyncIterator[ModelResponse]]]:
         """Decorator for the async litellm acompletion function with streaming."""
         return self._async_streaming_completion

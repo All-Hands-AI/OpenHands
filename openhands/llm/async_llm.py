@@ -1,6 +1,6 @@
 import asyncio
 from functools import partial
-from typing import Any, Coroutine, cast
+from typing import Any, Callable, Coroutine
 
 from litellm import acompletion as litellm_acompletion
 from litellm.types.utils import ModelResponse
@@ -17,6 +17,8 @@ from openhands.utils.shutdown_listener import should_continue
 
 class AsyncLLM(LLM):
     """Asynchronous LLM class."""
+
+    _async_completion: Callable[..., Coroutine[Any, Any, ModelResponse]]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -37,7 +39,9 @@ class AsyncLLM(LLM):
             drop_params=self.config.drop_params,
         )
 
-        async_completion_unwrapped = self._async_completion
+        async_completion_unwrapped: Callable[
+            ..., Coroutine[Any, Any, ModelResponse]
+        ] = self._async_completion
 
         @self.retry_decorator(
             num_retries=self.config.num_retries,
@@ -115,9 +119,7 @@ class AsyncLLM(LLM):
                 except asyncio.CancelledError:
                     pass
 
-        self._async_completion = cast(
-            'partial[Coroutine[Any, Any, ModelResponse]]', async_completion_wrapper
-        )
+        self._async_completion = async_completion_wrapper
 
     async def _call_acompletion(self, *args: Any, **kwargs: Any) -> ModelResponse:
         """Wrapper for the litellm acompletion function."""
@@ -126,6 +128,6 @@ class AsyncLLM(LLM):
         return ModelResponse(**resp)
 
     @property
-    def async_completion(self) -> Any:
+    def async_completion(self) -> Callable[..., Coroutine[Any, Any, ModelResponse]]:
         """Decorator for the async litellm acompletion function."""
         return self._async_completion

@@ -2,8 +2,7 @@ import copy
 import os
 import time
 import warnings
-from functools import partial
-from typing import Any, Callable, cast
+from typing import Any, Callable
 
 import requests
 
@@ -89,6 +88,8 @@ class LLM(RetryMixin, DebugMixin):
     Attributes:
         config: an LLMConfig object specifying the configuration of the LLM.
     """
+
+    _completion: Callable[..., ModelResponse]
 
     def __init__(
         self,
@@ -324,7 +325,7 @@ class LLM(RetryMixin, DebugMixin):
 
             return resp
 
-        self._completion = cast('partial[ModelResponse]', wrapper)
+        self._completion = wrapper
 
     @property
     def completion(self) -> Callable[..., ModelResponse]:
