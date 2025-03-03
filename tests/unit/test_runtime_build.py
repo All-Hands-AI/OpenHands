@@ -40,7 +40,8 @@ def temp_dir(tmp_path_factory: TempPathFactory) -> str:
 def mock_docker_client():
     mock_client = MagicMock(spec=docker.DockerClient)
     mock_client.version.return_value = {
-        'Version': '19.03'
+        'Version': '20.10.0',
+        'Components': [{'Name': 'Engine', 'Version': '20.10.0'}],
     }  # Ensure version is >= 18.09
     return mock_client
 
@@ -612,7 +613,10 @@ CMD ["sh", "-c", "echo 'Hello, World!'"]
 
 def test_image_exists_local(docker_runtime_builder):
     mock_client = MagicMock()
-    mock_client.version().get.return_value = '18.9'
+    mock_client.version.return_value = {
+        'Version': '20.10.0',
+        'Components': [{'Name': 'Engine', 'Version': '20.10.0'}],
+    }  # Ensure version is >= 18.09
     builder = DockerRuntimeBuilder(mock_client)
     image_name = 'existing-local:image'  # The mock pretends this exists by default
     assert builder.image_exists(image_name)
@@ -620,7 +624,10 @@ def test_image_exists_local(docker_runtime_builder):
 
 def test_image_exists_not_found():
     mock_client = MagicMock()
-    mock_client.version().get.return_value = '18.9'
+    mock_client.version.return_value = {
+        'Version': '20.10.0',
+        'Components': [{'Name': 'Engine', 'Version': '20.10.0'}],
+    }  # Ensure version is >= 18.09
     mock_client.images.get.side_effect = docker.errors.ImageNotFound(
         "He doesn't like you!"
     )

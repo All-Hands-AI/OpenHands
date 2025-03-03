@@ -9,6 +9,7 @@ from openhands.core.config.app_config import AppConfig
 from openhands.server.conversation_manager.standalone_conversation_manager import (
     StandaloneConversationManager,
 )
+from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.memory import InMemoryFileStore
 
@@ -54,7 +55,7 @@ async def test_init_new_local_session():
         ),
     ):
         async with StandaloneConversationManager(
-            sio, AppConfig(), InMemoryFileStore()
+            sio, AppConfig(), InMemoryFileStore(), MonitoringListener()
         ) as conversation_manager:
             await conversation_manager.maybe_start_agent_loop(
                 'new-session-id', ConversationInitData(), 1
@@ -86,7 +87,7 @@ async def test_join_local_session():
         ),
     ):
         async with StandaloneConversationManager(
-            sio, AppConfig(), InMemoryFileStore()
+            sio, AppConfig(), InMemoryFileStore(), MonitoringListener()
         ) as conversation_manager:
             await conversation_manager.maybe_start_agent_loop(
                 'new-session-id', ConversationInitData(), None
@@ -121,7 +122,7 @@ async def test_add_to_local_event_stream():
         ),
     ):
         async with StandaloneConversationManager(
-            sio, AppConfig(), InMemoryFileStore()
+            sio, AppConfig(), InMemoryFileStore(), MonitoringListener()
         ) as conversation_manager:
             await conversation_manager.maybe_start_agent_loop(
                 'new-session-id', ConversationInitData(), 1
@@ -139,7 +140,7 @@ async def test_add_to_local_event_stream():
 async def test_cleanup_session_connections():
     sio = get_mock_sio()
     async with StandaloneConversationManager(
-        sio, AppConfig(), InMemoryFileStore()
+        sio, AppConfig(), InMemoryFileStore(), MonitoringListener()
     ) as conversation_manager:
         conversation_manager._local_connection_id_to_session_id.update(
             {

@@ -43,7 +43,7 @@ export function BaseModal({
       backdrop="blur"
       hideCloseButton
       size="sm"
-      className="bg-base rounded-lg"
+      className="bg-base-secondary rounded-lg"
     >
       <ModalContent className={contentClassName}>
         {(closeModal) => (
