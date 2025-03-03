@@ -1,14 +1,10 @@
-from typing import Annotated, cast
-
 from fastapi import (
     APIRouter,
-    Depends,
     HTTPException,
     Request,
     Response,
     status,
 )
-from fastapi.routing import APIRoute
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
