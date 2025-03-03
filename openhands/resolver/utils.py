@@ -4,7 +4,7 @@ import multiprocessing as mp
 import os
 import re
 from enum import Enum
-from typing import Callable
+from typing import Callable, Optional
 
 import pandas as pd
 import requests
@@ -22,7 +22,7 @@ class Platform(Enum):
     GITLAB = 2
 
 
-def identify_token(token: str, repo: str = None) -> Platform:
+def identify_token(token: str, repo: Optional[str] = None) -> Platform:
     """
     Identifies whether a token belongs to GitHub or GitLab.
 
@@ -38,14 +38,19 @@ def identify_token(token: str, repo: str = None) -> Platform:
     # Try GitHub Actions token format (Bearer) with repo endpoint if repo is provided
     if repo:
         github_repo_url = f'https://api.github.com/repos/{repo}'
-        github_bearer_headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json'}
-        
+        github_bearer_headers = {
+            'Authorization': f'Bearer {token}',
+            'Accept': 'application/vnd.github+json',
+        }
+
         try:
-            github_repo_response = requests.get(github_repo_url, headers=github_bearer_headers, timeout=5)
+            github_repo_response = requests.get(
+                github_repo_url, headers=github_bearer_headers, timeout=5
+            )
             if github_repo_response.status_code == 200:
                 return Platform.GITHUB
         except requests.RequestException as e:
-            print(f'Error connecting to GitHub API (repo check): {e}')1
+            print(f'Error connecting to GitHub API (repo check): {e}')
 
     # Try GitHub PAT format (token)
     github_url = 'https://api.github.com/user'
