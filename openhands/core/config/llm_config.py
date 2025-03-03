@@ -48,7 +48,7 @@ class LLMConfig(BaseModel):
         reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Exclusive for o1 models.
     """
 
-    model: str = Field(default='claude-3-5-sonnet-20241022')
+    model: str = Field(default='claude-3-7-sonnet-20250219')
     api_key: SecretStr | None = Field(default=None)
     base_url: str | None = Field(default=None)
     api_version: str | None = Field(default=None)

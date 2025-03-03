@@ -333,7 +333,10 @@ class DockerRuntime(ActionExecutionClient):
         if exposed_ports:
             for exposed_port in exposed_ports.keys():
                 exposed_port = int(exposed_port.split('/tcp')[0])
-                if exposed_port != self._host_port and exposed_port != self._vscode_port:
+                if (
+                    exposed_port != self._host_port
+                    and exposed_port != self._vscode_port
+                ):
                     self._app_ports.append(exposed_port)
 
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'

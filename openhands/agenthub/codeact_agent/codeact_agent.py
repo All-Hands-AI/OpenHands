@@ -83,7 +83,7 @@ class CodeActAgent(Agent):
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
 
         self.condenser = Condenser.from_config(self.config.condenser)
-        logger.debug(f'Using condenser: {self.condenser}')
+        logger.debug(f'Using condenser: {type(self.condenser)}')
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
