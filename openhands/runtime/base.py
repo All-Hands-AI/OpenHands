@@ -489,5 +489,5 @@ class Runtime(FileEditRuntimeMixin):
         return {}
 
     @property
-    def additional_instructions(self) -> str:
+    def additional_agent_instructions(self) -> str:
         return ''
