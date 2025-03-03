@@ -228,7 +228,7 @@ def test_memory_usage_file_operations(temp_dir: str):
     """
 
     def get_memory_mb():
-        """Get current memory usage in MB"""
+        """Get current memory usage in MB."""
         process = psutil.Process(os.getpid())
         return process.memory_info().rss / 1024 / 1024
 
