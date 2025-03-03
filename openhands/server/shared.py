@@ -1,3 +1,4 @@
+import inspect
 import os
 
 import socketio
@@ -8,6 +9,7 @@ from openhands.server.config.server_config import load_server_config
 from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
 )
+from openhands.server.monitoring import MonitoringListener
 from openhands.storage import get_file_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.settings.settings_store import SettingsStore
@@ -32,11 +34,27 @@ sio = socketio.AsyncServer(
     async_mode='asgi', cors_allowed_origins='*', client_manager=client_manager
 )
 
+MonitoringListenerImpl = get_impl(
+    MonitoringListener,
+    server_config.monitoring_listener_class,
+)
+
+monitoring_listener = MonitoringListenerImpl.get_instance(config)
+
 ConversationManagerImpl = get_impl(
     ConversationManager,  # type: ignore
     server_config.conversation_manager_class,
 )
-conversation_manager = ConversationManagerImpl.get_instance(sio, config, file_store)
+
+if len(inspect.signature(ConversationManagerImpl.get_instance).parameters) == 3:
+    # This conditional prevents a breaking change in February 2025.
+    # It should be safe to remove by April.
+    conversation_manager = ConversationManagerImpl.get_instance(sio, config, file_store)
+else:
+    # This is the new signature.
+    conversation_manager = ConversationManagerImpl.get_instance(  # type: ignore
+        sio, config, file_store, monitoring_listener
+    )
 
 SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)  # type: ignore
 

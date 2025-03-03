@@ -1,7 +1,6 @@
 import asyncio
 import json
 import os
-import sys
 from pathlib import Path
 from typing import Callable, Protocol
 
@@ -21,6 +20,7 @@ from openhands.core.setup import (
     create_controller,
     create_runtime,
     generate_sid,
+    initialize_repository_for_runtime,
 )
 from openhands.events import EventSource, EventStreamSubscriber
 from openhands.events.action import MessageAction, NullAction
@@ -28,8 +28,9 @@ from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.events.serialization import event_from_dict
-from openhands.events.serialization.event import event_to_trajectory
+from openhands.io import read_input, read_task
 from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 
 class FakeUserResponseFunc(Protocol):
@@ -39,32 +40,6 @@ class FakeUserResponseFunc(Protocol):
         encapsulate_solution: bool = False,
         try_parse: Callable[[Action | None], str] | None = None,
     ) -> str: ...
-
-
-def read_task_from_file(file_path: str) -> str:
-    """Read task from the specified file."""
-    with open(file_path, 'r', encoding='utf-8') as file:
-        return file.read()
-
-
-def read_task_from_stdin() -> str:
-    """Read task from stdin."""
-    return sys.stdin.read()
-
-
-def read_input(config: AppConfig) -> str:
-    """Read input from user based on config settings."""
-    if config.cli_multiline_input:
-        print('Enter your message (enter "/exit" on a new line to finish):')
-        lines = []
-        while True:
-            line = input('>> ').rstrip()
-            if line == '/exit':  # finish input
-                break
-            lines.append(line)
-        return '\n'.join(lines)
-    else:
-        return input('>> ').rstrip()
 
 
 async def run_controller(
@@ -115,14 +90,28 @@ async def run_controller(
     """
     sid = sid or generate_sid(config)
 
+    if agent is None:
+        agent = create_agent(config)
+
     if runtime is None:
-        runtime = create_runtime(config, sid=sid, headless_mode=headless_mode)
-        await runtime.connect()
+        runtime = create_runtime(
+            config,
+            sid=sid,
+            headless_mode=headless_mode,
+            agent=agent,
+        )
+        # Connect to the runtime
+        call_async_from_sync(runtime.connect)
+
+        # Initialize repository if needed
+        if config.sandbox.selected_repo:
+            initialize_repository_for_runtime(
+                runtime,
+                agent=agent,
+                selected_repository=config.sandbox.selected_repo,
+            )
 
     event_stream = runtime.event_stream
-
-    if agent is None:
-        agent = create_agent(runtime, config)
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:
@@ -139,7 +128,6 @@ async def run_controller(
     assert isinstance(
         initial_user_action, Action
     ), f'initial user actions must be an Action, got {type(initial_user_action)}'
-    # Logging
     logger.debug(
         f'Agent Controller Initialized: Running agent {agent.name}, model '
         f'{agent.llm.config.model}, with actions: {initial_user_action}'
@@ -167,7 +155,7 @@ async def run_controller(
                 if exit_on_message:
                     message = '/exit'
                 elif fake_user_response_fn is None:
-                    message = read_input(config)
+                    message = read_input(config.cli_multiline_input)
                 else:
                     message = fake_user_response_fn(controller.get_state())
                 action = MessageAction(content=message)
@@ -194,6 +182,8 @@ async def run_controller(
         # NOTE: the saved state does not include delegates events
         end_state.save_to_session(event_stream.sid, event_stream.file_store)
 
+    await controller.close(set_stop_state=False)
+
     state = controller.get_state()
 
     # save trajectories if applicable
@@ -204,7 +194,7 @@ async def run_controller(
         else:
             file_path = config.save_trajectory_path
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        histories = [event_to_trajectory(event) for event in state.history]
+        histories = controller.get_trajectory()
         with open(file_path, 'w') as f:
             json.dump(histories, f)
 
@@ -268,16 +258,10 @@ def load_replay_log(trajectory_path: str) -> tuple[list[Event] | None, Action]:
 if __name__ == '__main__':
     args = parse_arguments()
 
-    config = setup_config_from_args(args)
+    config: AppConfig = setup_config_from_args(args)
 
-    # Determine the task
-    task_str = ''
-    if args.file:
-        task_str = read_task_from_file(args.file)
-    elif args.task:
-        task_str = args.task
-    elif not sys.stdin.isatty():
-        task_str = read_task_from_stdin()
+    # Read task from file, CLI args, or stdin
+    task_str = read_task(args, config.cli_multiline_input)
 
     initial_user_action: Action = NullAction()
     if config.replay_trajectory_path:
@@ -285,10 +269,12 @@ if __name__ == '__main__':
             raise ValueError(
                 'User-specified task is not supported under trajectory replay mode'
             )
-    elif task_str:
-        initial_user_action = MessageAction(content=task_str)
     else:
-        raise ValueError('No task provided. Please specify a task through -t, -f.')
+        if not task_str:
+            raise ValueError('No task provided. Please specify a task through -t, -f.')
+
+        # Create actual initial user action
+        initial_user_action = MessageAction(content=task_str)
 
     # Set session name
     session_name = args.name

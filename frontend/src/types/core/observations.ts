@@ -70,6 +70,7 @@ export interface EditObservation extends OpenHandsObservationEvent<"edit"> {
   source: "agent";
   extras: {
     path: string;
+    diff: string;
   };
 }
 
@@ -80,8 +81,17 @@ export interface ErrorObservation extends OpenHandsObservationEvent<"error"> {
   };
 }
 
+export interface AgentThinkObservation
+  extends OpenHandsObservationEvent<"think"> {
+  source: "agent";
+  extras: {
+    thought: string;
+  };
+}
+
 export type OpenHandsObservation =
   | AgentStateChangeObservation
+  | AgentThinkObservation
   | CommandObservation
   | IPythonObservation
   | DelegateObservation

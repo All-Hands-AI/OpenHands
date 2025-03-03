@@ -8,7 +8,6 @@ NOTE: this will be executed inside the docker sandbox.
 import argparse
 import asyncio
 import base64
-import io
 import mimetypes
 import os
 import shutil
@@ -21,12 +20,14 @@ from zipfile import ZipFile
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
+from openhands_aci.utils.diff import get_diff
 from pydantic import BaseModel
+from starlette.background import BackgroundTask
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
 
@@ -89,7 +90,7 @@ def _execute_file_editor(
     new_str: str | None = None,
     insert_line: int | None = None,
     enable_linting: bool = False,
-) -> str:
+) -> tuple[str, tuple[str | None, str | None]]:
     """Execute file editor command and handle exceptions.
 
     Args:
@@ -104,7 +105,7 @@ def _execute_file_editor(
         enable_linting: Whether to enable linting
 
     Returns:
-        str: Result string from the editor operation
+        tuple: A tuple containing the output string and a tuple of old and new file content
     """
     result: ToolResult | None = None
     try:
@@ -122,13 +123,13 @@ def _execute_file_editor(
         result = ToolResult(error=e.message)
 
     if result.error:
-        return f'ERROR:\n{result.error}'
+        return f'ERROR:\n{result.error}', (None, None)
 
     if not result.output:
         logger.warning(f'No output from file_editor for {path}')
-        return ''
+        return '', (None, None)
 
-    return result.output
+    return result.output, (result.old_content, result.new_content)
 
 
 class ActionExecutor:
@@ -316,7 +317,7 @@ class ActionExecutor:
     async def read(self, action: FileReadAction) -> Observation:
         assert self.bash_session is not None
         if action.impl_source == FileReadSource.OH_ACI:
-            result_str = _execute_file_editor(
+            result_str, _ = _execute_file_editor(
                 self.file_editor,
                 command='view',
                 path=action.path,
@@ -433,7 +434,7 @@ class ActionExecutor:
 
     async def edit(self, action: FileEditAction) -> Observation:
         assert action.impl_source == FileEditSource.OH_ACI
-        result_str = _execute_file_editor(
+        result_str, (old_content, new_content) = _execute_file_editor(
             self.file_editor,
             command=action.command,
             path=action.path,
@@ -450,6 +451,11 @@ class ActionExecutor:
             old_content=action.old_str,
             new_content=action.new_str,
             impl_source=FileEditSource.OH_ACI,
+            diff=get_diff(
+                old_contents=old_content or '',
+                new_contents=new_content or '',
+                filepath=action.path,
+            ),
         )
 
     async def browse(self, action: BrowseURLAction) -> Observation:
@@ -631,7 +637,7 @@ if __name__ == '__main__':
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get('/download_files')
-    async def download_file(path: str):
+    def download_file(path: str):
         logger.debug('Downloading files')
         try:
             if not os.path.isabs(path):
@@ -642,7 +648,7 @@ if __name__ == '__main__':
             if not os.path.exists(path):
                 raise HTTPException(status_code=404, detail='File not found')
 
-            with tempfile.TemporaryFile() as temp_zip:
+            with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp_zip:
                 with ZipFile(temp_zip, 'w') as zipf:
                     for root, _, files in os.walk(path):
                         for file in files:
@@ -650,15 +656,11 @@ if __name__ == '__main__':
                             zipf.write(
                                 file_path, arcname=os.path.relpath(file_path, path)
                             )
-                temp_zip.seek(0)  # Rewind the file to the beginning after writing
-                content = temp_zip.read()
-                # Good for small to medium-sized files. For very large files, streaming directly from the
-                # file chunks may be more memory-efficient.
-                zip_stream = io.BytesIO(content)
-                return StreamingResponse(
-                    content=zip_stream,
+                return FileResponse(
+                    path=temp_zip.name,
                     media_type='application/zip',
-                    headers={'Content-Disposition': f'attachment; filename={path}.zip'},
+                    filename=f'{os.path.basename(path)}.zip',
+                    background=BackgroundTask(lambda: os.unlink(temp_zip.name)),
                 )
 
         except Exception as e:

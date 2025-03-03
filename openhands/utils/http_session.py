@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
+from typing import Any, cast
 
 import requests
+from requests.structures import CaseInsensitiveDict
 
 from openhands.core.logger import openhands_logger as logger
 
@@ -15,13 +17,25 @@ class HttpSession:
 
     session: requests.Session | None = field(default_factory=requests.Session)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         if self.session is None:
             logger.error(
                 'Session is being used after close!', stack_info=True, exc_info=True
             )
-        return object.__getattribute__(self.session, name)
+            self.session = requests.Session()
+        return getattr(self.session, name)
 
-    def close(self):
+    @property
+    def headers(self) -> CaseInsensitiveDict[str]:
+        if self.session is None:
+            logger.error(
+                'Session is being used after close!', stack_info=True, exc_info=True
+            )
+            self.session = requests.Session()
+        # Cast to CaseInsensitiveDict[str] since mypy doesn't know the exact type
+        return cast(CaseInsensitiveDict[str], self.session.headers)
+
+    def close(self) -> None:
         if self.session is not None:
             self.session.close()
+            self.session = None

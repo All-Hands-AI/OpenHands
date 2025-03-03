@@ -6,14 +6,20 @@ import sys
 import traceback
 from datetime import datetime
 from types import TracebackType
-from typing import Any, Literal, Mapping
+from typing import Any, Literal, Mapping, TextIO
 
 import litellm
+from pythonjsonlogger.json import JsonFormatter
 from termcolor import colored
 
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
 DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
 DEBUG_LLM = os.getenv('DEBUG_LLM', 'False').lower() in ['true', '1', 'yes']
+
+# Structured logs with JSON, disabled by default
+LOG_JSON = os.getenv('LOG_JSON', 'False').lower() in ['true', '1', 'yes']
+LOG_JSON_LEVEL_KEY = os.getenv('LOG_JSON_LEVEL_KEY', 'level')
+
 
 # Configure litellm logging based on DEBUG_LLM
 if DEBUG_LLM:
@@ -74,10 +80,18 @@ LOG_COLORS: Mapping[str, ColorType] = {
 
 
 class StackInfoFilter(logging.Filter):
-    def filter(self, record):
+    def filter(self, record: logging.LogRecord) -> bool:
         if record.levelno >= logging.ERROR:
-            record.stack_info = True
-            record.exc_info = True
+            # LogRecord attributes are dynamically typed
+
+            # Capture the current stack trace as a string
+            stack = traceback.format_stack()
+            # Remove the last entries which are related to the logging machinery
+            stack = stack[:-3]  # Adjust this number if needed
+            # Join the stack frames into a single string
+            stack_str = ''.join(stack)
+            setattr(record, 'stack_info', stack_str)
+            setattr(record, 'exc_info', sys.exc_info())
         return True
 
 
@@ -107,9 +121,9 @@ def strip_ansi(s: str) -> str:
 
 
 class ColoredFormatter(logging.Formatter):
-    def format(self, record):
-        msg_type = record.__dict__.get('msg_type')
-        event_source = record.__dict__.get('event_source')
+    def format(self, record: logging.LogRecord) -> str:
+        msg_type = record.__dict__.get('msg_type', '')
+        event_source = record.__dict__.get('event_source', '')
         if event_source:
             new_msg_type = f'{event_source.upper()}_{msg_type}'
             if new_msg_type in LOG_COLORS:
@@ -136,12 +150,13 @@ class ColoredFormatter(logging.Formatter):
         return super().format(new_record)
 
 
-def _fix_record(record: logging.LogRecord):
+def _fix_record(record: logging.LogRecord) -> logging.LogRecord:
     new_record = copy.copy(record)
     # The formatter expects non boolean values, and will raise an exception if there is a boolean - so we fix these
-    if new_record.exc_info is True and not new_record.exc_text:  # type: ignore
-        new_record.exc_info = sys.exc_info()  # type: ignore
-        new_record.stack_info = None  # type: ignore
+    # LogRecord attributes are dynamically typed
+    if getattr(new_record, 'exc_info', None) is True:
+        setattr(new_record, 'exc_info', sys.exc_info())
+        setattr(new_record, 'stack_info', None)
     return new_record
 
 
@@ -158,32 +173,32 @@ class RollingLogger:
     log_lines: list[str]
     all_lines: str
 
-    def __init__(self, max_lines=10, char_limit=80):
+    def __init__(self, max_lines: int = 10, char_limit: int = 80) -> None:
         self.max_lines = max_lines
         self.char_limit = char_limit
         self.log_lines = [''] * self.max_lines
         self.all_lines = ''
 
-    def is_enabled(self):
+    def is_enabled(self) -> bool:
         return DEBUG and sys.stdout.isatty()
 
-    def start(self, message=''):
+    def start(self, message: str = '') -> None:
         if message:
             print(message)
         self._write('\n' * self.max_lines)
         self._flush()
 
-    def add_line(self, line):
+    def add_line(self, line: str) -> None:
         self.log_lines.pop(0)
         self.log_lines.append(line[: self.char_limit])
         self.print_lines()
         self.all_lines += line + '\n'
 
-    def write_immediately(self, line):
+    def write_immediately(self, line: str) -> None:
         self._write(line)
         self._flush()
 
-    def print_lines(self):
+    def print_lines(self) -> None:
         """Display the last n log_lines in the console (not for file logging).
 
         This will create the effect of a rolling display in the console.
@@ -192,37 +207,39 @@ class RollingLogger:
         for line in self.log_lines:
             self.replace_current_line(line)
 
-    def move_back(self, amount=-1):
+    def move_back(self, amount: int = -1) -> None:
         r"""'\033[F' moves the cursor up one line."""
         if amount == -1:
             amount = self.max_lines
         self._write('\033[F' * (self.max_lines))
         self._flush()
 
-    def replace_current_line(self, line=''):
+    def replace_current_line(self, line: str = '') -> None:
         r"""'\033[2K\r' clears the line and moves the cursor to the beginning of the line."""
         self._write('\033[2K' + line + '\n')
         self._flush()
 
-    def _write(self, line):
+    def _write(self, line: str) -> None:
         if not self.is_enabled():
             return
         sys.stdout.write(line)
 
-    def _flush(self):
+    def _flush(self) -> None:
         if not self.is_enabled():
             return
         sys.stdout.flush()
 
 
 class SensitiveDataFilter(logging.Filter):
-    def filter(self, record):
+    def filter(self, record: logging.LogRecord) -> bool:
         # Gather sensitive values which should not ever appear in the logs.
         sensitive_values = []
         for key, value in os.environ.items():
             key_upper = key.upper()
-            if len(value) > 2 and any(
-                s in key_upper for s in ('SECRET', 'KEY', 'CODE', 'TOKEN')
+            if (
+                len(value) > 2
+                and value != 'default'
+                and any(s in key_upper for s in ('SECRET', 'KEY', 'CODE', 'TOKEN'))
             ):
                 sensitive_values.append(value)
 
@@ -243,6 +260,7 @@ class SensitiveDataFilter(logging.Filter):
             'modal_api_token_secret',
             'llm_api_key',
             'sandbox_env_github_token',
+            'daytona_api_key',
         ]
 
         # add env var names
@@ -260,7 +278,9 @@ class SensitiveDataFilter(logging.Filter):
         return True
 
 
-def get_console_handler(log_level: int = logging.INFO, extra_info: str | None = None):
+def get_console_handler(
+    log_level: int = logging.INFO, extra_info: str | None = None
+) -> logging.StreamHandler:
     """Returns a console handler for logging."""
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
@@ -271,15 +291,43 @@ def get_console_handler(log_level: int = logging.INFO, extra_info: str | None = 
     return console_handler
 
 
-def get_file_handler(log_dir: str, log_level: int = logging.INFO):
+def get_file_handler(
+    log_dir: str, log_level: int = logging.INFO
+) -> logging.FileHandler:
     """Returns a file handler for logging."""
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime('%Y-%m-%d')
     file_name = f'openhands_{timestamp}.log'
     file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
     file_handler.setLevel(log_level)
-    file_handler.setFormatter(file_formatter)
+    if LOG_JSON:
+        file_handler.setFormatter(json_formatter())
+    else:
+        file_handler.setFormatter(file_formatter)
     return file_handler
+
+
+def json_formatter():
+    return JsonFormatter(
+        '{message}{levelname}',
+        style='{',
+        rename_fields={'levelname': LOG_JSON_LEVEL_KEY},
+        timestamp=True,
+    )
+
+
+def json_log_handler(
+    level: int = logging.INFO,
+    _out: TextIO = sys.stdout,
+) -> logging.Handler:
+    """
+    Configure logger instance for structured logging as json lines.
+    """
+
+    handler = logging.StreamHandler(_out)
+    handler.setLevel(level)
+    handler.setFormatter(json_formatter())
+    return handler
 
 
 # Set up logging
@@ -319,7 +367,11 @@ if current_log_level == logging.DEBUG:
     LOG_TO_FILE = True
     openhands_logger.debug('DEBUG mode enabled.')
 
-openhands_logger.addHandler(get_console_handler(current_log_level))
+if LOG_JSON:
+    openhands_logger.addHandler(json_log_handler(current_log_level))
+else:
+    openhands_logger.addHandler(get_console_handler(current_log_level))
+
 openhands_logger.addFilter(SensitiveDataFilter(openhands_logger.name))
 openhands_logger.propagate = False
 openhands_logger.debug('Logging initialized')
@@ -345,7 +397,13 @@ logging.getLogger('LiteLLM Proxy').disabled = True
 class LlmFileHandler(logging.FileHandler):
     """LLM prompt and response logging."""
 
-    def __init__(self, filename, mode='a', encoding='utf-8', delay=False):
+    def __init__(
+        self,
+        filename: str,
+        mode: str = 'a',
+        encoding: str = 'utf-8',
+        delay: bool = False,
+    ) -> None:
         """Initializes an instance of LlmFileHandler.
 
         Args:
@@ -376,7 +434,7 @@ class LlmFileHandler(logging.FileHandler):
         self.baseFilename = os.path.join(self.log_directory, filename)
         super().__init__(self.baseFilename, mode, encoding, delay)
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         """Emits a log record.
 
         Args:
@@ -391,7 +449,7 @@ class LlmFileHandler(logging.FileHandler):
         self.message_counter += 1
 
 
-def _get_llm_file_handler(name: str, log_level: int):
+def _get_llm_file_handler(name: str, log_level: int) -> LlmFileHandler:
     # The 'delay' parameter, when set to True, postpones the opening of the log file
     # until the first log message is emitted.
     llm_file_handler = LlmFileHandler(name, delay=True)
@@ -400,7 +458,7 @@ def _get_llm_file_handler(name: str, log_level: int):
     return llm_file_handler
 
 
-def _setup_llm_logger(name: str, log_level: int):
+def _setup_llm_logger(name: str, log_level: int) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.propagate = False
     logger.setLevel(log_level)
