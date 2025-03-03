@@ -25,6 +25,22 @@ const createAxiosNotFoundErrorObject = () =>
     },
   );
 
+const createAxiosPaymentRequiredErrorObject = () =>
+  new AxiosError(
+    "Request failed with status code 402",
+    "ERR_PAYMENT_REQUIRED",
+    undefined,
+    undefined,
+    {
+      status: 402,
+      statusText: "Payment Required",
+      data: { message: "Payment required" },
+      headers: {},
+      // @ts-expect-error - we only need the response object for this test
+      config: {},
+    },
+  );
+
 const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
 
 const RouterStub = createRoutesStub([
@@ -113,5 +129,47 @@ describe("Settings 404", () => {
 
     const settingsModalAfter = screen.queryByTestId("ai-config-modal");
     expect(settingsModalAfter).not.toBeInTheDocument();
+  });
+});
+
+describe("Credit card modal", () => {
+  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+  const getUserCreditsSpy = vi.spyOn(OpenHands, "getBalance");
+
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("should only render if SaaS mode and /user/credits endpoint returns 402", async () => {
+    // @ts-expect-error - we only need the APP_MODE for this test
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+    });
+    getUserCreditsSpy.mockRejectedValue(
+      createAxiosPaymentRequiredErrorObject(),
+    );
+
+    renderWithProviders(<RouterStub initialEntries={["/"]} />);
+
+    const creditCardModal = await screen.findByTestId("credit-card-modal");
+    expect(creditCardModal).toBeInTheDocument();
+  });
+
+  it("should redirect the user to the home screen if the conditions fail", async () => {
+    // @ts-expect-error - we only need the APP_MODE for this test
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+    });
+    getUserCreditsSpy.mockRejectedValue(
+      createAxiosPaymentRequiredErrorObject(),
+    );
+
+    renderWithProviders(<RouterStub initialEntries={["/settings"]} />);
+
+    const creditCardModal = await screen.findByTestId("credit-card-modal");
+    expect(creditCardModal).toBeInTheDocument();
+
+    const homeScreen = await screen.findByTestId("home-screen");
+    expect(homeScreen).toBeInTheDocument();
   });
 });

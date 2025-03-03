@@ -1,5 +1,11 @@
 import React from "react";
-import { useRouteError, isRouteErrorResponse, Outlet } from "react-router";
+import {
+  useRouteError,
+  isRouteErrorResponse,
+  Outlet,
+  useNavigate,
+  useLocation,
+} from "react-router";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
@@ -10,6 +16,7 @@ import { AnalyticsConsentFormModal } from "#/components/features/analytics/analy
 import { useSettings } from "#/hooks/query/use-settings";
 import { useAuth } from "#/context/auth-context";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
+import { useBalance } from "#/hooks/query/use-balance";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -44,11 +51,12 @@ export function ErrorBoundary() {
 }
 
 export default function MainApp() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { githubTokenIsSet } = useAuth();
   const { data: settings } = useSettings();
+  const { error, isFetching } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
-
-  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
 
   const config = useConfig();
   const {
@@ -61,6 +69,8 @@ export default function MainApp() {
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
+
+  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (settings?.LANGUAGE) {
@@ -83,6 +93,13 @@ export default function MainApp() {
       },
     });
   }, []);
+
+  React.useEffect(() => {
+    // Don't allow users to use the app if it 402s
+    if (error?.status === 402 && pathname !== "/") {
+      navigate("/");
+    }
+  }, [error?.status, pathname, isFetching]);
 
   const userIsAuthed = !!isAuthed && !authError;
   const renderWaitlistModal =
@@ -115,6 +132,10 @@ export default function MainApp() {
             setConsentFormIsOpen(false);
           }}
         />
+      )}
+
+      {config.data?.APP_MODE === "saas" && error?.status === 402 && (
+        <div data-testid="credit-card-modal" />
       )}
     </div>
   );
