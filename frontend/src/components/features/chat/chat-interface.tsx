@@ -83,8 +83,8 @@ export function ChatInterface() {
 
   const handleStop = () => {
     posthog.capture("stop_button_clicked");
-    send(getStopProcessesCommand());  // First kill all processes
-    send(generateAgentStateChangeEvent(AgentState.STOPPED));  // Then change agent state
+    send(getStopProcessesCommand()); // First kill all processes
+    send(generateAgentStateChangeEvent(AgentState.STOPPED)); // Then change agent state
   };
 
   const handleSendContinueMsg = () => {
