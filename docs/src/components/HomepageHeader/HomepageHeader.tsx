@@ -25,10 +25,10 @@ export function HomepageHeader() {
           padding: '0rem 0rem 1rem'
         }}>
         <p style={{ margin: '0' }}>
-          Welcome to OpenHands, a platform for software development agents powered by AI.
-          OpenHands agents can do anything a human developer can: modify code, run commands, browse the web, call APIs, and yes—even copy code snippets from StackOverflow.
+          Use AI to tackle the toil in your backlog. Our agents have all the same tools as a human developer: they can modify code, run commands, browse the web,
+          call APIs, and yes-even copy code snippets from StackOverflow.
           <br/>
-          <Link to="../../modules/usage/Installation"
+          <Link to="https://docs.all-hands.dev/modules/usage/installation"
             style={{
               textDecoration: 'underline',
               display: 'inline-block',
@@ -36,16 +36,6 @@ export function HomepageHeader() {
             }}
           >
             Get started with OpenHands.
-          </Link>
-          <br/>
-          <Link to="../../modules/usage/cloud/openhands-cloud"
-            style={{
-              textDecoration: 'underline',
-              display: 'inline-block',
-              marginTop: '0.5rem'
-            }}
-          >
-            Sign up for OpenHands Cloud.
           </Link>
         </p>
       </div>
@@ -60,7 +50,6 @@ export function HomepageHeader() {
           <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community" /></a>
           <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/CREDITS.md"><img src="https://img.shields.io/badge/Project-Credits-blue?style=for-the-badge&color=FFE165&logo=github&logoColor=white" alt="Credits" /></a>
           <br/>
-          <a href="https://docs.all-hands.dev/modules/usage/getting-started"><img src="https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge" alt="Check out the documentation" /></a>
           <a href="https://arxiv.org/abs/2407.16741"><img src="https://img.shields.io/badge/Paper%20on%20Arxiv-000?logoColor=FFE165&logo=arxiv&style=for-the-badge" alt="Paper on Arxiv" /></a>
           <a href="https://huggingface.co/spaces/OpenHands/evaluation"><img src="https://img.shields.io/badge/Benchmark%20score-000?logoColor=FFE165&logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark Score" /></a>
         </div>
