@@ -3,7 +3,7 @@ import os
 import time
 import warnings
 from functools import partial
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 import requests
 
@@ -320,7 +320,7 @@ class LLM(RetryMixin, DebugMixin):
 
             return resp
 
-        self._completion = partial(wrapper)
+        self._completion = cast('partial[ModelResponse]', wrapper)
 
     @property
     def completion(self) -> Callable[..., ModelResponse]:

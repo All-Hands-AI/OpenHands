@@ -1,6 +1,6 @@
 import asyncio
 from functools import partial
-from typing import Any
+from typing import Any, Coroutine, cast
 
 from litellm import acompletion as litellm_acompletion
 from litellm.types.utils import ModelResponse
@@ -115,7 +115,9 @@ class AsyncLLM(LLM):
                 except asyncio.CancelledError:
                     pass
 
-        self._async_completion = partial(async_completion_wrapper)
+        self._async_completion = cast(
+            'partial[Coroutine[Any, Any, ModelResponse]]', async_completion_wrapper
+        )
 
     async def _call_acompletion(self, *args: Any, **kwargs: Any) -> ModelResponse:
         """Wrapper for the litellm acompletion function."""

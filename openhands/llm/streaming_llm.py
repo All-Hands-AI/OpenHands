@@ -1,6 +1,6 @@
 import asyncio
 from functools import partial
-from typing import Any
+from typing import Any, AsyncIterator, Coroutine, cast
 
 from litellm.types.utils import ModelResponse
 
@@ -108,7 +108,10 @@ class StreamingLLM(AsyncLLM):
                 if kwargs.get('stream', False):
                     await asyncio.sleep(0.1)
 
-        self._async_streaming_completion = partial(async_streaming_completion_wrapper)
+        self._async_streaming_completion = cast(
+            'partial[Coroutine[Any, Any, AsyncIterator[ModelResponse]]]',
+            async_streaming_completion_wrapper,
+        )
 
     @property
     def async_streaming_completion(self) -> Any:
