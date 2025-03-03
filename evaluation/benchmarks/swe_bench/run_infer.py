@@ -100,7 +100,7 @@ Follow these steps to resolve the issue:
    - Add edge cases to your test script to ensure comprehensive coverage
    - Run existing tests related to the modified code to ensure you haven't broken anything
 
-6. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["base_commit"]} via `git diff`.
+6. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["base_commit"]}.
    - Ensure you've fully addressed all requirements
    - Run any tests in the repository related to:
      * The issue you are fixing
@@ -109,9 +109,6 @@ Follow these steps to resolve the issue:
    - If any tests fail, revise your implementation until all tests pass
 
 Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
-<IMPORTANT!>
-Make sure to RUN RELEVANT TESTS in the repository related to the modified code to ensure you haven't broken anything in Verification and Final Review steps! Do NOT consider the task is complete until all tests pass.
-</IMPORTANT!>
 """
 
     if RUN_WITH_BROWSING:
@@ -399,6 +396,32 @@ def complete_runtime(
         f'Failed to git config --global core.pager "": {str(obs)}',
     )
 
+    # First check for any git repositories in subdirectories
+    action = CmdRunAction(command='find . -type d -name .git -not -path "./.git"')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+        f'Failed to find git repositories: {str(obs)}',
+    )
+
+    git_dirs = [p for p in obs.content.strip().split('\n') if p]
+    if git_dirs:
+        # Remove all .git directories in subdirectories
+        for git_dir in git_dirs:
+            action = CmdRunAction(command=f'rm -rf "{git_dir}"')
+            action.set_hard_timeout(600)
+            logger.info(action, extra={'msg_type': 'ACTION'})
+            obs = runtime.run_action(action)
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+            assert_and_raise(
+                isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+                f'Failed to remove git directory {git_dir}: {str(obs)}',
+            )
+
+    # add all files
     action = CmdRunAction(command='git add -A')
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})

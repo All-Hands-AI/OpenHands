@@ -6,10 +6,7 @@ _STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating a
 * The `create` command cannot be used if the specified `path` already exists as a file
 * If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
 * The `undo_edit` command will revert the last edit made to the file at `path`
-* For `view` command, the `view_range` parameter options:
-  - Omit entirely to view the whole file (recommended for initial exploration)
-  - Use `[start_line, -1]` to view from `start_line` to the end of file (recommended if you know where you want to start viewing)
-  - Use `[start_line, end_line]` only when needing to view a specific limited section
+
 
 Before using this tool:
 1. Use the view tool to understand the file's contents and context
