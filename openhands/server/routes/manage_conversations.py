@@ -215,6 +215,9 @@ async def search_conversations(
     page_id: str | None = None,
     limit: int = 20,
 ) -> ConversationInfoResultSet:
+    # Flag to track if we should skip title generation
+    continue_without_title_generation = False
+    
     conversation_store = await ConversationStoreImpl.get_instance(
         config, get_user_id(request)
     )
@@ -253,26 +256,34 @@ async def search_conversations(
         settings = await settings_store.load()
 
         if settings:
-            # Create LLM config from settings with a default model
-            model = settings.llm_model
-            if not model:
-                model = "gpt-3.5-turbo"
-            llm_config = LLMConfig(
-                model=model,
-                api_key=settings.llm_api_key,
-                base_url=settings.llm_base_url,
-            )
+            # Create LLM config from settings
+            if not settings.llm_model:
+                logger.warning(
+                    "LLM model not found in settings, cannot generate conversation title"
+                )
+                # Skip title generation and continue with the rest of the function
+                continue_without_title_generation = True
+            
+            # Only proceed with title generation if we have a model
+            if not continue_without_title_generation:
+                # We've already checked that settings.llm_model is not None
+                assert settings.llm_model is not None
+                llm_config = LLMConfig(
+                    model=settings.llm_model,
+                    api_key=settings.llm_api_key,
+                    base_url=settings.llm_base_url,
+                )
 
             # Update titles for running conversations with default titles
-            for conversation_id in running_conversations:
-                # Get the event stream
-                file_store = config.file_store
-                event_stream = EventStream(conversation_id, file_store)
+            if not continue_without_title_generation:
+                for conversation_id in running_conversations:
+                    # Get the event stream
+                    event_stream = EventStream(conversation_id, file_store=config.file_store)
 
-                # Update the title if needed
-                await update_conversation_title_if_needed(
-                    conversation_id, conversation_store, event_stream, llm_config
-                )
+                    # Update the title if needed
+                    await update_conversation_title_if_needed(
+                        conversation_id, conversation_store, event_stream, llm_config
+                    )
 
     # Refresh metadata after potential updates
     if running_conversations:
@@ -330,19 +341,26 @@ async def get_conversation(
             settings = await settings_store.load()
 
             if settings:
-                # Create LLM config from settings with a default model
-                model = settings.llm_model
-                if not model:
-                    model = "gpt-3.5-turbo"
+                # Create LLM config from settings
+                if not settings.llm_model:
+                    logger.warning(
+                        "LLM model not found in settings, cannot generate conversation title"
+                    )
+                    conversation_info = await _get_conversation_info(
+                        metadata, is_running
+                    )
+                    return conversation_info
+
+                # We have already checked that settings.llm_model is not None
+                assert settings.llm_model is not None
                 llm_config = LLMConfig(
-                    model=model,
+                    model=settings.llm_model,
                     api_key=settings.llm_api_key,
                     base_url=settings.llm_base_url,
                 )
 
                 # Get the event stream
-                file_store = config.file_store
-                event_stream = EventStream(conversation_id, file_store)
+                event_stream = EventStream(conversation_id, file_store=config.file_store)
 
                 # Update the title if needed
                 await update_conversation_title_if_needed(
