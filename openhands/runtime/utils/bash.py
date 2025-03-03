@@ -10,7 +10,7 @@ import libtmux
 import psutil
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action import Action, CmdRunAction, StopProcessesAction
+from openhands.events.action import Action, CmdRunAction
 from openhands.events.observation import ErrorObservation
 from openhands.events.observation.commands import (
     CMD_OUTPUT_PS1_END,
@@ -474,10 +474,7 @@ class BashSession:
                 - 'command_pids': List of PIDs of processes that are likely part of the current command
         """
         # Check if a command is running in this session
-        pane_content = self._get_pane_content()
-        is_command_running = not pane_content.rstrip().endswith(
-            CMD_OUTPUT_PS1_END.rstrip()
-        )
+        is_command_running = False
 
         # Get the shell's PID directly from tmux
         shell_pid_str = (
@@ -516,34 +513,32 @@ class BashSession:
 
                     # Identify processes that are likely part of current command
                     child_ppid = child.ppid()
-                    if is_command_running:
-                        # Direct child of shell = likely current command
-                        if child_ppid == shell_pid:
-                            if not current_command_pid:
-                                current_command_pid = child.pid
-                            command_processes.append(process_str)
-                        # Child of identified command process = part of current command
-                        elif current_command_pid and (
-                            child_ppid == current_command_pid
-                            or any(
-                                p.pid == child_ppid
-                                for p in children
-                                if p.pid == current_command_pid
-                                or p.ppid() == current_command_pid
-                            )
-                        ):
-                            command_processes.append(process_str)
+                    # Direct child of shell = likely current command
+                    if child_ppid == shell_pid:
+                        if not current_command_pid:
+                            current_command_pid = child.pid
+                            is_command_running = True
+                        command_processes.append(process_str)
+                    # Child of identified command process = part of current command
+                    elif current_command_pid and (
+                        child_ppid == current_command_pid
+                        or any(
+                            p.pid == child_ppid
+                            for p in children
+                            if p.pid == current_command_pid
+                            or p.ppid() == current_command_pid
+                        )
+                    ):
+                        command_processes.append(process_str)
 
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     # Process may have terminated while we were examining it
                     continue
 
-            # If we have a running command but couldn't identify processes, it might be a shell builtin
-            if is_command_running and not command_processes:
-                logger.debug(
-                    'Command appears to be running but no child processes detected. '
-                    'This might be a shell builtin or a command that completed very quickly.'
-                )
+            # If we have no command processes, we're not running anything
+            if not command_processes:
+                is_command_running = False
+                current_command_pid = None
 
         except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
             logger.warning(f'Error accessing process information: {e}')
@@ -621,14 +616,6 @@ class BashSession:
 
         logger.debug(f'RECEIVED ACTION: {action}')
 
-        # Handle StopProcessesAction
-        if isinstance(action, StopProcessesAction):
-            success = self.kill_all_processes()
-            return CmdOutputObservation(
-                content="All running processes have been terminated" if success else "No processes were terminated",
-                command="",
-                metadata=CmdOutputMetadata(),
-            )
 
         # Handle CmdRunAction
         if not isinstance(action, CmdRunAction):

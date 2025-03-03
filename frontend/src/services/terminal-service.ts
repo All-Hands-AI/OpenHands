@@ -6,6 +6,6 @@ export function getTerminalCommand(command: string, hidden: boolean = false) {
 }
 
 export function getStopProcessesCommand() {
-  const event = { action: ActionType.STOP_PROCESSES, args: {} };
+  const event = { action: ActionType.RUN, args: { command: "pkill -P $$" } };
   return event;
 }

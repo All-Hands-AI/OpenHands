@@ -1,6 +1,6 @@
 import time
 
-from openhands.events.action import CmdRunAction, StopProcessesAction
+from openhands.events.action import CmdRunAction
 from openhands.runtime.utils.bash import BashSession
 
 
@@ -21,13 +21,13 @@ def test_stop_button_background_process():
     initial_processes = [p for p in process_info["processes"] if "sleep" in p]
     assert len(initial_processes) > 0, "Expected at least one sleep process"
 
-    # Send StopProcessesAction to stop it
-    obs = session.execute(StopProcessesAction())
+    # Send kill command to stop it
+    obs = session.execute(CmdRunAction("pkill -P $$"))
     time.sleep(1)  # Give time for processes to be killed
 
     # Check if process is still running (it should be terminated)
     process_info = session.get_running_processes()
-    print("Process info after StopProcessesAction:", process_info)  # Debug output
+    print("Process info after kill command:", process_info)  # Debug output
     assert not any("sleep" in p for p in process_info["processes"]), "Background process should be terminated"
 
     session.close()

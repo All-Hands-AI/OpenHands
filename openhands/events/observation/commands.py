@@ -10,11 +10,18 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
 
-CMD_OUTPUT_PS1_BEGIN = '\n###PS1JSON###\n'
+CMD_OUTPUT_PS1_BEGIN = '\n###PS1BEGIN###\n'
 CMD_OUTPUT_PS1_END = '\n###PS1END###'
 CMD_OUTPUT_METADATA_PS1_REGEX = re.compile(
-    f'^{CMD_OUTPUT_PS1_BEGIN.strip()}(.*?){CMD_OUTPUT_PS1_END.strip()}',
-    re.DOTALL | re.MULTILINE,
+    r'###PS1BEGIN###\s*\n'
+    r'PID=([^\n]*)\s*\n'
+    r'EXIT_CODE=([^\n]*)\s*\n'
+    r'USERNAME=([^\n]*)\s*\n'
+    r'HOSTNAME=([^\n]*)\s*\n'
+    r'WORKING_DIR=([^\n]*)\s*\n'
+    r'PY_INTERPRETER_PATH=([^\n]*)\s*\n'
+    r'###PS1END###',
+    re.MULTILINE | re.DOTALL,
 )
 
 
@@ -33,60 +40,50 @@ class CmdOutputMetadata(BaseModel):
     @classmethod
     def to_ps1_prompt(cls) -> str:
         """Convert the required metadata into a PS1 prompt."""
-        prompt = CMD_OUTPUT_PS1_BEGIN
-        json_str = json.dumps(
-            {
-                'pid': '$!',
-                'exit_code': '$?',
-                'username': r'\u',
-                'hostname': r'\h',
-                'working_dir': r'$(pwd)',
-                'py_interpreter_path': r'$(which python 2>/dev/null || echo "")',
-            },
-            indent=2,
+        return (
+            CMD_OUTPUT_PS1_BEGIN +
+            'PID=$!\n' +
+            'EXIT_CODE=$?\n' +
+            r'USERNAME=\u\n' +
+            r'HOSTNAME=\h\n' +
+            r'WORKING_DIR=$(pwd)\n' +
+            r'PY_INTERPRETER_PATH=$(which python 2>/dev/null || echo "")\n' +
+            CMD_OUTPUT_PS1_END + '\n'  # Ensure there's a newline at the end
         )
-        # Make sure we escape double quotes in the JSON string
-        # So that PS1 will keep them as part of the output
-        prompt += json_str.replace('"', r'\"')
-        prompt += CMD_OUTPUT_PS1_END + '\n'  # Ensure there's a newline at the end
-        return prompt
 
     @classmethod
     def matches_ps1_metadata(cls, string: str) -> list[re.Match[str]]:
-        matches = []
-        for match in CMD_OUTPUT_METADATA_PS1_REGEX.finditer(string):
-            try:
-                json.loads(match.group(1).strip())  # Try to parse as JSON
-                matches.append(match)
-            except json.JSONDecodeError:
-                logger.warning(
-                    f'Failed to parse PS1 metadata: {match.group(1)}. Skipping.'
-                    + traceback.format_exc()
-                )
-                continue  # Skip if not valid JSON
-        return matches
+        return list(CMD_OUTPUT_METADATA_PS1_REGEX.finditer(string))
 
     @classmethod
     def from_ps1_match(cls, match: re.Match[str]) -> Self:
         """Extract the required metadata from a PS1 prompt."""
-        metadata = json.loads(match.group(1))
-        # Create a copy of metadata to avoid modifying the original
-        processed = metadata.copy()
-        # Convert numeric fields
-        if 'pid' in metadata:
-            try:
-                processed['pid'] = int(float(str(metadata['pid'])))
-            except (ValueError, TypeError):
-                processed['pid'] = -1
-        if 'exit_code' in metadata:
-            try:
-                processed['exit_code'] = int(float(str(metadata['exit_code'])))
-            except (ValueError, TypeError):
-                logger.warning(
-                    f'Failed to parse exit code: {metadata["exit_code"]}. Setting to -1.'
-                )
-                processed['exit_code'] = -1
-        return cls(**processed)
+        pid = match.group(1)
+        exit_code = match.group(2)
+        username = match.group(3)
+        hostname = match.group(4)
+        working_dir = match.group(5)
+        py_interpreter_path = match.group(6)
+
+        try:
+            pid = int(float(str(pid)))
+        except (ValueError, TypeError):
+            pid = -1
+
+        try:
+            exit_code = int(float(str(exit_code)))
+        except (ValueError, TypeError):
+            logger.warning(f'Failed to parse exit code: {exit_code}. Setting to -1.')
+            exit_code = -1
+
+        return cls(
+            pid=pid,
+            exit_code=exit_code,
+            username=username,
+            hostname=hostname,
+            working_dir=working_dir,
+            py_interpreter_path=py_interpreter_path,
+        )
 
 
 @dataclass
