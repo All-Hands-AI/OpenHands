@@ -373,8 +373,9 @@ class EventStream:
         if event_types and not isinstance(event, event_types):
             return True
 
-        if source and event.source is not None and event.source.value != source:
-            return True
+        if source:
+            if event.source is None or event.source.value != source:
+                return True
 
         if start_date and event.timestamp is not None and event.timestamp < start_date:
             return True

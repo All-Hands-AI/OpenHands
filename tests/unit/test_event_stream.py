@@ -24,6 +24,7 @@ from openhands.events.observation.files import (
     FileReadObservation,
     FileWriteObservation,
 )
+from openhands.events.serialization.event import event_to_dict
 from openhands.storage import get_file_store
 
 
@@ -162,13 +163,17 @@ def test_get_matching_events_source_filter(temp_dir: str):
     event = event_stream.get_event(event_stream.get_latest_event_id())
     event._source = None  # type: ignore
 
+    # Update the serialized version
+    data = event_to_dict(event)
+    event_stream.file_store.write(event_stream._get_filename_for_id(event.id), json.dumps(data))
+
     # Verify that source comparison works correctly
-    assert not event_stream._should_filter_event(
-        event, source='agent'
-    )  # Should not filter out None source events
-    assert not event_stream._should_filter_event(
-        event, source=None
-    )  # Should not filter out when source filter is None
+    assert event_stream._should_filter_event(event, source='agent')  # Should filter out None source events
+    assert not event_stream._should_filter_event(event, source=None)  # Should not filter out when source filter is None
+
+    # Filter by AGENT source again
+    events = event_stream.get_matching_events(source='agent')
+    assert len(events) == 2  # Should not include the None source event
 
 
 def test_get_matching_events_pagination(temp_dir: str):
