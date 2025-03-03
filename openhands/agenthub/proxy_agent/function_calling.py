@@ -6,7 +6,10 @@ from litellm import (
     ModelResponse,
 )
 
-from openhands.core.exceptions import FunctionCallNotExistsError
+from openhands.core.exceptions import (
+    FunctionCallNotExistsError,
+    FunctionCallValidationError,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
@@ -122,6 +125,12 @@ def response_to_action(response: ModelResponse) -> Action:
             ) from e
 
         if tool_call.function.name == 'delegate_remote_oh':
+            for k in ['url', 'agent_name', 'task']:
+                if k not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "{k}" in tool call {tool_call.function.name}'
+                    )
+
             message = (
                 arguments['task']
                 + f'\nI\'d like {arguments["agent_name"]} to handle this task'
@@ -147,6 +156,11 @@ def response_to_action(response: ModelResponse) -> Action:
             action = IPythonRunCellAction(code=code, include_extra=False)
 
         elif tool_call.function.name == 'delegate_local':
+            for k in ['agent_name', 'task']:
+                if k not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "{k}" in tool call {tool_call.function.name}'
+                    )
             action = AgentDelegateAction(
                 agent=arguments['agent_name'],
                 inputs={
