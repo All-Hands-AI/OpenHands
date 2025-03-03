@@ -5,11 +5,11 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
-from openhands.integrations.github.github_types import (
-    GhAuthenticationError,
-    GHUnknownException,
-    GitHubRepository,
-    GitHubUser,
+from openhands.integrations.service_types import (
+    AuthenticationError,
+    UnknownException,
+    Repository,
+    User,
     SuggestedTask,
     TaskType,
 )
@@ -74,17 +74,17 @@ class GitHubService:
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
-                raise GhAuthenticationError('Invalid Github token')
-            raise GHUnknownException('Unknown error')
+                raise AuthenticationError('Invalid Github token')
+            raise UnknownException('Unknown error')
 
         except httpx.HTTPError:
-            raise GHUnknownException('Unknown error')
+            raise UnknownException('Unknown error')
 
-    async def get_user(self) -> GitHubUser:
+    async def get_user(self) -> User:
         url = f'{self.BASE_URL}/user'
         response, _ = await self._fetch_data(url)
 
-        return GitHubUser(
+        return User(
             id=response.get('id'),
             login=response.get('login'),
             avatar_url=response.get('avatar_url'),
@@ -95,7 +95,7 @@ class GitHubService:
 
     async def get_repositories(
         self, page: int, per_page: int, sort: str, installation_id: int | None
-    ) -> list[GitHubRepository]:
+    ) -> list[Repository]:
         params = {'page': str(page), 'per_page': str(per_page)}
         if installation_id:
             url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
@@ -108,7 +108,7 @@ class GitHubService:
 
         next_link: str = headers.get('Link', '')
         repos = [
-            GitHubRepository(
+            Repository(
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
@@ -126,7 +126,7 @@ class GitHubService:
 
     async def search_repositories(
         self, query: str, per_page: int, sort: str, order: str
-    ) -> list[GitHubRepository]:
+    ) -> list[Repository]:
         url = f'{self.BASE_URL}/search/repositories'
         params = {'q': query, 'per_page': per_page, 'sort': sort, 'order': order}
 
@@ -134,7 +134,7 @@ class GitHubService:
         repos = response.get('items', [])
 
         repos = [
-            GitHubRepository(
+            Repository(
                 id=repo.get('id'),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
@@ -160,7 +160,7 @@ class GitHubService:
 
                 result = response.json()
                 if 'errors' in result:
-                    raise GHUnknownException(
+                    raise UnknownException(
                         f"GraphQL query error: {json.dumps(result['errors'])}"
                     )
 
@@ -168,11 +168,11 @@ class GitHubService:
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
-                raise GhAuthenticationError('Invalid Github token')
-            raise GHUnknownException('Unknown error')
+                raise AuthenticationError('Invalid Github token')
+            raise UnknownException('Unknown error')
 
         except httpx.HTTPError:
-            raise GHUnknownException('Unknown error')
+            raise UnknownException('Unknown error')
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """

@@ -3,11 +3,11 @@ from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands.integrations.github.github_types import (
-    GhAuthenticationError,
-    GHUnknownException,
-    GitHubRepository,
-    GitHubUser,
+from openhands.integrations.service_types import (
+    AuthenticationError,
+    UnknownException,
+    Repository,
+    User,
     SuggestedTask,
 )
 from openhands.server.auth import get_idp_token, get_token, get_token_type, get_user_id
@@ -35,18 +35,18 @@ async def get_github_repositories(
 
     client = GithubServiceImpl(user_id=github_user_id, idp_token=idp_token, token=token)
     try:
-        repos: list[GitHubRepository] = await client.get_repositories(
+        repos: list[Repository] = await client.get_repositories(
             page, per_page, sort, installation_id
         )
         return repos
 
-    except GhAuthenticationError as e:
+    except AuthenticationError as e:
         return JSONResponse(
             content=str(e),
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
-    except GHUnknownException as e:
+    except UnknownException as e:
         return JSONResponse(
             content=str(e),
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -69,16 +69,16 @@ async def get_github_user(
 
     client = GithubServiceImpl(user_id=github_user_id, idp_token=idp_token, token=token)
     try:
-        user: GitHubUser = await client.get_user()
+        user: User = await client.get_user()
         return user
 
-    except GhAuthenticationError as e:
+    except AuthenticationError as e:
         return JSONResponse(
             content=str(e),
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
-    except GHUnknownException as e:
+    except UnknownException as e:
         return JSONResponse(
             content=str(e),
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -104,13 +104,13 @@ async def get_github_installation_ids(
         installations_ids: list[int] = await client.get_installation_ids()
         return installations_ids
 
-    except GhAuthenticationError as e:
+    except AuthenticationError as e:
         return JSONResponse(
             content=str(e),
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
-    except GHUnknownException as e:
+    except UnknownException as e:
         return JSONResponse(
             content=str(e),
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -137,18 +137,18 @@ async def search_github_repositories(
 
     client = GithubServiceImpl(user_id=github_user_id, idp_token=idp_token, token=token)
     try:
-        repos: list[GitHubRepository] = await client.search_repositories(
+        repos: list[Repository] = await client.search_repositories(
             query, per_page, sort, order
         )
         return repos
 
-    except GhAuthenticationError as e:
+    except AuthenticationError as e:
         return JSONResponse(
             content=str(e),
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
-    except GHUnknownException as e:
+    except UnknownException as e:
         return JSONResponse(
             content=str(e),
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -180,13 +180,13 @@ async def get_suggested_tasks(
         tasks: list[SuggestedTask] = await client.get_suggested_tasks()
         return tasks
 
-    except GhAuthenticationError as e:
+    except AuthenticationError as e:
         return JSONResponse(
             content=str(e),
             status_code=401,
         )
 
-    except GHUnknownException as e:
+    except UnknownException as e:
         return JSONResponse(
             content=str(e),
             status_code=500,

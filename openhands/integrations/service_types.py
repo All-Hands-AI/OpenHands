@@ -18,7 +18,7 @@ class SuggestedTask(BaseModel):
     title: str
 
 
-class GitHubUser(BaseModel):
+class User(BaseModel):
     id: int
     login: str
     avatar_url: str
@@ -27,20 +27,20 @@ class GitHubUser(BaseModel):
     email: str | None = None
 
 
-class GitHubRepository(BaseModel):
+class Repository(BaseModel):
     id: int
     full_name: str
     stargazers_count: int | None = None
     link_header: str | None = None
 
 
-class GhAuthenticationError(ValueError):
+class AuthenticationError(ValueError):
     """Raised when there is an issue with GitHub authentication."""
 
     pass
 
 
-class GHUnknownException(ValueError):
+class UnknownException(ValueError):
     """Raised when there is an issue with GitHub communcation."""
 
     pass
