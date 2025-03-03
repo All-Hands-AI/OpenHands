@@ -17,6 +17,7 @@ from openhands.agenthub.codeact_agent.tools import (
     IPythonTool,
     LLMBasedFileEditTool,
     StrReplaceEditorTool,
+    ThinkTool,
     WebReadTool,
 )
 from openhands.core.exceptions import (
@@ -27,6 +28,7 @@ from openhands.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
+    AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -42,7 +44,9 @@ from openhands.events.tool import ToolCallMetadata
 def combine_thought(action: Action, thought: str) -> Action:
     if not hasattr(action, 'thought'):
         return action
-    if thought:
+    if thought and action.thought:
+        action.thought = f'{thought}\n{action.thought}'
+    elif thought:
         action.thought = thought
     return action
 
@@ -71,6 +75,11 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 raise RuntimeError(
                     f'Failed to parse tool call arguments: {tool_call.function.arguments}'
                 ) from e
+
+            # ================================================
+            # CmdRunTool (Bash)
+            # ================================================
+
             if tool_call.function.name == CmdRunTool['function']['name']:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
@@ -79,6 +88,10 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 # convert is_input to boolean
                 is_input = arguments.get('is_input', 'false') == 'true'
                 action = CmdRunAction(command=arguments['command'], is_input=is_input)
+
+            # ================================================
+            # IPythonTool (Jupyter)
+            # ================================================
             elif tool_call.function.name == IPythonTool['function']['name']:
                 if 'code' not in arguments:
                     raise FunctionCallValidationError(
@@ -90,8 +103,19 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     agent='BrowsingAgent',
                     inputs=arguments,
                 )
+
+            # ================================================
+            # AgentFinishAction
+            # ================================================
             elif tool_call.function.name == FinishTool['function']['name']:
-                action = AgentFinishAction()
+                action = AgentFinishAction(
+                    final_thought=arguments.get('message', ''),
+                    task_completed=arguments.get('task_completed', None),
+                )
+
+            # ================================================
+            # LLMBasedFileEditTool (LLM-based file editor, deprecated)
+            # ================================================
             elif tool_call.function.name == LLMBasedFileEditTool['function']['name']:
                 if 'path' not in arguments:
                     raise FunctionCallValidationError(
@@ -138,12 +162,25 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                         impl_source=FileEditSource.OH_ACI,
                         **other_kwargs,
                     )
+            # ================================================
+            # AgentThinkAction
+            # ================================================
+            elif tool_call.function.name == ThinkTool['function']['name']:
+                action = AgentThinkAction(thought=arguments.get('thought', ''))
+
+            # ================================================
+            # BrowserTool
+            # ================================================
             elif tool_call.function.name == BrowserTool['function']['name']:
                 if 'code' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
+
+            # ================================================
+            # WebReadTool (simplified browsing)
+            # ================================================
             elif tool_call.function.name == WebReadTool['function']['name']:
                 if 'url' not in arguments:
                     raise FunctionCallValidationError(
@@ -183,7 +220,7 @@ def get_tools(
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
 ) -> list[ChatCompletionToolParam]:
-    tools = [CmdRunTool, FinishTool]
+    tools = [CmdRunTool, ThinkTool, FinishTool]
     if codeact_enable_browsing:
         tools.append(WebReadTool)
         tools.append(BrowserTool)

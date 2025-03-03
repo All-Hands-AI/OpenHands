@@ -40,6 +40,7 @@ from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
@@ -371,6 +372,32 @@ def complete_runtime(
         f'Failed to git config --global core.pager "": {str(obs)}',
     )
 
+    # First check for any git repositories in subdirectories
+    action = CmdRunAction(command='find . -type d -name .git -not -path "./.git"')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+        f'Failed to find git repositories: {str(obs)}',
+    )
+
+    git_dirs = [p for p in obs.content.strip().split('\n') if p]
+    if git_dirs:
+        # Remove all .git directories in subdirectories
+        for git_dir in git_dirs:
+            action = CmdRunAction(command=f'rm -rf "{git_dir}"')
+            action.set_hard_timeout(600)
+            logger.info(action, extra={'msg_type': 'ACTION'})
+            obs = runtime.run_action(action)
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+            assert_and_raise(
+                isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+                f'Failed to remove git directory {git_dir}: {str(obs)}',
+            )
+
+    # add all files
     action = CmdRunAction(command='git add -A')
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -438,6 +465,7 @@ def process_instance(
             f'This is the {runtime_failure_count + 1}th attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
         )
     runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
 
     try:
         initialize_runtime(runtime, instance)

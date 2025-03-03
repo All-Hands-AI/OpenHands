@@ -123,17 +123,18 @@ export function ExpandableMessage({
           )}
         </div>
         {(!headline || showDetails) && (
-          <Markdown
-            className="text-sm overflow-auto"
-            components={{
-              code,
-              ul,
-              ol,
-            }}
-            remarkPlugins={[remarkGfm]}
-          >
-            {details}
-          </Markdown>
+          <div className="text-sm overflow-auto">
+            <Markdown
+              components={{
+                code,
+                ul,
+                ol,
+              }}
+              remarkPlugins={[remarkGfm]}
+            >
+              {details}
+            </Markdown>
+          </div>
         )}
       </div>
     </div>
