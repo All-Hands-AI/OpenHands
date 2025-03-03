@@ -83,14 +83,15 @@ export function ChatInterface() {
     const pending = true;
     dispatch(addUserMessage({ content, imageUrls, timestamp, pending }));
 
-    // Create the chat message
+    // Create and send the chat message
     const chatMessage = createChatMessage(content, imageUrls, timestamp);
-
-    // Send or queue the message depending on connection status
     send(chatMessage);
-
-    // Set agent state to RUNNING when a message is sent
-    send(generateAgentStateChangeEvent(AgentState.RUNNING));
+    
+    // Wait a moment before sending the agent state change event
+    // This helps ensure the message is processed first
+    setTimeout(() => {
+      send(generateAgentStateChangeEvent(AgentState.RUNNING));
+    }, 100);
 
     setMessageToSend(null);
   };

@@ -157,7 +157,16 @@ export function WsClientProvider({
   function handleConnect() {
     EventLogger.info("WebSocket connected");
     setStatus(WsClientProviderStatus.CONNECTED);
-    // Don't send queued messages yet - wait for backend ready signal
+    
+    // Set a timeout to consider the backend ready after a short delay
+    // This is a fallback in case we don't receive any events from the backend
+    setTimeout(() => {
+      if (!backendReady) {
+        EventLogger.info("Backend ready timeout reached, forcing backend ready state");
+        setBackendReady(true);
+      }
+    }, 1000); // 1 second timeout
+    
     EventLogger.info(`Connection established, waiting for backend ready signal. Pending messages: ${pendingMessages.length}`);
   }
 
@@ -166,9 +175,9 @@ export function WsClientProvider({
       messageRateHandler.record(new Date().getTime());
     }
 
-    // Check if this is a state change event indicating backend is ready
-    if (isAgentStateEvent(event)) {
-      EventLogger.info(`Received agent state event, setting backend ready. Event: ${JSON.stringify(event)}`);
+    // Consider the backend ready as soon as we receive any event
+    if (!backendReady) {
+      EventLogger.info(`Received first event from backend, setting backend ready. Event: ${JSON.stringify(event)}`);
       setBackendReady(true);
     }
 
