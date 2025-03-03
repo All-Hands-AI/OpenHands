@@ -132,29 +132,33 @@ export function WsClientProvider({
   const messageRateHandler = useRate({ threshold: 250 });
 
   function queueMessage(event: Record<string, unknown>) {
+    EventLogger.info(`Queueing message: ${JSON.stringify(event)}`);
     setPendingMessages((prev) => [...prev, event]);
   }
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
-      EventLogger.error("WebSocket is not connected.");
+      EventLogger.error("WebSocket is not connected, queueing message");
       queueMessage(event);
       return;
     }
 
     if (!backendReady) {
       // If backend is not ready yet, queue the message
-      EventLogger.info("Backend not ready, queueing message");
+      EventLogger.info(`Backend not ready, queueing message: ${JSON.stringify(event)}`);
       queueMessage(event);
       return;
     }
 
+    EventLogger.info(`Sending message to backend: ${JSON.stringify(event)}`);
     sioRef.current.emit("oh_action", event);
   }
 
   function handleConnect() {
+    EventLogger.info("WebSocket connected");
     setStatus(WsClientProviderStatus.CONNECTED);
     // Don't send queued messages yet - wait for backend ready signal
+    EventLogger.info(`Connection established, waiting for backend ready signal. Pending messages: ${pendingMessages.length}`);
   }
 
   function handleMessage(event: Record<string, unknown>) {
@@ -164,6 +168,7 @@ export function WsClientProvider({
 
     // Check if this is a state change event indicating backend is ready
     if (isAgentStateEvent(event)) {
+      EventLogger.info(`Received agent state event, setting backend ready. Event: ${JSON.stringify(event)}`);
       setBackendReady(true);
     }
 
@@ -176,6 +181,7 @@ export function WsClientProvider({
   }
 
   function handleDisconnect(data: unknown) {
+    EventLogger.info("WebSocket disconnected");
     setStatus(WsClientProviderStatus.DISCONNECTED);
     setBackendReady(false);
     const sio = sioRef.current;
@@ -184,10 +190,12 @@ export function WsClientProvider({
     }
     sio.io.opts.query = sio.io.opts.query || {};
     sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
+    EventLogger.info(`Disconnect with latest event ID: ${lastEventRef.current?.id}`);
     updateStatusWhenErrorMessagePresent(data);
   }
 
   function handleError(data: unknown) {
+    EventLogger.error(`WebSocket connection error: ${JSON.stringify(data)}`);
     setStatus(WsClientProviderStatus.DISCONNECTED);
     setBackendReady(false);
     updateStatusWhenErrorMessagePresent(data);
@@ -195,11 +203,14 @@ export function WsClientProvider({
 
   // Watch for backend ready state and send queued messages when ready
   React.useEffect(() => {
+    EventLogger.info(`Backend ready: ${backendReady}, Pending messages: ${pendingMessages.length}`);
+    
     if (backendReady && pendingMessages.length > 0 && sioRef.current) {
       // Backend is ready and we have pending messages
-      EventLogger.info(`Sending ${pendingMessages.length} queued messages`);
-
-      pendingMessages.forEach((event) => {
+      EventLogger.info(`Backend is ready! Sending ${pendingMessages.length} queued messages`);
+      
+      pendingMessages.forEach((event, index) => {
+        EventLogger.info(`Sending queued message ${index + 1}/${pendingMessages.length}: ${JSON.stringify(event)}`);
         sioRef.current?.emit("oh_action", event);
       });
 
@@ -208,9 +219,11 @@ export function WsClientProvider({
         action: "change_agent_state",
         args: { agent_state: "running" },
       };
+      EventLogger.info(`Setting agent state to RUNNING: ${JSON.stringify(agentStateEvent)}`);
       sioRef.current.emit("oh_action", agentStateEvent);
 
       setPendingMessages([]);
+      EventLogger.info("All queued messages sent, queue cleared");
     }
   }, [backendReady, pendingMessages.length]);
 
