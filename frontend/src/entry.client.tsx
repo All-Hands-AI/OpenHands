@@ -12,11 +12,15 @@ import { Provider } from "react-redux";
 import posthog from "posthog-js";
 import "./i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
 import { queryClientConfig } from "./query-client-config";
 import { SettingsProvider } from "./context/settings-context";
+
+const stripePromise = loadStripe("");
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -57,7 +61,22 @@ prepareApp().then(() =>
           <AuthProvider>
             <QueryClientProvider client={queryClient}>
               <SettingsProvider>
-                <HydratedRouter />
+                <Elements
+                  stripe={stripePromise}
+                  options={{
+                    mode: "setup",
+                    currency: "eur",
+                    appearance: {
+                      theme: "night",
+                      variables: {
+                        colorPrimary: "#C9B974",
+                        iconColor: "#C9B974",
+                      },
+                    },
+                  }}
+                >
+                  <HydratedRouter />
+                </Elements>
                 <PosthogInit />
               </SettingsProvider>
             </QueryClientProvider>
