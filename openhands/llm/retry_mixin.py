@@ -38,10 +38,9 @@ class RetryMixin:
         Returns:
             A retry decorator with the parameters customizable in configuration.
         """
-        num_retries = 3 if num_retries is None else num_retries
-        retry_min_wait = 1 if retry_min_wait is None else retry_min_wait
-        retry_max_wait = 60 if retry_max_wait is None else retry_max_wait
-        retry_multiplier = 2.0 if retry_multiplier is None else retry_multiplier
+        # Use the values from config if not provided
+        # Note: These values are already set in LLMConfig with appropriate defaults
+        # See openhands/core/config/llm_config.py for the actual default values
 
         def before_sleep(retry_state: Any) -> None:
             self.log_retry_attempt(retry_state)
