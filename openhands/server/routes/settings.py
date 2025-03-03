@@ -52,7 +52,7 @@ async def store_settings(
             # We check if the token is valid by getting the user
             # If the token is invalid, this will raise an exception
             github = GithubServiceImpl(
-                user_id=None, token=SecretStr(settings.github_token)
+                user_id=None, idp_token=None, token=SecretStr(settings.github_token)
             )
             await github.get_user()
 

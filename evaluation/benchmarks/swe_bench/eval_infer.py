@@ -11,7 +11,11 @@ from swebench.harness.run_evaluation import (
     APPLY_PATCH_FAIL,
     APPLY_PATCH_PASS,
 )
-from swebench.harness.test_spec import SWEbenchInstance, TestSpec, make_test_spec
+from swebench.harness.test_spec.test_spec import (
+    SWEbenchInstance,
+    TestSpec,
+    make_test_spec,
+)
 from swebench.harness.utils import load_swebench_dataset
 from tqdm import tqdm
 
@@ -284,7 +288,7 @@ def process_instance(
                                     'model_patch': model_patch,
                                     'instance_id': instance_id,
                                 },
-                                log_path=test_output_path,
+                                test_log_path=test_output_path,
                                 include_tests_status=True,
                             )
                             report = _report[instance_id]

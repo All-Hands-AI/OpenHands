@@ -11,19 +11,20 @@ from openhands.events.action.message import MessageAction
 from openhands.events.stream import EventStreamSubscriber
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.runtime import get_runtime_cls
-from openhands.server.auth import get_github_token, get_user_id
+from openhands.server.auth import get_github_token, get_idp_token, get_user_id
+from openhands.server.data_models.conversation_info import ConversationInfo
+from openhands.server.data_models.conversation_info_result_set import (
+    ConversationInfoResultSet,
+)
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
     SettingsStoreImpl,
     config,
     conversation_manager,
+    monitoring_listener,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
-from openhands.storage.data_models.conversation_info import ConversationInfo
-from openhands.storage.data_models.conversation_info_result_set import (
-    ConversationInfoResultSet,
-)
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import (
@@ -51,6 +52,7 @@ async def _create_new_conversation(
     initial_user_msg: str | None,
     image_urls: list[str] | None,
 ):
+    monitoring_listener.on_create_conversation()
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
@@ -136,7 +138,11 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     """
     logger.info('Initializing new conversation')
     user_id = get_user_id(request)
-    gh_client = GithubServiceImpl(user_id=user_id, token=get_github_token(request))
+    gh_client = GithubServiceImpl(
+        user_id=user_id,
+        idp_token=get_idp_token(request),
+        token=get_github_token(request),
+    )
     github_token = await gh_client.get_latest_token()
 
     selected_repository = data.selected_repository
