@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Callable, Optional
+from typing import Callable
 
 from pydantic import SecretStr
 

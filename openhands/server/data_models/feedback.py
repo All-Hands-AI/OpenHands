@@ -1,5 +1,5 @@
 import json
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import requests
 from pydantic import BaseModel

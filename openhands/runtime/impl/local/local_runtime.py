@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import tempfile
 import threading
-from typing import Callable, Optional
+from typing import Callable
 
 import requests
 import tenacity

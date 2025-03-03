@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable
 
 from openhands.core.config import AppConfig
 from openhands.events.action import (

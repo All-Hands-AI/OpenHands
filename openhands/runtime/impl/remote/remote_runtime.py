@@ -1,5 +1,5 @@
 import os
-from typing import Callable, Optional
+from typing import Callable
 from urllib.parse import urlparse
 
 import requests

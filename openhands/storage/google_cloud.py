@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional
+from typing import List
 
 from google.api_core.exceptions import NotFound
 from google.cloud import storage

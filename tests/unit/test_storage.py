@@ -5,7 +5,7 @@ import shutil
 from abc import ABC
 from dataclasses import dataclass, field
 from io import BytesIO, StringIO
-from typing import Dict, List, Optional
+from typing import Dict, List
 from unittest import TestCase
 from unittest.mock import patch
 
