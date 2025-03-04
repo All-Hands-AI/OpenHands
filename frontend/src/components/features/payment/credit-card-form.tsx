@@ -1,12 +1,11 @@
-import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
-import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import React from "react";
+import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { BrandButton } from "../settings/brand-button";
-
 
 export const CreditCardForm = () => {
   const [paymentFormErrorMessage, setPaymentFormErrorMessage] =
-    React.useState("");
+      React.useState("");
   const stripe = useStripe();
   const elements = useElements();
 
@@ -39,12 +38,15 @@ export const CreditCardForm = () => {
               <h3 className="text-danger text-xs">{paymentFormErrorMessage}</h3>
             )}
           </div>
+
           <PaymentElement />
+
+          <div>Form here</div>
 
           <BrandButton type="submit" variant="primary" className="w-full">
             Confirm
           </BrandButton>
         </form>
       </ModalBackdrop>
-  )
-}
+  );
+};
