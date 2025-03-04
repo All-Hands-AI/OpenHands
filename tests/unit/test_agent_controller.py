@@ -90,6 +90,7 @@ def mock_status_callback():
 async def send_event_to_controller(controller, event):
     await controller._on_event(event)
     await asyncio.sleep(0.1)
+    controller._pending_action = None
 
 
 @pytest.mark.asyncio
