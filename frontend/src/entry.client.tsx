@@ -12,15 +12,12 @@ import { Provider } from "react-redux";
 import posthog from "posthog-js";
 import "./i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
 import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
 import { queryClientConfig } from "./query-client-config";
 import { SettingsProvider } from "./context/settings-context";
-
-const stripePromise = loadStripe("pk_test_51QcB1BISRRWxrODC7gYdTQuLNR8kAiCpdEOXqFloJMaGI2bw3pJ6v72JqyJ7WNGHBYPaE8rrHEYviwlcOqh1IXi700yHRRlZCV");
+import { PaymentElements } from "./components/features/payment/payment-elements";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -55,28 +52,15 @@ export const queryClient = new QueryClient(queryClientConfig);
 prepareApp().then(() =>
   startTransition(() => {
     hydrateRoot(
-      document,
+      document.body,
       <StrictMode>
         <Provider store={store}>
           <AuthProvider>
             <QueryClientProvider client={queryClient}>
               <SettingsProvider>
-                <Elements
-                  stripe={stripePromise}
-                  options={{
-                    mode: "setup",
-                    currency: "usd",
-                    appearance: {
-                      theme: "night",
-                      variables: {
-                        colorPrimary: "#C9B974",
-                        iconColor: "#C9B974",
-                      },
-                    },
-                  }}
-                >
+                <PaymentElements>
                   <HydratedRouter />
-                </Elements>
+                </PaymentElements>
                 <PosthogInit />
               </SettingsProvider>
             </QueryClientProvider>

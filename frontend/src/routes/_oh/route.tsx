@@ -67,7 +67,6 @@ export default function MainApp() {
 
   const stripe = useStripe();
   const elements = useElements();
-  console.log("TRACE:MainApp", stripe, elements);
 
   const config = useConfig();
   const {
@@ -120,7 +119,6 @@ export default function MainApp() {
 
   const formAction = async (formData: FormData) => {
     setPaymentFormErrorMessage("");
-    console.log("TRACE:formAction", stripe, elements)
 
     if (!stripe || !elements) return;
 
@@ -130,6 +128,7 @@ export default function MainApp() {
     }
   };
 
+  console.log("TRACE:MainApp", config, error)
   return (
     <div
       data-testid="root-layout"
