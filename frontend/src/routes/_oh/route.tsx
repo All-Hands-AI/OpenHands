@@ -20,6 +20,9 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
     ?.split(";")
     .find((cookie) => cookie.trim().startsWith("keycloak_auth="));
 
+  console.log(cookies);
+  console.log(keycloakAuthCookie);
+
   if (!keycloakAuthCookie) {
     await queryClient.invalidateQueries({
       queryKey: ["user", "authenticated"],
@@ -81,8 +84,9 @@ export default function MainApp({ loaderData }: Route.ComponentProps) {
   });
 
   React.useEffect(() => {
+    console.log("LOADER DATA", loaderData);
     setGitHubTokenIsSet(!!loaderData.keycloakAuthCookie);
-  }, [loaderData]);
+  }, [loaderData.keycloakAuthCookie]);
 
   React.useEffect(() => {
     if (settings?.LANGUAGE) {
