@@ -24,21 +24,6 @@ async def security_api(request: Request) -> Response:
     Raises:
         HTTPException: If the security analyzer is not initialized.
     """
-    return await get_response(request)
-
-
-async def get_response(request: Request) -> Response:
-    """Get response from security analyzer.
-
-    Args:
-        request (Request): The incoming FastAPI request object.
-
-    Returns:
-        Response: The response from the security analyzer.
-
-    Raises:
-        HTTPException: If the security analyzer is not initialized.
-    """
     if not request.state.conversation.security_analyzer:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
