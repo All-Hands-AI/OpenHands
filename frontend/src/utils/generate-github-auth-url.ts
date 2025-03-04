@@ -5,7 +5,11 @@
  * @param offline True for offline session, defaults to false
  * @returns The URL to redirect to for GitHub OAuth
  */
-export const generateGitHubAuthUrl = (clientId: string, requestUrl: URL, offline: boolean = false) => {
+export const generateGitHubAuthUrl = (
+  clientId: string,
+  requestUrl: URL,
+  offline: boolean = false,
+) => {
   const redirectUri = offline
     ? `${requestUrl.origin}/oauth/keycloak/offline/callback`
     : `${requestUrl.origin}/oauth/keycloak/callback`;
@@ -15,7 +19,9 @@ export const generateGitHubAuthUrl = (clientId: string, requestUrl: URL, offline
     .replace(/(^|\.)app\.all-hands\.dev$/, "auth.app.all-hands.dev")
     .replace(/(^|\.)localhost$/, "auth.staging.all-hands.dev");
 
-  const scope = offline ? "openid email profile offline_access" : "openid email profile";
+  const scope = offline
+    ? "openid email profile offline_access"
+    : "openid email profile";
 
   return `https://${authUrl}/realms/allhands/protocol/openid-connect/auth?client_id=github&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
 };
