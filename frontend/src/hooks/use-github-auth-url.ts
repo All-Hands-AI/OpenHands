@@ -9,15 +9,15 @@ interface UseGitHubAuthUrlConfig {
 }
 
 export const useGitHubAuthUrl = (config: UseGitHubAuthUrlConfig) => {
-  const { githubTokenIsSet } = useAuth();
+  const { tokenIsSet } = useAuth();
 
   return React.useMemo(() => {
-    if (config.appMode === "saas" && !githubTokenIsSet)
+    if (config.appMode === "saas" && !tokenIsSet)
       return generateGitHubAuthUrl(
         config.gitHubClientId || "",
         new URL(window.location.href),
       );
 
     return null;
-  }, [githubTokenIsSet, config.appMode, config.gitHubClientId]);
+  }, [tokenIsSet, config.appMode, config.gitHubClientId]);
 };

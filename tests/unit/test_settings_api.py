@@ -30,7 +30,7 @@ def test_client(mock_settings_store):
             settings = mock_settings_store.load.return_value
             token = settings.github_token if settings else None
             if scope['type'] == 'http':
-                scope['state'] = {'github_token': token}
+                scope['state'] = {'token': token}
             await self.app(scope, receive, send)
 
     # Replace the middleware
@@ -163,8 +163,8 @@ async def test_settings_api_set_github_token(
     data = response.json()
 
     assert response.status_code == 200
-    assert data.get('github_token') is None
-    assert data['github_token_is_set'] is True
+    assert data.get('token') is None
+    assert data['token_is_set'] is True
 
 
 @pytest.mark.skip(
@@ -191,9 +191,9 @@ async def test_settings_unset_github_token(
 
     response = test_client.get('/api/settings')
     assert response.status_code == 200
-    assert response.json()['github_token_is_set'] is True
+    assert response.json()['token_is_set'] is True
 
-    settings_data['unset_github_token'] = True
+    settings_data['unset_token'] = True
 
     # Make the POST request to store settings
     response = test_client.post('/api/settings', json=settings_data)
@@ -207,4 +207,4 @@ async def test_settings_unset_github_token(
     # Make a GET request to retrieve settings
     response = test_client.get('/api/settings')
     assert response.status_code == 200
-    assert response.json()['github_token_is_set'] is False
+    assert response.json()['token_is_set'] is False

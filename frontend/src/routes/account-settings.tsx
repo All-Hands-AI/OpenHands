@@ -63,7 +63,7 @@ function AccountSettings() {
 
   const isSaas = config?.APP_MODE === "saas";
   const hasAppSlug = !!config?.APP_SLUG;
-  const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
+  const isTokenSet = settings?.TOKEN_IS_SET;
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
@@ -109,8 +109,8 @@ function AccountSettings() {
 
     saveSettings(
       {
-        github_token:
-          formData.get("github-token-input")?.toString() || undefined,
+        github_token: formData.get("token-input")?.toString() || undefined,
+        gitlab_token: "",
         LANGUAGE: languageValue,
         user_consents_to_analytics: userConsentsToAnalytics,
         ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
@@ -345,17 +345,15 @@ function AccountSettings() {
             {!isSaas && (
               <>
                 <SettingsInput
-                  testId="github-token-input"
-                  name="github-token-input"
+                  testId="token-input"
+                  name="token-input"
                   label="GitHub Token"
                   type="password"
                   className="w-[680px]"
                   startContent={
-                    isGitHubTokenSet && (
-                      <KeyStatusIcon isSet={!!isGitHubTokenSet} />
-                    )
+                    isTokenSet && <KeyStatusIcon isSet={!!isTokenSet} />
                   }
-                  placeholder={isGitHubTokenSet ? "**********" : ""}
+                  placeholder={isTokenSet ? "**********" : ""}
                 />
 
                 <HelpLink
@@ -371,7 +369,7 @@ function AccountSettings() {
               type="button"
               variant="secondary"
               onClick={handleLogout}
-              isDisabled={!isGitHubTokenSet}
+              isDisabled={!isTokenSet}
             >
               Disconnect from GitHub
             </BrandButton>

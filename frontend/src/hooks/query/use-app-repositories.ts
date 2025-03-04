@@ -6,12 +6,12 @@ import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";
 
 export const useAppRepositories = () => {
-  const { githubTokenIsSet } = useAuth();
+  const { tokenIsSet } = useAuth();
   const { data: config } = useConfig();
   const { data: installations } = useAppInstallations();
 
   const repos = useInfiniteQuery({
-    queryKey: ["repositories", githubTokenIsSet, installations],
+    queryKey: ["repositories", tokenIsSet, installations],
     queryFn: async ({
       pageParam,
     }: {
@@ -46,7 +46,7 @@ export const useAppRepositories = () => {
       return null;
     },
     enabled:
-      githubTokenIsSet &&
+      tokenIsSet &&
       Array.isArray(installations) &&
       installations.length > 0 &&
       config?.APP_MODE === "saas",

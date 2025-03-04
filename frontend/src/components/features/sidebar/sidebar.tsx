@@ -73,7 +73,7 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     if (config?.APP_MODE === "saas") await logout();
-    else await saveUserSettings({ unset_github_token: true });
+    else await saveUserSettings({ unset_token: true });
     posthog.reset();
   };
 

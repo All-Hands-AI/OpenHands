@@ -5,7 +5,7 @@ import pytest
 from pydantic import SecretStr
 
 from openhands.integrations.github.github_service import GitHubService
-from openhands.integrations.github.github_types import GhAuthenticationError
+from openhands.integrations.service_types import AuthenticationError
 
 
 @pytest.mark.asyncio
@@ -77,5 +77,5 @@ async def test_github_service_fetch_data():
         mock_client.get.reset_mock()
         mock_client.get.return_value = mock_response
 
-        with pytest.raises(GhAuthenticationError):
+        with pytest.raises(AuthenticationError):
             _ = await service._fetch_data('https://api.github.com/user')

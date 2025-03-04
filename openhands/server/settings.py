@@ -22,6 +22,7 @@ class Settings(BaseModel):
     llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = None
     github_token: SecretStr | None = None
+    gitlab_token: SecretStr | None = None
     enable_default_condenser: bool = False
     enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
@@ -39,21 +40,20 @@ class Settings(BaseModel):
         return pydantic_encoder(llm_api_key)
 
     @field_serializer('github_token')
-    def github_token_serializer(
-        self, github_token: SecretStr | None, info: SerializationInfo
-    ):
-        """Custom serializer for the GitHub token.
+    @field_serializer('gitlab_token')
+    def token_serializer(self, token: SecretStr | None, info: SerializationInfo):
+        """Custom serializer for the token.
 
         To serialize the token instead of ********, set expose_secrets to True in the serialization context.
         """
-        if github_token is None:
+        if token is None:
             return None
 
         context = info.context
         if context and context.get('expose_secrets', False):
-            return github_token.get_secret_value()
+            return token.get_secret_value()
 
-        return pydantic_encoder(github_token)
+        return pydantic_encoder(token)
 
     @staticmethod
     def from_config() -> Settings | None:
@@ -74,6 +74,7 @@ class Settings(BaseModel):
             llm_base_url=llm_config.base_url,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
             github_token=None,
+            gitlab_type=None,
         )
         return settings
 
@@ -83,15 +84,17 @@ class POSTSettingsModel(Settings):
     Settings for POST requests
     """
 
-    unset_github_token: bool | None = None
+    unset_token: bool | None = None
     github_token: str | None = (
         None  # This is a string because it's coming from the frontend
     )
+    gitlab_token: str | None = None
 
-    # Override the serializer for the GitHub token to handle the string input
+    # Override the serializer for the token to handle the string input
     @field_serializer('github_token')
-    def github_token_serializer(self, github_token: str | None):
-        return github_token
+    @field_serializer('gitlab_token')
+    def token_serializer(self, token: str | None):
+        return token
 
 
 class GETSettingsModel(Settings):
@@ -99,4 +102,4 @@ class GETSettingsModel(Settings):
     Settings with additional token data for the frontend
     """
 
-    github_token_is_set: bool | None = None
+    token_is_set: bool | None = None

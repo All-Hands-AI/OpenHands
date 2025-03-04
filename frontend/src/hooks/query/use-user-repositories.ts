@@ -5,16 +5,16 @@ import { useConfig } from "./use-config";
 import { useAuth } from "#/context/auth-context";
 
 export const useUserRepositories = () => {
-  const { githubTokenIsSet } = useAuth();
+  const { tokenIsSet } = useAuth();
   const { data: config } = useConfig();
 
   const repos = useInfiniteQuery({
-    queryKey: ["repositories", githubTokenIsSet],
+    queryKey: ["repositories", tokenIsSet],
     queryFn: async ({ pageParam }) =>
       retrieveGitHubUserRepositories(pageParam, 100),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    enabled: githubTokenIsSet && config?.APP_MODE === "oss",
+    enabled: tokenIsSet && config?.APP_MODE === "oss",
   });
 
   // TODO: Once we create our custom dropdown component, we should fetch data onEndReached

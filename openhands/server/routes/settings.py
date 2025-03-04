@@ -4,7 +4,9 @@ from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands.server.auth import get_github_token, get_user_id
+from openhands.integrations.gitlab.gitlab_service import GitLabService
+from openhands.integrations.utils import determine_token_type
+from openhands.server.auth import get_github_token, get_user_id, get_gitlab_token
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
 
@@ -23,14 +25,15 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
                 content={'error': 'Settings not found'},
             )
 
-        token_is_set = bool(user_id) or bool(get_github_token(request))
+        token_is_set = bool(user_id) or bool(get_github_token(request)) or bool(get_gitlab_token(request))
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(),
-            github_token_is_set=token_is_set,
+            token_is_set=token_is_set,
         )
         settings_with_token_data.llm_api_key = settings.llm_api_key
 
         del settings_with_token_data.github_token
+        del settings_with_token_data.gitlab_token
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
@@ -45,22 +48,24 @@ async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
 ) -> JSONResponse:
-    # Check if token is valid
+    # Check if at least one token is valid
     if settings.github_token:
-        try:
-            # We check if the token is valid by getting the user
-            # If the token is invalid, this will raise an exception
-            github = GithubServiceImpl(
-                user_id=None, idp_token=None, token=SecretStr(settings.github_token)
-            )
-            await github.get_user()
-
-        except Exception as e:
-            logger.warning(f'Invalid GitHub token: {e}')
+        token_type = await determine_token_type(SecretStr(settings.github_token))
+        if token_type != 'github':
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 content={
-                    'error': 'Invalid GitHub token. Please make sure it is valid.'
+                    'error': 'Invalid token. Please make sure it is a valid Github token.'
+                },
+            )
+
+    if settings.gitlab_token:
+        token_type =  await determine_token_type(SecretStr(settings.gitlab_token))
+        if token_type != 'gitlab':
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={
+                    'error': 'Invalid token. Please make sure it is a valid GitLab token.'
                 },
             )
 
@@ -78,6 +83,9 @@ async def store_settings(
             if settings.github_token is None:
                 settings.github_token = existing_settings.github_token
 
+            if settings.gitlab_token is None:
+                settings.gitlab_token = existing_settings.gitlab_token
+
             if settings.user_consents_to_analytics is None:
                 settings.user_consents_to_analytics = (
                     existing_settings.user_consents_to_analytics
@@ -88,8 +96,9 @@ async def store_settings(
             content={'message': 'Settings stored'},
         )
 
-        if settings.unset_github_token:
+        if settings.unset_token:
             settings.github_token = None
+            settings.gitlab_token = None
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
@@ -122,5 +131,6 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
     # Convert the `llm_api_key` and `github_token` to a `SecretStr` instance
     filtered_settings_data['llm_api_key'] = settings_with_token_data.llm_api_key
     filtered_settings_data['github_token'] = settings_with_token_data.github_token
+    filtered_settings_data['gitlab_token'] = settings_with_token_data.gitlab_token
 
     return Settings(**filtered_settings_data)

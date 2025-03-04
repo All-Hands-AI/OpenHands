@@ -3,13 +3,13 @@ from unittest.mock import AsyncMock
 import pytest
 
 from openhands.integrations.github.github_service import GitHubService
-from openhands.integrations.github.github_types import GitHubUser, TaskType
+from openhands.integrations.service_types import TaskType, User
 
 
 @pytest.mark.asyncio
 async def test_get_suggested_tasks():
     # Mock responses
-    mock_user = GitHubUser(
+    mock_user = User(
         id=1,
         login='test-user',
         avatar_url='https://example.com/avatar.jpg',

@@ -197,7 +197,9 @@ class GitHubTokenMiddleware(SessionMiddlewareInterface):
         if getattr(request.state, 'github_token', None) is None:
             if settings and settings.github_token:
                 request.state.github_token = settings.github_token
-            else:
-                request.state.github_token = None
+
+        if getattr(request.state, 'gitlab_token', None) is None:
+            if settings and settings.gitlab_token:
+                request.state.gitlab_token = settings.gitlab_token
 
         return await call_next(request)
