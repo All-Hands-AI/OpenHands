@@ -14,7 +14,7 @@ interface SettingsContextType {
   saveUserSettings: (
     newSettings: Partial<PostSettings>,
     config?: SaveUserSettingsConfig,
-  ) => Promise<void>;
+  ) => void;
   settings: Settings | undefined;
 }
 
@@ -28,9 +28,9 @@ interface SettingsProviderProps {
 
 export function SettingsProvider({ children }: SettingsProviderProps) {
   const { data: userSettings } = useSettings();
-  const { mutateAsync: saveSettings } = useSaveSettings();
+  const { mutate: saveSettings } = useSaveSettings();
 
-  const saveUserSettings = async (
+  const saveUserSettings = (
     newSettings: Partial<PostSettings>,
     config?: SaveUserSettingsConfig,
   ) => {
@@ -43,7 +43,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       delete updatedSettings.LLM_API_KEY;
     }
 
-    await saveSettings(updatedSettings, {
+    saveSettings(updatedSettings, {
       onSuccess: config?.onSuccess,
       onError: (error) => {
         const errorMessage = retrieveAxiosErrorMessage(error);
