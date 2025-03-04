@@ -51,6 +51,7 @@ async def _create_new_conversation(
     selected_branch: str | None,
     initial_user_msg: str | None,
     image_urls: list[str] | None,
+    attach_convo_id: bool = False,
 ):
     monitoring_listener.on_create_conversation()
     logger.info('Loading settings')
@@ -109,8 +110,13 @@ async def _create_new_conversation(
     logger.info(f'Starting agent loop for conversation {conversation_id}')
     initial_message_action = None
     if initial_user_msg or image_urls:
+        user_msg = (
+            initial_user_msg.format(conversation_id)
+            if attach_convo_id and initial_user_msg
+            else initial_user_msg
+        )
         initial_message_action = MessageAction(
-            content=initial_user_msg or '',
+            content=user_msg or '',
             image_urls=image_urls or [],
         )
     event_stream = await conversation_manager.maybe_start_agent_loop(

@@ -51,6 +51,9 @@ class GitHubService:
     async def get_latest_token(self) -> SecretStr:
         return self.token
 
+    async def get_latest_provider_token(self) -> SecretStr:
+        return self.token
+
     async def _fetch_data(
         self, url: str, params: dict | None = None
     ) -> tuple[Any, dict]:

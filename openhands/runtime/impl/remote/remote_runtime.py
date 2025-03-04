@@ -1,5 +1,5 @@
 import os
-from typing import Callable, Optional
+from typing import Callable
 from urllib.parse import urlparse
 
 import requests
@@ -42,7 +42,7 @@ class RemoteRuntime(ActionExecutionClient):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_callback: Optional[Callable] = None,
+        status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
         github_user_id: str | None = None,
