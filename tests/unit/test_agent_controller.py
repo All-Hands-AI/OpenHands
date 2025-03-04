@@ -19,7 +19,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
-from openhands.llm.metrics import Metrics
+from openhands.llm.metrics import Cost, Metrics
 from openhands.runtime.base import Runtime
 from openhands.storage.memory import InMemoryFileStore
 
@@ -749,3 +749,59 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
 
     # Check that the context window exceeded error was raised during the run
     assert step_state.has_errored
+
+
+@pytest.mark.asyncio
+async def test_action_metrics_copy():
+    # Setup
+    file_store = InMemoryFileStore({})
+    event_stream = EventStream(sid='test', file_store=file_store)
+
+    # Create agent with metrics
+    agent = MagicMock(spec=Agent)
+    agent.llm = MagicMock(spec=LLM)
+    metrics = Metrics(model_name='test-model')
+    metrics.accumulated_cost = 0.05
+    cost = Cost(model='test-model', cost=0.05)
+    metrics._costs.append(cost)
+    agent.llm.metrics = metrics
+
+    # Mock agent step to return an action
+    action = MessageAction(content='Test message')
+
+    def agent_step_fn(state):
+        return action
+
+    agent.step = agent_step_fn
+
+    # Create controller with correct parameters
+    controller = AgentController(
+        agent=agent,
+        event_stream=event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Execute one step
+    controller.state.agent_state = AgentState.RUNNING
+    await controller._step()
+
+    # Get the last event from event stream
+    events = list(event_stream.get_events())
+    assert len(events) > 0
+    last_action = events[-1]
+
+    # Verify metrics were copied correctly
+    assert last_action.llm_metrics is not None
+    assert last_action.llm_metrics.accumulated_cost == 0.05
+    assert len(last_action.llm_metrics.costs) == 1
+    assert last_action.llm_metrics.costs[0].cost == 0.05
+    assert last_action.llm_metrics.costs[0].model == 'test-model'
+
+    # Verify it's a deep copy by modifying the original
+    agent.llm.metrics.accumulated_cost = 0.1
+    assert last_action.llm_metrics.accumulated_cost == 0.05  # Should remain unchanged
+
+    await controller.close()
