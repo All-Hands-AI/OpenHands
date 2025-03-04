@@ -54,7 +54,6 @@ class Settings(BaseModel):
             return token.get_secret_value()
 
         return pydantic_encoder(token)
-    
 
     @staticmethod
     def from_config() -> Settings | None:
@@ -86,14 +85,13 @@ class POSTSettingsModel(Settings):
     """
 
     unset_token: bool | None = None
-    github_token: str | None = None  # This is a string because it's coming from the frontend
+    github_token: str | None = (
+        None  # This is a string because it's coming from the frontend
+    )
     gitlab_token: str | None = None
 
     # Override the serializer for the token to handle the string input
     @field_serializer('github_token')
-    def token_serializer(self, token: str | None):
-        return token
-
     @field_serializer('gitlab_token')
     def token_serializer(self, token: str | None):
         return token

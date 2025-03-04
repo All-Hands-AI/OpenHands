@@ -1,5 +1,3 @@
-from typing import Literal
-
 from fastapi import Request
 from pydantic import SecretStr
 

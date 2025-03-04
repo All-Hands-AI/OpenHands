@@ -60,7 +60,7 @@ async def store_settings(
             )
 
     if settings.gitlab_token:
-        token_type = not (await determine_token_type(SecretStr(settings.gitlab_token)))
+        token_type =  await determine_token_type(SecretStr(settings.gitlab_token))
         if token_type != 'gitlab':
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
