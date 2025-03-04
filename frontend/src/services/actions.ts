@@ -9,6 +9,7 @@ import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
+import { updateLLMMetrics } from "#/state/llm-metrics-slice";
 import store from "#/store";
 import ActionType from "#/types/action-type";
 import {
@@ -80,6 +81,20 @@ const messageActions = {
     }
   },
 };
+
+function showLLMMetricsAlert(message: ActionMessage) {
+  const metrics = message.llm_metrics;
+  const usage = message.tool_call_metadata?.model_response?.usage;
+
+  if (!metrics && !usage) return;
+
+  store.dispatch(updateLLMMetrics({
+    accumulatedCost: metrics?.accumulated_cost || 0,
+    promptTokens: usage?.prompt_tokens || 0,
+    completionTokens: usage?.completion_tokens || 0,
+    totalTokens: usage?.total_tokens || 0,
+  }));
+}
 
 export function handleActionMessage(message: ActionMessage) {
   if (message.args?.hidden) {
