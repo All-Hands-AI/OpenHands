@@ -1,7 +1,6 @@
 from openhands.events.action import (
     Action,
     AgentFinishAction,
-    AgentRecallAction,
     AgentRejectAction,
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -355,17 +354,6 @@ def test_file_ohaci_edit_action_legacy_serialization():
     assert event_dict['args']['content'] == ''
     assert event_dict['args']['start'] == 1
     assert event_dict['args']['end'] == -1
-
-
-def test_agent_recall_action_serialization_deserialization():
-    original_action_dict = {
-        'action': 'recall',
-        'args': {
-            'query': 'What is the capital of France?',
-            'thought': 'I need to recall information about France',
-        },
-    }
-    serialization_deserialization(original_action_dict, AgentRecallAction)
 
 
 def test_file_read_action_legacy_serialization():
