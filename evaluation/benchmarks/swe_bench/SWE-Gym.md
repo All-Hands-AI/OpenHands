@@ -44,7 +44,7 @@ export ALLHANDS_API_KEY=ah-yourkey
 ./evaluation/benchmarks/swe_bench/scripts/rollout_swegym.sh llm.mymodel-temp05 'train-t05' 16
 ```
 
-NOTE: SWE-Gym sampling with parallism is currently only tested with AllHands RemoteRuntime (limited beta). Contact `contact@all-hands.dev` to apply for access.
+NOTE: SWE-Gym sampling with parallism is currently only tested with AllHands RemoteRuntime (limited beta). Fill [this form](https://docs.google.com/forms/d/e/1FAIpQLSckVz_JFwg2_mOxNZjCtr7aoBFI2Mwdan3f75J_TrdMS1JV2g/viewform) to apply for access.
 
 
 5. When `rollout_swegym.sh` finishes, you will get a file called `output.with_completions.jsonl.gz`. Then you can use [`./scripts/swegym/convert_data.ipynb`](./scripts/swegym/convert_data.ipynb) to convert them into SFT data format.
