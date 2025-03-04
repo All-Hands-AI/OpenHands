@@ -20,7 +20,7 @@ import { AuthProvider } from "./context/auth-context";
 import { queryClientConfig } from "./query-client-config";
 import { SettingsProvider } from "./context/settings-context";
 
-const stripePromise = loadStripe("");
+const stripePromise = loadStripe("pk_test_51QcB1BISRRWxrODC7gYdTQuLNR8kAiCpdEOXqFloJMaGI2bw3pJ6v72JqyJ7WNGHBYPaE8rrHEYviwlcOqh1IXi700yHRRlZCV");
 
 function PosthogInit() {
   const { data: config } = useConfig();
