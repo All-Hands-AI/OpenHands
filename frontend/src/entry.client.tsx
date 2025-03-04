@@ -65,7 +65,7 @@ prepareApp().then(() =>
                   stripe={stripePromise}
                   options={{
                     mode: "setup",
-                    currency: "eur",
+                    currency: "usd",
                     appearance: {
                       theme: "night",
                       variables: {
