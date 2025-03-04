@@ -7,6 +7,7 @@ import pytest
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import (
     AmortizedForgettingCondenserConfig,
+    BrowserOutputCondenserConfig,
     LLMAttentionCondenserConfig,
     LLMSummarizingCondenserConfig,
     NoOpCondenserConfig,
@@ -15,6 +16,7 @@ from openhands.core.config.condenser_config import (
 )
 from openhands.core.config.llm_config import LLMConfig
 from openhands.events.event import Event, EventSource
+from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.observation.observation import Observation
 from openhands.llm import LLM
@@ -22,6 +24,7 @@ from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import RollingCondenser
 from openhands.memory.condenser.impl import (
     AmortizedForgettingCondenser,
+    BrowserOutputCondenser,
     ImportantEventSelection,
     LLMAttentionCondenser,
     LLMSummarizingCondenser,
@@ -150,6 +153,46 @@ def test_observation_masking_condenser_respects_attention_window(mock_state):
                 assert '<MASKED>' in str(condensed_event)
 
         # If we're within the attention window, events are unchanged.
+        else:
+            assert event == condensed_event
+
+
+def test_browser_output_condenser_from_config():
+    """Test that BrowserOutputCondenser objects can be made from config."""
+    attention_window = 5
+    config = BrowserOutputCondenserConfig(attention_window=attention_window)
+    condenser = Condenser.from_config(config)
+
+    assert isinstance(condenser, BrowserOutputCondenser)
+    assert condenser.attention_window == attention_window
+
+
+def test_browser_output_condenser_respects_attention_window(mock_state):
+    """Test that BrowserOutputCondenser only masks events outside the attention window."""
+    attention_window = 3
+    condenser = BrowserOutputCondenser(attention_window=attention_window)
+
+    events = [
+        BrowserOutputObservation('Observation 1', url='', trigger_by_action=''),
+        BrowserOutputObservation('Observation 2', url='', trigger_by_action=''),
+        create_test_event('Event 3'),
+        create_test_event('Event 4'),
+        BrowserOutputObservation('Observation 3', url='', trigger_by_action=''),
+        BrowserOutputObservation('Observation 4', url='', trigger_by_action=''),
+    ]
+
+    mock_state.history = events
+    result = condenser.condensed_history(mock_state)
+
+    assert len(result) == len(events)
+    cnt = 4
+    for event, condensed_event in zip(events, result):
+        if isinstance(event, BrowserOutputObservation):
+            if cnt > attention_window:
+                assert 'Content Omitted' in str(condensed_event)
+            else:
+                assert event == condensed_event
+            cnt -= 1
         else:
             assert event == condensed_event
 
