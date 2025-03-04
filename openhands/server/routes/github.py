@@ -12,13 +12,12 @@ from openhands.integrations.service_types import (
 )
 from openhands.server.auth import (get_idp_token, 
                                    get_github_token, 
-                                   get_gitlab_token,
                                    get_user_id)
 
 app = APIRouter(prefix='/api/github')
 
 
-@app.get('/repositories', response_model=list[GitHubRepository])
+@app.get('/repositories', response_model=list[Repository])
 async def get_github_repositories(
     page: int = 1,
     per_page: int = 10,
@@ -55,7 +54,7 @@ async def get_github_repositories(
     )
 
 
-@app.get('/user', response_model=GitHubUser)
+@app.get('/user', response_model=User)
 async def get_github_user(
     github_user_id: str | None = Depends(get_user_id),
     github_token: SecretStr | None = Depends(get_github_token),
@@ -118,7 +117,7 @@ async def get_github_installation_ids(
 
 
 
-@app.get('/search/repositories', response_model=list[GitHubRepository])
+@app.get('/search/repositories', response_model=list[Repository])
 async def search_github_repositories(
     query: str,
     per_page: int = 5,
