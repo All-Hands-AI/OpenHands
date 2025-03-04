@@ -22,7 +22,7 @@ class HttpSession:
             logger.error(
                 'Session is being used after close!', stack_info=True, exc_info=True
             )
-            raise RuntimeError('Session is being used after close!')
+            self.session = requests.Session()
         return getattr(self.session, name)
 
     @property
@@ -31,7 +31,7 @@ class HttpSession:
             logger.error(
                 'Session is being used after close!', stack_info=True, exc_info=True
             )
-            raise RuntimeError('Session is being used after close!')
+            self.session = requests.Session()
         # Cast to CaseInsensitiveDict[str] since mypy doesn't know the exact type
         return cast(CaseInsensitiveDict[str], self.session.headers)
 

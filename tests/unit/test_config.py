@@ -16,7 +16,9 @@ from openhands.core.config import (
     load_from_toml,
 )
 from openhands.core.config.condenser_config import (
+    LLMSummarizingCondenserConfig,
     NoOpCondenserConfig,
+    RecentEventsCondenserConfig,
 )
 from openhands.core.logger import openhands_logger
 
@@ -566,11 +568,241 @@ def test_cache_dir_creation(default_config, tmpdir):
     assert os.path.exists(default_config.cache_dir)
 
 
-def test_agent_config_condenser_default():
-    """Test that default agent condenser is NoOpCondenser."""
-    config = AppConfig()
+def test_agent_config_condenser_with_no_enabled():
+    """Test default agent condenser with enable_default_condenser=False."""
+    config = AppConfig(enable_default_condenser=False)
     agent_config = config.get_agent_config()
     assert isinstance(agent_config.condenser, NoOpCondenserConfig)
+
+
+def test_condenser_config_from_toml_basic(default_config, temp_toml_file):
+    """Test loading basic condenser configuration from TOML."""
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write("""
+[condenser]
+type = "recent"
+keep_first = 3
+max_events = 15
+""")
+
+    load_from_toml(default_config, temp_toml_file)
+
+    # Verify that the condenser config is correctly assigned to the default agent config
+    agent_config = default_config.get_agent_config()
+    assert isinstance(agent_config.condenser, RecentEventsCondenserConfig)
+    assert agent_config.condenser.keep_first == 3
+    assert agent_config.condenser.max_events == 15
+
+    # We can also verify the function works directly
+    from openhands.core.config.condenser_config import (
+        condenser_config_from_toml_section,
+    )
+
+    condenser_data = {'type': 'recent', 'keep_first': 3, 'max_events': 15}
+    condenser_mapping = condenser_config_from_toml_section(condenser_data)
+
+    assert 'condenser' in condenser_mapping
+    assert isinstance(condenser_mapping['condenser'], RecentEventsCondenserConfig)
+    assert condenser_mapping['condenser'].keep_first == 3
+    assert condenser_mapping['condenser'].max_events == 15
+
+
+def test_condenser_config_from_toml_with_llm_reference(default_config, temp_toml_file):
+    """Test loading condenser configuration with LLM reference from TOML."""
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write("""
+[llm.condenser_llm]
+model = "gpt-4"
+api_key = "test-key"
+
+[condenser]
+type = "llm"
+llm_config = "condenser_llm"
+keep_first = 2
+max_size = 50
+""")
+
+    load_from_toml(default_config, temp_toml_file)
+
+    # Verify that the LLM config was loaded
+    assert 'condenser_llm' in default_config.llms
+    assert default_config.llms['condenser_llm'].model == 'gpt-4'
+
+    # Verify that the condenser config is correctly assigned to the default agent config
+    agent_config = default_config.get_agent_config()
+    assert isinstance(agent_config.condenser, LLMSummarizingCondenserConfig)
+    assert agent_config.condenser.keep_first == 2
+    assert agent_config.condenser.max_size == 50
+    assert agent_config.condenser.llm_config.model == 'gpt-4'
+
+    # Test the condenser config with the LLM reference
+    from openhands.core.config.condenser_config import (
+        condenser_config_from_toml_section,
+    )
+
+    condenser_data = {
+        'type': 'llm',
+        'llm_config': 'condenser_llm',
+        'keep_first': 2,
+        'max_size': 50,
+    }
+    condenser_mapping = condenser_config_from_toml_section(
+        condenser_data, default_config.llms
+    )
+
+    assert 'condenser' in condenser_mapping
+    assert isinstance(condenser_mapping['condenser'], LLMSummarizingCondenserConfig)
+    assert condenser_mapping['condenser'].keep_first == 2
+    assert condenser_mapping['condenser'].max_size == 50
+    assert condenser_mapping['condenser'].llm_config.model == 'gpt-4'
+
+
+def test_condenser_config_from_toml_with_missing_llm_reference(
+    default_config, temp_toml_file
+):
+    """Test loading condenser configuration with missing LLM reference from TOML."""
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write("""
+[condenser]
+type = "llm"
+llm_config = "missing_llm"
+keep_first = 2
+max_size = 50
+""")
+
+    load_from_toml(default_config, temp_toml_file)
+
+    # Test the condenser config with a missing LLM reference
+    from openhands.core.config.condenser_config import (
+        condenser_config_from_toml_section,
+    )
+
+    condenser_data = {
+        'type': 'llm',
+        'llm_config': 'missing_llm',
+        'keep_first': 2,
+        'max_size': 50,
+    }
+    condenser_mapping = condenser_config_from_toml_section(
+        condenser_data, default_config.llms
+    )
+
+    assert 'condenser' in condenser_mapping
+    assert isinstance(condenser_mapping['condenser'], NoOpCondenserConfig)
+    # Should not have a default LLMConfig when the reference is missing
+    assert not hasattr(condenser_mapping['condenser'], 'llm_config')
+
+
+def test_condenser_config_from_toml_with_invalid_config(default_config, temp_toml_file):
+    """Test loading invalid condenser configuration from TOML."""
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write("""
+[condenser]
+type = "invalid_type"
+""")
+
+    load_from_toml(default_config, temp_toml_file)
+
+    # Test the condenser config with an invalid type
+    from openhands.core.config.condenser_config import (
+        condenser_config_from_toml_section,
+    )
+
+    condenser_data = {'type': 'invalid_type'}
+    condenser_mapping = condenser_config_from_toml_section(condenser_data)
+
+    # Should default to NoOpCondenserConfig when the type is invalid
+    assert 'condenser' in condenser_mapping
+    assert isinstance(condenser_mapping['condenser'], NoOpCondenserConfig)
+
+
+def test_condenser_config_from_toml_with_validation_error(
+    default_config, temp_toml_file
+):
+    """Test loading condenser configuration with validation error from TOML."""
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write("""
+[condenser]
+type = "recent"
+keep_first = -1  # Invalid: must be >= 0
+max_events = 0   # Invalid: must be >= 1
+""")
+
+    load_from_toml(default_config, temp_toml_file)
+
+    # Test the condenser config with validation errors
+    from openhands.core.config.condenser_config import (
+        condenser_config_from_toml_section,
+    )
+
+    condenser_data = {'type': 'recent', 'keep_first': -1, 'max_events': 0}
+    condenser_mapping = condenser_config_from_toml_section(condenser_data)
+
+    # Should default to NoOpCondenserConfig when validation fails
+    assert 'condenser' in condenser_mapping
+    assert isinstance(condenser_mapping['condenser'], NoOpCondenserConfig)
+
+
+def test_default_condenser_behavior_enabled(default_config, temp_toml_file):
+    """Test the default condenser behavior when enable_default_condenser is True."""
+    # Create a minimal TOML file with no condenser section
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write("""
+[core]
+# Empty core section, no condenser section
+""")
+
+    # Set enable_default_condenser to True
+    default_config.enable_default_condenser = True
+    load_from_toml(default_config, temp_toml_file)
+
+    # Verify the default agent config has LLMSummarizingCondenserConfig
+    agent_config = default_config.get_agent_config()
+    assert isinstance(agent_config.condenser, LLMSummarizingCondenserConfig)
+    assert agent_config.condenser.keep_first == 1
+    assert agent_config.condenser.max_size == 100
+
+
+def test_default_condenser_behavior_disabled(default_config, temp_toml_file):
+    """Test the default condenser behavior when enable_default_condenser is False."""
+    # Create a minimal TOML file with no condenser section
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write("""
+[core]
+# Empty core section, no condenser section
+""")
+
+    # Set enable_default_condenser to False
+    default_config.enable_default_condenser = False
+    load_from_toml(default_config, temp_toml_file)
+
+    # Verify the agent config uses NoOpCondenserConfig
+    agent_config = default_config.get_agent_config()
+    assert isinstance(agent_config.condenser, NoOpCondenserConfig)
+
+
+def test_default_condenser_explicit_toml_override(default_config, temp_toml_file):
+    """Test that explicit condenser in TOML takes precedence over the default."""
+    # Set enable_default_condenser to True
+    default_config.enable_default_condenser = True
+
+    # Create a TOML file with an explicit condenser section
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write("""
+[condenser]
+type = "recent"
+keep_first = 3
+max_events = 15
+""")
+
+    # Load the config
+    load_from_toml(default_config, temp_toml_file)
+
+    # Verify the explicit condenser from TOML takes precedence
+    agent_config = default_config.get_agent_config()
+    assert isinstance(agent_config.condenser, RecentEventsCondenserConfig)
+    assert agent_config.condenser.keep_first == 3
+    assert agent_config.condenser.max_events == 15
 
 
 def test_api_keys_repr_str():

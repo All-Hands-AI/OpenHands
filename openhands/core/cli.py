@@ -14,7 +14,12 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
-from openhands.core.setup import create_agent, create_controller, create_runtime
+from openhands.core.setup import (
+    create_agent,
+    create_controller,
+    create_runtime,
+    initialize_repository_for_runtime,
+)
 from openhands.events import EventSource, EventStreamSubscriber
 from openhands.events.action import (
     Action,
@@ -109,7 +114,6 @@ async def main(loop: asyncio.AbstractEventLoop):
         sid=sid,
         headless_mode=True,
         agent=agent,
-        selected_repository=config.sandbox.selected_repo,
     )
 
     controller, _ = create_controller(agent, runtime, config)
@@ -164,6 +168,14 @@ async def main(loop: asyncio.AbstractEventLoop):
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
     await runtime.connect()
+
+    # Initialize repository if needed
+    if config.sandbox.selected_repo:
+        initialize_repository_for_runtime(
+            runtime,
+            agent=agent,
+            selected_repository=config.sandbox.selected_repo,
+        )
 
     if initial_user_action:
         # If there's an initial user action, enqueue it and do not prompt again
