@@ -7,6 +7,70 @@ from openhands.runtime.base import Runtime
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
+@app.get('/metrics')
+async def get_conversation_metrics(request: Request):
+    """Retrieve the conversation metrics.
+
+    This endpoint returns the accumulated cost and token usage metrics for the conversation.
+
+    Args:
+        request (Request): The incoming FastAPI request object.
+
+    Returns:
+        JSONResponse: A JSON response containing the metrics data.
+    """
+    try:
+        if not hasattr(request.state, 'conversation'):
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={'error': 'No conversation found in request state'},
+            )
+
+        event_stream = request.state.conversation.event_stream
+
+        # Get metrics from the event stream
+        metrics = (
+            event_stream.get_metrics() if hasattr(event_stream, 'get_metrics') else None
+        )
+
+        if not metrics:
+            # Return empty metrics if not available
+            return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content={
+                    'accumulated_cost': 0.0,
+                    'total_prompt_tokens': 0,
+                    'total_completion_tokens': 0,
+                    'total_tokens': 0,
+                },
+            )
+
+        # Calculate total tokens
+        total_prompt_tokens = sum(usage.prompt_tokens for usage in metrics.token_usages)
+        total_completion_tokens = sum(
+            usage.completion_tokens for usage in metrics.token_usages
+        )
+        total_tokens = total_prompt_tokens + total_completion_tokens
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                'accumulated_cost': metrics.accumulated_cost,
+                'total_prompt_tokens': total_prompt_tokens,
+                'total_completion_tokens': total_completion_tokens,
+                'total_tokens': total_tokens,
+            },
+        )
+    except Exception as e:
+        logger.error(f'Error getting conversation metrics: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                'error': f'Error getting conversation metrics: {e}',
+            },
+        )
+
+
 @app.get('/config')
 async def get_remote_runtime_config(request: Request):
     """Retrieve the runtime configuration.
