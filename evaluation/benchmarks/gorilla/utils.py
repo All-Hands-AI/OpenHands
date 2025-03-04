@@ -122,8 +122,3 @@ def get_data_for_hub(hub: str):
             'hub': [hub] * len(questions),
         }
     )
-
-
-if __name__ == '__main__':
-    df = get_data_for_hub('hf')
-    print(df)
