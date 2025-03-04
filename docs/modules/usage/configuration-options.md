@@ -385,6 +385,11 @@ To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-
   - Default: `false`
   - Description: Use host network
 
+- `runtime_binding_address`
+  - Type: `str`
+  - Default: `127.0.0.1`
+  - Description: The binding address for the runtime ports.  It specifies which network interface on the host machine Docker should bind the runtime ports to.
+
 ### Linting and Plugins
 - `enable_auto_lint`
   - Type: `bool`

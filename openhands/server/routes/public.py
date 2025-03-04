@@ -1,16 +1,14 @@
 import warnings
+from typing import Any
 
 import requests
+from fastapi import APIRouter
 
 from openhands.security.options import SecurityAnalyzers
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
-
-from fastapi import (
-    APIRouter,
-)
 
 from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig
@@ -21,7 +19,7 @@ from openhands.server.shared import config, server_config
 app = APIRouter(prefix='/api/options')
 
 
-@app.get('/models')
+@app.get('/models', response_model=list[str])
 async def get_litellm_models() -> list[str]:
     """Get all models supported by LiteLLM.
 
@@ -34,7 +32,7 @@ async def get_litellm_models() -> list[str]:
     ```
 
     Returns:
-        list: A sorted list of unique model names.
+        list[str]: A sorted list of unique model names.
     """
     litellm_model_list = litellm.model_list + list(litellm.model_cost.keys())
     litellm_model_list_without_bedrock = bedrock.remove_error_modelId(
@@ -74,8 +72,8 @@ async def get_litellm_models() -> list[str]:
     return list(sorted(set(model_list)))
 
 
-@app.get('/agents')
-async def get_agents():
+@app.get('/agents', response_model=list[str])
+async def get_agents() -> list[str]:
     """Get all agents supported by LiteLLM.
 
     To get the agents:
@@ -84,14 +82,13 @@ async def get_agents():
     ```
 
     Returns:
-        list: A sorted list of agent names.
+        list[str]: A sorted list of agent names.
     """
-    agents = sorted(Agent.list_agents())
-    return agents
+    return sorted(Agent.list_agents())
 
 
-@app.get('/security-analyzers')
-async def get_security_analyzers():
+@app.get('/security-analyzers', response_model=list[str])
+async def get_security_analyzers() -> list[str]:
     """Get all supported security analyzers.
 
     To get the security analyzers:
@@ -100,15 +97,16 @@ async def get_security_analyzers():
     ```
 
     Returns:
-        list: A sorted list of security analyzer names.
+        list[str]: A sorted list of security analyzer names.
     """
     return sorted(SecurityAnalyzers.keys())
 
 
-@app.get('/config')
-async def get_config():
-    """
-    Get current config
-    """
+@app.get('/config', response_model=dict[str, Any])
+async def get_config() -> dict[str, Any]:
+    """Get current config.
 
+    Returns:
+        dict[str, Any]: The current server configuration.
+    """
     return server_config.get_config()

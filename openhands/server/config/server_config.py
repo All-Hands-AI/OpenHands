@@ -17,6 +17,7 @@ class ServerConfig(ServerConfigInterface):
         'openhands.storage.conversation.file_conversation_store.FileConversationStore'
     )
     conversation_manager_class: str = 'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
+    monitoring_listener_class: str = 'openhands.server.monitoring.MonitoringListener'
 
     def verify_config(self):
         if self.config_cls:
