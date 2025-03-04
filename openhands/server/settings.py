@@ -5,6 +5,7 @@ from pydantic.json import pydantic_encoder
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.utils import load_app_config
+from openhands.integrations.provider import ProviderType
 
 
 class Settings(BaseModel):
@@ -23,6 +24,7 @@ class Settings(BaseModel):
     remote_runtime_resource_factor: int | None = None
     github_token: SecretStr | None = None
     gitlab_token: SecretStr | None = None
+    provider_tokens: dict[ProviderType, SecretStr] = {}
     enable_default_condenser: bool = False
     enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
@@ -55,6 +57,19 @@ class Settings(BaseModel):
 
         return pydantic_encoder(token)
 
+
+    @field_serializer('provider_tokens')
+    def serialize_provider_tokens(
+        self, tokens: dict[ProviderType, SecretStr], info: SerializationInfo
+    ):
+        """Custom serializer for provider tokens."""
+        result = {}
+        for provider, token_info in tokens.items():
+            result[provider.value] = token_info.model_dump()
+        return result
+
+
+
     @staticmethod
     def from_config() -> Settings | None:
         app_config = load_app_config()
@@ -75,6 +90,7 @@ class Settings(BaseModel):
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
             github_token=None,
             gitlab_type=None,
+            provider_tokens={}
         )
         return settings
 
@@ -90,11 +106,21 @@ class POSTSettingsModel(Settings):
     )
     gitlab_token: str | None = None
 
+    # Override provider_tokens to accept string tokens from frontend
+    provider_tokens: dict[str, str] = {}
+
     # Override the serializer for the token to handle the string input
     @field_serializer('github_token')
     @field_serializer('gitlab_token')
     def token_serializer(self, token: str | None):
         return token
+
+
+
+    @field_serializer('provider_tokens')
+    def provider_tokens_serializer(self, provider_tokens: dict[str, str]):
+        return provider_tokens
+
 
 
 class GETSettingsModel(Settings):
