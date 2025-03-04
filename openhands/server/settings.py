@@ -22,8 +22,6 @@ class Settings(BaseModel):
     llm_api_key: SecretStr | None = None
     llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = None
-    github_token: SecretStr | None = None
-    gitlab_token: SecretStr | None = None
     provider_tokens: dict[ProviderType, SecretStr] = {}
     enable_default_condenser: bool = False
     enable_sound_notifications: bool = False
@@ -41,33 +39,22 @@ class Settings(BaseModel):
 
         return pydantic_encoder(llm_api_key)
 
-    @field_serializer('github_token')
-    @field_serializer('gitlab_token')
-    def token_serializer(self, token: SecretStr | None, info: SerializationInfo):
-        """Custom serializer for the token.
-
-        To serialize the token instead of ********, set expose_secrets to True in the serialization context.
-        """
-        if token is None:
-            return None
-
-        context = info.context
-        if context and context.get('expose_secrets', False):
-            return token.get_secret_value()
-
-        return pydantic_encoder(token)
-
-
     @field_serializer('provider_tokens')
-    def serialize_provider_tokens(
+    def provider_tokens_serializer(
         self, tokens: dict[ProviderType, SecretStr], info: SerializationInfo
     ):
         """Custom serializer for provider tokens."""
-        result = {}
-        for provider, token_info in tokens.items():
-            result[provider.value] = token_info.model_dump()
-        return result
+        
+        context = info.context
 
+        if context and context.get('expose_secrets', False):
+            result = {}
+            for provider, token_info in tokens.items():
+                result[provider.value] = token_info.get_secret_value()
+
+            return result
+    
+        return pydantic_encoder(result)
 
 
     @staticmethod
@@ -88,8 +75,6 @@ class Settings(BaseModel):
             llm_api_key=llm_config.api_key,
             llm_base_url=llm_config.base_url,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
-            github_token=None,
-            gitlab_type=None,
             provider_tokens={}
         )
         return settings
@@ -101,26 +86,12 @@ class POSTSettingsModel(Settings):
     """
 
     unset_token: bool | None = None
-    github_token: str | None = (
-        None  # This is a string because it's coming from the frontend
-    )
-    gitlab_token: str | None = None
-
     # Override provider_tokens to accept string tokens from frontend
     provider_tokens: dict[str, str] = {}
-
-    # Override the serializer for the token to handle the string input
-    @field_serializer('github_token')
-    @field_serializer('gitlab_token')
-    def token_serializer(self, token: str | None):
-        return token
-
-
 
     @field_serializer('provider_tokens')
     def provider_tokens_serializer(self, provider_tokens: dict[str, str]):
         return provider_tokens
-
 
 
 class GETSettingsModel(Settings):

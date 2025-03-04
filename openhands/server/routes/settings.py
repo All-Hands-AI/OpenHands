@@ -30,8 +30,7 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
         )
         settings_with_token_data.llm_api_key = settings.llm_api_key
 
-        del settings_with_token_data.github_token
-        del settings_with_token_data.gitlab_token
+        del settings_with_token_data.provider_tokens
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
@@ -46,26 +45,17 @@ async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
 ) -> JSONResponse:
-    # Check if at least one token is valid
-    if settings.github_token:
-        token_type = await determine_token_type(SecretStr(settings.github_token))
-        if token_type != 'github':
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={
-                    'error': 'Invalid token. Please make sure it is a valid Github token.'
-                },
-            )
-
-    if settings.gitlab_token:
-        token_type =  await determine_token_type(SecretStr(settings.gitlab_token))
-        if token_type != 'gitlab':
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={
-                    'error': 'Invalid token. Please make sure it is a valid GitLab token.'
-                },
-            )
+    # Check provider tokens are valid
+    if settings.provider_tokens:
+        for token_type, token_value in settings.provider_tokens.items():
+            confirmed_token_type = await determine_token_type(SecretStr(token_value))
+            if confirmed_token_type != token_type:
+                return JSONResponse(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    content={
+                        'error': f'Invalid token. Please make sure it is a valid {token_type} token.'
+                    },
+                )
 
     try:
         settings_store = await SettingsStoreImpl.get_instance(
@@ -78,11 +68,12 @@ async def store_settings(
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
 
-            if settings.github_token is None:
-                settings.github_token = existing_settings.github_token
+            # Updating any existing provider tokens with new ones
+            if settings.provider_tokens:
+                existing_settings.provider_tokens.update(settings.provider_tokens)
 
-            if settings.gitlab_token is None:
-                settings.gitlab_token = existing_settings.gitlab_token
+            settings.provider_tokens = existing_settings.provider_tokens
+
 
             if settings.user_consents_to_analytics is None:
                 settings.user_consents_to_analytics = (
@@ -95,8 +86,7 @@ async def store_settings(
         )
 
         if settings.unset_token:
-            settings.github_token = None
-            settings.gitlab_token = None
+            settings.provider_tokens = {}
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
@@ -128,7 +118,6 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
 
     # Convert the `llm_api_key` and `github_token` to a `SecretStr` instance
     filtered_settings_data['llm_api_key'] = settings_with_token_data.llm_api_key
-    filtered_settings_data['github_token'] = settings_with_token_data.github_token
-    filtered_settings_data['gitlab_token'] = settings_with_token_data.gitlab_token
+    filtered_settings_data['provider_tokens'] = settings_with_token_data.provider_tokens
 
     return Settings(**filtered_settings_data)
