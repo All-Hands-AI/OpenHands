@@ -112,12 +112,10 @@ def test_edit_file_missing_required():
     assert 'Missing required argument "content"' in str(exc_info.value)
 
 
-def test_str_replace_editor_valid():
-    """Test str_replace_editor with valid arguments."""
+def test_file_editor_valid():
+    """Test file_editor with valid arguments."""
     # Test view command
-    response = create_mock_response(
-        'str_replace_editor', {'command': 'view', 'path': '/path/to/file'}
-    )
+    response = create_mock_response('view', {'path': '/path/to/file'})
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], FileReadAction)
@@ -126,7 +124,7 @@ def test_str_replace_editor_valid():
 
     # Test other commands
     response = create_mock_response(
-        'str_replace_editor',
+        'file_editor',
         {
             'command': 'str_replace',
             'path': '/path/to/file',
@@ -141,16 +139,16 @@ def test_str_replace_editor_valid():
     assert actions[0].impl_source == FileEditSource.OH_ACI
 
 
-def test_str_replace_editor_missing_required():
-    """Test str_replace_editor with missing required arguments."""
+def test_file_editor_missing_required():
+    """Test file_editor with missing required arguments."""
     # Missing command
-    response = create_mock_response('str_replace_editor', {'path': '/path/to/file'})
+    response = create_mock_response('file_editor', {'path': '/path/to/file'})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "command"' in str(exc_info.value)
 
     # Missing path
-    response = create_mock_response('str_replace_editor', {'command': 'view'})
+    response = create_mock_response('file_editor', {'command': 'view'})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "path"' in str(exc_info.value)

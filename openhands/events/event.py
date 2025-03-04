@@ -10,6 +10,8 @@ class EventSource(str, Enum):
     AGENT = 'agent'
     USER = 'user'
     ENVIRONMENT = 'environment'
+    # When an event that is created by another agent, such event source is "delegate"
+    DELEGATE = 'delegate'
 
 
 class FileEditSource(str, Enum):
