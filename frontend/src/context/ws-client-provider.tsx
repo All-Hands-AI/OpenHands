@@ -49,13 +49,19 @@ interface UseWsClient {
   isLoadingMessages: boolean;
   events: Record<string, unknown>[];
   send: (event: Record<string, unknown>) => void;
+  queueMessage: (event: Record<string, unknown>) => void;
+  pendingMessages: Record<string, unknown>[];
 }
 
 const WsClientContext = React.createContext<UseWsClient>({
   status: WsClientProviderStatus.DISCONNECTED,
   isLoadingMessages: true,
   events: [],
+  pendingMessages: [],
   send: () => {
+    throw new Error("not connected");
+  },
+  queueMessage: () => {
     throw new Error("not connected");
   },
 });
@@ -109,26 +115,72 @@ export function WsClientProvider({
     WsClientProviderStatus.DISCONNECTED,
   );
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
+  const [pendingMessages, setPendingMessages] = React.useState<
+    Record<string, unknown>[]
+  >([]);
+  const [backendReady, setBackendReady] = React.useState(false);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
 
   const messageRateHandler = useRate({ threshold: 250 });
 
+  function queueMessage(event: Record<string, unknown>) {
+    EventLogger.info(`Queueing message: ${JSON.stringify(event)}`);
+    setPendingMessages((prev) => [...prev, event]);
+  }
+
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
-      EventLogger.error("WebSocket is not connected.");
+      EventLogger.error("WebSocket is not connected, queueing message");
+      queueMessage(event);
       return;
     }
+
+    if (!backendReady) {
+      // If backend is not ready yet, queue the message
+      EventLogger.info(
+        `Backend not ready, queueing message: ${JSON.stringify(event)}`,
+      );
+      queueMessage(event);
+      return;
+    }
+
+    EventLogger.info(`Sending message to backend: ${JSON.stringify(event)}`);
     sioRef.current.emit("oh_action", event);
   }
 
   function handleConnect() {
+    EventLogger.info("WebSocket connected");
     setStatus(WsClientProviderStatus.CONNECTED);
+
+    // Set a timeout to consider the backend ready after a short delay
+    // This is a fallback in case we don't receive any events from the backend
+    setTimeout(() => {
+      if (!backendReady) {
+        EventLogger.info(
+          "Backend ready timeout reached, forcing backend ready state",
+        );
+        setBackendReady(true);
+      }
+    }, 1000); // 1 second timeout
+
+    EventLogger.info(
+      `Connection established, waiting for backend ready signal. Pending messages: ${pendingMessages.length}`,
+    );
   }
 
   function handleMessage(event: Record<string, unknown>) {
     if (isOpenHandsEvent(event) && isMessageAction(event)) {
       messageRateHandler.record(new Date().getTime());
     }
+
+    // Consider the backend ready as soon as we receive any event
+    if (!backendReady) {
+      EventLogger.info(
+        `Received first event from backend, setting backend ready. Event: ${JSON.stringify(event)}`,
+      );
+      setBackendReady(true);
+    }
+
     setEvents((prevEvents) => [...prevEvents, event]);
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
@@ -138,23 +190,65 @@ export function WsClientProvider({
   }
 
   function handleDisconnect(data: unknown) {
+    EventLogger.info("WebSocket disconnected");
     setStatus(WsClientProviderStatus.DISCONNECTED);
+    setBackendReady(false);
     const sio = sioRef.current;
     if (!sio) {
       return;
     }
     sio.io.opts.query = sio.io.opts.query || {};
     sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
+    EventLogger.info(
+      `Disconnect with latest event ID: ${lastEventRef.current?.id}`,
+    );
     updateStatusWhenErrorMessagePresent(data);
   }
 
   function handleError(data: unknown) {
+    EventLogger.error(`WebSocket connection error: ${JSON.stringify(data)}`);
     setStatus(WsClientProviderStatus.DISCONNECTED);
+    setBackendReady(false);
     updateStatusWhenErrorMessagePresent(data);
   }
 
+  // Watch for backend ready state and send queued messages when ready
+  React.useEffect(() => {
+    EventLogger.info(
+      `Backend ready: ${backendReady}, Pending messages: ${pendingMessages.length}`,
+    );
+
+    if (backendReady && pendingMessages.length > 0 && sioRef.current) {
+      // Backend is ready and we have pending messages
+      EventLogger.info(
+        `Backend is ready! Sending ${pendingMessages.length} queued messages`,
+      );
+
+      pendingMessages.forEach((event, index) => {
+        EventLogger.info(
+          `Sending queued message ${index + 1}/${pendingMessages.length}: ${JSON.stringify(event)}`,
+        );
+        sioRef.current?.emit("oh_action", event);
+      });
+
+      // Also set the agent state to RUNNING if needed
+      const agentStateEvent = {
+        action: "change_agent_state",
+        args: { agent_state: "running" },
+      };
+      EventLogger.info(
+        `Setting agent state to RUNNING: ${JSON.stringify(agentStateEvent)}`,
+      );
+      sioRef.current.emit("oh_action", agentStateEvent);
+
+      setPendingMessages([]);
+      EventLogger.info("All queued messages sent, queue cleared");
+    }
+  }, [backendReady, pendingMessages.length]);
+
   React.useEffect(() => {
     lastEventRef.current = null;
+    setBackendReady(false);
   }, [conversationId]);
 
   React.useEffect(() => {
@@ -210,9 +304,11 @@ export function WsClientProvider({
       status,
       isLoadingMessages: messageRateHandler.isUnderThreshold,
       events,
+      pendingMessages,
       send,
+      queueMessage,
     }),
-    [status, messageRateHandler.isUnderThreshold, events],
+    [status, messageRateHandler.isUnderThreshold, events, pendingMessages],
   );
 
   return <WsClientContext value={value}>{children}</WsClientContext>;
