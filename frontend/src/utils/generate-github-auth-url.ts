@@ -11,8 +11,8 @@ export const generateGitHubAuthUrl = (
   offline: boolean = false,
 ) => {
   const redirectUri = offline
-    ? `http://localhost:3000/oauth/keycloak/offline/callback`
-    : `http://localhost:3000/oauth/keycloak/callback`;
+    ? `${requestUrl.origin}/oauth/keycloak/offline/callback`
+    : `${requestUrl.origin}/oauth/keycloak/callback`;
 
   const authUrl = requestUrl.hostname
     .replace(/(^|\.)staging\.all-hands\.dev$/, "$1auth.staging.all-hands.dev")
@@ -23,5 +23,5 @@ export const generateGitHubAuthUrl = (
     ? "openid email profile offline_access"
     : "openid email profile";
 
-  return `http://127.0.0.1:8080/realms/allhands/protocol/openid-connect/auth?client_id=github&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
+  return `https://${authUrl}/realms/allhands/protocol/openid-connect/auth?client_id=github&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
 };
