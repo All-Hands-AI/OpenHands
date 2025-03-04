@@ -11,7 +11,7 @@ def get_github_token(request: Request) -> SecretStr | None:
 
 def get_gitlab_token(request: Request) -> SecretStr | None:
     """Get GitHub token from request state. For backward compatibility."""
-    return getattr(request.state, 'github_token', None)
+    return getattr(request.state, 'gitlab_token', None)
 
 
 def get_user_id(request: Request) -> str | None:

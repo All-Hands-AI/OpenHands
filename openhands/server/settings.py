@@ -21,8 +21,8 @@ class Settings(BaseModel):
     llm_api_key: SecretStr | None = None
     llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = None
-    token: SecretStr | None = None
-    token_type: str | None = None  # 'github' or 'gitlab'
+    github_token: SecretStr | None = None
+    gitlab_token: SecretStr | None = None
     enable_default_condenser: bool = False
     enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
@@ -72,8 +72,8 @@ class Settings(BaseModel):
             llm_api_key=llm_config.api_key,
             llm_base_url=llm_config.base_url,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
-            token=None,
-            token_type=None,
+            github_token=None,
+            gitlab_type=None,
         )
         return settings
 
@@ -84,10 +84,15 @@ class POSTSettingsModel(Settings):
     """
 
     unset_token: bool | None = None
-    token: str | None = None  # This is a string because it's coming from the frontend
+    github_token: str | None = None  # This is a string because it's coming from the frontend
+    gitlab_token: str | None = None
 
     # Override the serializer for the token to handle the string input
-    @field_serializer('token')
+    @field_serializer('github_token')
+    def token_serializer(self, token: str | None):
+        return token
+
+    @field_serializer('gitlab_token')
     def token_serializer(self, token: str | None):
         return token
 
