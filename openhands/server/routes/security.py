@@ -9,6 +9,24 @@ from fastapi import (
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
+@app.route('/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
+async def security_api(request: Request) -> Response:
+    """Catch-all route for security analyzer API requests.
+
+    Each request is handled directly to the security analyzer.
+
+    Args:
+        request (Request): The incoming FastAPI request object.
+
+    Returns:
+        Response: The response from the security analyzer.
+
+    Raises:
+        HTTPException: If the security analyzer is not initialized.
+    """
+    return await get_response(request)
+
+
 async def get_response(request: Request) -> Response:
     """Get response from security analyzer.
 
