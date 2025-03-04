@@ -85,6 +85,7 @@ class GitLabService:
             name=response.get('name'),
             email=response.get('email'),
             company=response.get('organization'),
+            login=response.get('username'),
         )
 
 
