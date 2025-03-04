@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any
 from uuid import uuid4
 
@@ -19,8 +20,12 @@ class SecurityAnalyzer:
             event_stream: The event stream to listen for events.
         """
         self.event_stream = event_stream
+
+        def sync_on_event(event: Event) -> None:
+            asyncio.create_task(self.on_event(event))
+
         self.event_stream.subscribe(
-            EventStreamSubscriber.SECURITY_ANALYZER, self.on_event, str(uuid4())
+            EventStreamSubscriber.SECURITY_ANALYZER, sync_on_event, str(uuid4())
         )
 
     async def on_event(self, event: Event) -> None:
