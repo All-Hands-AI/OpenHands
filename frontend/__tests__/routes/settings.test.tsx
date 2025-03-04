@@ -11,6 +11,7 @@ import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { PostApiSettings } from "#/types/settings";
 import * as ConsentHandlers from "#/utils/handle-capture-consent";
 import AccountSettings from "#/routes/account-settings";
+import { github } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
 const toggleAdvancedSettings = async (user: UserEvent) => {
   const advancedSwitch = await screen.findByTestId("advanced-settings-switch");
@@ -699,7 +700,7 @@ describe("Settings Screen", () => {
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           llm_api_key: "", // empty because it's not set previously
-          token: undefined,
+          github_token: undefined,
           language: "no",
         }),
       );
@@ -736,7 +737,7 @@ describe("Settings Screen", () => {
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          token: undefined,
+          github_token: undefined,
           llm_api_key: "", // empty because it's not set previously
           llm_model: "openai/gpt-4o",
         }),
@@ -779,7 +780,7 @@ describe("Settings Screen", () => {
 
       expect(saveSettingsSpy).toHaveBeenCalledWith({
         ...mockCopy,
-        token: undefined, // not set
+        github_token: undefined, // not set
         llm_api_key: "", // reset as well
       });
       expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();

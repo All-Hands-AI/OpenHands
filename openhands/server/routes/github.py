@@ -129,7 +129,7 @@ async def search_github_repositories(
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
     if github_token or github_user_id:
-        client = GithubServiceImpl(user_id=github_user_id, idp_token=idp_token, token=token)
+        client = GithubServiceImpl(user_id=github_user_id, idp_token=idp_token, token=github_token)
         try:
             repos: list[Repository] = await client.search_repositories(
                 query, per_page, sort, order
@@ -170,7 +170,7 @@ async def get_suggested_tasks(
     """
 
     if github_token or github_user_id:
-        client = GithubServiceImpl(user_id=github_user_id, idp_token=idp_token, token=token)
+        client = GithubServiceImpl(user_id=github_user_id, idp_token=idp_token, token=github_token)
         try:
             tasks: list[SuggestedTask] = await client.get_suggested_tasks()
             return tasks

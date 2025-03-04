@@ -32,8 +32,8 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
         )
         settings_with_token_data.llm_api_key = settings.llm_api_key
 
-        del settings_with_token_data.token
-        del settings_with_token_data.token_type
+        del settings_with_token_data.github_token
+        del settings_with_token_data.gitlab_token
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
@@ -49,20 +49,23 @@ async def store_settings(
     settings: POSTSettingsModel,
 ) -> JSONResponse:
     # Check if at least one token is valid
-    is_valid = False
     if settings.github_token:
-        is_valid = is_valid or (await determine_token_type(SecretStr(settings.github_token)) != None)
+        if not (await determine_token_type(SecretStr(settings.github_token))):
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={
+                    'error': 'Invalid token. Please make sure it is a valid Github token.'
+                },
+            )
 
     if settings.gitlab_token:
-        is_valid = is_valid or (await determine_token_type(SecretStr(settings.gitlab_token)) != None)
-
-    if not is_valid:
-        return JSONResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content={
-                'error': 'Invalid token. Please make sure it is a valid GitHub or GitLab token.'
-            },
-        )
+        if not (await determine_token_type(SecretStr(settings.gitlab_token))):
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={
+                    'error': 'Invalid token. Please make sure it is a valid GitLab token.'
+                },
+            )
 
     try:
         settings_store = await SettingsStoreImpl.get_instance(

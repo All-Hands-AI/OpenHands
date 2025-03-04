@@ -189,7 +189,8 @@ export const handlers = [
       language: "no",
     };
     // @ts-expect-error - mock types
-    if (settings.token) settings.token_is_set = true;
+    if (settings.github_token || settings.gitlab_token)
+      settings.token_is_set = true;
 
     return HttpResponse.json(settings);
   }),
@@ -201,7 +202,8 @@ export const handlers = [
       if (typeof body === "object") {
         newSettings = { ...body };
         if (newSettings.unset_token) {
-          newSettings.token = undefined;
+          newSettings.github_token = undefined;
+          newSettings.gitlab_token = undefined;
           newSettings.token_is_set = false;
           delete newSettings.unset_token;
         }

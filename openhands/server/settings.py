@@ -39,7 +39,8 @@ class Settings(BaseModel):
 
         return pydantic_encoder(llm_api_key)
 
-    @field_serializer('token')
+    @field_serializer('github_token')
+    @field_serializer('gitlab_token')
     def token_serializer(self, token: SecretStr | None, info: SerializationInfo):
         """Custom serializer for the token.
 
@@ -53,6 +54,7 @@ class Settings(BaseModel):
             return token.get_secret_value()
 
         return pydantic_encoder(token)
+    
 
     @staticmethod
     def from_config() -> Settings | None:

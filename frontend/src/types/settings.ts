@@ -29,13 +29,15 @@ export type ApiSettings = {
 };
 
 export type PostSettings = Settings & {
-  token: string;
+  github_token: string;
+  gitlab_token: string;
   unset_token: boolean;
   user_consents_to_analytics: boolean | null;
 };
 
 export type PostApiSettings = ApiSettings & {
-  token: string;
+  github_token: string;
+  gitlab_token: string;
   unset_token: boolean;
   user_consents_to_analytics: boolean | null;
 };
