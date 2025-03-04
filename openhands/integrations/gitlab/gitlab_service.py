@@ -6,13 +6,14 @@ from pydantic import SecretStr
 
 from openhands.integrations.service_types import (
     AuthenticationError,
+    GitService,
     UnknownException,
     User,
 )
 from openhands.utils.import_utils import get_impl
 
 
-class GitLabService:
+class GitLabService(GitService):
     BASE_URL = 'https://gitlab.com/api/v4'
     token: SecretStr = SecretStr('')
     refresh = False

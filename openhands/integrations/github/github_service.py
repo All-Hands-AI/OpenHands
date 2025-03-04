@@ -7,6 +7,7 @@ from pydantic import SecretStr
 
 from openhands.integrations.service_types import (
     AuthenticationError,
+    GitService,
     UnknownException,
     Repository,
     User,
@@ -16,7 +17,7 @@ from openhands.integrations.service_types import (
 from openhands.utils.import_utils import get_impl
 
 
-class GitHubService:
+class GitHubService(GitService):
     BASE_URL = 'https://api.github.com'
     token: SecretStr = SecretStr('')
     refresh = False
