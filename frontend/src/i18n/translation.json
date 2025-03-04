@@ -3833,7 +3833,21 @@
         "pt": "Ocorreu um erro ao conectar ao ambiente de execução. Por favor, atualize a página.",
         "tr": "Çalışma zamanına bağlanırken bir hata oluştu. Lütfen sayfayı yenileyin."
     },
-
+    "STATUS$ERROR_LLM_OUT_OF_CREDITS": {
+        "en": "You're out of OpenHands Credits",
+        "ja": "OpenHandsクレジットが不足しています",
+        "zh-CN": "您的OpenHands点数已用完",
+        "zh-TW": "您的OpenHands點數已用完",
+        "ko-KR": "OpenHands 크레딧이 소진되었습니다",
+        "no": "Du er tom for OpenHands-kreditter",
+        "it": "Hai esaurito i crediti OpenHands",
+        "pt": "Você está sem créditos OpenHands",
+        "es": "Te has quedado sin créditos de OpenHands",
+        "ar": "لقد نفدت رصيدك من OpenHands",
+        "fr": "Vous n'avez plus de crédits OpenHands",
+        "tr": "OpenHands kredileriniz tükendi",
+        "de": "Ihre OpenHands-Guthaben sind aufgebraucht"
+    },
     "STATUS$ERROR_RUNTIME_DISCONNECTED": {
         "en": "There was an error while connecting to the runtime. Please refresh the page.",
         "zh-CN": "运行时已断开连接",
@@ -4163,6 +4177,21 @@
         "pt": "Navegando na web",
         "es": "Navegando en la web",
         "tr": "Web'de geziniyor"
+    },
+    "ACTION_MESSAGE$THINK": {
+        "en": "Thinking",
+        "zh-CN": "思考",
+        "zh-TW": "思考",
+        "ko-KR": "생각",
+        "ja": "考える",
+        "no": "Tenker",
+        "ar": "يفكر",
+        "de": "Denkt",
+        "fr": "Pensant",
+        "it": "Pensando",
+        "pt": "Pensando",
+        "es": "Pensando",
+        "tr": "Düşünüyor"
     },
     "OBSERVATION_MESSAGE$RUN": {
         "en": "Ran a bash command",
@@ -4558,5 +4587,65 @@
     "SETTINGS_FORM$ENABLE_DEFAULT_CONDENSER_SWITCH_LABEL": {
         "en": "Enable Memory Condenser",
         "zh-TW": "啟用記憶體壓縮器"
+    },
+    "BUTTON$MARK_HELPFUL": {
+        "en": "Mark this solution as helpful",
+        "zh-CN": "标记此解决方案有帮助",
+        "zh-TW": "標記此解決方案有幫助",
+        "de": "Diese Lösung als hilfreich markieren",
+        "ko-KR": "이 해결책이 도움이 되었다고 표시",
+        "no": "Marker denne løsningen som nyttig",
+        "it": "Segna questa soluzione come utile",
+        "pt": "Marcar esta solução como útil",
+        "es": "Marcar esta solución como útil",
+        "ar": "وضع علامة على هذا الحل كمفيد",
+        "fr": "Marquer cette solution comme utile",
+        "tr": "Bu çözümü yararlı olarak işaretle",
+        "ja": "このソリューションが役立つと評価"
+    },
+    "BUTTON$MARK_NOT_HELPFUL": {
+        "en": "Mark this solution as not helpful",
+        "zh-CN": "标记此解决方案没有帮助",
+        "zh-TW": "標記此解決方案沒有幫助",
+        "de": "Diese Lösung als nicht hilfreich markieren",
+        "ko-KR": "이 해결책이 도움이 되지 않았다고 표시",
+        "no": "Marker denne løsningen som ikke nyttig",
+        "it": "Segna questa soluzione come non utile",
+        "pt": "Marcar esta solução como não útil",
+        "es": "Marcar esta solución como no útil",
+        "ar": "وضع علامة على هذا الحل كغير مفيد",
+        "fr": "Marquer cette solution comme non utile",
+        "tr": "Bu çözümü yararlı değil olarak işaretle",
+        "ja": "このソリューションが役立たないと評価"
+    },
+    "BUTTON$EXPORT_CONVERSATION": {
+        "en": "Export conversation",
+        "zh-CN": "导出对话",
+        "zh-TW": "導出對話",
+        "de": "Konversation exportieren",
+        "ko-KR": "대화 내보내기",
+        "no": "Eksporter samtale",
+        "it": "Esporta conversazione",
+        "pt": "Exportar conversa",
+        "es": "Exportar conversación",
+        "ar": "تصدير المحادثة",
+        "fr": "Exporter la conversation",
+        "tr": "Konuşmayı dışa aktar",
+        "ja": "会話をエクスポート"
+    },
+    "BILLING$CLICK_TO_TOP_UP": {
+        "en": "Add funds to Your Account",
+        "ja": "アカウントに資金を追加",
+        "zh-CN": "为您的账户充值",
+        "zh-TW": "為您的帳戶充值",
+        "ko-KR": "계정에 자금 추가",
+        "no": "Legg til midler på kontoen din",
+        "it": "Aggiungi fondi al tuo account",
+        "pt": "Adicionar fundos à sua conta",
+        "es": "Añadir fondos a tu cuenta",
+        "ar": "إضافة رصيد إلى حسابك",
+        "fr": "Ajouter des fonds à votre compte",
+        "tr": "Hesabınıza bakiye ekleyin",
+        "de": "Guthaben zu Ihrem Konto hinzufügen"
     }
 }
