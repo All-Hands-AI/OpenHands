@@ -9,7 +9,6 @@ import * as CaptureConsent from "#/utils/handle-capture-consent";
 import OpenHands from "#/api/open-hands";
 
 describe("frontend/routes/_oh", () => {
-  // @ts-expect-error - Component props provided by RR7
   const RouteStub = createRoutesStub([{ Component: MainApp, path: "/" }]);
 
   const { userIsAuthenticatedMock, settingsAreUpToDateMock } = vi.hoisted(

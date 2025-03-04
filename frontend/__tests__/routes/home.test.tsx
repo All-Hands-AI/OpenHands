@@ -30,7 +30,6 @@ describe("Home Screen", () => {
 
   const RouterStub = createRoutesStub([
     {
-      // @ts-expect-error - Component props provided by RR7
       Component: MainApp,
       path: "/",
       children: [
