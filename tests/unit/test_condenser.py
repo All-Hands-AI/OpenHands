@@ -38,7 +38,7 @@ def create_test_event(
     event = Event()
     event._message = message
     event.timestamp = timestamp if timestamp else datetime.now()
-    if id:
+    if id is not None:
         event._id = id
     event._source = EventSource.USER
     return event
@@ -186,13 +186,14 @@ def test_recent_events_condenser():
     assert result == events
 
     # If the max_events are smaller than the number of events, only keep the last few.
-    max_events = 2
+    max_events = 3
     condenser = RecentEventsCondenser(max_events=max_events)
     result = condenser.condensed_history(mock_state)
 
     assert len(result) == max_events
-    assert result[0]._message == 'Event 4'
-    assert result[1]._message == 'Event 5'
+    assert result[0]._message == 'Event 1'  # kept from keep_first
+    assert result[1]._message == 'Event 4'  # kept from max_events
+    assert result[2]._message == 'Event 5'  # kept from max_events
 
     # If the keep_first flag is set, the first event will always be present.
     keep_first = 1
@@ -211,9 +212,9 @@ def test_recent_events_condenser():
     result = condenser.condensed_history(mock_state)
 
     assert len(result) == max_events
-    assert result[0]._message == 'Event 1'
-    assert result[1]._message == 'Event 2'
-    assert result[2]._message == 'Event 5'
+    assert result[0]._message == 'Event 1'  # kept from keep_first
+    assert result[1]._message == 'Event 2'  # kept from keep_first
+    assert result[2]._message == 'Event 5'  # kept from max_events
 
 
 def test_llm_summarization_condenser_from_config():
@@ -539,7 +540,7 @@ def test_llm_attention_condenser_forgets_when_larger_than_max_size(
 ):
     """Test that the LLMAttentionCondenser forgets events when the context grows too large."""
     max_size = 2
-    condenser = LLMAttentionCondenser(max_size=max_size, llm=mock_llm)
+    condenser = LLMAttentionCondenser(max_size=max_size, keep_first=0, llm=mock_llm)
 
     for i in range(max_size * 10):
         event = create_test_event(f'Event {i}', id=i)
@@ -560,7 +561,7 @@ def test_llm_attention_condenser_forgets_when_larger_than_max_size(
 def test_llm_attention_condenser_handles_events_outside_history(mock_llm, mock_state):
     """Test that the LLMAttentionCondenser handles event IDs that aren't from the event history."""
     max_size = 2
-    condenser = LLMAttentionCondenser(max_size=max_size, llm=mock_llm)
+    condenser = LLMAttentionCondenser(max_size=max_size, keep_first=0, llm=mock_llm)
 
     for i in range(max_size * 10):
         event = create_test_event(f'Event {i}', id=i)
@@ -580,7 +581,7 @@ def test_llm_attention_condenser_handles_events_outside_history(mock_llm, mock_s
 def test_llm_attention_condenser_handles_too_many_events(mock_llm, mock_state):
     """Test that the LLMAttentionCondenser handles when the response contains too many event IDs."""
     max_size = 2
-    condenser = LLMAttentionCondenser(max_size=max_size, llm=mock_llm)
+    condenser = LLMAttentionCondenser(max_size=max_size, keep_first=0, llm=mock_llm)
 
     for i in range(max_size * 10):
         event = create_test_event(f'Event {i}', id=i)
@@ -600,7 +601,9 @@ def test_llm_attention_condenser_handles_too_many_events(mock_llm, mock_state):
 def test_llm_attention_condenser_handles_too_few_events(mock_llm, mock_state):
     """Test that the LLMAttentionCondenser handles when the response contains too few event IDs."""
     max_size = 2
-    condenser = LLMAttentionCondenser(max_size=max_size, llm=mock_llm)
+    # Developer note: We must specify keep_first=0 because
+    # keep_first (1) >= max_size//2 (1) is invalid.
+    condenser = LLMAttentionCondenser(max_size=max_size, keep_first=0, llm=mock_llm)
 
     for i in range(max_size * 10):
         event = create_test_event(f'Event {i}', id=i)
@@ -614,3 +617,33 @@ def test_llm_attention_condenser_handles_too_few_events(mock_llm, mock_state):
 
         # The number of results should bounce back and forth between 1, 2, 1, 2, ...
         assert len(results) == (i % 2) + 1
+
+    # Add a new test verifying that keep_first=1 works with max_size > 2
+
+
+def test_llm_attention_condenser_handles_keep_first_for_larger_max_size(
+    mock_llm, mock_state
+):
+    """Test that LLMAttentionCondenser works when keep_first=1 is allowed (must be less than half of max_size)."""
+    max_size = 4  # so keep_first=1 < (max_size // 2) = 2
+    condenser = LLMAttentionCondenser(max_size=max_size, keep_first=1, llm=mock_llm)
+
+    for i in range(max_size * 2):
+        # We append new events, then ensure some are pruned.
+        event = create_test_event(f'Event {i}', id=i)
+        mock_state.history.append(event)
+
+        mock_llm.set_mock_response_content(
+            ImportantEventSelection(ids=[]).model_dump_json()
+        )
+
+        results = condenser.condensed_history(mock_state)
+
+        # We expect that the first event is always kept, and the tail grows until max_size
+        if len(mock_state.history) <= max_size:
+            # No condensation needed yet
+            assert len(results) == len(mock_state.history)
+        else:
+            # The first event is kept, plus some from the tail
+            assert results[0].id == 0
+            assert len(results) <= max_size

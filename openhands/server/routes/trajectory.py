@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
@@ -9,7 +9,7 @@ app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
 @app.get('/trajectory')
-async def get_trajectory(request: Request):
+async def get_trajectory(request: Request) -> JSONResponse:
     """Get trajectory.
 
     This function retrieves the current trajectory and returns it.
@@ -28,11 +28,13 @@ async def get_trajectory(request: Request):
         trajectory = []
         async for event in async_stream:
             trajectory.append(event_to_trajectory(event))
-        return JSONResponse(status_code=200, content={'trajectory': trajectory})
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content={'trajectory': trajectory}
+        )
     except Exception as e:
         logger.error(f'Error getting trajectory: {e}', exc_info=True)
         return JSONResponse(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
                 'trajectory': None,
                 'error': f'Error getting trajectory: {e}',
