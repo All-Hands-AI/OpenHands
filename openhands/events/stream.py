@@ -428,3 +428,41 @@ class EventStream:
                 break
 
         return matching_events
+
+    def get_metrics(self):
+        """Get the accumulated metrics from all events in the stream.
+
+        This method extracts metrics from events that contain them and returns
+        the aggregated metrics object.
+
+        Returns:
+            Metrics: The metrics object containing accumulated cost and token usage data.
+            Returns None if no metrics are found.
+        """
+        from openhands.llm.metrics import Metrics
+
+        # Look for events with metrics
+        metrics = None
+        events_with_metrics = []
+
+        try:
+            # First collect all events with metrics
+            for event in self.get_events():
+                if hasattr(event, 'llm_metrics') and event.llm_metrics is not None:
+                    events_with_metrics.append(event)
+
+            # Then merge them if any were found
+            if events_with_metrics:
+                # Get the first event with metrics to initialize our metrics object
+                first_event = events_with_metrics[0]
+                if first_event.llm_metrics is not None:
+                    metrics = Metrics(model_name=first_event.llm_metrics.model_name)
+
+                    # Merge metrics from all events
+                    for event in events_with_metrics:
+                        if event.llm_metrics is not None:
+                            metrics.merge(event.llm_metrics)
+        except Exception as e:
+            logger.error(f'Error retrieving metrics from events: {e}')
+
+        return metrics
