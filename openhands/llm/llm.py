@@ -76,6 +76,8 @@ REASONING_EFFORT_SUPPORTED_MODELS = [
 MODELS_WITHOUT_STOP_WORDS = [
     'o1-mini',
     'o1-preview',
+    'o1',
+    'o1-2024-12-17',
 ]
 
 
@@ -217,9 +219,8 @@ class LLM(RetryMixin, DebugMixin):
                     kwargs['stop'] = STOP_WORDS
 
                 mock_fncall_tools = kwargs.pop('tools')
-                kwargs['tool_choice'] = (
-                    'none'  # force no tool calling because we're mocking it - without it, it will cause issue with sglang
-                )
+                # tool_choice should not be specified when mocking function calling
+                kwargs.pop('tool_choice', None)
 
             # if we have no messages, something went very wrong
             if not messages:

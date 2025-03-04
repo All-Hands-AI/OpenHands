@@ -11,7 +11,7 @@ app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
 @app.post('/submit-feedback')
-async def submit_feedback(request: Request, conversation_id: str):
+async def submit_feedback(request: Request, conversation_id: str) -> JSONResponse:
     """Submit user feedback.
 
     This function stores the provided feedback data.
