@@ -39,14 +39,6 @@ const isMessageAction = (
 ): event is UserMessageAction | AssistantMessageAction =>
   isUserMessage(event) || isAssistantMessage(event);
 
-// Check if an event is an agent state changed observation
-const isAgentStateEvent = (event: Record<string, unknown>): boolean =>
-  isOpenHandsEvent(event) &&
-  "type" in event &&
-  event.type === "observation" &&
-  "observation_id" in event &&
-  event.observation_id === "agent_state_changed";
-
 export enum WsClientProviderStatus {
   CONNECTED,
   DISCONNECTED,
@@ -145,7 +137,9 @@ export function WsClientProvider({
 
     if (!backendReady) {
       // If backend is not ready yet, queue the message
-      EventLogger.info(`Backend not ready, queueing message: ${JSON.stringify(event)}`);
+      EventLogger.info(
+        `Backend not ready, queueing message: ${JSON.stringify(event)}`,
+      );
       queueMessage(event);
       return;
     }
@@ -157,17 +151,21 @@ export function WsClientProvider({
   function handleConnect() {
     EventLogger.info("WebSocket connected");
     setStatus(WsClientProviderStatus.CONNECTED);
-    
+
     // Set a timeout to consider the backend ready after a short delay
     // This is a fallback in case we don't receive any events from the backend
     setTimeout(() => {
       if (!backendReady) {
-        EventLogger.info("Backend ready timeout reached, forcing backend ready state");
+        EventLogger.info(
+          "Backend ready timeout reached, forcing backend ready state",
+        );
         setBackendReady(true);
       }
     }, 1000); // 1 second timeout
-    
-    EventLogger.info(`Connection established, waiting for backend ready signal. Pending messages: ${pendingMessages.length}`);
+
+    EventLogger.info(
+      `Connection established, waiting for backend ready signal. Pending messages: ${pendingMessages.length}`,
+    );
   }
 
   function handleMessage(event: Record<string, unknown>) {
@@ -177,7 +175,9 @@ export function WsClientProvider({
 
     // Consider the backend ready as soon as we receive any event
     if (!backendReady) {
-      EventLogger.info(`Received first event from backend, setting backend ready. Event: ${JSON.stringify(event)}`);
+      EventLogger.info(
+        `Received first event from backend, setting backend ready. Event: ${JSON.stringify(event)}`,
+      );
       setBackendReady(true);
     }
 
@@ -199,7 +199,9 @@ export function WsClientProvider({
     }
     sio.io.opts.query = sio.io.opts.query || {};
     sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
-    EventLogger.info(`Disconnect with latest event ID: ${lastEventRef.current?.id}`);
+    EventLogger.info(
+      `Disconnect with latest event ID: ${lastEventRef.current?.id}`,
+    );
     updateStatusWhenErrorMessagePresent(data);
   }
 
@@ -212,14 +214,20 @@ export function WsClientProvider({
 
   // Watch for backend ready state and send queued messages when ready
   React.useEffect(() => {
-    EventLogger.info(`Backend ready: ${backendReady}, Pending messages: ${pendingMessages.length}`);
-    
+    EventLogger.info(
+      `Backend ready: ${backendReady}, Pending messages: ${pendingMessages.length}`,
+    );
+
     if (backendReady && pendingMessages.length > 0 && sioRef.current) {
       // Backend is ready and we have pending messages
-      EventLogger.info(`Backend is ready! Sending ${pendingMessages.length} queued messages`);
-      
+      EventLogger.info(
+        `Backend is ready! Sending ${pendingMessages.length} queued messages`,
+      );
+
       pendingMessages.forEach((event, index) => {
-        EventLogger.info(`Sending queued message ${index + 1}/${pendingMessages.length}: ${JSON.stringify(event)}`);
+        EventLogger.info(
+          `Sending queued message ${index + 1}/${pendingMessages.length}: ${JSON.stringify(event)}`,
+        );
         sioRef.current?.emit("oh_action", event);
       });
 
@@ -228,7 +236,9 @@ export function WsClientProvider({
         action: "change_agent_state",
         args: { agent_state: "running" },
       };
-      EventLogger.info(`Setting agent state to RUNNING: ${JSON.stringify(agentStateEvent)}`);
+      EventLogger.info(
+        `Setting agent state to RUNNING: ${JSON.stringify(agentStateEvent)}`,
+      );
       sioRef.current.emit("oh_action", agentStateEvent);
 
       setPendingMessages([]);
