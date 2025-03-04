@@ -669,7 +669,9 @@ class LLM(RetryMixin, DebugMixin):
                     f'Using fallback model name {_model_name} to get cost: {cost}'
                 )
             self.metrics.add_cost(cost)
-            logger.info(f'LLM query cost: ${cost:.6f}')
+            logger.info(
+                f'LLM query cost: ${cost:.6f}, accumulated cost: ${self.metrics.accumulated_cost:.6f}'
+            )
             return cost
         except Exception:
             self.cost_metric_supported = False
