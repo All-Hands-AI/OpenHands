@@ -2,14 +2,16 @@ import React from "react";
 import { PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { BrandButton } from "../settings/brand-button";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const CreditCardForm = () => {
   const [paymentFormErrorMessage, setPaymentFormErrorMessage] =
       React.useState("");
   const stripe = useStripe();
   const elements = useElements();
+  const queryClient = useQueryClient();
 
-  const formAction = async (formData: FormData) => {
+  const formAction = async () => {
     setPaymentFormErrorMessage("");
 
     if (!stripe || !elements) return;
@@ -17,6 +19,8 @@ export const CreditCardForm = () => {
     const { error: submitError } = await elements.submit();
     if (submitError?.message) {
       setPaymentFormErrorMessage(submitError.message);
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['settings', true] })
     }
   };
 
@@ -40,8 +44,6 @@ export const CreditCardForm = () => {
           </div>
 
           <PaymentElement />
-
-          <div>Form here</div>
 
           <BrandButton type="submit" variant="primary" className="w-full">
             Confirm

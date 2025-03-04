@@ -6,11 +6,6 @@ import {
   useNavigate,
   useLocation,
 } from "react-router";
-import {
-  PaymentElement,
-  useElements,
-  useStripe,
-} from "@stripe/react-stripe-js";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
@@ -22,8 +17,6 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { useAuth } from "#/context/auth-context";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
-import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
-import { BrandButton } from "#/components/features/settings/brand-button";
 import { StripePromiseProvider } from "#/context/stripe-promise-context";
 import { CreditCardModal } from "#/components/features/payment/credit-card-modal";
 
@@ -143,7 +136,7 @@ export default function MainApp() {
         />
       )}
 
-      {config.data?.APP_MODE === "saas" && !settings && (
+      {config.data?.APP_MODE === "saas" && settings?.DEFAULT_SETTINGS && (
         <StripePromiseProvider>
           <CreditCardModal />
         </StripePromiseProvider>
