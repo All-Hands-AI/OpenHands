@@ -46,6 +46,8 @@ class AppConfig(BaseModel):
         file_uploads_allowed_extensions: Allowed file extensions. `['.*']` allows all.
         cli_multiline_input: Whether to enable multiline input in CLI. When disabled,
             input is read line by line. When enabled, input continues until /exit command.
+        conversation_max_age_seconds: Maximum age of a conversation in seconds.
+        track_llm_metrics: Whether to track LLM metrics for display in the web UI (cost, latency, token usage).
     """
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
@@ -82,6 +84,7 @@ class AppConfig(BaseModel):
     daytona_target: str = Field(default='us')
     cli_multiline_input: bool = Field(default=False)
     conversation_max_age_seconds: int = Field(default=864000)  # 10 days in seconds
+    track_llm_metrics: bool = Field(default=False)
 
     defaults_dict: ClassVar[dict] = {}
 

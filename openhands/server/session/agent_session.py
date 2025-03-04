@@ -124,6 +124,7 @@ class AgentSession:
                 max_budget_per_task=max_budget_per_task,
                 agent_to_llm_config=agent_to_llm_config,
                 agent_configs=agent_configs,
+                track_llm_metrics=config.track_llm_metrics,
             )
             if github_token:
                 self.event_stream.set_secrets(
@@ -285,6 +286,7 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
+        track_llm_metrics: bool = False,
     ) -> AgentController:
         """Creates an AgentController instance
 
@@ -330,6 +332,7 @@ class AgentSession:
             headless_mode=False,
             status_callback=self._status_callback,
             initial_state=self._maybe_restore_state(),
+            track_llm_metrics=track_llm_metrics,
         )
 
         return controller

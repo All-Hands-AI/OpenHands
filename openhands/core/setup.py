@@ -164,6 +164,7 @@ def create_controller(
         headless_mode=headless_mode,
         confirmation_mode=config.security.confirmation_mode,
         replay_events=replay_events,
+        track_llm_metrics=config.track_llm_metrics,
     )
     return (controller, initial_state)
 

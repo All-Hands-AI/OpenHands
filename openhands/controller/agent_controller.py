@@ -96,6 +96,7 @@ class AgentController:
         headless_mode: bool = True,
         status_callback: Callable | None = None,
         replay_events: list[Event] | None = None,
+        track_llm_metrics: bool = False,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -148,6 +149,9 @@ class AgentController:
 
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
+
+        # track LLM metrics
+        self.track_llm_metrics = track_llm_metrics
 
     async def close(self, set_stop_state=True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -731,7 +735,11 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-            action.llm_metrics = copy.deepcopy(self.agent.llm.metrics)
+            action.llm_metrics = (
+                copy.deepcopy(self.agent.llm.metrics)
+                if self.track_llm_metrics
+                else None
+            )
             self.event_stream.add_event(action, action._source)  # type: ignore [attr-defined]
 
         await self.update_state_after_step()
