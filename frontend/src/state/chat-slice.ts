@@ -159,9 +159,16 @@ export const chatSlice = createSlice({
           .includes("error:");
       } else if (observationID === "read" || observationID === "edit") {
         // For read/edit operations, we consider it successful if there's content and no error
-        causeMessage.success =
-          observation.payload.content.length > 0 &&
-          !observation.payload.content.toLowerCase().includes("error:");
+
+        if (observation.payload.extras.impl_source === "oh_aci") {
+          causeMessage.success =
+            observation.payload.content.length > 0 &&
+            !observation.payload.content.startsWith("ERROR:\n");
+        } else {
+          causeMessage.success =
+            observation.payload.content.length > 0 &&
+            !observation.payload.content.toLowerCase().includes("error:");
+        }
       }
 
       if (observationID === "run" || observationID === "run_ipython") {
