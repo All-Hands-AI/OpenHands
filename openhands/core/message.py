@@ -101,7 +101,6 @@ class Message(BaseModel):
     def _list_serializer(self) -> dict:
         content: list[dict] = []
         if self.thinking_blocks is not None:
-            print(f'Extending content with thinking blocks: {self.thinking_blocks}')
             content.extend(self.thinking_blocks)
 
         role_tool_with_prompt_caching = False
