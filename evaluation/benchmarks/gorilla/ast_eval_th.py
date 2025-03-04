@@ -13,6 +13,7 @@
 # limitations under the License.
 # This file is modified from https://github.com/ShishirPatil/gorilla/blob/main/eval/eval-scripts/ast_eval_th.py
 
+import tree_sitter_python as tspython
 from tree_sitter import Language, Parser
 
 
@@ -39,10 +40,9 @@ def get_all_sub_trees(root_node):
 
 
 # Parse the program into AST trees
-def ast_parse(candidate, lang='python'):
-    LANGUAGE = Language('evaluation/gorilla/my-languages.so', lang)
-    parser = Parser()
-    parser.set_language(LANGUAGE)
+def ast_parse(candidate):
+    LANGUAGE = Language(tspython.language())
+    parser = Parser(LANGUAGE)
 
     candidate_tree = parser.parse(bytes(candidate, 'utf8')).root_node
     return candidate_tree
