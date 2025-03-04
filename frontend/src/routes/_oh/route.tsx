@@ -10,6 +10,24 @@ import { AnalyticsConsentFormModal } from "#/components/features/analytics/analy
 import { useSettings } from "#/hooks/query/use-settings";
 import { useAuth } from "#/context/auth-context";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
+import { Route } from "./+types/route";
+import { queryClient } from "#/entry.client";
+
+// Read more about data loaders here: https://reactrouter.com/start/framework/data-loading
+export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
+  const cookies = request.headers.get("Cookie");
+  const keycloakAuthCookie = cookies
+    ?.split(";")
+    .find((cookie) => cookie.trim().startsWith("keycloak_auth="));
+
+  if (!keycloakAuthCookie) {
+    await queryClient.invalidateQueries({
+      queryKey: ["user", "authenticated"],
+    });
+  }
+
+  return { keycloakAuthCookie };
+};
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -43,8 +61,8 @@ export function ErrorBoundary() {
   );
 }
 
-export default function MainApp() {
-  const { githubTokenIsSet } = useAuth();
+export default function MainApp({ loaderData }: Route.ComponentProps) {
+  const { githubTokenIsSet, setGitHubTokenIsSet } = useAuth();
   const { data: settings } = useSettings();
   const { migrateUserConsent } = useMigrateUserConsent();
 
@@ -61,6 +79,10 @@ export default function MainApp() {
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
+
+  React.useEffect(() => {
+    setGitHubTokenIsSet(!!loaderData.keycloakAuthCookie);
+  }, [loaderData]);
 
   React.useEffect(() => {
     if (settings?.LANGUAGE) {
