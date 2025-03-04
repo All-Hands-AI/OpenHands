@@ -43,7 +43,7 @@ def test_settings_from_config():
         assert settings.llm_api_key.get_secret_value() == 'test-key'
         assert settings.llm_base_url == 'https://test.example.com'
         assert settings.remote_runtime_resource_factor == 2
-        assert settings.token is None
+        assert settings.github_token is None
 
 
 def test_settings_from_config_no_api_key():
@@ -80,23 +80,23 @@ def test_settings_handles_sensitive_data():
         llm_api_key='test-key',
         llm_base_url='https://test.example.com',
         remote_runtime_resource_factor=2,
-        token='test-token',
+        github_token='test-token',
     )
 
     assert str(settings.llm_api_key) == '**********'
-    assert str(settings.token) == '**********'
+    assert str(settings.github_token) == '**********'
 
     assert settings.llm_api_key.get_secret_value() == 'test-key'
-    assert settings.token.get_secret_value() == 'test-token'
+    assert settings.github_token.get_secret_value() == 'test-token'
 
 
 def test_convert_to_settings():
     settings_with_token_data = POSTSettingsModel(
         llm_api_key='test-key',
-        token='test-token',
+        github_token='test-token',
     )
 
     settings = convert_to_settings(settings_with_token_data)
 
     assert settings.llm_api_key.get_secret_value() == 'test-key'
-    assert settings.token.get_secret_value() == 'test-token'
+    assert settings.github_token.get_secret_value() == 'test-token'

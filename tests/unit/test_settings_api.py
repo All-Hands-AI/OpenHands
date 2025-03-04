@@ -28,7 +28,7 @@ def test_client(mock_settings_store):
 
         async def __call__(self, scope, receive, send):
             settings = mock_settings_store.load.return_value
-            token = settings.token if settings else None
+            token = settings.github_token if settings else None
             if scope['type'] == 'http':
                 scope['state'] = {'token': token}
             await self.app(scope, receive, send)
@@ -144,7 +144,7 @@ async def test_settings_api_set_github_token(
         'llm_model': 'test-model',
         'llm_api_key': 'test-key',
         'llm_base_url': 'https://test.com',
-        'token': 'test-token',
+        'github_token': 'test-token',
     }
 
     # Make the POST request to store settings
@@ -153,7 +153,7 @@ async def test_settings_api_set_github_token(
 
     # Verify the settings were stored with the github_token
     stored_settings = mock_settings_store.store.call_args[0][0]
-    assert stored_settings.token == 'test-token'
+    assert stored_settings.github_token == 'test-token'
 
     # Mock settings store to return our settings for the GET request
     mock_settings_store.load.return_value = Settings(**settings_data)
@@ -183,7 +183,7 @@ async def test_settings_unset_github_token(
         'llm_model': 'test-model',
         'llm_api_key': 'test-key',
         'llm_base_url': 'https://test.com',
-        'token': 'test-token',
+        'github_token': 'test-token',
     }
 
     # Mock settings store to return our settings for the GET request
@@ -201,7 +201,7 @@ async def test_settings_unset_github_token(
 
     # Verify the settings were stored with the github_token unset
     stored_settings = mock_settings_store.store.call_args[0][0]
-    assert stored_settings.token is None
+    assert stored_settings.github_token is None
     mock_settings_store.load.return_value = Settings(**stored_settings.dict())
 
     # Make a GET request to retrieve settings
