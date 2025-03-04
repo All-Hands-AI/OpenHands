@@ -216,7 +216,7 @@ class JupyterKernel:
                         if isinstance(image_png, str):
                             # use markdown to display image (in case of large image)
                             outputs.append(
-                                f"\n![image](data:image/png;base64,{image_png})\n"
+                                f'\n![image](data:image/png;base64,{image_png})\n'
                             )
 
                 elif msg_type == 'execute_reply':
@@ -282,9 +282,15 @@ class ExecuteHandler(tornado.web.RequestHandler):
 
 
 def make_app() -> tornado.web.Application:
+    port = os.environ.get('JUPYTER_GATEWAY_PORT')
+    kernel_id = os.environ.get('JUPYTER_GATEWAY_KERNEL_ID')
+    assert port is not None, 'JUPYTER_GATEWAY_PORT environment variable must be set'
+    assert (
+        kernel_id is not None
+    ), 'JUPYTER_GATEWAY_KERNEL_ID environment variable must be set'
     jupyter_kernel = JupyterKernel(
-        f"localhost:{os.environ.get('JUPYTER_GATEWAY_PORT')}",
-        os.environ.get('JUPYTER_GATEWAY_KERNEL_ID', ''),
+        f'localhost:{port}',
+        kernel_id,
     )
     asyncio.get_event_loop().run_until_complete(jupyter_kernel.initialize())
 
@@ -297,6 +303,10 @@ def make_app() -> tornado.web.Application:
 
 if __name__ == '__main__':
     app = make_app()
-    port = int(os.environ.get('JUPYTER_EXEC_SERVER_PORT', '8888'))
+    port_str = os.environ.get('JUPYTER_EXEC_SERVER_PORT')
+    assert (
+        port_str is not None
+    ), 'JUPYTER_EXEC_SERVER_PORT environment variable must be set'
+    port = int(port_str)
     app.listen(port)
     tornado.ioloop.IOLoop.current().start()
