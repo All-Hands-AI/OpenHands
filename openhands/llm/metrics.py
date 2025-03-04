@@ -83,6 +83,12 @@ class Metrics:
         self._accumulated_cost += value
         self._costs.append(Cost(cost=value, model=self.model_name))
 
+    def get_last_cost(self) -> float | None:
+        """Return the cost of the last query, or None if no queries have been made."""
+        if not self._costs:
+            return None
+        return self._costs[-1].cost
+
     def add_response_latency(self, value: float, response_id: str) -> None:
         self._response_latencies.append(
             ResponseLatency(
