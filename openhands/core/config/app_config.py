@@ -85,6 +85,7 @@ class AppConfig(BaseModel):
     max_concurrent_conversations: int = Field(
         default=3
     )  # Maximum number of concurrent agent loops allowed per user
+    enable_default_condenser: bool = Field(default=True)
 
     defaults_dict: ClassVar[dict] = {}
 
