@@ -1,5 +1,5 @@
 import os
-from typing import Callable, Optional
+from typing import Callable
 from urllib.parse import urlparse
 
 import requests
@@ -42,7 +42,7 @@ class RemoteRuntime(ActionExecutionClient):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_callback: Optional[Callable] = None,
+        status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
         github_user_id: str | None = None,
@@ -377,7 +377,22 @@ class RemoteRuntime(ActionExecutionClient):
         raise AgentRuntimeNotReadyError()
 
     def close(self):
-        if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
+        if self.attach_to_existing:
+            super().close()
+            return
+        if self.config.sandbox.keep_runtime_alive:
+            if self.config.sandbox.pause_closed_runtimes:
+                try:
+                    if not self._runtime_closed:
+                        with self._send_runtime_api_request(
+                            'POST',
+                            f'{self.config.sandbox.remote_runtime_api_url}/pause',
+                            json={'runtime_id': self.runtime_id},
+                        ):
+                            self.log('debug', 'Runtime paused.')
+                except Exception as e:
+                    self.log('error', f'Unable to pause runtime: {str(e)}')
+                    raise e
             super().close()
             return
         try:
