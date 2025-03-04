@@ -1,7 +1,7 @@
 import asyncio
 import time
 from dataclasses import dataclass, field
-from typing import Iterable
+from typing import Iterable, Type
 
 import socketio
 
@@ -17,14 +17,16 @@ from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.server.settings import Settings
+from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import wait_all
+from openhands.utils.import_utils import get_impl
 from openhands.utils.shutdown_listener import should_continue
 
 from .conversation_manager import ConversationManager
 
 _CLEANUP_INTERVAL = 15
-MAX_RUNNING_CONVERSATIONS = 3
 
 
 @dataclass
@@ -46,6 +48,7 @@ class StandaloneConversationManager(ConversationManager):
     )
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
+    _conversation_store_class: Type | None = None
 
     async def __aenter__(self):
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
@@ -146,7 +149,7 @@ class StandaloneConversationManager(ConversationManager):
                         sid_to_close.append(sid)
 
                 connections = await self.get_connections(
-                    filter_to_sids=set(sid_to_close)
+                    filter_to_sids=set(sid_to_close)  # get_connections expects a set
                 )
                 connected_sids = {sid for _, sid in connections.items()}
                 sid_to_close = [
@@ -170,15 +173,36 @@ class StandaloneConversationManager(ConversationManager):
                 logger.error('error_cleaning_stale')
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
+    def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
+        conversation_store_class = self._conversation_store_class
+        if not conversation_store_class:
+            self._conversation_store_class = conversation_store_class = get_impl(
+                ConversationStore,  # type: ignore
+                self.config.conversation_store_class,
+            )
+        store = conversation_store_class.get_instance(self.config, user_id)
+        return store
+
     async def get_running_agent_loops(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> set[str]:
-        """Get the running session ids. If a user is supplied, then the results are limited to session ids for that user. If a set of filter_to_sids is supplied, then results are limited to these ids of interest."""
+        """Get the running session ids in chronological order (oldest first).
+
+        If a user is supplied, then the results are limited to session ids for that user.
+        If a set of filter_to_sids is supplied, then results are limited to these ids of interest.
+
+        Returns:
+            A set of session IDs
+        """
+        # Get all items and convert to list for sorting
         items: Iterable[tuple[str, Session]] = self._local_agent_loops_by_sid.items()
+
+        # Filter items if needed
         if filter_to_sids is not None:
             items = (item for item in items if item[0] in filter_to_sids)
         if user_id:
             items = (item for item in items if item[1].user_id == user_id)
+
         sids = {sid for sid, _ in items}
         return sids
 
@@ -212,12 +236,15 @@ class StandaloneConversationManager(ConversationManager):
             logger.info(f'start_agent_loop:{sid}')
 
             response_ids = await self.get_running_agent_loops(user_id)
-            if len(response_ids) >= MAX_RUNNING_CONVERSATIONS:
+            if len(response_ids) >= self.config.max_concurrent_conversations:
                 logger.info('too_many_sessions_for:{user_id}')
-                # Order is not guaranteed, but response_ids tend to be in descending chronological order
-                # By reversing, we are likely to pick the oldest (or at least an older) conversation
-                session_id = next(iter(reversed(list(response_ids))))
-                await self.close_session(session_id)
+                # Get the conversations sorted (oldest first)
+                conversation_store = self._get_conversation_store(user_id)
+                conversations = await conversation_store.get_all_metadata(response_ids)
+                conversations.sort(key=_last_updated_at_key)
+
+                oldest_conversation_id = conversations[0].conversation_id
+                await self.close_session(oldest_conversation_id)
 
             session = Session(
                 sid=sid,
@@ -301,5 +328,15 @@ class StandaloneConversationManager(ConversationManager):
         monitoring_listener: MonitoringListener | None = None,
     ) -> ConversationManager:
         return StandaloneConversationManager(
-            sio, config, file_store, monitoring_listener or MonitoringListener()
+            sio,
+            config,
+            file_store,
+            monitoring_listener or MonitoringListener(),
         )
+
+
+def _last_updated_at_key(conversation: ConversationMetadata) -> float:
+    last_updated_at = conversation.last_updated_at
+    if last_updated_at is None:
+        return 0.0
+    return last_updated_at.timestamp()

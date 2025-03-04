@@ -162,3 +162,38 @@ async def test_search_with_invalid_conversation():
     assert len(result.results) == 1
     assert result.results[0].conversation_id == 'conv1'
     assert result.next_page_id is None
+
+
+@pytest.mark.asyncio
+async def test_get_all_metadata():
+    store = FileConversationStore(
+        InMemoryFileStore(
+            {
+                'sessions/conv1/metadata.json': json.dumps(
+                    {
+                        'conversation_id': 'conv1',
+                        'github_user_id': '123',
+                        'selected_repository': 'repo1',
+                        'title': 'First conversation',
+                        'created_at': '2025-01-16T19:51:04Z',
+                    }
+                ),
+                'sessions/conv2/metadata.json': json.dumps(
+                    {
+                        'conversation_id': 'conv2',
+                        'github_user_id': '123',
+                        'selected_repository': 'repo1',
+                        'title': 'Second conversation',
+                        'created_at': '2025-01-17T19:51:04Z',
+                    }
+                ),
+            }
+        )
+    )
+
+    results = await store.get_all_metadata(['conv1', 'conv2'])
+    assert len(results) == 2
+    assert results[0].conversation_id == 'conv1'
+    assert results[0].title == 'First conversation'
+    assert results[1].conversation_id == 'conv2'
+    assert results[1].title == 'Second conversation'
