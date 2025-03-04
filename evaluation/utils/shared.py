@@ -247,12 +247,12 @@ def prepare_dataset(
             f'Starting evaluation with skipping first {skip_num} instances ({len(dataset)} instances to run).'
         )
         if eval_n_limit and eval_n_limit > 0:
-            # Use fixed random seed 42 for sampling without replacement
-            dataset = dataset.sample(
-                min(eval_n_limit, len(dataset)), random_state=42, replace=False
-            )
+            # First shuffle the entire dataset with a fixed seed
+            shuffled_dataset = dataset.sample(frac=1.0, random_state=42, replace=False)
+            # Then take the first eval_n_limit rows
+            dataset = shuffled_dataset.iloc[:eval_n_limit]
             logger.info(
-                f'Randomly sampling {eval_n_limit} unique instances with random seed 42.'
+                f'Taking first {eval_n_limit} instances from randomly shuffled dataset (seed 42).'
             )
     elif eval_n_limit and eval_n_limit > 0:
         # Use fixed random seed 42 for sampling without replacement

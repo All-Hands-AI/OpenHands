@@ -205,6 +205,9 @@ class ConversationMemory:
                 if assistant_msg.content is not None
                 else [],
                 tool_calls=assistant_msg.tool_calls,
+                thinking_blocks=llm_response.choices[0].message.thinking_blocks
+                if hasattr(llm_response.choices[0].message, 'thinking_blocks')
+                else None,
             )
             return []
         elif isinstance(action, AgentFinishAction):
@@ -236,6 +239,15 @@ class ConversationMemory:
                 Message(
                     role=role,  # type: ignore[arg-type]
                     content=[TextContent(text=action.thought)],
+                    thinking_blocks=tool_metadata.model_response.choices[
+                        0
+                    ].message.thinking_blocks
+                    if tool_metadata is not None
+                    and hasattr(
+                        tool_metadata.model_response.choices[0].message,
+                        'thinking_blocks',
+                    )
+                    else None,
                 )
             ]
         elif isinstance(action, MessageAction):
