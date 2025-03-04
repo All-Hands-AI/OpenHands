@@ -17,6 +17,7 @@ import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
 import { queryClientConfig } from "./query-client-config";
 import { SettingsProvider } from "./context/settings-context";
+import { PaymentElements } from "./components/features/payment/payment-elements";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -51,13 +52,15 @@ export const queryClient = new QueryClient(queryClientConfig);
 prepareApp().then(() =>
   startTransition(() => {
     hydrateRoot(
-      document,
+      document.body,
       <StrictMode>
         <Provider store={store}>
           <AuthProvider>
             <QueryClientProvider client={queryClient}>
               <SettingsProvider>
-                <HydratedRouter />
+                <PaymentElements>
+                  <HydratedRouter />
+                </PaymentElements>
                 <PosthogInit />
               </SettingsProvider>
             </QueryClientProvider>

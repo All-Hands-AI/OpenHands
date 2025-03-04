@@ -1,5 +1,16 @@
 import React from "react";
-import { useRouteError, isRouteErrorResponse, Outlet } from "react-router";
+import {
+  useRouteError,
+  isRouteErrorResponse,
+  Outlet,
+  useNavigate,
+  useLocation,
+} from "react-router";
+import {
+  PaymentElement,
+  useElements,
+  useStripe,
+} from "@stripe/react-stripe-js";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
@@ -10,6 +21,9 @@ import { AnalyticsConsentFormModal } from "#/components/features/analytics/analy
 import { useSettings } from "#/hooks/query/use-settings";
 import { useAuth } from "#/context/auth-context";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
+import { useBalance } from "#/hooks/query/use-balance";
+import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
+import { BrandButton } from "#/components/features/settings/brand-button";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -44,11 +58,15 @@ export function ErrorBoundary() {
 }
 
 export default function MainApp() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { githubTokenIsSet } = useAuth();
   const { data: settings } = useSettings();
+  const { error, isFetching } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
 
-  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
+  const stripe = useStripe();
+  const elements = useElements();
 
   const config = useConfig();
   const {
@@ -61,6 +79,10 @@ export default function MainApp() {
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
+
+  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
+  const [paymentFormErrorMessage, setPaymentFormErrorMessage] =
+    React.useState("");
 
   React.useEffect(() => {
     if (settings?.LANGUAGE) {
@@ -84,10 +106,29 @@ export default function MainApp() {
     });
   }, []);
 
+  React.useEffect(() => {
+    // Don't allow users to use the app if it 402s
+    if (error?.status === 402 && pathname !== "/") {
+      navigate("/");
+    }
+  }, [error?.status, pathname, isFetching]);
+
   const userIsAuthed = !!isAuthed && !authError;
   const renderWaitlistModal =
     !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
 
+  const formAction = async (formData: FormData) => {
+    setPaymentFormErrorMessage("");
+
+    if (!stripe || !elements) return;
+
+    const { error: submitError } = await elements.submit();
+    if (submitError?.message) {
+      setPaymentFormErrorMessage(submitError.message);
+    }
+  };
+
+  console.log("TRACE:MainApp", config, error)
   return (
     <div
       data-testid="root-layout"
@@ -116,6 +157,36 @@ export default function MainApp() {
           }}
         />
       )}
+
+      {config.data?.APP_MODE === "saas" && error?.status === 402 && (
+        <div data-testid="credit-card-modal" />
+      )}
+
+      <ModalBackdrop>
+        <form
+          action={formAction}
+          className="w-[512px] bg-tertiary rounded-xl p-6 flex flex-col gap-6"
+        >
+          <div className="flex flex-col gap-2">
+            <h2 className="text-content-2 text-xl leading-6 font-[500] -tracking-[0.01em]">
+              You&apos;ve got credits!
+            </h2>
+            <h3 className="text-content-2 text-xs">
+              You&apos;re almost there! Claim your $50 in free OpenHands credits
+              by adding a credit card
+            </h3>
+            {paymentFormErrorMessage && (
+              <h3 className="text-danger text-xs">{paymentFormErrorMessage}</h3>
+            )}
+          </div>
+
+          <PaymentElement />
+
+          <BrandButton type="submit" variant="primary" className="w-full">
+            Confirm
+          </BrandButton>
+        </form>
+      </ModalBackdrop>
     </div>
   );
 }
