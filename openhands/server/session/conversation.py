@@ -46,3 +46,24 @@ class Conversation:
         if self.event_stream:
             self.event_stream.close()
         asyncio.create_task(call_sync_from_async(self.runtime.close))
+
+    def get_metrics(self):
+        """Get metrics directly from the runtime's state.
+
+        This method retrieves metrics from the runtime's state object rather than
+        reconstructing them from events, providing a more accurate representation
+        of costs and token usage, including those not associated with events.
+
+        Returns:
+            Metrics: The metrics object containing accumulated cost and token usage data.
+            Returns None if no metrics are available or if the runtime has no state.
+        """
+        try:
+            if hasattr(self.runtime, 'state') and self.runtime.state:
+                return self.runtime.state.metrics
+            return None
+        except Exception as e:
+            from openhands.core.logger import openhands_logger as logger
+
+            logger.error(f'Error retrieving metrics from runtime state: {e}')
+            return None

@@ -12,6 +12,8 @@ async def get_conversation_metrics(request: Request):
     """Retrieve the conversation metrics.
 
     This endpoint returns the accumulated cost and token usage metrics for the conversation.
+    Metrics are retrieved directly from the runtime's state rather than reconstructing from events,
+    providing a more accurate representation of costs, including those not associated with events.
 
     Args:
         request (Request): The incoming FastAPI request object.
@@ -26,12 +28,14 @@ async def get_conversation_metrics(request: Request):
                 content={'error': 'No conversation found in request state'},
             )
 
-        event_stream = request.state.conversation.event_stream
+        conversation = request.state.conversation
 
-        # Get metrics from the event stream
-        metrics = (
-            event_stream.get_metrics() if hasattr(event_stream, 'get_metrics') else None
-        )
+        # Get metrics directly from the conversation's runtime state
+        metrics = conversation.get_metrics()
+
+        # If no metrics from state, fall back to event stream metrics for backward compatibility
+        if not metrics and hasattr(conversation.event_stream, 'get_metrics'):
+            metrics = conversation.event_stream.get_metrics()
 
         if not metrics:
             # Return empty metrics if not available
