@@ -3,8 +3,6 @@ from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands.integrations.gitlab.gitlab_service import GitLabService
 from openhands.integrations.utils import determine_token_type
 from openhands.server.auth import get_github_token, get_user_id, get_gitlab_token
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
