@@ -20,7 +20,7 @@ class JupyterRequirement(PluginRequirement):
 class JupyterPlugin(Plugin):
     name: str = 'jupyter'
 
-    async def initialize(self, username: str, kernel_id: str = 'openhands-default'):
+    async def initialize(self, username: str, kernel_id: str = 'openhands-default') -> None:
         self.kernel_gateway_port = find_available_tcp_port(40000, 49999)
         self.kernel_id = kernel_id
         if username in ['root', 'openhands']:
@@ -98,7 +98,7 @@ class JupyterPlugin(Plugin):
 
         if not self.kernel.initialized:
             await self.kernel.initialize()
-        output = await self.kernel.execute(action.code, timeout=action.timeout)
+        output = await self.kernel.execute(action.code, timeout=action.timeout or 120)
         return IPythonRunCellObservation(
             content=output,
             code=action.code,
