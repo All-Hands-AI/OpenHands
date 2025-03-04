@@ -13,33 +13,20 @@ Before using this tool:
 2. Verify the directory path is correct (only applicable when creating new files):
    - Use the view tool to verify the parent directory exists and is the correct location
 
-CRITICAL REQUIREMENTS FOR USING THIS TOOL:
-
-1. UNIQUENESS: The old_string MUST uniquely identify the specific instance you want to change. This means:
-   - Include AT LEAST 3-5 lines of context BEFORE the change point
-   - Include AT LEAST 3-5 lines of context AFTER the change point
-   - Be mindful of whitespaces! Include all whitespace, indentation, and surrounding code exactly as it appears in the file.
-
-2. SINGLE INSTANCE: This tool can only change ONE instance at a time. If you need to change multiple instances:
-   - Make separate calls to this tool for each instance
-   - Each call must uniquely identify its specific instance using extensive context
-
-3. VERIFICATION: Before using this tool:
-   - Check how many instances of the target text exist in the file
-   - If multiple instances exist, gather enough context to uniquely identify each one
-   - Plan separate tool calls for each instance
-
-4. DIFFERENT: The `new_str` parameter should contain the edited lines that replace the `old_str`. `old_str` and `new_str` should be different.
-
-WARNING: If you do not follow these requirements:
-   - The tool will fail if old_str matches multiple locations
-   - The tool will fail if old_str doesn't match exactly (including whitespace)
-   - You may change the wrong instance if you don't include enough context
-
 When making edits:
    - Ensure the edit results in idiomatic, correct code
    - Do not leave the code in a broken state
    - Always use absolute file paths (starting with /)
+
+CRITICAL REQUIREMENTS FOR USING THIS TOOL:
+
+1. EXACT MATCHING: The `old_str` parameter must match EXACTLY one or more consecutive lines from the file, including all whitespace and indentation. The tool will fail if `old_str` matches multiple locations or doesn't match exactly with the file content.
+
+2. UNIQUENESS: The `old_str` must uniquely identify a single instance in the file:
+   - Include sufficient context before and after the change point (3-5 lines recommended)
+   - If not unique, the replacement will not be performed
+
+3. REPLACEMENT: The `new_str` parameter should contain the edited lines that replace the `old_str`. Both strings must be different.
 
 Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.
 """
