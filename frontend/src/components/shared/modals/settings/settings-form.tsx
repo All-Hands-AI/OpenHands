@@ -43,7 +43,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
   const handleFormSubmission = async (formData: FormData) => {
     const newSettings = extractSettings(formData);
 
-    saveUserSettings(newSettings, {
+    await saveUserSettings(newSettings, {
       onSuccess: () => {
         onClose();
         resetOngoingSession();
