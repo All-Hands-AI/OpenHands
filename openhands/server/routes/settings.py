@@ -5,7 +5,7 @@ from pydantic import SecretStr
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderType
 from openhands.integrations.utils import determine_token_type
-from openhands.server.auth import get_user_id, get_provider_tokens
+from openhands.server.auth import get_provider_tokens, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
 
@@ -48,7 +48,6 @@ async def store_settings(
 ) -> JSONResponse:
     # Check provider tokens are valid
     if settings.provider_tokens:
-
         # Remove extraneous token types
         provider_types = [provider.value for provider in ProviderType]
         for token_type in settings.provider_tokens:
@@ -82,7 +81,6 @@ async def store_settings(
                 existing_settings.provider_tokens.update(settings.provider_tokens)
 
             settings.provider_tokens = existing_settings.provider_tokens
-
 
             if settings.user_consents_to_analytics is None:
                 settings.user_consents_to_analytics = (

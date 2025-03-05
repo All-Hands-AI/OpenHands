@@ -8,11 +8,11 @@ from pydantic import SecretStr
 from openhands.integrations.service_types import (
     AuthenticationError,
     GitService,
-    UnknownException,
     Repository,
-    User,
     SuggestedTask,
     TaskType,
+    UnknownException,
+    User,
 )
 from openhands.utils.import_utils import get_impl
 

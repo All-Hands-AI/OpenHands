@@ -89,8 +89,19 @@ class GitLabService(GitService):
             login=response.get('username'),
         )
 
-    async def search_repositories(self, query, per_page, sort, order):
-        return await super().search_repositories(query, per_page, sort, order)
+    async def search_repositories(
+        self, query: str, per_page: int = 30, sort: str = 'updated', order: str = 'desc'
+    ):
+        url = f'{self.BASE_URL}/search'
+        params = {
+            'scope': 'projects',
+            'search': query,
+            'per_page': per_page,
+            'order_by': sort,
+            'sort': order,
+        }
+        response, headers = await self._fetch_data(url, params)
+        return response, headers
 
 
 gitlab_service_cls = os.environ.get(
