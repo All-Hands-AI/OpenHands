@@ -1,7 +1,5 @@
 import os
-from typing import List, Optional, Set
-
-from google.api_core.exceptions import NotFound  # type: ignore
+from google.api_core.exceptions import NotFound
 from google.cloud import storage  # type: ignore
 from google.cloud.storage.blob import Blob  # type: ignore
 from google.cloud.storage.bucket import Bucket  # type: ignore
@@ -11,7 +9,7 @@ from openhands.storage.files import FileStore
 
 
 class GoogleCloudFileStore(FileStore):
-    def __init__(self, bucket_name: Optional[str] = None) -> None:
+    def __init__(self, bucket_name: str | None = None) -> None:
         """
         Create a new FileStore. If GOOGLE_APPLICATION_CREDENTIALS is defined in the
         environment it will be used for authentication. Otherwise access will be
@@ -36,7 +34,7 @@ class GoogleCloudFileStore(FileStore):
         except NotFound as err:
             raise FileNotFoundError(err)
 
-    def list(self, path: str) -> List[str]:
+    def list(self, path: str) -> list[str]:
         if not path or path == '/':
             path = ''
         elif not path.endswith('/'):
@@ -48,7 +46,7 @@ class GoogleCloudFileStore(FileStore):
         #   ping.txt
         # prefix=None, delimiter="/"   yields  ["ping.txt"]  # :(
         # prefix="foo", delimiter="/"  yields  []  # :(
-        blobs: Set[str] = set()
+        blobs: set[str] = set()
         prefix_len = len(path)
         for blob in self.bucket.list_blobs(prefix=path):
             name: str = blob.name

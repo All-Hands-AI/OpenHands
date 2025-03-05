@@ -1,17 +1,14 @@
 import os
-from typing import Any, Dict, List, Optional
-
 import boto3
 import botocore
 from mypy_boto3_s3.client import S3Client
 from mypy_boto3_s3.type_defs import GetObjectOutputTypeDef, ListObjectsV2OutputTypeDef
-from botocore.response import StreamingBody
 
 from openhands.storage.files import FileStore
 
 
 class S3FileStore(FileStore):
-    def __init__(self, bucket_name: Optional[str]) -> None:
+    def __init__(self, bucket_name: str | None) -> None:
         access_key = os.getenv('AWS_ACCESS_KEY_ID')
         secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
         secure = os.getenv('AWS_S3_SECURE', 'true').lower() == 'true'
@@ -48,8 +45,10 @@ class S3FileStore(FileStore):
 
     def read(self, path: str) -> str:
         try:
-            response: GetObjectOutputTypeDef = self.client.get_object(Bucket=self.bucket, Key=path)
-            with response['Body'] as stream:  # type: StreamingBody
+            response: GetObjectOutputTypeDef = self.client.get_object(
+                Bucket=self.bucket, Key=path
+            )
+            with response['Body'] as stream:  # type: ignore
                 return str(stream.read().decode('utf-8'))
         except botocore.exceptions.ClientError as e:
             # Catch all S3-related errors
@@ -70,7 +69,7 @@ class S3FileStore(FileStore):
                 f"Error: Failed to read from bucket '{self.bucket}' at path {path}: {e}"
             )
 
-    def list(self, path: str) -> List[str]:
+    def list(self, path: str) -> list[str]:
         if not path or path == '/':
             path = ''
         elif not path.endswith('/'):
@@ -84,7 +83,9 @@ class S3FileStore(FileStore):
         # prefix="foo", delimiter="/"  yields  []  # :(
         results: set[str] = set()
         prefix_len = len(path)
-        response: ListObjectsV2OutputTypeDef = self.client.list_objects_v2(Bucket=self.bucket, Prefix=path)
+        response: ListObjectsV2OutputTypeDef = self.client.list_objects_v2(
+            Bucket=self.bucket, Prefix=path
+        )
         contents = response.get('Contents')
         if not contents:
             return []
