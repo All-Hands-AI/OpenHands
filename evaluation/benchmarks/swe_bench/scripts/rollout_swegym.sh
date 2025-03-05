@@ -11,7 +11,7 @@ N_WORKERS=${3:-64}
 N_RUNS=${4:-1}
 
 export EXP_NAME=$EXP_NAME
-# use 2x resources for rollout since some codebase are pretty resource-intensive
+# use 2x resources for rollout since some codebases are pretty resource-intensive
 export DEFAULT_RUNTIME_RESOURCE_FACTOR=2
 echo "MODEL: $MODEL"
 echo "EXP_NAME: $EXP_NAME"
