@@ -11,7 +11,7 @@ from openhands.events.action.message import MessageAction
 from openhands.events.stream import EventStreamSubscriber
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.runtime import get_runtime_cls
-from openhands.server.auth import get_github_token, get_idp_token, get_user_id
+from openhands.server.auth import get_idp_token, get_user_id
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
@@ -147,7 +147,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     gh_client = GithubServiceImpl(
         user_id=user_id,
         idp_token=get_idp_token(request),
-        token=get_github_token(request),
+        # token=get_github_token(request),
     )
     github_token = await gh_client.get_latest_token()
 

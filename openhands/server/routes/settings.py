@@ -4,7 +4,7 @@ from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.utils import determine_token_type
-from openhands.server.auth import get_github_token, get_user_id, get_gitlab_token
+from openhands.server.auth import get_user_id, get_provider_tokens
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
 
@@ -23,7 +23,7 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
                 content={'error': 'Settings not found'},
             )
 
-        token_is_set = bool(user_id) or bool(get_github_token(request)) or bool(get_gitlab_token(request))
+        token_is_set = bool(user_id) or bool(get_provider_tokens)
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(),
             token_is_set=token_is_set,

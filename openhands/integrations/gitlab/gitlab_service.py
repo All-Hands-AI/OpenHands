@@ -94,4 +94,4 @@ gitlab_service_cls = os.environ.get(
     'OPENHANDS_GITLAB_SERVICE_CLS',
     'openhands.integrations.gitlab.gitlab_service.GitLabService',
 )
-GitlabServiceImpl = get_impl(GitLabService, gitlab_service_cls)
+GitLabServiceImpl = get_impl(GitLabService, gitlab_service_cls)

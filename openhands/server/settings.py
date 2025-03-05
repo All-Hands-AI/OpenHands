@@ -5,7 +5,7 @@ from pydantic.json import pydantic_encoder
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.utils import load_app_config
-from openhands.integrations.provider import ProviderType
+from openhands.integrations.provider import SecretStore
 
 
 class Settings(BaseModel):
@@ -22,7 +22,7 @@ class Settings(BaseModel):
     llm_api_key: SecretStr | None = None
     llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = None
-    provider_tokens: dict[ProviderType, SecretStr] = {}
+    secrets_store: SecretStore = {}
     enable_default_condenser: bool = False
     enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
@@ -39,23 +39,24 @@ class Settings(BaseModel):
 
         return pydantic_encoder(llm_api_key)
 
-    @field_serializer('provider_tokens')
-    def provider_tokens_serializer(
-        self, tokens: dict[ProviderType, SecretStr], info: SerializationInfo
+    @field_serializer('secrets_store')
+    def secrets_store_serializer(
+        self, secrets: SecretStore, info: SerializationInfo
     ):
-        """Custom serializer for provider tokens."""
-        
+        """Custom serializer for secrets store."""
+
         context = info.context
-
+        serialized_data = {}
         if context and context.get('expose_secrets', False):
-            result = {}
-            for provider, token_info in tokens.items():
-                result[provider.value] = token_info.get_secret_value()
+            
+            serialized_data['provider_tokens'] = secrets.provider_tokens
+        else:
+            # Otherwise, serialize provider_tokens normally
+            serialized_data['provider_tokens'] = pydantic_encoder(secrets.provider_tokens)
 
-            return result
-    
-        return pydantic_encoder(result)
+        return serialized_data
 
+       
 
     @staticmethod
     def from_config() -> Settings | None:
@@ -87,7 +88,7 @@ class POSTSettingsModel(Settings):
 
     unset_token: bool | None = None
     # Override provider_tokens to accept string tokens from frontend
-    provider_tokens: dict[str, str] = {}
+    provider_tokens: dict[str,  str] = {}
 
     @field_serializer('provider_tokens')
     def provider_tokens_serializer(self, provider_tokens: dict[str, str]):
