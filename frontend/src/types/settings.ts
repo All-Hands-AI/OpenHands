@@ -11,7 +11,7 @@ export type Settings = {
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
-  provider_tokens: Record<string, string>;
+  PROVIDER_TOKENS: Record<string, string>;
 };
 
 export type ApiSettings = {
@@ -31,14 +31,12 @@ export type ApiSettings = {
 };
 
 export type PostSettings = Settings & {
-  github_token: string;
   provider_tokens: Record<string, string>;
   unset_github_token: boolean;
   user_consents_to_analytics: boolean | null;
 };
 
 export type PostApiSettings = ApiSettings & {
-  github_token: string;
   provider_tokens: Record<string, string>;
   unset_github_token: boolean;
   user_consents_to_analytics: boolean | null;

@@ -56,7 +56,7 @@ function AccountSettings() {
         isCustomModel(resources.models, settings.LLM_MODEL) ||
         hasAdvancedSettingsSet({
           ...settings,
-          provider_tokens: settings.provider_tokens || {},
+          PROVIDER_TOKENS: {},
         })
       );
     }
@@ -139,11 +139,9 @@ function AccountSettings() {
       CONFIRMATION_MODE: confirmationModeIsEnabled,
     };
 
-    // Always call handleCaptureConsent with the current analytics consent value
-    handleCaptureConsent(userConsentsToAnalytics);
-
     saveSettings(newSettings, {
       onSuccess: () => {
+        handleCaptureConsent(userConsentsToAnalytics);
         displaySuccessToast("Settings saved");
         setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
       },
