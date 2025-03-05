@@ -1,6 +1,7 @@
 from enum import Enum
 
 from pydantic import BaseModel, SecretStr, SerializationInfo, field_serializer
+from pydantic.json import pydantic_encoder
 
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
@@ -75,7 +76,7 @@ class SecretStore(BaseModel):
             tokens[token_type_str] = {
                 'token': provider_token.token.get_secret_value()
                 if expose_secrets
-                else '**********',
+                else pydantic_encoder(provider_token.token),
                 'user_id': provider_token.user_id,
             }
 
