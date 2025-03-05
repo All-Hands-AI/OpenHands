@@ -9,13 +9,17 @@ from openhands.server.auth import get_gh_user_id_from_provider_tokens, get_provi
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
 
+
+def get_user_id(request: Request) -> str | None:
+    return get_gh_user_id_from_provider_tokens(request)
+
 app = APIRouter(prefix='/api')
 
 
 @app.get('/settings', response_model=GETSettingsModel)
 async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
     try:
-        user_id = get_gh_user_id_from_provider_tokens(request)
+        user_id = get_user_id(request)
         settings_store = await SettingsStoreImpl.get_instance(config, user_id)
         settings = await settings_store.load()
         if not settings:
@@ -70,7 +74,7 @@ async def store_settings(
 
     try:
         settings_store = await SettingsStoreImpl.get_instance(
-            config, get_gh_user_id_from_provider_tokens(request)
+            config, get_user_id(request)
         )
         existing_settings = await settings_store.load()
 
