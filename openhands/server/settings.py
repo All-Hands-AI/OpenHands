@@ -45,43 +45,53 @@ class Settings(BaseModel):
 
         return pydantic_encoder(llm_api_key)
 
+    @staticmethod
+    def _convert_token_value(
+        token_type: ProviderType, token_value: str | dict
+    ) -> ProviderToken | None:
+        """Convert a token value to a ProviderToken object."""
+        if isinstance(token_value, dict):
+            token_str = token_value.get('token')
+            if not token_str:
+                return None
+            return ProviderToken(
+                token=SecretStr(token_str),
+                user_id=token_value.get('user_id'),
+            )
+        if isinstance(token_value, str) and token_value:
+            return ProviderToken(token=SecretStr(token_value), user_id=None)
+        return None
+
     @model_validator(mode='before')
     @classmethod
-    def convert_provider_tokens(cls, data: dict) -> dict:
+    def convert_provider_tokens(cls, data: dict | object) -> dict | object:
         """Convert provider tokens from JSON format to SecretStore format."""
-        if isinstance(data, dict):
-            if 'secrets_store' in data and isinstance(data['secrets_store'], dict):
-                # Handle direct provider_tokens in secrets_store
-                if 'provider_tokens' in data['secrets_store']:
-                    tokens = data['secrets_store']['provider_tokens']
-                    if isinstance(tokens, dict):
-                        # Create a new SecretStore with the tokens
-                        converted_tokens = {}
-                        for token_type_str, token_value in tokens.items():
-                            if token_value:
-                                try:
-                                    # Convert string to ProviderType enum
-                                    token_type = ProviderType(token_type_str)
-                                    # Handle both string and dict token values
-                                    if isinstance(token_value, dict):
-                                        token_str = token_value.get('token')
-                                        if token_str:
-                                            converted_tokens[token_type] = (
-                                                ProviderToken(
-                                                    token=SecretStr(token_str),
-                                                    user_id=token_value.get('user_id'),
-                                                )
-                                            )
-                                    elif isinstance(token_value, str) and token_value:
-                                        converted_tokens[token_type] = ProviderToken(
-                                            token=SecretStr(token_value), user_id=None
-                                        )
-                                except ValueError:
-                                    # Skip invalid provider types
-                                    continue
-                        data['secrets_store'] = SecretStore(
-                            provider_tokens=converted_tokens
-                        )
+        if not isinstance(data, dict):
+            return data
+
+        secrets_store = data.get('secrets_store')
+        if not isinstance(secrets_store, dict):
+            return data
+
+        tokens = secrets_store.get('provider_tokens')
+        if not isinstance(tokens, dict):
+            return data
+
+        converted_tokens = {}
+        for token_type_str, token_value in tokens.items():
+            if not token_value:
+                continue
+
+            try:
+                token_type = ProviderType(token_type_str)
+            except ValueError:
+                continue
+
+            provider_token = cls._convert_token_value(token_type, token_value)
+            if provider_token:
+                converted_tokens[token_type] = provider_token
+
+        data['secrets_store'] = SecretStore(provider_tokens=converted_tokens)
         return data
 
     @field_serializer('secrets_store')
