@@ -88,8 +88,12 @@ async def store_settings(
                 )
 
             if existing_settings.secrets_store:
-                # TODO: merge incoming settings store with the existing one
-                pass
+                # Merge incoming settings store with the existing one
+                if not settings.unset_token:  # Only merge if not unsetting tokens
+                    for provider, token in existing_settings.secrets_store.provider_tokens.items():
+                        if provider.value not in settings.provider_tokens:
+                            # Keep existing token if not being updated
+                            settings.provider_tokens[provider.value] = token.get_secret_value()
 
             # Merge provider tokens with existing ones
             if not settings.unset_token:  # Only merge if not unsetting tokens
