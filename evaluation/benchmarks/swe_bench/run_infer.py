@@ -473,13 +473,13 @@ def process_instance(
     try:
         initialize_runtime(runtime, instance)
 
-        instruction = get_instruction(instance, metadata)
+        message_action = get_instruction(instance, metadata)
 
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
         state: State | None = asyncio.run(
             run_controller(
                 config=config,
-                initial_user_action=MessageAction(content=instruction),
+                initial_user_action=message_action,
                 runtime=runtime,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                     metadata.agent_class
@@ -519,6 +519,11 @@ def process_instance(
     metrics = get_metrics(state)
 
     # Save the output
+    instruction = message_action.content
+    if message_action.image_urls:
+        instruction += (
+            '\n\n<image_urls>' + '\n'.join(message_action.image_urls) + '</image_urls>'
+        )
     output = EvalOutput(
         instance_id=instance.instance_id,
         instruction=instruction,
