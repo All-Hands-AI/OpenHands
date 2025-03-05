@@ -5,7 +5,7 @@ import platform
 import sys
 from ast import literal_eval
 from types import UnionType
-from typing import Any, MutableMapping, get_args, get_origin
+from typing import MutableMapping, get_args, get_origin
 from uuid import uuid4
 
 import toml
@@ -232,7 +232,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
         # Create default LLM summarizing condenser config
         default_condenser = LLMSummarizingCondenserConfig(
             llm_config=cfg.get_llm_config(),  # Use default LLM config
-            type="llm"
+            type='llm',
         )
 
         # Set as default condenser
