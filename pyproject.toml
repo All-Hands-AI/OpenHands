@@ -95,8 +95,6 @@ ruff = "0.9.8"
 mypy = "1.15.0"
 pre-commit = "4.1.0"
 build = "*"
-types-boto3 = "^1.37.6"
-mypy-boto3-s3 = "^1.37.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
@@ -111,8 +109,6 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
-
-
 
 
 [tool.poetry.group.runtime.dependencies]
@@ -142,8 +138,6 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
-
 
 
 [tool.poetry.group.evaluation.dependencies]
