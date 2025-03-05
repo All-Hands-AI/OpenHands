@@ -17,8 +17,9 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
       ? ""
       : settings.LLM_API_KEY?.trim() || undefined,
     remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
+    github_token: settings.github_token,
     provider_tokens: settings.provider_tokens,
-    unset_token: settings.unset_token,
+    unset_github_token: settings.unset_github_token,
     enable_default_condenser: settings.ENABLE_DEFAULT_CONDENSER,
     enable_sound_notifications: settings.ENABLE_SOUND_NOTIFICATIONS,
     user_consents_to_analytics: settings.user_consents_to_analytics,

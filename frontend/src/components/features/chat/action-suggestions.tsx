@@ -13,7 +13,7 @@ interface ActionSuggestionsProps {
 export function ActionSuggestions({
   onSuggestionsClick,
 }: ActionSuggestionsProps) {
-  const { tokenIsSet } = useAuth();
+  const { githubTokenIsSet } = useAuth();
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initialQuery,
   );
@@ -32,7 +32,7 @@ export function ActionSuggestions({
         onClose={handleDownloadClose}
         isOpen={isDownloading}
       />
-      {tokenIsSet && selectedRepository ? (
+      {githubTokenIsSet && selectedRepository ? (
         <div className="flex flex-row gap-2 justify-center w-full">
           {!hasPullRequest ? (
             <>

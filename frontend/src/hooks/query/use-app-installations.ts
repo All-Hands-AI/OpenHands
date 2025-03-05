@@ -5,12 +5,14 @@ import { useAuth } from "#/context/auth-context";
 
 export const useAppInstallations = () => {
   const { data: config } = useConfig();
-  const { tokenIsSet } = useAuth();
+  const { githubTokenIsSet } = useAuth();
 
   return useQuery({
-    queryKey: ["installations", tokenIsSet, config?.GITHUB_CLIENT_ID],
+    queryKey: ["installations", githubTokenIsSet, config?.GITHUB_CLIENT_ID],
     queryFn: OpenHands.getGitHubUserInstallationIds,
     enabled:
-      tokenIsSet && !!config?.GITHUB_CLIENT_ID && config?.APP_MODE === "saas",
+      githubTokenIsSet &&
+      !!config?.GITHUB_CLIENT_ID &&
+      config?.APP_MODE === "saas",
   });
 };

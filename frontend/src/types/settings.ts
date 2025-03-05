@@ -7,7 +7,7 @@ export type Settings = {
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
   REMOTE_RUNTIME_RESOURCE_FACTOR: number | null;
-  TOKEN_IS_SET: boolean;
+  GITHUB_TOKEN_IS_SET: boolean;
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
@@ -23,7 +23,7 @@ export type ApiSettings = {
   confirmation_mode: boolean;
   security_analyzer: string;
   remote_runtime_resource_factor: number | null;
-  token_is_set: boolean;
+  github_token_is_set: boolean;
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
   user_consents_to_analytics: boolean | null;
@@ -31,13 +31,15 @@ export type ApiSettings = {
 };
 
 export type PostSettings = Settings & {
+  github_token: string;
   provider_tokens: Record<string, string>;
-  unset_token: boolean;
+  unset_github_token: boolean;
   user_consents_to_analytics: boolean | null;
 };
 
 export type PostApiSettings = ApiSettings & {
+  github_token: string;
   provider_tokens: Record<string, string>;
-  unset_token: boolean;
+  unset_github_token: boolean;
   user_consents_to_analytics: boolean | null;
 };

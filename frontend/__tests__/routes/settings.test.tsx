@@ -72,7 +72,7 @@ describe("Settings Screen", () => {
       renderSettingsScreen();
 
       await waitFor(() => {
-        screen.getByTestId("token-input");
+        screen.getByTestId("github-token-input");
         screen.getByTestId("github-token-help-anchor");
         screen.getByTestId("language-input");
         screen.getByTestId("enable-analytics-switch");
@@ -83,13 +83,13 @@ describe("Settings Screen", () => {
     it.skip("should render an indicator if the GitHub token is not set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        token_is_set: false,
+        github_token_is_set: false,
       });
 
       renderSettingsScreen();
 
       await waitFor(() => {
-        const input = screen.getByTestId("token-input");
+        const input = screen.getByTestId("github-token-input");
         const inputParent = input.parentElement;
 
         if (inputParent) {
@@ -104,13 +104,13 @@ describe("Settings Screen", () => {
     it("should set asterik placeholder if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        token_is_set: true,
+        github_token_is_set: true,
       });
 
       renderSettingsScreen();
 
       await waitFor(() => {
-        const input = screen.getByTestId("token-input");
+        const input = screen.getByTestId("github-token-input");
         expect(input).toHaveProperty("placeholder", "**********");
       });
     });
@@ -118,12 +118,12 @@ describe("Settings Screen", () => {
     it("should render an indicator if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        token_is_set: true,
+        github_token_is_set: true,
       });
 
       renderSettingsScreen();
 
-      const input = await screen.findByTestId("token-input");
+      const input = await screen.findByTestId("github-token-input");
       const inputParent = input.parentElement;
 
       if (inputParent) {
@@ -137,7 +137,7 @@ describe("Settings Screen", () => {
     it("should render a disabled 'Disconnect from GitHub' button if the GitHub token is not set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        token_is_set: false,
+        github_token_is_set: false,
       });
 
       renderSettingsScreen();
@@ -150,7 +150,7 @@ describe("Settings Screen", () => {
     it("should render an enabled 'Disconnect from GitHub' button if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        token_is_set: true,
+        github_token_is_set: true,
       });
 
       renderSettingsScreen();
@@ -159,7 +159,7 @@ describe("Settings Screen", () => {
       expect(button).toBeEnabled();
 
       // input should still be rendered
-      const input = await screen.findByTestId("token-input");
+      const input = await screen.findByTestId("github-token-input");
       expect(input).toBeInTheDocument();
     });
 
@@ -168,7 +168,7 @@ describe("Settings Screen", () => {
 
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        token_is_set: true,
+        github_token_is_set: true,
       });
 
       renderSettingsScreen();
@@ -214,7 +214,7 @@ describe("Settings Screen", () => {
       renderSettingsScreen();
 
       await waitFor(() => {
-        const input = screen.queryByTestId("token-input");
+        const input = screen.queryByTestId("github-token-input");
         const helpAnchor = screen.queryByTestId("github-token-help-anchor");
 
         expect(input).not.toBeInTheDocument();
@@ -226,7 +226,7 @@ describe("Settings Screen", () => {
       const user = userEvent.setup();
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        token_is_set: false,
+        github_token_is_set: false,
         llm_model: "anthropic/claude-3-5-sonnet-20241022",
       });
       saveSettingsSpy.mockRejectedValueOnce(new Error("Invalid GitHub token"));
@@ -239,7 +239,7 @@ describe("Settings Screen", () => {
       expect(llmProviderInput).toHaveValue("Anthropic");
       expect(llmModelInput).toHaveValue("claude-3-5-sonnet-20241022");
 
-      const input = await screen.findByTestId("token-input");
+      const input = await screen.findByTestId("github-token-input");
       await user.type(input, "invalid-token");
 
       const saveButton = screen.getByText("Save Changes");
@@ -647,7 +647,7 @@ describe("Settings Screen", () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         language: "no",
-        token_is_set: true,
+        github_token_is_set: true,
         user_consents_to_analytics: true,
         llm_base_url: "https://test.com",
         llm_model: "anthropic/claude-3-5-sonnet-20241022",
@@ -774,8 +774,8 @@ describe("Settings Screen", () => {
       const mockCopy: Partial<PostApiSettings> = {
         ...MOCK_DEFAULT_USER_SETTINGS,
       };
-      delete mockCopy.token_is_set;
-      delete mockCopy.unset_token;
+      delete mockCopy.github_token_is_set;
+      delete mockCopy.unset_github_token;
       delete mockCopy.user_consents_to_analytics;
 
       expect(saveSettingsSpy).toHaveBeenCalledWith({

@@ -3,13 +3,13 @@ import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 
 export const useLogout = () => {
-  const { setTokenIsSet } = useAuth();
+  const { setGitHubTokenIsSet } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: OpenHands.logout,
     onSuccess: async () => {
-      setTokenIsSet(false);
+      setGitHubTokenIsSet(false);
       await queryClient.invalidateQueries();
     },
   });

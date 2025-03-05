@@ -18,7 +18,7 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
   remote_runtime_resource_factor:
     DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-  token_is_set: DEFAULT_SETTINGS.TOKEN_IS_SET,
+  github_token_is_set: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
@@ -190,7 +190,7 @@ export const handlers = [
       language: "no",
     };
     if (Object.keys(settings.provider_tokens).length > 0) {
-      settings.token_is_set = true;
+      settings.github_token_is_set = true;
     }
 
     return HttpResponse.json(settings);
@@ -202,10 +202,10 @@ export const handlers = [
       let newSettings: Partial<PostApiSettings> = {};
       if (typeof body === "object") {
         newSettings = { ...body };
-        if (newSettings.unset_token) {
+        if (newSettings.unset_github_token) {
           newSettings.provider_tokens = {};
-          newSettings.token_is_set = false;
-          delete newSettings.unset_token;
+          newSettings.github_token_is_set = false;
+          delete newSettings.unset_github_token;
         }
       }
 
