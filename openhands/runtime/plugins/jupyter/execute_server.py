@@ -180,10 +180,16 @@ class JupyterKernel:
                 if not msg_raw:
                     continue
                 msg = json_decode(msg_raw)
-                if not isinstance(msg, dict):
-                    continue
-                msg_type = msg.get('msg_type', '')
-                parent_msg_id = msg.get('parent_header', {}).get('msg_id', None)
+                assert isinstance(msg, dict), 'Message must be a dictionary'
+
+                msg_type = msg.get('msg_type')
+                assert msg_type is not None, 'Message must have a msg_type'
+
+                parent_header = msg.get('parent_header')
+                assert isinstance(
+                    parent_header, dict
+                ), 'parent_header must be a dictionary'
+                parent_msg_id = parent_header.get('msg_id')
 
                 if parent_msg_id != msg_id:
                     continue
@@ -193,31 +199,36 @@ class JupyterKernel:
                         f"MSG TYPE: {msg_type.upper()} DONE:{execution_done}\nCONTENT: {msg.get('content', {})}"
                     )
 
-                content = msg.get('content', {})
-                if not isinstance(content, dict):
-                    continue
+                content = msg.get('content')
+                assert isinstance(content, dict), 'content must be a dictionary'
 
                 if msg_type == 'error':
-                    traceback = content.get('traceback', [])
-                    if isinstance(traceback, list):
-                        outputs.append('\n'.join(traceback))
+                    traceback = content.get('traceback')
+                    assert isinstance(traceback, list), 'traceback must be a list'
+                    outputs.append('\n'.join(traceback))
                     execution_done = True
                 elif msg_type == 'stream':
-                    text = content.get('text', '')
-                    if isinstance(text, str):
-                        outputs.append(text)
+                    text = content.get('text')
+                    assert isinstance(text, str), 'text must be a string'
+                    outputs.append(text)
                 elif msg_type in ['execute_result', 'display_data']:
-                    data = content.get('data', {})
-                    if isinstance(data, dict):
-                        text_plain = data.get('text/plain', '')
-                        if isinstance(text_plain, str):
-                            outputs.append(text_plain)
-                        image_png = data.get('image/png', '')
-                        if isinstance(image_png, str):
-                            # use markdown to display image (in case of large image)
-                            outputs.append(
-                                f'\n![image](data:image/png;base64,{image_png})\n'
-                            )
+                    data = content.get('data')
+                    assert isinstance(data, dict), 'data must be a dictionary'
+
+                    text_plain = data.get('text/plain')
+                    if text_plain is not None:
+                        assert isinstance(
+                            text_plain, str
+                        ), 'text/plain must be a string'
+                        outputs.append(text_plain)
+
+                    image_png = data.get('image/png')
+                    if image_png is not None:
+                        assert isinstance(image_png, str), 'image/png must be a string'
+                        # use markdown to display image (in case of large image)
+                        outputs.append(
+                            f'\n![image](data:image/png;base64,{image_png})\n'
+                        )
 
                 elif msg_type == 'execute_reply':
                     execution_done = True
