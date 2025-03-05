@@ -46,55 +46,51 @@ async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
 ) -> JSONResponse:
-    # Check provider tokens are valid
-    if settings.provider_tokens:
-        # Remove extraneous token types
-        provider_types = [provider.value for provider in ProviderType]
-        for token_type in settings.provider_tokens:
-            if token_type not in provider_types:
-                del settings.provider_tokens[token_type]
-
-        # Determine whether tokens are valid
-        for token_type, token_value in settings.provider_tokens.items():
-            if token_value:
-                confirmed_token_type = await determine_token_type(SecretStr(token_value))
-                if not confirmed_token_type or confirmed_token_type.value != token_type:
-                    return JSONResponse(
-                        status_code=status.HTTP_401_UNAUTHORIZED,
-                        content={
-                            'error': f'Invalid token. Please make sure it is a valid {token_type} token.'
-                        },
-                    )
-
     try:
         settings_store = await SettingsStoreImpl.get_instance(
             config, get_user_id(request)
         )
         existing_settings = await settings_store.load()
 
+        # Validate any provided tokens
+        if settings.provider_tokens:
+            # Remove extraneous token types
+            provider_types = [provider.value for provider in ProviderType]
+            settings.provider_tokens = {
+                k: v for k, v in settings.provider_tokens.items()
+                if k in provider_types
+            }
+
+            # Validate each token
+            for token_type, token_value in settings.provider_tokens.items():
+                if token_value:
+                    confirmed_token_type = await determine_token_type(SecretStr(token_value))
+                    if not confirmed_token_type or confirmed_token_type.value != token_type:
+                        return JSONResponse(
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            content={
+                                'error': f'Invalid token. Please make sure it is a valid {token_type} token.'
+                            },
+                        )
+
+        # Convert to Settings model and merge with existing settings
+        new_settings = convert_to_settings(settings)
         if existing_settings:
-            # LLM key isn't on the frontend, so we need to keep it if unset
+            # Keep existing LLM key if not provided
             if settings.llm_api_key is None:
-                settings.llm_api_key = existing_settings.llm_api_key
+                new_settings.llm_api_key = existing_settings.llm_api_key
 
-            # Updating any existing provider tokens with new ones
-            if settings.provider_tokens:
-                # existing_settings.provider_tokens.update(settings.provider_tokens)
-                settings.secrets_store = existing_settings.secrets_store
-                settings.secrets_store.provider_tokens = settings.provider_tokens
-
+            # Keep existing analytics consent if not provided
             if settings.user_consents_to_analytics is None:
-                settings.user_consents_to_analytics = (
+                new_settings.user_consents_to_analytics = (
                     existing_settings.user_consents_to_analytics
                 )
 
-        response = JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={'message': 'Settings stored'},
-        )
-
-        if settings.unset_token:
-            settings.provider_tokens = {}
+            # Merge provider tokens with existing ones
+            if not settings.unset_token:  # Only merge if not unsetting tokens
+                for provider, token in existing_settings.secrets_store.provider_tokens.items():
+                    if provider not in new_settings.secrets_store.provider_tokens:
+                        new_settings.secrets_store.provider_tokens[provider] = token
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
@@ -102,10 +98,12 @@ async def store_settings(
                 settings.remote_runtime_resource_factor
             )
 
-        settings = convert_to_settings(settings)
-
-        await settings_store.store(settings)
-        return response
+        # Store the settings and return success response
+        await settings_store.store(new_settings)
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings stored'},
+        )
     except Exception as e:
         logger.warning(f'Something went wrong storing settings: {e}')
         return JSONResponse(
@@ -124,8 +122,24 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
         if key in Settings.model_fields  # Ensures only `Settings` fields are included
     }
 
-    # Convert the `llm_api_key` and `github_token` to a `SecretStr` instance
+    # Convert the `llm_api_key` to a `SecretStr` instance
     filtered_settings_data['llm_api_key'] = settings_with_token_data.llm_api_key
-    filtered_settings_data['secrets_store'] = settings_with_token_data.provider_tokens
 
-    return Settings(**filtered_settings_data)
+    # Create a new Settings instance without provider tokens
+    settings = Settings(**filtered_settings_data)
+
+    # Update provider tokens if any are provided
+    if settings_with_token_data.provider_tokens:
+        for token_type, token_value in settings_with_token_data.provider_tokens.items():
+            try:
+                provider = ProviderType(token_type)
+                if token_value:
+                    settings.secrets_store.provider_tokens[provider] = SecretStr(token_value)
+                else:
+                    # Remove token if empty string is provided
+                    settings.secrets_store.provider_tokens.pop(provider, None)
+            except ValueError:
+                # Skip invalid provider types
+                continue
+
+    return settings
