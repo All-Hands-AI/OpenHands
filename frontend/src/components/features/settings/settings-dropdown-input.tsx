@@ -1,9 +1,10 @@
 import { Autocomplete, AutocompleteItem } from "@heroui/react";
+import { ReactNode } from "react";
 import { OptionalTag } from "./optional-tag";
 
 interface SettingsDropdownInputProps {
   testId: string;
-  label: string;
+  label: ReactNode;
   name: string;
   items: { key: React.Key; label: string }[];
   showOptionalTag?: boolean;
@@ -29,7 +30,7 @@ export function SettingsDropdownInput({
         {showOptionalTag && <OptionalTag />}
       </div>
       <Autocomplete
-        aria-label={label}
+        aria-label={typeof label === "string" ? label : name}
         data-testid={testId}
         name={name}
         defaultItems={items}
