@@ -17,7 +17,7 @@ class S3FileStore(FileStore):
         if bucket_name is None:
             bucket_name = os.environ['AWS_S3_BUCKET']
         self.bucket: str = bucket_name
-        self.client: S3Client = boto3.client(  # type: ignore
+        self.client: S3Client = boto3.client(
             's3',
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
