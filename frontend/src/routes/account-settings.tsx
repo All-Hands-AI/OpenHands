@@ -54,7 +54,10 @@ function AccountSettings() {
     if (isSuccess) {
       return (
         isCustomModel(resources.models, settings.LLM_MODEL) ||
-        hasAdvancedSettingsSet({ ...settings, provider_tokens: settings.provider_tokens || {} })
+        hasAdvancedSettingsSet({
+          ...settings,
+          provider_tokens: settings.provider_tokens || {},
+        })
       );
     }
 
@@ -108,48 +111,45 @@ function AccountSettings() {
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
 
     const newSettings = {
-        provider_tokens: formData.get("token-input")?.toString()
-          ? {
-              github: formData.get("token-input")?.toString() || "",
-              gitlab: "",
-            }
-          : undefined,
-        LANGUAGE: languageValue,
-        user_consents_to_analytics: userConsentsToAnalytics,
-        ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
-        ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
-        LLM_MODEL: customLlmModel || fullLlmModel,
-        LLM_BASE_URL: formData.get("base-url-input")?.toString() || "",
-        LLM_API_KEY:
-          formData.get("llm-api-key-input")?.toString() ||
-          (isLLMKeySet
-            ? undefined // don't update if it's already set
-            : ""), // reset if it's first time save to avoid 500 error
-        AGENT: formData.get("agent-input")?.toString(),
-        SECURITY_ANALYZER:
-          formData.get("security-analyzer-input")?.toString() || "",
-        REMOTE_RUNTIME_RESOURCE_FACTOR:
-          remoteRuntimeResourceFactor ||
-          DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-        CONFIRMATION_MODE: confirmationModeIsEnabled,
-      };
+      provider_tokens: formData.get("token-input")?.toString()
+        ? {
+            github: formData.get("token-input")?.toString() || "",
+            gitlab: "",
+          }
+        : undefined,
+      LANGUAGE: languageValue,
+      user_consents_to_analytics: userConsentsToAnalytics,
+      ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
+      ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
+      LLM_MODEL: customLlmModel || fullLlmModel,
+      LLM_BASE_URL: formData.get("base-url-input")?.toString() || "",
+      LLM_API_KEY:
+        formData.get("llm-api-key-input")?.toString() ||
+        (isLLMKeySet
+          ? undefined // don't update if it's already set
+          : ""), // reset if it's first time save to avoid 500 error
+      AGENT: formData.get("agent-input")?.toString(),
+      SECURITY_ANALYZER:
+        formData.get("security-analyzer-input")?.toString() || "",
+      REMOTE_RUNTIME_RESOURCE_FACTOR:
+        remoteRuntimeResourceFactor ||
+        DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+      CONFIRMATION_MODE: confirmationModeIsEnabled,
+    };
 
     // Always call handleCaptureConsent with the current analytics consent value
     handleCaptureConsent(userConsentsToAnalytics);
 
-    saveSettings(
-      newSettings,
-      {
-        onSuccess: () => {
-          displaySuccessToast("Settings saved");
-          setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
-        },
-        onError: (error) => {
-          const errorMessage = retrieveAxiosErrorMessage(error);
-          displayErrorToast(errorMessage);
-        },
+    saveSettings(newSettings, {
+      onSuccess: () => {
+        displaySuccessToast("Settings saved");
+        setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
       },
-    );
+      onError: (error) => {
+        const errorMessage = retrieveAxiosErrorMessage(error);
+        displayErrorToast(errorMessage);
+      },
+    });
   };
 
   const handleReset = () => {
