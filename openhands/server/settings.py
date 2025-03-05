@@ -54,9 +54,21 @@ class Settings(BaseModel):
                         for token_type_str, token_value in tokens.items():
                             if token_value:
                                 try:
-                                    # Convert string to ProviderType enum and value to SecretStr
+                                    # Convert string to ProviderType enum
                                     token_type = ProviderType(token_type_str)
-                                    data['secrets_store'].provider_tokens[token_type] = SecretStr(token_value)
+                                    # Handle both string and dict token values
+                                    if isinstance(token_value, dict):
+                                        token_str = token_value.get('token')
+                                        if token_str:
+                                            data['secrets_store'].provider_tokens[token_type] = ProviderToken(
+                                                token=SecretStr(token_str),
+                                                user_id=token_value.get('user_id')
+                                            )
+                                    elif isinstance(token_value, str) and token_value:
+                                        data['secrets_store'].provider_tokens[token_type] = ProviderToken(
+                                            token=SecretStr(token_value),
+                                            user_id=None
+                                        )
                                 except ValueError:
                                     # Skip invalid provider types
                                     continue
@@ -68,9 +80,21 @@ class Settings(BaseModel):
                     for token_type_str, token_value in tokens.items():
                         if token_value:
                             try:
-                                # Convert string to ProviderType enum and value to SecretStr
+                                # Convert string to ProviderType enum
                                 token_type = ProviderType(token_type_str)
-                                data['secrets_store'].provider_tokens[token_type] = SecretStr(token_value)
+                                # Handle both string and dict token values
+                                if isinstance(token_value, dict):
+                                    token_str = token_value.get('token')
+                                    if token_str:
+                                        data['secrets_store'].provider_tokens[token_type] = ProviderToken(
+                                            token=SecretStr(token_str),
+                                            user_id=token_value.get('user_id')
+                                        )
+                                elif isinstance(token_value, str) and token_value:
+                                    data['secrets_store'].provider_tokens[token_type] = ProviderToken(
+                                        token=SecretStr(token_value),
+                                        user_id=None
+                                    )
                             except ValueError:
                                 # Skip invalid provider types
                                 continue
