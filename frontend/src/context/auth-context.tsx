@@ -12,7 +12,7 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 function AuthProvider({ children }: React.PropsWithChildren) {
   const queryClient = useQueryClient();
-  const { data: config, isFetched } = useConfig();
+  const { data: config, isFetching } = useConfig();
 
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
 
@@ -37,9 +37,13 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   });
 
   const checkIsAuthed = React.useCallback(() => {
-    if (!isFetched) return;
+    if (isFetching) return;
     authenticate(config?.APP_MODE || "saas");
-  }, [config?.APP_MODE, isFetched]);
+  }, [config?.APP_MODE, isFetching]);
+
+  React.useEffect(() => {
+    checkIsAuthed();
+  }, [checkIsAuthed]);
 
   const value = React.useMemo(
     () => ({
