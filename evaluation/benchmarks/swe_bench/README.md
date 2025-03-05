@@ -50,7 +50,7 @@ default, it is set to 1.
 - `dataset_split`, split for the huggingface dataset. e.g., `test`, `dev`. Default to `test`.
 
 > [!CAUTION]
-> Setting `num_workers` larger than 1 is not offcially tested, YMMV.
+> Setting `num_workers` larger than 1 is not officially tested, YMMV.
 
 There are also one optional environment variables you can set.
 
