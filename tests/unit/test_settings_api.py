@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
 from openhands.core.config.sandbox_config import SandboxConfig
+from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.server.app import app
 from openhands.server.settings import Settings
 
@@ -18,6 +19,20 @@ def mock_settings_store():
         store_instance.store = AsyncMock()
         yield store_instance
 
+@pytest.fixture
+def mock_get_user_id():
+    with patch('openhands.server.routes.settings.get_user_id') as mock:
+        mock.return_value = 'test-user'
+        yield mock
+
+@pytest.fixture
+def mock_determine_token_type():
+    with patch('openhands.server.routes.settings.determine_token_type') as mock:
+        async def mock_determine(*args, **kwargs):
+            return ProviderType.GITHUB
+        mock.side_effect = mock_determine
+        yield mock
+
 
 @pytest.fixture
 def test_client(mock_settings_store):
@@ -28,7 +43,9 @@ def test_client(mock_settings_store):
 
         async def __call__(self, scope, receive, send):
             settings = mock_settings_store.load.return_value
-            token = settings.github_token if settings else None
+            token = None
+            if settings and settings.secrets_store.provider_tokens.get(ProviderType.GITHUB):
+                token = settings.secrets_store.provider_tokens[ProviderType.GITHUB].token
             if scope['type'] == 'http':
                 scope['state'] = {'token': token}
             await self.app(scope, receive, send)
@@ -47,7 +64,7 @@ def mock_github_service():
 
 
 @pytest.mark.asyncio
-async def test_settings_api_runtime_factor(test_client, mock_settings_store):
+async def test_settings_api_runtime_factor(test_client, mock_settings_store, mock_get_user_id, mock_determine_token_type):
     # Mock the settings store to return None initially (no existing settings)
     mock_settings_store.load.return_value = None
 
@@ -62,6 +79,9 @@ async def test_settings_api_runtime_factor(test_client, mock_settings_store):
         'llm_api_key': 'test-key',
         'llm_base_url': 'https://test.com',
         'remote_runtime_resource_factor': 2,
+        'provider_tokens': {
+            'github': 'test-token'
+        }
     }
 
     # The test_client fixture already handles authentication
@@ -98,12 +118,17 @@ async def test_settings_api_runtime_factor(test_client, mock_settings_store):
 
 
 @pytest.mark.asyncio
-async def test_settings_llm_api_key(test_client, mock_settings_store):
+async def test_settings_llm_api_key(test_client, mock_settings_store, mock_get_user_id, mock_determine_token_type):
     # Mock the settings store to return None initially (no existing settings)
     mock_settings_store.load.return_value = None
 
     # Test data with remote_runtime_resource_factor
-    settings_data = {'llm_api_key': 'test-key'}
+    settings_data = {
+        'llm_api_key': 'test-key',
+        'provider_tokens': {
+            'github': 'test-token'
+        }
+    }
 
     # The test_client fixture already handles authentication
 
@@ -132,9 +157,9 @@ async def test_settings_llm_api_key(test_client, mock_settings_store):
 )
 @pytest.mark.asyncio
 async def test_settings_api_set_github_token(
-    mock_github_service, test_client, mock_settings_store
+    mock_github_service, test_client, mock_settings_store, mock_get_user_id, mock_determine_token_type
 ):
-    # Test data with github_token set
+    # Test data with provider token set
     settings_data = {
         'language': 'en',
         'agent': 'test-agent',
@@ -144,16 +169,18 @@ async def test_settings_api_set_github_token(
         'llm_model': 'test-model',
         'llm_api_key': 'test-key',
         'llm_base_url': 'https://test.com',
-        'github_token': 'test-token',
+        'provider_tokens': {
+            'github': 'test-token'
+        }
     }
 
     # Make the POST request to store settings
     response = test_client.post('/api/settings', json=settings_data)
     assert response.status_code == 200
 
-    # Verify the settings were stored with the github_token
+    # Verify the settings were stored with the provider token
     stored_settings = mock_settings_store.store.call_args[0][0]
-    assert stored_settings.github_token == 'test-token'
+    assert stored_settings.secrets_store.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == 'test-token'
 
     # Mock settings store to return our settings for the GET request
     mock_settings_store.load.return_value = Settings(**settings_data)
@@ -171,9 +198,9 @@ async def test_settings_api_set_github_token(
     reason='Mock middleware does not seem to properly set the github_token'
 )
 async def test_settings_unset_github_token(
-    mock_github_service, test_client, mock_settings_store
+    mock_github_service, test_client, mock_settings_store, mock_get_user_id, mock_determine_token_type
 ):
-    # Test data with unset_github_token set to True
+    # Test data with unset_token set to True
     settings_data = {
         'language': 'en',
         'agent': 'test-agent',
@@ -183,7 +210,9 @@ async def test_settings_unset_github_token(
         'llm_model': 'test-model',
         'llm_api_key': 'test-key',
         'llm_base_url': 'https://test.com',
-        'github_token': 'test-token',
+        'provider_tokens': {
+            'github': 'test-token'
+        }
     }
 
     # Mock settings store to return our settings for the GET request
@@ -199,9 +228,9 @@ async def test_settings_unset_github_token(
     response = test_client.post('/api/settings', json=settings_data)
     assert response.status_code == 200
 
-    # Verify the settings were stored with the github_token unset
+    # Verify the settings were stored with the provider token unset
     stored_settings = mock_settings_store.store.call_args[0][0]
-    assert stored_settings.github_token is None
+    assert not stored_settings.secrets_store.provider_tokens
     mock_settings_store.load.return_value = Settings(**stored_settings.dict())
 
     # Make a GET request to retrieve settings
