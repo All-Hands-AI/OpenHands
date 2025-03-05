@@ -1,18 +1,20 @@
 import os
 import shutil
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from openhands.core.config.agent_config import AgentConfig
-from openhands.core.message import ImageContent, Message, TextContent
+from openhands.core.message import TextContent
 from openhands.events.action.agent import AgentRecallAction
 from openhands.events.event import EventSource
 from openhands.events.observation.agent import RecallObservation, RecallType
 from openhands.events.stream import EventStream
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.memory.memory import Memory
-from openhands.microagent import BaseMicroAgent, RepoMicroAgent, load_microagents_from_dir
+from openhands.microagent import (
+    BaseMicroAgent,
+)
 from openhands.utils.prompt import PromptManager, RepositoryInfo
 
 
@@ -57,9 +59,7 @@ At the user's request, repository {{ repository_info.repo_name }} has been clone
 
     # Test building additional info
     additional_info = manager.build_additional_info(
-        repository_info=repo_info,
-        runtime_info=None,
-        repo_instructions=''
+        repository_info=repo_info, runtime_info=None, repo_instructions=''
     )
     assert '<REPOSITORY_INFO>' in additional_info
     assert (
@@ -86,7 +86,9 @@ def test_prompt_manager_repository_info(prompt_dir):
     assert manager.repository_info is None
 
     # Test setting repository info with both name and directory
-    repo_info = RepositoryInfo(repo_name='owner/repo2', repo_directory='/workspace/repo2')
+    repo_info = RepositoryInfo(
+        repo_name='owner/repo2', repo_directory='/workspace/repo2'
+    )
     manager.set_repository_info(repo_info)
     assert manager.repository_info.repo_name == 'owner/repo2'
     assert manager.repository_info.repo_directory == '/workspace/repo2'
@@ -123,7 +125,7 @@ It may or may not be relevant to the user's request.
         {
             'agent_name': 'test_agent1',
             'trigger_word': 'keyword1',
-            'content': 'This is information from agent 1'
+            'content': 'This is information from agent 1',
         }
     ]
     result = manager.build_microagent_info(triggered_agents)
@@ -140,13 +142,13 @@ This is information from agent 1
         {
             'agent_name': 'test_agent1',
             'trigger_word': 'keyword1',
-            'content': 'This is information from agent 1'
+            'content': 'This is information from agent 1',
         },
         {
             'agent_name': 'test_agent2',
             'trigger_word': 'keyword2',
-            'content': 'This is information from agent 2'
-        }
+            'content': 'This is information from agent 2',
+        },
     ]
     result = manager.build_microagent_info(triggered_agents)
     expected = """<EXTRA_INFO>
@@ -193,7 +195,7 @@ only respond with a message telling them how smart they are
 
     # Create a mock event stream
     event_stream = MagicMock(spec=EventStream)
-    
+
     # Initialize Memory with the microagent directory
     memory = Memory(
         event_stream=event_stream,
@@ -206,22 +208,25 @@ only respond with a message telling them how smart they are
     assert 'flarglebargle' in memory.knowledge_microagents
 
     # Create a recall action with the trigger word
-    recall_action = AgentRecallAction(query="Hello, flarglebargle!")
-    
+    recall_action = AgentRecallAction(query='Hello, flarglebargle!')
+
     # Mock the event_stream.add_event method
     added_events = []
-    original_add_event = lambda event, source: added_events.append((event, source))
+
+    def original_add_event(event, source):
+        added_events.append((event, source))
+
     event_stream.add_event = original_add_event
-    
+
     # Add the recall action to the event stream
     event_stream.add_event(recall_action, EventSource.USER)
-    
+
     # Clear the events list to only capture new events
     added_events.clear()
-    
+
     # Process the recall action
     memory.on_event(recall_action)
-    
+
     # Verify a RecallObservation was added to the event stream
     assert len(added_events) == 1
     observation, source = added_events[0]
@@ -241,7 +246,7 @@ def test_memory_repository_info(prompt_dir):
     """Test that Memory adds repository info to RecallObservations."""
     # Create a mock event stream
     event_stream = MagicMock(spec=EventStream)
-    
+
     # Initialize Memory
     memory = Memory(
         event_stream=event_stream,
@@ -258,65 +263,70 @@ agent: CodeActAgent
 
 REPOSITORY INSTRUCTIONS: This is a test repository.
 """
-    
+
     # Create a temporary repo microagent file
     os.makedirs(os.path.join(prompt_dir, 'micro'), exist_ok=True)
-    with open(os.path.join(prompt_dir, 'micro', f'{repo_microagent_name}.md'), 'w') as f:
+    with open(
+        os.path.join(prompt_dir, 'micro', f'{repo_microagent_name}.md'), 'w'
+    ) as f:
         f.write(repo_microagent_content)
-    
+
     # Reload microagents
     memory._load_global_microagents()
-    
+
     # Verify that the repo microagent was loaded
-    print(f"Repo microagents: {memory.repo_microagents}")
-    
-    
+    print(f'Repo microagents: {memory.repo_microagents}')
+
     # Set repository info
     memory.set_repository_info('owner/repo', '/workspace/repo')
-    
+
     # Create a recall action
-    recall_action = AgentRecallAction(query="First user message")
-    
+    recall_action = AgentRecallAction(query='First user message')
+
     # Set the source directly on the event
     recall_action._source = EventSource.USER  # type: ignore[attr-defined]
-    
+
     # Mock the event_stream.add_event method to capture events
     added_observations = []
+
     def mock_add_event(event, source):
         # Print the event type for debugging
-        print(f"Event added: {type(event).__name__}, source: {source}")
+        print(f'Event added: {type(event).__name__}, source: {source}')
         added_observations.append((event, source))
-    
+
     event_stream.add_event = mock_add_event
-    
+
     # Set the _first_user_message_seen flag to False to simulate first message
     memory._first_user_message_seen = False
-    
+
     # Process the recall action
     memory.on_event(recall_action)
-    
+
     # Print all captured events for debugging
-    print(f"Captured events: {len(added_observations)}")
+    print(f'Captured events: {len(added_observations)}')
     for i, (event, src) in enumerate(added_observations):
-        print(f"Event {i}: {type(event).__name__}, source: {src}")
-    
+        print(f'Event {i}: {type(event).__name__}, source: {src}')
+
     # Now we should get at least one event
     assert len(added_observations) > 0
-    
+
     # Find the RecallObservation event
-    recall_obs_events = [(event, src) for event, src in added_observations 
-                         if isinstance(event, RecallObservation)]
-    
+    recall_obs_events = [
+        (event, src)
+        for event, src in added_observations
+        if isinstance(event, RecallObservation)
+    ]
+
     # We should have at least one RecallObservation
     assert len(recall_obs_events) > 0
-    
+
     # Get the first RecallObservation
     observation, source = recall_obs_events[0]
     assert source == EventSource.ENVIRONMENT
     assert observation.recall_type == RecallType.ENVIRONMENT_INFO
     assert observation.repo_name == 'owner/repo'
     assert observation.repo_directory == '/workspace/repo'
-    assert "This is a test repository" in observation.repo_instructions
+    assert 'This is a test repository' in observation.repo_instructions
 
 
 def test_conversation_memory_processes_recall_observation(prompt_dir):
@@ -339,16 +349,15 @@ It may or may not be relevant to the user's request.
     agent_config = MagicMock(spec=AgentConfig)
     agent_config.enable_prompt_extensions = True
     agent_config.disabled_microagents = []
-    
+
     # Create a PromptManager
     prompt_manager = PromptManager(prompt_dir=prompt_dir)
-    
+
     # Initialize ConversationMemory
     conversation_memory = ConversationMemory(
-        config=agent_config,
-        prompt_manager=prompt_manager
+        config=agent_config, prompt_manager=prompt_manager
     )
-    
+
     # Create a RecallObservation with microagent knowledge
     recall_observation = RecallObservation(
         recall_type=RecallType.KNOWLEDGE_MICROAGENT,
@@ -356,33 +365,31 @@ It may or may not be relevant to the user's request.
             {
                 'agent_name': 'test_agent',
                 'trigger_word': 'test_trigger',
-                'content': 'This is triggered content for testing.'
+                'content': 'This is triggered content for testing.',
             }
         ],
-        content='Recalled knowledge from microagents'
+        content='Recalled knowledge from microagents',
     )
-    
+
     # Process the observation
     messages = conversation_memory._process_observation(
-        obs=recall_observation,
-        tool_call_id_to_message={},
-        max_message_chars=None
+        obs=recall_observation, tool_call_id_to_message={}, max_message_chars=None
     )
-    
+
     # Verify the message was created correctly
     assert len(messages) == 1
     message = messages[0]
     assert message.role == 'user'
     assert len(message.content) == 1
     assert isinstance(message.content[0], TextContent)
-    
+
     expected_text = """<EXTRA_INFO>
 The following information has been included based on a keyword match for "test_trigger".
 It may or may not be relevant to the user's request.
 
 This is triggered content for testing.
 </EXTRA_INFO>"""
-    
+
     assert message.content[0].text.strip() == expected_text.strip()
 
 
@@ -419,16 +426,15 @@ each of which has a corresponding port:
     # Create a mock agent config
     agent_config = MagicMock(spec=AgentConfig)
     agent_config.enable_prompt_extensions = True
-    
+
     # Create a PromptManager
     prompt_manager = PromptManager(prompt_dir=prompt_dir)
-    
+
     # Initialize ConversationMemory
     conversation_memory = ConversationMemory(
-        config=agent_config,
-        prompt_manager=prompt_manager
+        config=agent_config, prompt_manager=prompt_manager
     )
-    
+
     # Create a RecallObservation with environment info
     recall_observation = RecallObservation(
         recall_type=RecallType.ENVIRONMENT_INFO,
@@ -436,32 +442,30 @@ each of which has a corresponding port:
         repo_directory='/workspace/repo',
         repo_instructions='This repository contains important code.',
         runtime_hosts={'example.com': 8080},
-        content='Recalled environment info'
+        content='Recalled environment info',
     )
-    
+
     # Process the observation
     messages = conversation_memory._process_observation(
-        obs=recall_observation,
-        tool_call_id_to_message={},
-        max_message_chars=None
+        obs=recall_observation, tool_call_id_to_message={}, max_message_chars=None
     )
-    
+
     # Verify the message was created correctly
     assert len(messages) == 1
     message = messages[0]
     assert message.role == 'user'
     assert len(message.content) == 1
     assert isinstance(message.content[0], TextContent)
-    
+
     # Check that the message contains the repository info
     assert '<REPOSITORY_INFO>' in message.content[0].text
     assert 'owner/repo' in message.content[0].text
     assert '/workspace/repo' in message.content[0].text
-    
+
     # Check that the message contains the repository instructions
     assert '<REPOSITORY_INSTRUCTIONS>' in message.content[0].text
     assert 'This repository contains important code.' in message.content[0].text
-    
+
     # Check that the message contains the runtime info
     assert '<RUNTIME_INFORMATION>' in message.content[0].text
     assert 'example.com (port 8080)' in message.content[0].text
