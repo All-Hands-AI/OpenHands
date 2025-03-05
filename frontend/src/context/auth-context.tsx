@@ -1,27 +1,59 @@
 import React from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import OpenHands from "#/api/open-hands";
+import { useConfig } from "#/hooks/query/use-config";
 
 interface AuthContextType {
-  githubTokenIsSet: boolean;
-  setGitHubTokenIsSet: (value: boolean) => void;
-}
-
-interface AuthContextProps extends React.PropsWithChildren {
-  initialGithubTokenIsSet?: boolean;
+  isAuthenticated: boolean;
+  logout: () => void;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
-function AuthProvider({ children, initialGithubTokenIsSet }: AuthContextProps) {
-  const [githubTokenIsSet, setGitHubTokenIsSet] = React.useState(
-    !!initialGithubTokenIsSet,
-  );
+function AuthProvider({ children }: React.PropsWithChildren) {
+  const queryClient = useQueryClient();
+  const { data: config } = useConfig();
+
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+
+  const { mutate: authenticate } = useMutation({
+    mutationFn: OpenHands.authenticate,
+    onSettled: async (data) => {
+      if (!data) {
+        setIsAuthenticated(false);
+        await queryClient.resetQueries();
+      } else {
+        setIsAuthenticated(true);
+      }
+    },
+  });
+
+  const { mutate: logout } = useMutation({
+    mutationFn: OpenHands.logout,
+    onSuccess: async () => {
+      setIsAuthenticated(false);
+      await queryClient.resetQueries();
+    },
+  });
+
+  const checkIsAuthed = () => {
+    authenticate(config?.APP_MODE || "saas");
+  };
+
+  React.useEffect(() => {
+    checkIsAuthed();
+
+    // Check every 5 minutes
+    const intervalId = setInterval(checkIsAuthed, 1000 * 60 * 5);
+    return () => clearInterval(intervalId);
+  }, []);
 
   const value = React.useMemo(
     () => ({
-      githubTokenIsSet,
-      setGitHubTokenIsSet,
+      isAuthenticated,
+      logout,
     }),
-    [githubTokenIsSet, setGitHubTokenIsSet],
+    [isAuthenticated, logout],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

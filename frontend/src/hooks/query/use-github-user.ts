@@ -4,20 +4,19 @@ import posthog from "posthog-js";
 import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
-import { useLogout } from "../mutation/use-logout";
 import { useCurrentSettings } from "#/context/settings-context";
 
 export const useGitHubUser = () => {
-  const { githubTokenIsSet } = useAuth();
-  const { setGitHubTokenIsSet } = useAuth();
-  const { mutateAsync: logout } = useLogout();
-  const { saveUserSettings } = useCurrentSettings();
+  const { logout } = useAuth();
+  const { saveUserSettings, settings } = useCurrentSettings();
   const { data: config } = useConfig();
 
+  const hasGitHubTokenSet = !!settings?.GITHUB_TOKEN_IS_SET;
+
   const user = useQuery({
-    queryKey: ["user", githubTokenIsSet],
+    queryKey: ["user", hasGitHubTokenSet],
     queryFn: OpenHands.getGitHubUser,
-    enabled: githubTokenIsSet && !!config?.APP_MODE,
+    enabled: hasGitHubTokenSet && !!config?.APP_MODE,
     retry: false,
   });
 
@@ -34,10 +33,9 @@ export const useGitHubUser = () => {
   }, [user.data]);
 
   const handleLogout = async () => {
-    if (config?.APP_MODE === "saas") await logout();
+    if (config?.APP_MODE === "saas") logout();
     else {
       await saveUserSettings({ unset_github_token: true });
-      setGitHubTokenIsSet(false);
     }
     posthog.reset();
   };

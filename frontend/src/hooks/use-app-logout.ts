@@ -1,14 +1,14 @@
+import { useAuth } from "#/context/auth-context";
 import { useCurrentSettings } from "#/context/settings-context";
-import { useLogout } from "./mutation/use-logout";
 import { useConfig } from "./query/use-config";
 
 export const useAppLogout = () => {
   const { data: config } = useConfig();
-  const { mutateAsync: logout } = useLogout();
+  const { logout } = useAuth();
   const { saveUserSettings } = useCurrentSettings();
 
   const handleLogout = async () => {
-    if (config?.APP_MODE === "saas") await logout();
+    if (config?.APP_MODE === "saas") logout();
     else await saveUserSettings({ unset_github_token: true });
   };
 

@@ -2,7 +2,6 @@ import React from "react";
 import { useRouteError, isRouteErrorResponse, Outlet } from "react-router";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
-import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
@@ -44,23 +43,20 @@ export function ErrorBoundary() {
 }
 
 export default function MainApp() {
-  const { githubTokenIsSet } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { data: settings } = useSettings();
   const { migrateUserConsent } = useMigrateUserConsent();
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
 
   const config = useConfig();
-  const {
-    data: isAuthed,
-    isFetching: isFetchingAuth,
-    isError: authError,
-  } = useIsAuthed();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
+
+  const hasGitHubTokenSet = !!settings?.GITHUB_TOKEN_IS_SET;
 
   React.useEffect(() => {
     if (settings?.LANGUAGE) {
@@ -84,10 +80,6 @@ export default function MainApp() {
     });
   }, []);
 
-  const userIsAuthed = !!isAuthed && !authError;
-  const renderWaitlistModal =
-    !isFetchingAuth && !userIsAuthed && config.data?.APP_MODE === "saas";
-
   return (
     <div
       data-testid="root-layout"
@@ -102,9 +94,9 @@ export default function MainApp() {
         <Outlet />
       </div>
 
-      {renderWaitlistModal && (
+      {!isAuthenticated && (
         <WaitlistModal
-          ghTokenIsSet={githubTokenIsSet}
+          ghTokenIsSet={hasGitHubTokenSet}
           githubAuthUrl={gitHubAuthUrl}
         />
       )}

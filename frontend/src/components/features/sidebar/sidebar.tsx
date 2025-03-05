@@ -20,9 +20,9 @@ import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
 import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
-import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { cn } from "#/utils/utils";
+import { useAuth } from "#/context/auth-context";
 
 export function Sidebar() {
   const location = useLocation();
@@ -35,7 +35,7 @@ export function Sidebar() {
     isError: settingsIsError,
     isFetching: isFetchingSettings,
   } = useSettings();
-  const { mutateAsync: logout } = useLogout();
+  const { logout } = useAuth();
   const { settings, saveUserSettings } = useCurrentSettings();
 
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
@@ -72,7 +72,7 @@ export function Sidebar() {
   };
 
   const handleLogout = async () => {
-    if (config?.APP_MODE === "saas") await logout();
+    if (config?.APP_MODE === "saas") logout();
     else await saveUserSettings({ unset_github_token: true });
     posthog.reset();
   };
