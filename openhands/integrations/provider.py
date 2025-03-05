@@ -57,24 +57,14 @@ class SecretStore(BaseModel):
         expose_secrets = info.context and info.context.get('expose_secrets', False)
         
         for token_type, provider_token in provider_tokens.items():
-            if not provider_token:
+            if not provider_token or not provider_token.token:
                 continue
                 
             token_type_str = token_type.value if isinstance(token_type, ProviderType) else str(token_type)
-            
-            if isinstance(provider_token, ProviderToken) and provider_token.token:
-                tokens[token_type_str] = {
-                    'token': provider_token.token.get_secret_value() if expose_secrets else '**********',
-                    'user_id': provider_token.user_id
-                }
-            elif isinstance(provider_token, (str, SecretStr)):
-                # Convert to ProviderToken if needed
-                token_obj = self._convert_token(provider_token)
-                if token_obj.token:
-                    tokens[token_type_str] = {
-                        'token': token_obj.token.get_secret_value() if expose_secrets else '**********',
-                        'user_id': token_obj.user_id
-                    }
+            tokens[token_type_str] = {
+                'token': provider_token.token.get_secret_value() if expose_secrets else '**********',
+                'user_id': provider_token.user_id
+            }
         
         return tokens
 
