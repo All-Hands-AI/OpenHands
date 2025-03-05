@@ -33,6 +33,7 @@ export const useSettings = () => {
     // Only retry if the error is not a 404 because we
     // would want to show the modal immediately if the
     // settings are not found
+    enabled: isAuthenticated,
     retry: (_, error) => error.status !== 404,
     meta: {
       disableToast: true,

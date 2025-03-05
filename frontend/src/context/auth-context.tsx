@@ -41,14 +41,6 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     authenticate(config?.APP_MODE || "saas");
   }, [config?.APP_MODE, isFetched]);
 
-  React.useEffect(() => {
-    checkIsAuthed();
-
-    // Check every 5 minutes
-    const intervalId = setInterval(checkIsAuthed, 1000 * 60 * 5);
-    return () => clearInterval(intervalId);
-  }, [config?.APP_MODE, isFetched]);
-
   const value = React.useMemo(
     () => ({
       isAuthenticated,
