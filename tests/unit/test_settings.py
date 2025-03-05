@@ -88,10 +88,18 @@ def test_settings_handles_sensitive_data():
     )
 
     assert str(settings.llm_api_key) == '**********'
-    assert str(settings.secrets_store.provider_tokens[ProviderType.GITHUB].token) == '**********'
+    assert (
+        str(settings.secrets_store.provider_tokens[ProviderType.GITHUB].token)
+        == '**********'
+    )
 
     assert settings.llm_api_key.get_secret_value() == 'test-key'
-    assert settings.secrets_store.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == 'test-token'
+    assert (
+        settings.secrets_store.provider_tokens[
+            ProviderType.GITHUB
+        ].token.get_secret_value()
+        == 'test-token'
+    )
 
 
 def test_convert_to_settings():
@@ -105,4 +113,9 @@ def test_convert_to_settings():
     settings = convert_to_settings(settings_with_token_data)
 
     assert settings.llm_api_key.get_secret_value() == 'test-key'
-    assert settings.secrets_store.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == 'test-token'
+    assert (
+        settings.secrets_store.provider_tokens[
+            ProviderType.GITHUB
+        ].token.get_secret_value()
+        == 'test-token'
+    )
