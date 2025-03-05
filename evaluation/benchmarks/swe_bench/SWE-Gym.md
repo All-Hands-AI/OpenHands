@@ -40,7 +40,7 @@ The process of running SWE-Gym is very similar to how you'd run SWE-Bench evalua
 4. And then simply do the following to sample for 16x parallism:
 
 ```bash
-export ALLHANDS_API_KEY=ah-yourkey
+export ALLHANDS_API_KEY=ah-yourkey  # You don't need to set this when running these in local docker container
 ./evaluation/benchmarks/swe_bench/scripts/rollout_swegym.sh llm.mymodel-temp05 'train-t05' 16
 ```
 
