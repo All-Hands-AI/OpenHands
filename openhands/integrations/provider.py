@@ -17,7 +17,7 @@ class ProviderToken(BaseModel):
     user_id: str | None
 
 
-PROVIDER_TOKEN_TYPE = dict[ProviderType, ProviderToken]
+PROVIDER_TOKEN_TYPE = dict[ProviderType, ProviderToken | str]
 CUSTOM_SECRETS_TYPE = dict[str, SecretStr]
 
 
@@ -30,17 +30,18 @@ class SecretStore(BaseModel):
     ):
         tokens = {}
         for token_type, provider_token in provider_tokens.items():
-            if provider_token.token:
-                if info.context and info.context.get('expose_secrets', False):
+            # Handle both string tokens and ProviderToken objects
+            if isinstance(provider_token, str):
+                if provider_token:  # Only include non-empty tokens
                     tokens[token_type.value] = {
-                        'token': provider_token.token.get_secret_value(),
-                        'user_id': provider_token.user_id
+                        'token': '**********' if not info.context or not info.context.get('expose_secrets', False) else provider_token,
+                        'user_id': None
                     }
-                else:
-                    tokens[token_type.value] = {
-                        'token': '**********' if provider_token.token else None,
-                        'user_id': provider_token.user_id
-                    }
+            elif isinstance(provider_token, ProviderToken) and provider_token.token:
+                tokens[token_type.value] = {
+                    'token': '**********' if not info.context or not info.context.get('expose_secrets', False) else provider_token.token.get_secret_value(),
+                    'user_id': provider_token.user_id
+                }
         return tokens
 
 
