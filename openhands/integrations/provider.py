@@ -29,19 +29,16 @@ class SecretStore(BaseModel):
         self, provider_tokens: PROVIDER_TOKEN_TYPE, info: SerializationInfo
     ):
         tokens = {}
+        expose_secrets = info.context and info.context.get('expose_secrets', False)
+        
         for token_type, provider_token in provider_tokens.items():
-            # Handle both string tokens and ProviderToken objects
             if isinstance(provider_token, str):
                 if provider_token:  # Only include non-empty tokens
-                    tokens[token_type.value] = {
-                        'token': '**********' if not info.context or not info.context.get('expose_secrets', False) else provider_token,
-                        'user_id': None
-                    }
+                    tokens[token_type.value] = provider_token if expose_secrets else '**********'
+            elif isinstance(provider_token, SecretStr):
+                tokens[token_type.value] = provider_token.get_secret_value() if expose_secrets else '**********'
             elif isinstance(provider_token, ProviderToken) and provider_token.token:
-                tokens[token_type.value] = {
-                    'token': '**********' if not info.context or not info.context.get('expose_secrets', False) else provider_token.token.get_secret_value(),
-                    'user_id': provider_token.user_id
-                }
+                tokens[token_type.value] = provider_token.token.get_secret_value() if expose_secrets else '**********'
         return tokens
 
 

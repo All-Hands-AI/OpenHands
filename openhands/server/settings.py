@@ -42,8 +42,11 @@ class Settings(BaseModel):
     @field_serializer('secrets_store')
     def secrets_store_serializer(self, secrets: SecretStore, info: SerializationInfo):
         """Custom serializer for secrets store."""
-        # Use the SecretStore's own serializer which handles provider_tokens correctly
-        return secrets.model_dump(context=info.context)
+        return {
+            'provider_tokens': secrets.provider_tokens_serializer(
+                secrets.provider_tokens, info
+            )
+        }
 
     @staticmethod
     def from_config() -> Settings | None:
