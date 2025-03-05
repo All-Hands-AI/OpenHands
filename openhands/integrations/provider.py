@@ -1,11 +1,18 @@
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, SecretStr, SerializationInfo, field_serializer
 from pydantic.json import pydantic_encoder
 
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
-from openhands.integrations.service_types import AuthenticationError, GitService, User
+from openhands.integrations.service_types import (
+    AuthenticationError,
+    GitService,
+    Repository,
+    SuggestedTask,
+    User,
+)
 
 
 class ProviderType(Enum):
@@ -80,15 +87,87 @@ class ProviderHandler:
         self.provider_tokens = provider_tokens
         self.idp_token = idp_token
 
-    def get_user(self) -> User:
-        for provider in self.provider_tokens:
-            token = self.provider_tokens[provider]
-            service_class = self.service_class_map[provider]
-            service = service_class(user_id=token.user_id,
-                                    idp_token=self.idp_token,
-                                    token=token.token)
-            
-            return service.get_user()
+    async def _get_service(self, provider: ProviderType) -> GitService:
+        """Helper method to instantiate a service for a given provider"""
+        token = self.provider_tokens.get(provider)
+        if not token:
+            raise AuthenticationError(f"No token found for {provider.value}")
+        
+        service_class = self.service_class_map[provider]
+        return service_class(
+            user_id=token.user_id,
+            idp_token=self.idp_token,
+            token=token.token
+        )
 
-            
+    async def get_user(self) -> User:
+        """Get user information from the first available provider"""
+        for provider in self.provider_tokens:
+            try:
+                service = await self._get_service(provider)
+                return await service.get_user()
+            except Exception:
+                continue
         raise AuthenticationError("Need valid provider token")
+
+    async def get_latest_token(self) -> SecretStr:
+        """Get latest token from GitHub service"""
+        service = await self._get_service(ProviderType.GITHUB)
+        return await service.get_latest_token()
+
+    async def get_latest_provider_token(self) -> SecretStr:
+        """Get latest provider token from GitHub service"""
+        service = await self._get_service(ProviderType.GITHUB)
+        return await service.get_latest_provider_token()
+
+    async def get_repositories(
+        self, page: int, per_page: int, sort: str, installation_id: int | None
+    ) -> list[Repository]:
+        """Get repositories from all available providers"""
+        all_repos = []
+        for provider in self.provider_tokens:
+            try:
+                service = await self._get_service(provider)
+                repos = await service.get_repositories(page, per_page, sort, installation_id)
+                all_repos.extend(repos)
+            except Exception:
+                continue
+        return all_repos
+
+    async def get_installation_ids(self) -> list[int]:
+        """Get installation IDs from GitHub service"""
+        service = await self._get_service(ProviderType.GITHUB)
+        return await service.get_installation_ids()
+
+    async def search_repositories(
+        self, query: str, per_page: int, sort: str, order: str
+    ) -> list[Repository]:
+        """Search repositories across all available providers"""
+        all_repos = []
+        for provider in self.provider_tokens:
+            try:
+                service = await self._get_service(provider)
+                repos = await service.search_repositories(query, per_page, sort, order)
+                all_repos.extend(repos)
+            except Exception:
+                continue
+        return all_repos
+
+    async def execute_graphql_query(
+        self, query: str, variables: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Execute GraphQL query on GitHub service"""
+        service = await self._get_service(ProviderType.GITHUB)
+        return await service.execute_graphql_query(query, variables)
+
+    async def get_suggested_tasks(self) -> list[SuggestedTask]:
+        """Get suggested tasks from all available providers"""
+        all_tasks = []
+        for provider in self.provider_tokens:
+            try:
+                service = await self._get_service(provider)
+                tasks = await service.get_suggested_tasks()
+                all_tasks.extend(tasks)
+            except Exception:
+                continue
+        return all_tasks
