@@ -42,6 +42,10 @@ def mock_agent():
     
     # Add prompt_manager attribute
     agent.prompt_manager = MagicMock()
+    
+    # Add memory attribute with on_event method
+    agent.memory = MagicMock()
+    agent.memory.on_event = MagicMock()
 
     return agent
 
@@ -104,10 +108,15 @@ async def test_agent_session_start_with_no_state(mock_agent):
             max_iterations=10,
         )
 
-        # Verify EventStream.subscribe was called with AGENT_CONTROLLER
+        # Verify EventStream.subscribe was called with AGENT_CONTROLLER and MEMORY
         mock_event_stream.subscribe.assert_any_call(
             EventStreamSubscriber.AGENT_CONTROLLER,
             session.controller.on_event,
+            session.controller.id,
+        )
+        mock_event_stream.subscribe.assert_any_call(
+            EventStreamSubscriber.MEMORY,
+            session.controller.agent.memory.on_event,
             session.controller.id,
         )
 
@@ -189,10 +198,15 @@ async def test_agent_session_start_with_restored_state(mock_agent):
         # Verify set_initial_state was called once with the restored state
         assert session.controller.set_initial_state_call_count == 1
 
-        # Verify EventStream.subscribe was called with AGENT_CONTROLLER
+        # Verify EventStream.subscribe was called with AGENT_CONTROLLER and MEMORY
         mock_event_stream.subscribe.assert_any_call(
             EventStreamSubscriber.AGENT_CONTROLLER,
             session.controller.on_event,
+            session.controller.id,
+        )
+        mock_event_stream.subscribe.assert_any_call(
+            EventStreamSubscriber.MEMORY,
+            session.controller.agent.memory.on_event,
             session.controller.id,
         )
         assert session.controller.test_initial_state is mock_restored_state
