@@ -89,6 +89,9 @@ class GitLabService(GitService):
             login=response.get('username'),
         )
 
+    async def search_repositories(self, query, per_page, sort, order):
+        return await super().search_repositories(query, per_page, sort, order)
+
 
 gitlab_service_cls = os.environ.get(
     'OPENHANDS_GITLAB_SERVICE_CLS',

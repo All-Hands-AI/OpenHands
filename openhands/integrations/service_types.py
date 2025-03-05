@@ -73,4 +73,3 @@ class GitService(Protocol):
     ) -> list[Repository]:
         """Search for repositories"""
         ...
-
