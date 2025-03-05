@@ -46,51 +46,54 @@ async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
 ) -> JSONResponse:
+    # Check provider tokens are valid
+    if settings.provider_tokens:
+        # Remove extraneous token types
+        provider_types = [provider.value for provider in ProviderType]
+        settings.provider_tokens = {
+            k: v for k, v in settings.provider_tokens.items()
+            if k in provider_types
+        }
+
+
+        # Determine whether tokens are valid
+        for token_type, token_value in settings.provider_tokens.items():
+            if token_value:
+                confirmed_token_type = await determine_token_type(SecretStr(token_value))
+                if not confirmed_token_type or confirmed_token_type.value != token_type:
+                    return JSONResponse(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        content={
+                            'error': f'Invalid token. Please make sure it is a valid {token_type} token.'
+                        },
+                    )
+                
     try:
         settings_store = await SettingsStoreImpl.get_instance(
             config, get_user_id(request)
         )
         existing_settings = await settings_store.load()
 
-        # Validate any provided tokens
-        if settings.provider_tokens:
-            # Remove extraneous token types
-            provider_types = [provider.value for provider in ProviderType]
-            settings.provider_tokens = {
-                k: v for k, v in settings.provider_tokens.items()
-                if k in provider_types
-            }
-
-            # Validate each token
-            for token_type, token_value in settings.provider_tokens.items():
-                if token_value:
-                    confirmed_token_type = await determine_token_type(SecretStr(token_value))
-                    if not confirmed_token_type or confirmed_token_type.value != token_type:
-                        return JSONResponse(
-                            status_code=status.HTTP_401_UNAUTHORIZED,
-                            content={
-                                'error': f'Invalid token. Please make sure it is a valid {token_type} token.'
-                            },
-                        )
-
         # Convert to Settings model and merge with existing settings
-        new_settings = convert_to_settings(settings)
+        
         if existing_settings:
             # Keep existing LLM key if not provided
             if settings.llm_api_key is None:
-                new_settings.llm_api_key = existing_settings.llm_api_key
+                settings.llm_api_key = existing_settings.llm_api_key
 
             # Keep existing analytics consent if not provided
             if settings.user_consents_to_analytics is None:
-                new_settings.user_consents_to_analytics = (
+                settings.user_consents_to_analytics = (
                     existing_settings.user_consents_to_analytics
                 )
 
+            if existing_settings.secrets_store:
+                # TODO: merge incoming settings store with the existing one
+                pass
+
             # Merge provider tokens with existing ones
             if not settings.unset_token:  # Only merge if not unsetting tokens
-                for provider, token in existing_settings.secrets_store.provider_tokens.items():
-                    if provider not in new_settings.secrets_store.provider_tokens:
-                        new_settings.secrets_store.provider_tokens[provider] = token
+                settings.secrets_store.provider_tokens = {}
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
@@ -98,8 +101,8 @@ async def store_settings(
                 settings.remote_runtime_resource_factor
             )
 
-        # Store the settings and return success response
-        await settings_store.store(new_settings)
+        settings = convert_to_settings(settings)
+        await settings_store.store(settings)
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={'message': 'Settings stored'},
