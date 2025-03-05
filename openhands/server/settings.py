@@ -82,34 +82,6 @@ class Settings(BaseModel):
                         data['secrets_store'] = SecretStore(
                             provider_tokens=converted_tokens
                         )
-            # Handle provider_tokens at root level (for backward compatibility)
-            elif 'provider_tokens' in data:
-                tokens = data['provider_tokens']
-                if isinstance(tokens, dict):
-                    converted_tokens = {}
-                    for token_type_str, token_value in tokens.items():
-                        if token_value:
-                            try:
-                                # Convert string to ProviderType enum
-                                token_type = ProviderType(token_type_str)
-                                # Handle both string and dict token values
-                                if isinstance(token_value, dict):
-                                    token_str = token_value.get('token')
-                                    if token_str:
-                                        converted_tokens[token_type] = ProviderToken(
-                                            token=SecretStr(token_str),
-                                            user_id=token_value.get('user_id'),
-                                        )
-                                elif isinstance(token_value, str) and token_value:
-                                    converted_tokens[token_type] = ProviderToken(
-                                        token=SecretStr(token_value), user_id=None
-                                    )
-                            except ValueError:
-                                # Skip invalid provider types
-                                continue
-                    data['secrets_store'] = SecretStore(
-                        provider_tokens=converted_tokens
-                    )
         return data
 
     @field_serializer('secrets_store')
