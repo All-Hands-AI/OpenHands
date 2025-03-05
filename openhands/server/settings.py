@@ -1,11 +1,17 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, SecretStr, SerializationInfo, field_serializer, model_validator
+from pydantic import (
+    BaseModel,
+    SecretStr,
+    SerializationInfo,
+    field_serializer,
+    model_validator,
+)
 from pydantic.json import pydantic_encoder
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.utils import load_app_config
-from openhands.integrations.provider import ProviderType, SecretStore, ProviderToken
+from openhands.integrations.provider import ProviderToken, ProviderType, SecretStore
 
 
 class Settings(BaseModel):
@@ -60,19 +66,22 @@ class Settings(BaseModel):
                                     if isinstance(token_value, dict):
                                         token_str = token_value.get('token')
                                         if token_str:
-                                            converted_tokens[token_type] = ProviderToken(
-                                                token=SecretStr(token_str),
-                                                user_id=token_value.get('user_id')
+                                            converted_tokens[token_type] = (
+                                                ProviderToken(
+                                                    token=SecretStr(token_str),
+                                                    user_id=token_value.get('user_id'),
+                                                )
                                             )
                                     elif isinstance(token_value, str) and token_value:
                                         converted_tokens[token_type] = ProviderToken(
-                                            token=SecretStr(token_value),
-                                            user_id=None
+                                            token=SecretStr(token_value), user_id=None
                                         )
                                 except ValueError:
                                     # Skip invalid provider types
                                     continue
-                        data['secrets_store'] = SecretStore(provider_tokens=converted_tokens)
+                        data['secrets_store'] = SecretStore(
+                            provider_tokens=converted_tokens
+                        )
             # Handle provider_tokens at root level (for backward compatibility)
             elif 'provider_tokens' in data:
                 tokens = data['provider_tokens']
@@ -89,17 +98,18 @@ class Settings(BaseModel):
                                     if token_str:
                                         converted_tokens[token_type] = ProviderToken(
                                             token=SecretStr(token_str),
-                                            user_id=token_value.get('user_id')
+                                            user_id=token_value.get('user_id'),
                                         )
                                 elif isinstance(token_value, str) and token_value:
                                     converted_tokens[token_type] = ProviderToken(
-                                        token=SecretStr(token_value),
-                                        user_id=None
+                                        token=SecretStr(token_value), user_id=None
                                     )
                             except ValueError:
                                 # Skip invalid provider types
                                 continue
-                    data['secrets_store'] = SecretStore(provider_tokens=converted_tokens)
+                    data['secrets_store'] = SecretStore(
+                        provider_tokens=converted_tokens
+                    )
         return data
 
     @field_serializer('secrets_store')

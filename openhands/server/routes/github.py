@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands.integrations.provider import ProviderHandler
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler, ProviderType
 from openhands.integrations.service_types import (
     AuthenticationError,
     Repository,
@@ -22,14 +22,15 @@ async def get_github_repositories(
     per_page: int = 10,
     sort: str = 'pushed',
     installation_id: int | None = None,
-    github_user_id: str | None = Depends(get_user_id),
-    provider_tokens: SecretStr | None = Depends(get_provider_tokens),
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
-    if provider_tokens:
+    if ProviderType.GITHUB in provider_tokens:
+        token = provider_tokens[ProviderType.GITHUB]
         client = GithubServiceImpl(
-            user_id=github_user_id, idp_token=idp_token, token=None
+            user_id=token.user_id, idp_token=idp_token, token=token.token
         )
+        
         try:
             repos: list[Repository] = await client.get_repositories(
                 page, per_page, sort, installation_id
@@ -56,8 +57,7 @@ async def get_github_repositories(
 
 @app.get('/user', response_model=User)
 async def get_github_user(
-    github_user_id: str | None = Depends(get_user_id),
-    provider_tokens: SecretStr | None = Depends(get_provider_tokens),
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
     if provider_tokens:
@@ -88,13 +88,14 @@ async def get_github_user(
 
 @app.get('/installations', response_model=list[int])
 async def get_github_installation_ids(
-    github_user_id: str | None = Depends(get_user_id),
-    provider_tokens: SecretStr | None = Depends(get_provider_tokens),
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
-    if provider_tokens:
+    if ProviderType.GITHUB in provider_tokens:
+        token = provider_tokens[ProviderType.GITHUB]
+
         client = GithubServiceImpl(
-            user_id=github_user_id, idp_token=idp_token, token=None
+            user_id=token.user_id, idp_token=idp_token, token=token.token
         )
         try:
             installations_ids: list[int] = await client.get_installation_ids()
@@ -124,13 +125,14 @@ async def search_github_repositories(
     per_page: int = 5,
     sort: str = 'stars',
     order: str = 'desc',
-    github_user_id: str | None = Depends(get_user_id),
-    provider_tokens: SecretStr | None = Depends(get_provider_tokens),
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
-    if provider_tokens:
+    if ProviderType.GITHUB in provider_tokens:
+        token = provider_tokens[ProviderType.GITHUB]
+
         client = GithubServiceImpl(
-            user_id=github_user_id, idp_token=idp_token, token=None
+            user_id=token.user_id, idp_token=idp_token, token=token.token
         )
         try:
             repos: list[Repository] = await client.search_repositories(
@@ -158,8 +160,7 @@ async def search_github_repositories(
 
 @app.get('/suggested-tasks', response_model=list[SuggestedTask])
 async def get_suggested_tasks(
-    github_user_id: str | None = Depends(get_user_id),
-    provider_tokens: SecretStr | None = Depends(get_provider_tokens),
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
     """Get suggested tasks for the authenticated user across their most recently pushed repositories.
@@ -169,9 +170,11 @@ async def get_suggested_tasks(
     - Issues assigned to the user.
     """
 
-    if provider_tokens:
+    if ProviderType.GITHUB in provider_tokens:
+        token = provider_tokens[ProviderType.GITHUB]
+
         client = GithubServiceImpl(
-            user_id=github_user_id, idp_token=idp_token, token=None
+            user_id=token.user_id, idp_token=idp_token, token=token.token
         )
         try:
             tasks: list[SuggestedTask] = await client.get_suggested_tasks()

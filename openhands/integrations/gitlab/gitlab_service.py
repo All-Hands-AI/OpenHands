@@ -7,6 +7,7 @@ from pydantic import SecretStr
 from openhands.integrations.service_types import (
     AuthenticationError,
     GitService,
+    Repository,
     UnknownException,
     User,
 )
@@ -44,6 +45,9 @@ class GitLabService(GitService):
         return status_code == 401
 
     async def get_latest_token(self) -> SecretStr:
+        return self.token
+    
+    async def get_latest_provider_token(self) -> SecretStr:
         return self.token
 
     async def _fetch_data(
@@ -103,6 +107,8 @@ class GitLabService(GitService):
         response, headers = await self._fetch_data(url, params)
         return response, headers
 
+    async def get_repositories(self, page: int, per_page: int, sort: str, installation_id: int | None) -> list[Repository]:
+        return []
 
 gitlab_service_cls = os.environ.get(
     'OPENHANDS_GITLAB_SERVICE_CLS',

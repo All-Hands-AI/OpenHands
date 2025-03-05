@@ -60,6 +60,10 @@ class GitService(Protocol):
         """Get latest working token of the users"""
         ...
 
+    async def get_latest_provider_token(self) -> SecretStr:
+        """Get latest working token from provider"""
+        ...
+
     async def get_user(self) -> User:
         """Get the authenticated user's information"""
         ...
