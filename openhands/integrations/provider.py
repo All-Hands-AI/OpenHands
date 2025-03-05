@@ -39,10 +39,14 @@ class SecretStore(BaseModel):
                     token_dict['token'] = (
                         provider_token.token.get_secret_value()
                     )  # Expose secret if it exists
-                tokens[token_type] = token_dict
+                tokens[token_type.value] = token_dict
             return tokens
 
-        return pydantic_encoder(provider_tokens)
+        # Convert enum keys to strings for non-exposed secrets
+        tokens = {}
+        for token_type, provider_token in provider_tokens.items():
+            tokens[token_type.value] = pydantic_encoder(provider_token)
+        return tokens
 
 
 class ProviderHandler:
