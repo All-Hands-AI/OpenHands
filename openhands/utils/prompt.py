@@ -26,7 +26,7 @@ class PromptManager:
     """
     Manages prompt templates and includes information from the user's workspace micro-agents and global micro-agents.
 
-    This class is dedicated toloading and rendering prompts (system prompt, user prompt).
+    This class is dedicated to loading and rendering prompts (system prompt, user prompt).
 
     Attributes:
         prompt_dir: Directory containing prompt templates.
@@ -37,14 +37,10 @@ class PromptManager:
         prompt_dir: str,
     ):
         self.prompt_dir: str = prompt_dir
-        self.repository_info: RepositoryInfo | None = None
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
         self.microagent_info_template: Template = self._load_template('microagent_info')
-        self.runtime_info = RuntimeInfo(
-            available_hosts={}, additional_agent_instructions=''
-        )
 
     def _load_template(self, template_name: str) -> Template:
         if self.prompt_dir is None:
@@ -57,13 +53,6 @@ class PromptManager:
 
     def get_system_message(self) -> str:
         return self.system_template.render().strip()
-
-    def set_runtime_info(self, runtime_info: RuntimeInfo) -> None:
-        self.runtime_info = runtime_info
-
-    def set_repository_info(self, repository_info: RepositoryInfo) -> None:
-        """Stores info about a cloned repository for rendering the template."""
-        self.repository_info = repository_info
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent

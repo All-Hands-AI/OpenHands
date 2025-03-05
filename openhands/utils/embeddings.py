@@ -58,7 +58,7 @@ def check_llama_index():
     if not LLAMA_INDEX_AVAILABLE:
         raise ImportError(
             'llama_index and its dependencies are not installed. '
-            'To use long-term memory features, please run: poetry install --with llama-index.'
+            'To use memory features, please run: poetry install --with llama-index.'
         )
 
 
