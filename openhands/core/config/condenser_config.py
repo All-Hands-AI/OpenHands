@@ -27,6 +27,17 @@ class ObservationMaskingCondenserConfig(BaseModel):
     model_config = {'extra': 'forbid'}
 
 
+class BrowserOutputCondenserConfig(BaseModel):
+    """Configuration for the BrowserOutputCondenser."""
+
+    type: Literal['browser_output_masking'] = Field('browser_output_masking')
+    attention_window: int = Field(
+        default=1,
+        description='The number of most recent browser output observations that will not be masked.',
+        ge=1,
+    )
+
+
 class RecentEventsCondenserConfig(BaseModel):
     """Configuration for RecentEventsCondenser."""
 
@@ -115,6 +126,7 @@ class LLMAttentionCondenserConfig(BaseModel):
 CondenserConfig = (
     NoOpCondenserConfig
     | ObservationMaskingCondenserConfig
+    | BrowserOutputCondenserConfig
     | RecentEventsCondenserConfig
     | LLMSummarizingCondenserConfig
     | AmortizedForgettingCondenserConfig
