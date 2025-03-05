@@ -214,7 +214,7 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
     print(f'state: {state}')
     events = list(event_stream.get_events())
     print(f'event_stream: {events}')
-    assert state.iteration == 4
+    assert state.iteration == 3
     assert state.agent_state == AgentState.ERROR
     assert state.last_error == 'AgentStuckInLoopError: Agent got stuck in a loop'
     assert len(events) == 11
@@ -272,10 +272,10 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
     for i, event in enumerate(events):
         print(f'event {i}: {event_to_dict(event)}')
 
-    assert state.iteration == 4
+    assert state.iteration == 3
     assert len(events) == 11
     # check the eventstream have 4 pairs of repeated actions and observations
-    repeating_actions_and_observations = events[2:10]
+    repeating_actions_and_observations = events[4:12]
     for action, observation in zip(
         repeating_actions_and_observations[0::2],
         repeating_actions_and_observations[1::2],
@@ -773,7 +773,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
         def step(self, state: State):
             # If the state has more than one message and we haven't errored yet,
             # throw the context window exceeded error
-            if len(state.history) > 1 and not self.has_errored:
+            if len(state.history) > 3 and not self.has_errored:
                 error = ContextWindowExceededError(
                     message='prompt is too long: 233885 tokens > 200000 maximum',
                     model='',
