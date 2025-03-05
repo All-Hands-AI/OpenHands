@@ -5,6 +5,7 @@ from pydantic.json import pydantic_encoder
 
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
+from openhands.integrations.service_types import AuthenticationError, GitService, User
 
 
 class ProviderType(Enum):
@@ -70,13 +71,24 @@ class SecretStore(BaseModel):
 
 
 class ProviderHandler:
-    def __init__(self, secret_store: SecretStore):
-        self.service_class_map = {
+    def __init__(self, provider_tokens: PROVIDER_TOKEN_TYPE, idp_token: SecretStr | None = None):
+        self.service_class_map: dict[ProviderType, GitService] = {
             ProviderType.GITHUB: GithubServiceImpl,
             ProviderType.GITLAB: GitLabServiceImpl,
         }
 
-        self.provider_tokens = secret_store.provider_tokens
+        self.provider_tokens = provider_tokens
+        self.idp_token = idp_token
 
-    def get_user(self):
-        pass
+    def get_user(self) -> User:
+        for provider in self.provider_tokens:
+            token = self.provider_tokens[provider]
+            service_class = self.service_class_map[provider]
+            service = service_class(user_id=token.user_id,
+                                    idp_token=self.idp_token,
+                                    token=token.token)
+            
+            return service.get_user()
+
+            
+        raise AuthenticationError("Need valid provider token")

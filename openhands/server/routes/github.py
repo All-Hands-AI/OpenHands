@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.integrations.github.github_service import GithubServiceImpl
+from openhands.integrations.provider import ProviderHandler
 from openhands.integrations.service_types import (
     AuthenticationError,
     Repository,
@@ -60,9 +61,9 @@ async def get_github_user(
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
     if provider_tokens:
-        client = GithubServiceImpl(
-            user_id=github_user_id, idp_token=idp_token, token=None
-        )
+        client = ProviderHandler(provider_tokens=provider_tokens,
+                                 idp_token=idp_token)
+
         try:
             user: User = await client.get_user()
             return user
