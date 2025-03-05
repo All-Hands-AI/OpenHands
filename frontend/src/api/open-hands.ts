@@ -14,6 +14,7 @@ import {
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
+import { CustomerSetupSession } from "#/types/billing";
 
 class OpenHands {
   /**
@@ -281,11 +282,11 @@ class OpenHands {
     return data.redirect_url;
   }
 
-  static async createSetupIntent(): Promise<string> {
+  static async createCustomerSetupSession(): Promise<CustomerSetupSession> {
     const { data } = await openHands.post(
-      "/api/billing/create-setup-intent",
+      "/api/billing/create-customer-setup-session",
     );
-    return data.client_secret;
+    return data;
   }
 
   static async getBalance(): Promise<string> {

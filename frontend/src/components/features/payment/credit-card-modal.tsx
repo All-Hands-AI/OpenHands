@@ -9,9 +9,9 @@ import OpenHands from "#/api/open-hands";
 
 export const CreditCardModal = () => {
   const stripePromise = useStripePromise();
-  const { data: clientSecret, isFetching } = useQuery({
+  const { data: customerSession, isFetching } = useQuery({
       queryKey: ["createSetupIntent"],
-      queryFn: OpenHands.createSetupIntent,
+      queryFn: OpenHands.createCustomerSetupSession,
     });
 
   if (isFetching) {
@@ -32,7 +32,8 @@ export const CreditCardModal = () => {
                   iconColor: "#C9B974",
                 },
               },
-              clientSecret: clientSecret as any,
+              clientSecret: customerSession?.client_secret,
+              customerSessionClientSecret: customerSession?.customer_session_client_secret,
             }}
           >
           <CreditCardForm />

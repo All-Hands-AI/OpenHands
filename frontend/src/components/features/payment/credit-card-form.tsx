@@ -16,12 +16,15 @@ export const CreditCardForm = () => {
 
     if (!stripe || !elements) return;
 
-    const { error: submitError } = await elements.submit();
+    const submitResult = await stripe.confirmSetup({
+      elements,
+      confirmParams: {
+        return_url: location.href
+      }
+    });
+    const { error: submitError } = submitResult;
     if (submitError?.message) {
       setPaymentFormErrorMessage(submitError.message);
-    } else {
-      // TODO: Query is not invalidated.
-      queryClient.invalidateQueries({ queryKey: ['settings', false] })
     }
   };
 
