@@ -48,8 +48,6 @@ default, it is set to 1.
 - `dataset`, a huggingface dataset name. e.g. `wentingzhao/commit0_combined`, specifies which dataset to evaluate on.
 - `dataset_split`, split for the huggingface dataset. Notice only `test` is supported for Commit0.
 
-Note that the `USE_INSTANCE_IMAGE` environment variable is always set to `true` for Commit0.
-
 Let's say you'd like to run 10 instances using `llm.eval_sonnet` and CodeActAgent,
 
 then your command would be:
