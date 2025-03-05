@@ -56,7 +56,7 @@ function AccountSettings() {
         isCustomModel(resources.models, settings.LLM_MODEL) ||
         hasAdvancedSettingsSet({
           ...settings,
-          PROVIDER_TOKENS: {},
+          PROVIDER_TOKENS: settings.PROVIDER_TOKENS || {},
         })
       );
     }

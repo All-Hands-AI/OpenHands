@@ -779,7 +779,7 @@ describe("Settings Screen", () => {
 
       expect(saveSettingsSpy).toHaveBeenCalledWith({
         ...mockCopy,
-        provider_tokens: {}, // not set
+        provider_tokens: undefined, // not set
         llm_api_key: "", // reset as well
       });
       expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
