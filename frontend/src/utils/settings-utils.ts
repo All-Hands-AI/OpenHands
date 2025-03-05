@@ -80,6 +80,6 @@ export const extractSettings = (formData: FormData): Partial<Settings> => {
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
     ENABLE_DEFAULT_CONDENSER,
-    providerTokens,
+    provider_tokens: providerTokens,
   };
 };
