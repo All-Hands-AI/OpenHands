@@ -28,24 +28,19 @@ class SecretStore(BaseModel):
     def provider_tokens_serializer(
         self, provider_tokens: PROVIDER_TOKEN_TYPE, info: SerializationInfo
     ):
-        context = info.context
-        if context and context.get('expose_secrets', False):
-            tokens = {}
-            for token_type, provider_token in provider_tokens.items():
-                token_dict = (
-                    provider_token.__dict__.copy()
-                )  # Copy all attributes of token_obj
-                if provider_token.token:
-                    token_dict['token'] = (
-                        provider_token.token.get_secret_value()
-                    )  # Expose secret if it exists
-                tokens[token_type.value] = token_dict
-            return tokens
-
-        # Convert enum keys to strings for non-exposed secrets
         tokens = {}
         for token_type, provider_token in provider_tokens.items():
-            tokens[token_type.value] = pydantic_encoder(provider_token)
+            if provider_token.token:
+                if info.context and info.context.get('expose_secrets', False):
+                    tokens[token_type.value] = {
+                        'token': provider_token.token.get_secret_value(),
+                        'user_id': provider_token.user_id
+                    }
+                else:
+                    tokens[token_type.value] = {
+                        'token': '**********' if provider_token.token else None,
+                        'user_id': provider_token.user_id
+                    }
         return tokens
 
 

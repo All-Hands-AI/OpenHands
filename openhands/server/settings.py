@@ -42,18 +42,8 @@ class Settings(BaseModel):
     @field_serializer('secrets_store')
     def secrets_store_serializer(self, secrets: SecretStore, info: SerializationInfo):
         """Custom serializer for secrets store."""
-
-        context = info.context
-        serialized_data = {}
-        if context and context.get('expose_secrets', False):
-            serialized_data['provider_tokens'] = secrets.provider_tokens
-        else:
-            # Otherwise, serialize provider_tokens normally
-            serialized_data['provider_tokens'] = pydantic_encoder(
-                secrets.provider_tokens
-            )
-
-        return serialized_data
+        # Use the SecretStore's own serializer which handles provider_tokens correctly
+        return secrets.model_dump(context=info.context)
 
     @staticmethod
     def from_config() -> Settings | None:
