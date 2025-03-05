@@ -145,7 +145,8 @@ streamlit = "*"
 whatthepatch = "*"
 retry = "*"
 evaluate = "*"
-swebench = { git = "https://github.com/SWE-Gym/SWE-Bench-Fork.git" }
+swebench = "^3.0.8"
+swegym = { git = "https://github.com/SWE-Gym/SWE-Bench-Package.git" }
 commit0 = "*"
 func_timeout = "*"
 sympy = "*"

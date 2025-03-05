@@ -9109,8 +9109,40 @@ files = [
 
 [[package]]
 name = "swebench"
-version = "2.0.13"
+version = "3.0.15"
 description = "The official SWE-bench package - a benchmark for evaluating LMs on software engineering"
+optional = false
+python-versions = ">=3.8"
+groups = ["evaluation"]
+files = [
+    {file = "swebench-3.0.15-py3-none-any.whl", hash = "sha256:dd694356f9c155a55d3d2e113fe58446f7385eea0574230af5e2504426f8b85b"},
+    {file = "swebench-3.0.15.tar.gz", hash = "sha256:24e734fbcce34082665a25719075e6899382b7135103dd8c6cc09a6e23789101"},
+]
+
+[package.dependencies]
+beautifulsoup4 = "*"
+chardet = "*"
+datasets = "*"
+docker = "*"
+ghapi = "*"
+GitPython = "*"
+modal = "*"
+pre-commit = "*"
+python-dotenv = "*"
+requests = "*"
+rich = "*"
+tenacity = "*"
+tqdm = "*"
+unidiff = "*"
+
+[package.extras]
+inference = ["anthropic", "flash_attn", "jedi", "openai", "peft", "protobuf", "sentencepiece", "tiktoken", "torch", "transformers", "triton"]
+test = ["pytest", "pytest-cov"]
+
+[[package]]
+name = "swegym"
+version = "2.0.13"
+description = "Fork of SWE-bench package - a benchmark for evaluating LMs on software engineering"
 optional = false
 python-versions = ">=3.8"
 groups = ["evaluation"]
@@ -9136,9 +9168,9 @@ inference = ["anthropic", "flash_attn", "jedi", "openai", "peft", "protobuf", "s
 
 [package.source]
 type = "git"
-url = "https://github.com/SWE-Gym/SWE-Bench-Fork.git"
+url = "https://github.com/SWE-Gym/SWE-Bench-Package.git"
 reference = "HEAD"
-resolved_reference = "242429c188fcfd06aad13fce9a54d450470bf0ac"
+resolved_reference = "16dd480cce9b27bf111a362d280881c6def5d2a7"
 
 [[package]]
 name = "sympy"
@@ -10856,4 +10888,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "77612fe1a446e9f8b8ebbf0099ba33c3a6608e4993ed795a6e308fb9d55abba8"
+content-hash = "c3f32c54606e5f313d9a909625f77cc3d575bf951e986633bcecd94520f36450"
