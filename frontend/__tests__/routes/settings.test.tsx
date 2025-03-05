@@ -1,10 +1,9 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
 import { afterEach, describe, expect, it, test, vi } from "vitest";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent, { UserEvent } from "@testing-library/user-event";
+import { renderWithProviders } from "test-utils";
 import OpenHands from "#/api/open-hands";
-import { AuthProvider } from "#/context/auth-context";
 import SettingsScreen from "#/routes/settings";
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
@@ -41,18 +40,8 @@ describe("Settings Screen", () => {
     },
   ]);
 
-  const renderSettingsScreen = () => {
-    const queryClient = new QueryClient();
-    return render(<RouterStub initialEntries={["/settings"]} />, {
-      wrapper: ({ children }) => (
-        <AuthProvider>
-          <QueryClientProvider client={queryClient}>
-            {children}
-          </QueryClientProvider>
-        </AuthProvider>
-      ),
-    });
-  };
+  const renderSettingsScreen = () =>
+    renderWithProviders(<RouterStub initialEntries={["/settings"]} />);
 
   it("should render", async () => {
     renderSettingsScreen();

@@ -12,7 +12,7 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 function AuthProvider({ children }: React.PropsWithChildren) {
   const queryClient = useQueryClient();
-  const { data: config } = useConfig();
+  const { data: config, isFetched } = useConfig();
 
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
 
@@ -36,9 +36,10 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     },
   });
 
-  const checkIsAuthed = () => {
+  const checkIsAuthed = React.useCallback(() => {
+    if (!isFetched) return;
     authenticate(config?.APP_MODE || "saas");
-  };
+  }, [config?.APP_MODE, isFetched]);
 
   React.useEffect(() => {
     checkIsAuthed();
@@ -46,7 +47,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     // Check every 5 minutes
     const intervalId = setInterval(checkIsAuthed, 1000 * 60 * 5);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [config?.APP_MODE, isFetched]);
 
   const value = React.useMemo(
     () => ({

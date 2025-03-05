@@ -66,21 +66,21 @@ export function renderWithProviders(
   function Wrapper({ children }: PropsWithChildren) {
     return (
       <Provider store={store}>
-        <AuthProvider initialGithubTokenIsSet={true}>
-          <QueryClientProvider
-            client={
-              new QueryClient({
-                defaultOptions: { queries: { retry: false } },
-              })
-            }
-          >
+        <QueryClientProvider
+          client={
+            new QueryClient({
+              defaultOptions: { queries: { retry: false } },
+            })
+          }
+        >
+          <AuthProvider>
             <SettingsProvider>
               <ConversationProvider>
                 <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
               </ConversationProvider>
             </SettingsProvider>
-          </QueryClientProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </QueryClientProvider>
       </Provider>
     );
   }
