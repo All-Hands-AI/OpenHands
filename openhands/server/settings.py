@@ -5,7 +5,7 @@ from pydantic.json import pydantic_encoder
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.utils import load_app_config
-from openhands.integrations.provider import SecretStore
+from openhands.integrations.provider import ProviderType, SecretStore
 
 
 class Settings(BaseModel):
@@ -51,17 +51,29 @@ class Settings(BaseModel):
                     if isinstance(tokens, dict):
                         # Create a new SecretStore with the tokens
                         data['secrets_store'] = SecretStore(provider_tokens={})
-                        for token_type, token_value in tokens.items():
+                        for token_type_str, token_value in tokens.items():
                             if token_value:
-                                data['secrets_store'].provider_tokens[token_type] = token_value
+                                try:
+                                    # Convert string to ProviderType enum
+                                    token_type = ProviderType(token_type_str)
+                                    data['secrets_store'].provider_tokens[token_type] = token_value
+                                except ValueError:
+                                    # Skip invalid provider types
+                                    continue
             # Handle provider_tokens at root level (for backward compatibility)
             elif 'provider_tokens' in data:
                 tokens = data['provider_tokens']
                 if isinstance(tokens, dict):
                     data['secrets_store'] = SecretStore(provider_tokens={})
-                    for token_type, token_value in tokens.items():
+                    for token_type_str, token_value in tokens.items():
                         if token_value:
-                            data['secrets_store'].provider_tokens[token_type] = token_value
+                            try:
+                                # Convert string to ProviderType enum
+                                token_type = ProviderType(token_type_str)
+                                data['secrets_store'].provider_tokens[token_type] = token_value
+                            except ValueError:
+                                # Skip invalid provider types
+                                continue
         return data
 
     @field_serializer('secrets_store')
