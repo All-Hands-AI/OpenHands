@@ -107,8 +107,7 @@ function AccountSettings() {
     const enableSoundNotifications =
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
 
-    saveSettings(
-      {
+    const newSettings = {
         provider_tokens: formData.get("token-input")?.toString()
           ? {
               github: formData.get("token-input")?.toString() || "",
@@ -133,10 +132,15 @@ function AccountSettings() {
           remoteRuntimeResourceFactor ||
           DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
         CONFIRMATION_MODE: confirmationModeIsEnabled,
-      },
+      };
+
+    // Always call handleCaptureConsent with the current analytics consent value
+    handleCaptureConsent(userConsentsToAnalytics);
+
+    saveSettings(
+      newSettings,
       {
         onSuccess: () => {
-          handleCaptureConsent(userConsentsToAnalytics);
           displaySuccessToast("Settings saved");
           setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
         },
