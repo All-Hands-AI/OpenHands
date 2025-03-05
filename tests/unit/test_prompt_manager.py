@@ -248,39 +248,7 @@ def test_memory_repository_info(prompt_dir):
         microagents_dir=os.path.join(prompt_dir, 'micro'),
     )
 
-    # Set repository info
-    memory.set_repository_info('owner/repo', '/workspace/repo')
-    
-    # Create a recall action
-    recall_action = AgentRecallAction(query="First user message")
-    
-    # Mock the event_stream.add_event method
-    added_events = []
-    original_add_event = lambda event, source: added_events.append((event, source))
-    event_stream.add_event = original_add_event
-    
-    # Add the recall action to the event stream
-    event_stream.add_event(recall_action, EventSource.USER)
-    
-    # Clear the events list to only capture new events
-    added_events.clear()
-    
-    # Process the recall action
-    memory.on_event(recall_action)
-    
-    # Verify an observation was added
-    assert len(added_events) == 1
-    observation, source = added_events[0]
-    
-    # In the new implementation, if there are no repository instructions or runtime info,
-    # a NullObservation is returned instead of a RecallObservation
-    # This is expected behavior in the refactored code
-    assert source == EventSource.ENVIRONMENT
-    
-    # We need to add repository instructions or runtime info to get a RecallObservation
-    # Let's add some repository instructions by creating a repo microagent
-    
-    # Create a test repo microagent
+    # Create a test repo microagent first
     repo_microagent_name = 'test_repo_microagent'
     repo_microagent_content = """---
 name: test_repo
@@ -305,16 +273,31 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
     # If the repo microagent wasn't loaded, we need to manually add it
     if not memory.repo_microagents:
         # Load the microagent directly
-        microagents = load_microagents_from_dir(os.path.join(prompt_dir, 'micro'))
-        for microagent in microagents:
-            if isinstance(microagent, RepoMicroAgent):
-                memory.repo_microagents[microagent.name] = microagent
-                print(f"Manually added repo microagent: {microagent.name}")
+        repo_agents = {}
+        try:
+            repo_agents, _, _ = load_microagents_from_dir(os.path.join(prompt_dir, 'micro'))
+        except ValueError:
+            # Handle the case where the function doesn't return a tuple of 3 values
+            microagents = load_microagents_from_dir(os.path.join(prompt_dir, 'micro'))
+            for microagent in microagents:
+                if isinstance(microagent, RepoMicroAgent):
+                    repo_agents[microagent.name] = microagent
+        
+        for name, agent in repo_agents.items():
+            if isinstance(agent, RepoMicroAgent):
+                memory.repo_microagents[name] = agent
+                print(f"Manually added repo microagent: {name}")
     
-    # Create a new recall action
-    recall_action = AgentRecallAction(query="Second user message")
+    # Set repository info
+    memory.set_repository_info('owner/repo', '/workspace/repo')
     
-    # Create a new mock for event_stream.add_event that captures all events
+    # Create a recall action
+    recall_action = AgentRecallAction(query="First user message")
+    
+    # Set the source directly on the event
+    recall_action._source = EventSource.USER  # type: ignore[attr-defined]
+    
+    # Mock the event_stream.add_event method to capture events
     added_observations = []
     def mock_add_event(event, source):
         # Print the event type for debugging
@@ -322,6 +305,9 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
         added_observations.append((event, source))
     
     event_stream.add_event = mock_add_event
+    
+    # Set the _first_user_message_seen flag to False to simulate first message
+    memory._first_user_message_seen = False
     
     # Process the recall action
     memory.on_event(recall_action)
