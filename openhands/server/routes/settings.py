@@ -31,7 +31,7 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
         )
         settings_with_token_data.llm_api_key = settings.llm_api_key
 
-        del settings_with_token_data.provider_tokens
+        del settings_with_token_data.secrets_store
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
@@ -56,14 +56,15 @@ async def store_settings(
 
         # Determine whether tokens are valid
         for token_type, token_value in settings.provider_tokens.items():
-            confirmed_token_type = await determine_token_type(SecretStr(token_value))
-            if confirmed_token_type != token_type:
-                return JSONResponse(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    content={
-                        'error': f'Invalid token. Please make sure it is a valid {token_type} token.'
-                    },
-                )
+            if token_value:
+                confirmed_token_type = await determine_token_type(SecretStr(token_value))
+                if not confirmed_token_type or confirmed_token_type.value != token_type:
+                    return JSONResponse(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        content={
+                            'error': f'Invalid token. Please make sure it is a valid {token_type} token.'
+                        },
+                    )
 
     try:
         settings_store = await SettingsStoreImpl.get_instance(
@@ -78,9 +79,9 @@ async def store_settings(
 
             # Updating any existing provider tokens with new ones
             if settings.provider_tokens:
-                existing_settings.provider_tokens.update(settings.provider_tokens)
-
-            settings.provider_tokens = existing_settings.provider_tokens
+                # existing_settings.provider_tokens.update(settings.provider_tokens)
+                settings.secrets_store = existing_settings.secrets_store
+                settings.secrets_store.provider_tokens = settings.provider_tokens
 
             if settings.user_consents_to_analytics is None:
                 settings.user_consents_to_analytics = (
@@ -125,6 +126,6 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
 
     # Convert the `llm_api_key` and `github_token` to a `SecretStr` instance
     filtered_settings_data['llm_api_key'] = settings_with_token_data.llm_api_key
-    filtered_settings_data['provider_tokens'] = settings_with_token_data.provider_tokens
+    filtered_settings_data['secrets_store'] = settings_with_token_data.provider_tokens
 
     return Settings(**filtered_settings_data)
