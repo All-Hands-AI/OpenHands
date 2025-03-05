@@ -19,13 +19,14 @@ DATASET="SWE-Gym/SWE-Gym"  # change this to the "/SWE-Gym-Lite" if you want to r
 SPLIT="train"
 
 if [ -z "$ALLHANDS_API_KEY" ]; then
-    echo "ALLHANDS_API_KEY is not set. Please set it and run the script again."
-    exit 1
+    echo "ALLHANDS_API_KEY is not set. Will rollout and evaluate locally using Docker. WARNING: A large value of N_WORKERS will result in a large number of Docker containers being spun up and may crash your machine."
+    export RUNTIME=docker
+else
+    echo "ALLHANDS_API_KEY is set. Continuing rollout and evaluation with remote runtime..."
+    export RUNTIME=remote
+    export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev"
+    export EVAL_DOCKER_IMAGE_PREFIX="us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images"
 fi
-
-export RUNTIME=remote
-export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev"
-export EVAL_DOCKER_IMAGE_PREFIX="us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images"
 
 EVAL_LIMIT=3000
 MAX_ITER=100
