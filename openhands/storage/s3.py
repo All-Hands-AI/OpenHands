@@ -1,21 +1,25 @@
 import os
+from typing import Any, Dict, List, Optional
 
 import boto3
 import botocore
+from mypy_boto3_s3.client import S3Client
+from mypy_boto3_s3.type_defs import GetObjectOutputTypeDef, ListObjectsV2OutputTypeDef
+from botocore.response import StreamingBody
 
 from openhands.storage.files import FileStore
 
 
 class S3FileStore(FileStore):
-    def __init__(self, bucket_name: str | None) -> None:
+    def __init__(self, bucket_name: Optional[str]) -> None:
         access_key = os.getenv('AWS_ACCESS_KEY_ID')
         secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
         secure = os.getenv('AWS_S3_SECURE', 'true').lower() == 'true'
         endpoint = self._ensure_url_scheme(secure, os.getenv('AWS_S3_ENDPOINT'))
         if bucket_name is None:
             bucket_name = os.environ['AWS_S3_BUCKET']
-        self.bucket = bucket_name
-        self.client = boto3.client(
+        self.bucket: str = bucket_name
+        self.client: S3Client = boto3.client(  # type: ignore
             's3',
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
@@ -44,8 +48,8 @@ class S3FileStore(FileStore):
 
     def read(self, path: str) -> str:
         try:
-            response = self.client.get_object(Bucket=self.bucket, Key=path)
-            with response['Body'] as stream:
+            response: GetObjectOutputTypeDef = self.client.get_object(Bucket=self.bucket, Key=path)
+            with response['Body'] as stream:  # type: StreamingBody
                 return str(stream.read().decode('utf-8'))
         except botocore.exceptions.ClientError as e:
             # Catch all S3-related errors
@@ -66,7 +70,7 @@ class S3FileStore(FileStore):
                 f"Error: Failed to read from bucket '{self.bucket}' at path {path}: {e}"
             )
 
-    def list(self, path: str) -> list[str]:
+    def list(self, path: str) -> List[str]:
         if not path or path == '/':
             path = ''
         elif not path.endswith('/'):
@@ -78,9 +82,9 @@ class S3FileStore(FileStore):
         #   ping.txt
         # prefix=None, delimiter="/"   yields  ["ping.txt"]  # :(
         # prefix="foo", delimiter="/"  yields  []  # :(
-        results = set()
+        results: set[str] = set()
         prefix_len = len(path)
-        response = self.client.list_objects_v2(Bucket=self.bucket, Prefix=path)
+        response: ListObjectsV2OutputTypeDef = self.client.list_objects_v2(Bucket=self.bucket, Prefix=path)
         contents = response.get('Contents')
         if not contents:
             return []
