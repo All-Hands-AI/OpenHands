@@ -270,23 +270,6 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
     # Verify that the repo microagent was loaded
     print(f"Repo microagents: {memory.repo_microagents}")
     
-    # If the repo microagent wasn't loaded, we need to manually add it
-    if not memory.repo_microagents:
-        # Load the microagent directly
-        repo_agents = {}
-        try:
-            repo_agents, _, _ = load_microagents_from_dir(os.path.join(prompt_dir, 'micro'))
-        except ValueError:
-            # Handle the case where the function doesn't return a tuple of 3 values
-            microagents = load_microagents_from_dir(os.path.join(prompt_dir, 'micro'))
-            for microagent in microagents:
-                if isinstance(microagent, RepoMicroAgent):
-                    repo_agents[microagent.name] = microagent
-        
-        for name, agent in repo_agents.items():
-            if isinstance(agent, RepoMicroAgent):
-                memory.repo_microagents[name] = agent
-                print(f"Manually added repo microagent: {name}")
     
     # Set repository info
     memory.set_repository_info('owner/repo', '/workspace/repo')
