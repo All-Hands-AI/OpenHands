@@ -46,7 +46,7 @@ class GitLabService(GitService):
 
     async def get_latest_token(self) -> SecretStr:
         return self.token
-    
+
     async def get_latest_provider_token(self) -> SecretStr:
         return self.token
 
@@ -107,8 +107,11 @@ class GitLabService(GitService):
         response, headers = await self._fetch_data(url, params)
         return response, headers
 
-    async def get_repositories(self, page: int, per_page: int, sort: str, installation_id: int | None) -> list[Repository]:
+    async def get_repositories(
+        self, page: int, per_page: int, sort: str, installation_id: int | None
+    ) -> list[Repository]:
         return []
+
 
 gitlab_service_cls = os.environ.get(
     'OPENHANDS_GITLAB_SERVICE_CLS',

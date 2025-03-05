@@ -51,15 +51,15 @@ async def store_settings(
         # Remove extraneous token types
         provider_types = [provider.value for provider in ProviderType]
         settings.provider_tokens = {
-            k: v for k, v in settings.provider_tokens.items()
-            if k in provider_types
+            k: v for k, v in settings.provider_tokens.items() if k in provider_types
         }
-
 
         # Determine whether tokens are valid
         for token_type, token_value in settings.provider_tokens.items():
             if token_value:
-                confirmed_token_type = await determine_token_type(SecretStr(token_value))
+                confirmed_token_type = await determine_token_type(
+                    SecretStr(token_value)
+                )
                 if not confirmed_token_type or confirmed_token_type.value != token_type:
                     return JSONResponse(
                         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -67,7 +67,7 @@ async def store_settings(
                             'error': f'Invalid token. Please make sure it is a valid {token_type} token.'
                         },
                     )
-                
+
     try:
         settings_store = await SettingsStoreImpl.get_instance(
             config, get_user_id(request)
@@ -88,10 +88,16 @@ async def store_settings(
 
             if existing_settings.secrets_store:
                 # Merge incoming settings store with the existing one
-                for provider, provider_token in existing_settings.secrets_store.provider_tokens.items():
+                for (
+                    provider,
+                    provider_token,
+                ) in existing_settings.secrets_store.provider_tokens.items():
                     if provider.value not in settings.provider_tokens:
                         # Keep existing token if not being updated
-                        settings.provider_tokens[provider.value] = provider_token.token.get_secret_value()
+                        if provider_token and provider_token.token:
+                            settings.provider_tokens[provider.value] = (
+                                provider_token.token.get_secret_value()
+                            )
 
             # Merge provider tokens with existing ones
             if settings.unset_token:  # Only merge if not unsetting tokens
@@ -139,7 +145,8 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
         for token_type, token_value in settings_with_token_data.provider_tokens.items():
             if token_value:
                 provider = ProviderType(token_type)
-                settings.secrets_store.provider_tokens[provider] = ProviderToken(token=SecretStr(token_value), 
-                                                                                 user_id=None)
+                settings.secrets_store.provider_tokens[provider] = ProviderToken(
+                    token=SecretStr(token_value), user_id=None
+                )
 
     return settings

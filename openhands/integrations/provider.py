@@ -86,7 +86,7 @@ class ProviderHandler:
     def __init__(
         self, provider_tokens: PROVIDER_TOKEN_TYPE, idp_token: SecretStr | None = None
     ):
-        self.service_class_map: dict[ProviderType, GitService] = {
+        self.service_class_map: dict[ProviderType, type[GitService]] = {
             ProviderType.GITHUB: GithubServiceImpl,
             ProviderType.GITLAB: GitLabServiceImpl,
         }

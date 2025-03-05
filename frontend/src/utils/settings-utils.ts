@@ -63,7 +63,7 @@ export const extractSettings = (formData: FormData): Partial<Settings> => {
   const githubToken = formData.get("github-token")?.toString();
   const gitlabToken = formData.get("gitlab-token")?.toString();
   const provider_tokens: Record<string, string> = {};
-  
+
   if (githubToken) {
     provider_tokens["github"] = githubToken;
   }

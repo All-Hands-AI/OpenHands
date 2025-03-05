@@ -3,7 +3,11 @@ from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler, ProviderType
+from openhands.integrations.provider import (
+    PROVIDER_TOKEN_TYPE,
+    ProviderHandler,
+    ProviderType,
+)
 from openhands.integrations.service_types import (
     AuthenticationError,
     Repository,
@@ -11,7 +15,7 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.server.auth import get_idp_token, get_provider_tokens, get_user_id
+from openhands.server.auth import get_idp_token, get_provider_tokens
 
 app = APIRouter(prefix='/api/github')
 
@@ -25,12 +29,12 @@ async def get_github_repositories(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
-    if ProviderType.GITHUB in provider_tokens:
+    if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
         client = GithubServiceImpl(
             user_id=token.user_id, idp_token=idp_token, token=token.token
         )
-        
+
         try:
             repos: list[Repository] = await client.get_repositories(
                 page, per_page, sort, installation_id
@@ -61,8 +65,7 @@ async def get_github_user(
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
     if provider_tokens:
-        client = ProviderHandler(provider_tokens=provider_tokens,
-                                 idp_token=idp_token)
+        client = ProviderHandler(provider_tokens=provider_tokens, idp_token=idp_token)
 
         try:
             user: User = await client.get_user()
@@ -91,7 +94,7 @@ async def get_github_installation_ids(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
-    if ProviderType.GITHUB in provider_tokens:
+    if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
 
         client = GithubServiceImpl(
@@ -128,7 +131,7 @@ async def search_github_repositories(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
-    if ProviderType.GITHUB in provider_tokens:
+    if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
 
         client = GithubServiceImpl(
@@ -170,7 +173,7 @@ async def get_suggested_tasks(
     - Issues assigned to the user.
     """
 
-    if ProviderType.GITHUB in provider_tokens:
+    if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
 
         client = GithubServiceImpl(
