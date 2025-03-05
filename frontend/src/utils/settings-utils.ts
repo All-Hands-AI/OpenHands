@@ -59,6 +59,18 @@ export const extractSettings = (formData: FormData): Partial<Settings> => {
     ENABLE_DEFAULT_CONDENSER,
   } = extractAdvancedFormData(formData);
 
+  // Extract provider tokens
+  const githubToken = formData.get("github-token")?.toString();
+  const gitlabToken = formData.get("gitlab-token")?.toString();
+  const provider_tokens: Record<string, string> = {};
+  
+  if (githubToken) {
+    provider_tokens["github"] = githubToken;
+  }
+  if (gitlabToken) {
+    provider_tokens["gitlab"] = gitlabToken;
+  }
+
   return {
     LLM_MODEL: CUSTOM_LLM_MODEL || LLM_MODEL,
     LLM_API_KEY,
@@ -68,5 +80,6 @@ export const extractSettings = (formData: FormData): Partial<Settings> => {
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
     ENABLE_DEFAULT_CONDENSER,
+    provider_tokens,
   };
 };
