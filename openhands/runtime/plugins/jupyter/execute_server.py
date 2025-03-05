@@ -177,8 +177,7 @@ class JupyterKernel:
             while not execution_done:
                 assert self.ws is not None
                 msg_raw = await self.ws.read_message()
-                if not msg_raw:
-                    continue
+                assert msg_raw, 'msg_raw must be set'
                 msg = json_decode(msg_raw)
                 assert isinstance(msg, dict), 'Message must be a dictionary'
 
