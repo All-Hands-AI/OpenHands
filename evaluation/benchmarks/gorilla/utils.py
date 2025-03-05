@@ -71,19 +71,19 @@ def fetch_data(url, filename):
 
 def get_data_for_hub(hub: str):
     if hub == 'hf':
-        question_data = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/eval/eval-data/questions/huggingface/questions_huggingface_0_shot.jsonl'
-        api_dataset = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/data/api/huggingface_api.jsonl'
-        apibench = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/data/apibench/huggingface_eval.json'
+        question_data = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/refs/tags/v1.2/eval/eval-data/questions/huggingface/questions_huggingface_0_shot.jsonl'
+        api_dataset = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/refs/tags/v1.2/data/api/huggingface_api.jsonl'
+        apibench = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/refs/tags/v1.2/data/apibench/huggingface_eval.json'
         ast_eval = ast_eval_hf
     elif hub == 'torch':
-        question_data = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/eval/eval-data/questions/torchhub/questions_torchhub_0_shot.jsonl'
-        api_dataset = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/data/api/torchhub_api.jsonl'
-        apibench = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/data/apibench/torchhub_eval.json'
+        question_data = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/refs/tags/v1.2/eval/eval-data/questions/torchhub/questions_torchhub_0_shot.jsonl'
+        api_dataset = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/refs/tags/v1.2/data/api/torchhub_api.jsonl'
+        apibench = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/refs/tags/v1.2/data/apibench/torchhub_eval.json'
         ast_eval = ast_eval_th
     elif hub == 'tf':
-        question_data = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/eval/eval-data/questions/tensorflowhub/questions_tensorflowhub_0_shot.jsonl'
-        api_dataset = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/data/api/tensorflowhub_api.jsonl'
-        apibench = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/main/data/apibench/tensorflow_eval.json'
+        question_data = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/refs/tags/v1.2/eval/eval-data/questions/tensorflowhub/questions_tensorflowhub_0_shot.jsonl'
+        api_dataset = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/refs/tags/v1.2/data/api/tensorflowhub_api.jsonl'
+        apibench = 'https://raw.githubusercontent.com/ShishirPatil/gorilla/refs/tags/v1.2/data/apibench/tensorflow_eval.json'
         ast_eval = ast_eval_tf
 
     question_data = fetch_data(question_data, 'question_data.jsonl')
