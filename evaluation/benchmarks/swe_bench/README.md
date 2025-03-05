@@ -52,7 +52,7 @@ default, it is set to 1.
 > [!CAUTION]
 > Setting `num_workers` larger than 1 is not officially tested, YMMV.
 
-There are also one optional environment variables you can set.
+There is also one optional environment variable you can set.
 
 ```bash
 export USE_HINT_TEXT=true # if you want to use hint text in the evaluation. Default to false. Ignore this if you are not sure.
