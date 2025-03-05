@@ -195,7 +195,9 @@ class GitHubTokenMiddleware(SessionMiddlewareInterface):
 
         # TODO: To avoid checks like this we should re-add the abilty to have completely different middleware in SAAS as in OSS
         if getattr(request.state, 'provider_tokens', None) is None:
-            if settings and settings.secrets_store:
+            if settings and settings.secrets_store and settings.secrets_store.provider_tokens:
                 request.state.provider_tokens = settings.secrets_store.provider_tokens
+            else:
+                request.state.provider_tokens = None
 
         return await call_next(request)

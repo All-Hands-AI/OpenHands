@@ -6,7 +6,7 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderType
 
 def get_provider_tokens(request: Request) -> PROVIDER_TOKEN_TYPE | None:
     """Get GitHub token from request state. For backward compatibility."""
-    return getattr(request.state, 'provider_tokens', {})
+    return getattr(request.state, 'provider_tokens', None)
 
 
 def get_user_id(request: Request) -> str | None:
