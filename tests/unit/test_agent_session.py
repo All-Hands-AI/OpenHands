@@ -35,6 +35,13 @@ def mock_agent():
     agent.llm = llm
     agent.name = 'test-agent'
     agent.sandbox_plugins = []
+    
+    # Add config attribute with disabled_microagents
+    agent.config = MagicMock()
+    agent.config.disabled_microagents = []
+    
+    # Add prompt_manager attribute
+    agent.prompt_manager = MagicMock()
 
     return agent
 
@@ -97,8 +104,8 @@ async def test_agent_session_start_with_no_state(mock_agent):
             max_iterations=10,
         )
 
-        # Verify EventStream.subscribe was called with correct parameters
-        mock_event_stream.subscribe.assert_called_with(
+        # Verify EventStream.subscribe was called with AGENT_CONTROLLER
+        mock_event_stream.subscribe.assert_any_call(
             EventStreamSubscriber.AGENT_CONTROLLER,
             session.controller.on_event,
             session.controller.id,
@@ -182,8 +189,8 @@ async def test_agent_session_start_with_restored_state(mock_agent):
         # Verify set_initial_state was called once with the restored state
         assert session.controller.set_initial_state_call_count == 1
 
-        # Verify EventStream.subscribe was called with correct parameters
-        mock_event_stream.subscribe.assert_called_with(
+        # Verify EventStream.subscribe was called with AGENT_CONTROLLER
+        mock_event_stream.subscribe.assert_any_call(
             EventStreamSubscriber.AGENT_CONTROLLER,
             session.controller.on_event,
             session.controller.id,
