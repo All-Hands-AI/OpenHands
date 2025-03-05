@@ -58,9 +58,10 @@ then your command would be:
 ./evaluation/benchmarks/commit0_bench/scripts/run_infer.sh lite llm.eval_sonnet HEAD CodeActAgent 10 30 1 wentingzhao/commit0_combined test
 ```
 
-### Run Inference on `RemoteRuntime` (experimental)
+### Run Inference on `RemoteRuntime`
 
-This is in limited beta. Contact Xingyao over slack if you want to try this out!
+This is in beta. Fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLSckVz_JFwg2_mOxNZjCtr7aoBFI2Mwdan3f75J_TrdMS1JV2g/viewform) to apply if you want to try this out!
+
 
 ```bash
 ./evaluation/benchmarks/commit0_bench/scripts/run_infer.sh [repo_split] [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]

@@ -99,7 +99,6 @@ export function GitHubRepositorySelector({
             <AutocompleteItem
               data-testid="github-repo-item"
               key={repo.id}
-              value={repo.id}
               className="data-[selected=true]:bg-default-100"
               textValue={repo.full_name}
             >
@@ -114,7 +113,6 @@ export function GitHubRepositorySelector({
             <AutocompleteItem
               data-testid="github-repo-item"
               key={repo.id}
-              value={repo.id}
               className="data-[selected=true]:bg-default-100"
               textValue={repo.full_name}
             >

@@ -10,12 +10,12 @@ from openhands.integrations.github.github_types import (
     GitHubUser,
     SuggestedTask,
 )
-from openhands.server.auth import get_github_token, get_user_id
+from openhands.server.auth import get_github_token, get_idp_token, get_user_id
 
 app = APIRouter(prefix='/api/github')
 
 
-@app.get('/repositories')
+@app.get('/repositories', response_model=list[GitHubRepository])
 async def get_github_repositories(
     page: int = 1,
     per_page: int = 10,
@@ -23,8 +23,11 @@ async def get_github_repositories(
     installation_id: int | None = None,
     github_user_id: str | None = Depends(get_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
+    idp_token: SecretStr | None = Depends(get_idp_token),
 ):
-    client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
+    client = GithubServiceImpl(
+        user_id=github_user_id, idp_token=idp_token, token=github_user_token
+    )
     try:
         repos: list[GitHubRepository] = await client.get_repositories(
             page, per_page, sort, installation_id
@@ -44,12 +47,15 @@ async def get_github_repositories(
         )
 
 
-@app.get('/user')
+@app.get('/user', response_model=GitHubUser)
 async def get_github_user(
     github_user_id: str | None = Depends(get_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
+    idp_token: SecretStr | None = Depends(get_idp_token),
 ):
-    client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
+    client = GithubServiceImpl(
+        user_id=github_user_id, idp_token=idp_token, token=github_user_token
+    )
     try:
         user: GitHubUser = await client.get_user()
         return user
@@ -67,12 +73,15 @@ async def get_github_user(
         )
 
 
-@app.get('/installations')
+@app.get('/installations', response_model=list[int])
 async def get_github_installation_ids(
     github_user_id: str | None = Depends(get_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
+    idp_token: SecretStr | None = Depends(get_idp_token),
 ):
-    client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
+    client = GithubServiceImpl(
+        user_id=github_user_id, idp_token=idp_token, token=github_user_token
+    )
     try:
         installations_ids: list[int] = await client.get_installation_ids()
         return installations_ids
@@ -90,7 +99,7 @@ async def get_github_installation_ids(
         )
 
 
-@app.get('/search/repositories')
+@app.get('/search/repositories', response_model=list[GitHubRepository])
 async def search_github_repositories(
     query: str,
     per_page: int = 5,
@@ -98,8 +107,11 @@ async def search_github_repositories(
     order: str = 'desc',
     github_user_id: str | None = Depends(get_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
+    idp_token: SecretStr | None = Depends(get_idp_token),
 ):
-    client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
+    client = GithubServiceImpl(
+        user_id=github_user_id, idp_token=idp_token, token=github_user_token
+    )
     try:
         repos: list[GitHubRepository] = await client.search_repositories(
             query, per_page, sort, order
@@ -119,18 +131,21 @@ async def search_github_repositories(
         )
 
 
-@app.get('/suggested-tasks')
+@app.get('/suggested-tasks', response_model=list[SuggestedTask])
 async def get_suggested_tasks(
     github_user_id: str | None = Depends(get_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
+    idp_token: SecretStr | None = Depends(get_idp_token),
 ):
-    """
-    Get suggested tasks for the authenticated user across their most recently pushed repositories.
+    """Get suggested tasks for the authenticated user across their most recently pushed repositories.
+
     Returns:
     - PRs owned by the user
-    - Issues assigned to the user
+    - Issues assigned to the user.
     """
-    client = GithubServiceImpl(user_id=github_user_id, token=github_user_token)
+    client = GithubServiceImpl(
+        user_id=github_user_id, idp_token=idp_token, token=github_user_token
+    )
     try:
         tasks: list[SuggestedTask] = await client.get_suggested_tasks()
         return tasks

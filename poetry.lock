@@ -4250,20 +4250,20 @@ python-dotenv = ">=1.0.1,<2.0.0"
 
 [[package]]
 name = "llama-index"
-version = "0.12.20"
+version = "0.12.21"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["llama-index"]
 files = [
-    {file = "llama_index-0.12.20-py3-none-any.whl", hash = "sha256:461093b03694c6e1342b743b20e35eb2d616749a207f20c154cbd23c075f6f25"},
-    {file = "llama_index-0.12.20.tar.gz", hash = "sha256:f154abba9bfb552478b6822d9b043504523e8af3029002ba61c79828ab6e5703"},
+    {file = "llama_index-0.12.21-py3-none-any.whl", hash = "sha256:860ebe29ceb55220fb3d15555d723fe3a2071b5b5fd6c687b5c8d407002c1098"},
+    {file = "llama_index-0.12.21.tar.gz", hash = "sha256:8ca52e6d9eb988b9761604297b5f78afacd27e66b8e6984968e052e4867fecab"},
 ]
 
 [package.dependencies]
 llama-index-agent-openai = ">=0.4.0,<0.5.0"
-llama-index-cli = ">=0.4.0,<0.5.0"
-llama-index-core = ">=0.12.20,<0.13.0"
+llama-index-cli = ">=0.4.1,<0.5.0"
+llama-index-core = ">=0.12.21,<0.13.0"
 llama-index-embeddings-openai = ">=0.3.0,<0.4.0"
 llama-index-indices-managed-llama-cloud = ">=0.4.0"
 llama-index-llms-openai = ">=0.3.0,<0.4.0"
@@ -4293,14 +4293,14 @@ openai = ">=1.14.0"
 
 [[package]]
 name = "llama-index-cli"
-version = "0.4.0"
+version = "0.4.1"
 description = "llama-index cli"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["llama-index"]
 files = [
-    {file = "llama_index_cli-0.4.0-py3-none-any.whl", hash = "sha256:60d12f89e6b85e80a0cc3a8b531f05a911b5eebaebc37314411476d1ba685904"},
-    {file = "llama_index_cli-0.4.0.tar.gz", hash = "sha256:d6ab201359962a8a34368aeda3a49bbbe67e9e009c59bd925c4fb2be4ace3906"},
+    {file = "llama_index_cli-0.4.1-py3-none-any.whl", hash = "sha256:6dfc931aea5b90c256e476b48dfac76f48fb2308fdf656bb02ee1e4f2cab8b06"},
+    {file = "llama_index_cli-0.4.1.tar.gz", hash = "sha256:3f97f1f8f5f401dfb5b6bc7170717c176dcd981538017430073ef12ffdcbddfa"},
 ]
 
 [package.dependencies]
@@ -4310,14 +4310,14 @@ llama-index-llms-openai = ">=0.3.0,<0.4.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.20"
+version = "0.12.21"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["llama-index"]
 files = [
-    {file = "llama_index_core-0.12.20-py3-none-any.whl", hash = "sha256:1af65cb28cf59e1d1ae49a0268aee0a830141be97a083750754067a1337c67ac"},
-    {file = "llama_index_core-0.12.20.tar.gz", hash = "sha256:c115264aa738f0ee77e60150084940b1e9df7e9d66c80e7c6091064bb20c57e1"},
+    {file = "llama_index_core-0.12.21-py3-none-any.whl", hash = "sha256:8583c781263a883f91c5575d533a5c3c1c27f923ee8913741e1598052370495a"},
+    {file = "llama_index_core-0.12.21.tar.gz", hash = "sha256:bd51521197231b767e90394f1df9e8869016cfeb9bbe6599fa56a3c32ddd8ccc"},
 ]
 
 [package.dependencies]
@@ -7598,7 +7598,7 @@ version = "3.2.1"
 description = "JSON Log Formatter for the Python Logging Package"
 optional = false
 python-versions = ">=3.8"
-groups = ["runtime"]
+groups = ["main", "runtime"]
 files = [
     {file = "python_json_logger-3.2.1-py3-none-any.whl", hash = "sha256:cdc17047eb5374bd311e748b42f99d71223f3b0e186f4206cc5d52aefe85b090"},
     {file = "python_json_logger-3.2.1.tar.gz", hash = "sha256:8eb0554ea17cb75b05d2848bc14fb02fbdbd9d6972120781b974380bfa162008"},
@@ -8938,7 +8938,7 @@ files = [
 
 [package.dependencies]
 greenlet = [
-    {version = "!=0.4.17", markers = "python_version < \"3.14\" and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\")"},
+    {version = "!=0.4.17", optional = true, markers = "python_version < \"3.14\" and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\") or extra == \"asyncio\""},
     {version = "!=0.4.17", optional = true, markers = "python_version < \"3.14\" and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\") or extra == \"asyncio\""},
 ]
 typing-extensions = ">=4.6.0"
@@ -10855,4 +10855,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "86ed19317e08fe0393af44fbc9b3df0da54e48ca40898e3ab23f935ac406349d"
+content-hash = "83da0b681253a79417c9842862cdd102c1ab6e8770d9dd9e0c42bc7994be2cd0"

@@ -21,7 +21,12 @@ class GitHubService:
     token: SecretStr = SecretStr('')
     refresh = False
 
-    def __init__(self, user_id: str | None = None, token: SecretStr | None = None):
+    def __init__(
+        self,
+        user_id: str | None = None,
+        idp_token: SecretStr | None = None,
+        token: SecretStr | None = None,
+    ):
         self.user_id = user_id
 
         if token:
@@ -44,6 +49,9 @@ class GitHubService:
         return status_code == 401
 
     async def get_latest_token(self) -> SecretStr:
+        return self.token
+
+    async def get_latest_provider_token(self) -> SecretStr:
         return self.token
 
     async def _fetch_data(
