@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, SecretStr, SerializationInfo, field_serializer
+from pydantic import BaseModel, SecretStr, SerializationInfo, field_serializer, model_validator
 from pydantic.json import pydantic_encoder
 
 from openhands.core.config.llm_config import LLMConfig
@@ -38,6 +38,31 @@ class Settings(BaseModel):
             return llm_api_key.get_secret_value()
 
         return pydantic_encoder(llm_api_key)
+
+    @model_validator(mode='before')
+    @classmethod
+    def convert_provider_tokens(cls, data: dict) -> dict:
+        """Convert provider tokens from JSON format to SecretStore format."""
+        if isinstance(data, dict):
+            if 'secrets_store' in data and isinstance(data['secrets_store'], dict):
+                # Handle direct provider_tokens in secrets_store
+                if 'provider_tokens' in data['secrets_store']:
+                    tokens = data['secrets_store']['provider_tokens']
+                    if isinstance(tokens, dict):
+                        # Create a new SecretStore with the tokens
+                        data['secrets_store'] = SecretStore(provider_tokens={})
+                        for token_type, token_value in tokens.items():
+                            if token_value:
+                                data['secrets_store'].provider_tokens[token_type] = token_value
+            # Handle provider_tokens at root level (for backward compatibility)
+            elif 'provider_tokens' in data:
+                tokens = data['provider_tokens']
+                if isinstance(tokens, dict):
+                    data['secrets_store'] = SecretStore(provider_tokens={})
+                    for token_type, token_value in tokens.items():
+                        if token_value:
+                            data['secrets_store'].provider_tokens[token_type] = token_value
+        return data
 
     @field_serializer('secrets_store')
     def secrets_store_serializer(self, secrets: SecretStore, info: SerializationInfo):
