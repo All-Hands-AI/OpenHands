@@ -20,7 +20,8 @@ export const CreditCardForm = () => {
     if (submitError?.message) {
       setPaymentFormErrorMessage(submitError.message);
     } else {
-      queryClient.invalidateQueries({ queryKey: ['settings', true] })
+      // TODO: Query is not invalidated.
+      queryClient.invalidateQueries({ queryKey: ['settings', false] })
     }
   };
 

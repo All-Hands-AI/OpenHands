@@ -281,6 +281,13 @@ class OpenHands {
     return data.redirect_url;
   }
 
+  static async createSetupIntent(): Promise<string> {
+    const { data } = await openHands.post(
+      "/api/billing/create-setup-intent",
+    );
+    return data.client_secret;
+  }
+
   static async getBalance(): Promise<string> {
     const { data } = await openHands.get<{ credits: string }>(
       "/api/billing/credits",
