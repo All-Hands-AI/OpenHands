@@ -51,7 +51,7 @@ class GitService(Protocol):
     """Protocol defining the interface for Git service providers"""
 
     def __init__(
-        self, user_id: str | None, idp_token: SecretStr | None, token: SecretStr
+        self, user_id: str | None, idp_token: SecretStr | None, token: SecretStr | None
     ) -> None:
         """Initialize the service with authentication details"""
         ...

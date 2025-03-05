@@ -96,7 +96,7 @@ class ProviderHandler:
 
     def _get_service(self, provider: ProviderType) -> GitService:
         """Helper method to instantiate a service for a given provider"""
-        token = self.provider_tokens.get(provider)
+        token = self.provider_tokens[provider]
         service_class = self.service_class_map[provider]
         return service_class(
             user_id=token.user_id, idp_token=self.idp_token, token=token.token
@@ -128,7 +128,7 @@ class ProviderHandler:
         all_repos = []
         for provider in self.provider_tokens:
             try:
-                service = await self._get_service(provider)
+                service = self._get_service(provider)
                 repos = await service.get_repositories(
                     page, per_page, sort, installation_id
                 )
