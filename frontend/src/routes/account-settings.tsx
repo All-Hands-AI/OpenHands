@@ -54,7 +54,7 @@ function AccountSettings() {
     if (isSuccess) {
       return (
         isCustomModel(resources.models, settings.LLM_MODEL) ||
-        hasAdvancedSettingsSet(settings)
+        hasAdvancedSettingsSet({ ...settings, provider_tokens: settings.provider_tokens || {} })
       );
     }
 

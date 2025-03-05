@@ -22,6 +22,7 @@ const getSettingsQueryFn = async () => {
     ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
     ENABLE_SOUND_NOTIFICATIONS: apiSettings.enable_sound_notifications,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
+    provider_tokens: apiSettings.provider_tokens,
   };
 };
 
