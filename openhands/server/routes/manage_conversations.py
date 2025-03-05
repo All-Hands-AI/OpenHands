@@ -12,7 +12,7 @@ from openhands.events.stream import EventStreamSubscriber
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import ProviderType
 from openhands.runtime import get_runtime_cls
-from openhands.server.auth import get_gh_user_id_from_provider_tokens, get_idp_token, get_provider_tokens
+from openhands.server.auth import get_user_id, get_idp_token, get_provider_tokens
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
@@ -204,7 +204,7 @@ async def search_conversations(
     limit: int = 20,
 ) -> ConversationInfoResultSet:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_gh_user_id_from_provider_tokens(request)
+        config, get_user_id(request)
     )
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
@@ -223,7 +223,7 @@ async def search_conversations(
         conversation.conversation_id for conversation in filtered_results
     )
     running_conversations = await conversation_manager.get_running_agent_loops(
-        get_gh_user_id_from_provider_tokens(request), set(conversation_ids)
+        get_user_id(request), set(conversation_ids)
     )
     result = ConversationInfoResultSet(
         results=await wait_all(
@@ -243,7 +243,7 @@ async def get_conversation(
     conversation_id: str, request: Request
 ) -> ConversationInfo | None:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_gh_user_id_from_provider_tokens(request)
+        config, get_user_id(request)
     )
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
@@ -259,7 +259,7 @@ async def update_conversation(
     request: Request, conversation_id: str, title: str = Body(embed=True)
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_gh_user_id_from_provider_tokens(request)
+        config, get_user_id(request)
     )
     metadata = await conversation_store.get_metadata(conversation_id)
     if not metadata:
@@ -275,7 +275,7 @@ async def delete_conversation(
     request: Request,
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_gh_user_id_from_provider_tokens(request)
+        config, get_user_id(request)
     )
     try:
         await conversation_store.get_metadata(conversation_id)

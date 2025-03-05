@@ -5,13 +5,10 @@ from pydantic import SecretStr
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.integrations.utils import determine_token_type
-from openhands.server.auth import get_gh_user_id_from_provider_tokens, get_provider_tokens
+from openhands.server.auth import get_user_id, get_provider_tokens
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
 
-
-def get_user_id(request: Request) -> str | None:
-    return get_gh_user_id_from_provider_tokens(request)
 
 app = APIRouter(prefix='/api')
 

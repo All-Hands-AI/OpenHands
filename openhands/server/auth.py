@@ -9,7 +9,7 @@ def get_provider_tokens(request: Request) -> PROVIDER_TOKEN_TYPE | None:
     return getattr(request.state, 'provider_tokens', {})
 
 
-def get_gh_user_id_from_provider_tokens(request: Request) -> str | None:
+def get_user_id(request: Request) -> str | None:
     provider_tokens = get_provider_tokens(request)
 
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
