@@ -12,6 +12,7 @@ from openhands.microagent.microagent import RepoMicroAgent
 @dataclass
 class RuntimeInfo:
     available_hosts: dict[str, int]
+    additional_agent_instructions: str
 
 
 @dataclass
@@ -42,7 +43,9 @@ class PromptManager:
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
         self.microagent_info_template: Template = self._load_template('microagent_info')
-        self.runtime_info = RuntimeInfo(available_hosts={})
+        self.runtime_info = RuntimeInfo(
+            available_hosts={}, additional_agent_instructions=''
+        )
         self.repo_microagents: dict[str, RepoMicroAgent] = {}
 
     def _load_template(self, template_name: str) -> Template:
