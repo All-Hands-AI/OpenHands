@@ -35,14 +35,14 @@ def mock_agent():
     agent.llm = llm
     agent.name = 'test-agent'
     agent.sandbox_plugins = []
-    
+
     # Add config attribute with disabled_microagents
     agent.config = MagicMock()
     agent.config.disabled_microagents = []
-    
+
     # Add prompt_manager attribute
     agent.prompt_manager = MagicMock()
-    
+
     # Add memory attribute with on_event method
     agent.memory = MagicMock()
     agent.memory.on_event = MagicMock()
