@@ -136,12 +136,9 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
     # Update provider tokens if any are provided
     if settings_with_token_data.provider_tokens:
         for token_type, token_value in settings_with_token_data.provider_tokens.items():
-            try:
-                if token_value:
-                    provider = ProviderType(token_type)
-                    settings.secrets_store.provider_tokens[provider] = ProviderToken(token=SecretStr(token_value))
-            except ValueError:
-                # Skip invalid provider types
-                continue
+            if token_value:
+                provider = ProviderType(token_type)
+                settings.secrets_store.provider_tokens[provider] = ProviderToken(token=SecretStr(token_value), 
+                                                                                 user_id=None)
 
     return settings
