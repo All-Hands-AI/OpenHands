@@ -141,7 +141,6 @@ export default function MainApp() {
           <CreditCardModal />
         </StripePromiseProvider>
       )}
-
     </div>
   );
 }

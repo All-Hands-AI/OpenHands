@@ -11,7 +11,7 @@ export type Settings = {
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
-  DEFAULT_SETTINGS?: boolean
+  DEFAULT_SETTINGS?: boolean;
 };
 
 export type ApiSettings = {

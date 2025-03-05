@@ -1,28 +1,34 @@
 import React from "react";
+import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useConfig } from "#/hooks/query/use-config";
-import { loadStripe, Stripe } from "@stripe/stripe-js";
 
-const StripePromiseContext = React.createContext<Promise<Stripe | null> | null>(null);
+const StripePromiseContext = React.createContext<Promise<Stripe | null> | null>(
+  null,
+);
 
 function StripePromiseProvider({ children }: React.PropsWithChildren) {
-  const {data: config, isFetched, isLoading} = useConfig();
-      const stripePromise = React.useMemo(() => {
-          if (!isLoading && isFetched && config?.STRIPE_PUBLISHABLE_KEY) {
-              return loadStripe(config.STRIPE_PUBLISHABLE_KEY);
-          }
-          return null;
-      }, [isLoading, isFetched, config?.STRIPE_PUBLISHABLE_KEY])
+  const { data: config, isFetched, isLoading } = useConfig();
+  const stripePromise = React.useMemo(() => {
+    if (!isLoading && isFetched && config?.STRIPE_PUBLISHABLE_KEY) {
+      return loadStripe(config.STRIPE_PUBLISHABLE_KEY);
+    }
+    return null;
+  }, [isLoading, isFetched, config?.STRIPE_PUBLISHABLE_KEY]);
 
   if (!stripePromise) {
     return (
-    <div className="flex justify-center">
+      <div className="flex justify-center">
         <LoadingSpinner size="small" />
-    </div>
+      </div>
     );
   }
 
-  return <StripePromiseContext value={stripePromise}>{children}</StripePromiseContext>;
+  return (
+    <StripePromiseContext value={stripePromise}>
+      {children}
+    </StripePromiseContext>
+  );
 }
 
 function useStripePromise() {
