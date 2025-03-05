@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.provider import ProviderType
 from openhands.integrations.utils import determine_token_type
 from openhands.server.auth import get_user_id, get_provider_tokens
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
@@ -47,6 +48,14 @@ async def store_settings(
 ) -> JSONResponse:
     # Check provider tokens are valid
     if settings.provider_tokens:
+
+        # Remove extraneous token types
+        provider_types = [provider.value for provider in ProviderType]
+        for token_type in settings.provider_tokens:
+            if token_type not in provider_types:
+                del settings.provider_tokens[token_type]
+
+        # Determine whether tokens are valid
         for token_type, token_value in settings.provider_tokens.items():
             confirmed_token_type = await determine_token_type(SecretStr(token_value))
             if confirmed_token_type != token_type:
