@@ -22,6 +22,7 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
+  provider_tokens: {},
 };
 
 const MOCK_USER_PREFERENCES: {
@@ -188,9 +189,9 @@ export const handlers = [
       ...MOCK_USER_PREFERENCES.settings,
       language: "no",
     };
-    // @ts-expect-error - mock types
-    if (settings.github_token || settings.gitlab_token)
+    if (Object.keys(settings.provider_tokens).length > 0) {
       settings.token_is_set = true;
+    }
 
     return HttpResponse.json(settings);
   }),
@@ -202,8 +203,7 @@ export const handlers = [
       if (typeof body === "object") {
         newSettings = { ...body };
         if (newSettings.unset_token) {
-          newSettings.github_token = undefined;
-          newSettings.gitlab_token = undefined;
+          newSettings.provider_tokens = {};
           newSettings.token_is_set = false;
           delete newSettings.unset_token;
         }

@@ -109,8 +109,10 @@ function AccountSettings() {
 
     saveSettings(
       {
-        github_token: formData.get("token-input")?.toString() || undefined,
-        gitlab_token: "",
+        provider_tokens: {
+          github: formData.get("token-input")?.toString() || "",
+          gitlab: "",
+        },
         LANGUAGE: languageValue,
         user_consents_to_analytics: userConsentsToAnalytics,
         ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
