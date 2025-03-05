@@ -56,7 +56,7 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
     return f'{instance.repo}__{instance.version}'.replace('/', '__')
 
 
-def get_instruction(instance: pd.Series, metadata: EvalMetadata):
+def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageAction:
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     # Instruction based on Anthropic's official trajectory
     # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
@@ -92,40 +92,59 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             'You SHOULD NEVER attempt to browse the web. '
             '</IMPORTANT!>\n'
         )
-    return instruction
+
+    if 'image_assets' in instance:
+        assets = instance['image_assets']
+        assert (
+            'problem_statement' in assets
+        ), 'problem_statement is required in image_assets'
+        image_urls = assets['problem_statement']
+        return MessageAction(content=instruction, image_urls=image_urls)
+    return MessageAction(content=instruction)
 
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
-DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')
-logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
+DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', None)
+if DOCKER_IMAGE_PREFIX:
+    logger.info(f'Using set image prefix: {DOCKER_IMAGE_PREFIX}')
+else:
+    logger.info('No image prefix set, using default image prefix from swebench/')
 
 
-def get_instance_docker_image(instance_id: str, official_image: bool = False) -> str:
-    if official_image:
+def get_instance_docker_image(
+    instance_id: str,
+    swebench_official_image: bool = False,
+) -> str:
+    if swebench_official_image:
         # Official SWE-Bench image
         # swebench/sweb.eval.x86_64.django_1776_django-11333:v1
         repo, name = instance_id.split('__')
-        image_name = f'sweb.eval.x86_64.{repo}_1776_{name}:latest'
-        logger.warning(f'Using official SWE-Bench image: {image_name}')
+        image_name = f'swebench/sweb.eval.x86_64.{repo}_1776_{name}:latest'
+        logger.info(f'Using official SWE-Bench image: {image_name}')
+        return image_name
     else:
         # OpenHands version of the image
         image_name = 'sweb.eval.x86_64.' + instance_id
         image_name = image_name.replace(
             '__', '_s_'
         )  # to comply with docker image naming convention
-    return (DOCKER_IMAGE_PREFIX.rstrip('/') + '/' + image_name).lower()
+        prefix = (
+            DOCKER_IMAGE_PREFIX.rstrip('/')
+            if DOCKER_IMAGE_PREFIX
+            else 'docker.io/xingyaoww'
+        )
+        return (prefix + '/' + image_name).lower()
 
 
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
 ) -> AppConfig:
-    # We use a different instance image for the each instance of swe-bench eval
-    use_official_image = bool(
-        'verified' in metadata.dataset.lower() or 'lite' in metadata.dataset.lower()
-    )
+    # We don't use SWE-Bench official image for SWE-Gym
+    use_swebench_official_image = bool('swe-bench' in metadata.dataset.lower())
     base_container_image = get_instance_docker_image(
-        instance['instance_id'], use_official_image
+        instance['instance_id'],
+        swebench_official_image=use_swebench_official_image,
     )
     logger.info(
         f'Using instance container image: {base_container_image}. '
