@@ -248,10 +248,6 @@ class Runtime(FileEditRuntimeMixin):
             error_message = f'{type(e).__name__}: {str(e)}'
             self.log('error', f'Unexpected error while running action: {error_message}')
             self.log('error', f'Problematic action: {str(event)}')
-            if hasattr(self, 'sid'):
-                self.log('error', f'Runtime session ID: {self.sid}')
-            if hasattr(self, 'runtime_id'):
-                self.log('error', f'Runtime ID: {self.runtime_id}')
             self.send_error_message(err_id, error_message)
             return
 
@@ -491,3 +487,7 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def web_hosts(self) -> dict[str, int]:
         return {}
+
+    @property
+    def additional_agent_instructions(self) -> str:
+        return ''
