@@ -412,13 +412,19 @@ At the user's request, repository {{ repository_info.repo_name }} has been clone
 </REPOSITORY_INSTRUCTIONS>
 {% endif %}
 
-{% if runtime_info and runtime_info.available_hosts %}
+{% if runtime_info and (runtime_info.available_hosts or runtime_info.additional_agent_instructions) -%}
 <RUNTIME_INFORMATION>
+{% if runtime_info.available_hosts %}
 The user has access to the following hosts for accessing a web application,
 each of which has a corresponding port:
 {% for host, port in runtime_info.available_hosts.items() %}
 * {{ host }} (port {{ port }})
 {% endfor %}
+{% endif %}
+
+{% if runtime_info.additional_agent_instructions %}
+{{ runtime_info.additional_agent_instructions }}
+{% endif %}
 </RUNTIME_INFORMATION>
 {% endif %}
 """)
@@ -442,6 +448,7 @@ each of which has a corresponding port:
         repo_directory='/workspace/repo',
         repo_instructions='This repository contains important code.',
         runtime_hosts={'example.com': 8080},
+        additional_agent_instructions='You know everything about this runtime.',
         content='Recalled environment info',
     )
 
@@ -469,3 +476,7 @@ each of which has a corresponding port:
     # Check that the message contains the runtime info
     assert '<RUNTIME_INFORMATION>' in message.content[0].text
     assert 'example.com (port 8080)' in message.content[0].text
+
+    # Check that the message contains the additional agent instructions
+    assert '<ADDITIONAL_AGENT_INSTRUCTIONS>' in message.content[0].text
+    assert 'You know everything about this runtime.' in message.content[0].text

@@ -389,11 +389,14 @@ class ConversationMemory:
                     if obs.repo_name or obs.repo_directory
                     else None
                 )
-                runtime_info = (
-                    RuntimeInfo(available_hosts=obs.runtime_hosts)
-                    if obs.runtime_hosts
-                    else None
-                )
+                if obs.runtime_hosts or obs.additional_agent_instructions:
+                    runtime_info = RuntimeInfo(
+                        available_hosts=obs.runtime_hosts,
+                        additional_agent_instructions=obs.additional_agent_instructions,
+                    )
+                else:
+                    runtime_info = None
+
                 repo_instructions = (
                     obs.repo_instructions if obs.repo_instructions else ''
                 )

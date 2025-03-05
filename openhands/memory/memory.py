@@ -13,6 +13,7 @@ from openhands.microagent import (
     RepoMicroAgent,
     load_microagents_from_dir,
 )
+from openhands.runtime.base import Runtime
 from openhands.utils.prompt import RepositoryInfo, RuntimeInfo
 
 
@@ -75,10 +76,16 @@ class Memory:
         """Store repository info so we can reference it in an observation."""
         self.repository_info = RepositoryInfo(repo_name, repo_directory)
 
-    def set_runtime_info(self, runtime_hosts: dict[str, int]) -> None:
+    def set_runtime_info(self, runtime: Runtime) -> None:
         """Store runtime info (web hosts, ports, etc.)."""
         # e.g. { '127.0.0.1': 8080 }
-        self.runtime_info = RuntimeInfo(available_hosts=runtime_hosts)
+        if runtime.web_hosts or runtime.additional_agent_instructions:
+            self.runtime_info = RuntimeInfo(
+                available_hosts=runtime.web_hosts,
+                additional_agent_instructions=runtime.additional_agent_instructions,
+            )
+        else:
+            self.runtime_info = None
 
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
@@ -143,6 +150,10 @@ class Memory:
                 runtime_hosts=self.runtime_info.available_hosts
                 if self.runtime_info and self.runtime_info.available_hosts is not None
                 else {},
+                additional_agent_instructions=self.runtime_info.additional_agent_instructions
+                if self.runtime_info
+                and self.runtime_info.additional_agent_instructions is not None
+                else '',
                 microagent_knowledge=[],
                 content='Recalled environment info',
             )

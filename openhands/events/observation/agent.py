@@ -63,13 +63,14 @@ class RecallObservation(Observation):
     observation: str = ObservationType.RECALL
     recall_type: RecallType = RecallType.DEFAULT
 
-    # For environment_info
+    # environment_info
     repo_name: str = ''
     repo_directory: str = ''
     repo_instructions: str = ''
     runtime_hosts: dict[str, int] = field(default_factory=dict)
+    additional_agent_instructions: str = ''
 
-    # For knowledge_microagent
+    # knowledge_microagent
     microagent_knowledge: list[dict[str, str]] = field(default_factory=list)
 
     @property
@@ -83,6 +84,7 @@ class RecallObservation(Observation):
             f'repo_name={self.repo_name}',
             f'repo_instructions={self.repo_instructions[:20]}...',
             f'runtime_hosts={self.runtime_hosts}',
+            f'additional_agent_instructions={self.additional_agent_instructions[:20]}...',
             f'microagent_knowledge={self.microagent_knowledge}',
         ]
         return f'Recalled: {", ".join(fields)}'

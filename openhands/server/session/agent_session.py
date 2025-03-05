@@ -339,7 +339,7 @@ class AgentSession:
 
         if self.runtime:
             # sets available hosts
-            memory.set_runtime_info(self.runtime.web_hosts)
+            memory.set_runtime_info(self.runtime)
 
             # loads microagents from repo/.openhands/microagents
             microagents: list[BaseMicroAgent] = await call_sync_from_async(

@@ -1,18 +1,17 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from itertools import islice
 
 from jinja2 import Template
 
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
-from openhands.microagent.microagent import RepoMicroAgent
 
 
 @dataclass
 class RuntimeInfo:
-    available_hosts: dict[str, int]
-    additional_agent_instructions: str
+    available_hosts: dict[str, int] = field(default_factory=dict)
+    additional_agent_instructions: str = ''
 
 
 @dataclass
@@ -46,7 +45,6 @@ class PromptManager:
         self.runtime_info = RuntimeInfo(
             available_hosts={}, additional_agent_instructions=''
         )
-        self.repo_microagents: dict[str, RepoMicroAgent] = {}
 
     def _load_template(self, template_name: str) -> Template:
         if self.prompt_dir is None:
