@@ -54,9 +54,9 @@ class Settings(BaseModel):
                         for token_type_str, token_value in tokens.items():
                             if token_value:
                                 try:
-                                    # Convert string to ProviderType enum
+                                    # Convert string to ProviderType enum and value to SecretStr
                                     token_type = ProviderType(token_type_str)
-                                    data['secrets_store'].provider_tokens[token_type] = token_value
+                                    data['secrets_store'].provider_tokens[token_type] = SecretStr(token_value)
                                 except ValueError:
                                     # Skip invalid provider types
                                     continue
@@ -68,9 +68,9 @@ class Settings(BaseModel):
                     for token_type_str, token_value in tokens.items():
                         if token_value:
                             try:
-                                # Convert string to ProviderType enum
+                                # Convert string to ProviderType enum and value to SecretStr
                                 token_type = ProviderType(token_type_str)
-                                data['secrets_store'].provider_tokens[token_type] = token_value
+                                data['secrets_store'].provider_tokens[token_type] = SecretStr(token_value)
                             except ValueError:
                                 # Skip invalid provider types
                                 continue
