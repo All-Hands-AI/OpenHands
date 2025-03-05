@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.provider import ProviderType
+from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.integrations.utils import determine_token_type
 from openhands.server.auth import get_provider_tokens, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
@@ -75,7 +75,6 @@ async def store_settings(
         existing_settings = await settings_store.load()
 
         # Convert to Settings model and merge with existing settings
-        
         if existing_settings:
             # Keep existing LLM key if not provided
             if settings.llm_api_key is None:
@@ -89,11 +88,10 @@ async def store_settings(
 
             if existing_settings.secrets_store:
                 # Merge incoming settings store with the existing one
-                if not settings.unset_token:  # Only merge if not unsetting tokens
-                    for provider, token in existing_settings.secrets_store.provider_tokens.items():
-                        if provider.value not in settings.provider_tokens:
-                            # Keep existing token if not being updated
-                            settings.provider_tokens[provider.value] = token.get_secret_value()
+                for provider, provider_token in existing_settings.secrets_store.provider_tokens.items():
+                    if provider.value not in settings.provider_tokens:
+                        # Keep existing token if not being updated
+                        settings.provider_tokens[provider.value] = provider_token.token.get_secret_value()
 
             # Merge provider tokens with existing ones
             if not settings.unset_token:  # Only merge if not unsetting tokens
@@ -139,12 +137,9 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
     if settings_with_token_data.provider_tokens:
         for token_type, token_value in settings_with_token_data.provider_tokens.items():
             try:
-                provider = ProviderType(token_type)
                 if token_value:
-                    settings.secrets_store.provider_tokens[provider] = SecretStr(token_value)
-                else:
-                    # Remove token if empty string is provided
-                    settings.secrets_store.provider_tokens.pop(provider, None)
+                    provider = ProviderType(token_type)
+                    settings.secrets_store.provider_tokens[provider] = ProviderToken(token=SecretStr(token_value))
             except ValueError:
                 # Skip invalid provider types
                 continue

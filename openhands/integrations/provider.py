@@ -17,7 +17,7 @@ class ProviderToken(BaseModel):
     user_id: str | None
 
 
-PROVIDER_TOKEN_TYPE = dict[ProviderType, ProviderToken | str]
+PROVIDER_TOKEN_TYPE = dict[ProviderType, ProviderToken]
 CUSTOM_SECRETS_TYPE = dict[str, SecretStr]
 
 

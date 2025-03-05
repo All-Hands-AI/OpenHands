@@ -5,7 +5,7 @@ from pydantic.json import pydantic_encoder
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.utils import load_app_config
-from openhands.integrations.provider import ProviderType, SecretStore
+from openhands.integrations.provider import ProviderType, SecretStore, ProviderToken
 
 
 class Settings(BaseModel):
