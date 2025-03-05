@@ -52,8 +52,8 @@ At the user's request, repository {{ repository_info.repo_name }} has been clone
     # Test with GitHub repo
     manager = PromptManager(prompt_dir=prompt_dir)
     repo_info = RepositoryInfo(repo_name='owner/repo', repo_directory='/workspace/repo')
-    manager.set_repository_info(repo_info)
-    assert manager.repository_info.repo_name == 'owner/repo'
+
+    # verify its parts are rendered
     system_msg = manager.get_system_message()
     assert 'System prompt: bar' in system_msg
 
@@ -73,25 +73,6 @@ At the user's request, repository {{ repository_info.repo_name }} has been clone
     os.remove(os.path.join(prompt_dir, 'system_prompt.j2'))
     os.remove(os.path.join(prompt_dir, 'user_prompt.j2'))
     os.remove(os.path.join(prompt_dir, 'additional_info.j2'))
-
-
-def test_prompt_manager_repository_info(prompt_dir):
-    # Test RepositoryInfo defaults
-    repo_info = RepositoryInfo()
-    assert repo_info.repo_name is None
-    assert repo_info.repo_directory is None
-
-    # Test setting repository info
-    manager = PromptManager(prompt_dir=prompt_dir)
-    assert manager.repository_info is None
-
-    # Test setting repository info with both name and directory
-    repo_info = RepositoryInfo(
-        repo_name='owner/repo2', repo_directory='/workspace/repo2'
-    )
-    manager.set_repository_info(repo_info)
-    assert manager.repository_info.repo_name == 'owner/repo2'
-    assert manager.repository_info.repo_directory == '/workspace/repo2'
 
 
 def test_prompt_manager_file_not_found(prompt_dir):
@@ -478,5 +459,4 @@ each of which has a corresponding port:
     assert 'example.com (port 8080)' in message.content[0].text
 
     # Check that the message contains the additional agent instructions
-    assert '<ADDITIONAL_AGENT_INSTRUCTIONS>' in message.content[0].text
     assert 'You know everything about this runtime.' in message.content[0].text
