@@ -5,7 +5,7 @@ from pydantic import SecretStr
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.integrations.utils import determine_token_type
-from openhands.server.auth import get_provider_tokens, get_user_id
+from openhands.server.auth import get_gh_user_id_from_provider_tokens, get_provider_tokens
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
 
@@ -15,7 +15,7 @@ app = APIRouter(prefix='/api')
 @app.get('/settings', response_model=GETSettingsModel)
 async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
     try:
-        user_id = get_user_id(request)
+        user_id = get_gh_user_id_from_provider_tokens(request)
         settings_store = await SettingsStoreImpl.get_instance(config, user_id)
         settings = await settings_store.load()
         if not settings:
@@ -70,7 +70,7 @@ async def store_settings(
 
     try:
         settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
+            config, get_gh_user_id_from_provider_tokens(request)
         )
         existing_settings = await settings_store.load()
 

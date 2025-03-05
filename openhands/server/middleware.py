@@ -12,7 +12,7 @@ from starlette.requests import Request as StarletteRequest
 from starlette.types import ASGIApp
 
 from openhands.server import shared
-from openhands.server.auth import get_user_id
+from openhands.server.auth import get_gh_user_id_from_provider_tokens
 from openhands.server.types import SessionMiddlewareInterface
 
 
@@ -189,7 +189,7 @@ class GitHubTokenMiddleware(SessionMiddlewareInterface):
 
     async def __call__(self, request: Request, call_next: Callable):
         settings_store = await shared.SettingsStoreImpl.get_instance(
-            shared.config, get_user_id(request)
+            shared.config, get_gh_user_id_from_provider_tokens(request)
         )
         settings = await settings_store.load()
 
