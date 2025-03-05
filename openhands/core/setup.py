@@ -21,7 +21,6 @@ from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage import get_file_store
-from openhands.utils.async_utils import call_async_from_sync
 
 
 def create_runtime(
@@ -29,18 +28,19 @@ def create_runtime(
     sid: str | None = None,
     headless_mode: bool = True,
     agent: Agent | None = None,
-    selected_repository: str | None = None,
-    github_token: SecretStr | None = None,
 ) -> Runtime:
     """Create a runtime for the agent to run on.
 
-    config: The app config.
-    sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
-        Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
-    headless_mode: Whether the agent is run in headless mode. `create_runtime` is typically called within evaluation scripts,
-        where we don't want to have the VSCode UI open, so it defaults to True.
-    selected_repository: (optional) The GitHub repository to use.
-    github_token: (optional) The GitHub token to use.
+    Args:
+        config: The app config.
+        sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
+            Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
+        headless_mode: Whether the agent is run in headless mode. `create_runtime` is typically called within evaluation scripts,
+            where we don't want to have the VSCode UI open, so it defaults to True.
+        agent: (optional) The agent instance to use for configuring the runtime.
+
+    Returns:
+        The created Runtime instance (not yet connected or initialized).
     """
     # if sid is provided on the command line, use it as the name of the event stream
     # otherwise generate it on the basis of the configured jwt_secret
@@ -74,8 +74,30 @@ def create_runtime(
         headless_mode=headless_mode,
     )
 
-    call_async_from_sync(runtime.connect)
+    logger.debug(
+        f'Runtime created with plugins: {[plugin.name for plugin in runtime.plugins]}'
+    )
 
+    return runtime
+
+
+def initialize_repository_for_runtime(
+    runtime: Runtime,
+    agent: Agent | None = None,
+    selected_repository: str | None = None,
+    github_token: SecretStr | None = None,
+) -> str | None:
+    """Initialize the repository for the runtime.
+
+    Args:
+        runtime: The runtime to initialize the repository for.
+        agent: (optional) The agent to load microagents for.
+        selected_repository: (optional) The GitHub repository to use.
+        github_token: (optional) The GitHub token to use.
+
+    Returns:
+        The repository directory path if a repository was cloned, None otherwise.
+    """
     # clone selected repository if provided
     repo_directory = None
     github_token = (
@@ -98,11 +120,7 @@ def create_runtime(
         agent.prompt_manager.load_microagents(microagents)
         agent.prompt_manager.set_repository_info(selected_repository, repo_directory)
 
-    logger.debug(
-        f'Runtime initialized with plugins: {[plugin.name for plugin in runtime.plugins]}'
-    )
-
-    return runtime
+    return repo_directory
 
 
 def create_agent(config: AppConfig) -> Agent:

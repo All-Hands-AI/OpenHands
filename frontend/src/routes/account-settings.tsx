@@ -104,6 +104,8 @@ function AccountSettings() {
       formData.get("enable-analytics-switch")?.toString() === "on";
     const enableMemoryCondenser =
       formData.get("enable-memory-condenser-switch")?.toString() === "on";
+    const enableSoundNotifications =
+      formData.get("enable-sound-notifications-switch")?.toString() === "on";
 
     saveSettings(
       {
@@ -112,6 +114,7 @@ function AccountSettings() {
         LANGUAGE: languageValue,
         user_consents_to_analytics: userConsentsToAnalytics,
         ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
+        ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
         LLM_MODEL: customLlmModel || fullLlmModel,
         LLM_BASE_URL: formData.get("base-url-input")?.toString() || "",
         LLM_API_KEY:
@@ -275,7 +278,15 @@ function AccountSettings() {
               <SettingsDropdownInput
                 testId="runtime-settings-input"
                 name="runtime-settings-input"
-                label="Runtime Settings"
+                label={
+                  <>
+                    Runtime Settings (
+                    <a href="mailto:contact@all-hands.dev">
+                      get in touch for access
+                    </a>
+                    )
+                  </>
+                }
                 items={REMOTE_RUNTIME_OPTIONS}
                 defaultSelectedKey={settings.REMOTE_RUNTIME_RESOURCE_FACTOR?.toString()}
                 isDisabled
@@ -397,6 +408,14 @@ function AccountSettings() {
               defaultIsToggled={!!isAnalyticsEnabled}
             >
               Enable analytics
+            </SettingsSwitch>
+
+            <SettingsSwitch
+              testId="enable-sound-notifications-switch"
+              name="enable-sound-notifications-switch"
+              defaultIsToggled={!!settings.ENABLE_SOUND_NOTIFICATIONS}
+            >
+              Enable sound notifications
             </SettingsSwitch>
           </section>
         </div>

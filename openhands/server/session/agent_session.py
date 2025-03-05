@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Callable, Optional
+from typing import Callable
 
 from pydantic import SecretStr
 
@@ -52,7 +52,7 @@ class AgentSession:
         sid: str,
         file_store: FileStore,
         monitoring_listener: MonitoringListener,
-        status_callback: Optional[Callable] = None,
+        status_callback: Callable | None = None,
         github_user_id: str | None = None,
     ):
         """Initializes a new instance of the Session class
@@ -174,10 +174,6 @@ class AgentSession:
             self.runtime.close()
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
-
-    async def stop_agent_loop_for_error(self):
-        if self.controller is not None:
-            await self.controller.set_agent_state_to(AgentState.ERROR)
 
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions

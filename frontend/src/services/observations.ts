@@ -48,6 +48,8 @@ export function handleObservationMessage(message: ObservationMessage) {
       break;
     case ObservationType.READ:
     case ObservationType.EDIT:
+    case ObservationType.THINK:
+    case ObservationType.NULL:
       break; // We don't display the default message for these observations
     default:
       store.dispatch(addAssistantMessage(message.message));
@@ -87,6 +89,17 @@ export function handleObservationMessage(message: ObservationMessage) {
         );
         break;
       case "read":
+        store.dispatch(
+          addAssistantObservation({
+            ...baseObservation,
+            observation,
+            extras: {
+              path: String(message.extras.path || ""),
+              impl_source: String(message.extras.impl_source || ""),
+            },
+          }),
+        );
+        break;
       case "edit":
         store.dispatch(
           addAssistantObservation({
@@ -94,6 +107,8 @@ export function handleObservationMessage(message: ObservationMessage) {
             observation,
             extras: {
               path: String(message.extras.path || ""),
+              diff: String(message.extras.diff || ""),
+              impl_source: String(message.extras.impl_source || ""),
             },
           }),
         );

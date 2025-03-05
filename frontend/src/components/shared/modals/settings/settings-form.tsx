@@ -43,15 +43,18 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
   const handleFormSubmission = async (formData: FormData) => {
     const newSettings = extractSettings(formData);
 
-    await saveUserSettings(newSettings);
-    onClose();
-    resetOngoingSession();
+    await saveUserSettings(newSettings, {
+      onSuccess: () => {
+        onClose();
+        resetOngoingSession();
 
-    posthog.capture("settings_saved", {
-      LLM_MODEL: newSettings.LLM_MODEL,
-      LLM_API_KEY: newSettings.LLM_API_KEY ? "SET" : "UNSET",
-      REMOTE_RUNTIME_RESOURCE_FACTOR:
-        newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
+        posthog.capture("settings_saved", {
+          LLM_MODEL: newSettings.LLM_MODEL,
+          LLM_API_KEY: newSettings.LLM_API_KEY ? "SET" : "UNSET",
+          REMOTE_RUNTIME_RESOURCE_FACTOR:
+            newSettings.REMOTE_RUNTIME_RESOURCE_FACTOR,
+        });
+      },
     });
   };
 

@@ -12,9 +12,11 @@ import toml
 from dotenv import load_dotenv
 from pydantic import BaseModel, SecretStr, ValidationError
 
+from openhands import __version__
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.app_config import AppConfig
+from openhands.core.config.condenser_config import condenser_config_from_toml_section
 from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
@@ -166,28 +168,70 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     # Process security section if present
     if 'security' in toml_config:
         try:
-            logger.openhands_logger.debug(
-                'Attempt to load security config from config toml'
-            )
-            security_config = SecurityConfig(**toml_config['security'])
-            cfg.security = security_config
+            security_mapping = SecurityConfig.from_toml_section(toml_config['security'])
+            # We only use the base security config for now
+            if 'security' in security_mapping:
+                cfg.security = security_mapping['security']
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
                 f'Cannot parse [security] config from toml, values have not been applied.\nError: {e}'
             )
+        except ValueError:
+            # Re-raise ValueError from SecurityConfig.from_toml_section
+            raise ValueError('Error in [security] section in config.toml')
 
     # Process sandbox section if present
     if 'sandbox' in toml_config:
         try:
-            logger.openhands_logger.debug(
-                'Attempt to load sandbox config from config toml'
-            )
-            sandbox_config = SandboxConfig(**toml_config['sandbox'])
-            cfg.sandbox = sandbox_config
+            sandbox_mapping = SandboxConfig.from_toml_section(toml_config['sandbox'])
+            # We only use the base sandbox config for now
+            if 'sandbox' in sandbox_mapping:
+                cfg.sandbox = sandbox_mapping['sandbox']
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
                 f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}'
             )
+        except ValueError:
+            # Re-raise ValueError from SandboxConfig.from_toml_section
+            raise ValueError('Error in [sandbox] section in config.toml')
+
+    # Process condenser section if present
+    if 'condenser' in toml_config:
+        try:
+            # Pass the LLM configs to the condenser config parser
+            condenser_mapping = condenser_config_from_toml_section(
+                toml_config['condenser'], cfg.llms
+            )
+            # Assign the default condenser configuration to the default agent configuration
+            if 'condenser' in condenser_mapping:
+                # Get the default agent config and assign the condenser config to it
+                default_agent_config = cfg.get_agent_config()
+                default_agent_config.condenser = condenser_mapping['condenser']
+                logger.openhands_logger.debug(
+                    'Default condenser configuration loaded from config toml and assigned to default agent'
+                )
+        except (TypeError, KeyError, ValidationError) as e:
+            logger.openhands_logger.warning(
+                f'Cannot parse [condenser] config from toml, values have not been applied.\nError: {e}'
+            )
+    # If no condenser section is in toml but enable_default_condenser is True,
+    # set LLMSummarizingCondenserConfig as default
+    elif cfg.enable_default_condenser:
+        from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
+
+        # Get default agent config
+        default_agent_config = cfg.get_agent_config()
+
+        # Create default LLM summarizing condenser config
+        default_condenser = LLMSummarizingCondenserConfig(
+            llm_config=cfg.get_llm_config(),  # Use default LLM config
+        )
+
+        # Set as default condenser
+        default_agent_config.condenser = default_condenser
+        logger.openhands_logger.debug(
+            'Default LLM summarizing condenser assigned to default agent (no condenser in config)'
+        )
 
     # Process extended section if present
     if 'extended' in toml_config:
@@ -199,7 +243,15 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
             )
 
     # Check for unknown sections
-    known_sections = {'core', 'extended', 'agent', 'llm', 'security', 'sandbox'}
+    known_sections = {
+        'core',
+        'extended',
+        'agent',
+        'llm',
+        'security',
+        'sandbox',
+        'condenser',
+    }
     for key in toml_config:
         if key.lower() not in known_sections:
             logger.openhands_logger.warning(f'Unknown section [{key}] in {toml_file}')
@@ -488,8 +540,6 @@ def parse_arguments() -> argparse.Namespace:
     args = parser.parse_args()
 
     if args.version:
-        from openhands import __version__
-
         print(f'OpenHands version: {__version__}')
         sys.exit(0)
 
