@@ -19,6 +19,7 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   remote_runtime_resource_factor:
     DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
   github_token_is_set: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
+  gitlab_token_is_set: DEFAULT_SETTINGS.GITLAB_TOKEN_IS_SET,
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
@@ -190,7 +191,8 @@ export const handlers = [
       language: "no",
     };
     if (Object.keys(settings.provider_tokens).length > 0) {
-      settings.github_token_is_set = true;
+      settings.github_token_is_set = !!settings.provider_tokens.github;
+      settings.gitlab_token_is_set = !!settings.provider_tokens.gitlab;
     }
 
     return HttpResponse.json(settings);
@@ -205,6 +207,7 @@ export const handlers = [
         if (newSettings.unset_github_token) {
           newSettings.provider_tokens = {};
           newSettings.github_token_is_set = false;
+          newSettings.gitlab_token_is_set = false;
           delete newSettings.unset_github_token;
         }
       }

@@ -59,7 +59,7 @@ describe("Settings Screen", () => {
 
     await waitFor(() => {
       screen.getByText("LLM Settings");
-      screen.getByText("GitHub Settings");
+      screen.getByText("Provider Settings");
       screen.getByText("Additional Settings");
       screen.getByText("Reset to defaults");
       screen.getByText("Save Changes");
@@ -133,7 +133,7 @@ describe("Settings Screen", () => {
       }
     });
 
-    it("should render a disabled 'Disconnect from GitHub' button if the GitHub token is not set", async () => {
+    it("should render a disabled 'Disconnect Tokens' button if the GitHub token is not set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         github_token_is_set: false,
@@ -141,19 +141,19 @@ describe("Settings Screen", () => {
 
       renderSettingsScreen();
 
-      const button = await screen.findByText("Disconnect from GitHub");
+      const button = await screen.findByText("Disconnect Tokens");
       expect(button).toBeInTheDocument();
       expect(button).toBeDisabled();
     });
 
-    it("should render an enabled 'Disconnect from GitHub' button if the GitHub token is set", async () => {
+    it("should render an enabled 'Disconnect Tokens' button if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         github_token_is_set: true,
       });
 
       renderSettingsScreen();
-      const button = await screen.findByText("Disconnect from GitHub");
+      const button = await screen.findByText("Disconnect Tokens");
       expect(button).toBeInTheDocument();
       expect(button).toBeEnabled();
 
@@ -162,7 +162,7 @@ describe("Settings Screen", () => {
       expect(input).toBeInTheDocument();
     });
 
-    it("should logout the user when the 'Disconnect from GitHub' button is clicked", async () => {
+    it("should logout the user when the 'Disconnect Tokens' button is clicked", async () => {
       const user = userEvent.setup();
 
       getSettingsSpy.mockResolvedValue({
@@ -172,7 +172,7 @@ describe("Settings Screen", () => {
 
       renderSettingsScreen();
 
-      const button = await screen.findByText("Disconnect from GitHub");
+      const button = await screen.findByText("Disconnect Tokens");
       await user.click(button);
 
       expect(handleLogoutMock).toHaveBeenCalled();
@@ -658,7 +658,7 @@ describe("Settings Screen", () => {
 
       await waitFor(() => {
         expect(screen.getByTestId("language-input")).toHaveValue("Norsk");
-        expect(screen.getByText("Disconnect from GitHub")).toBeInTheDocument();
+        expect(screen.getByText("Disconnect Tokens")).toBeInTheDocument();
         expect(screen.getByTestId("enable-analytics-switch")).toBeChecked();
         expect(screen.getByTestId("advanced-settings-switch")).toBeChecked();
         expect(screen.getByTestId("base-url-input")).toHaveValue(
@@ -774,6 +774,7 @@ describe("Settings Screen", () => {
         ...MOCK_DEFAULT_USER_SETTINGS,
       };
       delete mockCopy.github_token_is_set;
+      delete mockCopy.gitlab_token_is_set;
       delete mockCopy.unset_github_token;
       delete mockCopy.user_consents_to_analytics;
 
