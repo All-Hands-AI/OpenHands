@@ -14,7 +14,7 @@ export const useGitHubUser = () => {
   const { saveUserSettings } = useCurrentSettings();
   const { data: config } = useConfig();
 
-  const query = useQuery({
+  const user = useQuery({
     queryKey: ["user", githubTokenIsSet],
     queryFn: OpenHands.getGitHubUser,
     enabled: githubTokenIsSet && !!config?.APP_MODE,
@@ -22,17 +22,16 @@ export const useGitHubUser = () => {
   });
 
   React.useEffect(() => {
-    const { data } = query;
-    if (data) {
-      posthog.identify(data.login, {
-        company: data.company,
-        name: data.name,
-        email: data.email,
-        user: data.login,
+    if (user.data) {
+      posthog.identify(user.data.login, {
+        company: user.data.company,
+        name: user.data.name,
+        email: user.data.email,
+        user: user.data.login,
         mode: config?.APP_MODE || "oss",
       });
     }
-  }, [query.data]);
+  }, [user.data]);
 
   const handleLogout = async () => {
     if (config?.APP_MODE === "saas") await logout();
@@ -44,10 +43,10 @@ export const useGitHubUser = () => {
   };
 
   React.useEffect(() => {
-    if (query.isError) {
+    if (user.isError) {
       handleLogout();
     }
-  }, [query.isError]);
+  }, [user.isError]);
 
-  return { user: query.data, isLoading: query.isLoading || query.isPending };
+  return user;
 };

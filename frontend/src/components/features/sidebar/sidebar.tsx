@@ -27,7 +27,7 @@ export function Sidebar() {
   const location = useLocation();
   const dispatch = useDispatch();
   const endSession = useEndSession();
-  const { user, isLoading: isUserLoading } = useGitHubUser();
+  const user = useGitHubUser();
   const { data: config } = useConfig();
   const {
     error: settingsError,
@@ -111,9 +111,9 @@ export function Sidebar() {
               <SettingsButton />
             </NavLink>
             <UserActions
-              user={user}
+              user={user.data ? { avatar_url: user.data.avatar_url } : undefined}
               onLogout={handleLogout}
-              isLoading={isUserLoading}
+              isLoading={user.isLoading || user.isPending}
             />
           </div>
         </nav>
