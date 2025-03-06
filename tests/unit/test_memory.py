@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from openhands.events.action.agent import AgentRecallAction
@@ -76,3 +78,69 @@ def test_is_on_first_user_message_false(memory, event_stream):
     event_stream.add_event(recall_action2, EventSource.USER)
 
     assert memory._is_on_first_user_message(recall_action2) is False
+
+
+def test_memory_on_event_exception_handling(memory, event_stream):
+    """Test that exceptions in Memory.on_event are properly handled and propagate to the agent controller."""
+    # Mock the agent controller's _reset method to verify it's called
+    with patch(
+        'openhands.controller.agent_controller.AgentController._reset'
+    ) as mock_reset:
+        # Create a mock event stream that will propagate the error
+        mock_event_stream = MagicMock()
+        mock_event_stream.add_event.side_effect = Exception('Test error')
+
+        # Create a memory instance with the mock event stream
+        memory = Memory(mock_event_stream, 'test_sid')
+
+        # Create a recall action
+        recall_action = AgentRecallAction(query='test query')
+        recall_action._source = EventSource.USER
+
+        # This should raise the exception
+        with pytest.raises(Exception) as exc_info:
+            memory.on_event(recall_action)
+
+        assert str(exc_info.value) == 'Test error'
+
+        # Verify that the agent controller's reset was called
+        mock_reset.assert_called_once()
+
+
+def test_memory_on_first_recall_action_exception_handling(memory, event_stream):
+    """Test that exceptions in Memory._on_first_recall_action are properly handled and propagate to the agent controller."""
+    # Mock the agent controller's _reset method to verify it's called
+    with patch(
+        'openhands.controller.agent_controller.AgentController._reset'
+    ) as mock_reset:
+        # Create a mock event stream
+        mock_event_stream = MagicMock()
+
+        # Create a memory instance with the mock event stream
+        memory = Memory(mock_event_stream, 'test_sid')
+
+        # Mock _on_first_recall_action to raise an exception
+        with patch.object(
+            memory,
+            '_on_first_recall_action',
+            side_effect=Exception('Test error from _on_first_recall_action'),
+        ):
+            # Create a recall action that will trigger _on_first_recall_action
+            recall_action = AgentRecallAction(query='test query')
+            recall_action._source = EventSource.USER
+            recall_action._id = 1  # This will make it the first message
+
+            # Add a MessageAction with id=0 to make this the first user message
+            message_action = MessageAction(content='test')
+            message_action._source = EventSource.USER
+            message_action._id = 0
+            mock_event_stream.get_events.return_value = [message_action]
+
+            # This should raise the exception
+            with pytest.raises(Exception) as exc_info:
+                memory.on_event(recall_action)
+
+            assert str(exc_info.value) == 'Test error from _on_first_recall_action'
+
+            # Verify that the agent controller's reset was called
+            mock_reset.assert_called_once()
