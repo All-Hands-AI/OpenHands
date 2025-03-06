@@ -25,6 +25,7 @@ import {
   displayErrorToast,
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
+import { PostSettings } from "#/types/settings";
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },
@@ -155,19 +156,26 @@ function AccountSettings() {
   };
 
   const handleReset = () => {
-    saveSettings(
-      {
-        ...DEFAULT_SETTINGS,
-        LLM_API_KEY: "", // reset LLM API key
+    const newSettings: Partial<PostSettings> = {
+      ...DEFAULT_SETTINGS,
+      LLM_API_KEY: "", // reset LLM API key
+    };
+
+    // we don't want the user to be able to modify these settings in SaaS
+    // and we should make sure they aren't included in the reset
+    if (isSaas) {
+      delete newSettings.LLM_API_KEY;
+      delete newSettings.LLM_BASE_URL;
+      delete newSettings.LLM_MODEL;
+    }
+
+    saveSettings(newSettings, {
+      onSuccess: () => {
+        displaySuccessToast("Settings reset");
+        setResetSettingsModalIsOpen(false);
+        setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
       },
-      {
-        onSuccess: () => {
-          displaySuccessToast("Settings reset");
-          setResetSettingsModalIsOpen(false);
-          setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
-        },
-      },
-    );
+    });
   };
 
   React.useEffect(() => {

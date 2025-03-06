@@ -1033,5 +1033,25 @@ describe("Settings Screen", () => {
         }),
       );
     });
+
+    it("should not submit the unwanted fields when resetting", async () => {
+      const user = userEvent.setup();
+      renderSettingsScreen();
+
+      const resetButton = await screen.findByText("Reset to defaults");
+      await user.click(resetButton);
+
+      const modal = await screen.findByTestId("reset-modal");
+      const confirmButton = within(modal).getByText("Reset");
+      await user.click(confirmButton);
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          llm_api_key: undefined,
+          llm_base_url: undefined,
+          llm_model: undefined,
+        }),
+      );
+    });
   });
 });
