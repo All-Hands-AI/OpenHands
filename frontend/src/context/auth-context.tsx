@@ -14,7 +14,13 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   const queryClient = useQueryClient();
   const { data: config } = useConfig();
 
-  const { data: isAuthenticated, isFetched } = useQuery({
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+
+  const {
+    data: userIsAuthenticated,
+    isFetched,
+    isError,
+  } = useQuery({
     queryKey: ["authenticate", config?.APP_MODE],
     queryFn: () => OpenHands.authenticate(config!.APP_MODE),
     enabled: !!config?.APP_MODE,
@@ -29,12 +35,16 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   });
 
   React.useEffect(() => {
-    if (isFetched && !isAuthenticated) queryClient.resetQueries();
-  }, [isAuthenticated, isFetched]);
+    if (isFetched && !userIsAuthenticated)
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+
+    if (isError) setIsAuthenticated(false);
+    if (userIsAuthenticated) setIsAuthenticated(true);
+  }, [userIsAuthenticated, isFetched, isError]);
 
   const value = React.useMemo(
     () => ({
-      isAuthenticated: isAuthenticated || false,
+      isAuthenticated,
       logout,
     }),
     [isAuthenticated, logout],
