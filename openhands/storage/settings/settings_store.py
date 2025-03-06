@@ -19,6 +19,10 @@ class SettingsStore(ABC):
     async def store(self, settings: Settings) -> None:
         """Store session init data"""
 
+    @abstractmethod
+    async def reset(self) -> None:
+        """Reset session"""
+
     @classmethod
     @abstractmethod
     async def get_instance(
