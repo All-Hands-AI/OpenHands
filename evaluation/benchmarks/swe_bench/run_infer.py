@@ -44,7 +44,6 @@ from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
-USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'true').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
 
 
@@ -121,23 +120,18 @@ def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
 ) -> AppConfig:
-    SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
-    if USE_INSTANCE_IMAGE:
-        # We use a different instance image for the each instance of swe-bench eval
-        use_official_image = bool(
-            'verified' in metadata.dataset.lower() or 'lite' in metadata.dataset.lower()
-        )
-        base_container_image = get_instance_docker_image(
-            instance['instance_id'], use_official_image
-        )
-        logger.info(
-            f'Using instance container image: {base_container_image}. '
-            f'Please make sure this image exists. '
-            f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
-        )
-    else:
-        base_container_image = SWE_BENCH_CONTAINER_IMAGE
-        logger.info(f'Using swe-bench container image: {base_container_image}')
+    # We use a different instance image for the each instance of swe-bench eval
+    use_official_image = bool(
+        'verified' in metadata.dataset.lower() or 'lite' in metadata.dataset.lower()
+    )
+    base_container_image = get_instance_docker_image(
+        instance['instance_id'], use_official_image
+    )
+    logger.info(
+        f'Using instance container image: {base_container_image}. '
+        f'Please make sure this image exists. '
+        f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
+    )
 
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = base_container_image
@@ -209,75 +203,65 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to export USER: {str(obs)}')
 
-    if USE_INSTANCE_IMAGE:
-        # inject the init script
-        script_dir = os.path.dirname(__file__)
+    # inject the init script
+    script_dir = os.path.dirname(__file__)
 
-        # inject the instance info
-        action = CmdRunAction(command='mkdir -p /swe_util/eval_data/instances')
-        action.set_hard_timeout(600)
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert_and_raise(
-            obs.exit_code == 0,
-            f'Failed to create /swe_util/eval_data/instances: {str(obs)}',
-        )
+    # inject the instance info
+    action = CmdRunAction(command='mkdir -p /swe_util/eval_data/instances')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        obs.exit_code == 0,
+        f'Failed to create /swe_util/eval_data/instances: {str(obs)}',
+    )
 
-        swe_instance_json_name = 'swe-bench-instance.json'
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Construct the full path for the desired file name within the temporary directory
-            temp_file_path = os.path.join(temp_dir, swe_instance_json_name)
-            # Write to the file with the desired name within the temporary directory
-            with open(temp_file_path, 'w') as f:
-                if not isinstance(instance, dict):
-                    json.dump([instance.to_dict()], f)
-                else:
-                    json.dump([instance], f)
+    swe_instance_json_name = 'swe-bench-instance.json'
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Construct the full path for the desired file name within the temporary directory
+        temp_file_path = os.path.join(temp_dir, swe_instance_json_name)
+        # Write to the file with the desired name within the temporary directory
+        with open(temp_file_path, 'w') as f:
+            if not isinstance(instance, dict):
+                json.dump([instance.to_dict()], f)
+            else:
+                json.dump([instance], f)
 
-            # Copy the file to the desired location
-            runtime.copy_to(temp_file_path, '/swe_util/eval_data/instances/')
+        # Copy the file to the desired location
+        runtime.copy_to(temp_file_path, '/swe_util/eval_data/instances/')
 
         # inject the instance swe entry
         runtime.copy_to(
             str(os.path.join(script_dir, 'scripts/setup/instance_swe_entry.sh')),
             '/swe_util/',
         )
-        action = CmdRunAction(command='cat ~/.bashrc')
-        action.set_hard_timeout(600)
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert_and_raise(obs.exit_code == 0, f'Failed to cat ~/.bashrc: {str(obs)}')
 
-        action = CmdRunAction(command='source ~/.bashrc')
-        action.set_hard_timeout(600)
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        if isinstance(obs, ErrorObservation):
-            logger.error(f'Failed to source ~/.bashrc: {str(obs)}')
-        assert_and_raise(obs.exit_code == 0, f'Failed to source ~/.bashrc: {str(obs)}')
+    action = CmdRunAction(command='cat ~/.bashrc')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(obs.exit_code == 0, f'Failed to cat ~/.bashrc: {str(obs)}')
 
-        action = CmdRunAction(command='source /swe_util/instance_swe_entry.sh')
-        action.set_hard_timeout(600)
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert_and_raise(
-            obs.exit_code == 0,
-            f'Failed to source /swe_util/instance_swe_entry.sh: {str(obs)}',
-        )
-    else:
-        action = CmdRunAction(command='source /swe_util/swe_entry.sh')
-        action.set_hard_timeout(1800)
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert_and_raise(
-            obs.exit_code == 0,
-            f'Failed to source /swe_util/swe_entry.sh: {str(obs)}',
-        )
+    action = CmdRunAction(command='source ~/.bashrc')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    if isinstance(obs, ErrorObservation):
+        logger.error(f'Failed to source ~/.bashrc: {str(obs)}')
+    assert_and_raise(obs.exit_code == 0, f'Failed to source ~/.bashrc: {str(obs)}')
+
+    action = CmdRunAction(command='source /swe_util/instance_swe_entry.sh')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        obs.exit_code == 0,
+        f'Failed to source /swe_util/instance_swe_entry.sh: {str(obs)}',
+    )
 
     action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
     action.set_hard_timeout(600)

@@ -23,10 +23,10 @@ Make sure your Docker daemon is running, and you have ample disk space (at least
 When the `run_infer.sh` script is started, it will automatically pull the `lite` split in Commit0. For example, for instance ID `commit-0/minitorch`, it will try to pull our pre-build docker image `wentingzhao/minitorch` from DockerHub. This image will be used create an OpenHands runtime image where the agent will operate on.
 
 ```bash
-./evaluation/benchmarks/commit0_bench/scripts/run_infer.sh [repo_split] [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
+./evaluation/benchmarks/commit0/scripts/run_infer.sh [repo_split] [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
 
 # Example
-./evaluation/benchmarks/commit0_bench/scripts/run_infer.sh lite llm.eval_sonnet HEAD CodeActAgent 16 100 8 wentingzhao/commit0_combined test
+./evaluation/benchmarks/commit0/scripts/run_infer.sh lite llm.eval_sonnet HEAD CodeActAgent 16 100 8 wentingzhao/commit0_combined test
 ```
 
 where `model_config` is mandatory, and the rest are optional.
@@ -48,14 +48,12 @@ default, it is set to 1.
 - `dataset`, a huggingface dataset name. e.g. `wentingzhao/commit0_combined`, specifies which dataset to evaluate on.
 - `dataset_split`, split for the huggingface dataset. Notice only `test` is supported for Commit0.
 
-Note that the `USE_INSTANCE_IMAGE` environment variable is always set to `true` for Commit0.
-
 Let's say you'd like to run 10 instances using `llm.eval_sonnet` and CodeActAgent,
 
 then your command would be:
 
 ```bash
-./evaluation/benchmarks/commit0_bench/scripts/run_infer.sh lite llm.eval_sonnet HEAD CodeActAgent 10 30 1 wentingzhao/commit0_combined test
+./evaluation/benchmarks/commit0/scripts/run_infer.sh lite llm.eval_sonnet HEAD CodeActAgent 10 30 1 wentingzhao/commit0_combined test
 ```
 
 ### Run Inference on `RemoteRuntime`
@@ -64,11 +62,11 @@ This is in beta. Fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLS
 
 
 ```bash
-./evaluation/benchmarks/commit0_bench/scripts/run_infer.sh [repo_split] [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
+./evaluation/benchmarks/commit0/scripts/run_infer.sh [repo_split] [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
 
 # Example - This runs evaluation on CodeActAgent for 10 instances on "wentingzhao/commit0_combined"'s test set, with max 30 iteration per instances, with 1 number of workers running in parallel
 ALLHANDS_API_KEY="YOUR-API-KEY" RUNTIME=remote SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev" EVAL_DOCKER_IMAGE_PREFIX="docker.io/wentingzhao" \
-./evaluation/benchmarks/commit0_bench/scripts/run_infer.sh lite llm.eval_sonnet HEAD CodeActAgent 10 30 1 wentingzhao/commit0_combined test
+./evaluation/benchmarks/commit0/scripts/run_infer.sh lite llm.eval_sonnet HEAD CodeActAgent 10 30 1 wentingzhao/commit0_combined test
 ```
 
 To clean-up all existing runtime you've already started, run:
