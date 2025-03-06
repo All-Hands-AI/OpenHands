@@ -46,7 +46,6 @@ class AppConfig(BaseModel):
         file_uploads_allowed_extensions: Allowed file extensions. `['.*']` allows all.
         cli_multiline_input: Whether to enable multiline input in CLI. When disabled,
             input is read line by line. When enabled, input continues until /exit command.
-        microagents_dir: Directory containing global microagents.
     """
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
@@ -84,10 +83,6 @@ class AppConfig(BaseModel):
     cli_multiline_input: bool = Field(default=False)
     conversation_max_age_seconds: int = Field(default=864000)  # 10 days in seconds
     enable_default_condenser: bool = Field(default=True)
-    microagents_dir: str = Field(
-        default='microagents',
-        description='Directory containing global microagents',
-    )
 
     defaults_dict: ClassVar[dict] = {}
 
