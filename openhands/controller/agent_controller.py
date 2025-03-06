@@ -71,6 +71,9 @@ class AgentController:
     agent_configs: dict[str, AgentConfig]
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
+    _delegate_action: AgentDelegateAction | None = (
+        None  # the AgentDelegateAction that started the delegate
+    )
     _pending_action: Action | None = None
     _closed: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
@@ -350,7 +353,7 @@ class AgentController:
             if 'task' in action.inputs:
                 self.event_stream.add_event(
                     MessageAction(content='TASK: ' + action.inputs['task']),
-                    EventSource.USER,
+                    EventSource.DELEGATE,
                 )
                 await self.delegate.set_agent_state_to(AgentState.RUNNING)
             return
@@ -430,7 +433,11 @@ class AgentController:
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
-            await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+            if not self.is_delegate:
+                await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+            else:
+                await self.set_agent_state_to(AgentState.FINISHED)
+                self.state.outputs['content'] = action.content
 
     def _reset(self) -> None:
         """Resets the agent controller"""
@@ -550,6 +557,10 @@ class AgentController:
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
+        if action.agent_config_override:
+            for key, value in action.agent_config_override.items():
+                setattr(agent_config, key, value)
+                logger.info(f'Overriding delegate agent config: {key} = {value}')
         delegate_agent = agent_cls(llm=llm, config=agent_config)
         state = State(
             inputs=action.inputs or {},
@@ -580,6 +591,7 @@ class AgentController:
             is_delegate=True,
             headless_mode=self.headless_mode,
         )
+        self._delegate_action = action
 
     def end_delegate(self) -> None:
         """Ends the currently active delegate (e.g., if it is finished or errored)
@@ -613,6 +625,9 @@ class AgentController:
 
             # emit the delegate result observation
             obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+            if self._delegate_action and self._delegate_action.tool_call_metadata:
+                obs.tool_call_metadata = self._delegate_action.tool_call_metadata
+                obs._cause = self._delegate_action.id  # type: ignore[attr-defined]
             self.event_stream.add_event(obs, EventSource.AGENT)
         else:
             # delegate state is ERROR
@@ -626,11 +641,14 @@ class AgentController:
 
             # emit the delegate result observation
             obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+            if self._delegate_action and self._delegate_action.tool_call_metadata:
+                obs.tool_call_metadata = self._delegate_action.tool_call_metadata
+                obs._cause = self._delegate_action.id  # type: ignore[attr-defined]
             self.event_stream.add_event(obs, EventSource.AGENT)
 
         # unset delegate so parent can resume normal handling
         self.delegate = None
-        self.delegateAction = None
+        self._delegate_action = None
 
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""

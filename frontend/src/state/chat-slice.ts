@@ -21,6 +21,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "read",
   "browse",
   "edit",
+  "delegate",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -108,7 +109,14 @@ export const chatSlice = createSlice({
         text = `${action.payload.args.path}\n${content}`;
       } else if (actionID === "browse") {
         text = `Browsing ${action.payload.args.url}`;
+      } else if (actionID === "delegate") {
+        text = `Target agent: ${action.payload.args.agent}`;
+        // if there is a task, add it to the text
+        if (action.payload.args.inputs.task) {
+          text += `\n\n**Task:**\n\n${action.payload.args.inputs.task}\n`;
+        }
       }
+
       if (actionID === "run" || actionID === "run_ipython") {
         if (
           action.payload.args.confirmation_state === "awaiting_confirmation"
@@ -139,6 +147,21 @@ export const chatSlice = createSlice({
         return;
       }
       const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
+
+      // Special case for delegate: we don't modify the cause message, but we add a new one
+      if (observationID === "delegate") {
+        const message: Message = {
+          type: "action",
+          sender: "assistant",
+          translationID,
+          eventID: observation.payload.id,
+          content: `**Output:**\n${observation.payload.extras.outputs.content}\n`,
+          imageUrls: [],
+          timestamp: new Date().toISOString(),
+        };
+        state.messages.push(message);
+      }
+
       const causeID = observation.payload.cause;
       const causeMessage = state.messages.find(
         (message) => message.eventID === causeID,
