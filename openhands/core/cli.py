@@ -17,6 +17,7 @@ from openhands.core.schema import AgentState
 from openhands.core.setup import (
     create_agent,
     create_controller,
+    create_memory,
     create_runtime,
     initialize_repository_for_runtime,
 )
@@ -170,12 +171,21 @@ async def main(loop: asyncio.AbstractEventLoop):
     await runtime.connect()
 
     # Initialize repository if needed
+    repo_directory = None
     if config.sandbox.selected_repo:
-        initialize_repository_for_runtime(
+        repo_directory = initialize_repository_for_runtime(
             runtime,
-            agent=agent,
             selected_repository=config.sandbox.selected_repo,
         )
+
+    # when memory is created, it will load the microagents from the selected repository
+    create_memory(
+        runtime=runtime,
+        event_stream=event_stream,
+        sid=sid,
+        selected_repository=config.sandbox.selected_repo,
+        repo_directory=repo_directory,
+    )
 
     if initial_user_action:
         # If there's an initial user action, enqueue it and do not prompt again

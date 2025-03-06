@@ -16,6 +16,8 @@ from openhands.microagent import (
 from openhands.runtime.base import Runtime
 from openhands.utils.prompt import RepositoryInfo, RuntimeInfo
 
+GLOBAL_MICROAGENTS_DIR = 'microagents'
+
 
 class Memory:
     """
@@ -25,18 +27,19 @@ class Memory:
     def __init__(
         self,
         event_stream: EventStream,
-        microagents_dir: str,
+        sid: str,
     ):
         self.event_stream = event_stream
-        self.microagents_dir = microagents_dir
-        # Subscribe to events
+        self.sid = sid
+        self.microagents_dir = GLOBAL_MICROAGENTS_DIR
+
         self.event_stream.subscribe(
             EventStreamSubscriber.MEMORY,
             self.on_event,
             'Memory',
         )
 
-        # Additional placeholders to store user workspace microagents if needed
+        # Additional placeholders to store user workspace microagents
         self.repo_microagents: dict[str, RepoMicroAgent] = {}
         self.knowledge_microagents: dict[str, KnowledgeMicroAgent] = {}
 
@@ -50,8 +53,6 @@ class Memory:
         # Load global microagents (Knowledge + Repo)
         # from typically OpenHands/microagents (i.e., the PUBLIC microagents)
         self._load_global_microagents()
-
-        # TODO: enable_prompt_extensions
 
     def _load_global_microagents(self) -> None:
         """

@@ -127,9 +127,12 @@ class AgentSession:
                 agent_configs=agent_configs,
             )
 
+            repo_directory = None
+            if self.runtime and runtime_connected and selected_repository:
+                repo_directory = selected_repository.split('/')[1]
             self.memory = await self._create_memory(
-                microagents_dir=config.microagents_dir,
                 selected_repository=selected_repository,
+                repo_directory=repo_directory,
             )
 
             if github_token:
@@ -330,11 +333,11 @@ class AgentSession:
         return controller
 
     async def _create_memory(
-        self, microagents_dir: str, selected_repository: str | None
+        self, selected_repository: str | None, repo_directory: str | None
     ) -> Memory:
         memory = Memory(
             event_stream=self.event_stream,
-            microagents_dir=microagents_dir,
+            sid=self.sid,
         )
 
         if self.runtime:
@@ -347,10 +350,8 @@ class AgentSession:
             )
             memory.load_user_workspace_microagents(microagents)
 
-            if selected_repository:
-                repo_directory = selected_repository.split('/')[1]
-                if repo_directory:
-                    memory.set_repository_info(selected_repository, repo_directory)
+            if selected_repository and repo_directory:
+                memory.set_repository_info(selected_repository, repo_directory)
         return memory
 
     def _maybe_restore_state(self) -> State | None:

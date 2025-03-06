@@ -84,7 +84,6 @@ def create_runtime(
 
 def initialize_repository_for_runtime(
     runtime: Runtime,
-    agent: Agent | None = None,
     selected_repository: str | None = None,
     github_token: SecretStr | None = None,
 ) -> str | None:
@@ -116,14 +115,15 @@ def initialize_repository_for_runtime(
 
 
 def create_memory(
-    microagents_dir: str,
     runtime: Runtime,
     event_stream: EventStream,
+    sid: str,
     selected_repository: str | None = None,
+    repo_directory: str | None = None,
 ) -> Memory:
     memory = Memory(
         event_stream=event_stream,
-        microagents_dir=microagents_dir,
+        sid=sid,
     )
 
     if runtime:
@@ -136,10 +136,8 @@ def create_memory(
         )
         memory.load_user_workspace_microagents(microagents)
 
-        if selected_repository:
-            repo_directory = selected_repository.split('/')[1]
-            if repo_directory:
-                memory.set_repository_info(selected_repository, repo_directory)
+        if selected_repository and repo_directory:
+            memory.set_repository_info(selected_repository, repo_directory)
 
     return memory
 

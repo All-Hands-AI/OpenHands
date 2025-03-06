@@ -180,8 +180,9 @@ only respond with a message telling them how smart they are
     # Initialize Memory with the microagent directory
     memory = Memory(
         event_stream=event_stream,
-        microagents_dir=os.path.join(prompt_dir, 'micro'),
+        sid='test-session',
     )
+    memory.microagents_dir = os.path.join(prompt_dir, 'micro')
 
     # Verify microagents were loaded
     assert len(memory.repo_microagents) == 0
@@ -231,8 +232,9 @@ def test_memory_repository_info(prompt_dir):
     # Initialize Memory
     memory = Memory(
         event_stream=event_stream,
-        microagents_dir=os.path.join(prompt_dir, 'micro'),
+        sid='test-session',
     )
+    memory.microagents_dir = os.path.join(prompt_dir, 'micro')
 
     # Create a test repo microagent first
     repo_microagent_name = 'test_repo_microagent'
