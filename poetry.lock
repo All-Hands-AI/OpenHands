@@ -9008,7 +9008,7 @@ files = [
 
 [package.dependencies]
 greenlet = [
-    {version = "!=0.4.17", optional = true, markers = "python_version < \"3.14\" and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\") or extra == \"asyncio\""},
+    {version = "!=0.4.17", markers = "python_version < \"3.14\" and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\")"},
     {version = "!=0.4.17", optional = true, markers = "python_version < \"3.14\" and (platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\") or extra == \"asyncio\""},
 ]
 typing-extensions = ">=4.6.0"
@@ -9207,6 +9207,39 @@ unidiff = "*"
 [package.extras]
 inference = ["anthropic", "flash_attn", "jedi", "openai", "peft", "protobuf", "sentencepiece", "tiktoken", "torch", "transformers", "triton"]
 test = ["pytest", "pytest-cov"]
+
+[[package]]
+name = "swegym"
+version = "2.0.13"
+description = "Fork of SWE-bench package - a benchmark for evaluating LMs on software engineering"
+optional = false
+python-versions = ">=3.8"
+groups = ["evaluation"]
+files = []
+develop = false
+
+[package.dependencies]
+beautifulsoup4 = "*"
+chardet = "*"
+datasets = "*"
+docker = "*"
+ghapi = "*"
+GitPython = "*"
+pre-commit = "*"
+python-dotenv = "*"
+requests = "*"
+rich = "*"
+tqdm = "*"
+unidiff = "*"
+
+[package.extras]
+inference = ["anthropic", "flash_attn", "jedi", "openai", "peft", "protobuf", "sentencepiece", "tenacity", "tiktoken", "torch", "transformers", "triton"]
+
+[package.source]
+type = "git"
+url = "https://github.com/SWE-Gym/SWE-Bench-Package.git"
+reference = "HEAD"
+resolved_reference = "16dd480cce9b27bf111a362d280881c6def5d2a7"
 
 [[package]]
 name = "sympy"
@@ -10924,4 +10957,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "1a96c8fc08ab6b50251ae42414d34a5aac296057dfb26a71c62ab4335d8397a9"
+content-hash = "c3f32c54606e5f313d9a909625f77cc3d575bf951e986633bcecd94520f36450"

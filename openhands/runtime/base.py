@@ -221,7 +221,9 @@ class Runtime(FileEditRuntimeMixin):
         try:
             if isinstance(event, CmdRunAction):
                 if self.github_user_id and '$GITHUB_TOKEN' in event.command:
-                    gh_client = GithubServiceImpl(user_id=self.github_user_id)
+                    gh_client = GithubServiceImpl(
+                        user_id=self.github_user_id, external_token_manager=True
+                    )
                     token = await gh_client.get_latest_provider_token()
                     if token:
                         export_cmd = CmdRunAction(
@@ -487,3 +489,7 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def web_hosts(self) -> dict[str, int]:
         return {}
+
+    @property
+    def additional_agent_instructions(self) -> str:
+        return ''
