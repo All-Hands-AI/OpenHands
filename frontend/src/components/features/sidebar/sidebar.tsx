@@ -115,7 +115,7 @@ export function Sidebar() {
                 user.data ? { avatar_url: user.data.avatar_url } : undefined
               }
               onLogout={handleLogout}
-              isLoading={user.isLoading || user.isPending}
+              isLoading={user.isFetching}
             />
           </div>
         </nav>
