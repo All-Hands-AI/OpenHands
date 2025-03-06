@@ -77,7 +77,7 @@ class AgentController:
         NullAction,
         NullObservation,
         ChangeAgentStateAction,
-        AgentCondensationObservation,
+        AgentStateChangedObservation,
     )
 
     def __init__(
