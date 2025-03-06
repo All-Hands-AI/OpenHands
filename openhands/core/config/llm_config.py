@@ -65,7 +65,9 @@ class LLMConfig(BaseModel):
     retry_multiplier: float = Field(default=2)
     retry_min_wait: int = Field(default=5)
     retry_max_wait: int = Field(default=30)
-    timeout: int | None = Field(default=None)
+    timeout: int | None = Field(
+        default=1200
+    )  # 20 minutes, extended thinking can take a while
     max_message_chars: int = Field(
         default=30_000
     )  # maximum number of characters in an observation's content when sent to the llm
