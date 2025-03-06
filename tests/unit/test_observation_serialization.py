@@ -23,10 +23,10 @@ def serialization_deserialization(
     observation_instance = event_from_dict(original_observation_dict)
     assert isinstance(
         observation_instance, Observation
-    ), 'The observation instance should be an instance of Action.'
+    ), 'The observation instance should be an instance of Observation.'
     assert isinstance(
         observation_instance, cls
-    ), 'The observation instance should be an instance of CmdOutputObservation.'
+    ), f'The observation instance should be an instance of {cls}.'
     serialized_observation_dict = event_to_dict(observation_instance)
     serialized_observation_trajectory = event_to_trajectory(observation_instance)
     serialized_observation_memory = event_to_memory(
@@ -246,13 +246,14 @@ def test_recall_observation_serialization():
     original_observation_dict = {
         'observation': 'recall',
         'content': '',
-        'message': "Recalled: recall_type=RecallType.ENVIRONMENT_INFO, repo_name=some_repo_name, repo_instructions=complex_repo_instruc..., runtime_hosts={'host1': 8080, 'host2': 8081}, microagent_knowledge=[]",
+        'message': "Recalled: recall_type=RecallType.ENVIRONMENT_INFO, repo_name=some_repo_name, repo_instructions=complex_repo_instruc..., runtime_hosts={'host1': 8080, 'host2': 8081}, additional_agent_instructions=You know it all abou..., microagent_knowledge=[]",
         'extras': {
             'recall_type': 'environment_info',
             'repo_name': 'some_repo_name',
             'repo_directory': 'some_repo_directory',
             'runtime_hosts': {'host1': 8080, 'host2': 8081},
             'repo_instructions': 'complex_repo_instructions',
+            'additional_agent_instructions': 'You know it all about this runtime',
             'microagent_knowledge': [],
         },
     }
@@ -263,13 +264,14 @@ def test_recall_observation_microagent_knowledge_serialization():
     original_observation_dict = {
         'observation': 'recall',
         'content': '',
-        'message': "Recalled: recall_type=RecallType.KNOWLEDGE_MICROAGENT, repo_name=, repo_instructions=..., runtime_hosts={}, microagent_knowledge=[{'agent_name': 'microagent1', 'trigger_word': 'trigger_word1', 'content': 'content1'}, {'agent_name': 'microagent2', 'trigger_word': 'trigger_word2', 'content': 'content2'}]",
+        'message': "Recalled: recall_type=RecallType.KNOWLEDGE_MICROAGENT, repo_name=, repo_instructions=..., runtime_hosts={}, additional_agent_instructions=..., microagent_knowledge=[{'agent_name': 'microagent1', 'trigger_word': 'trigger_word1', 'content': 'content1'}, {'agent_name': 'microagent2', 'trigger_word': 'trigger_word2', 'content': 'content2'}]",
         'extras': {
             'recall_type': 'knowledge_microagent',
             'repo_name': '',
             'repo_directory': '',
             'repo_instructions': '',
             'runtime_hosts': {},
+            'additional_agent_instructions': '',
             'microagent_knowledge': [
                 {
                     'agent_name': 'microagent1',
@@ -342,6 +344,7 @@ def test_recall_observation_environment_info_serialization():
         repo_directory='/workspace/openhands',
         repo_instructions="Follow the project's coding style guide.",
         runtime_hosts={'127.0.0.1': 8080, 'localhost': 5000},
+        additional_agent_instructions='You know it all about this runtime',
     )
 
     # Serialize to dictionary
@@ -356,7 +359,10 @@ def test_recall_observation_environment_info_serialization():
         '127.0.0.1': 8080,
         'localhost': 5000,
     }
-
+    assert (
+        serialized['extras']['additional_agent_instructions']
+        == 'You know it all about this runtime'
+    )
     # Deserialize back to RecallObservation
     deserialized = observation_from_dict(serialized)
 
@@ -366,7 +372,10 @@ def test_recall_observation_environment_info_serialization():
     assert deserialized.repo_directory == original.repo_directory
     assert deserialized.repo_instructions == original.repo_instructions
     assert deserialized.runtime_hosts == original.runtime_hosts
-
+    assert (
+        deserialized.additional_agent_instructions
+        == original.additional_agent_instructions
+    )
     # Check that knowledge microagent fields are empty
     assert deserialized.microagent_knowledge == []
 
@@ -384,6 +393,7 @@ def test_recall_observation_combined_serialization():
         repo_directory='/workspace/openhands',
         repo_instructions="Follow the project's coding style guide.",
         runtime_hosts={'127.0.0.1': 8080},
+        additional_agent_instructions='You know it all about this runtime',
         # Knowledge microagent info
         microagent_knowledge=[
             {
@@ -404,7 +414,10 @@ def test_recall_observation_combined_serialization():
         serialized['extras']['microagent_knowledge'][0]['agent_name']
         == 'python_best_practices'
     )
-
+    assert (
+        serialized['extras']['additional_agent_instructions']
+        == 'You know it all about this runtime'
+    )
     # Deserialize back to RecallObservation
     deserialized = observation_from_dict(serialized)
 
@@ -416,6 +429,10 @@ def test_recall_observation_combined_serialization():
     assert deserialized.repo_directory == original.repo_directory
     assert deserialized.repo_instructions == original.repo_instructions
     assert deserialized.runtime_hosts == original.runtime_hosts
+    assert (
+        deserialized.additional_agent_instructions
+        == original.additional_agent_instructions
+    )
 
     # Knowledge microagent properties
     assert deserialized.microagent_knowledge == original.microagent_knowledge
