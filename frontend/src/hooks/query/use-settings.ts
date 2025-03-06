@@ -17,7 +17,7 @@ const getSettingsQueryFn = async () => {
     SECURITY_ANALYZER: apiSettings.security_analyzer,
     LLM_API_KEY: apiSettings.llm_api_key,
     REMOTE_RUNTIME_RESOURCE_FACTOR: apiSettings.remote_runtime_resource_factor,
-    GITHUB_TOKEN_IS_SET: apiSettings.github_token_is_set,
+    PROVIDER_TOKENS_ARE_SET: apiSettings.provider_tokens_are_set,
     ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
     ENABLE_SOUND_NOTIFICATIONS: apiSettings.enable_sound_notifications,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
@@ -47,8 +47,8 @@ export const useSettings = () => {
   }, [query.data?.LLM_API_KEY]);
 
   React.useEffect(() => {
-    setGitHubTokenIsSet(!!query.data?.GITHUB_TOKEN_IS_SET);
-  }, [query.data?.GITHUB_TOKEN_IS_SET, query.isFetched]);
+    setGitHubTokenIsSet(!!query.data?.PROVIDER_TOKENS?.github);
+  }, [query.data?.PROVIDER_TOKENS?.github, query.isFetched]);
 
   // We want to return the defaults if the settings aren't found so the user can still see the
   // options to make their initial save. We don't set the defaults in `initialData` above because

@@ -66,8 +66,8 @@ function AccountSettings() {
 
   const isSaas = config?.APP_MODE === "saas";
   const hasAppSlug = !!config?.APP_SLUG;
-  const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
-  const isGitLabTokenSet = settings?.PROVIDER_TOKENS?.gitlab;
+  const areProviderTokensSet =
+    Object.keys(settings?.PROVIDER_TOKENS || {}).length > 0;
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
@@ -370,11 +370,15 @@ function AccountSettings() {
                   type="password"
                   className="w-[680px]"
                   startContent={
-                    isGitHubTokenSet && (
-                      <KeyStatusIcon isSet={!!isGitHubTokenSet} />
+                    settings?.PROVIDER_TOKENS?.github && (
+                      <KeyStatusIcon
+                        isSet={!!settings?.PROVIDER_TOKENS?.github}
+                      />
                     )
                   }
-                  placeholder={isGitHubTokenSet ? "**********" : ""}
+                  placeholder={
+                    settings?.PROVIDER_TOKENS?.github ? "**********" : ""
+                  }
                 />
 
                 <HelpLink
@@ -391,11 +395,15 @@ function AccountSettings() {
                   type="password"
                   className="w-[680px]"
                   startContent={
-                    isGitLabTokenSet && (
-                      <KeyStatusIcon isSet={!!isGitLabTokenSet} />
+                    settings?.PROVIDER_TOKENS?.gitlab && (
+                      <KeyStatusIcon
+                        isSet={!!settings?.PROVIDER_TOKENS?.gitlab}
+                      />
                     )
                   }
-                  placeholder={isGitLabTokenSet ? "**********" : ""}
+                  placeholder={
+                    settings?.PROVIDER_TOKENS?.gitlab ? "**********" : ""
+                  }
                 />
 
                 <HelpLink
@@ -411,7 +419,7 @@ function AccountSettings() {
               type="button"
               variant="secondary"
               onClick={handleLogout}
-              isDisabled={!isGitHubTokenSet && !isGitLabTokenSet}
+              isDisabled={!areProviderTokensSet}
             >
               Disconnect Tokens
             </BrandButton>

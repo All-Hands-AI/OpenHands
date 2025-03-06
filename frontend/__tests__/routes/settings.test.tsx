@@ -82,7 +82,7 @@ describe("Settings Screen", () => {
     it.skip("should render an indicator if the GitHub token is not set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        github_token_is_set: false,
+        provider_tokens: {},
       });
 
       renderSettingsScreen();
@@ -103,7 +103,7 @@ describe("Settings Screen", () => {
     it("should set asterik placeholder if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        github_token_is_set: true,
+        provider_tokens: { github: "test-token" },
       });
 
       renderSettingsScreen();
@@ -117,7 +117,7 @@ describe("Settings Screen", () => {
     it("should render an indicator if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        github_token_is_set: true,
+        provider_tokens: { github: "test-token" },
       });
 
       renderSettingsScreen();
@@ -136,7 +136,7 @@ describe("Settings Screen", () => {
     it("should render a disabled 'Disconnect Tokens' button if the GitHub token is not set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        github_token_is_set: false,
+        provider_tokens: {},
       });
 
       renderSettingsScreen();
@@ -149,7 +149,7 @@ describe("Settings Screen", () => {
     it("should render an enabled 'Disconnect Tokens' button if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        github_token_is_set: true,
+        provider_tokens: { github: "test-token" },
       });
 
       renderSettingsScreen();
@@ -167,7 +167,7 @@ describe("Settings Screen", () => {
 
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        github_token_is_set: true,
+        provider_tokens: { github: "test-token" },
       });
 
       renderSettingsScreen();
@@ -225,7 +225,7 @@ describe("Settings Screen", () => {
       const user = userEvent.setup();
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        github_token_is_set: false,
+        provider_tokens: {},
         llm_model: "anthropic/claude-3-5-sonnet-20241022",
       });
       saveSettingsSpy.mockRejectedValueOnce(new Error("Invalid GitHub token"));
@@ -646,7 +646,7 @@ describe("Settings Screen", () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         language: "no",
-        github_token_is_set: true,
+        provider_tokens: { github: "test-token" },
         user_consents_to_analytics: true,
         llm_base_url: "https://test.com",
         llm_model: "anthropic/claude-3-5-sonnet-20241022",
@@ -773,8 +773,7 @@ describe("Settings Screen", () => {
       const mockCopy: Partial<PostApiSettings> = {
         ...MOCK_DEFAULT_USER_SETTINGS,
       };
-      delete mockCopy.github_token_is_set;
-      delete mockCopy.gitlab_token_is_set;
+      delete mockCopy.provider_tokens_are_set;
       delete mockCopy.unset_github_token;
       delete mockCopy.user_consents_to_analytics;
 
