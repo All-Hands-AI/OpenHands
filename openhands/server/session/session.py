@@ -122,6 +122,11 @@ class Session:
             )
             logger.info(f'Enabling default condenser: {default_condenser_config}')
             agent_config.condenser = default_condenser_config
+            
+        # Set personality if available
+        if hasattr(settings, 'personality') and settings.personality:
+            logger.info(f'Setting agent personality to: {settings.personality}')
+            agent_config.personality = settings.personality
 
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 

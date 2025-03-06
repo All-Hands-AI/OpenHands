@@ -1,10 +1,24 @@
 from __future__ import annotations
 
+from enum import Enum
+from typing import Literal
+
 from pydantic import BaseModel, SecretStr, SerializationInfo, field_serializer
 from pydantic.json import pydantic_encoder
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.utils import load_app_config
+
+
+class PersonalityType(str, Enum):
+    """
+    Personality types for the agent
+    """
+    ENTHUSIASTIC = 'enthusiastic'
+    CONCISE = 'concise'
+    FUNNY = 'funny'
+    SNARKY = 'snarky'
+    DISGRUNTLED = 'disgruntled'
 
 
 class Settings(BaseModel):
@@ -25,6 +39,7 @@ class Settings(BaseModel):
     enable_default_condenser: bool = False
     enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
+    personality: Literal['enthusiastic', 'concise', 'funny', 'snarky', 'disgruntled'] | None = None
 
     @field_serializer('llm_api_key')
     def llm_api_key_serializer(self, llm_api_key: SecretStr, info: SerializationInfo):
@@ -74,6 +89,7 @@ class Settings(BaseModel):
             llm_base_url=llm_config.base_url,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
             github_token=None,
+            personality=None,
         )
         return settings
 
