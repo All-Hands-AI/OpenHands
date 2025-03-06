@@ -41,7 +41,7 @@ describe("Settings Screen", () => {
 
   beforeAll(() => {
     // TODO: Remove this once we release
-    vi.spyOn(FeatureFlags, "HIDING_LLM_SETTINGS").mockReturnValue(true);
+    vi.spyOn(FeatureFlags, "HIDE_LLM_SETTINGS").mockReturnValue(true);
   });
 
   afterEach(() => {
