@@ -77,7 +77,6 @@ class AgentController:
         NullAction,
         NullObservation,
         ChangeAgentStateAction,
-        AgentStateChangedObservation,
         AgentCondensationObservation,
     )
 
