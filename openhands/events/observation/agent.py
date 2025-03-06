@@ -71,6 +71,24 @@ class RecallObservation(Observation):
     additional_agent_instructions: str = ''
 
     # knowledge_microagent
+    # A list of dictionaries, where each dictionary contains information about a triggered microagent.
+    # Each dictionary has the following keys:
+    # - agent_name: str - The name of the microagent that was triggered
+    # - trigger_word: str - The word that triggered this microagent
+    # - content: str - The actual content/knowledge from the microagent
+    # Example:
+    # [
+    #     {
+    #         "agent_name": "python_best_practices",
+    #         "trigger_word": "python",
+    #         "content": "Always use virtual environments for Python projects."
+    #     },
+    #     {
+    #         "agent_name": "git_workflow",
+    #         "trigger_word": "git",
+    #         "content": "Create a new branch for each feature or bugfix."
+    #     }
+    # ]
     microagent_knowledge: list[dict[str, str]] = field(default_factory=list)
 
     @property
