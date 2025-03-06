@@ -111,7 +111,9 @@ export function Sidebar() {
               <SettingsButton />
             </NavLink>
             <UserActions
-              user={user.data ? { avatar_url: user.data.avatar_url } : undefined}
+              user={
+                user.data ? { avatar_url: user.data.avatar_url } : undefined
+              }
               onLogout={handleLogout}
               isLoading={user.isLoading || user.isPending}
             />
