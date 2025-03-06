@@ -4185,7 +4185,7 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.62.2"
+version = "1.62.4"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = ">=3.8.1,<4.0, !=3.9.7"
@@ -4213,8 +4213,8 @@ proxy = ["PyJWT (>=2.8.0,<3.0.0)", "apscheduler (>=3.10.4,<4.0.0)", "backoff", "
 [package.source]
 type = "git"
 url = "https://github.com/BerriAI/litellm.git"
-reference = "litellm_dev_03_03_2025_p3"
-resolved_reference = "a1a711abfa120e62944c3639620c6bce96671ba5"
+reference = "main"
+resolved_reference = "17efbf0ee94d21d9e8fc8a8ce24b5c854490e0ff"
 
 [[package]]
 name = "llama-cloud"
@@ -10859,4 +10859,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "9a2fac319676d921e5f637724dd8b80a09b3efb0f7d33e2af9185c6cda7f9fd9"
+content-hash = "2a2c34de062d9292dcbf1e4d2af9cda764b666b654a6d62e7423b01f1966ea61"
