@@ -466,28 +466,7 @@ class AgentController:
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
                 self.event_stream.add_event(obs, EventSource.AGENT)
 
-        # TODO: do RecallActions need an Observation?
-        if isinstance(self._pending_action, AgentRecallAction):
-            # check if there is an observation whose cause is set to pending_action.id
-            found_observation = False
-            for event in reversed(self.state.history):
-                if (
-                    isinstance(event, Observation)
-                    and event.cause == self._pending_action.id
-                ):
-                    found_observation = True
-                    break
-
-            # make a new ErrorObservation caused by the RecallAction
-            if not found_observation:
-                obs = ErrorObservation(content='No information found.')
-                obs._cause = self._pending_action.id  # type: ignore[attr-defined]
-                self.event_stream.add_event(
-                    obs,
-                    self._pending_action.source
-                    if self._pending_action.source
-                    else EventSource.ENVIRONMENT,
-                )
+        # NOTE: do RecallActions need an Observation? No, as long as they have no tool calls
 
         # reset the pending action, this will be called when the agent is STOPPED or ERROR
         self._pending_action = None
