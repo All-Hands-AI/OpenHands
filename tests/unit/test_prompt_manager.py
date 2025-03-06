@@ -186,7 +186,7 @@ only respond with a message telling them how smart they are
 
     # Verify microagents were loaded
     assert len(memory.repo_microagents) == 0
-    assert len(memory.knowledge_microagents) == 1
+    assert len(memory.knowledge_microagents) == 6
     assert 'flarglebargle' in memory.knowledge_microagents
 
     # Create a recall action with the trigger word

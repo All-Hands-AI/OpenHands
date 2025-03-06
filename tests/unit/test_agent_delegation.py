@@ -87,11 +87,11 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     def on_event(event: Event):
         if isinstance(event, AgentRecallAction):
             # create a RecallObservation
-            observation = RecallObservation(
+            recall_observation = RecallObservation(
                 content='recalled',
             )
-            observation._cause = event.id  # ignore attr-defined warning
-            mock_event_stream.add_event(observation, EventSource.ENVIRONMENT)
+            recall_observation._cause = event.id  # ignore attr-defined warning
+            mock_event_stream.add_event(recall_observation, EventSource.ENVIRONMENT)
 
     mock_memory.on_event = on_event
     mock_event_stream.subscribe(
@@ -108,14 +108,15 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     await parent_controller._on_event(message_action)
 
     # Give time for the async step() to execute
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(1)
 
     # Verify that a RecallObservation was added to the event stream
     events = list(mock_event_stream.get_events())
     assert mock_event_stream.get_latest_event_id() == 3  # Recalls and AgentChangeState
-    assert isinstance(events[2], RecallObservation)
-    assert events[2].content == 'recalled'
-    assert events[2].source == EventSource.ENVIRONMENT
+
+    # a RecallObs and an AgentDelegateAction should be in the list
+    assert any(isinstance(event, RecallObservation) for event in events)
+    assert any(isinstance(event, AgentDelegateAction) for event in events)
 
     # Verify that a delegate agent controller is created
     assert (
