@@ -1,6 +1,15 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
-import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  test,
+  vi,
+} from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent, { UserEvent } from "@testing-library/user-event";
 import OpenHands from "#/api/open-hands";
@@ -11,6 +20,7 @@ import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { PostApiSettings } from "#/types/settings";
 import * as ConsentHandlers from "#/utils/handle-capture-consent";
 import AccountSettings from "#/routes/account-settings";
+import * as FeatureFlags from "#/utils/feature-flags";
 
 const toggleAdvancedSettings = async (user: UserEvent) => {
   const advancedSwitch = await screen.findByTestId("advanced-settings-switch");
@@ -28,6 +38,11 @@ describe("Settings Screen", () => {
   vi.mock("#/hooks/use-app-logout", () => ({
     useAppLogout: vi.fn().mockReturnValue({ handleLogout: handleLogoutMock }),
   }));
+
+  beforeAll(() => {
+    // TODO: Remove this once we release
+    vi.spyOn(FeatureFlags, "HIDING_LLM_SETTINGS").mockReturnValue(true);
+  });
 
   afterEach(() => {
     vi.clearAllMocks();

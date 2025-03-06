@@ -13,3 +13,4 @@ function loadFeatureFlag(
 }
 
 export const BILLING_SETTINGS = () => loadFeatureFlag("BILLING_SETTINGS");
+export const HIDING_LLM_SETTINGS = () => loadFeatureFlag("HIDING_LLM_SETTINGS");

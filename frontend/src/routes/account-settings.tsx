@@ -26,6 +26,7 @@ import {
   displaySuccessToast,
 } from "#/utils/custom-toast-handlers";
 import { PostSettings } from "#/types/settings";
+import { HIDING_LLM_SETTINGS } from "#/utils/feature-flags";
 
 const REMOTE_RUNTIME_OPTIONS = [
   { key: 1, label: "1x (2 core, 8G)" },
@@ -52,9 +53,10 @@ function AccountSettings() {
   const isSuccess = isSuccessfulSettings && isSuccessfulResources;
 
   const isSaas = config?.APP_MODE === "saas";
+  const shouldHandleSpecialSaasCase = HIDING_LLM_SETTINGS() && isSaas;
 
   const determineWhetherToToggleAdvancedSettings = () => {
-    if (isSaas) return true;
+    if (shouldHandleSpecialSaasCase) return true;
 
     if (isSuccess) {
       return (
@@ -118,9 +120,13 @@ function AccountSettings() {
         : ""); // reset if it's first time save to avoid 500 error
 
     // we don't want the user to be able to modify these settings in SaaS
-    const finalLlmModel = isSaas ? undefined : customLlmModel || fullLlmModel;
-    const finalLlmBaseUrl = isSaas ? undefined : llmBaseUrl;
-    const finalLlmApiKey = isSaas ? undefined : llmApiKey;
+    const finalLlmModel = shouldHandleSpecialSaasCase
+      ? undefined
+      : customLlmModel || fullLlmModel;
+    const finalLlmBaseUrl = shouldHandleSpecialSaasCase
+      ? undefined
+      : llmBaseUrl;
+    const finalLlmApiKey = shouldHandleSpecialSaasCase ? undefined : llmApiKey;
 
     saveSettings(
       {
@@ -163,7 +169,7 @@ function AccountSettings() {
 
     // we don't want the user to be able to modify these settings in SaaS
     // and we should make sure they aren't included in the reset
-    if (isSaas) {
+    if (shouldHandleSpecialSaasCase) {
       delete newSettings.LLM_API_KEY;
       delete newSettings.LLM_BASE_URL;
       delete newSettings.LLM_MODEL;
@@ -219,7 +225,7 @@ function AccountSettings() {
               <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
                 LLM Settings
               </h2>
-              {!isSaas && (
+              {!shouldHandleSpecialSaasCase && (
                 <SettingsSwitch
                   testId="advanced-settings-switch"
                   defaultIsToggled={isAdvancedSettingsSet}
@@ -230,14 +236,14 @@ function AccountSettings() {
               )}
             </div>
 
-            {llmConfigMode === "basic" && !isSaas && (
+            {llmConfigMode === "basic" && !shouldHandleSpecialSaasCase && (
               <ModelSelector
                 models={modelsAndProviders}
                 currentModel={settings.LLM_MODEL}
               />
             )}
 
-            {llmConfigMode === "advanced" && !isSaas && (
+            {llmConfigMode === "advanced" && !shouldHandleSpecialSaasCase && (
               <SettingsInput
                 testId="llm-custom-model-input"
                 name="llm-custom-model-input"
@@ -248,7 +254,7 @@ function AccountSettings() {
                 className="w-[680px]"
               />
             )}
-            {llmConfigMode === "advanced" && !isSaas && (
+            {llmConfigMode === "advanced" && !shouldHandleSpecialSaasCase && (
               <SettingsInput
                 testId="base-url-input"
                 name="base-url-input"
@@ -260,7 +266,7 @@ function AccountSettings() {
               />
             )}
 
-            {!isSaas && (
+            {!shouldHandleSpecialSaasCase && (
               <SettingsInput
                 testId="llm-api-key-input"
                 name="llm-api-key-input"
@@ -274,7 +280,7 @@ function AccountSettings() {
               />
             )}
 
-            {!isSaas && (
+            {!shouldHandleSpecialSaasCase && (
               <HelpLink
                 testId="llm-api-key-help-anchor"
                 text="Don't know your API key?"
