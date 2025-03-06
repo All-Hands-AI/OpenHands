@@ -10,7 +10,6 @@ import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-b
 import { DocsButton } from "#/components/shared/buttons/docs-button";
 import { ExitProjectButton } from "#/components/shared/buttons/exit-project-button";
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { useCurrentSettings } from "#/context/settings-context";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -111,15 +110,13 @@ export function Sidebar() {
             >
               <SettingsButton />
             </NavLink>
-            {!user.isLoading && (
-              <UserActions
-                user={
-                  user.data ? { avatar_url: user.data.avatar_url } : undefined
-                }
-                onLogout={handleLogout}
-              />
-            )}
-            {user.isLoading && <LoadingSpinner size="small" />}
+            <UserActions
+              user={
+                user.data ? { avatar_url: user.data.avatar_url } : undefined
+              }
+              onLogout={handleLogout}
+              isLoading={user.isLoading || user.isPending}
+            />
           </div>
         </nav>
 
