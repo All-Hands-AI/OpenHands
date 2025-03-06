@@ -13,7 +13,6 @@ interface UserAvatarProps {
 }
 
 export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
-  console.log("TRACE:UserAvatar", avatarUrl, isLoading)
   const { t } = useTranslation();
   return (
     <TooltipButton
