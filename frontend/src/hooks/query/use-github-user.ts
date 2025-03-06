@@ -22,7 +22,7 @@ export const useGitHubUser = () => {
   });
 
   React.useEffect(() => {
-    const { data } = query
+    const { data } = query;
     if (data) {
       posthog.identify(data.login, {
         company: data.company,
@@ -49,5 +49,5 @@ export const useGitHubUser = () => {
     }
   }, [query.isError]);
 
-  return { user: query.data, isLoading: query.isLoading || query.isPending};
+  return { user: query.data, isLoading: query.isLoading || query.isPending };
 };
