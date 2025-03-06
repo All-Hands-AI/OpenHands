@@ -1,7 +1,8 @@
 import asyncio
 import time
 from dataclasses import dataclass, field
-from typing import Iterable, Type
+from datetime import datetime, timezone
+from typing import Callable, Iterable, Type
 
 import socketio
 
@@ -11,7 +12,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.observation.agent import AgentStateChangedObservation
-from openhands.events.stream import EventStream, session_exists
+from openhands.events.stream import EventStream, EventStreamSubscriber, session_exists
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
@@ -21,13 +22,14 @@ from openhands.server.settings import Settings
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import wait_all
+from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync, wait_all
 from openhands.utils.import_utils import get_impl
 from openhands.utils.shutdown_listener import should_continue
 
 from .conversation_manager import ConversationManager
 
 _CLEANUP_INTERVAL = 15
+UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 
 @dataclass
@@ -258,6 +260,15 @@ class StandaloneConversationManager(ConversationManager):
             )
             self._local_agent_loops_by_sid[sid] = session
             asyncio.create_task(session.initialize_agent(settings, initial_user_msg))
+            # This does not get added when resuming an existing conversation
+            try:
+                session.agent_session.event_stream.subscribe(
+                    EventStreamSubscriber.SERVER,
+                    self._create_conversation_update_callback(user_id, sid),
+                    UPDATED_AT_CALLBACK_ID,
+                )
+            except ValueError:
+                pass  # Already subscribed - take no action
 
         event_stream = await self._get_event_stream(sid)
         if not event_stream:
@@ -337,6 +348,27 @@ class StandaloneConversationManager(ConversationManager):
             server_config,
             monitoring_listener or MonitoringListener(),
         )
+
+    def _create_conversation_update_callback(
+        self, user_id: str | None, conversation_id: str
+    ) -> Callable:
+        def callback(*args, **kwargs):
+            call_async_from_sync(
+                self._update_timestamp_for_conversation,
+                GENERAL_TIMEOUT,
+                user_id,
+                conversation_id,
+            )
+
+        return callback
+
+    async def _update_timestamp_for_conversation(
+        self, user_id: str, conversation_id: str
+    ):
+        conversation_store = await self._get_conversation_store(user_id)
+        conversation = await conversation_store.get_metadata(conversation_id)
+        conversation.last_updated_at = datetime.now(timezone.utc)
+        await conversation_store.save_metadata(conversation)
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:
