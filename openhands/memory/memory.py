@@ -78,7 +78,10 @@ class Memory:
 
     def set_repository_info(self, repo_name: str, repo_directory: str) -> None:
         """Store repository info so we can reference it in an observation."""
-        self.repository_info = RepositoryInfo(repo_name, repo_directory)
+        if repo_name or repo_directory:
+            self.repository_info = RepositoryInfo(repo_name, repo_directory)
+        else:
+            self.repository_info = None
 
     def set_runtime_info(self, runtime: Runtime) -> None:
         """Store runtime info (web hosts, ports, etc.)."""
