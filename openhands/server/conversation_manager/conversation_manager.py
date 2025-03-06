@@ -7,6 +7,8 @@ import socketio
 from openhands.core.config import AppConfig
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStream
+from openhands.server.config.server_config import ServerConfig
+from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import Conversation
 from openhands.server.settings import Settings
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -94,5 +96,7 @@ class ConversationManager(ABC):
         sio: socketio.AsyncServer,
         config: AppConfig,
         file_store: FileStore,
+        server_config: ServerConfig,
+        monitoring_listener: MonitoringListener,
     ) -> ConversationManager:
         """Get a conversation manager instance"""

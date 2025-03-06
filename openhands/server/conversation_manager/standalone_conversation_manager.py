@@ -12,6 +12,7 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.stream import EventStream, session_exists
+from openhands.server.config.server_config import ServerConfig
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
 from openhands.server.session.conversation import Conversation
@@ -36,6 +37,7 @@ class StandaloneConversationManager(ConversationManager):
     sio: socketio.AsyncServer
     config: AppConfig
     file_store: FileStore
+    server_config: ServerConfig
     # Defaulting monitoring_listener for temp backward compatibility.
     monitoring_listener: MonitoringListener = MonitoringListener()
     _local_agent_loops_by_sid: dict[str, Session] = field(default_factory=dict)
@@ -173,14 +175,14 @@ class StandaloneConversationManager(ConversationManager):
                 logger.error('error_cleaning_stale')
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
-    def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
+    async def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
         conversation_store_class = self._conversation_store_class
         if not conversation_store_class:
             self._conversation_store_class = conversation_store_class = get_impl(
                 ConversationStore,  # type: ignore
-                self.config.conversation_store_class,
+                self.server_config.conversation_store_class,
             )
-        store = conversation_store_class.get_instance(self.config, user_id)
+        store = await conversation_store_class.get_instance(self.config, user_id)
         return store
 
     async def get_running_agent_loops(
@@ -239,7 +241,7 @@ class StandaloneConversationManager(ConversationManager):
             if len(response_ids) >= self.config.max_concurrent_conversations:
                 logger.info('too_many_sessions_for:{user_id}')
                 # Get the conversations sorted (oldest first)
-                conversation_store = self._get_conversation_store(user_id)
+                conversation_store = await self._get_conversation_store(user_id)
                 conversations = await conversation_store.get_all_metadata(response_ids)
                 conversations.sort(key=_last_updated_at_key)
 
@@ -325,12 +327,14 @@ class StandaloneConversationManager(ConversationManager):
         sio: socketio.AsyncServer,
         config: AppConfig,
         file_store: FileStore,
-        monitoring_listener: MonitoringListener | None = None,
+        server_config: ServerConfig,
+        monitoring_listener: MonitoringListener | None,
     ) -> ConversationManager:
         return StandaloneConversationManager(
             sio,
             config,
             file_store,
+            server_config,
             monitoring_listener or MonitoringListener(),
         )
 
