@@ -479,6 +479,34 @@ class ConversationMemory:
                 ].cache_prompt = True  # Last item inside the message content
                 break
 
+    def _filter_agents_in_recall_obs(
+        self, obs: RecallObservation, current_index: int, events: list[Event]
+    ) -> list[dict[str, str]]:
+        """Filter out agents that appear in later RecallObservations.
+
+        Args:
+            obs: The current RecallObservation to filter
+            current_index: The index of the current event in the events list
+            events: The list of all events
+
+        Returns:
+            list[dict[str, str]]: The filtered list of microagent knowledge
+        """
+        if obs.recall_type != RecallType.KNOWLEDGE_MICROAGENT:
+            return obs.microagent_knowledge
+
+        # For each agent in the current recall observation, check if it appears in any later recall observation
+        filtered_agents = []
+        for agent in obs.microagent_knowledge:
+            # Keep this agent if it doesn't appear in any later observation
+            # that is, if this is the most recent recall observation with this microagent
+            if not self._has_agent_in_later_events(
+                agent['agent_name'], current_index, events
+            ):
+                filtered_agents.append(agent)
+
+        return filtered_agents
+
     def _has_agent_in_later_events(
         self, agent_name: str, current_index: int, events: list[Event]
     ) -> bool:
@@ -503,27 +531,3 @@ class ConversationMemory:
                 ):
                     return True
         return False
-
-    def _filter_agents_in_recall_obs(
-        self, obs: RecallObservation, current_index: int, events: list[Event]
-    ) -> list[dict[str, str]]:
-        """Filter out agents that appear in later RecallObservations.
-
-        Args:
-            obs: The current RecallObservation to filter
-            current_index: The index of the current event in the events list
-            events: The list of all events
-
-        Returns:
-            list[dict[str, str]]: The filtered list of microagent knowledge
-        """
-        if obs.recall_type != RecallType.KNOWLEDGE_MICROAGENT:
-            return obs.microagent_knowledge
-
-        return [
-            agent
-            for agent in obs.microagent_knowledge
-            if not self._has_agent_in_later_events(
-                agent['agent_name'], current_index, events
-            )
-        ]
