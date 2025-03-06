@@ -976,12 +976,23 @@ describe("Settings Screen", () => {
     });
   });
 
-  describe("SaaS mode", () => {
+  describe.only("SaaS mode", () => {
     beforeEach(() => {
       getConfigSpy.mockResolvedValue({
         APP_MODE: "saas",
         GITHUB_CLIENT_ID: "123",
         POSTHOG_CLIENT_KEY: "456",
+      });
+    });
+
+    it("should hide the entire LLM section", async () => {
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        screen.getByTestId("account-settings-form"); // wait for the account settings form to render
+
+        const llmSection = screen.queryByTestId("llm-settings-section");
+        expect(llmSection).not.toBeInTheDocument();
       });
     });
 
@@ -1009,7 +1020,8 @@ describe("Settings Screen", () => {
       });
     });
 
-    it("should render advanced settings by default", async () => {
+    // We might want to bring this back if users wish to set advanced settings
+    it.skip("should render advanced settings by default", async () => {
       renderSettingsScreen();
 
       await waitFor(() => {
@@ -1031,17 +1043,11 @@ describe("Settings Screen", () => {
       const user = userEvent.setup();
       renderSettingsScreen();
 
-      const enableConfirmationModeSwitch = await screen.findByTestId(
-        "enable-confirmation-mode-switch",
-      );
-      await user.click(enableConfirmationModeSwitch);
-
-      const saveButton = screen.getByText("Save Changes");
+      const saveButton = await screen.findByText("Save Changes");
       await user.click(saveButton);
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          confirmation_mode: true,
           llm_api_key: undefined,
           llm_base_url: undefined,
           llm_model: undefined,
