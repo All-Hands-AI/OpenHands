@@ -146,6 +146,7 @@ whatthepatch = "*"
 retry = "*"
 evaluate = "*"
 swebench = "^3.0.8"
+visualswebench = { git = "https://github.com/luolin101/Visual-SWE-bench.git" }
 swegym = { git = "https://github.com/SWE-Gym/SWE-Bench-Package.git" }
 commit0 = "*"
 func_timeout = "*"
