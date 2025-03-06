@@ -1,5 +1,5 @@
 import React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
 import { useConfig } from "#/hooks/query/use-config";
 
@@ -12,42 +12,29 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 function AuthProvider({ children }: React.PropsWithChildren) {
   const queryClient = useQueryClient();
-  const { data: config, isFetching } = useConfig();
+  const { data: config } = useConfig();
 
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-
-  const { mutate: authenticate } = useMutation({
-    mutationFn: OpenHands.authenticate,
-    onSettled: async (data) => {
-      if (!data) {
-        setIsAuthenticated(false);
-        await queryClient.resetQueries();
-      } else {
-        setIsAuthenticated(true);
-      }
-    },
+  const { data: isAuthenticated, isFetched } = useQuery({
+    queryKey: ["authenticate", config?.APP_MODE],
+    queryFn: () => OpenHands.authenticate(config!.APP_MODE),
+    enabled: !!config?.APP_MODE,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const { mutate: logout } = useMutation({
     mutationFn: OpenHands.logout,
     onSuccess: async () => {
-      setIsAuthenticated(false);
       await queryClient.resetQueries();
     },
   });
 
-  const checkIsAuthed = React.useCallback(() => {
-    if (isFetching) return;
-    authenticate(config?.APP_MODE || "saas");
-  }, [config?.APP_MODE, isFetching]);
-
   React.useEffect(() => {
-    checkIsAuthed();
-  }, [checkIsAuthed]);
+    if (isFetched && !isAuthenticated) queryClient.resetQueries();
+  }, [isAuthenticated, isFetched]);
 
   const value = React.useMemo(
     () => ({
-      isAuthenticated,
+      isAuthenticated: isAuthenticated || false,
       logout,
     }),
     [isAuthenticated, logout],
