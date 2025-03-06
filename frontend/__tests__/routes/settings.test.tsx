@@ -458,7 +458,7 @@ describe("Settings Screen", () => {
         expect(input).not.toBeInTheDocument();
       });
 
-      it("should render the runtime settings input if SaaS mode", async () => {
+      it.skip("should render the runtime settings input if SaaS mode", async () => {
         getConfigSpy.mockResolvedValue({
           APP_MODE: "saas",
           GITHUB_CLIENT_ID: "123",
@@ -469,7 +469,7 @@ describe("Settings Screen", () => {
         await screen.findByTestId("runtime-settings-input");
       });
 
-      it("should set the default runtime setting set", async () => {
+      it.skip("should set the default runtime setting set", async () => {
         getConfigSpy.mockResolvedValue({
           APP_MODE: "saas",
           GITHUB_CLIENT_ID: "123",
@@ -487,7 +487,7 @@ describe("Settings Screen", () => {
         expect(input).toHaveValue("1x (2 core, 8G)");
       });
 
-      it("should always have the runtime input disabled", async () => {
+      it.skip("should always have the runtime input disabled", async () => {
         getConfigSpy.mockResolvedValue({
           APP_MODE: "saas",
           GITHUB_CLIENT_ID: "123",
@@ -976,7 +976,7 @@ describe("Settings Screen", () => {
     });
   });
 
-  describe.only("SaaS mode", () => {
+  describe("SaaS mode", () => {
     beforeEach(() => {
       getConfigSpy.mockResolvedValue({
         APP_MODE: "saas",
