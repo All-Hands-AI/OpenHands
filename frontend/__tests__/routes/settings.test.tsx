@@ -67,6 +67,14 @@ describe("Settings Screen", () => {
   });
 
   describe("Account Settings", () => {
+    beforeEach(() => {
+      getConfigSpy.mockResolvedValue({
+        APP_MODE: "oss",
+        GITHUB_CLIENT_ID: "123",
+        POSTHOG_CLIENT_KEY: "456",
+      });
+    });
+
     it("should render the account settings", async () => {
       renderSettingsScreen();
 
@@ -280,6 +288,14 @@ describe("Settings Screen", () => {
   });
 
   describe("LLM Settings", () => {
+    beforeEach(() => {
+      getConfigSpy.mockResolvedValue({
+        APP_MODE: "oss",
+        GITHUB_CLIENT_ID: "123",
+        POSTHOG_CLIENT_KEY: "456",
+      });
+    });
+
     it("should render the basic LLM settings by default", async () => {
       renderSettingsScreen();
 
@@ -428,7 +444,6 @@ describe("Settings Screen", () => {
       });
 
       it("should render the runtime settings input if SaaS mode", async () => {
-        const user = userEvent.setup();
         getConfigSpy.mockResolvedValue({
           APP_MODE: "saas",
           GITHUB_CLIENT_ID: "123",
@@ -436,9 +451,7 @@ describe("Settings Screen", () => {
         });
 
         renderSettingsScreen();
-
-        await toggleAdvancedSettings(user);
-        screen.getByTestId("runtime-settings-input");
+        await screen.findByTestId("runtime-settings-input");
       });
 
       it("should set the default runtime setting set", async () => {
@@ -455,8 +468,6 @@ describe("Settings Screen", () => {
 
         renderSettingsScreen();
 
-        await toggleAdvancedSettings(userEvent.setup());
-
         const input = await screen.findByTestId("runtime-settings-input");
         expect(input).toHaveValue("1x (2 core, 8G)");
       });
@@ -469,8 +480,6 @@ describe("Settings Screen", () => {
         });
 
         renderSettingsScreen();
-
-        await toggleAdvancedSettings(userEvent.setup());
 
         const input = await screen.findByTestId("runtime-settings-input");
         expect(input).toBeDisabled();
@@ -489,8 +498,6 @@ describe("Settings Screen", () => {
         });
 
         renderSettingsScreen();
-
-        await toggleAdvancedSettings(user);
 
         const input = await screen.findByTestId("runtime-settings-input");
         await user.click(input);
@@ -954,7 +961,7 @@ describe("Settings Screen", () => {
     });
   });
 
-  describe.only("SaaS mode", () => {
+  describe("SaaS mode", () => {
     beforeEach(() => {
       getConfigSpy.mockResolvedValue({
         APP_MODE: "saas",
