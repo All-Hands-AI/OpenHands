@@ -30,6 +30,10 @@ const MOCK_USER_PREFERENCES: {
   settings: MOCK_DEFAULT_USER_SETTINGS,
 };
 
+export const resetMockUserPreferences = () => {
+  MOCK_USER_PREFERENCES.settings = MOCK_DEFAULT_USER_SETTINGS;
+};
+
 const conversations: Conversation[] = [
   {
     conversation_id: "1",

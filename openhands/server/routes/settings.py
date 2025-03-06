@@ -83,6 +83,12 @@ async def store_settings(
                     existing_settings.user_consents_to_analytics
                 )
 
+            if settings.llm_model is None:
+                settings.llm_model = existing_settings.llm_model
+
+            if settings.llm_base_url is None:
+                settings.llm_base_url = existing_settings.llm_base_url
+
         response = JSONResponse(
             status_code=status.HTTP_200_OK,
             content={'message': 'Settings stored'},

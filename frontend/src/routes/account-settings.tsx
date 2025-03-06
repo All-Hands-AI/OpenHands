@@ -50,7 +50,11 @@ function AccountSettings() {
   const isFetching = isFetchingSettings || isFetchingResources;
   const isSuccess = isSuccessfulSettings && isSuccessfulResources;
 
+  const isSaas = config?.APP_MODE === "saas";
+
   const determineWhetherToToggleAdvancedSettings = () => {
+    if (isSaas) return true;
+
     if (isSuccess) {
       return (
         isCustomModel(resources.models, settings.LLM_MODEL) ||
@@ -61,7 +65,6 @@ function AccountSettings() {
     return false;
   };
 
-  const isSaas = config?.APP_MODE === "saas";
   const hasAppSlug = !!config?.APP_SLUG;
   const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
@@ -106,6 +109,17 @@ function AccountSettings() {
       formData.get("enable-memory-condenser-switch")?.toString() === "on";
     const enableSoundNotifications =
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
+    const llmBaseUrl = formData.get("base-url-input")?.toString() || "";
+    const llmApiKey =
+      formData.get("llm-api-key-input")?.toString() ||
+      (isLLMKeySet
+        ? undefined // don't update if it's already set
+        : ""); // reset if it's first time save to avoid 500 error
+
+    // we don't want the user to be able to modify these settings in SaaS
+    const finalLlmModel = isSaas ? undefined : customLlmModel || fullLlmModel;
+    const finalLlmBaseUrl = isSaas ? undefined : llmBaseUrl;
+    const finalLlmApiKey = isSaas ? undefined : llmApiKey;
 
     saveSettings(
       {
@@ -115,13 +129,9 @@ function AccountSettings() {
         user_consents_to_analytics: userConsentsToAnalytics,
         ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
         ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
-        LLM_MODEL: customLlmModel || fullLlmModel,
-        LLM_BASE_URL: formData.get("base-url-input")?.toString() || "",
-        LLM_API_KEY:
-          formData.get("llm-api-key-input")?.toString() ||
-          (isLLMKeySet
-            ? undefined // don't update if it's already set
-            : ""), // reset if it's first time save to avoid 500 error
+        LLM_MODEL: finalLlmModel,
+        LLM_BASE_URL: finalLlmBaseUrl,
+        LLM_API_KEY: finalLlmApiKey,
         AGENT: formData.get("agent-input")?.toString(),
         SECURITY_ANALYZER:
           formData.get("security-analyzer-input")?.toString() || "",
@@ -190,6 +200,7 @@ function AccountSettings() {
   return (
     <>
       <form
+        data-testid="account-settings-form"
         ref={formRef}
         action={onSubmit}
         className="flex flex-col grow overflow-auto"
@@ -200,23 +211,25 @@ function AccountSettings() {
               <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
                 LLM Settings
               </h2>
-              <SettingsSwitch
-                testId="advanced-settings-switch"
-                defaultIsToggled={isAdvancedSettingsSet}
-                onToggle={onToggleAdvancedMode}
-              >
-                Advanced
-              </SettingsSwitch>
+              {!isSaas && (
+                <SettingsSwitch
+                  testId="advanced-settings-switch"
+                  defaultIsToggled={isAdvancedSettingsSet}
+                  onToggle={onToggleAdvancedMode}
+                >
+                  Advanced
+                </SettingsSwitch>
+              )}
             </div>
 
-            {llmConfigMode === "basic" && (
+            {llmConfigMode === "basic" && !isSaas && (
               <ModelSelector
                 models={modelsAndProviders}
                 currentModel={settings.LLM_MODEL}
               />
             )}
 
-            {llmConfigMode === "advanced" && (
+            {llmConfigMode === "advanced" && !isSaas && (
               <SettingsInput
                 testId="llm-custom-model-input"
                 name="llm-custom-model-input"
@@ -227,7 +240,7 @@ function AccountSettings() {
                 className="w-[680px]"
               />
             )}
-            {llmConfigMode === "advanced" && (
+            {llmConfigMode === "advanced" && !isSaas && (
               <SettingsInput
                 testId="base-url-input"
                 name="base-url-input"
@@ -239,24 +252,28 @@ function AccountSettings() {
               />
             )}
 
-            <SettingsInput
-              testId="llm-api-key-input"
-              name="llm-api-key-input"
-              label="API Key"
-              type="password"
-              className="w-[680px]"
-              startContent={
-                isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
-              }
-              placeholder={isLLMKeySet ? "**********" : ""}
-            />
+            {!isSaas && (
+              <SettingsInput
+                testId="llm-api-key-input"
+                name="llm-api-key-input"
+                label="API Key"
+                type="password"
+                className="w-[680px]"
+                startContent={
+                  isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />
+                }
+                placeholder={isLLMKeySet ? "**********" : ""}
+              />
+            )}
 
-            <HelpLink
-              testId="llm-api-key-help-anchor"
-              text="Don't know your API key?"
-              linkText="Click here for instructions"
-              href="https://docs.all-hands.dev/modules/usage/llms"
-            />
+            {!isSaas && (
+              <HelpLink
+                testId="llm-api-key-help-anchor"
+                text="Don't know your API key?"
+                linkText="Click here for instructions"
+                href="https://docs.all-hands.dev/modules/usage/llms"
+              />
+            )}
 
             {llmConfigMode === "advanced" && (
               <SettingsDropdownInput

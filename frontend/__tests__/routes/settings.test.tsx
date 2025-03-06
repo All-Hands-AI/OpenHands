@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
-import { afterEach, describe, expect, it, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent, { UserEvent } from "@testing-library/user-event";
 import OpenHands from "#/api/open-hands";
@@ -950,6 +950,80 @@ describe("Settings Screen", () => {
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({ llm_api_key: "new-api-key" }),
+      );
+    });
+  });
+
+  describe.only("SaaS mode", () => {
+    beforeEach(() => {
+      getConfigSpy.mockResolvedValue({
+        APP_MODE: "saas",
+        GITHUB_CLIENT_ID: "123",
+        POSTHOG_CLIENT_KEY: "456",
+      });
+    });
+
+    it("should not render LLM Provider, LLM Model, and LLM API Key inputs", async () => {
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        screen.getByTestId("account-settings-form"); // wait for the account settings form to render
+
+        const providerInput = screen.queryByTestId("llm-provider-input");
+        const modelInput = screen.queryByTestId("llm-model-input");
+        const apiKeyInput = screen.queryByTestId("llm-api-key-input");
+        const llmApiKeyHelpAnchor = screen.queryByTestId(
+          "llm-api-key-help-anchor",
+        );
+        const advancedSettingsSwitch = screen.queryByTestId(
+          "advanced-settings-switch",
+        );
+
+        expect(providerInput).not.toBeInTheDocument();
+        expect(modelInput).not.toBeInTheDocument();
+        expect(apiKeyInput).not.toBeInTheDocument();
+        expect(llmApiKeyHelpAnchor).not.toBeInTheDocument();
+        expect(advancedSettingsSwitch).not.toBeInTheDocument();
+      });
+    });
+
+    it("should render advanced settings by default", async () => {
+      renderSettingsScreen();
+
+      await waitFor(() => {
+        screen.getByTestId("account-settings-form"); // wait for the account settings form to render
+
+        const agentInput = screen.getByTestId("agent-input"); // this is only rendered in advanced mode
+        expect(agentInput).toBeInTheDocument();
+
+        // we should not allow the user to change these fields
+        const customModelInput = screen.queryByTestId("llm-custom-model-input");
+        const baseUrlInput = screen.queryByTestId("base-url-input");
+
+        expect(customModelInput).not.toBeInTheDocument();
+        expect(baseUrlInput).not.toBeInTheDocument();
+      });
+    });
+
+    it("should not submit the unwanted fields when saving", async () => {
+      const user = userEvent.setup();
+      renderSettingsScreen();
+
+      const enableConfirmationModeSwitch = await screen.findByTestId(
+        "enable-confirmation-mode-switch",
+      );
+      await user.click(enableConfirmationModeSwitch);
+
+      const saveButton = screen.getByText("Save Changes");
+      await user.click(saveButton);
+
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          confirmation_mode: true,
+          llm_api_key: undefined,
+          llm_base_url: undefined,
+          llm_model: undefined,
+        }),
       );
     });
   });
