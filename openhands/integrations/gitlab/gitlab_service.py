@@ -114,10 +114,18 @@ class GitLabService(GitService):
             return []  # Not implementing installation_token case yet
         
         url = f'{self.BASE_URL}/projects'
+        # Map GitHub's sort values to GitLab's order_by values
+        order_by = {
+            'pushed': 'last_activity_at',
+            'updated': 'last_activity_at',
+            'created': 'created_at',
+            'full_name': 'name'
+        }.get(sort, 'last_activity_at')
+
         params = {
             'page': str(page),
             'per_page': str(per_page),
-            'order_by': sort,
+            'order_by': order_by,
             'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
             'owned': 1,  # Use 1 instead of True
             'membership': 1  # Use 1 instead of True
