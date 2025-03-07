@@ -9,7 +9,7 @@ from openhands.core.config.utils import load_from_toml
 
 def test_extended_config_from_dict():
     """Test that ExtendedConfig.from_dict successfully creates an instance.
-    
+
     This test verifies that the from_dict method correctly creates an instance
     from a dictionary containing arbitrary extra keys.
     """
@@ -36,7 +36,7 @@ def test_extended_config_empty():
 
 def test_extended_config_str_and_repr():
     """Test that __str__ and __repr__ return the correct string representations.
-    
+
     This test verifies that the string representations of the ExtendedConfig instance
     include the expected key/value pairs.
     """
@@ -55,7 +55,7 @@ def test_extended_config_str_and_repr():
 
 def test_extended_config_getitem_and_getattr():
     """Test that __getitem__ and __getattr__ can be used to access values.
-    
+
     This test verifies that values in the ExtendedConfig instance can be accessed
     both via attribute access and dictionary-style access.
     """
@@ -82,7 +82,7 @@ def test_extended_config_invalid_key():
 
 def test_app_config_extended_from_toml(tmp_path: os.PathLike) -> None:
     """Test that the [extended] section in a TOML file is correctly loaded.
-    
+
     This test verifies that the [extended] section is loaded into AppConfig.extended
     and that it accepts arbitrary keys.
     """
@@ -119,7 +119,7 @@ enable_prompt_extensions = true
 
 def test_app_config_extended_default(tmp_path: os.PathLike) -> None:
     """Test default behavior when no [extended] section exists.
-    
+
     This test verifies that if there is no [extended] section in the TOML file,
     AppConfig.extended remains its default (empty) ExtendedConfig.
     """
@@ -146,7 +146,7 @@ enable_prompt_extensions = true
 
 def test_app_config_extended_random_keys(tmp_path: os.PathLike) -> None:
     """Test that the extended section accepts arbitrary keys.
-    
+
     This test verifies that the extended section accepts arbitrary keys,
     including ones not defined in any schema.
     """
