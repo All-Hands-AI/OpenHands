@@ -1,7 +1,7 @@
 import hashlib
 import os
 import uuid
-from typing import Tuple, Type
+from typing import Callable, Tuple, Type
 
 from pydantic import SecretStr
 
@@ -120,10 +120,12 @@ def create_memory(
     sid: str,
     selected_repository: str | None = None,
     repo_directory: str | None = None,
+    status_callback: Callable | None = None,
 ) -> Memory:
     memory = Memory(
         event_stream=event_stream,
         sid=sid,
+        status_callback=status_callback,
     )
 
     if runtime:

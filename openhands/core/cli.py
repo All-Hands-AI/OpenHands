@@ -179,7 +179,7 @@ async def main(loop: asyncio.AbstractEventLoop):
         )
 
     # when memory is created, it will load the microagents from the selected repository
-    create_memory(
+    memory = create_memory(
         runtime=runtime,
         event_stream=event_stream,
         sid=sid,
@@ -195,7 +195,7 @@ async def main(loop: asyncio.AbstractEventLoop):
         asyncio.create_task(prompt_for_next_task())
 
     await run_agent_until_done(
-        controller, runtime, [AgentState.STOPPED, AgentState.ERROR]
+        controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]
     )
 
 

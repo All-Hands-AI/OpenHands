@@ -90,7 +90,7 @@ class AgentController:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        sid: str = 'default',
+        sid: str | None = None,
         confirmation_mode: bool = False,
         initial_state: State | None = None,
         is_delegate: bool = False,
@@ -117,7 +117,7 @@ class AgentController:
             status_callback: Optional callback function to handle status updates.
             replay_events: A list of logs to replay.
         """
-        self.id = sid
+        self.id = sid or event_stream.sid
         self.agent = agent
         self.headless_mode = headless_mode
         self.is_delegate = is_delegate

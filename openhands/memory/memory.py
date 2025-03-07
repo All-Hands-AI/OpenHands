@@ -1,4 +1,6 @@
+import asyncio
 import uuid
+from typing import Callable
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import AgentRecallAction
@@ -31,10 +33,13 @@ class Memory:
         self,
         event_stream: EventStream,
         sid: str,
+        status_callback: Callable | None = None,
     ):
         self.event_stream = event_stream
         self.sid = sid if sid else str(uuid.uuid4())
         self.microagents_dir = GLOBAL_MICROAGENTS_DIR
+        self.status_callback = status_callback
+        self.loop = asyncio.get_running_loop()
 
         self.event_stream.subscribe(
             EventStreamSubscriber.MEMORY,
@@ -57,34 +62,53 @@ class Memory:
         # from typically OpenHands/microagents (i.e., the PUBLIC microagents)
         self._load_global_microagents()
 
+    def send_error_message(self, message_id: str, message: str):
+        """Sends an error message if the callback function was provided."""
+        if self.status_callback:
+            asyncio.run_coroutine_threadsafe(
+                self._send_status_message('error', message_id, message), self.loop
+            )
+
+    async def _send_status_message(self, msg_type: str, id: str, message: str):
+        """Sends a status message to the client."""
+        if self.status_callback:
+            self.status_callback(msg_type, id, message)
+
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
+        try:
+            observation: RecallObservation | NullObservation | None = None
+            # Handle AgentRecallAction
+            if isinstance(event, AgentRecallAction):
+                # if this is the first user message, create and add a RecallObservation
+                # with info about repo and runtime.
+                if (
+                    not self._first_user_message_seen
+                    and event.source == EventSource.USER
+                    and self._is_on_first_user_message(event)
+                ):
+                    observation = self._on_first_recall_action(event)
 
-        observation: RecallObservation | NullObservation | None = None
-        # Handle AgentRecallAction
-        if isinstance(event, AgentRecallAction):
-            # if this is the first user message, create and add a RecallObservation
-            # with info about repo and runtime.
-            if (
-                not self._first_user_message_seen
-                and event.source == EventSource.USER
-                and self._is_on_first_user_message(event)
-            ):
-                observation = self._on_first_recall_action(event)
+                # continue with the next handler, to include knowledge microagents if suitable for this query
+                assert observation is None or isinstance(
+                    observation, RecallObservation
+                ), f'Expected a RecallObservation, but got {type(observation)}'
+                observation = self._on_recall_action(
+                    event, prev_observation=observation
+                )
 
-            # continue with the next handler, to include knowledge microagents if suitable for this query
-            assert observation is None or isinstance(
-                observation, RecallObservation
-            ), f'Expected a RecallObservation, but got {type(observation)}'
-            observation = self._on_recall_action(event, prev_observation=observation)
+                if observation is None:
+                    observation = NullObservation(content='')
 
-            if observation is None:
-                observation = NullObservation(content='')
+                # important: this will release the execution flow from waiting for the retrieval to complete
+                observation._cause = event.id  # type: ignore[union-attr]
 
-            # important: this will release the execution flow from waiting for the retrieval to complete
-            observation._cause = event.id  # type: ignore[union-attr]
-
-            self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+                self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+        except Exception as e:
+            error_str = f'Error: {str(e.__class__.__name__)}'
+            logger.error(error_str)
+            self.send_error_message('STATUS$ERROR_MEMORY', error_str)
+            return
 
     def _on_first_recall_action(
         self, event: AgentRecallAction

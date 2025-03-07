@@ -186,7 +186,7 @@ async def run_controller(
     ]
 
     try:
-        await run_agent_until_done(controller, runtime, end_states)
+        await run_agent_until_done(controller, runtime, memory, end_states)
     except Exception as e:
         logger.error(f'Exception in main loop: {e}')
 

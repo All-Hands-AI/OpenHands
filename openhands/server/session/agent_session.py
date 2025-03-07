@@ -338,6 +338,7 @@ class AgentSession:
         memory = Memory(
             event_stream=self.event_stream,
             sid=self.sid,
+            status_callback=self._status_callback,
         )
 
         if self.runtime:
