@@ -32,6 +32,7 @@ export function CreditCardModal() {
             },
           },
           clientSecret: customerSession?.client_secret,
+          // customerSessionClientSecret: customerSession?.customer_session_client_secret,
         }}
       >
         <CreditCardForm />

@@ -4,10 +4,14 @@ import {
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
+import {
+  StripePaymentElementChangeEvent
+} from "@stripe/stripe-js";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { BrandButton } from "../settings/brand-button";
 
 export function CreditCardForm() {
+  const [formComplete, setFormComplete] = React.useState(false);
   const [paymentFormErrorMessage, setPaymentFormErrorMessage] =
     React.useState("");
   const stripe = useStripe();
@@ -16,7 +20,7 @@ export function CreditCardForm() {
   const formAction = async () => {
     setPaymentFormErrorMessage("");
 
-    if (!stripe || !elements) return;
+    if (!stripe || !elements || !formComplete) return;
 
     const submitResult = await stripe.confirmSetup({
       elements,
@@ -29,6 +33,11 @@ export function CreditCardForm() {
       setPaymentFormErrorMessage(submitError.message);
     }
   };
+
+  const handlePaymentElementChange = (event: StripePaymentElementChangeEvent) => {
+    console.log('TRACE:change', event)
+    setFormComplete(event.complete)
+  }
 
   return (
     <ModalBackdrop>
@@ -49,9 +58,9 @@ export function CreditCardForm() {
           )}
         </div>
 
-        <PaymentElement />
+        <PaymentElement onChange={handlePaymentElementChange} />
 
-        <BrandButton type="submit" variant="primary" className="w-full">
+        <BrandButton type="submit" variant="primary" className="w-full" isDisabled={!formComplete}>
           Confirm
         </BrandButton>
       </form>
