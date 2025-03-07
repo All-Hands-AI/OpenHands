@@ -9,7 +9,7 @@ from openhands.memory.condenser.condenser import Condenser
 
 class BrowserOutputCondenser(Condenser):
     """A condenser that masks the observations from browser outputs outside of a recent attention window.
-    
+
     The intent here is to mask just the browser outputs and leave everything else untouched. This is important because currently we provide screenshots and accessibility trees as input to the model for browser observations. These are really large and consume a lot of tokens without any benefits in performance. So we want to mask all such observations from all previous timesteps, and leave only the most recent one in context.
     """
 
