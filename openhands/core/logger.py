@@ -278,15 +278,11 @@ class SensitiveDataFilter(logging.Filter):
         return True
 
 
-def get_console_handler(
-    log_level: int = logging.INFO, extra_info: str | None = None
-) -> logging.StreamHandler:
+def get_console_handler(log_level: int = logging.INFO) -> logging.StreamHandler:
     """Returns a console handler for logging."""
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
     formatter_str = '\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(message)s'
-    if extra_info:
-        formatter_str = f'{extra_info} - ' + formatter_str
     console_handler.setFormatter(ColoredFormatter(formatter_str, datefmt='%H:%M:%S'))
     return console_handler
 
