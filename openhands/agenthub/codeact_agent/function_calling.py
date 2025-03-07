@@ -219,6 +219,7 @@ def get_tools(
     codeact_enable_browsing: bool = False,
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
+    code_act_enable_secrets: bool = False,
 ) -> list[ChatCompletionToolParam]:
     tools = [CmdRunTool, ThinkTool, FinishTool]
     if codeact_enable_browsing:
@@ -230,4 +231,26 @@ def get_tools(
         tools.append(LLMBasedFileEditTool)
     else:
         tools.append(StrReplaceEditorTool)
+    if code_act_enable_secrets:
+        tools.append(SecretTool)
     return tools
+
+
+_SECRETS_DESCRIPTION = """Search for a secret, authentication credentials, or access token for external websites or services."""
+
+SecretTool = ChatCompletionToolParam(
+    type='function',
+    function=ChatCompletionToolParamFunctionChunk(
+        name='search_secrets',
+        description=_SECRETS_DESCRIPTION,
+        parameters={
+            'type': 'object',
+            'properties': {
+                'query': {
+                    'type': 'string',
+                    'description': 'A on optional case insensitive string which may be present in the key or description for the secret to retrieve.',
+                },
+            },
+        },
+    ),
+)

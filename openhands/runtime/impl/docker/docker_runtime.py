@@ -161,7 +161,7 @@ class DockerRuntime(ActionExecutionClient):
             self.log('info', 'Runtime is ready.')
 
         if not self.attach_to_existing:
-            await call_sync_from_async(self.setup_initial_env)
+            await self.setup_initial_env()
 
         self.log(
             'debug',
