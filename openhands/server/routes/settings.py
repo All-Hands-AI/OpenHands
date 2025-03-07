@@ -113,7 +113,7 @@ async def store_settings(
                         settings.provider_tokens[provider] = existing_settings.secrets_store.provider_tokens[ProviderType(provider)].token.get_secret_value()
 
             # Merge provider tokens with existing ones
-            if settings.unset_github_token:  # Only merge if not unsetting tokens
+            if settings.unset_tokens:  # Only merge if not unsetting tokens
                 settings.secrets_store.provider_tokens = {}
                 settings.provider_tokens = {}
 

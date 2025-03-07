@@ -131,7 +131,7 @@ class POSTSettingsModel(Settings):
     Settings for POST requests
     """
 
-    unset_github_token: bool | None = None
+    unset_tokens: bool | None = None
     # Override provider_tokens to accept string tokens from frontend
     provider_tokens: dict[str, str] = {}
 

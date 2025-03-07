@@ -212,7 +212,7 @@ async def test_settings_api_set_github_token(
 @pytest.mark.skip(
     reason='Mock middleware does not seem to properly set the github_token'
 )
-async def test_settings_unset_github_token(
+async def test_settings_unset_tokens(
     mock_github_service,
     test_client,
     mock_settings_store,

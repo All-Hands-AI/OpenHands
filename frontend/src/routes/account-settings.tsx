@@ -65,11 +65,13 @@ function AccountSettings() {
 
   const isSaas = config?.APP_MODE === "saas";
   const hasAppSlug = !!config?.APP_SLUG;
-  const providerTokensSet = settings?.PROVIDER_TOKENS_ARE_SET || {};
+  const providerTokensSet = settings?.PROVIDER_TOKENS_SET || {};
   const isGithubTokenSet = providerTokensSet.github || false;
   const isGitlabTokenSet = providerTokensSet.gitlab || false;
   // Check if at least one provider has a true value
-  const hasAnyProviderToken = Object.values(providerTokensSet).some(value => value === true);
+  const hasAnyProviderToken = Object.values(providerTokensSet).some(
+    (value) => value === true,
+  );
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
@@ -116,7 +118,6 @@ function AccountSettings() {
     const githubToken = formData.get("github-token-input")?.toString();
     const gitlabToken = formData.get("gitlab-token-input")?.toString();
     const newSettings = {
-      github_token: githubToken,
       provider_tokens:
         githubToken || gitlabToken
           ? {
