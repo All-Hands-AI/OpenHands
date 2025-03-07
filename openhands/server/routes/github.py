@@ -20,7 +20,18 @@ from openhands.server.auth import get_idp_token, get_provider_tokens
 app = APIRouter(prefix='/api/user')
 
 
-@app.get('/repositories', response_model=list[Repository])
+from pydantic import BaseModel
+
+class PaginationInfo(BaseModel):
+    total_count: int
+    has_more: bool
+    provider_cursors: dict[str, str]
+
+class RepositoryResponse(BaseModel):
+    repositories: list[Repository]
+    pagination: PaginationInfo
+
+@app.get('/repositories', response_model=RepositoryResponse)
 async def get_github_repositories(
     page: int = 1,
     per_page: int = 10,
@@ -33,10 +44,10 @@ async def get_github_repositories(
         client = ProviderHandler(provider_tokens=provider_tokens, idp_token=idp_token)
 
         try:
-            repos: list[Repository] = await client.get_repositories(
+            result = await client.get_repositories(
                 page, per_page, sort, installation_id
             )
-            return repos
+            return RepositoryResponse(**result)
 
         except AuthenticationError as e:
             return JSONResponse(

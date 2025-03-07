@@ -124,16 +124,60 @@ class ProviderHandler:
 
     async def get_repositories(
         self, page: int, per_page: int, sort: str, installation_id: int | None
-    ) -> list[Repository]:
-        """Get repositories from all available providers"""
+    ) -> dict:
+        """Get repositories from all available providers with pagination support
+        
+        Returns:
+            dict: {
+                'repositories': list[Repository],  # Combined list of repositories
+                'pagination': {
+                    'total_count': int,  # Total number of repositories across all providers
+                    'has_more': bool,    # True if any provider has more results
+                    'provider_cursors': dict[str, any]  # Provider-specific pagination cursors
+                }
+            }
+        """
         all_repos = []
+        total_count = 0
+        has_more = False
+        provider_cursors = {}
+        
+        # Calculate offset for each provider based on page and per_page
+        provider_count = len(self.provider_tokens)
+        items_per_provider = per_page // provider_count if provider_count > 0 else per_page
+        
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
+                # Each provider gets its share of the requested items
                 repos = await service.get_repositories(
-                    page, per_page, sort, installation_id
+                    page, items_per_provider, sort, installation_id
                 )
-                all_repos.extend(repos)
+                
+                if repos:
+                    all_repos.extend(repos)
+                    # Store provider-specific pagination info
+                    if hasattr(repos[0], 'link_header'):
+                        provider_cursors[provider.value] = repos[0].link_header
+                    if hasattr(repos[0], 'total_count'):
+                        total_count += repos[0].total_count
+                        has_more = has_more or len(repos) < repos[0].total_count
+                    else:
+                        # If provider doesn't support total_count, assume more if we got full page
+                        has_more = has_more or len(repos) >= items_per_provider
+                        
             except Exception:
                 continue
-        return all_repos
+                
+        # Sort combined results by the requested sort field
+        if sort == 'pushed':
+            all_repos.sort(key=lambda x: x.pushed_at or '', reverse=True)
+            
+        return {
+            'repositories': all_repos[:per_page],  # Return only requested number of items
+            'pagination': {
+                'total_count': total_count,
+                'has_more': has_more,
+                'provider_cursors': provider_cursors
+            }
+        }
