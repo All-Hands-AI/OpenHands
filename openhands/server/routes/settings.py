@@ -25,10 +25,10 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
                 content={'error': 'Settings not found'},
             )
 
-        github_token_is_set = bool(user_id) or bool(get_provider_tokens(request))
+        provider_tokens_are_set = bool(user_id) or bool(get_provider_tokens(request))
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(),
-            github_token_is_set=github_token_is_set,
+            provider_tokens_are_set=provider_tokens_are_set,
         )
         settings_with_token_data.llm_api_key = settings.llm_api_key
 
