@@ -119,7 +119,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
         mock_event_stream.subscribe.assert_any_call(
             EventStreamSubscriber.MEMORY,
             session.memory.on_event,
-            'Memory',
+            session.controller.id,
         )
 
         # Verify set_initial_state was called once with None as state

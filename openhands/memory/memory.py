@@ -57,43 +57,6 @@ class Memory:
         # from typically OpenHands/microagents (i.e., the PUBLIC microagents)
         self._load_global_microagents()
 
-    def _load_global_microagents(self) -> None:
-        """
-        Loads microagents from the global microagents_dir
-        This is effectively what used to happen in PromptManager.
-        """
-        repo_agents, knowledge_agents, _ = load_microagents_from_dir(
-            self.microagents_dir
-        )
-        for name, agent in knowledge_agents.items():
-            # if name in self.disabled_microagents:
-            #    continue
-            if isinstance(agent, KnowledgeMicroAgent):
-                self.knowledge_microagents[name] = agent
-        for name, agent in repo_agents.items():
-            # if name in self.disabled_microagents:
-            #    continue
-            if isinstance(agent, RepoMicroAgent):
-                self.repo_microagents[name] = agent
-
-    def set_repository_info(self, repo_name: str, repo_directory: str) -> None:
-        """Store repository info so we can reference it in an observation."""
-        if repo_name or repo_directory:
-            self.repository_info = RepositoryInfo(repo_name, repo_directory)
-        else:
-            self.repository_info = None
-
-    def set_runtime_info(self, runtime: Runtime) -> None:
-        """Store runtime info (web hosts, ports, etc.)."""
-        # e.g. { '127.0.0.1': 8080 }
-        if runtime.web_hosts or runtime.additional_agent_instructions:
-            self.runtime_info = RuntimeInfo(
-                available_hosts=runtime.web_hosts,
-                additional_agent_instructions=runtime.additional_agent_instructions,
-            )
-        else:
-            self.runtime_info = None
-
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
 
@@ -248,3 +211,40 @@ class Memory:
                 self.knowledge_microagents[user_microagent.name] = user_microagent
             elif isinstance(user_microagent, RepoMicroAgent):
                 self.repo_microagents[user_microagent.name] = user_microagent
+
+    def _load_global_microagents(self) -> None:
+        """
+        Loads microagents from the global microagents_dir
+        This is effectively what used to happen in PromptManager.
+        """
+        repo_agents, knowledge_agents, _ = load_microagents_from_dir(
+            self.microagents_dir
+        )
+        for name, agent in knowledge_agents.items():
+            # if name in self.disabled_microagents:
+            #    continue
+            if isinstance(agent, KnowledgeMicroAgent):
+                self.knowledge_microagents[name] = agent
+        for name, agent in repo_agents.items():
+            # if name in self.disabled_microagents:
+            #    continue
+            if isinstance(agent, RepoMicroAgent):
+                self.repo_microagents[name] = agent
+
+    def set_repository_info(self, repo_name: str, repo_directory: str) -> None:
+        """Store repository info so we can reference it in an observation."""
+        if repo_name or repo_directory:
+            self.repository_info = RepositoryInfo(repo_name, repo_directory)
+        else:
+            self.repository_info = None
+
+    def set_runtime_info(self, runtime: Runtime) -> None:
+        """Store runtime info (web hosts, ports, etc.)."""
+        # e.g. { '127.0.0.1': 8080 }
+        if runtime.web_hosts or runtime.additional_agent_instructions:
+            self.runtime_info = RuntimeInfo(
+                available_hosts=runtime.web_hosts,
+                additional_agent_instructions=runtime.additional_agent_instructions,
+            )
+        else:
+            self.runtime_info = None

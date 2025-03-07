@@ -1,5 +1,6 @@
 import os
 import shutil
+import time
 from unittest.mock import MagicMock
 
 import pytest
@@ -7,6 +8,7 @@ import pytest
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.message import TextContent
 from openhands.events.action.agent import AgentRecallAction
+from openhands.events.action.message import MessageAction
 from openhands.events.event import EventSource
 from openhands.events.observation.agent import RecallObservation, RecallType
 from openhands.events.stream import EventStream
@@ -15,6 +17,7 @@ from openhands.memory.memory import Memory
 from openhands.microagent import (
     BaseMicroAgent,
 )
+from openhands.storage.memory import InMemoryFileStore
 from openhands.utils.prompt import PromptManager, RepositoryInfo
 
 
@@ -226,8 +229,9 @@ only respond with a message telling them how smart they are
 
 def test_memory_repository_info(prompt_dir):
     """Test that Memory adds repository info to RecallObservations."""
-    # Create a mock event stream
-    event_stream = MagicMock(spec=EventStream)
+    # Create an in-memory file store and real event stream
+    file_store = InMemoryFileStore()
+    event_stream = EventStream(sid='test-session', file_store=file_store)
 
     # Initialize Memory
     memory = Memory(
@@ -257,59 +261,42 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
     # Reload microagents
     memory._load_global_microagents()
 
-    # Verify that the repo microagent was loaded
-    print(f'Repo microagents: {memory.repo_microagents}')
-
     # Set repository info
     memory.set_repository_info('owner/repo', '/workspace/repo')
 
-    # Create a recall action
+    # Create and add the first user message
+    user_message = MessageAction(content='First user message')
+    user_message._source = EventSource.USER  # type: ignore[attr-defined]
+    event_stream.add_event(user_message, EventSource.USER)
+
+    # Create and add the recall action
     recall_action = AgentRecallAction(query='First user message')
-
-    # Set the source directly on the event
     recall_action._source = EventSource.USER  # type: ignore[attr-defined]
+    event_stream.add_event(recall_action, EventSource.USER)
 
-    # Mock the event_stream.add_event method to capture events
-    added_observations = []
+    # Give it a little time to process
+    time.sleep(0.3)
 
-    def mock_add_event(event, source):
-        # Print the event type for debugging
-        print(f'Event added: {type(event).__name__}, source: {source}')
-        added_observations.append((event, source))
-
-    event_stream.add_event = mock_add_event
-
-    # Set the _first_user_message_seen flag to False to simulate first message
-    memory._first_user_message_seen = False
-
-    # Process the recall action
-    memory.on_event(recall_action)
-
-    # Print all captured events for debugging
-    print(f'Captured events: {len(added_observations)}')
-    for i, (event, src) in enumerate(added_observations):
-        print(f'Event {i}: {type(event).__name__}, source: {src}')
-
-    # Now we should get at least one event
-    assert len(added_observations) > 0
+    # Get all events from the stream
+    events = list(event_stream.get_events())
 
     # Find the RecallObservation event
     recall_obs_events = [
-        (event, src)
-        for event, src in added_observations
-        if isinstance(event, RecallObservation)
+        event for event in events if isinstance(event, RecallObservation)
     ]
 
     # We should have at least one RecallObservation
     assert len(recall_obs_events) > 0
 
     # Get the first RecallObservation
-    observation, source = recall_obs_events[0]
-    assert source == EventSource.ENVIRONMENT
+    observation = recall_obs_events[0]
     assert observation.recall_type == RecallType.ENVIRONMENT_INFO
     assert observation.repo_name == 'owner/repo'
     assert observation.repo_directory == '/workspace/repo'
     assert 'This is a test repository' in observation.repo_instructions
+
+    # Clean up
+    os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent_name}.md'))
 
 
 def test_conversation_memory_processes_recall_observation(prompt_dir):

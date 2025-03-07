@@ -418,19 +418,20 @@ class ConversationMemory:
                 )
             elif obs.recall_type == RecallType.KNOWLEDGE_MICROAGENT:
                 # Use prompt manager to build the microagent info
-                # First, exclude disabled microagents
-                filtered_agents = [
-                    agent
-                    for agent in obs.microagent_knowledge
-                    if agent['agent_name'] not in self.agent_config.disabled_microagents
-                ]
+                # First, filter out agents that appear in later RecallObservations
+                filtered_agents = self._filter_agents_in_recall_obs(
+                    obs, current_index, events or []
+                )
 
                 formatted_text = ''
                 if filtered_agents:
-                    # Then, filter out agents that appear in later RecallObservations
-                    filtered_agents = self._filter_agents_in_recall_obs(
-                        obs, current_index, events or []
-                    )
+                    # Then, exclude disabled microagents
+                    filtered_agents = [
+                        agent
+                        for agent in filtered_agents
+                        if agent['agent_name']
+                        not in self.agent_config.disabled_microagents
+                    ]
                     formatted_text = self.prompt_manager.build_microagent_info(
                         triggered_agents=filtered_agents,
                     )
