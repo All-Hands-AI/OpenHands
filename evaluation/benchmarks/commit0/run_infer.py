@@ -301,16 +301,6 @@ def complete_runtime(
     pytest_exit_code = obs.content.strip()
     # logger.info(f'Pytest exit code: {pytest_exit_code}')
 
-    # Read the test report
-    action = CmdRunAction(command='cat report.json')
-    action.set_hard_timeout(600)
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(
-        isinstance(obs, CmdOutputObservation),
-        f'Failed to read test report: {str(obs)}',
-    )
     # Get test IDs from instance
     repo_name = instance['repo'].split('/')[1]
     repo_name = repo_name.replace('.', '-')
@@ -321,8 +311,20 @@ def complete_runtime(
     # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     test_ids = obs.content.strip().split('\n')
 
+    # Read the test report
+    action = CmdRunAction(command='cat report.json')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        isinstance(obs, CmdOutputObservation),
+        f'Failed to read test report: {str(obs)}',
+    )
+    json_report = obs.content.strip()
+
     try:
-        report = json.loads(obs.content)
+        report = json.loads(json_report)
         tests = {x['nodeid']: x['call'] for x in report['tests'] if 'call' in x}
 
         # Calculate test statistics

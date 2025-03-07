@@ -10,7 +10,6 @@ import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-b
 import { DocsButton } from "#/components/shared/buttons/docs-button";
 import { ExitProjectButton } from "#/components/shared/buttons/exit-project-button";
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { useCurrentSettings } from "#/context/settings-context";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -23,6 +22,7 @@ import { ConversationPanelWrapper } from "../conversation-panel/conversation-pan
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { cn } from "#/utils/utils";
+import { HIDE_LLM_SETTINGS } from "#/utils/feature-flags";
 
 export function Sidebar() {
   const location = useLocation();
@@ -43,7 +43,12 @@ export function Sidebar() {
   const [conversationPanelIsOpen, setConversationPanelIsOpen] =
     React.useState(false);
 
+  // TODO: Remove HIDE_LLM_SETTINGS check once released
+  const isSaas = HIDE_LLM_SETTINGS() && config?.APP_MODE === "saas";
+
   React.useEffect(() => {
+    if (isSaas) return;
+
     if (location.pathname === "/settings") {
       setSettingsModalIsOpen(false);
     } else if (
@@ -111,15 +116,13 @@ export function Sidebar() {
             >
               <SettingsButton />
             </NavLink>
-            {!user.isLoading && (
-              <UserActions
-                user={
-                  user.data ? { avatar_url: user.data.avatar_url } : undefined
-                }
-                onLogout={handleLogout}
-              />
-            )}
-            {user.isLoading && <LoadingSpinner size="small" />}
+            <UserActions
+              user={
+                user.data ? { avatar_url: user.data.avatar_url } : undefined
+              }
+              onLogout={handleLogout}
+              isLoading={user.isFetching}
+            />
           </div>
         </nav>
 
