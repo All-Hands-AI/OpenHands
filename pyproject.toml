@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-ai"
-version = "0.27.0"
+version = "0.28.0"
 description = "OpenHands: Code Less, Make More"
 authors = ["OpenHands"]
 license = "MIT"
@@ -77,6 +77,7 @@ ipywidgets = "^8.1.5"
 qtconsole = "^5.6.1"
 memory-profiler = "^0.61.0"
 daytona-sdk = "0.9.1"
+python-json-logger = "^3.2.1"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -143,6 +144,7 @@ whatthepatch = "*"
 retry = "*"
 evaluate = "*"
 swebench = "^3.0.8"
+swegym = { git = "https://github.com/SWE-Gym/SWE-Bench-Package.git" }
 commit0 = "*"
 func_timeout = "*"
 sympy = "*"

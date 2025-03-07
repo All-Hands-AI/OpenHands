@@ -202,7 +202,7 @@ async def process_issue(
         timeout=300,
     )
 
-    if os.getenv('GITLAB_CI') == 'True':
+    if os.getenv('GITLAB_CI') == 'true':
         sandbox_config.local_runtime_url = os.getenv(
             'LOCAL_RUNTIME_URL', 'http://localhost'
         )
@@ -651,7 +651,7 @@ def main() -> None:
     if not token:
         raise ValueError('Token is required.')
 
-    platform = identify_token(token)
+    platform = identify_token(token, repo)
     if platform == Platform.INVALID:
         raise ValueError('Token is invalid.')
 

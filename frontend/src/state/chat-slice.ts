@@ -159,9 +159,16 @@ export const chatSlice = createSlice({
           .includes("error:");
       } else if (observationID === "read" || observationID === "edit") {
         // For read/edit operations, we consider it successful if there's content and no error
-        causeMessage.success =
-          observation.payload.content.length > 0 &&
-          !observation.payload.content.toLowerCase().includes("error:");
+
+        if (observation.payload.extras.impl_source === "oh_aci") {
+          causeMessage.success =
+            observation.payload.content.length > 0 &&
+            !observation.payload.content.startsWith("ERROR:\n");
+        } else {
+          causeMessage.success =
+            observation.payload.content.length > 0 &&
+            !observation.payload.content.toLowerCase().includes("error:");
+        }
       }
 
       if (observationID === "run" || observationID === "run_ipython") {
@@ -173,9 +180,14 @@ export const chatSlice = createSlice({
           causeMessage.content
         }\n\nOutput:\n\`\`\`\n${content.trim() || "[Command finished execution with no output]"}\n\`\`\``;
         causeMessage.content = content; // Observation content includes the action
-      } else if (observationID === "read" || observationID === "edit") {
-        const { content } = observation.payload;
-        causeMessage.content = `\`\`\`${observationID === "edit" ? "diff" : "python"}\n${content}\n\`\`\``; // Content is already truncated by the ACI
+      } else if (observationID === "read") {
+        causeMessage.content = `\`\`\`\n${observation.payload.content}\n\`\`\``; // Content is already truncated by the ACI
+      } else if (observationID === "edit") {
+        if (causeMessage.success) {
+          causeMessage.content = `\`\`\`diff\n${observation.payload.extras.diff}\n\`\`\``; // Content is already truncated by the ACI
+        } else {
+          causeMessage.content = observation.payload.content;
+        }
       } else if (observationID === "browse") {
         let content = `**URL:** ${observation.payload.extras.url}\n`;
         if (observation.payload.extras.error) {

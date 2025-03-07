@@ -176,7 +176,7 @@ class OpenHands {
     code: string,
   ): Promise<GitHubAccessTokenResponse> {
     const { data } = await openHands.post<GitHubAccessTokenResponse>(
-      "/api/github/callback",
+      "/api/keycloak/callback",
       {
         code,
       },
