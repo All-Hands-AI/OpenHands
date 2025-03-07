@@ -65,7 +65,10 @@ function AccountSettings() {
 
   const isSaas = config?.APP_MODE === "saas";
   const hasAppSlug = !!config?.APP_SLUG;
-  const areProviderTokensSet = settings?.PROVIDER_TOKENS_ARE_SET;
+  const providerTokensSet = settings?.PROVIDER_TOKENS_ARE_SET || {};
+  const isGithubTokenSet = providerTokensSet.github || false;
+  const isGitlabTokenSet = providerTokensSet.gitlab || false;
+  const hasAnyProviderToken = isGithubTokenSet || isGitlabTokenSet;
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
@@ -367,12 +370,8 @@ function AccountSettings() {
                   label="GitHub Token"
                   type="password"
                   className="w-[680px]"
-                  startContent={
-                    areProviderTokensSet && (
-                      <KeyStatusIcon isSet={!!areProviderTokensSet} />
-                    )
-                  }
-                  placeholder={areProviderTokensSet ? "**********" : ""}
+                  startContent={<KeyStatusIcon isSet={isGithubTokenSet} />}
+                  placeholder={isGithubTokenSet ? "**********" : ""}
                 />
 
                 <HelpLink
@@ -388,12 +387,8 @@ function AccountSettings() {
                   label="GitLab Token"
                   type="password"
                   className="w-[680px]"
-                  startContent={
-                    areProviderTokensSet && (
-                      <KeyStatusIcon isSet={!!areProviderTokensSet} />
-                    )
-                  }
-                  placeholder={areProviderTokensSet ? "**********" : ""}
+                  startContent={<KeyStatusIcon isSet={isGitlabTokenSet} />}
+                  placeholder={isGitlabTokenSet ? "**********" : ""}
                 />
 
                 <HelpLink
@@ -409,7 +404,7 @@ function AccountSettings() {
               type="button"
               variant="secondary"
               onClick={handleLogout}
-              isDisabled={!areProviderTokensSet}
+              isDisabled={!hasAnyProviderToken}
             >
               Disconnect Tokens
             </BrandButton>
