@@ -340,6 +340,11 @@ The agent configuration options are defined in the `[agent]` and `[agent.<agent_
   - Default: `false`
   - Description: Whether Jupyter is enabled in the action space
 
+- `enable_history_truncation`
+  - Type: `bool`
+  - Default: `true`
+  - Description: Whether history should be truncated to continue the session when hitting LLM context length limit
+
 ### Microagent Usage
 - `enable_prompt_extensions`
   - Type: `bool`
@@ -379,6 +384,11 @@ To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-
   - Type: `bool`
   - Default: `false`
   - Description: Use host network
+
+- `runtime_binding_address`
+  - Type: `str`
+  - Default: `127.0.0.1`
+  - Description: The binding address for the runtime ports.  It specifies which network interface on the host machine Docker should bind the runtime ports to.
 
 ### Linting and Plugins
 - `enable_auto_lint`

@@ -12,4 +12,5 @@ function loadFeatureFlag(
   }
 }
 
-export const MEMORY_CONDENSER = loadFeatureFlag("MEMORY_CONDENSER");
+export const BILLING_SETTINGS = () => loadFeatureFlag("BILLING_SETTINGS");
+export const HIDE_LLM_SETTINGS = () => loadFeatureFlag("HIDE_LLM_SETTINGS");

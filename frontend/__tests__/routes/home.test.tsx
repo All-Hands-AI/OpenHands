@@ -8,6 +8,7 @@ import MainApp from "#/routes/_oh/route";
 import SettingsScreen from "#/routes/settings";
 import Home from "#/routes/_oh._index/route";
 import OpenHands from "#/api/open-hands";
+import * as FeatureFlags from "#/utils/feature-flags";
 
 const createAxiosNotFoundErrorObject = () =>
   new AxiosError(
@@ -27,6 +28,7 @@ const createAxiosNotFoundErrorObject = () =>
 
 describe("Home Screen", () => {
   const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
 
   const RouterStub = createRoutesStub([
     {
@@ -39,11 +41,11 @@ describe("Home Screen", () => {
           Component: Home,
           path: "/",
         },
+        {
+          Component: SettingsScreen,
+          path: "/settings",
+        },
       ],
-    },
-    {
-      Component: SettingsScreen,
-      path: "/settings",
     },
   ]);
 
@@ -96,6 +98,9 @@ describe("Home Screen", () => {
       const user = userEvent.setup();
       renderWithProviders(<RouterStub initialEntries={["/"]} />);
 
+      const settingsScreen = screen.queryByTestId("settings-screen");
+      expect(settingsScreen).not.toBeInTheDocument();
+
       const settingsModal = await screen.findByTestId("ai-config-modal");
       expect(settingsModal).toBeInTheDocument();
 
@@ -104,11 +109,27 @@ describe("Home Screen", () => {
       );
       await user.click(advancedSettingsButton);
 
+      const settingsScreenAfter = await screen.findByTestId("settings-screen");
+      expect(settingsScreenAfter).toBeInTheDocument();
+
       const settingsModalAfter = screen.queryByTestId("ai-config-modal");
       expect(settingsModalAfter).not.toBeInTheDocument();
+    });
 
-      const settingsScreen = await screen.findByTestId("settings-screen");
-      expect(settingsScreen).toBeInTheDocument();
+    it("should not open the settings modal if GET /settings fails but is SaaS mode", async () => {
+      // TODO: Remove HIDE_LLM_SETTINGS check once released
+      vi.spyOn(FeatureFlags, "HIDE_LLM_SETTINGS").mockReturnValue(true);
+      // @ts-expect-error - we only need APP_MODE for this test
+      getConfigSpy.mockResolvedValue({ APP_MODE: "saas" });
+      const error = createAxiosNotFoundErrorObject();
+      getSettingsSpy.mockRejectedValue(error);
+
+      renderWithProviders(<RouterStub initialEntries={["/"]} />);
+
+      // small hack to wait for the modal to not appear
+      await expect(
+        screen.findByTestId("ai-config-modal", {}, { timeout: 1000 }),
+      ).rejects.toThrow();
     });
   });
 });

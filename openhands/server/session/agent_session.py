@@ -1,6 +1,7 @@
 import asyncio
 import time
-from typing import Callable, Optional
+from logging import LoggerAdapter
+from typing import Callable
 
 from pydantic import SecretStr
 
@@ -9,7 +10,7 @@ from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, AppConfig, LLMConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
-from openhands.core.logger import openhands_logger as logger
+from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import EventSource
@@ -44,12 +45,13 @@ class AgentSession:
     _started_at: float = 0
     _closed: bool = False
     loop: asyncio.AbstractEventLoop | None = None
+    logger: LoggerAdapter
 
     def __init__(
         self,
         sid: str,
         file_store: FileStore,
-        status_callback: Optional[Callable] = None,
+        status_callback: Callable | None = None,
         github_user_id: str | None = None,
     ):
         """Initializes a new instance of the Session class
@@ -64,6 +66,9 @@ class AgentSession:
         self.file_store = file_store
         self._status_callback = status_callback
         self.github_user_id = github_user_id
+        self.logger = OpenHandsLoggerAdapter(
+            extra={'session_id': sid, 'user_id': github_user_id}
+        )
 
     async def start(
         self,
@@ -95,13 +100,16 @@ class AgentSession:
             )
 
         if self._closed:
-            logger.warning('Session closed before starting')
+            self.logger.warning('Session closed before starting')
             return
         self._starting = True
-        self._started_at = time.time()
+        started_at = time.time()
+        self._started_at = started_at
+        finished = False  # For monitoring
+        runtime_connected = False
         try:
             self._create_security_analyzer(config.security.security_analyzer)
-            await self._create_runtime(
+            runtime_connected = await self._create_runtime(
                 runtime_name=runtime_name,
                 config=config,
                 agent=agent,
@@ -124,18 +132,30 @@ class AgentSession:
                         'github_token': github_token.get_secret_value(),
                     }
                 )
-            if initial_message:
-                self.event_stream.add_event(initial_message, EventSource.USER)
-                self.event_stream.add_event(
-                    ChangeAgentStateAction(AgentState.RUNNING), EventSource.ENVIRONMENT
-                )
-            else:
-                self.event_stream.add_event(
-                    ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT),
-                    EventSource.ENVIRONMENT,
-                )
+            if not self._closed:
+                if initial_message:
+                    self.event_stream.add_event(initial_message, EventSource.USER)
+                    self.event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.RUNNING),
+                        EventSource.ENVIRONMENT,
+                    )
+                else:
+                    self.event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT),
+                        EventSource.ENVIRONMENT,
+                    )
+            finished = True
         finally:
             self._starting = False
+            success = finished and runtime_connected
+            self.logger.info(
+                'Agent session start',
+                extra={
+                    'signal': 'agent_session_start',
+                    'success': success,
+                    'duration': (time.time() - started_at),
+                },
+            )
 
     async def close(self):
         """Closes the Agent session"""
@@ -143,12 +163,12 @@ class AgentSession:
             return
         self._closed = True
         while self._starting and should_continue():
-            logger.debug(
+            self.logger.debug(
                 f'Waiting for initialization to finish before closing session {self.sid}'
             )
             await asyncio.sleep(WAIT_TIME_BEFORE_CLOSE_INTERVAL)
             if time.time() <= self._started_at + WAIT_TIME_BEFORE_CLOSE:
-                logger.error(
+                self.logger.error(
                     f'Waited too long for initialization to finish before closing session {self.sid}'
                 )
                 break
@@ -163,10 +183,6 @@ class AgentSession:
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
 
-    async def stop_agent_loop_for_error(self):
-        if self.controller is not None:
-            await self.controller.set_agent_state_to(AgentState.ERROR)
-
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
 
@@ -175,7 +191,7 @@ class AgentSession:
         """
 
         if security_analyzer:
-            logger.debug(f'Using security analyzer: {security_analyzer}')
+            self.logger.debug(f'Using security analyzer: {security_analyzer}')
             self.security_analyzer = options.SecurityAnalyzers.get(
                 security_analyzer, SecurityAnalyzer
             )(self.event_stream)
@@ -188,19 +204,22 @@ class AgentSession:
         github_token: SecretStr | None = None,
         selected_repository: str | None = None,
         selected_branch: str | None = None,
-    ):
+    ) -> bool:
         """Creates a runtime instance
 
         Parameters:
         - runtime_name: The name of the runtime associated with the session
         - config:
         - agent:
+
+        Return True on successfully connected, False if could not connect.
+        Raises if already created, possibly in other situations.
         """
 
         if self.runtime is not None:
             raise RuntimeError('Runtime already created')
 
-        logger.debug(f'Initializing runtime `{runtime_name}` now...')
+        self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
         env_vars = (
             {
@@ -221,6 +240,7 @@ class AgentSession:
             plugins=agent.sandbox_plugins,
             status_callback=self._status_callback,
             headless_mode=False,
+            attach_to_existing=False,
             env_vars=env_vars,
             **kwargs,
         )
@@ -233,12 +253,12 @@ class AgentSession:
         try:
             await self.runtime.connect()
         except AgentRuntimeUnavailableError as e:
-            logger.error(f'Runtime initialization failed: {e}')
+            self.logger.error(f'Runtime initialization failed: {e}')
             if self._status_callback:
                 self._status_callback(
                     'error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e)
                 )
-            return
+            return False
 
         repo_directory = None
         if selected_repository:
@@ -260,9 +280,10 @@ class AgentSession:
                     selected_repository, repo_directory
                 )
 
-        logger.debug(
+        self.logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
         )
+        return True
 
     def _create_controller(
         self,
@@ -303,7 +324,7 @@ class AgentSession:
             f'Plugins: {agent.sandbox_plugins}\n'
             '-------------------------------------------------------------------------------------------'
         )
-        logger.debug(msg)
+        self.logger.debug(msg)
 
         controller = AgentController(
             sid=self.sid,
@@ -330,13 +351,13 @@ class AgentSession:
         # if we have events in the stream.
         try:
             restored_state = State.restore_from_session(self.sid, self.file_store)
-            logger.debug(f'Restored state from session, sid: {self.sid}')
+            self.logger.debug(f'Restored state from session, sid: {self.sid}')
         except Exception as e:
             if self.event_stream.get_latest_event_id() > 0:
                 # if we have events, we should have a state
-                logger.warning(f'State could not be restored: {e}')
+                self.logger.warning(f'State could not be restored: {e}')
             else:
-                logger.debug('No events found, no state to restore')
+                self.logger.debug('No events found, no state to restore')
         return restored_state
 
     def get_state(self) -> AgentState | None:
@@ -347,3 +368,6 @@ class AgentSession:
             # If 5 minutes have elapsed and we still don't have a controller, something has gone wrong
             return AgentState.ERROR
         return None
+
+    def is_closed(self) -> bool:
+        return self._closed

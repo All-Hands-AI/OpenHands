@@ -84,12 +84,12 @@ export function ModelSelector({
           defaultSelectedKey={selectedProvider ?? undefined}
           selectedKey={selectedProvider}
           classNames={{
-            popoverContent: "bg-[#454545] rounded-xl border border-[#717888]",
+            popoverContent: "bg-tertiary rounded-xl border border-[#717888]",
           }}
           inputProps={{
             classNames: {
               inputWrapper:
-                "bg-[#454545] border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
+                "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
             },
           }}
         >
@@ -100,7 +100,6 @@ export function ModelSelector({
                 <AutocompleteItem
                   data-testid={`provider-item-${provider}`}
                   key={provider}
-                  value={provider}
                 >
                   {mapProvider(provider)}
                 </AutocompleteItem>
@@ -110,7 +109,7 @@ export function ModelSelector({
             {Object.keys(models)
               .filter((provider) => !VERIFIED_PROVIDERS.includes(provider))
               .map((provider) => (
-                <AutocompleteItem key={provider} value={provider}>
+                <AutocompleteItem key={provider}>
                   {mapProvider(provider)}
                 </AutocompleteItem>
               ))}
@@ -135,12 +134,12 @@ export function ModelSelector({
           selectedKey={selectedModel}
           defaultSelectedKey={selectedModel ?? undefined}
           classNames={{
-            popoverContent: "bg-[#454545] rounded-xl border border-[#717888]",
+            popoverContent: "bg-tertiary rounded-xl border border-[#717888]",
           }}
           inputProps={{
             classNames: {
               inputWrapper:
-                "bg-[#454545] border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
+                "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
             },
           }}
         >
@@ -148,9 +147,7 @@ export function ModelSelector({
             {models[selectedProvider || ""]?.models
               .filter((model) => VERIFIED_MODELS.includes(model))
               .map((model) => (
-                <AutocompleteItem key={model} value={model}>
-                  {model}
-                </AutocompleteItem>
+                <AutocompleteItem key={model}>{model}</AutocompleteItem>
               ))}
           </AutocompleteSection>
           <AutocompleteSection title="Others">
@@ -160,7 +157,6 @@ export function ModelSelector({
                 <AutocompleteItem
                   data-testid={`model-item-${model}`}
                   key={model}
-                  value={model}
                 >
                   {model}
                 </AutocompleteItem>

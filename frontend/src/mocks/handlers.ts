@@ -5,6 +5,7 @@ import {
   ResultSet,
 } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
 import { ApiSettings, PostApiSettings } from "#/types/settings";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
@@ -19,6 +20,7 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
     DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
   github_token_is_set: DEFAULT_SETTINGS.GITHUB_TOKEN_IS_SET,
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
+  enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
 };
 
@@ -144,6 +146,7 @@ const openHandsHandlers = [
 ];
 
 export const handlers = [
+  ...STRIPE_BILLING_HANDLERS,
   ...openHandsHandlers,
   http.get("/api/github/repositories", () =>
     HttpResponse.json([
@@ -170,8 +173,9 @@ export const handlers = [
     HttpResponse.json(null, { status: 200 }),
   ),
   http.get("/api/options/config", () => {
+    const mockSaas = import.meta.env.VITE_MOCK_SAAS === "true";
     const config: GetConfigResponse = {
-      APP_MODE: "oss",
+      APP_MODE: mockSaas ? "saas" : "oss",
       GITHUB_CLIENT_ID: "fake-github-client-id",
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
     };

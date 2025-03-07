@@ -1,4 +1,4 @@
-SHELL=/bin/bash
+SHELL=/usr/bin/env bash
 # Makefile for OpenHands project
 
 # Variables
@@ -81,10 +81,10 @@ check-nodejs:
 	@if command -v node > /dev/null; then \
 		NODE_VERSION=$(shell node --version | sed -E 's/v//g'); \
 		IFS='.' read -r -a NODE_VERSION_ARRAY <<< "$$NODE_VERSION"; \
-		if [ "$${NODE_VERSION_ARRAY[0]}" -ge 20 ]; then \
+		if [ "$${NODE_VERSION_ARRAY[0]}" -ge 22 ]; then \
 			echo "$(BLUE)Node.js $$NODE_VERSION is already installed.$(RESET)"; \
 		else \
-			echo "$(RED)Node.js 20.x or later is required. Please install Node.js 20.x or later to continue.$(RESET)"; \
+			echo "$(RED)Node.js 22.x or later is required. Please install Node.js 22.x or later to continue.$(RESET)"; \
 			exit 1; \
 		fi; \
 	else \
