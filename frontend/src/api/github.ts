@@ -15,7 +15,7 @@ export const retrieveGitHubAppRepositories = async (
 ) => {
   const installationId = installations[installationIndex];
   const response = await openHands.get<GitHubRepository[]>(
-    "/api/github/repositories",
+    "/api/user/repositories",
     {
       params: {
         sort: "pushed",
@@ -57,8 +57,15 @@ export const retrieveGitHubUserRepositories = async (
   page = 1,
   per_page = 30,
 ) => {
-  const response = await openHands.get<GitHubRepository[]>(
-    "/api/github/repositories",
+  const response = await openHands.get<{
+    repositories: GitHubRepository[],
+    pagination: {
+      total_count: number,
+      has_more: boolean,
+      provider_cursors: Record<string, string>
+    }
+  }>(
+    "/api/user/repositories",
     {
       params: {
         sort: "pushed",
@@ -68,11 +75,17 @@ export const retrieveGitHubUserRepositories = async (
     },
   );
 
-  const link =
-    response.data.length > 0 && response.data[0].link_header
-      ? response.data[0].link_header
-      : "";
-  const nextPage = extractNextPageFromLink(link);
+  // Check if any provider has more results
+  const hasMore = response.data.pagination.has_more;
+  
+  // For backward compatibility, still use link_header if available
+  const githubCursor = response.data.pagination.provider_cursors?.github;
+  const nextPage = githubCursor ? extractNextPageFromLink(githubCursor) : hasMore ? page + 1 : null;
 
-  return { data: response.data, nextPage };
+  return { 
+    data: response.data.repositories,
+    nextPage,
+    totalCount: response.data.pagination.total_count,
+    providerCursors: response.data.pagination.provider_cursors
+  };
 };

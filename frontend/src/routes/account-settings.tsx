@@ -54,7 +54,9 @@ function AccountSettings() {
     if (isSuccess) {
       return (
         isCustomModel(resources.models, settings.LLM_MODEL) ||
-        hasAdvancedSettingsSet(settings)
+        hasAdvancedSettingsSet({
+          ...settings,
+        })
       );
     }
 
@@ -63,7 +65,13 @@ function AccountSettings() {
 
   const isSaas = config?.APP_MODE === "saas";
   const hasAppSlug = !!config?.APP_SLUG;
-  const isGitHubTokenSet = settings?.GITHUB_TOKEN_IS_SET;
+  const providerTokensSet = settings?.PROVIDER_TOKENS_SET || {};
+  const isGithubTokenSet = providerTokensSet.github || false;
+  const isGitlabTokenSet = providerTokensSet.gitlab || false;
+  // Check if at least one provider has a true value
+  const hasAnyProviderToken = Object.values(providerTokensSet).some(
+    (value) => value === true,
+  );
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
@@ -107,41 +115,47 @@ function AccountSettings() {
     const enableSoundNotifications =
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
 
-    saveSettings(
-      {
-        github_token:
-          formData.get("github-token-input")?.toString() || undefined,
-        LANGUAGE: languageValue,
-        user_consents_to_analytics: userConsentsToAnalytics,
-        ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
-        ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
-        LLM_MODEL: customLlmModel || fullLlmModel,
-        LLM_BASE_URL: formData.get("base-url-input")?.toString() || "",
-        LLM_API_KEY:
-          formData.get("llm-api-key-input")?.toString() ||
-          (isLLMKeySet
-            ? undefined // don't update if it's already set
-            : ""), // reset if it's first time save to avoid 500 error
-        AGENT: formData.get("agent-input")?.toString(),
-        SECURITY_ANALYZER:
-          formData.get("security-analyzer-input")?.toString() || "",
-        REMOTE_RUNTIME_RESOURCE_FACTOR:
-          remoteRuntimeResourceFactor ||
-          DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-        CONFIRMATION_MODE: confirmationModeIsEnabled,
+    const githubToken = formData.get("github-token-input")?.toString();
+    const gitlabToken = formData.get("gitlab-token-input")?.toString();
+    const newSettings = {
+      provider_tokens:
+        githubToken || gitlabToken
+          ? {
+              github: githubToken || "",
+              gitlab: gitlabToken || "",
+            }
+          : undefined,
+      LANGUAGE: languageValue,
+      user_consents_to_analytics: userConsentsToAnalytics,
+      ENABLE_DEFAULT_CONDENSER: enableMemoryCondenser,
+      ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
+      LLM_MODEL: customLlmModel || fullLlmModel,
+      LLM_BASE_URL: formData.get("base-url-input")?.toString() || "",
+      LLM_API_KEY:
+        formData.get("llm-api-key-input")?.toString() ||
+        (isLLMKeySet
+          ? undefined // don't update if it's already set
+          : ""), // reset if it's first time save to avoid 500 error
+      AGENT: formData.get("agent-input")?.toString(),
+      SECURITY_ANALYZER:
+        formData.get("security-analyzer-input")?.toString() || "",
+      REMOTE_RUNTIME_RESOURCE_FACTOR:
+        remoteRuntimeResourceFactor ||
+        DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
+      CONFIRMATION_MODE: confirmationModeIsEnabled,
+    };
+
+    saveSettings(newSettings, {
+      onSuccess: () => {
+        handleCaptureConsent(userConsentsToAnalytics);
+        displaySuccessToast("Settings saved");
+        setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
       },
-      {
-        onSuccess: () => {
-          handleCaptureConsent(userConsentsToAnalytics);
-          displaySuccessToast("Settings saved");
-          setLlmConfigMode(isAdvancedSettingsSet ? "advanced" : "basic");
-        },
-        onError: (error) => {
-          const errorMessage = retrieveAxiosErrorMessage(error);
-          displayErrorToast(errorMessage);
-        },
+      onError: (error) => {
+        const errorMessage = retrieveAxiosErrorMessage(error);
+        displayErrorToast(errorMessage);
       },
-    );
+    });
   };
 
   const handleReset = () => {
@@ -337,7 +351,7 @@ function AccountSettings() {
 
           <section className="flex flex-col gap-6">
             <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-              GitHub Settings
+              Provider Settings
             </h2>
             {isSaas && hasAppSlug && (
               <Link
@@ -358,19 +372,32 @@ function AccountSettings() {
                   label="GitHub Token"
                   type="password"
                   className="w-[680px]"
-                  startContent={
-                    isGitHubTokenSet && (
-                      <KeyStatusIcon isSet={!!isGitHubTokenSet} />
-                    )
-                  }
-                  placeholder={isGitHubTokenSet ? "**********" : ""}
+                  startContent={<KeyStatusIcon isSet={isGithubTokenSet} />}
+                  placeholder={isGithubTokenSet ? "**********" : ""}
                 />
 
                 <HelpLink
                   testId="github-token-help-anchor"
-                  text="Get your token"
+                  text="Get your GitHub token"
                   linkText="here"
                   href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
+                />
+
+                <SettingsInput
+                  testId="gitlab-token-input"
+                  name="gitlab-token-input"
+                  label="GitLab Token"
+                  type="password"
+                  className="w-[680px]"
+                  startContent={<KeyStatusIcon isSet={isGitlabTokenSet} />}
+                  placeholder={isGitlabTokenSet ? "**********" : ""}
+                />
+
+                <HelpLink
+                  testId="gitlab-token-help-anchor"
+                  text="Get your GitLab token"
+                  linkText="here"
+                  href="https://gitlab.com/-/profile/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository"
                 />
               </>
             )}
@@ -379,9 +406,9 @@ function AccountSettings() {
               type="button"
               variant="secondary"
               onClick={handleLogout}
-              isDisabled={!isGitHubTokenSet}
+              isDisabled={!hasAnyProviderToken}
             >
-              Disconnect from GitHub
+              Disconnect Tokens
             </BrandButton>
           </section>
 
