@@ -31,10 +31,6 @@ You will need your ChatGPT deployment name which can be found on the deployments
    - `Base URL` to your Azure API Base URL (e.g. `https://example-endpoint.openai.azure.com`)
    - `API Key` to your Azure API key
 
-## Embeddings
-
-OpenHands uses llama-index for embeddings. You can find their documentation on Azure [here](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/azure_openai/).
-
 ### Azure OpenAI Configuration
 
 When running OpenHands, set the following environment variables using `-e` in the
