@@ -110,7 +110,29 @@ class GitLabService(GitService):
     async def get_repositories(
         self, page: int, per_page: int, sort: str, installation_id: int | None
     ) -> list[Repository]:
-        return []
+        if installation_id:
+            return []  # Not implementing installation_token case yet
+        
+        url = f'{self.BASE_URL}/projects'
+        params = {
+            'page': str(page),
+            'per_page': str(per_page),
+            'order_by': sort,
+            'owned': 'true'  # Only get repositories owned by the user
+        }
+        response, headers = await self._fetch_data(url, params)
+        
+        next_link: str = headers.get('Link', '')
+        repos = [
+            Repository(
+                id=repo.get('id'),
+                full_name=repo.get('path_with_namespace'),
+                stargazers_count=repo.get('star_count'),
+                link_header=next_link,
+            )
+            for repo in response
+        ]
+        return repos
 
 
 gitlab_service_cls = os.environ.get(
