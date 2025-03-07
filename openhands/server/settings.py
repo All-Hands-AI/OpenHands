@@ -145,4 +145,4 @@ class GETSettingsModel(Settings):
     Settings with additional token data for the frontend
     """
 
-    provider_tokens_are_set: bool | None = None
+    provider_tokens_are_set: dict[str, str] | None = None
