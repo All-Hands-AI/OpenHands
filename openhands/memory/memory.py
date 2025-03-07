@@ -29,6 +29,11 @@ class Memory:
     Memory is a component that listens to the EventStream for AgentRecallAction (to create a RecallObservation).
     """
 
+    sid: str
+    event_stream: EventStream
+    status_callback: Callable | None
+    loop: asyncio.AbstractEventLoop | None
+
     def __init__(
         self,
         event_stream: EventStream,
@@ -39,7 +44,7 @@ class Memory:
         self.sid = sid if sid else str(uuid.uuid4())
         self.microagents_dir = GLOBAL_MICROAGENTS_DIR
         self.status_callback = status_callback
-        self.loop = asyncio.get_running_loop()
+        self.loop = None
 
         self.event_stream.subscribe(
             EventStreamSubscriber.MEMORY,
@@ -65,9 +70,14 @@ class Memory:
     def send_error_message(self, message_id: str, message: str):
         """Sends an error message if the callback function was provided."""
         if self.status_callback:
-            asyncio.run_coroutine_threadsafe(
-                self._send_status_message('error', message_id, message), self.loop
-            )
+            try:
+                if self.loop is None:
+                    self.loop = asyncio.get_running_loop()
+                asyncio.run_coroutine_threadsafe(
+                    self._send_status_message('error', message_id, message), self.loop
+                )
+            except RuntimeError as e:
+                logger.error(f'Error sending status message: {e.__class__.__name__}')
 
     async def _send_status_message(self, msg_type: str, id: str, message: str):
         """Sends a status message to the client."""
