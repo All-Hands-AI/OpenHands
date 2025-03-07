@@ -67,25 +67,12 @@ class Memory:
         # from typically OpenHands/microagents (i.e., the PUBLIC microagents)
         self._load_global_microagents()
 
-    def send_error_message(self, message_id: str, message: str):
-        """Sends an error message if the callback function was provided."""
-        if self.status_callback:
-            try:
-                if self.loop is None:
-                    self.loop = asyncio.get_running_loop()
-                asyncio.run_coroutine_threadsafe(
-                    self._send_status_message('error', message_id, message), self.loop
-                )
-            except RuntimeError as e:
-                logger.error(f'Error sending status message: {e.__class__.__name__}')
-
-    async def _send_status_message(self, msg_type: str, id: str, message: str):
-        """Sends a status message to the client."""
-        if self.status_callback:
-            self.status_callback(msg_type, id, message)
-
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
+        asyncio.get_event_loop().run_until_complete(self._on_event(event))
+
+    async def _on_event(self, event: Event):
+        """Handle an event from the event stream asynchronously."""
         try:
             observation: RecallObservation | NullObservation | None = None
             # Handle AgentRecallAction
@@ -282,3 +269,23 @@ class Memory:
             )
         else:
             self.runtime_info = None
+
+    def send_error_message(self, message_id: str, message: str):
+        """Sends an error message if the callback function was provided."""
+        if self.status_callback:
+            try:
+                if self.loop is None:
+                    self.loop = asyncio.get_running_loop()
+                asyncio.run_coroutine_threadsafe(
+                    self._send_status_message('error', message_id, message), self.loop
+                )
+            except RuntimeError as e:
+                logger.error(
+                    f'Error sending status message: {e.__class__.__name__}',
+                    stack_info=False,
+                )
+
+    async def _send_status_message(self, msg_type: str, id: str, message: str):
+        """Sends a status message to the client."""
+        if self.status_callback:
+            self.status_callback(msg_type, id, message)

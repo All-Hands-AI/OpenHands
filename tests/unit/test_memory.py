@@ -1,16 +1,20 @@
 import asyncio
-import time
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from openhands.controller.agent_controller import AgentController
+from openhands.controller.agent import Agent
+from openhands.core.config import AppConfig
+from openhands.core.main import run_controller
+from openhands.core.schema.agent import AgentState
 from openhands.events.action.agent import AgentRecallAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
+from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
+from openhands.runtime.base import Runtime
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -29,7 +33,11 @@ def event_stream(file_store):
 @pytest.fixture
 def memory(event_stream):
     """Create a test memory instance."""
-    return Memory(event_stream, 'test_sid')
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    memory = Memory(event_stream, 'test_sid')
+    yield memory
+    loop.close()
 
 
 def test_is_on_first_user_message_true(memory, event_stream):
@@ -84,132 +92,71 @@ def test_is_on_first_user_message_false(memory, event_stream):
     assert memory._is_on_first_user_message(recall_action2) is False
 
 
-def test_memory_on_event_exception_handling(memory, event_stream):
+@pytest.mark.asyncio
+async def test_memory_on_event_exception_handling(memory, event_stream):
     """Test that exceptions in Memory.on_event are properly handled via status callback."""
 
     # Create a dummy agent for the controller
-    class DummyAgent:
-        def __init__(self):
-            self.name = 'dummy'
-            self.llm = type(
-                'DummyLLM',
-                (),
-                {'metrics': Metrics()},
-            )()
+    agent = MagicMock(spec=Agent)
+    agent.llm = MagicMock(spec=LLM)
+    agent.llm.metrics = Metrics()
+    agent.llm.config = AppConfig().get_llm_config()
 
-        def reset(self):
-            pass
+    # Create a mock runtime
+    runtime = MagicMock(spec=Runtime)
+    runtime.event_stream = event_stream
 
-    # Track status callback calls
-    status_calls = []
+    # Mock Memory method to raise an exception
+    with patch.object(
+        memory, '_on_first_recall_action', side_effect=Exception('Test error')
+    ):
+        state = await run_controller(
+            config=AppConfig(),
+            initial_user_action=MessageAction(content='Test message'),
+            runtime=runtime,
+            sid='test',
+            agent=agent,
+            fake_user_response_fn=lambda _: 'repeat',
+            memory=memory,
+        )
 
-    def status_callback(status_type: str, status_id: str, msg: str):
-        status_calls.append((status_type, status_id, msg))
-
-    # Set the status callback BEFORE creating the controller
-    memory.status_callback = status_callback
-
-    # Create an agent controller that shares the same event stream as memory
-    controller = AgentController(
-        agent=DummyAgent(),
-        event_stream=event_stream,
-        max_iterations=10,
-        sid='test_sid',
-        confirmation_mode=False,
-        headless_mode=True,
-    )
-
-    # Create a recall action
-    recall_action = AgentRecallAction(query='test query')
-    recall_action._source = EventSource.USER
-
-    # Mock the event stream to raise an exception
-    with patch.object(event_stream, 'add_event', side_effect=Exception('Test error')):
-        # This should not raise the exception, but call the status callback
-        memory.on_event(recall_action)
-
-        # give it a little time
-        time.sleep(0.1)
-
-        # Verify that the status callback was called with the error
-        assert len(status_calls) == 1
-        status_type, status_id, msg = status_calls[0]
-        assert status_type == 'error'
-        assert status_id == 'STATUS$ERROR_MEMORY'
-        assert 'Error: Exception' in msg
-
-        assert controller._pending_action is None
-
-    # Clean up
-    asyncio.get_event_loop().run_until_complete(controller.close())
+        # Verify that the controller's last error was set
+        assert state.iteration == 0
+        assert state.agent_state == AgentState.ERROR
+        assert state.last_error == 'Error: Exception'
 
 
-def test_memory_on_first_recall_action_exception_handling(memory, event_stream):
+@pytest.mark.asyncio
+async def test_memory_on_first_recall_action_exception_handling(memory, event_stream):
     """Test that exceptions in Memory._on_first_recall_action are properly handled via status callback."""
 
     # Create a dummy agent for the controller
-    class DummyAgent:
-        def __init__(self):
-            self.name = 'dummy'
-            self.llm = type(
-                'DummyLLM',
-                (),
-                {'metrics': Metrics()},
-            )()
+    agent = MagicMock(spec=Agent)
+    agent.llm = MagicMock(spec=LLM)
+    agent.llm.metrics = Metrics()
+    agent.llm.config = AppConfig().get_llm_config()
 
-        def reset(self):
-            pass
+    # Create a mock runtime
+    runtime = MagicMock(spec=Runtime)
+    runtime.event_stream = event_stream
 
-    # Track status callback calls
-    status_calls = []
-
-    def status_callback(status_type: str, status_id: str, msg: str):
-        status_calls.append((status_type, status_id, msg))
-
-    # Set the status callback before creating the controller
-    memory.status_callback = status_callback
-
-    # Create an agent controller that shares the same event stream as memory
-    controller = AgentController(
-        agent=DummyAgent(),
-        event_stream=event_stream,
-        max_iterations=10,
-        sid='test_sid',
-        confirmation_mode=False,
-        headless_mode=True,
-    )
-    controller.status_callback = status_callback
-
-    # Add a MessageAction to make this the first user message
-    message_action = MessageAction(content='test')
-    message_action._source = EventSource.USER
-    event_stream.add_event(message_action, EventSource.USER)
-
-    # Create a recall action that will trigger _on_first_recall_action
-    recall_action = AgentRecallAction(query='test query')
-    recall_action._source = EventSource.USER
-    event_stream.add_event(recall_action, EventSource.USER)
-
-    # Mock the event stream to raise an exception
+    # Mock Memory._on_first_recall_action to raise an exception
     with patch.object(
-        event_stream,
-        'add_event',
+        memory,
+        '_on_first_recall_action',
         side_effect=Exception('Test error from _on_first_recall_action'),
     ):
-        # This should not raise the exception, but call the status callback
-        memory.on_event(recall_action)
+        state = await run_controller(
+            config=AppConfig(),
+            initial_user_action=MessageAction(content='Test message'),
+            runtime=runtime,
+            sid='test',
+            agent=agent,
+            fake_user_response_fn=lambda _: 'repeat',
+            memory=memory,
+        )
 
-        # give it a little time
-        time.sleep(0.1)
-
-        # Verify that the status callback was called with the error
-        assert len(status_calls) == 1
-        status_type, status_id, msg = status_calls[0]
-        assert status_type == 'error'
-        assert status_id == 'STATUS$ERROR_MEMORY'
-        assert 'Error: Exception' in msg
-
-        assert controller._pending_action is None
-
-    # Clean up
-    asyncio.get_event_loop().run_until_complete(controller.close())
+        # Verify that the controller's last error was set
+        assert state.iteration == 0
+        assert state.agent_state == AgentState.ERROR
+        assert state.last_error == 'Error: Exception'
