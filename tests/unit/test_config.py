@@ -553,15 +553,6 @@ def test_workspace_mount_rewrite(default_config, monkeypatch):
     assert default_config.workspace_mount_path == '/sandbox/project'
 
 
-def test_embedding_base_url_default(default_config):
-    default_config.get_llm_config().base_url = 'https://api.exampleapi.com'
-    finalize_config(default_config)
-    assert (
-        default_config.get_llm_config().embedding_base_url
-        == 'https://api.exampleapi.com'
-    )
-
-
 def test_cache_dir_creation(default_config, tmpdir):
     default_config.cache_dir = str(tmpdir.join('test_cache'))
     finalize_config(default_config)
@@ -927,12 +918,10 @@ max_budget_per_task = 4.0
 [llm.gpt3]
 model="gpt-3.5-turbo"
 api_key="redacted"
-embedding_model="openai"
 
 [llm.gpt4o]
 model="gpt-4o"
 api_key="redacted"
-embedding_model="openai"
 """
 
     with open(temp_toml_file, 'w') as f:
@@ -940,7 +929,6 @@ embedding_model="openai"
 
     llm_config = get_llm_config_arg('gpt3', temp_toml_file)
     assert llm_config.model == 'gpt-3.5-turbo'
-    assert llm_config.embedding_model == 'openai'
 
 
 def test_get_agent_configs(default_config, temp_toml_file):
