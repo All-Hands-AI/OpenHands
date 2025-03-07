@@ -26,10 +26,10 @@ const getSettingsQueryFn = async () => {
 };
 
 export const useSettings = () => {
-  const { setGitHubTokenIsSet, githubTokenIsSet } = useAuth();
+  const { setProviderTokensSet, providerTokensSet } = useAuth();
 
   const query = useQuery({
-    queryKey: ["settings", githubTokenIsSet],
+    queryKey: ["settings", providerTokensSet],
     queryFn: getSettingsQueryFn,
     // Only retry if the error is not a 404 because we
     // would want to show the modal immediately if the
@@ -47,7 +47,9 @@ export const useSettings = () => {
   }, [query.data?.LLM_API_KEY]);
 
   React.useEffect(() => {
-    setGitHubTokenIsSet(!!query.data?.PROVIDER_TOKENS_ARE_SET);
+    if (query.data?.PROVIDER_TOKENS_ARE_SET) {
+      setProviderTokensSet(query.data.PROVIDER_TOKENS_ARE_SET);
+    }
   }, [query.data?.PROVIDER_TOKENS_ARE_SET, query.isFetched]);
 
   // We want to return the defaults if the settings aren't found so the user can still see the
