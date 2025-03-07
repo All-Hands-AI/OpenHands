@@ -22,6 +22,9 @@ class AgentConfig(BaseModel):
         condenser: Configuration for the memory condenser. Default is NoOpCondenserConfig.
         enable_history_truncation: Whether history should be truncated to continue the session when hitting LLM context length limit.
         enable_som_visual_browsing: Whether to enable SoM (Set of Marks) visual browsing. Default is False.
+        devin_enable_planning: Whether planning is enabled for DevinAgent. Default is True.
+        devin_max_plan_steps: The maximum number of steps in a plan for DevinAgent. Default is 10.
+        devin_enable_feedback: Whether feedback handling is enabled for DevinAgent. Default is True.
     """
 
     llm_config: str | None = Field(default=None)
@@ -35,6 +38,10 @@ class AgentConfig(BaseModel):
     enable_history_truncation: bool = Field(default=True)
     enable_som_visual_browsing: bool = Field(default=False)
     condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
+    # DevinAgent設定
+    devin_enable_planning: bool = Field(default=True)
+    devin_max_plan_steps: int = Field(default=10)
+    devin_enable_feedback: bool = Field(default=True)
 
     model_config = {'extra': 'forbid'}
 
