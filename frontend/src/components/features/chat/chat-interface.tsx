@@ -1,5 +1,4 @@
 import { useDispatch, useSelector } from "react-redux";
-import toast from "react-hot-toast";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
@@ -23,6 +22,7 @@ import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bott
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-files";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -98,7 +98,7 @@ export function ChatInterface() {
 
   const onClickExportTrajectoryButton = () => {
     if (!params.conversationId) {
-      toast.error("ConversationId unknown, cannot download trajectory");
+      displayErrorToast("ConversationId unknown, cannot download trajectory");
       return;
     }
 
@@ -110,7 +110,7 @@ export function ChatInterface() {
         );
       },
       onError: (error) => {
-        toast.error(error.message);
+        displayErrorToast(error.message);
       },
     });
   };
