@@ -22,7 +22,6 @@ from openhands.server.shared import (
     SettingsStoreImpl,
     config,
     conversation_manager,
-    monitoring_listener,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
@@ -53,7 +52,10 @@ async def _create_new_conversation(
     image_urls: list[str] | None,
     attach_convo_id: bool = False,
 ):
-    monitoring_listener.on_create_conversation()
+    logger.info(
+        'Creating conversation',
+        extra={'signal': 'create_conversation', 'user_id': user_id},
+    )
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
@@ -89,7 +91,10 @@ async def _create_new_conversation(
     while await conversation_store.exists(conversation_id):
         logger.warning(f'Collision on conversation ID: {conversation_id}. Retrying...')
         conversation_id = uuid.uuid4().hex
-    logger.info(f'New conversation ID: {conversation_id}')
+    logger.info(
+        f'New conversation ID: {conversation_id}',
+        extra={'user_id': user_id, 'session_id': conversation_id},
+    )
 
     repository_title = (
         selected_repository.split('/')[-1] if selected_repository else None
@@ -107,7 +112,10 @@ async def _create_new_conversation(
         )
     )
 
-    logger.info(f'Starting agent loop for conversation {conversation_id}')
+    logger.info(
+        f'Starting agent loop for conversation {conversation_id}',
+        extra={'user_id': user_id, 'session_id': conversation_id},
+    )
     initial_message_action = None
     if initial_user_msg or image_urls:
         user_msg = (
@@ -305,6 +313,7 @@ async def _get_conversation_info(
     except Exception as e:
         logger.error(
             f'Error loading conversation {conversation.conversation_id}: {str(e)}',
+            extra={'session_id': conversation.conversation_id},
         )
         return None
 

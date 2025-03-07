@@ -192,10 +192,13 @@ class AgentController:
         Args:
             level (str): The logging level to use (e.g., 'info', 'debug', 'error').
             message (str): The message to log.
-            extra (dict | None, optional): Additional fields to include in the log. Defaults to None.
+            extra (dict | None, optional): Additional fields to log. Includes session_id by default.
         """
         message = f'[Agent Controller {self.id}] {message}'
-        getattr(logger, level)(message, extra=extra, stacklevel=2)
+        if extra is None:
+            extra = {}
+        extra_merged = {'session_id': self.id, **extra}
+        getattr(logger, level)(message, extra=extra_merged, stacklevel=2)
 
     def update_state_before_step(self):
         self.state.iteration += 1

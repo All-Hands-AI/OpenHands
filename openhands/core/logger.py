@@ -469,3 +469,22 @@ def _setup_llm_logger(name: str, log_level: int) -> logging.Logger:
 
 llm_prompt_logger = _setup_llm_logger('prompt', current_log_level)
 llm_response_logger = _setup_llm_logger('response', current_log_level)
+
+
+class OpenHandsLoggerAdapter(logging.LoggerAdapter):
+    extra: dict
+
+    def __init__(self, logger=openhands_logger, extra=None):
+        self.logger = logger
+        self.extra = extra or {}
+
+    def process(self, msg, kwargs):
+        """
+        If 'extra' is supplied in kwargs, merge it with the adapters 'extra' dict
+        Starting in Python 3.13, LoggerAdapter's merge_extra option will do this.
+        """
+        if 'extra' in kwargs and isinstance(kwargs['extra'], dict):
+            kwargs['extra'] = {**self.extra, **kwargs['extra']}
+        else:
+            kwargs['extra'] = self.extra
+        return msg, kwargs
