@@ -15,7 +15,7 @@ export const retrieveGitHubAppRepositories = async (
 ) => {
   const installationId = installations[installationIndex];
   const response = await openHands.get<GitHubRepository[]>(
-    "/api/github/repositories",
+    "/api/user/repositories",
     {
       params: {
         sort: "pushed",
@@ -58,7 +58,7 @@ export const retrieveGitHubUserRepositories = async (
   per_page = 30,
 ) => {
   const response = await openHands.get<GitHubRepository[]>(
-    "/api/github/repositories",
+    "/api/user/repositories",
     {
       params: {
         sort: "pushed",

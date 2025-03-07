@@ -149,13 +149,13 @@ const openHandsHandlers = [
 export const handlers = [
   ...STRIPE_BILLING_HANDLERS,
   ...openHandsHandlers,
-  http.get("/api/github/repositories", () =>
+  http.get("/api/user/repositories", () =>
     HttpResponse.json([
       { id: 1, full_name: "octocat/hello-world" },
       { id: 2, full_name: "octocat/earth" },
     ]),
   ),
-  http.get("/api/github/user", () => {
+  http.get("/api/user/info", () => {
     const user: GitHubUser = {
       id: 1,
       login: "octocat",

@@ -289,7 +289,7 @@ class OpenHands {
   }
 
   static async getGitHubUser(): Promise<GitHubUser> {
-    const response = await openHands.get<GitHubUser>("/api/github/user");
+    const response = await openHands.get<GitHubUser>("/api/user/info");
 
     const { data } = response;
 
@@ -306,7 +306,7 @@ class OpenHands {
   }
 
   static async getGitHubUserInstallationIds(): Promise<number[]> {
-    const response = await openHands.get<number[]>("/api/github/installations");
+    const response = await openHands.get<number[]>("/api/user/installations");
     return response.data;
   }
 
@@ -315,7 +315,7 @@ class OpenHands {
     per_page = 5,
   ): Promise<GitHubRepository[]> {
     const response = await openHands.get<GitHubRepository[]>(
-      "/api/github/search/repositories",
+      "/api/user/search/repositories",
       {
         params: {
           query,

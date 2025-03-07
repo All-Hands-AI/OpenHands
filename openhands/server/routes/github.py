@@ -17,7 +17,7 @@ from openhands.integrations.service_types import (
 )
 from openhands.server.auth import get_idp_token, get_provider_tokens
 
-app = APIRouter(prefix='/api/github')
+app = APIRouter(prefix='/api/user')
 
 
 @app.get('/repositories', response_model=list[Repository])
@@ -56,7 +56,7 @@ async def get_github_repositories(
     )
 
 
-@app.get('/user', response_model=User)
+@app.get('/info', response_model=User)
 async def get_github_user(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     idp_token: SecretStr | None = Depends(get_idp_token),
