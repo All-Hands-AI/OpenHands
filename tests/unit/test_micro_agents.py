@@ -30,8 +30,8 @@ def event_stream(temp_dir):
 @pytest.fixture
 def agent_configs():
     return {
-        'CoderAgent': AgentConfig(memory_enabled=True),
-        'BrowsingAgent': AgentConfig(memory_enabled=True),
+        'CoderAgent': AgentConfig(enable_prompt_extensions=True),
+        'BrowsingAgent': AgentConfig(enable_prompt_extensions=True),
     }
 
 

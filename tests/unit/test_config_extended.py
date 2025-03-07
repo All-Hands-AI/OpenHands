@@ -101,7 +101,7 @@ custom2 = 42
 llm = "overridden"  # even a key like 'llm' is accepted in extended
 
 [agent]
-memory_enabled = true
+enable_prompt_extensions = true
 """
     config_file = tmp_path / 'config.toml'
     config_file.write_text(config_content)
@@ -131,7 +131,7 @@ model = "test-model"
 api_key = "toml-api-key"
 
 [agent]
-memory_enabled = true
+enable_prompt_extensions = true
 """
     config_file = tmp_path / 'config.toml'
     config_file.write_text(config_content)
