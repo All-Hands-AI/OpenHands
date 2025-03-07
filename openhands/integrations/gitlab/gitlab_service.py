@@ -119,8 +119,8 @@ class GitLabService(GitService):
             'per_page': str(per_page),
             'order_by': sort,
             'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
-            'owned': True,  # Boolean value without quotes
-            'membership': True  # Include projects user is a member of
+            'owned': 1,  # Use 1 instead of True
+            'membership': 1  # Use 1 instead of True
         }
         response, headers = await self._fetch_data(url, params)
         
