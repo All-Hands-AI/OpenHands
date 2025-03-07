@@ -131,7 +131,9 @@ default_agent = "TestAgent"
         default_config.get_llm_config_from_agent('CodeActAgent')
         == default_config.get_llm_config()
     )
-    assert default_config.get_agent_config('CodeActAgent').enable_prompt_extensions is True
+    assert (
+        default_config.get_agent_config('CodeActAgent').enable_prompt_extensions is True
+    )
 
     # defined agent config overrides default ones
     assert default_config.get_llm_config_from_agent(
@@ -141,7 +143,10 @@ default_agent = "TestAgent"
         default_config.get_llm_config_from_agent('BrowsingAgent').model
         == 'some-cheap-model'
     )
-    assert default_config.get_agent_config('BrowsingAgent').enable_prompt_extensions is False
+    assert (
+        default_config.get_agent_config('BrowsingAgent').enable_prompt_extensions
+        is False
+    )
 
     assert default_config.workspace_base == '/opt/files2/workspace'
     assert default_config.sandbox.timeout == 1
@@ -829,7 +834,9 @@ def test_api_keys_repr_str():
 
     # Test AgentConfig
     # No attrs in AgentConfig have 'key' or 'token' in their name
-    agent_config = AgentConfig(enable_prompt_extensions=True, codeact_enable_browsing=False)
+    agent_config = AgentConfig(
+        enable_prompt_extensions=True, codeact_enable_browsing=False
+    )
     for attr_name in AgentConfig.model_fields.keys():
         if not attr_name.startswith('__'):
             assert (
@@ -1045,7 +1052,10 @@ def test_agent_config_from_toml_section_with_invalid_base():
     agent_section = {
         'invalid_field': 'some_value',  # This should be ignored in base config
         'codeact_enable_jupyter': 'not_a_bool',  # This should cause validation error
-        'CustomAgent': {'codeact_enable_browsing': False, 'codeact_enable_jupyter': True},
+        'CustomAgent': {
+            'codeact_enable_browsing': False,
+            'codeact_enable_jupyter': True,
+        },
     }
 
     # Parse the section
