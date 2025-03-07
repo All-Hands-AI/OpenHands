@@ -131,16 +131,18 @@ class AgentSession:
                         'github_token': github_token.get_secret_value(),
                     }
                 )
-            if initial_message:
-                self.event_stream.add_event(initial_message, EventSource.USER)
-                self.event_stream.add_event(
-                    ChangeAgentStateAction(AgentState.RUNNING), EventSource.ENVIRONMENT
-                )
-            else:
-                self.event_stream.add_event(
-                    ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT),
-                    EventSource.ENVIRONMENT,
-                )
+            if not self._closed:
+                if initial_message:
+                    self.event_stream.add_event(initial_message, EventSource.USER)
+                    self.event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.RUNNING),
+                        EventSource.ENVIRONMENT,
+                    )
+                else:
+                    self.event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT),
+                        EventSource.ENVIRONMENT,
+                    )
             finished = True
         finally:
             self._starting = False
@@ -360,3 +362,6 @@ class AgentSession:
             # If 5 minutes have elapsed and we still don't have a controller, something has gone wrong
             return AgentState.ERROR
         return None
+
+    def is_closed(self) -> bool:
+        return self._closed
