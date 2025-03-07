@@ -25,10 +25,10 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
                 content={'error': 'Settings not found'},
             )
 
-        provider_tokens_are_set = {}
+        provider_tokens_set = {}
         
         if bool(user_id):
-            provider_tokens_are_set[ProviderType.GITHUB.value] = True
+            provider_tokens_set[ProviderType.GITHUB.value] = True
         
         provider_tokens = get_provider_tokens(request)
         if provider_tokens:
@@ -36,13 +36,13 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
             provider_tokens_types = [provider.value for provider in provider_tokens]
             for provider_type in all_provider_types:
                 if provider_type in provider_tokens_types:
-                    provider_tokens_are_set[provider_type] = True
+                    provider_tokens_set[provider_type] = True
                 else:
-                    provider_tokens_are_set[provider_type] = False
+                    provider_tokens_set[provider_type] = False
 
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(),
-            provider_tokens_are_set=provider_tokens,
+            provider_tokens_set=provider_tokens_set,
         )
         settings_with_token_data.llm_api_key = settings.llm_api_key
 

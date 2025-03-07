@@ -190,7 +190,7 @@ export const handlers = [
       language: "no",
     };
     if (Object.keys(settings.provider_tokens).length > 0) {
-      settings.provider_tokens_are_set = true;
+      settings.provider_tokens_are_set = { github: false, gitlab: false };
     }
 
     return HttpResponse.json(settings);
@@ -204,7 +204,10 @@ export const handlers = [
         newSettings = { ...body };
         if (newSettings.unset_github_token) {
           newSettings.provider_tokens = {};
-          newSettings.provider_tokens_are_set = false;
+          newSettings.provider_tokens_are_set = {
+            github: false,
+            gitlab: false,
+          };
           delete newSettings.unset_github_token;
         }
       }
