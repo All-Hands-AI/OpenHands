@@ -47,8 +47,8 @@ export const useSettings = () => {
   }, [query.data?.LLM_API_KEY]);
 
   React.useEffect(() => {
-    setGitHubTokenIsSet(!!query.data?.PROVIDER_TOKENS?.github);
-  }, [query.data?.PROVIDER_TOKENS?.github, query.isFetched]);
+    setGitHubTokenIsSet(!!query.data?.PROVIDER_TOKENS_ARE_SET);
+  }, [query.data?.PROVIDER_TOKENS_ARE_SET, query.isFetched]);
 
   // We want to return the defaults if the settings aren't found so the user can still see the
   // options to make their initial save. We don't set the defaults in `initialData` above because

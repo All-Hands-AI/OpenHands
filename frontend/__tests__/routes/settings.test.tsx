@@ -103,7 +103,7 @@ describe("Settings Screen", () => {
     it("should set asterik placeholder if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        provider_tokens: { github: "test-token" },
+        provider_tokens: {},
       });
 
       renderSettingsScreen();
@@ -117,7 +117,7 @@ describe("Settings Screen", () => {
     it("should render an indicator if the GitHub token is set", async () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        provider_tokens: { github: "test-token" },
+        provider_tokens: {},
       });
 
       renderSettingsScreen();
@@ -167,7 +167,7 @@ describe("Settings Screen", () => {
 
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        provider_tokens: { github: "test-token" },
+        provider_tokens: {},
       });
 
       renderSettingsScreen();
@@ -646,7 +646,7 @@ describe("Settings Screen", () => {
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         language: "no",
-        provider_tokens: { github: "test-token" },
+        provider_tokens: {},
         user_consents_to_analytics: true,
         llm_base_url: "https://test.com",
         llm_model: "anthropic/claude-3-5-sonnet-20241022",

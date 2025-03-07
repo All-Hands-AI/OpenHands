@@ -56,7 +56,6 @@ function AccountSettings() {
         isCustomModel(resources.models, settings.LLM_MODEL) ||
         hasAdvancedSettingsSet({
           ...settings,
-          PROVIDER_TOKENS: settings.PROVIDER_TOKENS || {},
         })
       );
     }
@@ -66,8 +65,7 @@ function AccountSettings() {
 
   const isSaas = config?.APP_MODE === "saas";
   const hasAppSlug = !!config?.APP_SLUG;
-  const areProviderTokensSet =
-    Object.keys(settings?.PROVIDER_TOKENS || {}).length > 0;
+  const areProviderTokensSet = settings?.PROVIDER_TOKENS_ARE_SET;
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
@@ -370,15 +368,11 @@ function AccountSettings() {
                   type="password"
                   className="w-[680px]"
                   startContent={
-                    settings?.PROVIDER_TOKENS?.github && (
-                      <KeyStatusIcon
-                        isSet={!!settings?.PROVIDER_TOKENS?.github}
-                      />
+                    areProviderTokensSet && (
+                      <KeyStatusIcon isSet={!!areProviderTokensSet} />
                     )
                   }
-                  placeholder={
-                    settings?.PROVIDER_TOKENS?.github ? "**********" : ""
-                  }
+                  placeholder={areProviderTokensSet ? "**********" : ""}
                 />
 
                 <HelpLink
@@ -395,15 +389,11 @@ function AccountSettings() {
                   type="password"
                   className="w-[680px]"
                   startContent={
-                    settings?.PROVIDER_TOKENS?.gitlab && (
-                      <KeyStatusIcon
-                        isSet={!!settings?.PROVIDER_TOKENS?.gitlab}
-                      />
+                    areProviderTokensSet && (
+                      <KeyStatusIcon isSet={!!areProviderTokensSet} />
                     )
                   }
-                  placeholder={
-                    settings?.PROVIDER_TOKENS?.gitlab ? "**********" : ""
-                  }
+                  placeholder={areProviderTokensSet ? "**********" : ""}
                 />
 
                 <HelpLink
