@@ -29,11 +29,8 @@ async def get_github_repositories(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
-    if provider_tokens and ProviderType.GITHUB in provider_tokens:
-        token = provider_tokens[ProviderType.GITHUB]
-        client = GithubServiceImpl(
-            user_id=token.user_id, idp_token=idp_token, token=token.token
-        )
+    if provider_tokens:
+        client = ProviderHandler(provider_tokens=provider_tokens, idp_token=idp_token)
 
         try:
             repos: list[Repository] = await client.get_repositories(
