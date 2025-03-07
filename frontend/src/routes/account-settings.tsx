@@ -68,7 +68,8 @@ function AccountSettings() {
   const providerTokensSet = settings?.PROVIDER_TOKENS_ARE_SET || {};
   const isGithubTokenSet = providerTokensSet.github || false;
   const isGitlabTokenSet = providerTokensSet.gitlab || false;
-  const hasAnyProviderToken = isGithubTokenSet || isGitlabTokenSet;
+  // Check if at least one provider has a true value
+  const hasAnyProviderToken = Object.values(providerTokensSet).some(value => value === true);
   const isLLMKeySet = settings?.LLM_API_KEY === "**********";
   const isAnalyticsEnabled = settings?.USER_CONSENTS_TO_ANALYTICS;
   const isAdvancedSettingsSet = determineWhetherToToggleAdvancedSettings();
