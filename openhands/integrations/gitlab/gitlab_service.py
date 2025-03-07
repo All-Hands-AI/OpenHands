@@ -118,7 +118,9 @@ class GitLabService(GitService):
             'page': str(page),
             'per_page': str(per_page),
             'order_by': sort,
-            'owned': 'true'  # Only get repositories owned by the user
+            'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
+            'owned': True,  # Boolean value without quotes
+            'membership': True  # Include projects user is a member of
         }
         response, headers = await self._fetch_data(url, params)
         
