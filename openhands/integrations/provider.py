@@ -171,7 +171,8 @@ class ProviderHandler:
                 
         # Sort combined results by the requested sort field
         if sort == 'pushed':
-            all_repos.sort(key=lambda x: x.pushed_at or '', reverse=True)
+            # Sort by pushed_at, putting None values last
+            all_repos.sort(key=lambda x: (x.pushed_at is None, x.pushed_at or ''), reverse=True)
             
         return {
             'repositories': all_repos[:per_page],  # Return only requested number of items
