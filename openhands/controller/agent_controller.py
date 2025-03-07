@@ -285,8 +285,14 @@ class AgentController:
                 return True
             return False
         if isinstance(event, Observation):
-            if isinstance(event, NullObservation) or isinstance(
-                event, AgentStateChangedObservation
+            if (
+                isinstance(event, NullObservation)
+                and event.cause is not None
+                and event.cause > 0
+            ):
+                return True
+            if isinstance(event, AgentStateChangedObservation) or isinstance(
+                event, NullObservation
             ):
                 return False
             return True
