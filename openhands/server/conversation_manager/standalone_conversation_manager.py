@@ -245,10 +245,11 @@ class StandaloneConversationManager(ConversationManager):
                 # Get the conversations sorted (oldest first)
                 conversation_store = await self._get_conversation_store(user_id)
                 conversations = await conversation_store.get_all_metadata(response_ids)
-                conversations.sort(key=_last_updated_at_key)
+                conversations.sort(key=_last_updated_at_key, reverse=True)
 
-                oldest_conversation_id = conversations[0].conversation_id
-                await self.close_session(oldest_conversation_id)
+                while len(conversations) >= self.config.max_concurrent_conversations:
+                    oldest_conversation_id = conversations.pop().conversation_id
+                    await self.close_session(oldest_conversation_id)
 
             session = Session(
                 sid=sid,
