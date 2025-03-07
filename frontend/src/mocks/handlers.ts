@@ -203,7 +203,7 @@ export const handlers = [
       if (typeof body === "object") {
         newSettings = { ...body };
         if (newSettings.unset_github_token) {
-          newSettings.provider_tokens = {};
+          newSettings.provider_tokens = { github: "", gitlab: "" };
           newSettings.github_token_is_set = false;
           delete newSettings.unset_github_token;
         }

@@ -1,3 +1,5 @@
+export type Provider = "github" | "gitlab";
+
 export type Settings = {
   LLM_MODEL: string;
   LLM_BASE_URL: string;
@@ -11,7 +13,7 @@ export type Settings = {
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
-  PROVIDER_TOKENS: Record<string, string>;
+  PROVIDER_TOKENS: Record<Provider, string>;
 };
 
 export type ApiSettings = {
@@ -27,17 +29,17 @@ export type ApiSettings = {
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
   user_consents_to_analytics: boolean | null;
-  provider_tokens: Record<string, string>;
+  provider_tokens: Record<Provider, string>;
 };
 
 export type PostSettings = Settings & {
-  provider_tokens: Record<string, string>;
+  provider_tokens: Record<Provider, string>;
   unset_github_token: boolean;
   user_consents_to_analytics: boolean | null;
 };
 
 export type PostApiSettings = ApiSettings & {
-  provider_tokens: Record<string, string>;
+  provider_tokens: Record<Provider, string>;
   unset_github_token: boolean;
   user_consents_to_analytics: boolean | null;
 };
