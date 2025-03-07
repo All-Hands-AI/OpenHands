@@ -97,6 +97,8 @@ describe("Home Screen", () => {
 });
 
 describe("Settings 404", () => {
+  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+
   it("should open the settings modal if GET /settings fails with a 404", async () => {
     const error = createAxiosNotFoundErrorObject();
     getSettingsSpy.mockRejectedValue(error);
@@ -188,5 +190,7 @@ describe("Credit card modal", () => {
 
     const homeScreen = await screen.findByTestId("home-screen");
     expect(homeScreen).toBeInTheDocument();
+    const settingsModalAfter = screen.queryByTestId("ai-config-modal");
+    expect(settingsModalAfter).not.toBeInTheDocument();
   });
 });
