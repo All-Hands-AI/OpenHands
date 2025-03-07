@@ -23,6 +23,8 @@ import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bott
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-files";
+import { CostToggleButton } from "#/components/shared/buttons/cost-toggle-button";
+import { setCostVisibility } from "#/state/cost-visibility-slice";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -42,12 +44,16 @@ export function ChatInterface() {
 
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { isVisible: isCostVisible } = useSelector(
+    (state: RootState) => state.costVisibility
+  );
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
+  const [isFeatureEnabled, setIsFeatureEnabled] = React.useState(false);
   const { selectedRepository, importedProjectZip } = useSelector(
     (state: RootState) => state.initialQuery,
   );
@@ -115,12 +121,21 @@ export function ChatInterface() {
     });
   };
 
+  const handleToggleSwitch = (isOn: boolean) => {
+    setIsFeatureEnabled(isOn);
+    // 这里可以添加其他处理逻辑
+  };
+
+  const handleCostToggle = (isVisible: boolean) => {
+    dispatch(setCostVisibility(isVisible));
+  };
+
   const isWaitingForUserInput =
     curAgentState === AgentState.AWAITING_USER_INPUT ||
     curAgentState === AgentState.FINISHED;
 
   return (
-    <div className="h-full flex flex-col justify-between">
+    <div className="flex flex-col h-full relative">
       {messages.length === 0 && (
         <ChatSuggestions onSuggestionsClick={setMessageToSend} />
       )}
@@ -154,15 +169,22 @@ export function ChatInterface() {
 
       <div className="flex flex-col gap-[6px] px-4 pb-4">
         <div className="flex justify-between relative">
-          <TrajectoryActions
-            onPositiveFeedback={() =>
-              onClickShareFeedbackActionButton("positive")
-            }
-            onNegativeFeedback={() =>
-              onClickShareFeedbackActionButton("negative")
-            }
-            onExportTrajectory={() => onClickExportTrajectoryButton()}
-          />
+          <div className="flex items-center gap-1">
+            <TrajectoryActions
+              onPositiveFeedback={() =>
+                onClickShareFeedbackActionButton("positive")
+              }
+              onNegativeFeedback={() =>
+                onClickShareFeedbackActionButton("negative")
+              }
+              onExportTrajectory={() => onClickExportTrajectoryButton()}
+            />
+            <CostToggleButton
+              testId="cost-toggle"
+              onClick={handleCostToggle}
+              tooltip={isCostVisible ? "Hide Cost" : "Show Cost"}
+            />
+          </div>
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
             {messages.length > 2 &&
