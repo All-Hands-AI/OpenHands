@@ -205,7 +205,6 @@ def process_instance(
 
     runtime: Runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
-
     initialize_runtime(runtime, instance=instance)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state

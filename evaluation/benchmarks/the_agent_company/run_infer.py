@@ -277,7 +277,6 @@ if __name__ == '__main__':
     )
     runtime: Runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
-
     init_task_env(runtime, args.server_hostname, env_llm_config)
 
     dependencies = load_dependencies(runtime)

@@ -15,7 +15,9 @@ class Content(BaseModel):
     cache_prompt: bool = False
 
     @model_serializer
-    def serialize_model(self):
+    def serialize_model(
+        self,
+    ) -> dict[str, str | dict[str, str]] | list[dict[str, str | dict[str, str]]]:
         raise NotImplementedError('Subclasses should implement this method.')
 
 
@@ -24,7 +26,7 @@ class TextContent(Content):
     text: str
 
     @model_serializer
-    def serialize_model(self):
+    def serialize_model(self) -> dict[str, str | dict[str, str]]:
         data: dict[str, str | dict[str, str]] = {
             'type': self.type,
             'text': self.text,
@@ -39,7 +41,7 @@ class ImageContent(Content):
     image_urls: list[str]
 
     @model_serializer
-    def serialize_model(self):
+    def serialize_model(self) -> list[dict[str, str | dict[str, str]]]:
         images: list[dict[str, str | dict[str, str]]] = []
         for url in self.image_urls:
             images.append({'type': self.type, 'image_url': {'url': url}})
@@ -101,15 +103,22 @@ class Message(BaseModel):
             # See discussion here for details: https://github.com/BerriAI/litellm/issues/6422#issuecomment-2438765472
             if self.role == 'tool' and item.cache_prompt:
                 role_tool_with_prompt_caching = True
-                if isinstance(d, dict):
-                    d.pop('cache_control')
-                elif isinstance(d, list):
-                    for d_item in d:
-                        d_item.pop('cache_control')
+                if isinstance(item, TextContent):
+                    d.pop('cache_control', None)
+                elif isinstance(item, ImageContent):
+                    # ImageContent.model_dump() always returns a list
+                    # We know d is a list of dicts for ImageContent
+                    if hasattr(d, '__iter__'):
+                        for d_item in d:
+                            if hasattr(d_item, 'pop'):
+                                d_item.pop('cache_control', None)
+
             if isinstance(item, TextContent):
                 content.append(d)
             elif isinstance(item, ImageContent) and self.vision_enabled:
-                content.extend(d)
+                # ImageContent.model_dump() always returns a list
+                # We know d is a list for ImageContent
+                content.extend([d] if isinstance(d, dict) else d)
 
         message_dict: dict = {'content': content, 'role': self.role}
 

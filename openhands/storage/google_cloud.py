@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional
+from typing import List
 
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
@@ -8,7 +8,7 @@ from openhands.storage.files import FileStore
 
 
 class GoogleCloudFileStore(FileStore):
-    def __init__(self, bucket_name: Optional[str] = None) -> None:
+    def __init__(self, bucket_name: str | None = None) -> None:
         """
         Create a new FileStore. If GOOGLE_APPLICATION_CREDENTIALS is defined in the
         environment it will be used for authentication. Otherwise access will be
