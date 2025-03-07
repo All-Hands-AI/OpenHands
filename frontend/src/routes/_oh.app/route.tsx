@@ -142,6 +142,11 @@ function AppContent() {
                 className="h-full"
                 labels={[
                   {
+                    label: "Changes",
+                    to: "editor",
+                    icon: <CodeIcon />,
+                  },
+                  {
                     label: t(I18nKey.WORKSPACE$TITLE),
                     to: "",
                     icon: <CodeIcon />,
