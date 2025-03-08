@@ -19,7 +19,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
-from openhands.llm.metrics import Cost, Metrics
+from openhands.llm.metrics import Metrics, TokenUsage
 from openhands.runtime.base import Runtime
 from openhands.storage.memory import InMemoryFileStore
 
@@ -762,8 +762,17 @@ async def test_action_metrics_copy():
     agent.llm = MagicMock(spec=LLM)
     metrics = Metrics(model_name='test-model')
     metrics.accumulated_cost = 0.05
-    cost = Cost(model='test-model', cost=0.05)
-    metrics._costs.append(cost)
+
+    # Add a token usage
+    usage = TokenUsage(
+        model='test-model',
+        prompt_tokens=10,
+        completion_tokens=20,
+        cache_read_tokens=5,
+        cache_write_tokens=5,
+        response_id='test-id',
+    )
+    metrics.token_usages = [usage]
     agent.llm.metrics = metrics
 
     # Mock agent step to return an action
@@ -796,9 +805,11 @@ async def test_action_metrics_copy():
     # Verify metrics were copied correctly
     assert last_action.llm_metrics is not None
     assert last_action.llm_metrics.accumulated_cost == 0.05
-    assert len(last_action.llm_metrics.costs) == 1
-    assert last_action.llm_metrics.costs[0].cost == 0.05
-    assert last_action.llm_metrics.costs[0].model == 'test-model'
+    assert len(last_action.llm_metrics.token_usages) == 1
+    assert last_action.llm_metrics.token_usages[0].prompt_tokens == 10
+    assert last_action.llm_metrics.token_usages[0].completion_tokens == 20
+    assert last_action.llm_metrics.token_usages[0].cache_read_tokens == 5
+    assert last_action.llm_metrics.token_usages[0].cache_write_tokens == 5
 
     # Verify it's a deep copy by modifying the original
     agent.llm.metrics.accumulated_cost = 0.1

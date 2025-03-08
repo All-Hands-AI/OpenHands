@@ -53,6 +53,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
+from openhands.llm.metrics import Metrics
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -731,7 +732,40 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-            action.llm_metrics = copy.deepcopy(self.agent.llm.metrics)
+
+            # Create a metrics object for frontend display with minimal data.
+            # The original metrics object contains the full history of all LLM API calls,
+            # including costs, latencies, and token usages for each turn of conversation.
+            # For long conversations, copying all this historical data would cause performance issues.
+            # Therefore, we only keep:
+            # - accumulated_cost: The current total cost
+            # - latest token_usage: Token statistics from the most recent API call
+            metrics = Metrics(model_name=self.agent.llm.metrics.model_name)
+            metrics.accumulated_cost = self.agent.llm.metrics.accumulated_cost
+            if self.agent.llm.metrics.token_usages:
+                latest_usage = self.agent.llm.metrics.token_usages[-1]
+                metrics.add_token_usage(
+                    prompt_tokens=latest_usage.prompt_tokens,
+                    completion_tokens=latest_usage.completion_tokens,
+                    cache_read_tokens=latest_usage.cache_read_tokens,
+                    cache_write_tokens=latest_usage.cache_write_tokens,
+                    response_id=latest_usage.response_id,
+                )
+            action.llm_metrics = copy.deepcopy(metrics)
+
+            # Log the metrics information for frontend display
+            latest_usage = metrics.token_usages[0] if metrics.token_usages else None
+            self.log(
+                'info',
+                f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
+                f'tokens (prompt/completion/cache_read/cache_write): '
+                f'{latest_usage.prompt_tokens if latest_usage else 0}/'
+                f'{latest_usage.completion_tokens if latest_usage else 0}/'
+                f'{latest_usage.cache_read_tokens if latest_usage else 0}/'
+                f'{latest_usage.cache_write_tokens if latest_usage else 0}',
+                extra={'msg_type': 'METRICS'},
+            )
+
             self.event_stream.add_event(action, action._source)  # type: ignore [attr-defined]
 
         await self.update_state_after_step()
