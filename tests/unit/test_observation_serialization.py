@@ -238,7 +238,7 @@ def test_file_edit_observation_legacy_serialization():
     assert 'formatted_output_and_error' not in event_dict['extras']
 
 
-def test_command_output_success_serialization_from_event_serialization():
+def test_command_output_success_serialization():
     from openhands.events.observation import CmdOutputMetadata, CmdOutputObservation
     from openhands.events.serialization import event_to_dict
     
@@ -263,20 +263,20 @@ def test_command_output_success_serialization_from_event_serialization():
 
 
 def test_delegate_observation_serialization_deserialization():
-    from openhands.events.observation.delegate import DelegateObservation
+    from openhands.events.observation.delegate import AgentDelegateObservation
     from openhands.events.serialization import event_to_dict, event_from_dict
     
     original_observation_dict = {
         'observation': 'delegate',
         'message': 'Delegated operation',
         'extras': {
-            'delegate_info': {'target': 'some-target', 'priority': 'high'}
+            'outputs': {'target': 'some-target', 'priority': 'high'}
         }
     }
     event = event_from_dict(original_observation_dict)
-    assert hasattr(event, 'delegate_info')
-    assert event.delegate_info == {'target': 'some-target', 'priority': 'high'}
+    assert hasattr(event, 'outputs')
+    assert event.outputs == {'target': 'some-target', 'priority': 'high'}
     serialized = event_to_dict(event)
     # Ensure delegate_info remains intact
-    assert serialized['extras']['delegate_info'] == {'target': 'some-target', 'priority': 'high'}
+    assert serialized['extras']['outputs'] == {'target': 'some-target', 'priority': 'high'}
 
