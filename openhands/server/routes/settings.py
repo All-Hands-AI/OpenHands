@@ -11,8 +11,8 @@ from openhands.server.shared import SettingsStoreImpl, config
 app = APIRouter(prefix='/api')
 
 
-@app.get('/settings')
-async def load_settings(request: Request) -> GETSettingsModel | None:
+@app.get('/settings', response_model=GETSettingsModel)
+async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
     try:
         user_id = get_user_id(request)
         settings_store = await SettingsStoreImpl.get_instance(config, user_id)
@@ -40,13 +40,12 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
         )
 
 
-@app.post('/settings')
+@app.post('/settings', response_model=dict[str, str])
 async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
 ) -> JSONResponse:
     # Check if token is valid
-
     if settings.github_token:
         try:
             # We check if the token is valid by getting the user
@@ -83,6 +82,12 @@ async def store_settings(
                 settings.user_consents_to_analytics = (
                     existing_settings.user_consents_to_analytics
                 )
+
+            if settings.llm_model is None:
+                settings.llm_model = existing_settings.llm_model
+
+            if settings.llm_base_url is None:
+                settings.llm_base_url = existing_settings.llm_base_url
 
         response = JSONResponse(
             status_code=status.HTTP_200_OK,

@@ -26,8 +26,10 @@ class GitHubService:
         user_id: str | None = None,
         idp_token: SecretStr | None = None,
         token: SecretStr | None = None,
+        external_token_manager: bool = False,
     ):
         self.user_id = user_id
+        self.external_token_manager = external_token_manager
 
         if token:
             self.token = token
@@ -49,6 +51,9 @@ class GitHubService:
         return status_code == 401
 
     async def get_latest_token(self) -> SecretStr:
+        return self.token
+
+    async def get_latest_provider_token(self) -> SecretStr:
         return self.token
 
     async def _fetch_data(
