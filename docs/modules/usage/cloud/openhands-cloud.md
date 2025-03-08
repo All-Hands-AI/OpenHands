@@ -48,5 +48,5 @@ You can modify repository access at any time by:
 
 ### Access to Larger Runtimes
 
-OpenHands default runtimes have access to 2 core, 8G RAM. If you require larger runtimes for your needs, please get
+OpenHands default runtimes have access to 2 cores and 8G RAM. If you require larger runtimes for your needs, please get
 in touch via contact@all-hands.dev.
