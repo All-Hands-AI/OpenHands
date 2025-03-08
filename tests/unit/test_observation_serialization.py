@@ -236,3 +236,47 @@ def test_file_edit_observation_legacy_serialization():
     assert event_dict['extras']['old_content'] is None
     assert event_dict['extras']['new_content'] == 'new content'
     assert 'formatted_output_and_error' not in event_dict['extras']
+
+
+def test_command_output_success_serialization_from_event_serialization():
+    from openhands.events.observation import CmdOutputMetadata, CmdOutputObservation
+    from openhands.events.serialization import event_to_dict
+    
+    # Test successful command
+    obs = CmdOutputObservation(
+        command='ls',
+        content='file1.txt\nfile2.txt',
+        metadata=CmdOutputMetadata(exit_code=0),
+    )
+    serialized = event_to_dict(obs)
+    assert serialized['success'] is True
+    
+    # Test failed command
+    obs = CmdOutputObservation(
+        command='ls',
+        content='No such file or directory',
+        metadata=CmdOutputMetadata(exit_code=1),
+    )
+    serialized = event_to_dict(obs)
+    assert serialized['success'] is False
+
+
+
+def test_delegate_observation_serialization_deserialization():
+    from openhands.events.observation.delegate import DelegateObservation
+    from openhands.events.serialization import event_to_dict, event_from_dict
+    
+    original_observation_dict = {
+        'observation': 'delegate',
+        'message': 'Delegated operation',
+        'extras': {
+            'delegate_info': {'target': 'some-target', 'priority': 'high'}
+        }
+    }
+    event = event_from_dict(original_observation_dict)
+    assert hasattr(event, 'delegate_info')
+    assert event.delegate_info == {'target': 'some-target', 'priority': 'high'}
+    serialized = event_to_dict(event)
+    # Ensure delegate_info remains intact
+    assert serialized['extras']['delegate_info'] == {'target': 'some-target', 'priority': 'high'}
+
