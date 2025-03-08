@@ -33,11 +33,9 @@ You will need your ChatGPT deployment name which can be found on the deployments
 
 ### Azure OpenAI Configuration
 
-When running OpenHands, set the following environment variables using `-e` in the
+When running OpenHands, set the following environment variable using `-e` in the
 [docker run command](/modules/usage/installation#start-the-app):
 
 ```
-LLM_EMBEDDING_MODEL="azureopenai"
-LLM_EMBEDDING_DEPLOYMENT_NAME="<your-embedding-deployment-name>"   # e.g. "TextEmbedding...<etc>"
 LLM_API_VERSION="<api-version>"                                    # e.g. "2024-02-15-preview"
 ```
