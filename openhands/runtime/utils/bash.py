@@ -7,9 +7,10 @@ from enum import Enum
 
 import bashlex
 import libtmux
+import psutil
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action import CmdRunAction
+from openhands.events.action import Action, CmdRunAction
 from openhands.events.observation import ErrorObservation
 from openhands.events.observation.commands import (
     CMD_OUTPUT_PS1_END,
@@ -256,10 +257,41 @@ class BashSession:
         )
         return content
 
+    def kill_process(self, pid: int) -> bool:
+        """Kill a process by its PID.
+
+        Args:
+            pid (int): The PID of the process to kill.
+
+        Returns:
+            bool: True if the process was killed successfully, False otherwise.
+        """
+        try:
+            process = psutil.Process(pid)
+            process.kill()
+            return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            return False
+
+    def kill_all_processes(self) -> bool:
+        """Kill all processes associated with the current command.
+
+        Returns:
+            bool: True if any processes were killed successfully, False otherwise.
+        """
+        process_info = self.get_running_processes()
+        success = False
+        for pid in process_info['process_pids']:
+            if pid != int(self.pane.cmd('display-message', '-p', '#{pane_pid}').stdout[0].strip()):
+                if self.kill_process(pid):
+                    success = True
+        return success
+
     def close(self):
         """Clean up the session."""
         if self._closed:
             return
+        self.kill_all_processes()  # Kill any remaining processes
         self.session.kill_session()
         self._closed = True
 
@@ -429,6 +461,119 @@ class BashSession:
         # Clear the current content
         self._clear_screen()
 
+    def get_running_processes(self):
+        """Get a list of processes that are currently running in the bash session.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'is_command_running': Boolean indicating if the last command is still running
+                - 'current_command_pid': PID of the currently running command (if any)
+                - 'processes': List of all processes visible to this bash session
+                - 'command_processes': List of processes that are likely part of the current command
+                - 'process_pids': List of PIDs of all processes
+                - 'command_pids': List of PIDs of processes that are likely part of the current command
+        """
+        # Check if a command is running in this session
+        is_command_running = False
+
+        # Get the shell's PID directly from tmux
+        shell_pid_str = (
+            self.pane.cmd('display-message', '-p', '#{pane_pid}').stdout[0].strip()
+        )
+        shell_pid = int(shell_pid_str)
+
+        try:
+            # Get process information for the shell
+            shell_process = psutil.Process(shell_pid)
+            process_list = []
+            command_processes = []
+            current_command_pid = None
+
+            # Get all child processes recursively
+            children = shell_process.children(recursive=True)
+
+            # Add the shell process first
+            process_str = f"{shell_pid} {shell_process.ppid()} {shell_process.status()[0]} {' '.join(shell_process.cmdline())}"
+            process_list.append(process_str)
+
+            for child in children:
+                try:
+                    # Skip if no cmdline (might be a kernel process)
+                    cmdline = child.cmdline()
+                    if not cmdline:
+                        continue
+
+                    # Format the process info
+                    status_flag = child.status()[0]
+
+                    # Build process string (PID PPID STATUS COMMAND)
+                    cmd_str = ' '.join(cmdline)
+                    process_str = f'{child.pid} {child.ppid()} {status_flag} {cmd_str}'
+                    process_list.append(process_str)
+
+                    # Identify processes that are likely part of current command
+                    child_ppid = child.ppid()
+                    # Direct child of shell = likely current command
+                    if child_ppid == shell_pid:
+                        if not current_command_pid:
+                            current_command_pid = child.pid
+                            is_command_running = True
+                        command_processes.append(process_str)
+                    # Child of identified command process = part of current command
+                    elif current_command_pid and (
+                        child_ppid == current_command_pid
+                        or any(
+                            p.pid == child_ppid
+                            for p in children
+                            if p.pid == current_command_pid
+                            or p.ppid() == current_command_pid
+                        )
+                    ):
+                        command_processes.append(process_str)
+
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    # Process may have terminated while we were examining it
+                    continue
+
+            # If we have no command processes, we're not running anything
+            if not command_processes:
+                is_command_running = False
+                current_command_pid = None
+
+        except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+            logger.warning(f'Error accessing process information: {e}')
+            return {
+                'is_command_running': is_command_running,
+                'current_command_pid': None,
+                'processes': [],
+                'command_processes': [],
+            }
+
+        # Extract PIDs from process strings
+        process_pids = []
+        command_pids = []
+        for proc in process_list:
+            try:
+                pid = int(proc.split()[0])
+                process_pids.append(pid)
+            except (ValueError, IndexError):
+                continue
+        for proc in command_processes:
+            try:
+                pid = int(proc.split()[0])
+                command_pids.append(pid)
+            except (ValueError, IndexError):
+                continue
+
+        return {
+            'is_command_running': is_command_running,
+            'current_command_pid': current_command_pid,
+            'processes': process_list,
+            'command_processes': command_processes,
+            'process_pids': process_pids,
+            'command_pids': command_pids,
+        }
+
     def _combine_outputs_between_matches(
         self,
         pane_content: str,
@@ -464,34 +609,95 @@ class BashSession:
         logger.debug(f'COMBINED OUTPUT: {combined_output}')
         return combined_output
 
-    def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
+    def execute(self, action: Action) -> CmdOutputObservation | ErrorObservation:
         """Execute a command in the bash session."""
         if not self._initialized:
             raise RuntimeError('Bash session is not initialized')
 
-        # Strip the command of any leading/trailing whitespace
         logger.debug(f'RECEIVED ACTION: {action}')
-        command = action.command.strip()
-        is_input: bool = action.is_input
 
-        # If the previous command is not completed, we need to check if the command is empty
+
+        # Handle CmdRunAction
+        if not isinstance(action, CmdRunAction):
+            return ErrorObservation(f"Unsupported action type: {type(action)}")
+
+        command = action.command.strip()
+        is_input = action.is_input
+
+        # Handle different command types
+        if command == '':
+            return self._handle_empty_command(action)
+        elif is_input:
+            return self._handle_input_command(action)
+        else:
+            return self._handle_normal_command(action)
+
+    def _handle_empty_command(self, action: CmdRunAction) -> CmdOutputObservation:
+        """Handle an empty command (usually to retrieve more output from a running command)."""
+        assert action.command.strip() == ''
+        # If the previous command is not in a continuing state, return an error
         if self.prev_status not in {
             BashCommandStatus.CONTINUE,
             BashCommandStatus.NO_CHANGE_TIMEOUT,
             BashCommandStatus.HARD_TIMEOUT,
         }:
-            if command == '':
-                return CmdOutputObservation(
-                    content='ERROR: No previous running command to retrieve logs from.',
-                    command='',
-                    metadata=CmdOutputMetadata(),
-                )
-            if is_input:
-                return CmdOutputObservation(
-                    content='ERROR: No previous running command to interact with.',
-                    command='',
-                    metadata=CmdOutputMetadata(),
-                )
+            return CmdOutputObservation(
+                content='ERROR: No previous running command to retrieve logs from.',
+                command='',
+                metadata=CmdOutputMetadata(),
+            )
+
+        # Start polling for command completion
+        return self._poll_for_command_completion('', action)
+
+    def _handle_input_command(self, action: CmdRunAction) -> CmdOutputObservation:
+        """Handle an input command (sent to a running process)."""
+        command = action.command.strip()
+
+        # If the previous command is not in a continuing state, return an error
+        if self.prev_status not in {
+            BashCommandStatus.CONTINUE,
+            BashCommandStatus.NO_CHANGE_TIMEOUT,
+            BashCommandStatus.HARD_TIMEOUT,
+        }:
+            return CmdOutputObservation(
+                content='ERROR: No previous running command to interact with.',
+                command='',
+                metadata=CmdOutputMetadata(),
+            )
+
+        # Check if it's a special key
+        is_special_key = self._is_special_key(command)
+
+        # Send the input to the pane
+        logger.debug(f'SENDING INPUT TO RUNNING PROCESS: {command!r}')
+        self.pane.send_keys(
+            command,
+            enter=not is_special_key,
+        )
+
+        # Start polling for command completion
+        return self._poll_for_command_completion(command, action)
+
+    def _handle_normal_command(
+        self, action: CmdRunAction
+    ) -> CmdOutputObservation | ErrorObservation:
+        """Handle a normal command."""
+        command = action.command.strip()
+
+        # Check if command is running previous command first
+        last_pane_output = self._get_pane_content()
+        if (
+            self.prev_status
+            in {
+                BashCommandStatus.HARD_TIMEOUT,
+                BashCommandStatus.NO_CHANGE_TIMEOUT,
+            }
+            and not last_pane_output.endswith(
+                CMD_OUTPUT_PS1_END
+            )  # prev command is not completed
+        ):
+            return self._handle_interrupted_command(command, last_pane_output)
 
         # Check if the command is a single command or multiple commands
         splited_commands = split_bash_commands(command)
@@ -504,66 +710,55 @@ class BashSession:
                 )
             )
 
+        # Convert command to raw string and send it
+        is_special_key = self._is_special_key(command)
+        command = escape_bash_special_chars(command)
+        logger.debug(f'SENDING COMMAND: {command!r}')
+        self.pane.send_keys(
+            command,
+            enter=not is_special_key,
+        )
+
+        # Start polling for command completion
+        return self._poll_for_command_completion(command, action)
+
+    def _handle_interrupted_command(
+        self, command: str, last_pane_output: str
+    ) -> CmdOutputObservation:
+        """Handle the case where a new command is sent while a previous command is still running."""
+        _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
+        raw_command_output = self._combine_outputs_between_matches(
+            last_pane_output, _ps1_matches
+        )
+        metadata = CmdOutputMetadata()  # No metadata available
+        metadata.suffix = (
+            f'\n[Your command "{command}" is NOT executed. '
+            f'The previous command is still running - You CANNOT send new commands until the previous command is completed. '
+            'By setting `is_input` to `true`, you can interact with the current process: '
+            "You may wait longer to see additional output of the previous command by sending empty command '', "
+            'send other commands to interact with the current process, '
+            'or send keys ("C-c", "C-z", "C-d") to interrupt/kill the previous command before sending your new command.]'
+        )
+        logger.debug(f'PREVIOUS COMMAND OUTPUT: {raw_command_output}')
+        command_output = self._get_command_output(
+            command,
+            raw_command_output,
+            metadata,
+            continue_prefix='[Below is the output of the previous command.]\n',
+        )
+        return CmdOutputObservation(
+            command=command,
+            content=command_output,
+            metadata=metadata,
+        )
+
+    def _poll_for_command_completion(
+        self, command: str, action: CmdRunAction
+    ) -> CmdOutputObservation:
+        """Poll for command completion and handle timeouts."""
         start_time = time.time()
         last_change_time = start_time
         last_pane_output = self._get_pane_content()
-
-        # When prev command is still running, and we are trying to send a new command
-        if (
-            self.prev_status
-            in {
-                BashCommandStatus.HARD_TIMEOUT,
-                BashCommandStatus.NO_CHANGE_TIMEOUT,
-            }
-            and not last_pane_output.endswith(
-                CMD_OUTPUT_PS1_END
-            )  # prev command is not completed
-            and not is_input
-            and command != ''  # not input and not empty command
-        ):
-            _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
-            raw_command_output = self._combine_outputs_between_matches(
-                last_pane_output, _ps1_matches
-            )
-            metadata = CmdOutputMetadata()  # No metadata available
-            metadata.suffix = (
-                f'\n[Your command "{command}" is NOT executed. '
-                f'The previous command is still running - You CANNOT send new commands until the previous command is completed. '
-                'By setting `is_input` to `true`, you can interact with the current process: '
-                "You may wait longer to see additional output of the previous command by sending empty command '', "
-                'send other commands to interact with the current process, '
-                'or send keys ("C-c", "C-z", "C-d") to interrupt/kill the previous command before sending your new command.]'
-            )
-            logger.debug(f'PREVIOUS COMMAND OUTPUT: {raw_command_output}')
-            command_output = self._get_command_output(
-                command,
-                raw_command_output,
-                metadata,
-                continue_prefix='[Below is the output of the previous command.]\n',
-            )
-            return CmdOutputObservation(
-                command=command,
-                content=command_output,
-                metadata=metadata,
-            )
-
-        # Send actual command/inputs to the pane
-        if command != '':
-            is_special_key = self._is_special_key(command)
-            if is_input:
-                logger.debug(f'SENDING INPUT TO RUNNING PROCESS: {command!r}')
-                self.pane.send_keys(
-                    command,
-                    enter=not is_special_key,
-                )
-            else:
-                # convert command to raw string
-                command = escape_bash_special_chars(command)
-                logger.debug(f'SENDING COMMAND: {command!r}')
-                self.pane.send_keys(
-                    command,
-                    enter=not is_special_key,
-                )
 
         # Loop until the command completes or times out
         while should_continue():
@@ -575,6 +770,18 @@ class BashSession:
             )
             logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_output.split("\n")[:10]}')
             logger.debug(f'END OF PANE CONTENT: {cur_pane_output.split("\n")[-10:]}')
+
+            # Log running processes for debugging
+            try:
+                process_info = self.get_running_processes()
+                logger.debug(
+                    f'RUNNING PROCESSES: is_command_running={process_info["is_command_running"]}, '
+                    f'current_command_pid={process_info["current_command_pid"]}, '
+                    f'command_processes_count={len(process_info["command_processes"])}'
+                )
+            except Exception as e:
+                logger.warning(f'Failed to get running processes: {e}')
+
             ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
             if cur_pane_output != last_pane_output:
                 last_pane_output = cur_pane_output
@@ -582,7 +789,6 @@ class BashSession:
                 logger.debug(f'CONTENT UPDATED DETECTED at {last_change_time}')
 
             # 1) Execution completed
-            # if the last command output contains the end marker
             if cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip()):
                 return self._handle_completed_command(
                     command,
@@ -591,8 +797,6 @@ class BashSession:
                 )
 
             # 2) Execution timed out since there's no change in output
-            # for a while (self.NO_CHANGE_TIMEOUT_SECONDS)
-            # We ignore this if the command is *blocking
             time_since_last_change = time.time() - last_change_time
             logger.debug(
                 f'CHECKING NO CHANGE TIMEOUT ({self.NO_CHANGE_TIMEOUT_SECONDS}s): elapsed {time_since_last_change}. Action blocking: {action.blocking}'
