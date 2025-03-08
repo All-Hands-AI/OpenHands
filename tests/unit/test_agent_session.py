@@ -12,7 +12,6 @@ from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
-from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.memory import InMemoryFileStore
 
@@ -56,7 +55,6 @@ async def test_agent_session_start_with_no_state(mock_agent):
     session = AgentSession(
         sid='test-session',
         file_store=file_store,
-        monitoring_listener=MonitoringListener(),
     )
 
     # Create a mock runtime and set it up
@@ -141,7 +139,6 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     session = AgentSession(
         sid='test-session',
         file_store=file_store,
-        monitoring_listener=MonitoringListener(),
     )
 
     # Create a mock runtime and set it up

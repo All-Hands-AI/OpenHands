@@ -13,6 +13,7 @@ from openhands.events.observation import (
     CmdOutputObservation,
     FileReadObservation,
 )
+from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.observation.commands import IPythonRunCellObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.observation.error import ErrorObservation
@@ -601,6 +602,185 @@ class TestStuckDetector:
 
         with patch('logging.Logger.warning'):
             assert not stuck_detector.is_stuck(headless_mode=True)
+
+    def test_is_stuck_context_window_error_loop(self, stuck_detector):
+        """Test that we detect when we're stuck in a loop of context window errors."""
+        state = stuck_detector.state
+
+        # Add some initial events
+        message_action = MessageAction(content='Hello', wait_for_response=False)
+        message_action._source = EventSource.USER
+        state.history.append(message_action)
+        message_observation = NullObservation(content='')
+        state.history.append(message_observation)
+
+        # Add three consecutive condensation events (should detect as stuck)
+        for _ in range(3):
+            condensation = AgentCondensationObservation(
+                content='Trimming prompt to meet context window limitations'
+            )
+            state.history.append(condensation)
+
+        with patch('logging.Logger.warning') as mock_warning:
+            assert stuck_detector.is_stuck(headless_mode=True) is True
+            mock_warning.assert_called_once_with(
+                'Context window error loop detected - repeated condensation events'
+            )
+
+    def test_is_not_stuck_context_window_error_with_other_events(self, stuck_detector):
+        """Test that we don't detect a loop when there are other events between condensation events."""
+        state = stuck_detector.state
+
+        # Add some initial events
+        message_action = MessageAction(content='Hello', wait_for_response=False)
+        message_action._source = EventSource.USER
+        state.history.append(message_action)
+        message_observation = NullObservation(content='')
+        state.history.append(message_observation)
+
+        # Add condensation events with other events between them
+        condensation1 = AgentCondensationObservation(
+            content='Trimming prompt to meet context window limitations'
+        )
+        state.history.append(condensation1)
+
+        # Add some other events between condensation events
+        cmd_action = CmdRunAction(command='ls')
+        state.history.append(cmd_action)
+        cmd_observation = CmdOutputObservation(
+            command='ls', content='file1.txt\nfile2.txt'
+        )
+        state.history.append(cmd_observation)
+
+        condensation2 = AgentCondensationObservation(
+            content='Trimming prompt to meet context window limitations'
+        )
+        state.history.append(condensation2)
+
+        # Add more other events
+        read_action = FileReadAction(path='file1.txt')
+        state.history.append(read_action)
+        read_observation = FileReadObservation(content='File content', path='file1.txt')
+        state.history.append(read_observation)
+
+        condensation3 = AgentCondensationObservation(
+            content='Trimming prompt to meet context window limitations'
+        )
+        state.history.append(condensation3)
+
+        with patch('logging.Logger.warning') as mock_warning:
+            assert stuck_detector.is_stuck(headless_mode=True) is False
+            mock_warning.assert_not_called()
+
+    def test_is_not_stuck_context_window_error_less_than_three(self, stuck_detector):
+        """Test that we don't detect a loop with less than three condensation events."""
+        state = stuck_detector.state
+
+        # Add some initial events
+        message_action = MessageAction(content='Hello', wait_for_response=False)
+        message_action._source = EventSource.USER
+        state.history.append(message_action)
+        message_observation = NullObservation(content='')
+        state.history.append(message_observation)
+
+        # Add only two condensation events (should not detect as stuck)
+        for _ in range(2):
+            condensation = AgentCondensationObservation(
+                content='Trimming prompt to meet context window limitations'
+            )
+            state.history.append(condensation)
+
+        with patch('logging.Logger.warning') as mock_warning:
+            assert stuck_detector.is_stuck(headless_mode=True) is False
+            mock_warning.assert_not_called()
+
+    def test_is_stuck_context_window_error_with_user_messages(self, stuck_detector):
+        """Test that we still detect a loop even with user messages between condensation events.
+
+        User messages are filtered out in the stuck detection logic, so they shouldn't
+        prevent us from detecting a loop of condensation events.
+        """
+        state = stuck_detector.state
+
+        # Add some initial events
+        message_action = MessageAction(content='Hello', wait_for_response=False)
+        message_action._source = EventSource.USER
+        state.history.append(message_action)
+        message_observation = NullObservation(content='')
+        state.history.append(message_observation)
+
+        # Add condensation events with user messages between them
+        condensation1 = AgentCondensationObservation(
+            content='Trimming prompt to meet context window limitations'
+        )
+        state.history.append(condensation1)
+
+        # Add user message between condensation events
+        user_message = MessageAction(content='Please continue', wait_for_response=False)
+        user_message._source = EventSource.USER
+        state.history.append(user_message)
+        user_observation = NullObservation(content='')
+        state.history.append(user_observation)
+
+        condensation2 = AgentCondensationObservation(
+            content='Trimming prompt to meet context window limitations'
+        )
+        state.history.append(condensation2)
+
+        # Add another user message
+        user_message2 = MessageAction(content='Keep going', wait_for_response=False)
+        user_message2._source = EventSource.USER
+        state.history.append(user_message2)
+        user_observation2 = NullObservation(content='')
+        state.history.append(user_observation2)
+
+        condensation3 = AgentCondensationObservation(
+            content='Trimming prompt to meet context window limitations'
+        )
+        state.history.append(condensation3)
+
+        with patch('logging.Logger.warning') as mock_warning:
+            assert stuck_detector.is_stuck(headless_mode=True) is True
+            mock_warning.assert_called_once_with(
+                'Context window error loop detected - repeated condensation events'
+            )
+
+    def test_is_not_stuck_context_window_error_in_non_headless(self, stuck_detector):
+        """Test that in non-headless mode, we don't detect a loop if the condensation events
+        are before the last user message.
+
+        In non-headless mode, we only look at events after the last user message.
+        """
+        state = stuck_detector.state
+
+        # Add condensation events first
+        for _ in range(3):
+            condensation = AgentCondensationObservation(
+                content='Trimming prompt to meet context window limitations'
+            )
+            state.history.append(condensation)
+
+        # Add a user message at the end
+        user_message = MessageAction(content='Please continue', wait_for_response=False)
+        user_message._source = EventSource.USER
+        state.history.append(user_message)
+        user_observation = NullObservation(content='')
+        state.history.append(user_observation)
+
+        with patch('logging.Logger.warning') as mock_warning:
+            # In headless mode, we should detect the loop
+            assert stuck_detector.is_stuck(headless_mode=True) is True
+            mock_warning.assert_called_once_with(
+                'Context window error loop detected - repeated condensation events'
+            )
+
+            # Reset mock for next assertion
+            mock_warning.reset_mock()
+
+            # In non-headless mode, we should NOT detect the loop since we only look
+            # at events after the last user message
+            assert stuck_detector.is_stuck(headless_mode=False) is False
+            mock_warning.assert_not_called()
 
 
 class TestAgentController:
