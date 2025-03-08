@@ -72,7 +72,7 @@ async def connect(connection_id: str, environ):
 
 
 @sio.event
-async def oh_action(connection_id: str, data: dict):
+async def oh_user_action(connection_id: str, data: dict):
     await conversation_manager.send_to_event_stream(connection_id, data)
 
 
