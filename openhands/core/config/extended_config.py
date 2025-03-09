@@ -10,8 +10,8 @@ class ExtendedConfig(RootModel[dict]):
     """
 
     @property
-    def root(self) -> dict:  # type annotation to help mypy
-        return super().root
+    def root(self) -> dict:
+        return dict(self.root_value)
 
     def __str__(self) -> str:
         # Use the root dict to build a string representation.
