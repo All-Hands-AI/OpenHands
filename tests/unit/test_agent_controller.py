@@ -15,10 +15,11 @@ from openhands.core.schema import AgentState
 from openhands.events import Event, EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import ChangeAgentStateAction, CmdRunAction, MessageAction
 from openhands.events.action.agent import AgentRecallAction
+from openhands.events.event import RecallType
 from openhands.events.observation import (
     ErrorObservation,
 )
-from openhands.events.observation.agent import RecallObservation, RecallType
+from openhands.events.observation.agent import RecallObservation
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics

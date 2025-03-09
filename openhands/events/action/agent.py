@@ -4,6 +4,7 @@ from typing import Any
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action
+from openhands.events.event import RecallType
 
 
 @dataclass
@@ -114,6 +115,7 @@ class AgentRecallAction(Action):
     query: str = ''
     thought: str = ''
     action: str = ActionType.RECALL
+    recall_type: RecallType = RecallType.DEFAULT
 
     @property
     def message(self) -> str:

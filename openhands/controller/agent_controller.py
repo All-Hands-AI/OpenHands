@@ -29,7 +29,7 @@ from openhands.core.exceptions import (
 from openhands.core.logger import LOG_ALL_EVENTS
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
-from openhands.events import EventSource, EventStream, EventStreamSubscriber
+from openhands.events import EventSource, EventStream, EventStreamSubscriber, RecallType
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
@@ -440,7 +440,18 @@ class AgentController:
                 )
             # try to retrieve microagents relevant to the user message
             # set pending_action while we search for information
-            recall_action = AgentRecallAction(query=action.content)
+
+            # if this is the first user message for this agent, matters for the recall type
+            is_first_user_message = self._is_first_user_message(action)
+            recall_type = (
+                RecallType.ENVIRONMENT_INFO
+                if is_first_user_message
+                else RecallType.KNOWLEDGE_MICROAGENT
+            )
+
+            recall_action = AgentRecallAction(
+                query=action.content, recall_type=recall_type
+            )
             self._pending_action = recall_action
             # this is source=USER because the user message is the trigger for the recall
             self.event_stream.add_event(recall_action, EventSource.USER)
@@ -1121,3 +1132,36 @@ class AgentController:
                 result = event.agent_state == AgentState.RUNNING
                 return result
         return False
+
+    def _is_first_user_message(self, action: MessageAction) -> bool:
+        """
+        Determine if the given message action is the first user message for this agent.
+
+        For regular agents, this checks if the message is the first user message from the beginning (start_id=0).
+        For delegate agents, this checks if the message is the first user message after the delegate's start_id.
+
+        Args:
+            action: The message action to check
+
+        Returns:
+            bool: True if this is the first user message, False otherwise
+        """
+        if action.source != EventSource.USER:
+            return False
+
+        # self.state.start_id is the id of the first user message for the agent
+        # Find the first user message from the appropriate starting point
+        user_messages = list(self.event_stream.get_events(start_id=self.state.start_id))
+
+        # Get the first user message
+        first_user_message = next(
+            (
+                e
+                for e in user_messages
+                if isinstance(e, MessageAction) and e.source == EventSource.USER
+            ),
+            None,
+        )
+
+        # Is the current message the first user message?
+        return first_user_message is not None and first_user_message.id == action.id

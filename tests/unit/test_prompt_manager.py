@@ -9,8 +9,8 @@ from openhands.core.config.agent_config import AgentConfig
 from openhands.core.message import TextContent
 from openhands.events.action.agent import AgentRecallAction
 from openhands.events.action.message import MessageAction
-from openhands.events.event import EventSource
-from openhands.events.observation.agent import RecallObservation, RecallType
+from openhands.events.event import EventSource, RecallType
+from openhands.events.observation.agent import RecallObservation
 from openhands.events.stream import EventStream
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.memory.memory import Memory
