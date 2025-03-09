@@ -81,10 +81,11 @@ class GitHubService:
             if e.response.status_code == 401:
                 raise GhAuthenticationError('Invalid Github token')
 
-            logger.warning(f"Error on GH API: {e}")
+            logger.warning(f"Status error on GH API: {e}")
             raise GHUnknownException('Unknown error')
 
-        except httpx.HTTPError:
+        except httpx.HTTPError as e:
+            logger.warning(f"HTTP error on GH API: {e}")
             raise GHUnknownException('Unknown error')
 
     async def get_user(self) -> GitHubUser:
@@ -177,10 +178,11 @@ class GitHubService:
             if e.response.status_code == 401:
                 raise GhAuthenticationError('Invalid Github token')
         
-            logger.warning(f"Error on GH API: {e}")
+            logger.warning(f"Status error on GH API: {e}")
             raise GHUnknownException('Unknown error')
 
-        except httpx.HTTPError:
+        except httpx.HTTPError as e:
+            logger.warning(f"HTTP error on GH API: {e}")
             raise GHUnknownException('Unknown error')
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
