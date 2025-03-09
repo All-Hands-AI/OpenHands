@@ -20,6 +20,7 @@ class GitHubService:
     BASE_URL = 'https://api.github.com'
     token: SecretStr = SecretStr('')
     refresh = False
+    compress = False
 
     def __init__(
         self,
@@ -27,9 +28,11 @@ class GitHubService:
         idp_token: SecretStr | None = None,
         token: SecretStr | None = None,
         external_token_manager: bool = False,
+        compress: bool = False,
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
+        self.compress = compress
 
         if token:
             self.token = token
@@ -42,10 +45,15 @@ class GitHubService:
         if self.user_id and not self.token:
             self.token = await self.get_latest_token()
 
-        return {
+        headers = {
             'Authorization': f'Bearer {self.token.get_secret_value()}',
             'Accept': 'application/vnd.github.v3+json',
         }
+        
+        if self.compress:
+            headers['Accept-Encoding'] = 'gzip'
+            
+        return headers
 
     def _has_token_expired(self, status_code: int) -> bool:
         return status_code == 401
