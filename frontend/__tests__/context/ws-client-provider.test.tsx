@@ -85,7 +85,6 @@ describe("WsClientProvider", () => {
   });
 
   it("should emit oh_user_action event when send is called", async () => {
-    // Act
     const { getByText } = render(
       <WsClientProvider conversationId="test-conversation-id">
         <TestComponent />
