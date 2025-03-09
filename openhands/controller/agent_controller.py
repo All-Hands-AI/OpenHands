@@ -636,44 +636,6 @@ class AgentController:
         self.delegate = None
         self.delegateAction = None
 
-    def _prepare_metrics_for_frontend(self, action: Action) -> None:
-        """Create a minimal metrics object for frontend display and log it.
-
-        To avoid performance issues with long conversations, we only keep:
-        - accumulated_cost: The current total cost
-        - latest token_usage: Token statistics from the most recent API call
-
-        Args:
-            action: The action to attach metrics to
-        """
-        metrics = Metrics(model_name=self.agent.llm.metrics.model_name)
-        metrics.accumulated_cost = self.agent.llm.metrics.accumulated_cost
-        if self.agent.llm.metrics.token_usages:
-            latest_usage = self.agent.llm.metrics.token_usages[-1]
-            metrics.add_token_usage(
-                prompt_tokens=latest_usage.prompt_tokens,
-                completion_tokens=latest_usage.completion_tokens,
-                cache_read_tokens=latest_usage.cache_read_tokens,
-                cache_write_tokens=latest_usage.cache_write_tokens,
-                response_id=latest_usage.response_id,
-            )
-        action.llm_metrics = copy.deepcopy(metrics)
-
-        # Log the metrics information for frontend display
-        log_usage: TokenUsage | None = (
-            metrics.token_usages[-1] if metrics.token_usages else None
-        )
-        self.log(
-            'info',
-            f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
-            f'tokens (prompt/completion/cache_read/cache_write): '
-            f'{log_usage.prompt_tokens if log_usage else 0}/'
-            f'{log_usage.completion_tokens if log_usage else 0}/'
-            f'{log_usage.cache_read_tokens if log_usage else 0}/'
-            f'{log_usage.cache_write_tokens if log_usage else 0}',
-            extra={'msg_type': 'METRICS'},
-        )
-
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
         if self.get_agent_state() != AgentState.RUNNING:
@@ -1128,6 +1090,44 @@ class AgentController:
             return True
 
         return self._stuck_detector.is_stuck(self.headless_mode)
+
+    def _prepare_metrics_for_frontend(self, action: Action) -> None:
+        """Create a minimal metrics object for frontend display and log it.
+
+        To avoid performance issues with long conversations, we only keep:
+        - accumulated_cost: The current total cost
+        - latest token_usage: Token statistics from the most recent API call
+
+        Args:
+            action: The action to attach metrics to
+        """
+        metrics = Metrics(model_name=self.agent.llm.metrics.model_name)
+        metrics.accumulated_cost = self.agent.llm.metrics.accumulated_cost
+        if self.agent.llm.metrics.token_usages:
+            latest_usage = self.agent.llm.metrics.token_usages[-1]
+            metrics.add_token_usage(
+                prompt_tokens=latest_usage.prompt_tokens,
+                completion_tokens=latest_usage.completion_tokens,
+                cache_read_tokens=latest_usage.cache_read_tokens,
+                cache_write_tokens=latest_usage.cache_write_tokens,
+                response_id=latest_usage.response_id,
+            )
+        action.llm_metrics = copy.deepcopy(metrics)
+
+        # Log the metrics information for frontend display
+        log_usage: TokenUsage | None = (
+            metrics.token_usages[-1] if metrics.token_usages else None
+        )
+        self.log(
+            'info',
+            f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
+            f'tokens (prompt/completion/cache_read/cache_write): '
+            f'{log_usage.prompt_tokens if log_usage else 0}/'
+            f'{log_usage.completion_tokens if log_usage else 0}/'
+            f'{log_usage.cache_read_tokens if log_usage else 0}/'
+            f'{log_usage.cache_write_tokens if log_usage else 0}',
+            extra={'msg_type': 'METRICS'},
+        )
 
     def __repr__(self):
         return (
