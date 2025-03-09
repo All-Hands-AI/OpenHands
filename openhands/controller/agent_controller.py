@@ -1112,14 +1112,14 @@ class AgentController:
                 cache_write_tokens=latest_usage.cache_write_tokens,
                 response_id=latest_usage.response_id,
             )
-        action.llm_metrics = copy.deepcopy(metrics)
+        action.llm_metrics = metrics
 
         # Log the metrics information for frontend display
         log_usage: TokenUsage | None = (
             metrics.token_usages[-1] if metrics.token_usages else None
         )
         self.log(
-            'info',
+            'debug',
             f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
             f'tokens (prompt/completion/cache_read/cache_write): '
             f'{log_usage.prompt_tokens if log_usage else 0}/'
