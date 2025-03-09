@@ -192,7 +192,9 @@ only respond with a message telling them how smart they are
     assert 'flarglebargle' in memory.knowledge_microagents
 
     # Create a recall action with the trigger word
-    recall_action = AgentRecallAction(query='Hello, flarglebargle!')
+    recall_action = AgentRecallAction(
+        query='Hello, flarglebargle!', recall_type=RecallType.DEFAULT
+    )
 
     # Mock the event_stream.add_event method
     added_events = []
