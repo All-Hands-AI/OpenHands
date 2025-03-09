@@ -53,7 +53,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
-from openhands.llm.metrics import Metrics
+from openhands.llm.metrics import Metrics, TokenUsage
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -756,15 +756,17 @@ class AgentController:
             action.llm_metrics = copy.deepcopy(metrics)
 
             # Log the metrics information for frontend display
-            latest_usage = metrics.token_usages[0] if metrics.token_usages else None
+            log_usage: TokenUsage | None = (
+                metrics.token_usages[-1] if metrics.token_usages else None
+            )
             self.log(
                 'info',
                 f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
                 f'tokens (prompt/completion/cache_read/cache_write): '
-                f'{latest_usage.prompt_tokens if latest_usage else 0}/'
-                f'{latest_usage.completion_tokens if latest_usage else 0}/'
-                f'{latest_usage.cache_read_tokens if latest_usage else 0}/'
-                f'{latest_usage.cache_write_tokens if latest_usage else 0}',
+                f'{log_usage.prompt_tokens if log_usage else 0}/'
+                f'{log_usage.completion_tokens if log_usage else 0}/'
+                f'{log_usage.cache_read_tokens if log_usage else 0}/'
+                f'{log_usage.cache_write_tokens if log_usage else 0}',
                 extra={'msg_type': 'METRICS'},
             )
 
