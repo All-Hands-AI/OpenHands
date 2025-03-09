@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from browsergym.utils.obs import flatten_axtree_to_str
+from browsergym.utils.obs import flatten_axtree_to_str  # type: ignore
 
 from openhands.core.schema import ActionType, ObservationType
 from openhands.events.observation.observation import Observation
