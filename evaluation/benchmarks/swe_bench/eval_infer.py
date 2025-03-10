@@ -271,13 +271,18 @@ def process_instance(
                         with open(test_output_path, 'w') as f:
                             f.write(test_output)
                         try:
+                            extra_args = {}
+                            if 'SWE-Gym' in metadata.dataset:
+                                # SWE-Gym uses a different version of the package, hence a different eval report argument
+                                extra_args['log_path'] = test_output_path
+                            else:
+                                extra_args['test_log_path'] = test_output_path
                             _report = get_eval_report(
                                 test_spec=test_spec,
                                 prediction={
                                     'model_patch': model_patch,
                                     'instance_id': instance_id,
                                 },
-                                test_log_path=test_output_path,
                                 include_tests_status=True,
                             )
                             report = _report[instance_id]
