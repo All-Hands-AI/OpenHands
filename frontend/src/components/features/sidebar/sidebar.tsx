@@ -2,7 +2,6 @@ import React from "react";
 import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
-import toast from "react-hot-toast";
 import { NavLink, useLocation } from "react-router";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { UserActions } from "./user-actions";
@@ -22,6 +21,7 @@ import { ConversationPanelWrapper } from "../conversation-panel/conversation-pan
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { cn } from "#/utils/utils";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { HIDE_LLM_SETTINGS } from "#/utils/feature-flags";
 
 export function Sidebar() {
@@ -58,7 +58,7 @@ export function Sidebar() {
     ) {
       // We don't show toast errors for settings in the global error handler
       // because we have a special case for 404 errors
-      toast.error(
+      displayErrorToast(
         "Something went wrong while fetching settings. Please reload the page.",
       );
     } else if (config?.APP_MODE === "oss" && settingsError?.status === 404) {
