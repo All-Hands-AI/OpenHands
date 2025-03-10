@@ -19,6 +19,7 @@ from openhands.runtime.base import Runtime
 @dataclass
 class RuntimeInfo:
     available_hosts: dict[str, int]
+    additional_agent_instructions: str
 
 
 @dataclass
@@ -56,7 +57,9 @@ class PromptManager:
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
         self.microagent_info_template: Template = self._load_template('microagent_info')
-        self.runtime_info = RuntimeInfo(available_hosts={})
+        self.runtime_info = RuntimeInfo(
+            available_hosts={}, additional_agent_instructions=''
+        )
 
         self.knowledge_microagents: dict[str, KnowledgeMicroAgent] = {}
         self.repo_microagents: dict[str, RepoMicroAgent] = {}
@@ -113,6 +116,9 @@ class PromptManager:
 
     def set_runtime_info(self, runtime: Runtime) -> None:
         self.runtime_info.available_hosts = runtime.web_hosts
+        self.runtime_info.additional_agent_instructions = (
+            runtime.additional_agent_instructions
+        )
 
     def set_repository_info(
         self,

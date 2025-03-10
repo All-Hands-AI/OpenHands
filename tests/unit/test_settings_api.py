@@ -208,3 +208,60 @@ async def test_settings_unset_github_token(
     response = test_client.get('/api/settings')
     assert response.status_code == 200
     assert response.json()['github_token_is_set'] is False
+
+
+@pytest.mark.asyncio
+async def test_settings_preserve_llm_fields_when_none(test_client, mock_settings_store):
+    # Setup initial settings with LLM fields populated
+    initial_settings = Settings(
+        language='en',
+        agent='test-agent',
+        max_iterations=100,
+        security_analyzer='default',
+        confirmation_mode=True,
+        llm_model='existing-model',
+        llm_api_key=SecretStr('existing-key'),
+        llm_base_url='https://existing.com',
+    )
+
+    # Mock the settings store to return our initial settings
+    mock_settings_store.load.return_value = initial_settings
+
+    # Test data with None values for LLM fields
+    settings_update = {
+        'language': 'fr',  # Change something else to verify the update happens
+        'llm_model': None,
+        'llm_api_key': None,
+        'llm_base_url': None,
+    }
+
+    # Make the POST request to update settings
+    response = test_client.post('/api/settings', json=settings_update)
+    assert response.status_code == 200
+
+    # Verify that the settings were stored with preserved LLM values
+    stored_settings = mock_settings_store.store.call_args[0][0]
+
+    # Check that language was updated
+    assert stored_settings.language == 'fr'
+
+    # Check that LLM fields were preserved and not cleared
+    assert stored_settings.llm_model == 'existing-model'
+    assert isinstance(stored_settings.llm_api_key, SecretStr)
+    assert stored_settings.llm_api_key.get_secret_value() == 'existing-key'
+    assert stored_settings.llm_base_url == 'https://existing.com'
+
+    # Update the mock to return our new settings for the GET request
+    mock_settings_store.load.return_value = stored_settings
+
+    # Make a GET request to verify the updated settings
+    response = test_client.get('/api/settings')
+    assert response.status_code == 200
+    data = response.json()
+
+    # Verify fields in the response
+    assert data['language'] == 'fr'
+    assert data['llm_model'] == 'existing-model'
+    assert data['llm_base_url'] == 'https://existing.com'
+    # We expect the API key not to be included in the response
+    assert 'test-key' not in str(response.content)
