@@ -35,7 +35,6 @@ export function CreditCardForm() {
   };
 
   const handlePaymentElementChange = (event: StripePaymentElementChangeEvent) => {
-    console.log('TRACE:change', event)
     setFormComplete(event.complete)
   }
 

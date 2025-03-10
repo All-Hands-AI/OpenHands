@@ -4647,5 +4647,8 @@
         "fr": "Ajouter des fonds à votre compte",
         "tr": "Hesabınıza bakiye ekleyin",
         "de": "Guthaben zu Ihrem Konto hinzufügen"
+    },
+    "BILLING$FREE_CREDITS_APPLIED": {
+        "en": "Your free credits have been applied!"
     }
 }
