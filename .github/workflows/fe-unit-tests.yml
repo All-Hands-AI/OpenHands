@@ -21,7 +21,7 @@ jobs:
   # Run frontend unit tests
   fe-test:
     name: FE Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
       matrix:
         node-version: [20, 22]
@@ -30,7 +30,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: useblacksmith/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install dependencies

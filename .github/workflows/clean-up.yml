@@ -46,7 +46,7 @@ on:
 
 jobs:
   del_runs:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     permissions:
       actions: write
       contents: read

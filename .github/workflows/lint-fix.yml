@@ -9,7 +9,7 @@ jobs:
   lint-fix-frontend:
     if: github.event.label.name == 'lint-fix'
     name: Fix frontend linting issues
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     permissions:
       contents: write
       pull-requests: write
@@ -22,7 +22,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Node.js 20
-        uses: actions/setup-node@v4
+        uses: useblacksmith/setup-node@v5
         with:
           node-version: 20
       - name: Install frontend dependencies
@@ -52,7 +52,7 @@ jobs:
   lint-fix-python:
     if: github.event.label.name == 'lint-fix'
     name: Fix Python linting issues
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     permissions:
       contents: write
       pull-requests: write
@@ -65,7 +65,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up python
-        uses: actions/setup-python@v5
+        uses: useblacksmith/setup-python@v6
         with:
           python-version: 3.12
           cache: 'pip'

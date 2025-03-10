@@ -16,7 +16,7 @@ env:
 jobs:
   run-evaluation:
     if: github.event.label.name == 'eval-this' || github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     permissions:
       contents: "read"
       id-token: "write"
@@ -35,7 +35,7 @@ jobs:
         run: pipx install poetry
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: useblacksmith/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
