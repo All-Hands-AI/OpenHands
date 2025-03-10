@@ -20,8 +20,7 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { useAuth } from "#/context/auth-context";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
-import { StripePromiseProvider } from "#/context/stripe-promise-context";
-import { CreditCardModal } from "#/components/features/payment/credit-card-modal";
+import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -105,10 +104,9 @@ export default function MainApp() {
     // Don't allow users to use the app if it 402s
     if (error?.status === 402 && pathname !== "/") {
       navigate("/");
-    } else if (!isFetching && searchParams.get('setup_intent') && searchParams.get('redirect_status') == 'succeeded') {
+    } else if (!isFetching && searchParams.get('free_credits') == 'success') {
       toast.success(t("BILLING$FREE_CREDITS_APPLIED"))
-      searchParams.delete("setup_intent")
-      searchParams.delete("redirect_status")
+      searchParams.delete("free_credits")
       navigate("/");
     }
   }, [error?.status, pathname, isFetching]);
@@ -147,9 +145,7 @@ export default function MainApp() {
       )}
 
       {config.data?.APP_MODE === "saas" && settings?.IS_NEW_USER && (
-        <StripePromiseProvider>
-          <CreditCardModal />
-        </StripePromiseProvider>
+        <SetupPaymentModal />
       )}
     </div>
   );
