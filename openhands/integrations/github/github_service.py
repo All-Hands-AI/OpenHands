@@ -20,19 +20,16 @@ class GitHubService:
     BASE_URL = 'https://api.github.com'
     token: SecretStr = SecretStr('')
     refresh = False
-    compress = False
 
     def __init__(
         self,
         user_id: str | None = None,
         idp_token: SecretStr | None = None,
         token: SecretStr | None = None,
-        external_token_manager: bool = False,
-        compress: bool = False,
+        external_token_manager: bool = False
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
-        self.compress = compress
 
         if token:
             self.token = token
@@ -48,10 +45,8 @@ class GitHubService:
         headers = {
             'Authorization': f'Bearer {self.token.get_secret_value()}',
             'Accept': 'application/vnd.github.v3+json',
+            'Accept-Encoding': 'gzip'
         }
-        
-        if self.compress:
-            headers['Accept-Encoding'] = 'gzip'
             
         return headers
 
