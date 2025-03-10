@@ -5,7 +5,7 @@ import pytest
 from openhands.storage.conversation.file_conversation_store import FileConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.memory import InMemoryFileStore
-
+from openhands.storage.locations import get_conversation_metadata_filename
 
 @pytest.mark.asyncio
 async def test_load_store():
@@ -26,7 +26,7 @@ async def test_load_int_user_id():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                'sessions/some-conversation-id/metadata.json': json.dumps(
+                get_conversation_metadata_filename('some-conversation-id'): json.dumps(
                     {
                         'conversation_id': 'some-conversation-id',
                         'github_user_id': 12345,
@@ -56,7 +56,7 @@ async def test_search_basic():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                'sessions/conv1/metadata.json': json.dumps(
+                get_conversation_metadata_filename('conv1'): json.dumps(
                     {
                         'conversation_id': 'conv1',
                         'github_user_id': '123',
@@ -65,7 +65,7 @@ async def test_search_basic():
                         'created_at': '2025-01-16T19:51:04Z',
                     }
                 ),
-                'sessions/conv2/metadata.json': json.dumps(
+                get_conversation_metadata_filename('conv2'): json.dumps(
                     {
                         'conversation_id': 'conv2',
                         'github_user_id': '123',
@@ -74,7 +74,7 @@ async def test_search_basic():
                         'created_at': '2025-01-17T19:51:04Z',
                     }
                 ),
-                'sessions/conv3/metadata.json': json.dumps(
+                get_conversation_metadata_filename('conv3'): json.dumps(
                     {
                         'conversation_id': 'conv3',
                         'github_user_id': '123',
@@ -102,7 +102,7 @@ async def test_search_pagination():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                f'sessions/conv{i}/metadata.json': json.dumps(
+                get_conversation_metadata_filename(f'conv{i}'): json.dumps(
                     {
                         'conversation_id': f'conv{i}',
                         'github_user_id': '123',
@@ -143,7 +143,7 @@ async def test_search_with_invalid_conversation():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                'sessions/conv1/metadata.json': json.dumps(
+                get_conversation_metadata_filename('conv1'): json.dumps(
                     {
                         'conversation_id': 'conv1',
                         'github_user_id': '123',
@@ -152,7 +152,7 @@ async def test_search_with_invalid_conversation():
                         'created_at': '2025-01-16T19:51:04Z',
                     }
                 ),
-                'sessions/conv2/metadata.json': 'invalid json',  # Invalid conversation
+                get_conversation_metadata_filename('conv2'): 'invalid json',  # Invalid conversation
             }
         )
     )
@@ -169,7 +169,7 @@ async def test_get_all_metadata():
     store = FileConversationStore(
         InMemoryFileStore(
             {
-                'sessions/conv1/metadata.json': json.dumps(
+                get_conversation_metadata_filename('conv1'): json.dumps(
                     {
                         'conversation_id': 'conv1',
                         'github_user_id': '123',
@@ -178,7 +178,7 @@ async def test_get_all_metadata():
                         'created_at': '2025-01-16T19:51:04Z',
                     }
                 ),
-                'sessions/conv2/metadata.json': json.dumps(
+                get_conversation_metadata_filename('conv2'): json.dumps(
                     {
                         'conversation_id': 'conv2',
                         'github_user_id': '123',

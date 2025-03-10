@@ -19,3 +19,7 @@ def get_conversation_metadata_filename(sid: str) -> str:
 
 def get_conversation_init_data_filename(sid: str) -> str:
     return f'{get_conversation_dir(sid)}init.json'
+
+
+def get_conversation_agent_state_filename(sid: str) -> str:
+    return f'{get_conversation_dir(sid)}agent_state.pkl'
