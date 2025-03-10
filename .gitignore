@@ -233,3 +233,6 @@ containers/runtime/Dockerfile
 containers/runtime/project.tar.gz
 containers/runtime/code
 **/node_modules/
+
+# regression test workspaces
+tests/regression/cases/*/workspace/
