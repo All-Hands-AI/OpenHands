@@ -18,32 +18,29 @@ from openhands.utils.import_utils import get_impl
 
 class GitHubService:
     BASE_URL = 'https://api.github.com'
-    token: SecretStr = SecretStr('')
+    github_token: SecretStr = SecretStr('')
     refresh = False
 
     def __init__(
         self,
         user_id: str | None = None,
-        idp_token: SecretStr | None = None,
-        token: SecretStr | None = None,
+        access_token: SecretStr | None = None,
+        github_token: SecretStr | None = None,
         external_token_manager: bool = False,
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
 
-        if token:
-            self.token = token
+        if github_token:
+            self.github_token = github_token
 
     async def _get_github_headers(self) -> dict:
-        """
-        Retrieve the GH Token from settings store to construct the headers
-        """
-
-        if self.user_id and not self.token:
-            self.token = await self.get_latest_token()
+        """Retrieve the GH Token from settings store to construct the headers."""
+        if self.user_id and not self.github_token:
+            self.github_token = await self.get_latest_token()
 
         return {
-            'Authorization': f'Bearer {self.token.get_secret_value()}',
+            'Authorization': f'Bearer {self.github_token.get_secret_value()}',
             'Accept': 'application/vnd.github.v3+json',
         }
 
@@ -51,10 +48,7 @@ class GitHubService:
         return status_code == 401
 
     async def get_latest_token(self) -> SecretStr:
-        return self.token
-
-    async def get_latest_provider_token(self) -> SecretStr:
-        return self.token
+        return self.github_token
 
     async def _fetch_data(
         self, url: str, params: dict | None = None
@@ -180,11 +174,11 @@ class GitHubService:
             raise GHUnknownException('Unknown error')
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
-        """
-        Get suggested tasks for the authenticated user across all repositories.
+        """Get suggested tasks for the authenticated user across all repositories.
+
         Returns:
-        - PRs authored by the user
-        - Issues assigned to the user
+        - PRs authored by the user.
+        - Issues assigned to the user.
         """
         # Get user info to use in queries
         user = await self.get_user()
