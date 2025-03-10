@@ -4,8 +4,9 @@ import pytest
 
 from openhands.storage.conversation.file_conversation_store import FileConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
-from openhands.storage.memory import InMemoryFileStore
 from openhands.storage.locations import get_conversation_metadata_filename
+from openhands.storage.memory import InMemoryFileStore
+
 
 @pytest.mark.asyncio
 async def test_load_store():
@@ -152,7 +153,9 @@ async def test_search_with_invalid_conversation():
                         'created_at': '2025-01-16T19:51:04Z',
                     }
                 ),
-                get_conversation_metadata_filename('conv2'): 'invalid json',  # Invalid conversation
+                get_conversation_metadata_filename(
+                    'conv2'
+                ): 'invalid json',  # Invalid conversation
             }
         )
     )

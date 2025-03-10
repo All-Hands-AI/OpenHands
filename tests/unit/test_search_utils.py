@@ -3,8 +3,8 @@ import json
 import pytest
 
 from openhands.storage.conversation.file_conversation_store import FileConversationStore
-from openhands.storage.memory import InMemoryFileStore
 from openhands.storage.locations import get_conversation_metadata_filename
+from openhands.storage.memory import InMemoryFileStore
 from openhands.utils.search_utils import iterate, offset_to_page_id, page_id_to_offset
 
 
@@ -125,7 +125,9 @@ async def test_iterate_with_invalid_conversation():
                         'created_at': '2025-01-16T19:51:04Z',
                     }
                 ),
-                get_conversation_metadata_filename('conv2'): 'invalid json',  # Invalid conversation
+                get_conversation_metadata_filename(
+                    'conv2'
+                ): 'invalid json',  # Invalid conversation
             }
         )
     )
