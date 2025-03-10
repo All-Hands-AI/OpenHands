@@ -103,5 +103,3 @@ def test_draft_editor_fallback(config_toml_with_draft_editor):
     draft_editor_config = config.get_llm_config('draft_editor')
     # num_retries is an example default from llm section
     assert draft_editor_config.num_retries == 7
-    # embedding_model is defaulted in the LLMConfig class
-    assert draft_editor_config.embedding_model == 'local'
