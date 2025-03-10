@@ -41,14 +41,14 @@ class GitHubService:
             self.github_token = await self.get_latest_token()
 
         return {
-            'Authorization': f'Bearer {self.github_token.get_secret_value()}',
+            'Authorization': f'Bearer {self.github_token.get_secret_value() if self.github_token else ""}',
             'Accept': 'application/vnd.github.v3+json',
         }
 
     def _has_token_expired(self, status_code: int) -> bool:
         return status_code == 401
 
-    async def get_latest_token(self) -> SecretStr:
+    async def get_latest_token(self) -> SecretStr | None:
         return self.github_token
 
     async def _fetch_data(
