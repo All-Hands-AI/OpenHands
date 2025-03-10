@@ -27,7 +27,7 @@ async def get_github_repositories(
 ):
     client = GithubServiceImpl(
         user_id=github_user_id,
-        access_token=access_token,
+        external_auth_token=access_token,
         github_token=github_user_token,
     )
     try:
@@ -57,7 +57,7 @@ async def get_github_user(
 ):
     client = GithubServiceImpl(
         user_id=github_user_id,
-        access_token=access_token,
+        external_auth_token=access_token,
         github_token=github_user_token,
     )
     try:
@@ -85,7 +85,7 @@ async def get_github_installation_ids(
 ):
     client = GithubServiceImpl(
         user_id=github_user_id,
-        access_token=access_token,
+        external_auth_token=access_token,
         github_token=github_user_token,
     )
     try:
@@ -117,7 +117,7 @@ async def search_github_repositories(
 ):
     client = GithubServiceImpl(
         user_id=github_user_id,
-        access_token=access_token,
+        external_auth_token=access_token,
         github_token=github_user_token,
     )
     try:
@@ -153,7 +153,7 @@ async def get_suggested_tasks(
     """
     client = GithubServiceImpl(
         user_id=github_user_id,
-        access_token=access_token,
+        external_auth_token=access_token,
         github_token=github_user_token,
     )
     try:

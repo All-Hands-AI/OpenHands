@@ -25,7 +25,7 @@ class GitHubService:
     def __init__(
         self,
         user_id: str | None = None,
-        access_token: SecretStr | None = None,
+        external_auth_token: SecretStr | None = None,
         github_token: SecretStr | None = None,
         external_token_manager: bool = False,
     ):
