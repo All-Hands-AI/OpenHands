@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import json
 import os
 import tempfile
@@ -473,6 +474,13 @@ def process_instance(
         logger.warning(
             f'This is the {runtime_failure_count + 1}th attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
         )
+
+    metadata = copy.deepcopy(metadata)
+    metadata.details['runtime_failure_count'] = runtime_failure_count
+    metadata.details['remote_runtime_resource_factor'] = (
+        config.sandbox.remote_runtime_resource_factor
+    )
+
     runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
 
