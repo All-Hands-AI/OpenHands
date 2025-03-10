@@ -55,6 +55,7 @@ class CmdOutputMetadata(BaseModel):
     def matches_ps1_metadata(cls, string: str) -> list[re.Match[str]]:
         matches = []
         logger.info(f"Matching string, {CMD_OUTPUT_METADATA_PS1_REGEX}, {string}")
+        logger.info(f"All matches {CMD_OUTPUT_METADATA_PS1_REGEX.finditer(string)}")
         for match in CMD_OUTPUT_METADATA_PS1_REGEX.finditer(string):
             try:
                 logger.info(f"Match group, {match.group(1)}, {match.group(1).strip()}")
