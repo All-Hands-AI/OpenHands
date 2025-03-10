@@ -204,7 +204,7 @@ class BashSession:
         session_name = f'openhands-{self.username}-{uuid.uuid4()}'
         self.session = self.server.new_session(
             session_name=session_name,
-            # start_directory=self.work_dir,  # This parameter is not supported by libtmux
+            start_directory=self.work_dir,  # This parameter is supported by libtmux
             kill_session=True,
             x=1000,
             y=1000,
@@ -219,7 +219,7 @@ class BashSession:
         self.window = self.session.new_window(
             window_name='bash',
             window_shell=window_command,
-            # start_directory=self.work_dir,  # This parameter is not supported by libtmux
+            start_directory=self.work_dir,  # This parameter is supported by libtmux
         )
         self.pane = self.window.attached_pane
         logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
@@ -227,8 +227,17 @@ class BashSession:
 
         # Configure bash to use simple PS1 and disable PS2
         if self.pane is not None:
+            # Properly escape the JSON in PS1 to ensure it can be parsed
+            ps1_json = json.dumps({
+                "pid": "$!",
+                "exit_code": "$?",
+                "username": "\\u",
+                "hostname": "\\h",
+                "working_dir": "$(pwd)",
+                "py_interpreter_path": "$(which python 2>/dev/null || echo \"\")"
+            })
             self.pane.send_keys(
-                f'export PROMPT_COMMAND=\'export PS1="{self.PS1}"\'; export PS2=""'
+                f'export PROMPT_COMMAND=\'export PS1="\n###PS1JSON###\n{ps1_json}\n###PS1END###\n"\'; export PS2=""\'
             )
         time.sleep(0.1)  # Wait for command to take effect
         self._clear_screen()
