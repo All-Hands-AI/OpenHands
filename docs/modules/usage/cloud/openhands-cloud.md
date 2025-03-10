@@ -43,10 +43,3 @@ You can grant OpenHands specific repository access:
 You can modify repository access at any time by:
 * Using the same `Select a GitHub project > Add more repositories` workflow, or
 * Visiting the Settings page and selecting `Configure GitHub Repositories` under the `GitHub Settings` section.
-
-## Advanced Settings
-
-### Access to Larger Runtimes
-
-OpenHands default runtimes have access to 2 cores and 8G RAM. If you require larger runtimes for your needs, please get
-in touch via contact@all-hands.dev.
