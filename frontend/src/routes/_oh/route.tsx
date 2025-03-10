@@ -146,7 +146,7 @@ export default function MainApp() {
         />
       )}
 
-      {config.data?.APP_MODE === "saas" && settings?.DEFAULT_SETTINGS && (
+      {config.data?.APP_MODE === "saas" && settings?.IS_NEW_USER && (
         <StripePromiseProvider>
           <CreditCardModal />
         </StripePromiseProvider>

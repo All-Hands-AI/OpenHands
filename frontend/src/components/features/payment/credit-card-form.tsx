@@ -41,7 +41,7 @@ export function CreditCardForm() {
       elements,
       clientSecret,
       confirmParams: {
-        return_url: "http://localhost:3001/settings/billing/?checkout=success",
+        return_url: `${location.protocol}//${location.host}/settings/billing/?checkout=success`,
       },
     });
     if (error) {

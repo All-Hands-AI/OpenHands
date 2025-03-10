@@ -15,7 +15,7 @@ export const DEFAULT_SETTINGS: Settings = {
   ENABLE_DEFAULT_CONDENSER: true,
   ENABLE_SOUND_NOTIFICATIONS: false,
   USER_CONSENTS_TO_ANALYTICS: false,
-  DEFAULT_SETTINGS: true,
+  IS_NEW_USER: true,
 };
 
 /**
