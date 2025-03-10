@@ -14,7 +14,7 @@ from openhands.integrations.github.github_types import (
     TaskType,
 )
 from openhands.utils.import_utils import get_impl
-
+from openhands.core.logger import openhands_logger as logger
 
 class GitHubService:
     BASE_URL = 'https://api.github.com'
@@ -74,9 +74,12 @@ class GitHubService:
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
                 raise GhAuthenticationError('Invalid Github token')
+
+            logger.warning(f"Status error on GH API: {e}")
             raise GHUnknownException('Unknown error')
 
-        except httpx.HTTPError:
+        except httpx.HTTPError as e:
+            logger.warning(f"HTTP error on GH API: {e}")
             raise GHUnknownException('Unknown error')
 
     async def get_user(self) -> GitHubUser:
@@ -168,9 +171,12 @@ class GitHubService:
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401:
                 raise GhAuthenticationError('Invalid Github token')
+        
+            logger.warning(f"Status error on GH API: {e}")
             raise GHUnknownException('Unknown error')
 
-        except httpx.HTTPError:
+        except httpx.HTTPError as e:
+            logger.warning(f"HTTP error on GH API: {e}")
             raise GHUnknownException('Unknown error')
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
