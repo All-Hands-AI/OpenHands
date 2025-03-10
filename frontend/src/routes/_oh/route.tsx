@@ -5,7 +5,10 @@ import {
   Outlet,
   useNavigate,
   useLocation,
+  useSearchParams,
 } from "react-router";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
@@ -55,10 +58,12 @@ export function ErrorBoundary() {
 export default function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
   const { githubTokenIsSet } = useAuth();
   const { data: settings } = useSettings();
   const { error, isFetching } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
+  const { t } = useTranslation();
 
   const config = useConfig();
   const {
@@ -99,6 +104,11 @@ export default function MainApp() {
   React.useEffect(() => {
     // Don't allow users to use the app if it 402s
     if (error?.status === 402 && pathname !== "/") {
+      navigate("/");
+    } else if (!isFetching && searchParams.get('setup_intent') && searchParams.get('redirect_status') == 'succeeded') {
+      toast.success(t("BILLING$FREE_CREDITS_APPLIED"))
+      searchParams.delete("setup_intent")
+      searchParams.delete("redirect_status")
       navigate("/");
     }
   }, [error?.status, pathname, isFetching]);
