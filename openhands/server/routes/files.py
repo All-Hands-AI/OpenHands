@@ -348,6 +348,12 @@ async def git_changes(request: Request, ref: str = 'HEAD'):
             status_code=500,
             content={'error': f'Error getting changes: {e}'},
         )
+    except Exception as e:
+        logger.error(f'Error getting changes: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': str(e)},
+        )
 
 
 @app.get('/git/diff')

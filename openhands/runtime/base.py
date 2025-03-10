@@ -500,6 +500,13 @@ class Runtime(FileEditRuntimeMixin):
         output = obs.content.strip()
         return output == 'true'
 
+    def _is_clean_working_tree(self) -> bool:
+        cmd = 'git diff --quiet'
+        obs = self.run(CmdRunAction(command=cmd))
+        if hasattr(obs, 'exit_code'):
+            return obs.exit_code == 0
+        return False
+
     def _get_current_file_content(self, file_path: str) -> str:
         cmd = f'cat {file_path}'
         obs = self.run(CmdRunAction(command=cmd))
@@ -526,32 +533,31 @@ class Runtime(FileEditRuntimeMixin):
 
     def get_git_changes(self, ref='HEAD') -> list[dict[str, str]]:
         if not self._is_git_repo():
-            return []
+            raise RuntimeError('Not a git repository')
+
+        if self._is_clean_working_tree():
+            raise RuntimeError('Working tree is clean')
 
         result = []
         cmd = f'git diff --name-status {ref}'
 
-        try:
-            obs = self.run(CmdRunAction(command=cmd))
-            obs_list = obs.content.splitlines()
-            for line in obs_list:
-                status = line[:2].strip()
-                path = line[2:].strip()
+        obs = self.run(CmdRunAction(command=cmd))
+        obs_list = obs.content.splitlines()
+        for line in obs_list:
+            status = line[:2].strip()
+            path = line[2:].strip()
 
-                # Get the first non-space character as the primary status
-                primary_status = status.replace(' ', '')[0]
-                result.append(
-                    {
-                        'status': primary_status,
-                        'path': path,
-                    }
-                )
+            # Get the first non-space character as the primary status
+            primary_status = status.replace(' ', '')[0]
+            result.append(
+                {
+                    'status': primary_status,
+                    'path': path,
+                }
+            )
 
-            # join with untracked files
-            result += self.get_untracked_files()
-        except Exception as e:
-            logger.error(f'Error retrieving git changes: {e}')
-            return []
+        # join with untracked files
+        result += self.get_untracked_files()
 
         return result
 
