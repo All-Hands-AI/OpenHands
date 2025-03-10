@@ -17,8 +17,13 @@ from openhands.events.action import (
     AgentFinishAction,
     MessageAction,
 )
+from openhands.events.action.agent import AgentRecallAction
+from openhands.events.event import Event
+from openhands.events.observation.agent import RecallObservation
+from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
+from openhands.memory.memory import Memory
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -75,6 +80,24 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
         initial_state=parent_state,
     )
 
+    # Setup a Memory to catch RecallActions
+    mock_memory = MagicMock(spec=Memory)
+    mock_memory.event_stream = mock_event_stream
+
+    def on_event(event: Event):
+        if isinstance(event, AgentRecallAction):
+            # create a RecallObservation
+            recall_observation = RecallObservation(
+                content='recalled',
+            )
+            recall_observation._cause = event.id  # ignore attr-defined warning
+            mock_event_stream.add_event(recall_observation, EventSource.ENVIRONMENT)
+
+    mock_memory.on_event = on_event
+    mock_event_stream.subscribe(
+        EventStreamSubscriber.MEMORY, mock_memory.on_event, mock_memory
+    )
+
     # Setup a delegate action from the parent
     delegate_action = AgentDelegateAction(agent='ChildAgent', inputs={'test': True})
     mock_parent_agent.step.return_value = delegate_action
@@ -87,7 +110,14 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     # Give time for the async step() to execute
     await asyncio.sleep(1)
 
-    # The parent should receive step() from that event
+    # Verify that a RecallObservation was added to the event stream
+    events = list(mock_event_stream.get_events())
+    assert mock_event_stream.get_latest_event_id() == 3  # Recalls and AgentChangeState
+
+    # a RecallObs and an AgentDelegateAction should be in the list
+    assert any(isinstance(event, RecallObservation) for event in events)
+    assert any(isinstance(event, AgentDelegateAction) for event in events)
+
     # Verify that a delegate agent controller is created
     assert (
         parent_controller.delegate is not None

@@ -49,5 +49,8 @@ class ObservationTypeSchema(BaseModel):
     CONDENSE: str = Field(default='condense')
     """Result of a condensation operation."""
 
+    RECALL: str = Field(default='recall')
+    """Result of a recall operation."""
+
 
 ObservationType = ObservationTypeSchema()

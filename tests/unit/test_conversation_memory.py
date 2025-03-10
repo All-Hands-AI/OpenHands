@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, Mock
 import pytest
 
 from openhands.controller.state.state import State
+from openhands.core.config.agent_config import AgentConfig
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
     AgentFinishAction,
@@ -26,10 +27,30 @@ from openhands.utils.prompt import PromptManager
 
 
 @pytest.fixture
-def conversation_memory():
+def agent_config():
+    return AgentConfig(
+        enable_prompt_extensions=True,
+        enable_som_visual_browsing=True,
+        disabled_microagents=['disabled_agent'],
+    )
+
+
+@pytest.fixture
+def conversation_memory(agent_config):
     prompt_manager = MagicMock(spec=PromptManager)
     prompt_manager.get_system_message.return_value = 'System message'
-    return ConversationMemory(prompt_manager)
+    prompt_manager.build_additional_info.return_value = (
+        'Formatted repository and runtime info'
+    )
+
+    # Make build_microagent_info return the actual content from the triggered agents
+    def build_microagent_info(triggered_agents):
+        if not triggered_agents:
+            return ''
+        return '\n'.join(agent['content'] for agent in triggered_agents)
+
+    prompt_manager.build_microagent_info.side_effect = build_microagent_info
+    return ConversationMemory(agent_config, prompt_manager)
 
 
 @pytest.fixture

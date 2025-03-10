@@ -42,6 +42,7 @@ from openhands.events.action import (
     MessageAction,
     NullAction,
 )
+from openhands.events.action.agent import AgentRecallAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -88,7 +89,7 @@ class AgentController:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        sid: str = 'default',
+        sid: str | None = None,
         confirmation_mode: bool = False,
         initial_state: State | None = None,
         is_delegate: bool = False,
@@ -115,7 +116,7 @@ class AgentController:
             status_callback: Optional callback function to handle status updates.
             replay_events: A list of logs to replay.
         """
-        self.id = sid
+        self.id = sid or event_stream.sid
         self.agent = agent
         self.headless_mode = headless_mode
         self.is_delegate = is_delegate
@@ -286,8 +287,14 @@ class AgentController:
                 return True
             return False
         if isinstance(event, Observation):
-            if isinstance(event, NullObservation) or isinstance(
-                event, AgentStateChangedObservation
+            if (
+                isinstance(event, NullObservation)
+                and event.cause is not None
+                and event.cause > 0
+            ):
+                return True
+            if isinstance(event, AgentStateChangedObservation) or isinstance(
+                event, NullObservation
             ):
                 return False
             return True
@@ -387,6 +394,7 @@ class AgentController:
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
 
+        # this happens for runnable actions and recall actions
         if self._pending_action and self._pending_action.id == observation.cause:
             if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
                 return
@@ -430,6 +438,13 @@ class AgentController:
                     'debug',
                     f'Extended max iterations to {self.state.max_iterations} after user message',
                 )
+            # try to retrieve microagents relevant to the user message
+            # set pending_action while we search for information
+            recall_action = AgentRecallAction(query=action.content)
+            self._pending_action = recall_action
+            # this is source=USER because the user message is the trigger for the recall
+            self.event_stream.add_event(recall_action, EventSource.USER)
+
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
@@ -437,6 +452,7 @@ class AgentController:
 
     def _reset(self) -> None:
         """Resets the agent controller"""
+        # Runnable actions need an Observation
         # make sure there is an Observation with the tool call metadata to be recognized by the agent
         # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
         if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata'):
@@ -457,6 +473,8 @@ class AgentController:
                 obs.tool_call_metadata = self._pending_action.tool_call_metadata
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
                 self.event_stream.add_event(obs, EventSource.AGENT)
+
+        # NOTE: do RecallActions need an Observation? No, as long as they have no tool calls
 
         # reset the pending action, this will be called when the agent is STOPPED or ERROR
         self._pending_action = None

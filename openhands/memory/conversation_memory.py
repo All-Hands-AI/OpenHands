@@ -1,5 +1,6 @@
 from litellm import ModelResponse
 
+from openhands.core.config.agent_config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.core.schema import ActionType
@@ -28,16 +29,18 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     UserRejectObservation,
 )
+from openhands.events.observation.agent import RecallObservation, RecallType
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
-from openhands.utils.prompt import PromptManager
+from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
 
 
 class ConversationMemory:
     """Processes event history into a coherent conversation for the agent."""
 
-    def __init__(self, prompt_manager: PromptManager):
+    def __init__(self, config: AgentConfig, prompt_manager: PromptManager):
+        self.agent_config = config
         self.prompt_manager = prompt_manager
 
     def process_events(
@@ -53,14 +56,14 @@ class ConversationMemory:
         Ensures that tool call actions are processed correctly in function calling mode.
 
         Args:
-            state: The state containing the history of events to convert
-            condensed_history: The condensed list of events to process
-            initial_messages: The initial messages to include in the result
+            condensed_history: The condensed history of events to convert
+            initial_messages: The initial messages to include in the conversation
             max_message_chars: The maximum number of characters in the content of an event included
                 in the prompt to the LLM. Larger observations are truncated.
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
             enable_som_visual_browsing: Whether to enable visual browsing for the SOM model.
         """
+
         events = condensed_history
 
         # Process special events first (system prompts, etc.)
@@ -70,7 +73,7 @@ class ConversationMemory:
         pending_tool_call_action_messages: dict[str, Message] = {}
         tool_call_id_to_message: dict[str, Message] = {}
 
-        for event in events:
+        for i, event in enumerate(events):
             # create a regular message from an event
             if isinstance(event, Action):
                 messages_to_add = self._process_action(
@@ -84,7 +87,9 @@ class ConversationMemory:
                     tool_call_id_to_message=tool_call_id_to_message,
                     max_message_chars=max_message_chars,
                     vision_is_active=vision_is_active,
-                    enable_som_visual_browsing=enable_som_visual_browsing,
+                    enable_som_visual_browsing=self.agent_config.enable_som_visual_browsing,
+                    current_index=i,
+                    events=events,
                 )
             else:
                 raise ValueError(f'Unknown event type: {type(event)}')
@@ -270,6 +275,8 @@ class ConversationMemory:
         max_message_chars: int | None = None,
         vision_is_active: bool = False,
         enable_som_visual_browsing: bool = False,
+        current_index: int = 0,
+        events: list[Event] | None = None,
     ) -> list[Message]:
         """Converts an observation into a message format that can be sent to the LLM.
 
@@ -291,6 +298,8 @@ class ConversationMemory:
             max_message_chars: The maximum number of characters in the content of an observation included in the prompt to the LLM
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included
             enable_som_visual_browsing: Whether to enable visual browsing for the SOM model
+            current_index: The index of the current event in the events list (for deduplication)
+            events: The list of all events (for deduplication)
 
         Returns:
             list[Message]: A list containing the formatted message(s) for the observation.
@@ -372,6 +381,71 @@ class ConversationMemory:
         elif isinstance(obs, AgentCondensationObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
+        elif (
+            isinstance(obs, RecallObservation)
+            and self.agent_config.enable_prompt_extensions
+        ):
+            if obs.recall_type == RecallType.ENVIRONMENT_INFO:
+                # everything is optional, check if they are present
+                repo_info = (
+                    RepositoryInfo(
+                        repo_name=obs.repo_name or '',
+                        repo_directory=obs.repo_directory or '',
+                    )
+                    if obs.repo_name or obs.repo_directory
+                    else None
+                )
+                if obs.runtime_hosts or obs.additional_agent_instructions:
+                    runtime_info = RuntimeInfo(
+                        available_hosts=obs.runtime_hosts,
+                        additional_agent_instructions=obs.additional_agent_instructions,
+                    )
+                else:
+                    runtime_info = None
+
+                repo_instructions = (
+                    obs.repo_instructions if obs.repo_instructions else ''
+                )
+
+                # ok, now we can build the additional info
+                formatted_text = self.prompt_manager.build_additional_info(
+                    repository_info=repo_info,
+                    runtime_info=runtime_info,
+                    repo_instructions=repo_instructions,
+                )
+                message = Message(
+                    role='user', content=[TextContent(text=formatted_text)]
+                )
+            elif obs.recall_type == RecallType.KNOWLEDGE_MICROAGENT:
+                # Use prompt manager to build the microagent info
+                # First, filter out agents that appear in later RecallObservations
+                filtered_agents = self._filter_agents_in_recall_obs(
+                    obs, current_index, events or []
+                )
+
+                formatted_text = ''
+                if filtered_agents:
+                    # Then, exclude disabled microagents
+                    filtered_agents = [
+                        agent
+                        for agent in filtered_agents
+                        if agent['agent_name']
+                        not in self.agent_config.disabled_microagents
+                    ]
+                    formatted_text = self.prompt_manager.build_microagent_info(
+                        triggered_agents=filtered_agents,
+                    )
+
+                message = Message(
+                    role='user', content=[TextContent(text=formatted_text)]
+                )
+        elif (
+            isinstance(obs, RecallObservation)
+            and not self.agent_config.enable_prompt_extensions
+        ):
+            # If prompt extensions are disabled, we don't add any additional info
+            # TODO: test this
+            return []
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message
@@ -404,3 +478,56 @@ class ConversationMemory:
                     -1
                 ].cache_prompt = True  # Last item inside the message content
                 break
+
+    def _filter_agents_in_recall_obs(
+        self, obs: RecallObservation, current_index: int, events: list[Event]
+    ) -> list[dict[str, str]]:
+        """Filter out agents that appear in later RecallObservations.
+
+        Args:
+            obs: The current RecallObservation to filter
+            current_index: The index of the current event in the events list
+            events: The list of all events
+
+        Returns:
+            list[dict[str, str]]: The filtered list of microagent knowledge
+        """
+        if obs.recall_type != RecallType.KNOWLEDGE_MICROAGENT:
+            return obs.microagent_knowledge
+
+        # For each agent in the current recall observation, check if it appears in any later recall observation
+        filtered_agents = []
+        for agent in obs.microagent_knowledge:
+            # Keep this agent if it doesn't appear in any later observation
+            # that is, if this is the most recent recall observation with this microagent
+            if not self._has_agent_in_later_events(
+                agent['agent_name'], current_index, events
+            ):
+                filtered_agents.append(agent)
+
+        return filtered_agents
+
+    def _has_agent_in_later_events(
+        self, agent_name: str, current_index: int, events: list[Event]
+    ) -> bool:
+        """Check if an agent appears in any later RecallObservation in the event list.
+
+        Args:
+            agent_name: The name of the agent to look for
+            current_index: The index of the current event in the events list
+            events: The list of all events
+
+        Returns:
+            bool: True if the agent appears in a later RecallObservation, False otherwise
+        """
+        for event in events[current_index + 1 :]:
+            if (
+                isinstance(event, RecallObservation)
+                and event.recall_type == RecallType.KNOWLEDGE_MICROAGENT
+            ):
+                if any(
+                    agent['agent_name'] == agent_name
+                    for agent in event.microagent_knowledge
+                ):
+                    return True
+        return False
