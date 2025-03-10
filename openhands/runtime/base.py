@@ -224,7 +224,7 @@ class Runtime(FileEditRuntimeMixin):
                     gh_client = GithubServiceImpl(
                         user_id=self.github_user_id, external_token_manager=True
                     )
-                    token = await gh_client.get_latest_provider_token()
+                    token = await gh_client.get_latest_token()
                     if token:
                         export_cmd = CmdRunAction(
                             f"export GITHUB_TOKEN='{token.get_secret_value()}'"
