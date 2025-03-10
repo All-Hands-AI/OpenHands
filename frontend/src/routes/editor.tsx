@@ -30,6 +30,12 @@ function EditorScreen() {
         </div>
       )}
 
+      {gitChanges?.length === 0 && (
+        <div className="w-full h-full flex items-center justify-center text-2xl text-tertiary-light">
+          Clean working tree
+        </div>
+      )}
+
       {isSuccess &&
         gitChanges.map((change) => (
           <FileDiffViewer
