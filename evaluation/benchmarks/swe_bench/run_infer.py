@@ -558,20 +558,6 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
     return dataset
 
 
-# A list of instances that are known to be tricky to infer
-# (will cause runtime failure even with resource factor = 8)
-SWEGYM_EXCLUDE_IDS = [
-    'dask__dask-10422',
-    'pandas-dev__pandas-50548',
-    'pandas-dev__pandas-53672',
-    'pandas-dev__pandas-54174',
-    'pandas-dev__pandas-55518',
-    'pandas-dev__pandas-58383',
-    'pydata__xarray-6721',
-    'pytest-dev__pytest-10081',
-    'pytest-dev__pytest-7236',
-]
-
 if __name__ == '__main__':
     parser = get_parser()
     parser.add_argument(
@@ -596,11 +582,20 @@ if __name__ == '__main__':
         f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks'
     )
     if 'SWE-Gym' in args.dataset:
-        swe_bench_tests = swe_bench_tests[
-            ~swe_bench_tests['instance_id'].isin(SWEGYM_EXCLUDE_IDS)
-        ]
+        with open(
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                'split',
+                'swegym_verified_instances.json',
+            ),
+            'r',
+        ) as f:
+            swegym_verified_instances = json.load(f)
+            swe_bench_tests = swe_bench_tests[
+                swe_bench_tests['instance_id'].isin(swegym_verified_instances)
+            ]
         logger.info(
-            f'{len(swe_bench_tests)} tasks left after excluding SWE-Gym excluded tasks'
+            f'{len(swe_bench_tests)} tasks left after filtering for SWE-Gym verified instances'
         )
 
     llm_config = None
