@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List
 
 import docker
-from dirhash import dirhash
+from dirhash import dirhash  # type: ignore
 from jinja2 import Environment, FileSystemLoader
 
 import openhands
