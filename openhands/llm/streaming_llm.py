@@ -1,6 +1,8 @@
 import asyncio
 from functools import partial
-from typing import Any
+from typing import Any, AsyncIterator, Callable, Coroutine
+
+from litellm.types.utils import ModelResponse
 
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
@@ -11,7 +13,11 @@ from openhands.llm.llm import REASONING_EFFORT_SUPPORTED_MODELS
 class StreamingLLM(AsyncLLM):
     """Streaming LLM class."""
 
-    def __init__(self, *args, **kwargs):
+    _async_streaming_completion: Callable[
+        ..., Coroutine[Any, Any, AsyncIterator[ModelResponse]]
+    ]
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self._async_streaming_completion = partial(
@@ -31,7 +37,9 @@ class StreamingLLM(AsyncLLM):
             stream=True,  # Ensure streaming is enabled
         )
 
-        async_streaming_completion_unwrapped = self._async_streaming_completion
+        async_streaming_completion_unwrapped: Callable[
+            ..., Coroutine[Any, Any, AsyncIterator[ModelResponse]]
+        ] = self._async_streaming_completion
 
         @self.retry_decorator(
             num_retries=self.config.num_retries,
@@ -40,7 +48,7 @@ class StreamingLLM(AsyncLLM):
             retry_max_wait=self.config.retry_max_wait,
             retry_multiplier=self.config.retry_multiplier,
         )
-        async def async_streaming_completion_wrapper(*args, **kwargs):
+        async def async_streaming_completion_wrapper(*args: Any, **kwargs: Any) -> Any:
             messages: list[dict[str, Any]] | dict[str, Any] = []
 
             # some callers might send the model and messages directly
@@ -89,9 +97,10 @@ class StreamingLLM(AsyncLLM):
                     message_back = chunk['choices'][0]['delta'].get('content', '')
                     if message_back:
                         self.log_response(message_back)
-                    self._post_completion(chunk)
+                    chunk_dict = dict(chunk)
+                    self._post_completion(ModelResponse(**chunk_dict))
 
-                    yield chunk
+                    yield chunk_dict
 
             except UserCancelledError:
                 logger.debug('LLM request cancelled by user.')
@@ -108,6 +117,8 @@ class StreamingLLM(AsyncLLM):
         self._async_streaming_completion = async_streaming_completion_wrapper
 
     @property
-    def async_streaming_completion(self):
+    def async_streaming_completion(
+        self,
+    ) -> Callable[..., Coroutine[Any, Any, AsyncIterator[ModelResponse]]]:
         """Decorator for the async litellm acompletion function with streaming."""
         return self._async_streaming_completion

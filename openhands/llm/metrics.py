@@ -129,13 +129,13 @@ class Metrics:
             'token_usages': [usage.model_dump() for usage in self._token_usages],
         }
 
-    def reset(self):
+    def reset(self) -> None:
         self._accumulated_cost = 0.0
         self._costs = []
         self._response_latencies = []
         self._token_usages = []
 
-    def log(self):
+    def log(self) -> str:
         """Log the metrics."""
         metrics = self.get()
         logs = ''
@@ -143,5 +143,5 @@ class Metrics:
             logs += f'{key}: {value}\n'
         return logs
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'Metrics({self.get()}'
