@@ -4,11 +4,9 @@ from typing import Callable
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import AgentRecallAction
-from openhands.events.action.message import MessageAction
-from openhands.events.event import Event, EventSource
+from openhands.events.event import Event, EventSource, RecallType
 from openhands.events.observation.agent import (
     RecallObservation,
-    RecallType,
 )
 from openhands.events.observation.empty import NullObservation
 from openhands.events.stream import EventStream, EventStreamSubscriber
@@ -56,9 +54,6 @@ class Memory:
         self.repo_microagents: dict[str, RepoMicroAgent] = {}
         self.knowledge_microagents: dict[str, KnowledgeMicroAgent] = {}
 
-        # Track whether we've seen the first user message during this session
-        self._first_user_message_seen = False
-
         # Store repository / runtime info to send them to the templating later
         self.repository_info: RepositoryInfo | None = None
         self.runtime_info: RuntimeInfo | None = None
@@ -77,12 +72,12 @@ class Memory:
             observation: RecallObservation | NullObservation | None = None
             # Handle AgentRecallAction
             if isinstance(event, AgentRecallAction):
-                # if this is the first user message, create and add a RecallObservation
+                # if this is an environment_info type recall (on first user message)
+                # create and add a RecallObservation
                 # with info about repo and runtime.
                 if (
-                    not self._first_user_message_seen
-                    and event.source == EventSource.USER
-                    and self._is_on_first_user_message(event)
+                    event.source == EventSource.USER
+                    and event.recall_type == RecallType.ENVIRONMENT_INFO
                 ):
                     observation = self._on_first_recall_action(event)
 
@@ -111,8 +106,6 @@ class Memory:
         self, event: AgentRecallAction
     ) -> RecallObservation | None:
         """Add repository and runtime information to the stream as a RecallObservation."""
-
-        self._first_user_message_seen = True
 
         # Create ENVIRONMENT_INFO:
         # - repository_info
@@ -203,17 +196,6 @@ class Memory:
                 return obs
 
         return prev_observation
-
-    def _is_on_first_user_message(self, recall_action: AgentRecallAction) -> bool:
-        """Check if the event is on the first user message in the event stream."""
-        # On the first user message, we will add a RecallObservation with info about repo and runtime, once.
-        # typical case: event is a RecallAction with id = 1, or 2, or very low non-zero integer
-        # the MessageAction with source = USER before this recall_action has id = 0
-
-        for event in self.event_stream.get_events(reverse=True):
-            if isinstance(event, MessageAction) and event.source == EventSource.USER:
-                return event.id == 0
-        return False
 
     def load_user_workspace_microagents(
         self, user_microagents: list[BaseMicroAgent]

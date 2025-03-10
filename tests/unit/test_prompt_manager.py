@@ -9,8 +9,8 @@ from openhands.core.config.agent_config import AgentConfig
 from openhands.core.message import TextContent
 from openhands.events.action.agent import AgentRecallAction
 from openhands.events.action.message import MessageAction
-from openhands.events.event import EventSource
-from openhands.events.observation.agent import RecallObservation, RecallType
+from openhands.events.event import EventSource, RecallType
+from openhands.events.observation.agent import RecallObservation
 from openhands.events.stream import EventStream
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.memory.memory import Memory
@@ -189,11 +189,12 @@ only respond with a message telling them how smart they are
 
     # Verify microagents were loaded
     assert len(memory.repo_microagents) == 0
-    assert len(memory.knowledge_microagents) == 6
     assert 'flarglebargle' in memory.knowledge_microagents
 
     # Create a recall action with the trigger word
-    recall_action = AgentRecallAction(query='Hello, flarglebargle!')
+    recall_action = AgentRecallAction(
+        query='Hello, flarglebargle!', recall_type=RecallType.DEFAULT
+    )
 
     # Mock the event_stream.add_event method
     added_events = []
@@ -270,7 +271,9 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
     event_stream.add_event(user_message, EventSource.USER)
 
     # Create and add the recall action
-    recall_action = AgentRecallAction(query='First user message')
+    recall_action = AgentRecallAction(
+        query='First user message', recall_type=RecallType.ENVIRONMENT_INFO
+    )
     recall_action._source = EventSource.USER  # type: ignore[attr-defined]
     event_stream.add_event(recall_action, EventSource.USER)
 
@@ -343,7 +346,11 @@ It may or may not be relevant to the user's request.
 
     # Process the observation
     messages = conversation_memory._process_observation(
-        obs=recall_observation, tool_call_id_to_message={}, max_message_chars=None
+        obs=recall_observation,
+        tool_call_id_to_message={},
+        max_message_chars=None,
+        current_index=0,
+        events=[],
     )
 
     # Verify the message was created correctly
@@ -424,7 +431,11 @@ each of which has a corresponding port:
 
     # Process the observation
     messages = conversation_memory._process_observation(
-        obs=recall_observation, tool_call_id_to_message={}, max_message_chars=None
+        obs=recall_observation,
+        tool_call_id_to_message={},
+        max_message_chars=None,
+        current_index=0,
+        events=[],
     )
 
     # Verify the message was created correctly

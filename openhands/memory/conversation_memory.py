@@ -17,7 +17,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.event import Event
+from openhands.events.event import Event, RecallType
 from openhands.events.observation import (
     AgentCondensationObservation,
     AgentDelegateObservation,
@@ -29,7 +29,7 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     UserRejectObservation,
 )
-from openhands.events.observation.agent import RecallObservation, RecallType
+from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content

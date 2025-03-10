@@ -363,6 +363,7 @@ def test_agent_recall_action_serialization_deserialization():
         'args': {
             'query': 'What is the capital of France?',
             'thought': 'I need to recall information about France',
+            'recall_type': 'default',
         },
     }
     serialization_deserialization(original_action_dict, AgentRecallAction)

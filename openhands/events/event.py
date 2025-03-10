@@ -22,6 +22,19 @@ class FileReadSource(str, Enum):
     DEFAULT = 'default'
 
 
+class RecallType(str, Enum):
+    """The type of information that can be recalled."""
+
+    ENVIRONMENT_INFO = 'environment_info'
+    """environment information (repo instructions, runtime, etc.)"""
+
+    KNOWLEDGE_MICROAGENT = 'knowledge_microagent'
+    """A knowledge microagent."""
+
+    DEFAULT = 'default'
+    """Anything else that doesn't fit into the other categories."""
+
+
 @dataclass
 class Event:
     INVALID_ID = -1

@@ -1,21 +1,8 @@
 from dataclasses import dataclass, field
-from enum import Enum
 
 from openhands.core.schema import ObservationType
+from openhands.events.event import RecallType
 from openhands.events.observation.observation import Observation
-
-
-class RecallType(Enum):
-    """The type of information that can be recalled."""
-
-    ENVIRONMENT_INFO = 'environment_info'
-    """environment information (repo instructions, runtime, etc.)"""
-
-    KNOWLEDGE_MICROAGENT = 'knowledge_microagent'
-    """A knowledge microagent."""
-
-    DEFAULT = 'default'
-    """Anything else that doesn't fit into the other categories."""
 
 
 @dataclass
@@ -70,26 +57,29 @@ class RecallObservation(Observation):
     runtime_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
 
-    # knowledge_microagent
-    # A list of dictionaries, where each dictionary contains information about a triggered microagent.
-    # Each dictionary has the following keys:
-    # - agent_name: str - The name of the microagent that was triggered
-    # - trigger_word: str - The word that triggered this microagent
-    # - content: str - The actual content/knowledge from the microagent
-    # Example:
-    # [
-    #     {
-    #         "agent_name": "python_best_practices",
-    #         "trigger_word": "python",
-    #         "content": "Always use virtual environments for Python projects."
-    #     },
-    #     {
-    #         "agent_name": "git_workflow",
-    #         "trigger_word": "git",
-    #         "content": "Create a new branch for each feature or bugfix."
-    #     }
-    # ]
+    # microagent
     microagent_knowledge: list[dict[str, str]] = field(default_factory=list)
+    """
+    A list of dictionaries, each containing information about a triggered microagent.
+    Each dictionary has the following keys:
+        - agent_name: str - The name of the microagent that was triggered
+        - trigger_word: str - The word that triggered this microagent
+        - content: str - The actual content/knowledge from the microagent
+
+    Example:
+    [
+        {
+            "agent_name": "python_best_practices",
+            "trigger_word": "python",
+            "content": "Always use virtual environments for Python projects."
+        },
+        {
+            "agent_name": "git_workflow",
+            "trigger_word": "git",
+            "content": "Create a new branch for each feature or bugfix."
+        }
+    ]
+    """
 
     @property
     def message(self) -> str:
