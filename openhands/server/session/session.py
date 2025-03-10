@@ -177,11 +177,18 @@ class Session:
         Args:
             event: The agent event (Observation or Action).
         """
+        # Add logs: Record received events and metrics
+        logger.info(f"Session received event type: {type(event)}")
+        if hasattr(event, 'llm_metrics') and event.llm_metrics:
+            logger.info(f"Event accumulated cost: {event.llm_metrics.accumulated_cost}")
+
         if isinstance(event, NullAction):
             return
         if isinstance(event, NullObservation):
             return
         if event.source == EventSource.AGENT:
+            # Add logs：Record agent->metrics
+            logger.info(f"Processing AGENT event accumulated cost: {event.llm_metrics.accumulated_cost if hasattr(event, 'llm_metrics') and event.llm_metrics else None}")
             await self.send(event_to_dict(event))
         elif event.source == EventSource.USER:
             await self.send(event_to_dict(event))

@@ -12,8 +12,10 @@ import {
 } from "#/state/chat-slice";
 
 export function handleObservationMessage(message: ObservationMessage) {
+  console.log("Processing observation message:", message);
+  
   switch (message.observation) {
-    case ObservationType.RUN: {
+    case ObservationType.RUN:
       if (message.extras.hidden) break;
       let { content } = message;
 
@@ -24,9 +26,7 @@ export function handleObservationMessage(message: ObservationMessage) {
 
       store.dispatch(appendOutput(content));
       break;
-    }
     case ObservationType.RUN_IPYTHON:
-      // FIXME: render this as markdown
       store.dispatch(appendJupyterOutput(message.content));
       break;
     case ObservationType.BROWSE:
