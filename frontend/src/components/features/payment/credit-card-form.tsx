@@ -4,11 +4,11 @@ import {
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
-import {
-  StripePaymentElementChangeEvent
-} from "@stripe/stripe-js";
+import { StripePaymentElementChangeEvent } from "@stripe/stripe-js";
+import { useMutation } from "@tanstack/react-query";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { BrandButton } from "../settings/brand-button";
+import OpenHands from "#/api/open-hands";
 
 export function CreditCardForm() {
   const [formComplete, setFormComplete] = React.useState(false);
@@ -17,27 +17,43 @@ export function CreditCardForm() {
   const stripe = useStripe();
   const elements = useElements();
 
+  const { mutateAsync: createIntent } = useMutation({
+    mutationKey: ["createSetupIntent"],
+    mutationFn: OpenHands.createCustomerSetupSession,
+  });
+
   const formAction = async () => {
     setPaymentFormErrorMessage("");
 
     if (!stripe || !elements || !formComplete) return;
 
-    const submitResult = await stripe.confirmSetup({
+    // Trigger form validation and wallet collection
+    const { error: submitError } = await elements.submit();
+    if (submitError) {
+      // handle error
+      console.log(submitError);
+      return;
+    }
+
+    const { client_secret: clientSecret } = await createIntent();
+
+    const { error } = await stripe.confirmSetup({
       elements,
+      clientSecret,
       confirmParams: {
-        return_url: window.location.href,
+        return_url: "http://localhost:3001/settings/billing/?checkout=success",
       },
     });
-    const { error: submitError } = submitResult;
-    if (submitError?.message) {
-      setPaymentFormErrorMessage(submitError.message);
+    if (error) {
+      setPaymentFormErrorMessage(error.message ?? "An error occurred");
     }
   };
 
-  const handlePaymentElementChange = (event: StripePaymentElementChangeEvent) => {
-    console.log('TRACE:change', event)
-    setFormComplete(event.complete)
-  }
+  const handlePaymentElementChange = (
+    event: StripePaymentElementChangeEvent,
+  ) => {
+    setFormComplete(event.complete);
+  };
 
   return (
     <ModalBackdrop>
@@ -60,7 +76,12 @@ export function CreditCardForm() {
 
         <PaymentElement onChange={handlePaymentElementChange} />
 
-        <BrandButton type="submit" variant="primary" className="w-full" isDisabled={!formComplete}>
+        <BrandButton
+          type="submit"
+          variant="primary"
+          className="w-full"
+          isDisabled={!formComplete}
+        >
           Confirm
         </BrandButton>
       </form>

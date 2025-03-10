@@ -3,6 +3,9 @@ import Stripe from "stripe";
 
 const TEST_STRIPE_SECRET_KEY = "";
 const PRICE_ID = "";
+const TEST_CUSTOMER_ID = "cus_RuzdvY3VFDCEDS";
+
+const stripe = new Stripe(TEST_STRIPE_SECRET_KEY);
 
 export const STRIPE_BILLING_HANDLERS = [
   http.get("/api/billing/credits", async () => {
@@ -15,7 +18,6 @@ export const STRIPE_BILLING_HANDLERS = [
     const body = await request.json();
 
     if (body && typeof body === "object" && body.amount) {
-      const stripe = new Stripe(TEST_STRIPE_SECRET_KEY);
       const session = await stripe.checkout.sessions.create({
         line_items: [
           {
@@ -32,5 +34,15 @@ export const STRIPE_BILLING_HANDLERS = [
     }
 
     return HttpResponse.json({ message: "Invalid request" }, { status: 400 });
+  }),
+
+  http.post("/api/billing/create-customer-setup-session", async () => {
+    const intent = await stripe.setupIntents.create({
+      customer: TEST_CUSTOMER_ID,
+      // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
+      automatic_payment_methods: { enabled: true },
+    });
+
+    return HttpResponse.json({ client_secret: intent.client_secret });
   }),
 ];
