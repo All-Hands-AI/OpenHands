@@ -19,10 +19,10 @@ def serialization_deserialization(
     observation_instance = event_from_dict(original_observation_dict)
     assert isinstance(
         observation_instance, Observation
-    ), 'The observation instance should be an instance of Action.'
+    ), 'The observation instance should be an instance of Observation.'
     assert isinstance(
         observation_instance, cls
-    ), 'The observation instance should be an instance of CmdOutputObservation.'
+    ), f'The observation instance should be an instance of {cls}.'
     serialized_observation_dict = event_to_dict(observation_instance)
     serialized_observation_trajectory = event_to_trajectory(observation_instance)
     serialized_observation_memory = event_to_memory(

@@ -1,7 +1,7 @@
 import hashlib
 import os
 import uuid
-from typing import Tuple, Type
+from typing import Callable, Tuple, Type
 
 from pydantic import SecretStr
 
@@ -16,6 +16,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
+from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
@@ -83,7 +84,6 @@ def create_runtime(
 
 def initialize_repository_for_runtime(
     runtime: Runtime,
-    agent: Agent | None = None,
     selected_repository: str | None = None,
     github_token: SecretStr | None = None,
 ) -> str | None:
@@ -99,10 +99,10 @@ def initialize_repository_for_runtime(
         The repository directory path if a repository was cloned, None otherwise.
     """
     # clone selected repository if provided
-    repo_directory = None
     github_token = (
         SecretStr(os.environ.get('GITHUB_TOKEN')) if not github_token else github_token
     )
+    repo_directory = None
     if selected_repository and github_token:
         logger.debug(f'Selected repository {selected_repository}.')
         repo_directory = runtime.clone_repo(
@@ -111,16 +111,37 @@ def initialize_repository_for_runtime(
             None,
         )
 
-    # load microagents from selected repository
-    if agent and agent.prompt_manager and selected_repository and repo_directory:
-        agent.prompt_manager.set_runtime_info(runtime)
+    return repo_directory
+
+
+def create_memory(
+    runtime: Runtime,
+    event_stream: EventStream,
+    sid: str,
+    selected_repository: str | None = None,
+    repo_directory: str | None = None,
+    status_callback: Callable | None = None,
+) -> Memory:
+    memory = Memory(
+        event_stream=event_stream,
+        sid=sid,
+        status_callback=status_callback,
+    )
+
+    if runtime:
+        # sets available hosts
+        memory.set_runtime_info(runtime)
+
+        # loads microagents from repo/.openhands/microagents
         microagents: list[BaseMicroAgent] = runtime.get_microagents_from_selected_repo(
             selected_repository
         )
-        agent.prompt_manager.load_microagents(microagents)
-        agent.prompt_manager.set_repository_info(selected_repository, repo_directory)
+        memory.load_user_workspace_microagents(microagents)
 
-    return repo_directory
+        if selected_repository and repo_directory:
+            memory.set_repository_info(selected_repository, repo_directory)
+
+    return memory
 
 
 def create_agent(config: AppConfig) -> Agent:

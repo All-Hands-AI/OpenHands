@@ -369,9 +369,3 @@ def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
     # Fifth message only has ImageContent, no TextContent to modify
     assert len(enhanced_messages[5].content) == 1
     assert isinstance(enhanced_messages[5].content[0], ImageContent)
-
-    # Verify prompt manager methods were called as expected
-    assert agent.prompt_manager.add_examples_to_initial_message.call_count == 1
-    assert (
-        agent.prompt_manager.enhance_message.call_count == 5
-    )  # Called for each user message
