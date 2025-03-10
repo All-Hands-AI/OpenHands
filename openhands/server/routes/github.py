@@ -10,7 +10,7 @@ from openhands.integrations.github.github_types import (
     GitHubUser,
     SuggestedTask,
 )
-from openhands.server.auth import get_github_token, get_idp_token, get_user_id
+from openhands.server.auth import get_github_token, get_github_user_id, get_idp_token
 
 app = APIRouter(prefix='/api/github')
 
@@ -21,7 +21,7 @@ async def get_github_repositories(
     per_page: int = 10,
     sort: str = 'pushed',
     installation_id: int | None = None,
-    github_user_id: str | None = Depends(get_user_id),
+    github_user_id: str | None = Depends(get_github_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
@@ -49,7 +49,7 @@ async def get_github_repositories(
 
 @app.get('/user', response_model=GitHubUser)
 async def get_github_user(
-    github_user_id: str | None = Depends(get_user_id),
+    github_user_id: str | None = Depends(get_github_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
@@ -75,7 +75,7 @@ async def get_github_user(
 
 @app.get('/installations', response_model=list[int])
 async def get_github_installation_ids(
-    github_user_id: str | None = Depends(get_user_id),
+    github_user_id: str | None = Depends(get_github_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
@@ -105,7 +105,7 @@ async def search_github_repositories(
     per_page: int = 5,
     sort: str = 'stars',
     order: str = 'desc',
-    github_user_id: str | None = Depends(get_user_id),
+    github_user_id: str | None = Depends(get_github_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
@@ -133,7 +133,7 @@ async def search_github_repositories(
 
 @app.get('/suggested-tasks', response_model=list[SuggestedTask])
 async def get_suggested_tasks(
-    github_user_id: str | None = Depends(get_user_id),
+    github_user_id: str | None = Depends(get_github_user_id),
     github_user_token: SecretStr | None = Depends(get_github_token),
     idp_token: SecretStr | None = Depends(get_idp_token),
 ):
