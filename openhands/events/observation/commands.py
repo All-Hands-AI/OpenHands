@@ -54,8 +54,10 @@ class CmdOutputMetadata(BaseModel):
     @classmethod
     def matches_ps1_metadata(cls, string: str) -> list[re.Match[str]]:
         matches = []
+        logger.info(f"Matching string, {CMD_OUTPUT_METADATA_PS1_REGEX}, {string}")
         for match in CMD_OUTPUT_METADATA_PS1_REGEX.finditer(string):
             try:
+                logger.info(f"Match group, {match.group(1)}, {match.group(1).strip()}")
                 json.loads(match.group(1).strip())  # Try to parse as JSON
                 matches.append(match)
             except json.JSONDecodeError:
