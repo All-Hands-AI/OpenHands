@@ -429,10 +429,14 @@ async def resolve_issue(
     # checkout the repo
     repo_dir = os.path.join(output_dir, 'repo')
     if not os.path.exists(repo_dir):
+        # Configure Git to preserve symlinks globally
+        subprocess.check_output(['git', 'config', '--global', 'core.symlinks', 'true'])
+
         checkout_output = subprocess.check_output(
             [
                 'git',
                 'clone',
+                '--config', 'core.symlinks=true',
                 issue_handler.get_clone_url(),
                 f'{output_dir}/repo',
             ]
