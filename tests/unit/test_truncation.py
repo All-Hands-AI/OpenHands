@@ -220,9 +220,9 @@ class TestTruncation:
             event_stream.add_event(obs, EventSource.ENVIRONMENT)
             
             events.extend([cmd, obs])
-
-        # Set up initial history
-        controller1.state.history = events.copy()
+            
+        # Let the controller initialize its history from the event stream
+        controller1._init_history()
 
         # Force truncation
         controller1._handle_long_context_error()
