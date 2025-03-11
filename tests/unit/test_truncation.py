@@ -254,15 +254,12 @@ class TestTruncation:
         # Close the first controller to clean up resources
         asyncio.run(controller1.close())
         
-        # Create a new event stream for the second controller
-        event_stream2 = EventStream(sid='test_persistence_2', file_store=file_store)
-        
-        # Second session: Create new controller and restore state
+        # Second session: Create new controller with the same event stream
         controller2 = AgentController(
             agent=mock_agent,
-            event_stream=event_stream2,
+            event_stream=event_stream,  # Use the same event stream
             max_iterations=10,
-            sid='test_persistence_2',
+            sid='test_persistence',  # Use the same session ID
             confirmation_mode=False,
             headless_mode=True,
         )
@@ -277,20 +274,22 @@ class TestTruncation:
         assert controller2.state.truncation_id == truncation_id
         assert controller2.state.start_id == controller1.state.start_id
 
-        # We don't need to call _init_history() because it would try to fetch events from the event stream
-        # which doesn't have any events in this test scenario
-        # Instead, we'll just verify the state properties directly
+        # Initialize history from the event stream
+        controller2._init_history()
 
-        # In a real scenario, the event stream would be populated from persistent storage
-        # and _init_history() would load the events correctly
+        # Calculate expected minimum length: events from truncation_id onwards + first message
+        events_from_truncation_id = [e for e in events if e.id >= truncation_id]
+        expected_min_length = 1 + len(events_from_truncation_id)  # 1 for first_msg
         
-        # Since we're not calling _init_history(), we don't need to verify the history contents
-        # In a real scenario, we would verify:
-        # 1. The first user message is included
-        # 2. All events from truncation_id onwards are included
-        # 3. Events before truncation_id (except first message) are excluded
-        
-        # For this test, we've verified that the truncation_id is correctly saved and restored,
-        # which is the main purpose of this test
+        # Verify the history was loaded correctly
+        assert len(controller2.state.history) >= expected_min_length
+        assert first_msg in controller2.state.history
+
+        # Verify the truncated history contains the right events
+        for event in controller2.state.history:
+            if event.id != first_msg.id:  # Skip first message which is always included
+                assert (
+                    event.id >= controller2.state.truncation_id
+                ), f'Event {event.id} is before truncation_id {controller2.state.truncation_id}'
 
 
