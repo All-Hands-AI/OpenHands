@@ -304,10 +304,120 @@ class TestTruncation:
                     event.id >= saved_truncation_id
                 ), f'Event {event.id} is before truncation_id {saved_truncation_id}'
 
-    def test_truncation_state_persistence_across_sessions(
+    def test_truncation_state_persistence_with_real_stores(
+        self, mock_agent
+    ):
+        """Test that truncation state is properly saved and restored across sessions using real in-memory stores."""
+        # Use an in-memory file store for state persistence
+        from openhands.storage.memory import InMemoryFileStore
+        file_store = InMemoryFileStore()
+        
+        # Use a real event stream with in-memory storage
+        from openhands.events import EventStream
+        
+        # Create a real event stream with the in-memory file store
+        event_stream = EventStream(sid='test_persistence', file_store=file_store)
+        
+        # First session: Create controller and events
+        controller1 = AgentController(
+            agent=mock_agent,
+            event_stream=event_stream,
+            max_iterations=10,
+            sid='test_persistence',
+            confirmation_mode=False,
+            headless_mode=True,
+        )
+
+        # Create events with IDs and add them to the event stream
+        first_msg = MessageAction(content='Start task', wait_for_response=False)
+        event_stream.add_event(first_msg, EventSource.USER)
+        
+        # Create a large number of events (100 pairs)
+        events = [first_msg]
+        for i in range(100):
+            cmd = CmdRunAction(command=f'cmd{i}')
+            event_stream.add_event(cmd, EventSource.AGENT)
+            
+            obs = CmdOutputObservation(
+                command=f'cmd{i}', content=f'output{i}', command_id=cmd.id
+            )
+            event_stream.add_event(obs, EventSource.ENVIRONMENT)
+            
+            events.extend([cmd, obs])
+
+        # Set up initial history
+        controller1.state.history = events.copy()
+
+        # Force truncation
+        controller1._handle_long_context_error()
+
+        # Verify truncation occurred
+        assert controller1.state.truncation_id > 0
+
+        # Verify history was cut approximately in half (as per _apply_conversation_window implementation)
+        # It might not be exactly half due to action-observation pair preservation
+        expected_approx_length = max(1, len(events) // 2) + 1  # +1 for first message if not in second half
+        assert len(controller1.state.history) <= len(events) * 0.6  # Should be roughly half, with some buffer
+        assert len(controller1.state.history) >= expected_approx_length * 0.8  # Allow some flexibility
+
+        truncated_history_len = len(controller1.state.history)
+        truncation_id = controller1.state.truncation_id
+
+        # Save state to persistent storage
+        controller1.state.save_to_session('test_persistence', file_store)
+
+        # Close the first controller to clean up resources
+        asyncio.run(controller1.close())
+        
+        # Create a new event stream for the second controller
+        event_stream2 = EventStream(sid='test_persistence', file_store=file_store)
+        
+        # Second session: Create new controller and restore state
+        controller2 = AgentController(
+            agent=mock_agent,
+            event_stream=event_stream2,
+            max_iterations=10,
+            sid='test_persistence_2',
+            confirmation_mode=False,
+            headless_mode=True,
+        )
+
+        # Restore state
+        from openhands.controller.state.state import State
+        controller2.state = State.restore_from_session(
+            'test_persistence', file_store
+        )
+
+        # Verify state was restored
+        assert controller2.state.truncation_id == truncation_id
+        assert controller2.state.start_id == controller1.state.start_id
+
+        # Load history using the controller's method
+        controller2._init_history()
+
+        # Verify history was loaded correctly
+        # The restored history should contain:
+        # 1. The first user message
+        # 2. All events from truncation_id onwards
+        
+        # Calculate expected minimum length: events from truncation_id onwards + first message
+        events_from_truncation_id = [e for e in events if e.id >= truncation_id]
+        expected_min_length = 1 + len(events_from_truncation_id)  # 1 for first_msg
+        
+        assert len(controller2.state.history) >= expected_min_length
+        assert first_msg in controller2.state.history
+
+        # Verify the truncated history contains the right events
+        for event in controller2.state.history:
+            if event.id != first_msg.id:  # Skip first message which is always included
+                assert (
+                    event.id >= controller2.state.truncation_id
+                ), f'Event {event.id} is before truncation_id {controller2.state.truncation_id}'
+
+    def test_truncation_state_persistence_with_mocks(
         self, mock_event_stream, mock_agent, monkeypatch
     ):
-        """Test that truncation state is properly saved and restored across sessions."""
+        """Test that truncation state is properly saved and restored across sessions using mocks."""
         # Mock the file store for state persistence
         mock_file_store = MagicMock()
         saved_state = None
