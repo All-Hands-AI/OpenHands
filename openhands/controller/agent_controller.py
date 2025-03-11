@@ -901,7 +901,7 @@ class AgentController:
             if self.state.end_id >= 0
             else self.event_stream.get_latest_event_id()
         )
-        
+
         # Store the original start_id to preserve it
         original_start_id = self.state.start_id
 
@@ -938,7 +938,7 @@ class AgentController:
 
             # the rest of the events are from the truncation point
             start_id = self.state.truncation_id
-        
+
         # Get rest of history
         events_to_add = list(
             self.event_stream.get_events(
