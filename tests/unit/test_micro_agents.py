@@ -30,8 +30,8 @@ def event_stream(temp_dir):
 @pytest.fixture
 def agent_configs():
     return {
-        'CoderAgent': AgentConfig(memory_enabled=True),
-        'BrowsingAgent': AgentConfig(memory_enabled=True),
+        'CoderAgent': AgentConfig(enable_prompt_extensions=True),
+        'BrowsingAgent': AgentConfig(enable_prompt_extensions=True),
     }
 
 
@@ -91,8 +91,9 @@ def test_coder_agent_with_summary(event_stream: EventStream, agent_configs: dict
 
 
 def test_coder_agent_without_summary(event_stream: EventStream, agent_configs: dict):
-    """When there's no codebase_summary available, there shouldn't be any prompt
-    about 'code summary'
+    """When there's no codebase_summary available, there shouldn't be any prompt about 'code summary'.
+
+    This test verifies that the prompt doesn't include code summary text when no summary is provided.
     """
     mock_llm = MagicMock()
     content = json.dumps({'action': 'finish', 'args': {}})
