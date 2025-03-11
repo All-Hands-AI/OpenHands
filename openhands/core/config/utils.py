@@ -5,7 +5,7 @@ import platform
 import sys
 from ast import literal_eval
 from types import UnionType
-from typing import Any, MutableMapping, get_args, get_origin
+from typing import MutableMapping, get_args, get_origin
 from uuid import uuid4
 
 import toml
@@ -46,10 +46,16 @@ def load_from_env(
         env_or_toml_dict: The environment variables or a config.toml dict.
     """
 
-    def get_optional_type(union_type: UnionType) -> Any:
+    def get_optional_type(union_type: UnionType | type | None) -> type | None:
         """Returns the non-None type from a Union."""
-        types = get_args(union_type)
-        return next((t for t in types if t is not type(None)), None)
+        if union_type is None:
+            return None
+        if get_origin(union_type) is UnionType:
+            types = get_args(union_type)
+            return next((t for t in types if t is not type(None)), None)
+        if isinstance(union_type, type):
+            return union_type
+        return None
 
     # helper function to set attributes based on env vars
     def set_attr_from_env(sub_config: BaseModel, prefix='') -> None:
@@ -85,7 +91,8 @@ def load_from_env(
                     elif get_origin(field_type) is dict:
                         cast_value = literal_eval(value)
                     else:
-                        cast_value = field_type(value)
+                        if field_type is not None:
+                            cast_value = field_type(value)
                     setattr(sub_config, field_name, cast_value)
                 except (ValueError, TypeError):
                     logger.openhands_logger.error(
@@ -225,6 +232,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
         # Create default LLM summarizing condenser config
         default_condenser = LLMSummarizingCondenserConfig(
             llm_config=cfg.get_llm_config(),  # Use default LLM config
+            type='llm',
         )
 
         # Set as default condenser

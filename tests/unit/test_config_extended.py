@@ -8,9 +8,10 @@ from openhands.core.config.utils import load_from_toml
 
 
 def test_extended_config_from_dict():
-    """
-    Test that ExtendedConfig.from_dict successfully creates an instance
-    from a dictionary containing arbitrary extra keys.
+    """Test that ExtendedConfig.from_dict creates an instance from a dictionary.
+
+    Verifies that the method successfully creates an instance from a dictionary containing
+    arbitrary extra keys.
     """
     data = {'foo': 'bar', 'baz': 123, 'flag': True}
     ext_cfg = ExtendedConfig.from_dict(data)
@@ -24,9 +25,7 @@ def test_extended_config_from_dict():
 
 
 def test_extended_config_empty():
-    """
-    Test that an empty ExtendedConfig can be created and accessed.
-    """
+    """Test that an empty ExtendedConfig can be created and accessed."""
     ext_cfg = ExtendedConfig.from_dict({})
     assert ext_cfg.root == {}
 
@@ -36,8 +35,9 @@ def test_extended_config_empty():
 
 
 def test_extended_config_str_and_repr():
-    """
-    Test that __str__ and __repr__ return the correct string representations
+    """Test string representation methods of ExtendedConfig.
+
+    Verifies that __str__ and __repr__ return the correct string representations
     of the ExtendedConfig instance.
     """
     data = {'alpha': 'test', 'beta': 42}
@@ -54,8 +54,9 @@ def test_extended_config_str_and_repr():
 
 
 def test_extended_config_getitem_and_getattr():
-    """
-    Test that __getitem__ and __getattr__ can be used to access values
+    """Test value access methods of ExtendedConfig.
+
+    Verifies that __getitem__ and __getattr__ can be used to access values
     in the ExtendedConfig instance.
     """
     data = {'key1': 'value1', 'key2': 2}
@@ -68,9 +69,7 @@ def test_extended_config_getitem_and_getattr():
 
 
 def test_extended_config_invalid_key():
-    """
-    Test that accessing a non-existent key via attribute access raises AttributeError.
-    """
+    """Test that accessing non-existent keys raises appropriate errors."""
     data = {'existing': 'yes'}
     ext_cfg = ExtendedConfig.from_dict(data)
 
@@ -82,9 +81,9 @@ def test_extended_config_invalid_key():
 
 
 def test_app_config_extended_from_toml(tmp_path: os.PathLike) -> None:
-    """
-    Test that the [extended] section in a TOML file is correctly loaded into
-    AppConfig.extended and that it accepts arbitrary keys.
+    """Test that the [extended] section in a TOML file is correctly loaded.
+
+    The test verifies that the section is loaded into AppConfig.extended and that it accepts arbitrary keys.
     """
     # Create a temporary TOML file with multiple sections including [extended]
     config_content = """
@@ -118,9 +117,10 @@ memory_enabled = true
 
 
 def test_app_config_extended_default(tmp_path: os.PathLike) -> None:
-    """
-    Test that if there is no [extended] section in the TOML file,
-    AppConfig.extended remains its default (empty) ExtendedConfig.
+    """Test that AppConfig.extended remains empty without [extended] section.
+
+    When the TOML file does not contain an [extended] section, AppConfig.extended should
+    remain its default (empty) ExtendedConfig.
     """
     config_content = """
 [core]
@@ -144,9 +144,9 @@ memory_enabled = true
 
 
 def test_app_config_extended_random_keys(tmp_path: os.PathLike) -> None:
-    """
-    Test that the extended section accepts arbitrary keys,
-    including ones not defined in any schema.
+    """Test that the extended section accepts arbitrary keys.
+
+    The extended section should accept any keys, including ones not defined in any schema.
     """
     config_content = """
 [core]
