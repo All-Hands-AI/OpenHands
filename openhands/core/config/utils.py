@@ -282,8 +282,6 @@ def finalize_config(cfg: AppConfig):
     # make sure log_completions_folder is an absolute path
     for llm in cfg.llms.values():
         llm.log_completions_folder = os.path.abspath(llm.log_completions_folder)
-        if llm.embedding_base_url is None:
-            llm.embedding_base_url = llm.base_url
 
     if cfg.sandbox.use_host_network and platform.system() == 'Darwin':
         logger.openhands_logger.warning(
