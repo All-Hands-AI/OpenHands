@@ -4,6 +4,18 @@ import { FileDiffViewer } from "#/components/features/diff-viewer/file-diff-view
 import { useConversation } from "#/context/conversation-context";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 
+interface StatusMessageProps {
+  message: string;
+}
+
+function StatusMessage({ message }: StatusMessageProps) {
+  return (
+    <div className="w-full h-full flex items-center justify-center text-2xl text-tertiary-light">
+      {message}
+    </div>
+  );
+}
+
 function EditorScreen() {
   const { conversationId } = useConversation();
   const {
@@ -24,18 +36,11 @@ function EditorScreen() {
   return (
     <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col">
       {isFetching && <div>Loading...</div>}
-      {isError && (
-        <div className="w-full h-full flex items-center justify-center text-2xl text-tertiary-light">
-          {retrieveAxiosErrorMessage(error)}
-        </div>
-      )}
+      {isError && <StatusMessage message={retrieveAxiosErrorMessage(error)} />}
 
-      {gitChanges?.length === 0 && (
-        <div className="w-full h-full flex items-center justify-center text-2xl text-tertiary-light">
-          Clean working tree
-        </div>
+      {!isError && gitChanges?.length === 0 && (
+        <StatusMessage message="Clean working tree" />
       )}
-
       {isSuccess &&
         gitChanges.map((change) => (
           <FileDiffViewer

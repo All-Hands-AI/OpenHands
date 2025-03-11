@@ -514,6 +514,13 @@ class Runtime(FileEditRuntimeMixin):
             return ''
         return obs.content.strip()
 
+    def _verify_ref_exists(self, ref: str) -> bool:
+        cmd = f'git rev-parse --verify {ref}'
+        obs = self.run(CmdRunAction(command=cmd))
+        if hasattr(obs, 'error') and obs.error:
+            return False
+        return True
+
     def get_untracked_files(self) -> list[dict[str, str]]:
         try:
             cmd = 'git ls-files --others --exclude-standard'
@@ -531,20 +538,22 @@ class Runtime(FileEditRuntimeMixin):
         result = []
         cmd = f'git diff --name-status {ref}'
 
-        obs = self.run(CmdRunAction(command=cmd))
-        obs_list = obs.content.splitlines()
-        for line in obs_list:
-            status = line[:2].strip()
-            path = line[2:].strip()
+        # Only run the command if the ref exists (e.g., it is an existing branch)
+        if self._verify_ref_exists(ref):
+            obs = self.run(CmdRunAction(command=cmd))
+            obs_list = obs.content.splitlines()
+            for line in obs_list:
+                status = line[:2].strip()
+                path = line[2:].strip()
 
-            # Get the first non-space character as the primary status
-            primary_status = status.replace(' ', '')[0]
-            result.append(
-                {
-                    'status': primary_status,
-                    'path': path,
-                }
-            )
+                # Get the first non-space character as the primary status
+                primary_status = status.replace(' ', '')[0]
+                result.append(
+                    {
+                        'status': primary_status,
+                        'path': path,
+                    }
+                )
 
         # join with untracked files
         result += self.get_untracked_files()
