@@ -163,11 +163,26 @@ def initialize_repo(
     if os.path.exists(dest_dir):
         shutil.rmtree(dest_dir)
 
-    shutil.copytree(src_dir, dest_dir, symlinks=True)
+    # Copy the repository without using symlinks parameter to avoid GitHub action issues
+    shutil.copytree(src_dir, dest_dir)
     print(f'Copied repository to {dest_dir}')
+    
+    # Configure Git to properly handle symlinks
+    subprocess.run(
+        f'git -C {dest_dir} config core.symlinks true',
+        shell=True,
+        check=True
+    )
 
     # Checkout the base commit if provided
     if base_commit:
+        # Ensure Git is configured to handle symlinks properly
+        subprocess.run(
+            f'git -C {dest_dir} config core.symlinks true',
+            shell=True,
+            check=True
+        )
+        
         result = subprocess.run(
             f'git -C {dest_dir} checkout {base_commit}',
             shell=True,
