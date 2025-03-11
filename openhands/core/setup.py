@@ -14,6 +14,7 @@ from openhands.core.config import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.events.action import CmdRunAction
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.microagent.microagent import BaseMicroAgent
