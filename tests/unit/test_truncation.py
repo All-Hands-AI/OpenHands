@@ -286,8 +286,8 @@ class TestTruncation:
         assert len(new_controller.state.history) > 0
         assert first_msg in new_controller.state.history
         
-        # After _init_history, start_id is updated to match truncation_id
-        assert new_controller.state.start_id == saved_truncation_id
+        # After _init_history, start_id should remain at its original value
+        assert new_controller.state.start_id == saved_start_id
         assert new_controller.state.truncation_id == saved_truncation_id
         
         # Verify the truncated history contains the right events

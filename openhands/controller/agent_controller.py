@@ -936,6 +936,9 @@ class AgentController:
             # the rest of the events are from the truncation point
             start_id = self.state.truncation_id
 
+        # Store the original start_id to preserve it
+        original_start_id = self.state.start_id
+        
         # Get rest of history
         events_to_add = list(
             self.event_stream.get_events(
@@ -975,20 +978,20 @@ class AgentController:
             filtered_events: list[Event] = []
             current_idx = 0
 
-            for start_id, end_id in sorted(delegate_ranges):
+            for start_range_id, end_range_id in sorted(delegate_ranges):
                 # Add events before delegate range
                 filtered_events.extend(
-                    event for event in events[current_idx:] if event.id < start_id
+                    event for event in events[current_idx:] if event.id < start_range_id
                 )
 
                 # Add delegate action and observation
                 filtered_events.extend(
-                    event for event in events if event.id in (start_id, end_id)
+                    event for event in events if event.id in (start_range_id, end_range_id)
                 )
 
                 # Update index to after delegate range
                 current_idx = next(
-                    (i for i, e in enumerate(events) if e.id > end_id), len(events)
+                    (i for i, e in enumerate(events) if e.id > end_range_id), len(events)
                 )
 
             # Add any remaining events after last delegate range
@@ -998,8 +1001,8 @@ class AgentController:
         else:
             self.state.history = events
 
-        # make sure history is in sync
-        self.state.start_id = start_id
+        # Restore the original start_id to preserve the beginning of history
+        self.state.start_id = original_start_id
 
     def _handle_long_context_error(self) -> None:
         # When context window is exceeded, keep roughly half of agent interactions
