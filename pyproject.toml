@@ -95,6 +95,7 @@ ruff = "0.9.8"
 mypy = "1.15.0"
 pre-commit = "4.1.0"
 build = "*"
+mypy-boto3-s3 = "^1.37.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
