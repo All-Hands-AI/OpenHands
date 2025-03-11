@@ -4,8 +4,8 @@ from typing import ClassVar, Protocol
 
 
 class AppMode(Enum):
-    OSS = 'oss'
-    SAAS = 'saas'
+    OSS = "oss"
+    SAAS = "saas"
 
 
 class SessionMiddlewareInterface(Protocol):

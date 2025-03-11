@@ -7,19 +7,19 @@ from openhands.llm.metrics import Metrics
 
 
 class EventSource(str, Enum):
-    AGENT = 'agent'
-    USER = 'user'
-    ENVIRONMENT = 'environment'
+    AGENT = "agent"
+    USER = "user"
+    ENVIRONMENT = "environment"
 
 
 class FileEditSource(str, Enum):
-    LLM_BASED_EDIT = 'llm_based_edit'
-    OH_ACI = 'oh_aci'  # openhands-aci
+    LLM_BASED_EDIT = "llm_based_edit"
+    OH_ACI = "oh_aci"  # openhands-aci
 
 
 class FileReadSource(str, Enum):
-    OH_ACI = 'oh_aci'  # openhands-aci
-    DEFAULT = 'default'
+    OH_ACI = "oh_aci"  # openhands-aci
+    DEFAULT = "default"
 
 
 @dataclass
@@ -28,19 +28,19 @@ class Event:
 
     @property
     def message(self) -> str | None:
-        if hasattr(self, '_message'):
+        if hasattr(self, "_message"):
             return self._message  # type: ignore[attr-defined]
-        return ''
+        return ""
 
     @property
     def id(self) -> int:
-        if hasattr(self, '_id'):
+        if hasattr(self, "_id"):
             return self._id  # type: ignore[attr-defined]
         return Event.INVALID_ID
 
     @property
     def timestamp(self):
-        if hasattr(self, '_timestamp') and isinstance(self._timestamp, str):
+        if hasattr(self, "_timestamp") and isinstance(self._timestamp, str):
             return self._timestamp
 
     @timestamp.setter
@@ -50,19 +50,19 @@ class Event:
 
     @property
     def source(self) -> EventSource | None:
-        if hasattr(self, '_source'):
+        if hasattr(self, "_source"):
             return self._source  # type: ignore[attr-defined]
         return None
 
     @property
     def cause(self) -> int | None:
-        if hasattr(self, '_cause'):
+        if hasattr(self, "_cause"):
             return self._cause  # type: ignore[attr-defined]
         return None
 
     @property
     def timeout(self) -> int | None:
-        if hasattr(self, '_timeout'):
+        if hasattr(self, "_timeout"):
             return self._timeout  # type: ignore[attr-defined]
         return None
 
@@ -77,19 +77,19 @@ class Event:
             from openhands.core.logger import openhands_logger as logger
 
             logger.warning(
-                'Timeout greater than 600 seconds may not be supported by '
-                'the runtime. Consider setting a lower timeout.'
+                "Timeout greater than 600 seconds may not be supported by "
+                "the runtime. Consider setting a lower timeout."
             )
 
         # Check if .blocking is an attribute of the event
-        if hasattr(self, 'blocking'):
+        if hasattr(self, "blocking"):
             # .blocking needs to be set to True if .timeout is set
             self.blocking = blocking
 
     # optional metadata, LLM call cost of the edit
     @property
     def llm_metrics(self) -> Metrics | None:
-        if hasattr(self, '_llm_metrics'):
+        if hasattr(self, "_llm_metrics"):
             return self._llm_metrics  # type: ignore[attr-defined]
         return None
 
@@ -100,7 +100,7 @@ class Event:
     # optional field
     @property
     def tool_call_metadata(self) -> ToolCallMetadata | None:
-        if hasattr(self, '_tool_call_metadata'):
+        if hasattr(self, "_tool_call_metadata"):
             return self._tool_call_metadata  # type: ignore[attr-defined]
         return None
 

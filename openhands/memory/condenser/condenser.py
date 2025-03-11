@@ -10,7 +10,7 @@ from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import CondenserConfig
 from openhands.events.event import Event
 
-CONDENSER_METADATA_KEY = 'condenser_meta'
+CONDENSER_METADATA_KEY = "condenser_meta"
 """Key identifying where metadata is stored in a `State` object's `extra_data` field."""
 
 
@@ -113,7 +113,7 @@ class Condenser(ABC):
         """
         if configuration_type in CONDENSER_REGISTRY:
             raise ValueError(
-                f'Condenser configuration {configuration_type} is already registered'
+                f"Condenser configuration {configuration_type} is already registered"
             )
         CONDENSER_REGISTRY[configuration_type] = cls
 
@@ -134,7 +134,7 @@ class Condenser(ABC):
             condenser_class = CONDENSER_REGISTRY[type(config)]
             return condenser_class.from_config(config)
         except KeyError:
-            raise ValueError(f'Unknown condenser config: {config}')
+            raise ValueError(f"Unknown condenser config: {config}")
 
 
 class RollingCondenser(Condenser, ABC):

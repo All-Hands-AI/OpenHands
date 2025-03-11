@@ -26,19 +26,19 @@ class Settings(BaseModel):
     enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
 
-    @field_serializer('llm_api_key')
+    @field_serializer("llm_api_key")
     def llm_api_key_serializer(self, llm_api_key: SecretStr, info: SerializationInfo):
         """Custom serializer for the LLM API key.
 
         To serialize the API key instead of ********, set expose_secrets to True in the serialization context.
         """
         context = info.context
-        if context and context.get('expose_secrets', False):
+        if context and context.get("expose_secrets", False):
             return llm_api_key.get_secret_value()
 
         return pydantic_encoder(llm_api_key)
 
-    @field_serializer('github_token')
+    @field_serializer("github_token")
     def github_token_serializer(
         self, github_token: SecretStr | None, info: SerializationInfo
     ):
@@ -50,7 +50,7 @@ class Settings(BaseModel):
             return None
 
         context = info.context
-        if context and context.get('expose_secrets', False):
+        if context and context.get("expose_secrets", False):
             return github_token.get_secret_value()
 
         return pydantic_encoder(github_token)
@@ -64,7 +64,7 @@ class Settings(BaseModel):
             return None
         security = app_config.security
         settings = Settings(
-            language='en',
+            language="en",
             agent=app_config.default_agent,
             max_iterations=app_config.max_iterations,
             security_analyzer=security.security_analyzer,
@@ -89,7 +89,7 @@ class POSTSettingsModel(Settings):
     )
 
     # Override the serializer for the GitHub token to handle the string input
-    @field_serializer('github_token')
+    @field_serializer("github_token")
     def github_token_serializer(self, github_token: str | None):
         return github_token
 

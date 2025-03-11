@@ -23,12 +23,12 @@ class RetryMixin:
         Returns:
             A retry decorator with the parameters customizable in configuration.
         """
-        num_retries = kwargs.get('num_retries')
-        retry_exceptions: tuple = kwargs.get('retry_exceptions', ())
-        retry_min_wait = kwargs.get('retry_min_wait')
-        retry_max_wait = kwargs.get('retry_max_wait')
-        retry_multiplier = kwargs.get('retry_multiplier')
-        retry_listener = kwargs.get('retry_listener')
+        num_retries = kwargs.get("num_retries")
+        retry_exceptions: tuple = kwargs.get("retry_exceptions", ())
+        retry_min_wait = kwargs.get("retry_min_wait")
+        retry_max_wait = kwargs.get("retry_max_wait")
+        retry_multiplier = kwargs.get("retry_multiplier")
+        retry_listener = kwargs.get("retry_listener")
 
         def before_sleep(retry_state):
             self.log_retry_attempt(retry_state)
@@ -53,5 +53,5 @@ class RetryMixin:
         """Log retry attempts."""
         exception = retry_state.outcome.exception()
         logger.error(
-            f'{exception}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.',
+            f"{exception}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.",
         )

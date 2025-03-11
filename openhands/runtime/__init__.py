@@ -14,14 +14,14 @@ from openhands.utils.import_utils import get_impl
 
 # mypy: disable-error-code="type-abstract"
 _DEFAULT_RUNTIME_CLASSES: dict[str, Type[Runtime]] = {
-    'eventstream': DockerRuntime,
-    'docker': DockerRuntime,
-    'e2b': E2BRuntime,
-    'remote': RemoteRuntime,
-    'modal': ModalRuntime,
-    'runloop': RunloopRuntime,
-    'local': LocalRuntime,
-    'daytona': DaytonaRuntime,
+    "eventstream": DockerRuntime,
+    "docker": DockerRuntime,
+    "e2b": E2BRuntime,
+    "remote": RemoteRuntime,
+    "modal": ModalRuntime,
+    "runloop": RunloopRuntime,
+    "local": LocalRuntime,
+    "daytona": DaytonaRuntime,
 }
 
 
@@ -38,17 +38,17 @@ def get_runtime_cls(name: str) -> Type[Runtime]:
     except Exception as e:
         known_keys = _DEFAULT_RUNTIME_CLASSES.keys()
         raise ValueError(
-            f'Runtime {name} not supported, known are: {known_keys}'
+            f"Runtime {name} not supported, known are: {known_keys}"
         ) from e
 
 
 __all__ = [
-    'Runtime',
-    'E2BRuntime',
-    'RemoteRuntime',
-    'ModalRuntime',
-    'RunloopRuntime',
-    'DockerRuntime',
-    'DaytonaRuntime',
-    'get_runtime_cls',
+    "Runtime",
+    "E2BRuntime",
+    "RemoteRuntime",
+    "ModalRuntime",
+    "RunloopRuntime",
+    "DockerRuntime",
+    "DaytonaRuntime",
+    "get_runtime_cls",
 ]

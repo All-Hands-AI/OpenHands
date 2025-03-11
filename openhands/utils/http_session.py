@@ -20,7 +20,7 @@ class HttpSession:
     def __getattr__(self, name: str) -> Any:
         if self.session is None:
             logger.error(
-                'Session is being used after close!', stack_info=True, exc_info=True
+                "Session is being used after close!", stack_info=True, exc_info=True
             )
             self.session = requests.Session()
         return getattr(self.session, name)
@@ -29,7 +29,7 @@ class HttpSession:
     def headers(self) -> CaseInsensitiveDict[str]:
         if self.session is None:
             logger.error(
-                'Session is being used after close!', stack_info=True, exc_info=True
+                "Session is being used after close!", stack_info=True, exc_info=True
             )
             self.session = requests.Session()
         # Cast to CaseInsensitiveDict[str] since mypy doesn't know the exact type

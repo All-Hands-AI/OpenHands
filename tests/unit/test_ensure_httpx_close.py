@@ -50,7 +50,7 @@ def test_ensure_httpx_close_exception():
     try:
         with ensure_httpx_close():
             client = httpx.Client()
-            raise ValueError('Test exception')
+            raise ValueError("Test exception")
     except ValueError:
         pass
 

@@ -39,39 +39,39 @@ from openhands.io import read_input, read_task
 
 
 def display_message(message: str):
-    print(colored('🤖 ' + message + '\n', 'yellow'))
+    print(colored("🤖 " + message + "\n", "yellow"))
 
 
 def display_command(command: str):
-    print('❯ ' + colored(command + '\n', 'green'))
+    print("❯ " + colored(command + "\n", "green"))
 
 
 def display_confirmation(confirmation_state: ActionConfirmationStatus):
     if confirmation_state == ActionConfirmationStatus.CONFIRMED:
-        print(colored('✅ ' + confirmation_state + '\n', 'green'))
+        print(colored("✅ " + confirmation_state + "\n", "green"))
     elif confirmation_state == ActionConfirmationStatus.REJECTED:
-        print(colored('❌ ' + confirmation_state + '\n', 'red'))
+        print(colored("❌ " + confirmation_state + "\n", "red"))
     else:
-        print(colored('⏳ ' + confirmation_state + '\n', 'yellow'))
+        print(colored("⏳ " + confirmation_state + "\n", "yellow"))
 
 
 def display_command_output(output: str):
-    lines = output.split('\n')
+    lines = output.split("\n")
     for line in lines:
-        if line.startswith('[Python Interpreter') or line.startswith('openhands@'):
+        if line.startswith("[Python Interpreter") or line.startswith("openhands@"):
             # TODO: clean this up once we clean up terminal output
             continue
-        print(colored(line, 'blue'))
-    print('\n')
+        print(colored(line, "blue"))
+    print("\n")
 
 
 def display_file_edit(event: FileEditAction | FileEditObservation):
-    print(colored(str(event), 'green'))
+    print(colored(str(event), "green"))
 
 
 def display_event(event: Event, config: AppConfig):
     if isinstance(event, Action):
-        if hasattr(event, 'thought'):
+        if hasattr(event, "thought"):
             display_message(event.thought)
     if isinstance(event, MessageAction):
         if event.source == EventSource.AGENT:
@@ -84,7 +84,7 @@ def display_event(event: Event, config: AppConfig):
         display_file_edit(event)
     if isinstance(event, FileEditObservation):
         display_file_edit(event)
-    if hasattr(event, 'confirmation_state') and config.security.confirmation_mode:
+    if hasattr(event, "confirmation_state") and config.security.confirmation_mode:
         display_confirmation(event.confirmation_state)
 
 
@@ -105,7 +105,7 @@ async def main(loop: asyncio.AbstractEventLoop):
     initial_user_action = MessageAction(content=task_str) if task_str else None
 
     sid = str(uuid4())
-    display_message(f'Session ID: {sid}')
+    display_message(f"Session ID: {sid}")
 
     agent = create_agent(config)
 
@@ -127,7 +127,7 @@ async def main(loop: asyncio.AbstractEventLoop):
         )
         if not next_message.strip():
             await prompt_for_next_task()
-        if next_message == 'exit':
+        if next_message == "exit":
             event_stream.add_event(
                 ChangeAgentStateAction(AgentState.STOPPED), EventSource.ENVIRONMENT
             )
@@ -137,9 +137,9 @@ async def main(loop: asyncio.AbstractEventLoop):
 
     async def prompt_for_user_confirmation():
         user_confirmation = await loop.run_in_executor(
-            None, lambda: input('Confirm action (possible security risk)? (y/n) >> ')
+            None, lambda: input("Confirm action (possible security risk)? (y/n) >> ")
         )
-        return user_confirmation.lower() == 'y'
+        return user_confirmation.lower() == "y"
 
     async def on_event_async(event: Event):
         display_event(event, config)
@@ -189,18 +189,18 @@ async def main(loop: asyncio.AbstractEventLoop):
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
         loop.run_until_complete(main(loop))
     except KeyboardInterrupt:
-        print('Received keyboard interrupt, shutting down...')
+        print("Received keyboard interrupt, shutting down...")
     except ConnectionRefusedError as e:
-        print(f'Connection refused: {e}')
+        print(f"Connection refused: {e}")
         sys.exit(1)
     except Exception as e:
-        print(f'An error occurred: {e}')
+        print(f"An error occurred: {e}")
         sys.exit(1)
     finally:
         try:
@@ -212,5 +212,5 @@ if __name__ == '__main__':
             loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
             loop.close()
         except Exception as e:
-            print(f'Error during cleanup: {e}')
+            print(f"Error during cleanup: {e}")
             sys.exit(1)

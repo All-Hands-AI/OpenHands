@@ -28,10 +28,10 @@ class LocalhostCORSMiddleware(CORSMiddleware):
     def is_allowed_origin(self, origin: str) -> bool:
         if origin:
             parsed = urlparse(origin)
-            hostname = parsed.hostname or ''
+            hostname = parsed.hostname or ""
 
             # Allow any localhost/127.0.0.1 origin regardless of port
-            if hostname in ['localhost', '127.0.0.1']:
+            if hostname in ["localhost", "127.0.0.1"]:
                 return True
 
         # For missing origin or other origins, use the parent class's logic
@@ -45,15 +45,15 @@ class CacheControlMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request, call_next):
         response = await call_next(request)
-        if request.url.path.startswith('/assets'):
+        if request.url.path.startswith("/assets"):
             # The content of the assets directory has fingerprinted file names so we cache aggressively
-            response.headers['Cache-Control'] = 'public, max-age=2592000, immutable'
+            response.headers["Cache-Control"] = "public, max-age=2592000, immutable"
         else:
-            response.headers['Cache-Control'] = (
-                'no-cache, no-store, must-revalidate, max-age=0'
+            response.headers["Cache-Control"] = (
+                "no-cache, no-store, must-revalidate, max-age=0"
             )
-            response.headers['Pragma'] = 'no-cache'
-            response.headers['Expires'] = '0'
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
         return response
 
 
@@ -107,13 +107,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if not ok:
             return JSONResponse(
                 status_code=429,
-                content={'message': 'Too many requests'},
-                headers={'Retry-After': '1'},
+                content={"message": "Too many requests"},
+                headers={"Retry-After": "1"},
             )
         return await call_next(request)
 
     def is_rate_limited_request(self, request: StarletteRequest):
-        if request.url.path.startswith('/assets'):
+        if request.url.path.startswith("/assets"):
             return False
         # Put Other non rate limited checks here
         return True
@@ -127,15 +127,15 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         """
         Determine if the middleware should attach a session for the given request.
         """
-        if request.method == 'OPTIONS':
+        if request.method == "OPTIONS":
             return False
 
-        conversation_id = ''
-        if request.url.path.startswith('/api/conversation'):
+        conversation_id = ""
+        if request.url.path.startswith("/api/conversation"):
             # FIXME: we should be able to use path_params
-            path_parts = request.url.path.split('/')
+            path_parts = request.url.path.split("/")
             if len(path_parts) > 4:
-                conversation_id = request.url.path.split('/')[3]
+                conversation_id = request.url.path.split("/")[3]
         if not conversation_id:
             return False
 
@@ -153,7 +153,7 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         if not request.state.conversation:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
-                content={'error': 'Session not found'},
+                content={"error": "Session not found"},
             )
         return None
 
@@ -194,7 +194,7 @@ class GitHubTokenMiddleware(SessionMiddlewareInterface):
         settings = await settings_store.load()
 
         # TODO: To avoid checks like this we should re-add the abilty to have completely different middleware in SAAS as in OSS
-        if getattr(request.state, 'github_token', None) is None:
+        if getattr(request.state, "github_token", None) is None:
             if settings and settings.github_token:
                 request.state.github_token = settings.github_token
             else:

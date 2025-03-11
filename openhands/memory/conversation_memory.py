@@ -87,7 +87,7 @@ class ConversationMemory:
                     enable_som_visual_browsing=enable_som_visual_browsing,
                 )
             else:
-                raise ValueError(f'Unknown event type: {type(event)}')
+                raise ValueError(f"Unknown event type: {type(event)}")
 
             # Check pending tool call action messages and see if they are complete
             _response_ids_to_remove = []
@@ -96,8 +96,8 @@ class ConversationMemory:
                 pending_message,
             ) in pending_tool_call_action_messages.items():
                 assert pending_message.tool_calls is not None, (
-                    'Tool calls should NOT be None when function calling is enabled & the message is considered pending tool call. '
-                    f'Pending message: {pending_message}'
+                    "Tool calls should NOT be None when function calling is enabled & the message is considered pending tool call. "
+                    f"Pending message: {pending_message}"
                 )
                 if all(
                     tool_call.id in tool_call_id_to_message
@@ -123,7 +123,7 @@ class ConversationMemory:
         """Create the initial messages for the conversation."""
         return [
             Message(
-                role='system',
+                role="system",
                 content=[
                     TextContent(
                         text=self.prompt_manager.get_system_message(),
@@ -183,32 +183,32 @@ class ConversationMemory:
                 BrowseInteractiveAction,
                 BrowseURLAction,
             ),
-        ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
+        ) or (isinstance(action, CmdRunAction) and action.source == "agent"):
             tool_metadata = action.tool_call_metadata
             assert tool_metadata is not None, (
-                'Tool call metadata should NOT be None when function calling is enabled. Action: '
+                "Tool call metadata should NOT be None when function calling is enabled. Action: "
                 + str(action)
             )
 
             llm_response: ModelResponse = tool_metadata.model_response
-            assistant_msg = getattr(llm_response.choices[0], 'message')
+            assistant_msg = getattr(llm_response.choices[0], "message")
 
             # Add the LLM message (assistant) that initiated the tool calls
             # (overwrites any previous message with the same response_id)
             logger.debug(
-                f'Tool calls type: {type(assistant_msg.tool_calls)}, value: {assistant_msg.tool_calls}'
+                f"Tool calls type: {type(assistant_msg.tool_calls)}, value: {assistant_msg.tool_calls}"
             )
             pending_tool_call_action_messages[llm_response.id] = Message(
-                role=getattr(assistant_msg, 'role', 'assistant'),
+                role=getattr(assistant_msg, "role", "assistant"),
                 # tool call content SHOULD BE a string
-                content=[TextContent(text=assistant_msg.content or '')]
+                content=[TextContent(text=assistant_msg.content or "")]
                 if assistant_msg.content is not None
                 else [],
                 tool_calls=assistant_msg.tool_calls,
             )
             return []
         elif isinstance(action, AgentFinishAction):
-            role = 'user' if action.source == 'user' else 'assistant'
+            role = "user" if action.source == "user" else "assistant"
 
             # when agent finishes, it has tool_metadata
             # which has already been executed, and it doesn't have a response
@@ -217,21 +217,21 @@ class ConversationMemory:
             if tool_metadata is not None:
                 # take the response message from the tool call
                 assistant_msg = getattr(
-                    tool_metadata.model_response.choices[0], 'message'
+                    tool_metadata.model_response.choices[0], "message"
                 )
-                content = assistant_msg.content or ''
+                content = assistant_msg.content or ""
 
                 # save content if any, to thought
                 if action.thought:
                     if action.thought != content:
-                        action.thought += '\n' + content
+                        action.thought += "\n" + content
                 else:
                     action.thought = content
 
                 # remove the tool call metadata
                 action.tool_call_metadata = None
-            if role not in ('user', 'system', 'assistant', 'tool'):
-                raise ValueError(f'Invalid role: {role}')
+            if role not in ("user", "system", "assistant", "tool"):
+                raise ValueError(f"Invalid role: {role}")
             return [
                 Message(
                     role=role,  # type: ignore[arg-type]
@@ -239,25 +239,25 @@ class ConversationMemory:
                 )
             ]
         elif isinstance(action, MessageAction):
-            role = 'user' if action.source == 'user' else 'assistant'
-            content = [TextContent(text=action.content or '')]
+            role = "user" if action.source == "user" else "assistant"
+            content = [TextContent(text=action.content or "")]
             if vision_is_active and action.image_urls:
                 content.append(ImageContent(image_urls=action.image_urls))
-            if role not in ('user', 'system', 'assistant', 'tool'):
-                raise ValueError(f'Invalid role: {role}')
+            if role not in ("user", "system", "assistant", "tool"):
+                raise ValueError(f"Invalid role: {role}")
             return [
                 Message(
                     role=role,  # type: ignore[arg-type]
                     content=content,
                 )
             ]
-        elif isinstance(action, CmdRunAction) and action.source == 'user':
+        elif isinstance(action, CmdRunAction) and action.source == "user":
             content = [
-                TextContent(text=f'User executed the command:\n{action.command}')
+                TextContent(text=f"User executed the command:\n{action.command}")
             ]
             return [
                 Message(
-                    role='user',  # Always user for CmdRunAction
+                    role="user",  # Always user for CmdRunAction
                     content=content,
                 )
             ]
@@ -305,30 +305,30 @@ class ConversationMemory:
             # if it doesn't have tool call metadata, it was triggered by a user action
             if obs.tool_call_metadata is None:
                 text = truncate_content(
-                    f'\nObserved result of command executed by user:\n{obs.to_agent_observation()}',
+                    f"\nObserved result of command executed by user:\n{obs.to_agent_observation()}",
                     max_message_chars,
                 )
             else:
                 text = truncate_content(obs.to_agent_observation(), max_message_chars)
-            message = Message(role='user', content=[TextContent(text=text)])
+            message = Message(role="user", content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
             # replace base64 images with a placeholder
-            splitted = text.split('\n')
+            splitted = text.split("\n")
             for i, line in enumerate(splitted):
-                if '![image](data:image/png;base64,' in line:
+                if "![image](data:image/png;base64," in line:
                     splitted[i] = (
-                        '![image](data:image/png;base64, ...) already displayed to user'
+                        "![image](data:image/png;base64, ...) already displayed to user"
                     )
-            text = '\n'.join(splitted)
+            text = "\n".join(splitted)
             text = truncate_content(text, max_message_chars)
-            message = Message(role='user', content=[TextContent(text=text)])
+            message = Message(role="user", content=[TextContent(text=text)])
         elif isinstance(obs, FileEditObservation):
             text = truncate_content(str(obs), max_message_chars)
-            message = Message(role='user', content=[TextContent(text=text)])
+            message = Message(role="user", content=[TextContent(text=text)])
         elif isinstance(obs, FileReadObservation):
             message = Message(
-                role='user', content=[TextContent(text=obs.content)]
+                role="user", content=[TextContent(text=obs.content)]
             )  # Content is already truncated by openhands-aci
         elif isinstance(obs, BrowserOutputObservation):
             text = obs.get_agent_obs_text()
@@ -339,9 +339,9 @@ class ConversationMemory:
                 and enable_som_visual_browsing
                 and vision_is_active
             ):
-                text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
+                text += "Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n"
                 message = Message(
-                    role='user',
+                    role="user",
                     content=[
                         TextContent(text=text),
                         ImageContent(image_urls=[obs.set_of_marks]),
@@ -349,38 +349,38 @@ class ConversationMemory:
                 )
             else:
                 message = Message(
-                    role='user',
+                    role="user",
                     content=[TextContent(text=text)],
                 )
         elif isinstance(obs, AgentDelegateObservation):
             text = truncate_content(
-                obs.outputs['content'] if 'content' in obs.outputs else '',
+                obs.outputs["content"] if "content" in obs.outputs else "",
                 max_message_chars,
             )
-            message = Message(role='user', content=[TextContent(text=text)])
+            message = Message(role="user", content=[TextContent(text=text)])
         elif isinstance(obs, AgentThinkObservation):
             text = truncate_content(obs.content, max_message_chars)
-            message = Message(role='user', content=[TextContent(text=text)])
+            message = Message(role="user", content=[TextContent(text=text)])
         elif isinstance(obs, ErrorObservation):
             text = truncate_content(obs.content, max_message_chars)
-            text += '\n[Error occurred in processing last action]'
-            message = Message(role='user', content=[TextContent(text=text)])
+            text += "\n[Error occurred in processing last action]"
+            message = Message(role="user", content=[TextContent(text=text)])
         elif isinstance(obs, UserRejectObservation):
-            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
-            text += '\n[Last action has been rejected by the user]'
-            message = Message(role='user', content=[TextContent(text=text)])
+            text = "OBSERVATION:\n" + truncate_content(obs.content, max_message_chars)
+            text += "\n[Last action has been rejected by the user]"
+            message = Message(role="user", content=[TextContent(text=text)])
         elif isinstance(obs, AgentCondensationObservation):
             text = truncate_content(obs.content, max_message_chars)
-            message = Message(role='user', content=[TextContent(text=text)])
+            message = Message(role="user", content=[TextContent(text=text)])
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message
-            raise ValueError(f'Unknown observation type: {type(obs)}')
+            raise ValueError(f"Unknown observation type: {type(obs)}")
 
         # Update the message as tool response properly
-        if (tool_call_metadata := getattr(obs, 'tool_call_metadata', None)) is not None:
+        if (tool_call_metadata := getattr(obs, "tool_call_metadata", None)) is not None:
             tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
-                role='tool',
+                role="tool",
                 content=message.content,
                 tool_call_id=tool_call_metadata.tool_call_id,
                 name=tool_call_metadata.function_name,
@@ -399,7 +399,7 @@ class ConversationMemory:
         """
         # NOTE: this is only needed for anthropic
         for message in reversed(messages):
-            if message.role in ('user', 'tool'):
+            if message.role in ("user", "tool"):
                 message.content[
                     -1
                 ].cache_prompt = True  # Last item inside the message content

@@ -1,13 +1,13 @@
 import importlib
 from typing import Type, TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def import_from(qual_name: str):
     """Import the value from the qualified name given"""
-    parts = qual_name.split('.')
-    module_name = '.'.join(parts[:-1])
+    parts = qual_name.split(".")
+    module_name = ".".join(parts[:-1])
     module = importlib.import_module(module_name)
     result = getattr(module, parts[-1])
     return result

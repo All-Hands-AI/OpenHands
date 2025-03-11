@@ -59,7 +59,7 @@ def ensure_httpx_close():
             # We have to override this as debuggers invoke it causing the client to reopen
             if self.client:
                 return self.client.iter(*args, **kwargs)
-            return object.__getattribute__(self, 'iter')(*args, **kwargs)
+            return object.__getattribute__(self, "iter")(*args, **kwargs)
 
         @property
         def is_closed(self):

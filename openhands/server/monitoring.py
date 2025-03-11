@@ -34,5 +34,5 @@ class MonitoringListener:
     def get_instance(
         cls,
         config: AppConfig,
-    ) -> 'MonitoringListener':
+    ) -> "MonitoringListener":
         return cls()

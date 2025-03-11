@@ -6,19 +6,19 @@ You may use the `web_read` tool to read content from a webpage, and even search 
 """
 
 WebReadTool = ChatCompletionToolParam(
-    type='function',
+    type="function",
     function=ChatCompletionToolParamFunctionChunk(
-        name='web_read',
+        name="web_read",
         description=_WEB_DESCRIPTION,
         parameters={
-            'type': 'object',
-            'properties': {
-                'url': {
-                    'type': 'string',
-                    'description': 'The URL of the webpage to read. You can also use a Google search query here (e.g., `https://www.google.com/search?q=YOUR_QUERY`).',
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "The URL of the webpage to read. You can also use a Google search query here (e.g., `https://www.google.com/search?q=YOUR_QUERY`).",
                 }
             },
-            'required': ['url'],
+            "required": ["url"],
         },
     ),
 )

@@ -12,16 +12,16 @@ Common use cases:
 The tool simply logs your thought process for better transparency and does not execute any code or make changes."""
 
 ThinkTool = ChatCompletionToolParam(
-    type='function',
+    type="function",
     function=ChatCompletionToolParamFunctionChunk(
-        name='think',
+        name="think",
         description=_THINK_DESCRIPTION,
         parameters={
-            'type': 'object',
-            'properties': {
-                'thought': {'type': 'string', 'description': 'The thought to log.'},
+            "type": "object",
+            "properties": {
+                "thought": {"type": "string", "description": "The thought to log."},
             },
-            'required': ['thought'],
+            "required": ["thought"],
         },
     ),
 )

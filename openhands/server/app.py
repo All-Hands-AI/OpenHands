@@ -2,7 +2,7 @@ import warnings
 from contextlib import asynccontextmanager
 
 with warnings.catch_warnings():
-    warnings.simplefilter('ignore')
+    warnings.simplefilter("ignore")
 
 from fastapi import (
     FastAPI,
@@ -31,16 +31,16 @@ async def _lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title='OpenHands',
-    description='OpenHands: Code Less, Make More',
+    title="OpenHands",
+    description="OpenHands: Code Less, Make More",
     version=__version__,
     lifespan=_lifespan,
 )
 
 
-@app.get('/health')
+@app.get("/health")
 async def health():
-    return 'OK'
+    return "OK"
 
 
 app.include_router(public_api_router)

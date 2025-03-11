@@ -16,22 +16,22 @@ The task_completed field should be set to True if you believed you have complete
 """
 
 FinishTool = ChatCompletionToolParam(
-    type='function',
+    type="function",
     function=ChatCompletionToolParamFunctionChunk(
-        name='finish',
+        name="finish",
         description=_FINISH_DESCRIPTION,
         parameters={
-            'type': 'object',
-            'required': ['message', 'task_completed'],
-            'properties': {
-                'message': {
-                    'type': 'string',
-                    'description': 'Final message to send to the user',
+            "type": "object",
+            "required": ["message", "task_completed"],
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "description": "Final message to send to the user",
                 },
-                'task_completed': {
-                    'type': 'string',
-                    'enum': ['true', 'false', 'partial'],
-                    'description': 'Whether you have completed the task.',
+                "task_completed": {
+                    "type": "string",
+                    "enum": ["true", "false", "partial"],
+                    "description": "Whether you have completed the task.",
                 },
             },
         },

@@ -14,9 +14,9 @@ from openhands.storage.files import FileStore
 @pytest.fixture
 def mock_llm_config() -> LLMConfig:
     config = MagicMock(spec=LLMConfig)
-    config.embedding_model = 'test_embedding_model'
-    config.api_key = 'test_api_key'
-    config.api_version = 'v1'
+    config.embedding_model = "test_embedding_model"
+    config.api_key = "test_api_key"
+    config.api_version = "v1"
     return config
 
 
@@ -25,7 +25,7 @@ def mock_agent_config() -> AgentConfig:
     config = AgentConfig(
         memory_enabled=True,
         memory_max_threads=4,
-        llm_config='test_llm_config',
+        llm_config="test_llm_config",
     )
     return config
 
@@ -33,15 +33,15 @@ def mock_agent_config() -> AgentConfig:
 @pytest.fixture
 def mock_file_store() -> FileStore:
     store = MagicMock(spec=FileStore)
-    store.sid = 'test_session'
+    store.sid = "test_session"
     return store
 
 
 @pytest.fixture
 def mock_event_stream(mock_file_store: FileStore) -> EventStream:
-    with patch('openhands.events.stream.EventStream') as MockEventStream:
+    with patch("openhands.events.stream.EventStream") as MockEventStream:
         instance = MockEventStream.return_value
-        instance.sid = 'test_session'
+        instance.sid = "test_session"
         instance.get_events = MagicMock()
         return instance
 
@@ -53,15 +53,15 @@ def long_term_memory(
     mock_event_stream: EventStream,
 ) -> LongTermMemory:
     mod = LongTermMemory.__module__
-    with patch(f'{mod}.chromadb.PersistentClient') as mock_chroma_client:
+    with patch(f"{mod}.chromadb.PersistentClient") as mock_chroma_client:
         mock_collection = MagicMock()
         mock_chroma_client.return_value.get_or_create_collection.return_value = (
             mock_collection
         )
         with (
-            patch(f'{mod}.ChromaVectorStore', MagicMock()),
-            patch(f'{mod}.EmbeddingsLoader', MagicMock()),
-            patch(f'{mod}.VectorStoreIndex', MagicMock()),
+            patch(f"{mod}.ChromaVectorStore", MagicMock()),
+            patch(f"{mod}.EmbeddingsLoader", MagicMock()),
+            patch(f"{mod}.VectorStoreIndex", MagicMock()),
         ):
             memory = LongTermMemory(
                 llm_config=mock_llm_config,
@@ -93,25 +93,25 @@ def _create_observation_event(observation: str) -> Event:
 
 
 def test_add_event_with_action(long_term_memory: LongTermMemory):
-    event = _create_action_event('test_action')
+    event = _create_action_event("test_action")
     long_term_memory._add_document = MagicMock()
     long_term_memory.add_event(event)
     assert long_term_memory.thought_idx == 1
     long_term_memory._add_document.assert_called_once()
     _, kwargs = long_term_memory._add_document.call_args
-    assert kwargs['document'].extra_info['type'] == 'action'
-    assert kwargs['document'].extra_info['id'] == 'test_action'
+    assert kwargs["document"].extra_info["type"] == "action"
+    assert kwargs["document"].extra_info["id"] == "test_action"
 
 
 def test_add_event_with_observation(long_term_memory: LongTermMemory):
-    event = _create_observation_event('test_observation')
+    event = _create_observation_event("test_observation")
     long_term_memory._add_document = MagicMock()
     long_term_memory.add_event(event)
     assert long_term_memory.thought_idx == 1
     long_term_memory._add_document.assert_called_once()
     _, kwargs = long_term_memory._add_document.call_args
-    assert kwargs['document'].extra_info['type'] == 'observation'
-    assert kwargs['document'].extra_info['id'] == 'test_observation'
+    assert kwargs["document"].extra_info["type"] == "observation"
+    assert kwargs["document"].extra_info["id"] == "test_observation"
 
 
 def test_add_event_with_missing_keys(long_term_memory: LongTermMemory):
@@ -120,16 +120,16 @@ def test_add_event_with_missing_keys(long_term_memory: LongTermMemory):
     event._id = -1
     event._timestamp = datetime.now(timezone.utc).isoformat()
     event._source = EventSource.AGENT
-    event.action = 'test_action'
-    event.unexpected_key = 'value'
+    event.action = "test_action"
+    event.unexpected_key = "value"
 
     long_term_memory._add_document = MagicMock()
     long_term_memory.add_event(event)
     assert long_term_memory.thought_idx == 1
     long_term_memory._add_document.assert_called_once()
     _, kwargs = long_term_memory._add_document.call_args
-    assert kwargs['document'].extra_info['type'] == 'action'
-    assert kwargs['document'].extra_info['id'] == 'test_action'
+    assert kwargs["document"].extra_info["type"] == "action"
+    assert kwargs["document"].extra_info["id"] == "test_action"
 
 
 def test_events_to_docs_no_events(
@@ -153,10 +153,10 @@ def test_load_events_into_index_with_invalid_json(
     """Test loading events with malformed event data."""
     # Simulate an event that causes event_to_memory to raise a JSONDecodeError
     with patch(
-        'openhands.memory.long_term_memory.event_to_memory',
-        side_effect=json.JSONDecodeError('Expecting value', '', 0),
+        "openhands.memory.long_term_memory.event_to_memory",
+        side_effect=json.JSONDecodeError("Expecting value", "", 0),
     ):
-        event = _create_action_event('invalid_action')
+        event = _create_action_event("invalid_action")
         mock_event_stream.get_events.return_value = [event]
 
         # convert events to documents
@@ -170,14 +170,14 @@ def test_load_events_into_index_with_invalid_json(
 
 
 def test_embeddings_inserted_into_chroma(long_term_memory: LongTermMemory):
-    event = _create_action_event('test_action')
+    event = _create_action_event("test_action")
     long_term_memory._add_document = MagicMock()
     long_term_memory.add_event(event)
     long_term_memory._add_document.assert_called()
     _, kwargs = long_term_memory._add_document.call_args
-    assert 'document' in kwargs
+    assert "document" in kwargs
     assert (
-        kwargs['document'].text
+        kwargs["document"].text
         == '{"source": "agent", "action": "test_action", "args": {}}'
     )
 
@@ -185,33 +185,33 @@ def test_embeddings_inserted_into_chroma(long_term_memory: LongTermMemory):
 def test_search_returns_correct_results(long_term_memory: LongTermMemory):
     mock_retriever = MagicMock()
     mock_retriever.retrieve.return_value = [
-        MagicMock(get_text=MagicMock(return_value='result1')),
-        MagicMock(get_text=MagicMock(return_value='result2')),
+        MagicMock(get_text=MagicMock(return_value="result1")),
+        MagicMock(get_text=MagicMock(return_value="result2")),
     ]
     with patch(
-        'openhands.memory.long_term_memory.VectorIndexRetriever',
+        "openhands.memory.long_term_memory.VectorIndexRetriever",
         return_value=mock_retriever,
     ):
-        results = long_term_memory.search(query='test query', k=2)
-        assert results == ['result1', 'result2']
-        mock_retriever.retrieve.assert_called_once_with('test query')
+        results = long_term_memory.search(query="test query", k=2)
+        assert results == ["result1", "result2"]
+        mock_retriever.retrieve.assert_called_once_with("test query")
 
 
 def test_search_with_no_results(long_term_memory: LongTermMemory):
     mock_retriever = MagicMock()
     mock_retriever.retrieve.return_value = []
     with patch(
-        'openhands.memory.long_term_memory.VectorIndexRetriever',
+        "openhands.memory.long_term_memory.VectorIndexRetriever",
         return_value=mock_retriever,
     ):
-        results = long_term_memory.search(query='no results', k=5)
+        results = long_term_memory.search(query="no results", k=5)
         assert results == []
-        mock_retriever.retrieve.assert_called_once_with('no results')
+        mock_retriever.retrieve.assert_called_once_with("no results")
 
 
 def test_add_event_increment_thought_idx(long_term_memory: LongTermMemory):
-    event1 = _create_action_event('action1')
-    event2 = _create_observation_event('observation1')
+    event1 = _create_action_event("action1")
+    event2 = _create_observation_event("observation1")
     long_term_memory.add_event(event1)
     long_term_memory.add_event(event2)
     assert long_term_memory.thought_idx == 2
@@ -220,13 +220,13 @@ def test_add_event_increment_thought_idx(long_term_memory: LongTermMemory):
 def test_load_events_batch_insert(
     long_term_memory: LongTermMemory, mock_event_stream: EventStream
 ):
-    event1 = _create_action_event('action1')
-    event2 = _create_observation_event('observation1')
-    event3 = _create_action_event('action2')
+    event1 = _create_action_event("action1")
+    event2 = _create_observation_event("observation1")
+    event3 = _create_action_event("action2")
     mock_event_stream.get_events.return_value = [event1, event2, event3]
 
     # Mock insert_batch_docs
-    with patch('openhands.utils.embeddings.insert_batch_docs') as mock_run_docs:
+    with patch("openhands.utils.embeddings.insert_batch_docs") as mock_run_docs:
         # convert events to documents
         documents = long_term_memory._events_to_docs()
 

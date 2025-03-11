@@ -12,11 +12,11 @@ from openhands.microagent import KnowledgeMicroAgent, RepoMicroAgent, TaskMicroA
 
 def _create_test_microagents(test_dir: str):
     """Create test microagent files in the given directory."""
-    microagents_dir = Path(test_dir) / '.openhands' / 'microagents'
+    microagents_dir = Path(test_dir) / ".openhands" / "microagents"
     microagents_dir.mkdir(parents=True, exist_ok=True)
 
     # Create test knowledge agent
-    knowledge_dir = microagents_dir / 'knowledge'
+    knowledge_dir = microagents_dir / "knowledge"
     knowledge_dir.mkdir(exist_ok=True)
     knowledge_agent = """---
 name: test_knowledge_agent
@@ -32,7 +32,7 @@ triggers:
 
 Testing best practices and guidelines.
 """
-    (knowledge_dir / 'knowledge.md').write_text(knowledge_agent)
+    (knowledge_dir / "knowledge.md").write_text(knowledge_agent)
 
     # Create test repo agent
     repo_agent = """---
@@ -46,10 +46,10 @@ agent: CodeActAgent
 
 Repository-specific test instructions.
 """
-    (microagents_dir / 'repo.md').write_text(repo_agent)
+    (microagents_dir / "repo.md").write_text(repo_agent)
 
     # Create test task agent in a nested directory
-    task_dir = microagents_dir / 'tasks' / 'nested'
+    task_dir = microagents_dir / "tasks" / "nested"
     task_dir.mkdir(parents=True, exist_ok=True)
     task_agent = """---
 name: test_task
@@ -62,14 +62,14 @@ agent: CodeActAgent
 
 Test task content
 """
-    (task_dir / 'task.md').write_text(task_agent)
+    (task_dir / "task.md").write_text(task_agent)
 
     # Create legacy repo instructions
     legacy_instructions = """# Legacy Instructions
 
 These are legacy repository instructions.
 """
-    (Path(test_dir) / '.openhands_instructions').write_text(legacy_instructions)
+    (Path(test_dir) / ".openhands_instructions").write_text(legacy_instructions)
 
 
 def test_load_microagents_with_trailing_slashes(
@@ -93,20 +93,20 @@ def test_load_microagents_with_trailing_slashes(
         # Check knowledge agents
         assert len(knowledge_agents) == 1
         agent = knowledge_agents[0]
-        assert agent.name == 'test_knowledge_agent'
-        assert 'test' in agent.triggers
-        assert 'pytest' in agent.triggers
+        assert agent.name == "test_knowledge_agent"
+        assert "test" in agent.triggers
+        assert "pytest" in agent.triggers
 
         # Check repo agents (including legacy)
         assert len(repo_agents) == 2  # repo.md + .openhands_instructions
         repo_names = {a.name for a in repo_agents}
-        assert 'test_repo_agent' in repo_names
-        assert 'repo_legacy' in repo_names
+        assert "test_repo_agent" in repo_names
+        assert "repo_legacy" in repo_names
 
         # Check task agents
         assert len(task_agents) == 1
         agent = task_agents[0]
-        assert agent.name == 'test_task'
+        assert agent.name == "test_task"
 
     finally:
         _close_test_runtime(runtime)
@@ -115,7 +115,7 @@ def test_load_microagents_with_trailing_slashes(
 def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openhands):
     """Test loading microagents from a selected repository."""
     # Create test files in a repository-like structure
-    repo_dir = Path(temp_dir) / 'OpenHands'
+    repo_dir = Path(temp_dir) / "OpenHands"
     repo_dir.mkdir(parents=True)
     _create_test_microagents(str(repo_dir))
 
@@ -123,7 +123,7 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
     try:
         # Load microagents with selected repository
         loaded_agents = runtime.get_microagents_from_selected_repo(
-            'All-Hands-AI/OpenHands'
+            "All-Hands-AI/OpenHands"
         )
 
         # Verify all agents are loaded
@@ -136,20 +136,20 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
         # Check knowledge agents
         assert len(knowledge_agents) == 1
         agent = knowledge_agents[0]
-        assert agent.name == 'test_knowledge_agent'
-        assert 'test' in agent.triggers
-        assert 'pytest' in agent.triggers
+        assert agent.name == "test_knowledge_agent"
+        assert "test" in agent.triggers
+        assert "pytest" in agent.triggers
 
         # Check repo agents (including legacy)
         assert len(repo_agents) == 2  # repo.md + .openhands_instructions
         repo_names = {a.name for a in repo_agents}
-        assert 'test_repo_agent' in repo_names
-        assert 'repo_legacy' in repo_names
+        assert "test_repo_agent" in repo_names
+        assert "repo_legacy" in repo_names
 
         # Check task agents
         assert len(task_agents) == 1
         agent = task_agents[0]
-        assert agent.name == 'test_task'
+        assert agent.name == "test_task"
 
     finally:
         _close_test_runtime(runtime)
@@ -158,7 +158,7 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
 def test_load_microagents_with_missing_files(temp_dir, runtime_cls, run_as_openhands):
     """Test loading microagents when some files are missing."""
     # Create only repo.md, no other files
-    microagents_dir = Path(temp_dir) / '.openhands' / 'microagents'
+    microagents_dir = Path(temp_dir) / ".openhands" / "microagents"
     microagents_dir.mkdir(parents=True, exist_ok=True)
 
     repo_agent = """---
@@ -172,7 +172,7 @@ agent: CodeActAgent
 
 Repository-specific test instructions.
 """
-    (microagents_dir / 'repo.md').write_text(repo_agent)
+    (microagents_dir / "repo.md").write_text(repo_agent)
 
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -191,7 +191,7 @@ Repository-specific test instructions.
         assert len(task_agents) == 0
 
         agent = repo_agents[0]
-        assert agent.name == 'test_repo_agent'
+        assert agent.name == "test_repo_agent"
 
     finally:
         _close_test_runtime(runtime)

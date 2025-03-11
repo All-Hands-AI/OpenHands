@@ -22,13 +22,13 @@ from openhands.utils.shutdown_listener import should_continue
 
 
 class EventStreamSubscriber(str, Enum):
-    AGENT_CONTROLLER = 'agent_controller'
-    SECURITY_ANALYZER = 'security_analyzer'
-    RESOLVER = 'openhands_resolver'
-    SERVER = 'server'
-    RUNTIME = 'runtime'
-    MAIN = 'main'
-    TEST = 'test'
+    AGENT_CONTROLLER = "agent_controller"
+    SECURITY_ANALYZER = "security_analyzer"
+    RESOLVER = "openhands_resolver"
+    SERVER = "server"
+    RUNTIME = "runtime"
+    MAIN = "main"
+    TEST = "test"
 
 
 async def session_exists(sid: str, file_store: FileStore) -> bool:
@@ -92,7 +92,7 @@ class EventStream:
         try:
             events = self.file_store.list(get_conversation_events_dir(self.sid))
         except FileNotFoundError:
-            logger.debug(f'No events found for session {self.sid}')
+            logger.debug(f"No events found for session {self.sid}")
             self._cur_id = 0
             return
 
@@ -126,10 +126,10 @@ class EventStream:
 
     def _clean_up_subscriber(self, subscriber_id: str, callback_id: str):
         if subscriber_id not in self._subscribers:
-            logger.warning(f'Subscriber not found during cleanup: {subscriber_id}')
+            logger.warning(f"Subscriber not found during cleanup: {subscriber_id}")
             return
         if callback_id not in self._subscribers[subscriber_id]:
-            logger.warning(f'Callback not found during cleanup: {callback_id}')
+            logger.warning(f"Callback not found during cleanup: {callback_id}")
             return
         if (
             subscriber_id in self._thread_loops
@@ -141,7 +141,7 @@ class EventStream:
                 loop.close()
             except Exception as e:
                 logger.warning(
-                    f'Error closing loop for {subscriber_id}/{callback_id}: {e}'
+                    f"Error closing loop for {subscriber_id}/{callback_id}: {e}"
                 )
             del self._thread_loops[subscriber_id][callback_id]
 
@@ -161,9 +161,9 @@ class EventStream:
     @staticmethod
     def _get_id_from_filename(filename: str) -> int:
         try:
-            return int(filename.split('/')[-1].split('.')[0])
+            return int(filename.split("/")[-1].split(".")[0])
         except ValueError:
-            logger.warning(f'get id from filename ({filename}) failed.')
+            logger.warning(f"get id from filename ({filename}) failed.")
             return -1
 
     def get_events(
@@ -190,7 +190,7 @@ class EventStream:
         """
 
         def should_filter(event: Event):
-            if filter_hidden and hasattr(event, 'hidden') and event.hidden:
+            if filter_hidden and hasattr(event, "hidden") and event.hidden:
                 return True
             if filter_out_type is not None and isinstance(event, filter_out_type):
                 return True
@@ -206,7 +206,7 @@ class EventStream:
                     if not should_filter(event):
                         yield event
                 except FileNotFoundError:
-                    logger.debug(f'No event found for ID {event_id}')
+                    logger.debug(f"No event found for ID {event_id}")
                 event_id -= 1
         else:
             event_id = start_id
@@ -244,7 +244,7 @@ class EventStream:
 
         if callback_id in self._subscribers[subscriber_id]:
             raise ValueError(
-                f'Callback ID on subscriber {subscriber_id} already exists: {callback_id}'
+                f"Callback ID on subscriber {subscriber_id} already exists: {callback_id}"
             )
 
         self._subscribers[subscriber_id][callback_id] = callback
@@ -252,24 +252,24 @@ class EventStream:
 
     def unsubscribe(self, subscriber_id: EventStreamSubscriber, callback_id: str):
         if subscriber_id not in self._subscribers:
-            logger.warning(f'Subscriber not found during unsubscribe: {subscriber_id}')
+            logger.warning(f"Subscriber not found during unsubscribe: {subscriber_id}")
             return
 
         if callback_id not in self._subscribers[subscriber_id]:
-            logger.warning(f'Callback not found during unsubscribe: {callback_id}')
+            logger.warning(f"Callback not found during unsubscribe: {callback_id}")
             return
 
         self._clean_up_subscriber(subscriber_id, callback_id)
 
     def add_event(self, event: Event, source: EventSource):
-        if hasattr(event, '_id') and event.id is not None:
+        if hasattr(event, "_id") and event.id is not None:
             raise ValueError(
-                f'Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop.'
+                f"Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop."
             )
         with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
-        logger.debug(f'Adding {type(event).__name__} id={event.id} from {source.name}')
+        logger.debug(f"Adding {type(event).__name__} id={event.id} from {source.name}")
         event._timestamp = datetime.now().isoformat()
         event._source = source  # type: ignore [attr-defined]
         data = event_to_dict(event)
@@ -291,7 +291,7 @@ class EventStream:
                 data[key] = self._replace_secrets(data[key])
             elif isinstance(data[key], str):
                 for secret in self.secrets.values():
-                    data[key] = data[key].replace(secret, '<secret_hidden>')
+                    data[key] = data[key].replace(secret, "<secret_hidden>")
         return data
 
     def _run_queue_loop(self):
@@ -326,7 +326,7 @@ class EventStream:
                 fut.result()
             except Exception as e:
                 logger.error(
-                    f'Error in event callback {callback_id} for subscriber {subscriber_id}: {str(e)}',
+                    f"Error in event callback {callback_id} for subscriber {subscriber_id}: {str(e)}",
                 )
                 # Re-raise in the main thread so the error is not swallowed
                 raise e
@@ -411,7 +411,7 @@ class EventStream:
             ValueError: If limit is less than 1 or greater than 100
         """
         if limit < 1 or limit > 100:
-            raise ValueError('Limit must be between 1 and 100')
+            raise ValueError("Limit must be between 1 and 100")
 
         matching_events: list = []
 

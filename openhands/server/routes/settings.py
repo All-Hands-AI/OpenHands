@@ -8,10 +8,10 @@ from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
 
-app = APIRouter(prefix='/api')
+app = APIRouter(prefix="/api")
 
 
-@app.get('/settings', response_model=GETSettingsModel)
+@app.get("/settings", response_model=GETSettingsModel)
 async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
     try:
         user_id = get_user_id(request)
@@ -20,7 +20,7 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
         if not settings:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
-                content={'error': 'Settings not found'},
+                content={"error": "Settings not found"},
             )
 
         token_is_set = bool(user_id) or bool(get_github_token(request))
@@ -33,14 +33,14 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
         del settings_with_token_data.github_token
         return settings_with_token_data
     except Exception as e:
-        logger.warning(f'Invalid token: {e}')
+        logger.warning(f"Invalid token: {e}")
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Invalid token'},
+            content={"error": "Invalid token"},
         )
 
 
-@app.post('/settings', response_model=dict[str, str])
+@app.post("/settings", response_model=dict[str, str])
 async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
@@ -56,11 +56,11 @@ async def store_settings(
             await github.get_user()
 
         except Exception as e:
-            logger.warning(f'Invalid GitHub token: {e}')
+            logger.warning(f"Invalid GitHub token: {e}")
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 content={
-                    'error': 'Invalid GitHub token. Please make sure it is valid.'
+                    "error": "Invalid GitHub token. Please make sure it is valid."
                 },
             )
 
@@ -91,7 +91,7 @@ async def store_settings(
 
         response = JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={'message': 'Settings stored'},
+            content={"message": "Settings stored"},
         )
 
         if settings.unset_github_token:
@@ -108,10 +108,10 @@ async def store_settings(
         await settings_store.store(settings)
         return response
     except Exception as e:
-        logger.warning(f'Something went wrong storing settings: {e}')
+        logger.warning(f"Something went wrong storing settings: {e}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': 'Something went wrong storing settings'},
+            content={"error": "Something went wrong storing settings"},
         )
 
 
@@ -126,7 +126,7 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
     }
 
     # Convert the `llm_api_key` and `github_token` to a `SecretStr` instance
-    filtered_settings_data['llm_api_key'] = settings_with_token_data.llm_api_key
-    filtered_settings_data['github_token'] = settings_with_token_data.github_token
+    filtered_settings_data["llm_api_key"] = settings_with_token_data.llm_api_key
+    filtered_settings_data["github_token"] = settings_with_token_data.github_token
 
     return Settings(**filtered_settings_data)

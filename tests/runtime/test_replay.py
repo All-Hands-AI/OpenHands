@@ -22,7 +22,7 @@ def _get_config(trajectory_name: str, agent: str = OH_DEFAULT_AGENT):
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
-        replay_trajectory_path=f'./tests/runtime/trajs/{trajectory_name}.json',
+        replay_trajectory_path=f"./tests/runtime/trajs/{trajectory_name}.json",
     )
 
 
@@ -32,7 +32,7 @@ def test_simple_replay(temp_dir, runtime_cls, run_as_openhands):
     (creating a simple 2048 game), using the default agent
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    config.replay_trajectory_path = './tests/runtime/trajs/basic.json'
+    config.replay_trajectory_path = "./tests/runtime/trajs/basic.json"
 
     state: State | None = asyncio.run(
         run_controller(
@@ -60,7 +60,7 @@ def test_simple_gui_replay(temp_dir, runtime_cls, run_as_openhands):
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
-    config = _get_config('basic_gui_mode')
+    config = _get_config("basic_gui_mode")
 
     state: State | None = asyncio.run(
         run_controller(
@@ -87,7 +87,7 @@ def test_replay_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
     meaningless.
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    config.replay_trajectory_path = './tests/runtime/trajs/wrong_initial_state.json'
+    config.replay_trajectory_path = "./tests/runtime/trajs/wrong_initial_state.json"
 
     state: State | None = asyncio.run(
         run_controller(
@@ -120,7 +120,7 @@ def test_replay_basic_interactions(temp_dir, runtime_cls, run_as_openhands):
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
-    config = _get_config('basic_interactions')
+    config = _get_config("basic_interactions")
 
     state: State | None = asyncio.run(
         run_controller(
@@ -138,7 +138,7 @@ def test_replay_basic_interactions(temp_dir, runtime_cls, run_as_openhands):
     user_messages = [
         "what's 1+1?",
         "No, I mean by Goldbach's conjecture!",
-        'Finish please',
+        "Finish please",
     ]
     i = 0
     for event in state.history:

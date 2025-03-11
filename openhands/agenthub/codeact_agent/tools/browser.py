@@ -3,7 +3,7 @@ from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChun
 
 # from browsergym/core/action/highlevel.py
 _browser_action_space = HighLevelActionSet(
-    subsets=['bid', 'nav'],
+    subsets=["bid", "nav"],
     strict=False,  # less strict on the parsing of the actions
     multiaction=True,  # enable to agent to take multiple actions at once
 )
@@ -126,30 +126,30 @@ upload_file(bid: str, file: str | list[str])
 
 
 for _, action in _browser_action_space.action_set.items():
-    assert (
-        action.signature in _BROWSER_TOOL_DESCRIPTION
-    ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.signature}'
-    assert (
-        action.description in _BROWSER_TOOL_DESCRIPTION
-    ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.description}'
+    assert action.signature in _BROWSER_TOOL_DESCRIPTION, (
+        f"Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.signature}"
+    )
+    assert action.description in _BROWSER_TOOL_DESCRIPTION, (
+        f"Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.description}"
+    )
 
 BrowserTool = ChatCompletionToolParam(
-    type='function',
+    type="function",
     function=ChatCompletionToolParamFunctionChunk(
-        name='browser',
+        name="browser",
         description=_BROWSER_DESCRIPTION,
         parameters={
-            'type': 'object',
-            'properties': {
-                'code': {
-                    'type': 'string',
-                    'description': (
-                        'The Python code that interacts with the browser.\n'
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "description": (
+                        "The Python code that interacts with the browser.\n"
                         + _BROWSER_TOOL_DESCRIPTION
                     ),
                 }
             },
-            'required': ['code'],
+            "required": ["code"],
         },
     ),
 )

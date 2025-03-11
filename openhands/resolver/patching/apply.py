@@ -13,33 +13,33 @@ def _apply_diff_with_subprocess(
     diff: diffobj, lines: list[str], reverse: bool = False
 ) -> tuple[list[str], list[str] | None]:
     # call out to patch program
-    patchexec = which('patch')
+    patchexec = which("patch")
     if not patchexec:
-        raise SubprocessException('cannot find patch program', code=-1)
+        raise SubprocessException("cannot find patch program", code=-1)
 
     tempdir = tempfile.gettempdir()
 
-    filepath = os.path.join(tempdir, 'wtp-' + str(hash(diff.header)))
-    oldfilepath = filepath + '.old'
-    newfilepath = filepath + '.new'
-    rejfilepath = filepath + '.rej'
-    patchfilepath = filepath + '.patch'
-    with open(oldfilepath, 'w') as f:
-        f.write('\n'.join(lines) + '\n')
+    filepath = os.path.join(tempdir, "wtp-" + str(hash(diff.header)))
+    oldfilepath = filepath + ".old"
+    newfilepath = filepath + ".new"
+    rejfilepath = filepath + ".rej"
+    patchfilepath = filepath + ".patch"
+    with open(oldfilepath, "w") as f:
+        f.write("\n".join(lines) + "\n")
 
-    with open(patchfilepath, 'w') as f:
+    with open(patchfilepath, "w") as f:
         f.write(diff.text)
 
     args = [
         patchexec,
-        '--reverse' if reverse else '--forward',
-        '--quiet',
-        '--no-backup-if-mismatch',
-        '-o',
+        "--reverse" if reverse else "--forward",
+        "--quiet",
+        "--no-backup-if-mismatch",
+        "-o",
         newfilepath,
-        '-i',
+        "-i",
         patchfilepath,
-        '-r',
+        "-r",
         rejfilepath,
         oldfilepath,
     ]
@@ -61,7 +61,7 @@ def _apply_diff_with_subprocess(
 
     # do this last to ensure files get cleaned up
     if ret != 0:
-        raise SubprocessException('patch program failed', code=ret)
+        raise SubprocessException("patch program failed", code=ret)
 
     return lines, rejlines
 
@@ -99,8 +99,8 @@ def apply_diff(
             if lines[old - 1] != line:
                 # Try to normalize whitespace by replacing multiple spaces with a single space
                 # This helps with patches that have different indentation levels
-                normalized_line = ' '.join(line.split())
-                normalized_source = ' '.join(lines[old - 1].split())
+                normalized_line = " ".join(line.split())
+                normalized_source = " ".join(lines[old - 1].split())
                 if normalized_line != normalized_source:
                     raise HunkApplyException(
                         'context line {n}, "{line}" does not match "{sl}"'.format(

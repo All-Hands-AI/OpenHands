@@ -28,9 +28,9 @@ def call_async_from_sync(
     """
 
     if corofn is None:
-        raise ValueError('corofn is None')
+        raise ValueError("corofn is None")
     if not asyncio.iscoroutinefunction(corofn):
-        raise ValueError('corofn is not a coroutine function')
+        raise ValueError("corofn is not a coroutine function")
 
     async def arun():
         coro = corofn(*args, **kwargs)
@@ -94,4 +94,4 @@ class AsyncException(Exception):
         self.exceptions = exceptions
 
     def __str__(self):
-        return '\n'.join(str(e) for e in self.exceptions)
+        return "\n".join(str(e) for e in self.exceptions)

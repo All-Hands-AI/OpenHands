@@ -26,9 +26,9 @@ class MessageAction(Action):
         self.image_urls = value
 
     def __str__(self) -> str:
-        ret = f'**MessageAction** (source={self.source})\n'
-        ret += f'CONTENT: {self.content}'
+        ret = f"**MessageAction** (source={self.source})\n"
+        ret += f"CONTENT: {self.content}"
         if self.image_urls:
             for url in self.image_urls:
-                ret += f'\nIMAGE_URL: {url}'
+                ret += f"\nIMAGE_URL: {url}"
         return ret

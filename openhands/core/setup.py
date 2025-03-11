@@ -65,7 +65,7 @@ def create_runtime(
 
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
-    logger.debug(f'Initializing runtime: {runtime_cls.__name__}')
+    logger.debug(f"Initializing runtime: {runtime_cls.__name__}")
     runtime: Runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
@@ -75,7 +75,7 @@ def create_runtime(
     )
 
     logger.debug(
-        f'Runtime created with plugins: {[plugin.name for plugin in runtime.plugins]}'
+        f"Runtime created with plugins: {[plugin.name for plugin in runtime.plugins]}"
     )
 
     return runtime
@@ -101,10 +101,10 @@ def initialize_repository_for_runtime(
     # clone selected repository if provided
     repo_directory = None
     github_token = (
-        SecretStr(os.environ.get('GITHUB_TOKEN')) if not github_token else github_token
+        SecretStr(os.environ.get("GITHUB_TOKEN")) if not github_token else github_token
     )
     if selected_repository and github_token:
-        logger.debug(f'Selected repository {selected_repository}.')
+        logger.debug(f"Selected repository {selected_repository}.")
         repo_directory = runtime.clone_repo(
             github_token,
             selected_repository,
@@ -146,13 +146,13 @@ def create_controller(
     initial_state = None
     try:
         logger.debug(
-            f'Trying to restore agent state from session {event_stream.sid} if available'
+            f"Trying to restore agent state from session {event_stream.sid} if available"
         )
         initial_state = State.restore_from_session(
             event_stream.sid, event_stream.file_store
         )
     except Exception as e:
-        logger.debug(f'Cannot restore agent state: {e}')
+        logger.debug(f"Cannot restore agent state: {e}")
 
     controller = AgentController(
         agent=agent,
@@ -173,5 +173,5 @@ def generate_sid(config: AppConfig, session_name: str | None = None) -> str:
     session_name = session_name or str(uuid.uuid4())
     jwt_secret = config.jwt_secret
 
-    hash_str = hashlib.sha256(f'{session_name}{jwt_secret}'.encode('utf-8')).hexdigest()
-    return f'{session_name}-{hash_str[:16]}'
+    hash_str = hashlib.sha256(f"{session_name}{jwt_secret}".encode("utf-8")).hexdigest()
+    return f"{session_name}-{hash_str[:16]}"

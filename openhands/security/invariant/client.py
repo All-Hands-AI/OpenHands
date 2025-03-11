@@ -12,7 +12,7 @@ class InvariantClient:
         self.server = server_url
         self.session_id, err = self._create_session(session_id)
         if err:
-            raise RuntimeError(f'Failed to create session: {err}')
+            raise RuntimeError(f"Failed to create session: {err}")
         self.Policy = self._Policy(self)
         self.Monitor = self._Monitor(self)
 
@@ -24,12 +24,12 @@ class InvariantClient:
             try:
                 if session_id:
                     response = requests.get(
-                        f'{self.server}/session/new?session_id={session_id}', timeout=60
+                        f"{self.server}/session/new?session_id={session_id}", timeout=60
                     )
                 else:
-                    response = requests.get(f'{self.server}/session/new', timeout=60)
+                    response = requests.get(f"{self.server}/session/new", timeout=60)
                 response.raise_for_status()
-                return response.json().get('id'), None
+                return response.json().get("id"), None
             except (ConnectionError, Timeout):
                 elapsed += 1
                 time.sleep(1)
@@ -37,12 +37,12 @@ class InvariantClient:
                 return None, http_err
             except Exception as err:
                 return None, err
-        return None, ConnectionError('Connection timed out')
+        return None, ConnectionError("Connection timed out")
 
     def close_session(self) -> Union[None, Exception]:
         try:
             response = requests.delete(
-                f'{self.server}/session/?session_id={self.session_id}', timeout=60
+                f"{self.server}/session/?session_id={self.session_id}", timeout=60
             )
             response.raise_for_status()
         except (ConnectionError, Timeout, HTTPError) as err:
@@ -50,26 +50,26 @@ class InvariantClient:
         return None
 
     class _Policy:
-        def __init__(self, invariant: 'InvariantClient') -> None:
+        def __init__(self, invariant: "InvariantClient") -> None:
             self.server = invariant.server
             self.session_id = invariant.session_id
 
         def _create_policy(self, rule: str) -> tuple[str | None, Exception | None]:
             try:
                 response = requests.post(
-                    f'{self.server}/policy/new?session_id={self.session_id}',
-                    json={'rule': rule},
+                    f"{self.server}/policy/new?session_id={self.session_id}",
+                    json={"rule": rule},
                     timeout=60,
                 )
                 response.raise_for_status()
-                return response.json().get('policy_id'), None
+                return response.json().get("policy_id"), None
             except (ConnectionError, Timeout, HTTPError) as err:
                 return None, err
 
         def get_template(self) -> tuple[str | None, Exception | None]:
             try:
                 response = requests.get(
-                    f'{self.server}/policy/template',
+                    f"{self.server}/policy/template",
                     timeout=60,
                 )
                 response.raise_for_status()
@@ -77,7 +77,7 @@ class InvariantClient:
             except (ConnectionError, Timeout, HTTPError) as err:
                 return None, err
 
-        def from_string(self, rule: str) -> 'InvariantClient._Policy':
+        def from_string(self, rule: str) -> "InvariantClient._Policy":
             policy_id, err = self._create_policy(rule)
             if err:
                 raise err
@@ -87,8 +87,8 @@ class InvariantClient:
         def analyze(self, trace: list[dict]) -> Union[Any, Exception]:
             try:
                 response = requests.post(
-                    f'{self.server}/policy/{self.policy_id}/analyze?session_id={self.session_id}',
-                    json={'trace': trace},
+                    f"{self.server}/policy/{self.policy_id}/analyze?session_id={self.session_id}",
+                    json={"trace": trace},
                     timeout=60,
                 )
                 response.raise_for_status()
@@ -97,24 +97,24 @@ class InvariantClient:
                 return None, err
 
     class _Monitor:
-        def __init__(self, invariant: 'InvariantClient') -> None:
+        def __init__(self, invariant: "InvariantClient") -> None:
             self.server = invariant.server
             self.session_id = invariant.session_id
-            self.policy = ''
+            self.policy = ""
 
         def _create_monitor(self, rule: str) -> tuple[str | None, Exception | None]:
             try:
                 response = requests.post(
-                    f'{self.server}/monitor/new?session_id={self.session_id}',
-                    json={'rule': rule},
+                    f"{self.server}/monitor/new?session_id={self.session_id}",
+                    json={"rule": rule},
                     timeout=60,
                 )
                 response.raise_for_status()
-                return response.json().get('monitor_id'), None
+                return response.json().get("monitor_id"), None
             except (ConnectionError, Timeout, HTTPError) as err:
                 return None, err
 
-        def from_string(self, rule: str) -> 'InvariantClient._Monitor':
+        def from_string(self, rule: str) -> "InvariantClient._Monitor":
             monitor_id, err = self._create_monitor(rule)
             if err:
                 raise err
@@ -127,8 +127,8 @@ class InvariantClient:
         ) -> Union[Any, Exception]:
             try:
                 response = requests.post(
-                    f'{self.server}/monitor/{self.monitor_id}/check?session_id={self.session_id}',
-                    json={'past_events': past_events, 'pending_events': pending_events},
+                    f"{self.server}/monitor/{self.monitor_id}/check?session_id={self.session_id}",
+                    json={"past_events": past_events, "pending_events": pending_events},
                     timeout=60,
                 )
                 response.raise_for_status()

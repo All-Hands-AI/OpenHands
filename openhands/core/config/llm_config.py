@@ -48,18 +48,18 @@ class LLMConfig(BaseModel):
         reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Exclusive for o1 models.
     """
 
-    model: str = Field(default='claude-3-7-sonnet-20250219')
+    model: str = Field(default="claude-3-7-sonnet-20250219")
     api_key: SecretStr | None = Field(default=None)
     base_url: str | None = Field(default=None)
     api_version: str | None = Field(default=None)
-    embedding_model: str = Field(default='local')
+    embedding_model: str = Field(default="local")
     embedding_base_url: str | None = Field(default=None)
     embedding_deployment_name: str | None = Field(default=None)
     aws_access_key_id: SecretStr | None = Field(default=None)
     aws_secret_access_key: SecretStr | None = Field(default=None)
     aws_region_name: str | None = Field(default=None)
-    openrouter_site_url: str = Field(default='https://docs.all-hands.dev/')
-    openrouter_app_name: str = Field(default='OpenHands')
+    openrouter_site_url: str = Field(default="https://docs.all-hands.dev/")
+    openrouter_app_name: str = Field(default="OpenHands")
     # total wait time: 5 + 10 + 20 + 30 = 65 seconds
     num_retries: int = Field(default=4)
     retry_multiplier: float = Field(default=2)
@@ -84,12 +84,12 @@ class LLMConfig(BaseModel):
     disable_vision: bool | None = Field(default=None)
     caching_prompt: bool = Field(default=True)
     log_completions: bool = Field(default=False)
-    log_completions_folder: str = Field(default=os.path.join(LOG_DIR, 'completions'))
+    log_completions_folder: str = Field(default=os.path.join(LOG_DIR, "completions"))
     custom_tokenizer: str | None = Field(default=None)
     native_tool_calling: bool | None = Field(default=None)
-    reasoning_effort: str | None = Field(default='high')
+    reasoning_effort: str | None = Field(default="high")
 
-    model_config = {'extra': 'forbid'}
+    model_config = {"extra": "forbid"}
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, LLMConfig]:
@@ -129,15 +129,15 @@ class LLMConfig(BaseModel):
         # Try to create the base config
         try:
             base_config = cls.model_validate(base_data)
-            llm_mapping['llm'] = base_config
+            llm_mapping["llm"] = base_config
         except ValidationError:
             logger.warning(
-                'Cannot parse [llm] config from toml. Continuing with defaults.'
+                "Cannot parse [llm] config from toml. Continuing with defaults."
             )
             # If base config fails, create a default one
             base_config = cls()
             # Still add it to the mapping
-            llm_mapping['llm'] = base_config
+            llm_mapping["llm"] = base_config
 
         # Process each custom section independently
         for name, overrides in custom_sections.items():
@@ -148,7 +148,7 @@ class LLMConfig(BaseModel):
                 llm_mapping[name] = custom_config
             except ValidationError:
                 logger.warning(
-                    f'Cannot parse [{name}] config from toml. This section will be skipped.'
+                    f"Cannot parse [{name}] config from toml. This section will be skipped."
                 )
                 # Skip this custom section but continue with others
                 continue
@@ -164,12 +164,12 @@ class LLMConfig(BaseModel):
 
         # Assign OpenRouter-specific variables to environment variables
         if self.openrouter_site_url:
-            os.environ['OR_SITE_URL'] = self.openrouter_site_url
+            os.environ["OR_SITE_URL"] = self.openrouter_site_url
         if self.openrouter_app_name:
-            os.environ['OR_APP_NAME'] = self.openrouter_app_name
+            os.environ["OR_APP_NAME"] = self.openrouter_app_name
 
         # Assign an API version for Azure models
         # While it doesn't seem required, the format supported by the API without version seems old and will likely break.
         # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
-        if self.model.startswith('azure') and self.api_version is None:
-            self.api_version = '2024-08-01-preview'
+        if self.model.startswith("azure") and self.api_version is None:
+            self.api_version = "2024-08-01-preview"

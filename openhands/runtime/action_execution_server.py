@@ -70,13 +70,13 @@ class ActionRequest(BaseModel):
 
 ROOT_GID = 0
 
-SESSION_API_KEY = os.environ.get('SESSION_API_KEY')
-api_key_header = APIKeyHeader(name='X-Session-API-Key', auto_error=False)
+SESSION_API_KEY = os.environ.get("SESSION_API_KEY")
+api_key_header = APIKeyHeader(name="X-Session-API-Key", auto_error=False)
 
 
 def verify_api_key(api_key: str = Depends(api_key_header)):
     if SESSION_API_KEY and api_key != SESSION_API_KEY:
-        raise HTTPException(status_code=403, detail='Invalid API Key')
+        raise HTTPException(status_code=403, detail="Invalid API Key")
     return api_key
 
 
@@ -123,11 +123,11 @@ def _execute_file_editor(
         result = ToolResult(error=e.message)
 
     if result.error:
-        return f'ERROR:\n{result.error}', (None, None)
+        return f"ERROR:\n{result.error}", (None, None)
 
     if not result.output:
-        logger.warning(f'No output from file_editor for {path}')
-        return '', (None, None)
+        logger.warning(f"No output from file_editor for {path}")
+        return "", (None, None)
 
     return result.output, (result.old_content, result.new_content)
 
@@ -165,17 +165,17 @@ class ActionExecutor:
         self._initialized = False
 
         self.max_memory_gb: int | None = None
-        if _override_max_memory_gb := os.environ.get('RUNTIME_MAX_MEMORY_GB', None):
+        if _override_max_memory_gb := os.environ.get("RUNTIME_MAX_MEMORY_GB", None):
             self.max_memory_gb = int(_override_max_memory_gb)
             logger.info(
-                f'Setting max memory to {self.max_memory_gb}GB (according to the RUNTIME_MAX_MEMORY_GB environment variable)'
+                f"Setting max memory to {self.max_memory_gb}GB (according to the RUNTIME_MAX_MEMORY_GB environment variable)"
             )
         else:
-            logger.info('No max memory limit set, using all available system memory')
+            logger.info("No max memory limit set, using all available system memory")
 
         self.memory_monitor = MemoryMonitor(
-            enable=os.environ.get('RUNTIME_MEMORY_MONITOR', 'False').lower()
-            in ['true', '1', 'yes']
+            enable=os.environ.get("RUNTIME_MEMORY_MONITOR", "False").lower()
+            in ["true", "1", "yes"]
         )
         self.memory_monitor.start_monitoring()
 
@@ -185,39 +185,39 @@ class ActionExecutor:
 
     async def ainit(self):
         # bash needs to be initialized first
-        logger.debug('Initializing bash session')
+        logger.debug("Initializing bash session")
         self.bash_session = BashSession(
             work_dir=self._initial_cwd,
             username=self.username,
             no_change_timeout_seconds=int(
-                os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
+                os.environ.get("NO_CHANGE_TIMEOUT_SECONDS", 30)
             ),
             max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
         )
         self.bash_session.initialize()
-        logger.debug('Bash session initialized')
+        logger.debug("Bash session initialized")
 
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
             timeout=30,
         )
-        logger.debug('All plugins initialized')
+        logger.debug("All plugins initialized")
 
         # This is a temporary workaround
         # TODO: refactor AgentSkills to be part of JupyterPlugin
         # AFTER ServerRuntime is deprecated
-        logger.debug('Initializing AgentSkills')
-        if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
+        logger.debug("Initializing AgentSkills")
+        if "agent_skills" in self.plugins and "jupyter" in self.plugins:
             obs = await self.run_ipython(
                 IPythonRunCellAction(
-                    code='from openhands.runtime.plugins.agent_skills.agentskills import *\n'
+                    code="from openhands.runtime.plugins.agent_skills.agentskills import *\n"
                 )
             )
-            logger.debug(f'AgentSkills initialized: {obs}')
+            logger.debug(f"AgentSkills initialized: {obs}")
 
-        logger.debug('Initializing bash commands')
+        logger.debug("Initializing bash commands")
         await self._init_bash_commands()
-        logger.debug('Runtime client initialized.')
+        logger.debug("Runtime client initialized.")
         self._initialized = True
 
     @property
@@ -228,7 +228,7 @@ class ActionExecutor:
         assert self.bash_session is not None
         await plugin.initialize(self.username)
         self.plugins[plugin.name] = plugin
-        logger.debug(f'Initializing plugin: {plugin.name}')
+        logger.debug(f"Initializing plugin: {plugin.name}")
 
         if isinstance(plugin, JupyterPlugin):
             await self.run_ipython(
@@ -240,28 +240,28 @@ class ActionExecutor:
     async def _init_bash_commands(self):
         INIT_COMMANDS = [
             'git config --file ./.git_config user.name "openhands" && git config --file ./.git_config user.email "openhands@all-hands.dev" && alias git="git --no-pager" && export GIT_CONFIG=$(pwd)/.git_config'
-            if os.environ.get('LOCAL_RUNTIME_MODE') == '1'
+            if os.environ.get("LOCAL_RUNTIME_MODE") == "1"
             else 'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"'
         ]
-        logger.debug(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
+        logger.debug(f"Initializing by running {len(INIT_COMMANDS)} bash commands...")
         for command in INIT_COMMANDS:
             action = CmdRunAction(command=command)
             action.set_hard_timeout(300)
-            logger.debug(f'Executing init command: {command}')
+            logger.debug(f"Executing init command: {command}")
             obs = await self.run(action)
             assert isinstance(obs, CmdOutputObservation)
             logger.debug(
-                f'Init command outputs (exit code: {obs.exit_code}): {obs.content}'
+                f"Init command outputs (exit code: {obs.exit_code}): {obs.content}"
             )
             assert obs.exit_code == 0
-        logger.debug('Bash init commands completed')
+        logger.debug("Bash init commands completed")
 
     async def run_action(self, action) -> Observation:
         async with self.lock:
             action_type = action.action
-            logger.debug(f'Running action:\n{action}')
+            logger.debug(f"Running action:\n{action}")
             observation = await getattr(self, action_type)(action)
-            logger.debug(f'Action output:\n{observation}')
+            logger.debug(f"Action output:\n{observation}")
             return observation
 
     async def run(
@@ -273,14 +273,14 @@ class ActionExecutor:
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         assert self.bash_session is not None
-        if 'jupyter' in self.plugins:
-            _jupyter_plugin: JupyterPlugin = self.plugins['jupyter']  # type: ignore
+        if "jupyter" in self.plugins:
+            _jupyter_plugin: JupyterPlugin = self.plugins["jupyter"]  # type: ignore
             # This is used to make AgentSkills in Jupyter aware of the
             # current working directory in Bash
-            jupyter_cwd = getattr(self, '_jupyter_cwd', None)
+            jupyter_cwd = getattr(self, "_jupyter_cwd", None)
             if self.bash_session.cwd != jupyter_cwd:
                 logger.debug(
-                    f'{self.bash_session.cwd} != {jupyter_cwd} -> reset Jupyter PWD'
+                    f"{self.bash_session.cwd} != {jupyter_cwd} -> reset Jupyter PWD"
                 )
                 reset_jupyter_cwd_code = (
                     f'import os; os.chdir("{self.bash_session.cwd}")'
@@ -290,7 +290,7 @@ class ActionExecutor:
                     _aux_action
                 )
                 logger.debug(
-                    f'Changed working directory in IPython to: {self.bash_session.cwd}. Output: {_reset_obs}'
+                    f"Changed working directory in IPython to: {self.bash_session.cwd}. Output: {_reset_obs}"
                 )
                 self._jupyter_cwd = self.bash_session.cwd
 
@@ -299,13 +299,13 @@ class ActionExecutor:
 
             if action.include_extra:
                 obs.content += (
-                    f'\n[Jupyter current working directory: {self.bash_session.cwd}]'
+                    f"\n[Jupyter current working directory: {self.bash_session.cwd}]"
                 )
-                obs.content += f'\n[Jupyter Python interpreter: {_jupyter_plugin.python_interpreter_path}]'
+                obs.content += f"\n[Jupyter Python interpreter: {_jupyter_plugin.python_interpreter_path}]"
             return obs
         else:
             raise RuntimeError(
-                'JupyterRequirement not found. Unable to run IPython action.'
+                "JupyterRequirement not found. Unable to run IPython action."
             )
 
     def _resolve_path(self, path: str, working_dir: str) -> str:
@@ -319,7 +319,7 @@ class ActionExecutor:
         if action.impl_source == FileReadSource.OH_ACI:
             result_str, _ = _execute_file_editor(
                 self.file_editor,
-                command='view',
+                command="view",
                 path=action.path,
                 view_range=action.view_range,
             )
@@ -335,47 +335,47 @@ class ActionExecutor:
         working_dir = self.bash_session.cwd
         filepath = self._resolve_path(action.path, working_dir)
         try:
-            if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
-                with open(filepath, 'rb') as file:
+            if filepath.lower().endswith((".png", ".jpg", ".jpeg", ".bmp", ".gif")):
+                with open(filepath, "rb") as file:
                     image_data = file.read()
-                    encoded_image = base64.b64encode(image_data).decode('utf-8')
+                    encoded_image = base64.b64encode(image_data).decode("utf-8")
                     mime_type, _ = mimetypes.guess_type(filepath)
                     if mime_type is None:
-                        mime_type = 'image/png'  # default to PNG if mime type cannot be determined
-                    encoded_image = f'data:{mime_type};base64,{encoded_image}'
+                        mime_type = "image/png"  # default to PNG if mime type cannot be determined
+                    encoded_image = f"data:{mime_type};base64,{encoded_image}"
 
                 return FileReadObservation(path=filepath, content=encoded_image)
-            elif filepath.lower().endswith('.pdf'):
-                with open(filepath, 'rb') as file:
+            elif filepath.lower().endswith(".pdf"):
+                with open(filepath, "rb") as file:
                     pdf_data = file.read()
-                    encoded_pdf = base64.b64encode(pdf_data).decode('utf-8')
-                    encoded_pdf = f'data:application/pdf;base64,{encoded_pdf}'
+                    encoded_pdf = base64.b64encode(pdf_data).decode("utf-8")
+                    encoded_pdf = f"data:application/pdf;base64,{encoded_pdf}"
                 return FileReadObservation(path=filepath, content=encoded_pdf)
-            elif filepath.lower().endswith(('.mp4', '.webm', '.ogg')):
-                with open(filepath, 'rb') as file:
+            elif filepath.lower().endswith((".mp4", ".webm", ".ogg")):
+                with open(filepath, "rb") as file:
                     video_data = file.read()
-                    encoded_video = base64.b64encode(video_data).decode('utf-8')
+                    encoded_video = base64.b64encode(video_data).decode("utf-8")
                     mime_type, _ = mimetypes.guess_type(filepath)
                     if mime_type is None:
-                        mime_type = 'video/mp4'  # default to MP4 if MIME type cannot be determined
-                    encoded_video = f'data:{mime_type};base64,{encoded_video}'
+                        mime_type = "video/mp4"  # default to MP4 if MIME type cannot be determined
+                    encoded_video = f"data:{mime_type};base64,{encoded_video}"
 
                 return FileReadObservation(path=filepath, content=encoded_video)
 
-            with open(filepath, 'r', encoding='utf-8') as file:
+            with open(filepath, "r", encoding="utf-8") as file:
                 lines = read_lines(file.readlines(), action.start, action.end)
         except FileNotFoundError:
             return ErrorObservation(
-                f'File not found: {filepath}. Your current working directory is {working_dir}.'
+                f"File not found: {filepath}. Your current working directory is {working_dir}."
             )
         except UnicodeDecodeError:
-            return ErrorObservation(f'File could not be decoded as utf-8: {filepath}.')
+            return ErrorObservation(f"File could not be decoded as utf-8: {filepath}.")
         except IsADirectoryError:
             return ErrorObservation(
-                f'Path is a directory: {filepath}. You can only read files'
+                f"Path is a directory: {filepath}. You can only read files"
             )
 
-        code_view = ''.join(lines)
+        code_view = "".join(lines)
         return FileReadObservation(path=filepath, content=code_view)
 
     async def write(self, action: FileWriteAction) -> Observation:
@@ -383,7 +383,7 @@ class ActionExecutor:
         working_dir = self.bash_session.cwd
         filepath = self._resolve_path(action.path, working_dir)
 
-        insert = action.content.split('\n')
+        insert = action.content.split("\n")
         if not os.path.exists(os.path.dirname(filepath)):
             os.makedirs(os.path.dirname(filepath))
 
@@ -393,27 +393,27 @@ class ActionExecutor:
         else:
             file_stat = None
 
-        mode = 'w' if not file_exists else 'r+'
+        mode = "w" if not file_exists else "r+"
         try:
-            with open(filepath, mode, encoding='utf-8') as file:
-                if mode != 'w':
+            with open(filepath, mode, encoding="utf-8") as file:
+                if mode != "w":
                     all_lines = file.readlines()
                     new_file = insert_lines(insert, all_lines, action.start, action.end)
                 else:
-                    new_file = [i + '\n' for i in insert]
+                    new_file = [i + "\n" for i in insert]
 
                 file.seek(0)
                 file.writelines(new_file)
                 file.truncate()
 
         except FileNotFoundError:
-            return ErrorObservation(f'File not found: {filepath}')
+            return ErrorObservation(f"File not found: {filepath}")
         except IsADirectoryError:
             return ErrorObservation(
-                f'Path is a directory: {filepath}. You can only write to files'
+                f"Path is a directory: {filepath}. You can only write to files"
             )
         except UnicodeDecodeError:
-            return ErrorObservation(f'File could not be decoded as utf-8: {filepath}')
+            return ErrorObservation(f"File could not be decoded as utf-8: {filepath}")
 
         # Attempt to handle file permissions
         try:
@@ -428,9 +428,9 @@ class ActionExecutor:
                 os.chown(filepath, self.user_id, self.user_id)
         except PermissionError as e:
             return ErrorObservation(
-                f'File {filepath} written, but failed to change ownership and permissions: {e}'
+                f"File {filepath} written, but failed to change ownership and permissions: {e}"
             )
-        return FileWriteObservation(content='', path=filepath)
+        return FileWriteObservation(content="", path=filepath)
 
     async def edit(self, action: FileEditAction) -> Observation:
         assert action.impl_source == FileEditSource.OH_ACI
@@ -452,8 +452,8 @@ class ActionExecutor:
             new_content=action.new_str,
             impl_source=FileEditSource.OH_ACI,
             diff=get_diff(
-                old_contents=old_content or '',
-                new_contents=new_content or '',
+                old_contents=old_content or "",
+                new_contents=new_content or "",
                 filepath=action.path,
             ),
         )
@@ -471,19 +471,19 @@ class ActionExecutor:
         self.browser.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('port', type=int, help='Port to listen on')
-    parser.add_argument('--working-dir', type=str, help='Working directory')
-    parser.add_argument('--plugins', type=str, help='Plugins to initialize', nargs='+')
+    parser.add_argument("port", type=int, help="Port to listen on")
+    parser.add_argument("--working-dir", type=str, help="Working directory")
+    parser.add_argument("--plugins", type=str, help="Plugins to initialize", nargs="+")
     parser.add_argument(
-        '--username', type=str, help='User to run as', default='openhands'
+        "--username", type=str, help="User to run as", default="openhands"
     )
-    parser.add_argument('--user-id', type=int, help='User ID to run as', default=1000)
+    parser.add_argument("--user-id", type=int, help="User ID to run as", default=1000)
     parser.add_argument(
-        '--browsergym-eval-env',
+        "--browsergym-eval-env",
         type=str,
-        help='BrowserGym environment used for browser evaluation',
+        help="BrowserGym environment used for browser evaluation",
         default=None,
     )
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
@@ -493,7 +493,7 @@ if __name__ == '__main__':
     if args.plugins:
         for plugin in args.plugins:
             if plugin not in ALL_PLUGINS:
-                raise ValueError(f'Plugin {plugin} not found')
+                raise ValueError(f"Plugin {plugin} not found")
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
     client: ActionExecutor | None = None
@@ -519,38 +519,38 @@ if __name__ == '__main__':
     # Are these something we should keep?
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
-        logger.exception('Unhandled exception occurred:')
+        logger.exception("Unhandled exception occurred:")
         return JSONResponse(
             status_code=500,
-            content={'detail': 'An unexpected error occurred. Please try again later.'},
+            content={"detail": "An unexpected error occurred. Please try again later."},
         )
 
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-        logger.error(f'HTTP exception occurred: {exc.detail}')
-        return JSONResponse(status_code=exc.status_code, content={'detail': exc.detail})
+        logger.error(f"HTTP exception occurred: {exc.detail}")
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
         request: Request, exc: RequestValidationError
     ):
-        logger.error(f'Validation error occurred: {exc}')
+        logger.error(f"Validation error occurred: {exc}")
         return JSONResponse(
             status_code=422,
-            content={'detail': 'Invalid request parameters', 'errors': exc.errors()},
+            content={"detail": "Invalid request parameters", "errors": exc.errors()},
         )
 
-    @app.middleware('http')
+    @app.middleware("http")
     async def authenticate_requests(request: Request, call_next):
-        if request.url.path != '/alive' and request.url.path != '/server_info':
+        if request.url.path != "/alive" and request.url.path != "/server_info":
             try:
-                verify_api_key(request.headers.get('X-Session-API-Key'))
+                verify_api_key(request.headers.get("X-Session-API-Key"))
             except HTTPException as e:
                 return e
         response = await call_next(request)
         return response
 
-    @app.get('/server_info')
+    @app.get("/server_info")
     async def get_server_info():
         assert client is not None
         current_time = time.time()
@@ -558,33 +558,33 @@ if __name__ == '__main__':
         idle_time = current_time - client.last_execution_time
 
         response = {
-            'uptime': uptime,
-            'idle_time': idle_time,
-            'resources': get_system_stats(),
+            "uptime": uptime,
+            "idle_time": idle_time,
+            "resources": get_system_stats(),
         }
-        logger.info('Server info endpoint response: %s', response)
+        logger.info("Server info endpoint response: %s", response)
         return response
 
-    @app.post('/execute_action')
+    @app.post("/execute_action")
     async def execute_action(action_request: ActionRequest):
         assert client is not None
         try:
             action = event_from_dict(action_request.action)
             if not isinstance(action, Action):
-                raise HTTPException(status_code=400, detail='Invalid action type')
+                raise HTTPException(status_code=400, detail="Invalid action type")
             client.last_execution_time = time.time()
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
-            logger.error(f'Error while running /execute_action: {str(e)}')
+            logger.error(f"Error while running /execute_action: {str(e)}")
             raise HTTPException(
                 status_code=500,
                 detail=traceback.format_exc(),
             )
 
-    @app.post('/upload_file')
+    @app.post("/upload_file")
     async def upload_file(
-        file: UploadFile, destination: str = '/', recursive: bool = False
+        file: UploadFile, destination: str = "/", recursive: bool = False
     ):
         assert client is not None
 
@@ -592,22 +592,22 @@ if __name__ == '__main__':
             # Ensure the destination directory exists
             if not os.path.isabs(destination):
                 raise HTTPException(
-                    status_code=400, detail='Destination must be an absolute path'
+                    status_code=400, detail="Destination must be an absolute path"
                 )
 
             full_dest_path = destination
             if not os.path.exists(full_dest_path):
                 os.makedirs(full_dest_path, exist_ok=True)
 
-            if recursive or file.filename.endswith('.zip'):
+            if recursive or file.filename.endswith(".zip"):
                 # For recursive uploads, we expect a zip file
-                if not file.filename.endswith('.zip'):
+                if not file.filename.endswith(".zip"):
                     raise HTTPException(
-                        status_code=400, detail='Recursive uploads must be zip files'
+                        status_code=400, detail="Recursive uploads must be zip files"
                     )
 
                 zip_path = os.path.join(full_dest_path, file.filename)
-                with open(zip_path, 'wb') as buffer:
+                with open(zip_path, "wb") as buffer:
                     shutil.copyfileobj(file.file, buffer)
 
                 # Extract the zip file
@@ -615,20 +615,20 @@ if __name__ == '__main__':
                 os.remove(zip_path)  # Remove the zip file after extraction
 
                 logger.debug(
-                    f'Uploaded file {file.filename} and extracted to {destination}'
+                    f"Uploaded file {file.filename} and extracted to {destination}"
                 )
             else:
                 # For single file uploads
                 file_path = os.path.join(full_dest_path, file.filename)
-                with open(file_path, 'wb') as buffer:
+                with open(file_path, "wb") as buffer:
                     shutil.copyfileobj(file.file, buffer)
-                logger.debug(f'Uploaded file {file.filename} to {destination}')
+                logger.debug(f"Uploaded file {file.filename} to {destination}")
 
             return JSONResponse(
                 content={
-                    'filename': file.filename,
-                    'destination': destination,
-                    'recursive': recursive,
+                    "filename": file.filename,
+                    "destination": destination,
+                    "recursive": recursive,
                 },
                 status_code=200,
             )
@@ -636,20 +636,20 @@ if __name__ == '__main__':
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.get('/download_files')
+    @app.get("/download_files")
     def download_file(path: str):
-        logger.debug('Downloading files')
+        logger.debug("Downloading files")
         try:
             if not os.path.isabs(path):
                 raise HTTPException(
-                    status_code=400, detail='Path must be an absolute path'
+                    status_code=400, detail="Path must be an absolute path"
                 )
 
             if not os.path.exists(path):
-                raise HTTPException(status_code=404, detail='File not found')
+                raise HTTPException(status_code=404, detail="File not found")
 
-            with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp_zip:
-                with ZipFile(temp_zip, 'w') as zipf:
+            with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as temp_zip:
+                with ZipFile(temp_zip, "w") as zipf:
                     for root, _, files in os.walk(path):
                         for file in files:
                             file_path = os.path.join(root, file)
@@ -658,38 +658,38 @@ if __name__ == '__main__':
                             )
                 return FileResponse(
                     path=temp_zip.name,
-                    media_type='application/zip',
-                    filename=f'{os.path.basename(path)}.zip',
+                    media_type="application/zip",
+                    filename=f"{os.path.basename(path)}.zip",
                     background=BackgroundTask(lambda: os.unlink(temp_zip.name)),
                 )
 
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.get('/alive')
+    @app.get("/alive")
     async def alive():
         if client is None or not client.initialized:
-            return {'status': 'not initialized'}
-        return {'status': 'ok'}
+            return {"status": "not initialized"}
+        return {"status": "ok"}
 
     # ================================
     # VSCode-specific operations
     # ================================
 
-    @app.get('/vscode/connection_token')
+    @app.get("/vscode/connection_token")
     async def get_vscode_connection_token():
         assert client is not None
-        if 'vscode' in client.plugins:
-            plugin: VSCodePlugin = client.plugins['vscode']  # type: ignore
-            return {'token': plugin.vscode_connection_token}
+        if "vscode" in client.plugins:
+            plugin: VSCodePlugin = client.plugins["vscode"]  # type: ignore
+            return {"token": plugin.vscode_connection_token}
         else:
-            return {'token': None}
+            return {"token": None}
 
     # ================================
     # File-specific operations for UI
     # ================================
 
-    @app.post('/list_files')
+    @app.post("/list_files")
     async def list_files(request: Request):
         """List files in the specified path.
 
@@ -715,7 +715,7 @@ if __name__ == '__main__':
 
         # get request as dict
         request_dict = await request.json()
-        path = request_dict.get('path', None)
+        path = request_dict.get("path", None)
 
         # Get the full path of the requested directory
         if path is None:
@@ -741,7 +741,7 @@ if __name__ == '__main__':
             files = []
             for entry in entries:
                 # Remove leading slash and any parent directory components
-                entry_relative = entry.lstrip('/').split('/')[-1]
+                entry_relative = entry.lstrip("/").split("/")[-1]
 
                 # Construct the full path by joining the base path with the relative entry path
                 full_entry_path = os.path.join(full_path, entry_relative)
@@ -750,7 +750,7 @@ if __name__ == '__main__':
                     if is_dir:
                         # add trailing slash to directories
                         # required by FE to differentiate directories and files
-                        entry = entry.rstrip('/') + '/'
+                        entry = entry.rstrip("/") + "/"
                         directories.append(entry)
                     else:
                         files.append(entry)
@@ -764,8 +764,8 @@ if __name__ == '__main__':
             return sorted_entries
 
         except Exception as e:
-            logger.error(f'Error listing files: {e}')
+            logger.error(f"Error listing files: {e}")
             return []
 
-    logger.debug(f'Starting action execution API on port {args.port}')
-    run(app, host='0.0.0.0', port=args.port)
+    logger.debug(f"Starting action execution API on port {args.port}")
+    run(app, host="0.0.0.0", port=args.port)

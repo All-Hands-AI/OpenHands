@@ -24,15 +24,15 @@ def mock_agent():
     llm_config = MagicMock(spec=LLMConfig)
 
     # Configure the LLM config
-    llm_config.model = 'test-model'
-    llm_config.base_url = 'http://test'
+    llm_config.model = "test-model"
+    llm_config.base_url = "http://test"
     llm_config.max_message_chars = 1000
 
     # Set up the chain of mocks
     llm.metrics = metrics
     llm.config = llm_config
     agent.llm = llm
-    agent.name = 'test-agent'
+    agent.name = "test-agent"
     agent.sandbox_plugins = []
 
     return agent
@@ -45,7 +45,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
-        sid='test-session',
+        sid="test-session",
         file_store=file_store,
     )
 
@@ -79,17 +79,21 @@ async def test_agent_session_start_with_no_state(mock_agent):
             super().set_initial_state(*args, state=state, **kwargs)
 
     # Patch AgentController and State.restore_from_session to fail
-    with patch(
-        'openhands.server.session.agent_session.AgentController', SpyAgentController
-    ), patch(
-        'openhands.server.session.agent_session.EventStream',
-        return_value=mock_event_stream,
-    ), patch(
-        'openhands.controller.state.state.State.restore_from_session',
-        side_effect=Exception('No state found'),
+    with (
+        patch(
+            "openhands.server.session.agent_session.AgentController", SpyAgentController
+        ),
+        patch(
+            "openhands.server.session.agent_session.EventStream",
+            return_value=mock_event_stream,
+        ),
+        patch(
+            "openhands.controller.state.state.State.restore_from_session",
+            side_effect=Exception("No state found"),
+        ),
     ):
         await session.start(
-            runtime_name='test-runtime',
+            runtime_name="test-runtime",
             config=AppConfig(),
             agent=mock_agent,
             max_iterations=10,
@@ -106,7 +110,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
         assert session.controller.set_initial_state_call_count == 1
         assert session.controller.test_initial_state is None
         assert session.controller.state.max_iterations == 10
-        assert session.controller.agent.name == 'test-agent'
+        assert session.controller.agent.name == "test-agent"
         assert session.controller.state.start_id == 0
         assert session.controller.state.end_id == -1
         assert session.controller.state.truncation_id == -1
@@ -119,7 +123,7 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
-        sid='test-session',
+        sid="test-session",
         file_store=file_store,
     )
 
@@ -160,17 +164,21 @@ async def test_agent_session_start_with_restored_state(mock_agent):
             super().set_initial_state(*args, state=state, **kwargs)
 
     # Patch AgentController and State.restore_from_session to succeed
-    with patch(
-        'openhands.server.session.agent_session.AgentController', SpyAgentController
-    ), patch(
-        'openhands.server.session.agent_session.EventStream',
-        return_value=mock_event_stream,
-    ), patch(
-        'openhands.controller.state.state.State.restore_from_session',
-        return_value=mock_restored_state,
+    with (
+        patch(
+            "openhands.server.session.agent_session.AgentController", SpyAgentController
+        ),
+        patch(
+            "openhands.server.session.agent_session.EventStream",
+            return_value=mock_event_stream,
+        ),
+        patch(
+            "openhands.controller.state.state.State.restore_from_session",
+            return_value=mock_restored_state,
+        ),
     ):
         await session.start(
-            runtime_name='test-runtime',
+            runtime_name="test-runtime",
             config=AppConfig(),
             agent=mock_agent,
             max_iterations=10,

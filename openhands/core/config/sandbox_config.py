@@ -39,17 +39,17 @@ class SandboxConfig(BaseModel):
             This should be a JSON string that will be parsed into a dictionary.
     """
 
-    remote_runtime_api_url: str | None = Field(default='http://localhost:8000')
-    local_runtime_url: str = Field(default='http://localhost')
+    remote_runtime_api_url: str | None = Field(default="http://localhost:8000")
+    local_runtime_url: str = Field(default="http://localhost")
     keep_runtime_alive: bool = Field(default=False)
     pause_closed_runtimes: bool = Field(default=True)
     rm_all_containers: bool = Field(default=False)
     api_key: str | None = Field(default=None)
     base_container_image: str = Field(
-        default='nikolaik/python-nodejs:python3.12-nodejs22'
+        default="nikolaik/python-nodejs:python3.12-nodejs22"
     )
     runtime_container_image: str | None = Field(default=None)
-    user_id: int = Field(default=os.getuid() if hasattr(os, 'getuid') else 1000)
+    user_id: int = Field(default=os.getuid() if hasattr(os, "getuid") else 1000)
     timeout: int = Field(default=120)
     remote_runtime_init_timeout: int = Field(default=180)
     remote_runtime_api_timeout: int = Field(default=10)
@@ -61,7 +61,7 @@ class SandboxConfig(BaseModel):
         default=False
     )  # once enabled, OpenHands would lint files after editing
     use_host_network: bool = Field(default=False)
-    runtime_binding_address: str = Field(default='0.0.0.0')
+    runtime_binding_address: str = Field(default="0.0.0.0")
     runtime_extra_build_args: list[str] | None = Field(default=None)
     initialize_plugins: bool = Field(default=True)
     force_rebuild_runtime: bool = Field(default=False)
@@ -75,10 +75,10 @@ class SandboxConfig(BaseModel):
     docker_runtime_kwargs: dict | None = Field(default=None)
     selected_repo: str | None = Field(default=None)
 
-    model_config = {'extra': 'forbid'}
+    model_config = {"extra": "forbid"}
 
     @classmethod
-    def from_toml_section(cls, data: dict) -> dict[str, 'SandboxConfig']:
+    def from_toml_section(cls, data: dict) -> dict[str, "SandboxConfig"]:
         """
         Create a mapping of SandboxConfig instances from a toml dictionary representing the [sandbox] section.
 
@@ -92,8 +92,8 @@ class SandboxConfig(BaseModel):
 
         # Try to create the configuration instance
         try:
-            sandbox_mapping['sandbox'] = cls.model_validate(data)
+            sandbox_mapping["sandbox"] = cls.model_validate(data)
         except ValidationError as e:
-            raise ValueError(f'Invalid sandbox configuration: {e}')
+            raise ValueError(f"Invalid sandbox configuration: {e}")
 
         return sandbox_mapping

@@ -18,13 +18,13 @@ from openhands.storage.files import FileStore
 
 class TrafficControlState(str, Enum):
     # default state, no rate limiting
-    NORMAL = 'normal'
+    NORMAL = "normal"
 
     # task paused due to traffic control
-    THROTTLING = 'throttling'
+    THROTTLING = "throttling"
 
     # traffic control is temporarily paused
-    PAUSED = 'paused'
+    PAUSED = "paused"
 
 
 RESUMABLE_STATES = [
@@ -99,26 +99,26 @@ class State:
     # NOTE: This will never be used by the controller, but it can be used by different
     # evaluation tasks to store extra data needed to track the progress/state of the task.
     extra_data: dict[str, Any] = field(default_factory=dict)
-    last_error: str = ''
+    last_error: str = ""
 
     def save_to_session(self, sid: str, file_store: FileStore):
         pickled = pickle.dumps(self)
-        logger.debug(f'Saving state to session {sid}:{self.agent_state}')
-        encoded = base64.b64encode(pickled).decode('utf-8')
+        logger.debug(f"Saving state to session {sid}:{self.agent_state}")
+        encoded = base64.b64encode(pickled).decode("utf-8")
         try:
-            file_store.write(f'sessions/{sid}/agent_state.pkl', encoded)
+            file_store.write(f"sessions/{sid}/agent_state.pkl", encoded)
         except Exception as e:
-            logger.error(f'Failed to save state to session: {e}')
+            logger.error(f"Failed to save state to session: {e}")
             raise e
 
     @staticmethod
-    def restore_from_session(sid: str, file_store: FileStore) -> 'State':
+    def restore_from_session(sid: str, file_store: FileStore) -> "State":
         try:
-            encoded = file_store.read(f'sessions/{sid}/agent_state.pkl')
+            encoded = file_store.read(f"sessions/{sid}/agent_state.pkl")
             pickled = base64.b64decode(encoded)
             state = pickle.loads(pickled)
         except Exception as e:
-            logger.debug(f'Could not restore state from session: {e}')
+            logger.debug(f"Could not restore state from session: {e}")
             raise e
 
         # update state
@@ -134,14 +134,14 @@ class State:
     def __getstate__(self):
         # don't pickle history, it will be restored from the event stream
         state = self.__dict__.copy()
-        state['history'] = []
+        state["history"] = []
         return state
 
     def __setstate__(self, state):
         self.__dict__.update(state)
 
         # make sure we always have the attribute history
-        if not hasattr(self, 'history'):
+        if not hasattr(self, "history"):
             self.history = []
 
     def get_current_user_intent(self) -> tuple[str | None, list[str] | None]:
@@ -149,7 +149,7 @@ class State:
         last_user_message = None
         last_user_message_image_urls: list[str] | None = []
         for event in reversed(self.history):
-            if isinstance(event, MessageAction) and event.source == 'user':
+            if isinstance(event, MessageAction) and event.source == "user":
                 last_user_message = event.content
                 last_user_message_image_urls = event.image_urls
             elif isinstance(event, AgentFinishAction):

@@ -21,16 +21,16 @@ server_config = load_server_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
 
 client_manager = None
-redis_host = os.environ.get('REDIS_HOST')
+redis_host = os.environ.get("REDIS_HOST")
 if redis_host:
     client_manager = socketio.AsyncRedisManager(
-        f'redis://{redis_host}',
-        redis_options={'password': os.environ.get('REDIS_PASSWORD')},
+        f"redis://{redis_host}",
+        redis_options={"password": os.environ.get("REDIS_PASSWORD")},
     )
 
 
 sio = socketio.AsyncServer(
-    async_mode='asgi', cors_allowed_origins='*', client_manager=client_manager
+    async_mode="asgi", cors_allowed_origins="*", client_manager=client_manager
 )
 
 MonitoringListenerImpl = get_impl(

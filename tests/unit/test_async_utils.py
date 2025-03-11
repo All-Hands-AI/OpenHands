@@ -36,11 +36,11 @@ async def test_await_all_single_exception():
     async def dummy(value: int):
         await asyncio.sleep(0.1)
         if value == 1:
-            raise ValueError('Invalid value 1')  # Throw an exception on every odd value
+            raise ValueError("Invalid value 1")  # Throw an exception on every odd value
         return value * 2
 
     # expect an exception to be raised.
-    with pytest.raises(ValueError, match='Invalid value 1'):
+    with pytest.raises(ValueError, match="Invalid value 1"):
         await wait_all(dummy(i) for i in range(10))
 
 
@@ -51,7 +51,7 @@ async def test_await_all_multi_exception():
         await asyncio.sleep(0.1)
         if value & 1:
             raise ValueError(
-                f'Invalid value {value}'
+                f"Invalid value {value}"
             )  # Throw an exception on every odd value
         return value * 2
 
@@ -122,19 +122,19 @@ def test_call_async_from_sync_background_tasks():
 
     async def bg_task():
         # This background task should finish after the dummy task
-        events.append('bg_started')
+        events.append("bg_started")
         asyncio.sleep(0.2)
-        events.append('bg_finished')
+        events.append("bg_finished")
 
     async def dummy(value: int):
-        events.append('dummy_started')
+        events.append("dummy_started")
         # This coroutine kicks off a background task
         asyncio.create_task(bg_task())
-        events.append('dummy_started')
+        events.append("dummy_started")
 
     call_async_from_sync(dummy, 0, 3)
 
     # We check that the function did not return until all coroutines completed
     # (Even though some of these were started as background tasks)
-    expected = ['dummy_started', 'dummy_started', 'bg_started', 'bg_finished']
+    expected = ["dummy_started", "dummy_started", "bg_started", "bg_finished"]
     assert expected == events

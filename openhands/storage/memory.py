@@ -14,7 +14,7 @@ class InMemoryFileStore(FileStore):
 
     def write(self, path: str, contents: str | bytes) -> None:
         if isinstance(contents, bytes):
-            contents = contents.decode('utf-8')
+            contents = contents.decode("utf-8")
         self.files[path] = contents
 
     def read(self, path: str) -> str:
@@ -28,15 +28,15 @@ class InMemoryFileStore(FileStore):
             if not file.startswith(path):
                 continue
             suffix = file.removeprefix(path)
-            parts = suffix.split('/')
-            if parts[0] == '':
+            parts = suffix.split("/")
+            if parts[0] == "":
                 parts.pop(0)
             if len(parts) == 1:
                 files.append(file)
             else:
                 dir_path = os.path.join(path, parts[0])
-                if not dir_path.endswith('/'):
-                    dir_path += '/'
+                if not dir_path.endswith("/"):
+                    dir_path += "/"
                 if dir_path not in files:
                     files.append(dir_path)
         return files
@@ -46,6 +46,6 @@ class InMemoryFileStore(FileStore):
             keys_to_delete = [key for key in self.files.keys() if key.startswith(path)]
             for key in keys_to_delete:
                 del self.files[key]
-            logger.debug(f'Cleared in-memory file store: {path}')
+            logger.debug(f"Cleared in-memory file store: {path}")
         except Exception as e:
-            logger.error(f'Error clearing in-memory file store: {str(e)}')
+            logger.error(f"Error clearing in-memory file store: {str(e)}")

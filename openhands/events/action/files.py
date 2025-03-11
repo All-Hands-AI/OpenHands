@@ -16,7 +16,7 @@ class FileReadAction(Action):
     path: str
     start: int = 0
     end: int = -1
-    thought: str = ''
+    thought: str = ""
     action: str = ActionType.READ
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
@@ -25,7 +25,7 @@ class FileReadAction(Action):
 
     @property
     def message(self) -> str:
-        return f'Reading file: {self.path}'
+        return f"Reading file: {self.path}"
 
 
 @dataclass
@@ -39,22 +39,22 @@ class FileWriteAction(Action):
     content: str
     start: int = 0
     end: int = -1
-    thought: str = ''
+    thought: str = ""
     action: str = ActionType.WRITE
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
 
     @property
     def message(self) -> str:
-        return f'Writing file: {self.path}'
+        return f"Writing file: {self.path}"
 
     def __repr__(self) -> str:
         return (
-            f'**FileWriteAction**\n'
-            f'Path: {self.path}\n'
-            f'Range: [L{self.start}:L{self.end}]\n'
-            f'Thought: {self.thought}\n'
-            f'Content:\n```\n{self.content}\n```\n'
+            f"**FileWriteAction**\n"
+            f"Path: {self.path}\n"
+            f"Range: [L{self.start}:L{self.end}]\n"
+            f"Thought: {self.thought}\n"
+            f"Content:\n```\n{self.content}\n```\n"
         )
 
 
@@ -96,43 +96,43 @@ class FileEditAction(Action):
     path: str
 
     # OH_ACI arguments
-    command: str = ''
+    command: str = ""
     file_text: str | None = None
     old_str: str | None = None
     new_str: str | None = None
     insert_line: int | None = None
 
     # LLM-based editing arguments
-    content: str = ''
+    content: str = ""
     start: int = 1
     end: int = -1
 
     # Shared arguments
-    thought: str = ''
+    thought: str = ""
     action: str = ActionType.EDIT
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
     impl_source: FileEditSource = FileEditSource.OH_ACI
 
     def __repr__(self) -> str:
-        ret = '**FileEditAction**\n'
-        ret += f'Path: [{self.path}]\n'
-        ret += f'Thought: {self.thought}\n'
+        ret = "**FileEditAction**\n"
+        ret += f"Path: [{self.path}]\n"
+        ret += f"Thought: {self.thought}\n"
 
         if self.impl_source == FileEditSource.LLM_BASED_EDIT:
-            ret += f'Range: [L{self.start}:L{self.end}]\n'
-            ret += f'Content:\n```\n{self.content}\n```\n'
+            ret += f"Range: [L{self.start}:L{self.end}]\n"
+            ret += f"Content:\n```\n{self.content}\n```\n"
         else:  # OH_ACI mode
-            ret += f'Command: {self.command}\n'
-            if self.command == 'create':
-                ret += f'Created File with Text:\n```\n{self.file_text}\n```\n'
-            elif self.command == 'str_replace':
-                ret += f'Old String: ```\n{self.old_str}\n```\n'
-                ret += f'New String: ```\n{self.new_str}\n```\n'
-            elif self.command == 'insert':
-                ret += f'Insert Line: {self.insert_line}\n'
-                ret += f'New String: ```\n{self.new_str}\n```\n'
-            elif self.command == 'undo_edit':
-                ret += 'Undo Edit\n'
+            ret += f"Command: {self.command}\n"
+            if self.command == "create":
+                ret += f"Created File with Text:\n```\n{self.file_text}\n```\n"
+            elif self.command == "str_replace":
+                ret += f"Old String: ```\n{self.old_str}\n```\n"
+                ret += f"New String: ```\n{self.new_str}\n```\n"
+            elif self.command == "insert":
+                ret += f"Insert Line: {self.insert_line}\n"
+                ret += f"New String: ```\n{self.new_str}\n```\n"
+            elif self.command == "undo_edit":
+                ret += "Undo Edit\n"
             # We ignore "view" command because it will be mapped to a FileReadAction
         return ret

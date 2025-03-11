@@ -10,7 +10,7 @@ def get_token_usage_for_event(event: Event, metrics: Metrics) -> TokenUsage | No
     If no response_id is found, or none match in metrics.token_usages, returns None.
     """
     if event.tool_call_metadata and event.tool_call_metadata.model_response:
-        response_id = event.tool_call_metadata.model_response.get('id')
+        response_id = event.tool_call_metadata.model_response.get("id")
         if response_id:
             return next(
                 (

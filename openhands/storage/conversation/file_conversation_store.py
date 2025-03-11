@@ -40,10 +40,10 @@ class FileConversationStore(ConversationStore):
 
         # Temp: force int to str to stop pydandic being, well... pedantic
         json_obj = json.loads(json_str)
-        if 'created_at' not in json_obj:
+        if "created_at" not in json_obj:
             raise FileNotFoundError(path)
-        if isinstance(json_obj.get('github_user_id'), int):
-            json_obj['github_user_id'] = str(json_obj.get('github_user_id'))
+        if isinstance(json_obj.get("github_user_id"), int):
+            json_obj["github_user_id"] = str(json_obj.get("github_user_id"))
 
         result = conversation_metadata_type_adapter.validate_python(json_obj)
         return result
@@ -71,9 +71,9 @@ class FileConversationStore(ConversationStore):
         metadata_dir = self.get_conversation_metadata_dir()
         try:
             conversation_ids = [
-                path.split('/')[-2]
+                path.split("/")[-2]
                 for path in self.file_store.list(metadata_dir)
-                if not path.startswith(f'{metadata_dir}/.')
+                if not path.startswith(f"{metadata_dir}/.")
             ]
         except FileNotFoundError:
             return ConversationMetadataResultSet([])
@@ -86,7 +86,7 @@ class FileConversationStore(ConversationStore):
                 conversations.append(await self.get_metadata(conversation_id))
             except Exception:
                 logger.error(
-                    f'Error loading conversation: {conversation_id}',
+                    f"Error loading conversation: {conversation_id}",
                 )
         conversations.sort(key=_sort_key, reverse=True)
         conversations = conversations[start:end]
@@ -111,4 +111,4 @@ def _sort_key(conversation: ConversationMetadata) -> str:
     created_at = conversation.created_at
     if created_at:
         return created_at.isoformat()  # YYYY-MM-DDTHH:MM:SS for sorting
-    return ''
+    return ""

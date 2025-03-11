@@ -11,7 +11,7 @@ class ConversationValidator:
 
 
 conversation_validator_cls = os.environ.get(
-    'OPENHANDS_CONVERSATION_VALIDATOR_CLS',
-    'openhands.storage.conversation.conversation_validator.ConversationValidator',
+    "OPENHANDS_CONVERSATION_VALIDATOR_CLS",
+    "openhands.storage.conversation.conversation_validator.ConversationValidator",
 )
 ConversationValidatorImpl = get_impl(ConversationValidator, conversation_validator_cls)

@@ -7,10 +7,10 @@ from evaluation.benchmarks.mint.tasks.reasoning import (
 )
 
 __all__ = [
-    'Task',
-    'MultipleChoiceTask',
-    'ReasoningTask',
-    'TheoremqaTask',
-    'MBPPTask',
-    'HumanEvalTask',
+    "Task",
+    "MultipleChoiceTask",
+    "ReasoningTask",
+    "TheoremqaTask",
+    "MBPPTask",
+    "HumanEvalTask",
 ]

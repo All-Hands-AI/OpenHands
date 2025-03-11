@@ -20,12 +20,12 @@ from openhands.memory.condenser.impl.recent_events_condenser import (
 )
 
 __all__ = [
-    'AmortizedForgettingCondenser',
-    'LLMAttentionCondenser',
-    'ImportantEventSelection',
-    'LLMSummarizingCondenser',
-    'NoOpCondenser',
-    'ObservationMaskingCondenser',
-    'BrowserOutputCondenser',
-    'RecentEventsCondenser',
+    "AmortizedForgettingCondenser",
+    "LLMAttentionCondenser",
+    "ImportantEventSelection",
+    "LLMSummarizingCondenser",
+    "NoOpCondenser",
+    "ObservationMaskingCondenser",
+    "BrowserOutputCondenser",
+    "RecentEventsCondenser",
 ]
