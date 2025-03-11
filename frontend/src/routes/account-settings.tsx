@@ -372,6 +372,12 @@ function AccountSettings() {
                   linkText="here"
                   href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
                 />
+                <HelpLink
+                  testId="github-token-help-anchor"
+                  text="More Info on Github permissions and tokens "
+                  linkText="here."
+                  href="https://docs.all-hands.dev/modules/usage/how-to/gui-mode#github-token-setup"
+                />
               </>
             )}
 
