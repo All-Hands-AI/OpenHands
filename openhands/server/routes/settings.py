@@ -4,7 +4,7 @@ from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands.server.auth import get_github_token, get_github_user_id
+from openhands.server.auth import get_github_token, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
 
@@ -14,7 +14,7 @@ app = APIRouter(prefix='/api')
 @app.get('/settings', response_model=GETSettingsModel)
 async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
     try:
-        user_id = get_github_user_id(request)
+        user_id = get_user_id(request)
         settings_store = await SettingsStoreImpl.get_instance(config, user_id)
         settings = await settings_store.load()
         if not settings:
@@ -68,7 +68,7 @@ async def store_settings(
 
     try:
         settings_store = await SettingsStoreImpl.get_instance(
-            config, get_github_user_id(request)
+            config, get_user_id(request)
         )
         existing_settings = await settings_store.load()
 
