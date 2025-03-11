@@ -2,13 +2,15 @@ import asyncio
 import json
 import os
 import tempfile
-from typing import Any
+from typing import Any, Literal
 
 import pandas as pd
 import toml
 from datasets import load_dataset
 
 import openhands.agenthub
+from evaluation.benchmarks.swe_bench.resource.constants import MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE, MAP_REPO_TO_INSTALL, \
+    MAP_VERSION_TO_INSTALL
 from evaluation.benchmarks.swe_bench.resource.mapping import (
     get_instance_resource_factor,
 )
@@ -56,9 +58,33 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
     return f'{instance.repo}__{instance.version}'.replace('/', '__')
 
 
-def get_instruction(instance: pd.Series, metadata: EvalMetadata):
+def get_instruction(instance: pd.Series, metadata: EvalMetadata, mode: Literal["swt", "swe", "swt-ci"]):
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
-    instruction = f"""
+    if mode.startswith('swt'):
+        test_instructions = f"The following command can be used to run the tests: `{list(MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE[instance.repo].values())[0]}`. Make sure they fail in the expected way.\n"
+        instruction = f"""\
+<uploaded_files>
+/workspace/{workspace_dir_name}
+</uploaded_files>
+I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following issue description:
+
+<issue_description>
+{instance.problem_statement}
+</issue_description>
+
+
+Can you help me implement the necessary changes to the repository to test whether the issue in <issue_description> was resolved?
+I will take care of all changes to any of the non-test files. This means you DON'T have to modify the actual logic and ONLY have to update test logic and tests!
+Your task is to make the minimal changes to tests files in the /workspace directory to reproduce the issue in the <issue_description>, i.e., such that the generated tests fail in the current state (where the issue is unresolved) and pass when the issue will be resolved.
+Follow these steps to reproduce the issue:
+1. As a first step, it might be a good idea to explore the repo to familiarize yourself with its structure.
+2. Create a script `reproduction.py` to reproduce the error and execute it with `python reproduction.py` using the BashTool, to confirm the error
+3. Edit the sourcecode of the repo to integrate your reproduction script into the test framework
+4. Run the test framework and make sure your tests fail! Only submit FAILING tests! Never submit passing tests.
+{test_instructions}Your thinking should be thorough and so it's fine if it's very long.
+"""
+    else:
+        instruction = f"""
 <uploaded_files>
 /workspace/{workspace_dir_name}
 </uploaded_files>
@@ -198,6 +224,7 @@ def get_config(
 def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
+    mode: Literal["swt", "swe", "swt-ci"],
 ):
     """Initialize the runtime for the agent.
 
@@ -313,6 +340,29 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to remove git remotes: {str(obs)}')
+
+    if mode == "swt-ci":
+        # set up repo
+        setup_commands = []
+        if instance["repo"] in MAP_REPO_TO_INSTALL:
+            setup_commands.append(MAP_REPO_TO_INSTALL[instance["repo"]])
+
+        # Run pre-install set up if provided
+        install = MAP_VERSION_TO_INSTALL.get(instance['repo'], {}).get(instance['version'], [])
+        if "pre_install" in install:
+            for pre_install in install["pre_install"]:
+                setup_commands.append(pre_install)
+
+        if "install" in install:
+            setup_commands.append(install["install"])
+
+        for command in setup_commands:
+            action = CmdRunAction(command=command)
+            action.set_hard_timeout(600)
+            logger.info(action, extra={'msg_type': 'ACTION'})
+            obs = runtime.run_action(action)
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
 
     action = CmdRunAction(command='which python')
     action.set_hard_timeout(600)
@@ -456,6 +506,7 @@ def process_instance(
     runtime_failure_count: int = 0,
 ) -> EvalOutput:
     config = get_config(instance, metadata)
+    mode: Literal["swe", "swt", "swt-ci"] = metadata.details['mode']
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
@@ -477,9 +528,9 @@ def process_instance(
     call_async_from_sync(runtime.connect)
 
     try:
-        initialize_runtime(runtime, instance)
+        initialize_runtime(runtime, instance, mode)
 
-        instruction = get_instruction(instance, metadata)
+        instruction = get_instruction(instance, metadata, mode)
 
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
         state: State | None = asyncio.run(
@@ -586,6 +637,13 @@ if __name__ == '__main__':
         default='test',
         help='split to evaluate on',
     )
+    parser.add_argument(
+        '--mode',
+        type=str,
+        default='swe',
+        choices=['swe', 'swt', 'swt-ci'],
+        help="mode to run the evaluation, either 'swe', 'swt', or 'swt-ci'",
+    )
     args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
@@ -613,7 +671,7 @@ if __name__ == '__main__':
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
-    details = {}
+    details = {"mode": args.mode}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
     dataset_descrption = (
