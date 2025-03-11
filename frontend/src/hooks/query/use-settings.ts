@@ -3,7 +3,6 @@ import React from "react";
 import posthog from "posthog-js";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
-import { useConfig } from "#/hooks/query/use-config";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 
 const getSettingsQueryFn = async () => {
@@ -27,12 +26,10 @@ const getSettingsQueryFn = async () => {
 
 export const useSettings = () => {
   const { setGitHubTokenIsSet, githubTokenIsSet } = useAuth();
-  const { data: config } = useConfig();
 
   const query = useQuery({
     queryKey: ["settings", githubTokenIsSet],
     queryFn: getSettingsQueryFn,
-    enabled: config?.APP_MODE !== "saas" || githubTokenIsSet,
     // Only retry if the error is not a 404 because we
     // would want to show the modal immediately if the
     // settings are not found

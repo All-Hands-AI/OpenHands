@@ -41,8 +41,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.4.0
+        uses: docker/setup-qemu-action@v3.6.0
         with:
           image: tonistiigi/binfmt:latest
       - name: Login to GHCR
@@ -90,8 +92,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.4.0
+        uses: docker/setup-qemu-action@v3.6.0
         with:
           image: tonistiigi/binfmt:latest
       - name: Login to GHCR
@@ -154,6 +158,8 @@ jobs:
         base_image: ['nikolaik']
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Cache Poetry dependencies
         uses: actions/cache@v4
         with:

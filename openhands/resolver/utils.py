@@ -4,7 +4,7 @@ import multiprocessing as mp
 import os
 import re
 from enum import Enum
-from typing import Callable, Optional
+from typing import Callable
 
 import pandas as pd
 import requests
@@ -22,7 +22,7 @@ class Platform(Enum):
     GITLAB = 2
 
 
-def identify_token(token: str, repo: Optional[str] = None) -> Platform:
+def identify_token(token: str, repo: str | None = None) -> Platform:
     """
     Identifies whether a token belongs to GitHub or GitLab.
 

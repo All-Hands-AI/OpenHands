@@ -14,6 +14,7 @@ from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
 from openhands.llm.metrics import Metrics
 from openhands.storage.files import FileStore
+from openhands.storage.locations import get_conversation_agent_state_filename
 
 
 class TrafficControlState(str, Enum):
@@ -106,7 +107,7 @@ class State:
         logger.debug(f'Saving state to session {sid}:{self.agent_state}')
         encoded = base64.b64encode(pickled).decode('utf-8')
         try:
-            file_store.write(f'sessions/{sid}/agent_state.pkl', encoded)
+            file_store.write(get_conversation_agent_state_filename(sid), encoded)
         except Exception as e:
             logger.error(f'Failed to save state to session: {e}')
             raise e
@@ -114,7 +115,7 @@ class State:
     @staticmethod
     def restore_from_session(sid: str, file_store: FileStore) -> 'State':
         try:
-            encoded = file_store.read(f'sessions/{sid}/agent_state.pkl')
+            encoded = file_store.read(get_conversation_agent_state_filename(sid))
             pickled = base64.b64decode(encoded)
             state = pickle.loads(pickled)
         except Exception as e:

@@ -4,17 +4,17 @@ from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands.server.auth import get_github_token, get_user_id
+from openhands.server.auth import get_github_token, get_github_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
 
 app = APIRouter(prefix='/api')
 
 
-@app.get('/settings')
-async def load_settings(request: Request) -> GETSettingsModel | None:
+@app.get('/settings', response_model=GETSettingsModel)
+async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
     try:
-        user_id = get_user_id(request)
+        user_id = get_github_user_id(request)
         settings_store = await SettingsStoreImpl.get_instance(config, user_id)
         settings = await settings_store.load()
         if not settings:
@@ -40,19 +40,20 @@ async def load_settings(request: Request) -> GETSettingsModel | None:
         )
 
 
-@app.post('/settings')
+@app.post('/settings', response_model=dict[str, str])
 async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
 ) -> JSONResponse:
     # Check if token is valid
-
     if settings.github_token:
         try:
             # We check if the token is valid by getting the user
             # If the token is invalid, this will raise an exception
             github = GithubServiceImpl(
-                user_id=None, idp_token=None, token=SecretStr(settings.github_token)
+                user_id=None,
+                external_auth_token=None,
+                github_token=SecretStr(settings.github_token),
             )
             await github.get_user()
 
@@ -67,7 +68,7 @@ async def store_settings(
 
     try:
         settings_store = await SettingsStoreImpl.get_instance(
-            config, get_user_id(request)
+            config, get_github_user_id(request)
         )
         existing_settings = await settings_store.load()
 
@@ -83,6 +84,12 @@ async def store_settings(
                 settings.user_consents_to_analytics = (
                     existing_settings.user_consents_to_analytics
                 )
+
+            if settings.llm_model is None:
+                settings.llm_model = existing_settings.llm_model
+
+            if settings.llm_base_url is None:
+                settings.llm_base_url = existing_settings.llm_base_url
 
         response = JSONResponse(
             status_code=status.HTTP_200_OK,
