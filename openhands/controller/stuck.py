@@ -9,6 +9,7 @@ from openhands.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
+from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
@@ -97,9 +98,12 @@ class StuckDetector:
             return True
 
         # scenario 4: action, observation pattern on the last six steps
-        if len(filtered_history) < 6:
-            return False
-        if self._is_stuck_action_observation_pattern(filtered_history):
+        if len(filtered_history) >= 6:
+            if self._is_stuck_action_observation_pattern(filtered_history):
+                return True
+
+        # scenario 5: context window error loop
+        if self._is_stuck_context_window_error(filtered_history):
             return True
 
         return False
@@ -306,6 +310,54 @@ class StuckDetector:
             if actions_equal and observations_equal:
                 logger.warning('Action, Observation pattern detected')
                 return True
+        return False
+
+    def _is_stuck_context_window_error(self, filtered_history):
+        """Detects if we're stuck in a loop of context window errors.
+
+        This happens when we repeatedly get context window errors and try to trim,
+        but the trimming doesn't work, causing us to get more context window errors.
+        The pattern is repeated AgentCondensationObservation events without any other
+        events between them.
+
+        Args:
+            filtered_history: List of filtered events to check
+
+        Returns:
+            bool: True if we detect a context window error loop
+        """
+        # Look for AgentCondensationObservation events
+        condensation_events = [
+            (i, event)
+            for i, event in enumerate(filtered_history)
+            if isinstance(event, AgentCondensationObservation)
+        ]
+
+        # Need at least 3 condensation events to detect a loop
+        if len(condensation_events) < 3:
+            return False
+
+        # Get the last 3 condensation events
+        last_condensation_events = condensation_events[-3:]
+
+        # Check if there are any non-condensation events between them
+        for i in range(len(last_condensation_events) - 1):
+            start_idx = last_condensation_events[i][0]
+            end_idx = last_condensation_events[i + 1][0]
+
+            # Look for any non-condensation events between these two
+            has_other_events = False
+            for event in filtered_history[start_idx + 1 : end_idx]:
+                if not isinstance(event, AgentCondensationObservation):
+                    has_other_events = True
+                    break
+
+            if not has_other_events:
+                logger.warning(
+                    'Context window error loop detected - repeated condensation events'
+                )
+                return True
+
         return False
 
     def _eq_no_pid(self, obj1, obj2):

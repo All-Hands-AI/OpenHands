@@ -1,5 +1,4 @@
 import React from "react";
-import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { setImportedProjectZip } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
@@ -7,6 +6,7 @@ import { base64ToBlob } from "#/utils/base64-to-blob";
 import { useUploadFiles } from "../../../hooks/mutation/use-upload-files";
 
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 export const useHandleRuntimeActive = () => {
   const dispatch = useDispatch();
@@ -29,7 +29,7 @@ export const useHandleRuntimeActive = () => {
       { files: [file] },
       {
         onError: () => {
-          toast.error("Failed to upload project files.");
+          displayErrorToast("Failed to upload project files.");
         },
       },
     );
