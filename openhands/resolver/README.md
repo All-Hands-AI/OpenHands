@@ -17,6 +17,11 @@ Follow these steps to use this workflow in your own repository:
 
    Note: If you're working with an organizational repository, you may need to configure the organization's personal access token policy first. See [Setting a personal access token policy for your organization](https://docs.github.com/en/organizations/managing-programmatic-access-to-your-organization/setting-a-personal-access-token-policy-for-your-organization) for details.
 
+   **Important for organization repositories**:
+   - When working with repositories in an organization, you should generate your token with organization access.
+   - Make sure to explicitly select the organization repository under "Repository access" when creating the token.
+   - If you receive "Not Found" errors with your token, it likely doesn't have the correct organization access permissions.
+
 2. Create an API key for the [Claude API](https://www.anthropic.com/api) (recommended) or another supported LLM service
 
 3. Copy `examples/openhands-resolver.yml` to your repository's `.github/workflows/` directory
