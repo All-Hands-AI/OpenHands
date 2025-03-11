@@ -4,7 +4,7 @@ from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderToken, ProviderType
-from openhands.integrations.utils import determine_token_type
+from openhands.integrations.utils import validate_provider_token
 from openhands.server.auth import get_user_id, get_provider_tokens
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
@@ -58,7 +58,7 @@ async def store_settings(
         # Determine whether tokens are valid
         for token_type, token_value in settings.provider_tokens.items():
             if token_value:
-                confirmed_token_type = await determine_token_type(
+                confirmed_token_type = await validate_provider_token(
                     SecretStr(token_value)
                 )
                 if not confirmed_token_type or confirmed_token_type.value != token_type:

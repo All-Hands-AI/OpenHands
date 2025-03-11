@@ -28,8 +28,8 @@ def mock_get_user_id():
 
 
 @pytest.fixture
-def mock_determine_token_type():
-    with patch('openhands.server.routes.settings.determine_token_type') as mock:
+def mock_validate_provider_token():
+    with patch('openhands.server.routes.settings.validate_provider_token') as mock:
 
         async def mock_determine(*args, **kwargs):
             return ProviderType.GITHUB
@@ -73,7 +73,7 @@ def mock_github_service():
 
 @pytest.mark.asyncio
 async def test_settings_api_runtime_factor(
-    test_client, mock_settings_store, mock_get_user_id, mock_determine_token_type
+    test_client, mock_settings_store, mock_get_user_id, mock_validate_provider_token
 ):
     # Mock the settings store to return None initially (no existing settings)
     mock_settings_store.load.return_value = None
@@ -127,7 +127,7 @@ async def test_settings_api_runtime_factor(
 
 @pytest.mark.asyncio
 async def test_settings_llm_api_key(
-    test_client, mock_settings_store, mock_get_user_id, mock_determine_token_type
+    test_client, mock_settings_store, mock_get_user_id, mock_validate_provider_token
 ):
     # Mock the settings store to return None initially (no existing settings)
     mock_settings_store.load.return_value = None
@@ -169,7 +169,7 @@ async def test_settings_api_set_github_token(
     test_client,
     mock_settings_store,
     mock_get_user_id,
-    mock_determine_token_type,
+    mock_validate_provider_token,
 ):
     # Test data with provider token set
     settings_data = {
@@ -217,7 +217,7 @@ async def test_settings_unset_github_token(
     test_client,
     mock_settings_store,
     mock_get_user_id,
-    mock_determine_token_type,
+    mock_validate_provider_token,
 ):
     # Test data with unset_token set to True
     settings_data = {
