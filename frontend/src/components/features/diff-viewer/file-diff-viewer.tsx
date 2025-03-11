@@ -8,6 +8,14 @@ import { getLanguageFromPath } from "#/utils/get-language-from-path";
 import { cn } from "#/utils/utils";
 import ChevronUp from "#/icons/chveron-up.svg?react";
 
+const STATUS_MAP: Record<GitChangeStatus, string> = {
+  A: "Added",
+  D: "Deleted",
+  M: "Modified",
+  R: "Renamed",
+  U: "Untracked",
+};
+
 export interface FileDiffViewerProps {
   path: string;
   type: GitChangeStatus;
@@ -52,7 +60,9 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
         )}
       >
         <p className="text-sm text-content">
-          <strong className="text-primary">{type === "U" ? "A" : type}</strong>{" "}
+          <strong className="text-primary uppercase">
+            {type === "U" ? STATUS_MAP.A : STATUS_MAP[type]}
+          </strong>{" "}
           {filePath}{" "}
           {isRefetching && (
             <span className="text-tertiary-light">

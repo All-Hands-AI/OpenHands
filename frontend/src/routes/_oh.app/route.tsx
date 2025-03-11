@@ -4,6 +4,7 @@ import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FaServer } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
+import { DiGit } from "react-icons/di";
 import { I18nKey } from "#/i18n/declaration";
 import {
   ConversationProvider,
@@ -144,7 +145,7 @@ function AppContent() {
                   {
                     label: "Changes",
                     to: "editor",
-                    icon: <CodeIcon />,
+                    icon: <DiGit className="w-6 h-6" />,
                   },
                   {
                     label: t(I18nKey.WORKSPACE$TITLE),
