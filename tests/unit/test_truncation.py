@@ -246,8 +246,6 @@ class TestTruncation:
         # Save state
         saved_start_id = controller.state.start_id
         saved_truncation_id = controller.state.truncation_id
-        # We track the history length for debugging purposes
-        _ = len(controller.state.history)
 
         # Verify truncation_id is set to a value greater than the first event's ID
         assert saved_truncation_id > controller.state.history[0].id
