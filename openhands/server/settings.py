@@ -14,6 +14,7 @@ class PersonalityType(str, Enum):
     """
     Personality types for the agent
     """
+
     ENTHUSIASTIC = 'enthusiastic'
     CONCISE = 'concise'
     FUNNY = 'funny'
@@ -39,7 +40,9 @@ class Settings(BaseModel):
     enable_default_condenser: bool = False
     enable_sound_notifications: bool = False
     user_consents_to_analytics: bool | None = None
-    personality: Literal['enthusiastic', 'concise', 'funny', 'snarky', 'disgruntled'] | None = None
+    personality: (
+        Literal['enthusiastic', 'concise', 'funny', 'snarky', 'disgruntled'] | None
+    ) = None
 
     @field_serializer('llm_api_key')
     def llm_api_key_serializer(self, llm_api_key: SecretStr, info: SerializationInfo):

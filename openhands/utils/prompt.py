@@ -209,21 +209,23 @@ class PromptManager:
             if repo_instructions:
                 repo_instructions += '\n\n'
             repo_instructions += microagent.content
-        
+
         # Add personality instructions if specified
         personality_instructions = ''
         if personality:
             # Look for a personality microagent with the matching name
-            personality_microagent_name = f"{personality}_personality"
+            personality_microagent_name = f'{personality}_personality'
             for name, microagent in self.knowledge_microagents.items():
                 if name == personality_microagent_name:
                     personality_instructions = microagent.content
                     break
-            
+
             if personality_instructions:
-                openhands_logger.info(f"Adding {personality} personality to prompt")
+                openhands_logger.info(f'Adding {personality} personality to prompt')
             else:
-                openhands_logger.warning(f"Personality {personality} requested but no matching microagent found")
+                openhands_logger.warning(
+                    f'Personality {personality} requested but no matching microagent found'
+                )
 
         additional_info = self.additional_info_template.render(
             repository_instructions=repo_instructions,

@@ -220,7 +220,9 @@ class CodeActAgent(Agent):
                 if self.config.enable_prompt_extensions:
                     # Get personality from settings if available
                     personality = getattr(self.config, 'personality', None)
-                    self.prompt_manager.add_info_to_initial_message(msg, personality=personality)
+                    self.prompt_manager.add_info_to_initial_message(
+                        msg, personality=personality
+                    )
 
             # enhance the user message with additional context based on keywords matched
             if msg.role == 'user':

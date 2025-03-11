@@ -37,7 +37,9 @@ class AgentConfig(BaseModel):
     enable_history_truncation: bool = Field(default=True)
     enable_som_visual_browsing: bool = Field(default=False)
     condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
-    personality: Literal['enthusiastic', 'concise', 'funny', 'snarky', 'disgruntled'] | None = Field(default=None)
+    personality: (
+        Literal['enthusiastic', 'concise', 'funny', 'snarky', 'disgruntled'] | None
+    ) = Field(default=None)
 
     model_config = {'extra': 'forbid'}
 
