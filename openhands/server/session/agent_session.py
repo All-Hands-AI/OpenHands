@@ -130,7 +130,7 @@ class AgentSession:
 
             repo_directory = None
             if self.runtime and runtime_connected and selected_repository:
-                repo_directory = selected_repository.split('/')[1]
+                repo_directory = selected_repository.split('/')[-1]
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
