@@ -79,16 +79,6 @@ memory-profiler = "^0.61.0"
 daytona-sdk = "0.9.1"
 python-json-logger = "^3.2.1"
 
-[tool.poetry.group.llama-index.dependencies]
-llama-index = "*"
-llama-index-vector-stores-chroma = "*"
-chromadb = "*"
-llama-index-embeddings-huggingface = "*"
-torch = "2.5.1"
-llama-index-embeddings-azure-openai = "*"
-llama-index-embeddings-ollama = "*"
-voyageai = "*"
-llama-index-embeddings-voyageai = "*"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.9.8"
