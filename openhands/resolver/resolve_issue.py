@@ -189,7 +189,7 @@ async def process_issue(
     # write the repo to the workspace
     if os.path.exists(workspace_base):
         shutil.rmtree(workspace_base)
-    shutil.copytree(os.path.join(output_dir, 'repo'), workspace_base)
+    shutil.copytree(os.path.join(output_dir, 'repo'), workspace_base, symlinks=True)
 
     # This code looks unnecessary because these are default values in the config class
     # they're set by default if nothing else overrides them
