@@ -1,7 +1,5 @@
 from dotenv import load_dotenv
 
-from openhands.controller.agent import Agent
-
 load_dotenv()
 
 
