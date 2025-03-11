@@ -87,6 +87,10 @@ def initialize_repository_for_runtime(
     selected_repository: str | None = None,
     github_token: SecretStr | None = None,
 ) -> str | None:
+    # Configure Git to preserve symlinks globally before cloning
+    if not hasattr(runtime, '_git_symlinks_configured'):
+        runtime.run(CmdRunAction(command='git config --global core.symlinks true'))
+        runtime._git_symlinks_configured = True
     """Initialize the repository for the runtime.
 
     Args:
