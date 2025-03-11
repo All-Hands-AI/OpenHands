@@ -901,6 +901,9 @@ class AgentController:
             if self.state.end_id >= 0
             else self.event_stream.get_latest_event_id()
         )
+        
+        # Store the original start_id to preserve it
+        original_start_id = self.state.start_id
 
         # sanity check
         if start_id > end_id + 1:
@@ -935,9 +938,6 @@ class AgentController:
 
             # the rest of the events are from the truncation point
             start_id = self.state.truncation_id
-
-        # Store the original start_id to preserve it
-        original_start_id = self.state.start_id
         
         # Get rest of history
         events_to_add = list(
@@ -978,20 +978,20 @@ class AgentController:
             filtered_events: list[Event] = []
             current_idx = 0
 
-            for start_range_id, end_range_id in sorted(delegate_ranges):
+            for start_id, end_id in sorted(delegate_ranges):
                 # Add events before delegate range
                 filtered_events.extend(
-                    event for event in events[current_idx:] if event.id < start_range_id
+                    event for event in events[current_idx:] if event.id < start_id
                 )
 
                 # Add delegate action and observation
                 filtered_events.extend(
-                    event for event in events if event.id in (start_range_id, end_range_id)
+                    event for event in events if event.id in (start_id, end_id)
                 )
 
                 # Update index to after delegate range
                 current_idx = next(
-                    (i for i, e in enumerate(events) if e.id > end_range_id), len(events)
+                    (i for i, e in enumerate(events) if e.id > end_id), len(events)
                 )
 
             # Add any remaining events after last delegate range
