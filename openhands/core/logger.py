@@ -6,14 +6,20 @@ import sys
 import traceback
 from datetime import datetime
 from types import TracebackType
-from typing import Any, Literal, Mapping
+from typing import Any, Literal, Mapping, TextIO
 
 import litellm
+from pythonjsonlogger.json import JsonFormatter
 from termcolor import colored
 
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
 DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
 DEBUG_LLM = os.getenv('DEBUG_LLM', 'False').lower() in ['true', '1', 'yes']
+
+# Structured logs with JSON, disabled by default
+LOG_JSON = os.getenv('LOG_JSON', 'False').lower() in ['true', '1', 'yes']
+LOG_JSON_LEVEL_KEY = os.getenv('LOG_JSON_LEVEL_KEY', 'level')
+
 
 # Configure litellm logging based on DEBUG_LLM
 if DEBUG_LLM:
@@ -76,9 +82,17 @@ LOG_COLORS: Mapping[str, ColorType] = {
 class StackInfoFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         if record.levelno >= logging.ERROR:
-            # LogRecord attributes are dynamically typed
-            setattr(record, 'stack_info', True)
-            setattr(record, 'exc_info', sys.exc_info())
+            # Only add stack trace info if there's an actual exception
+            exc_info = sys.exc_info()
+            if exc_info and exc_info[0] is not None:
+                # Capture the current stack trace as a string
+                stack = traceback.format_stack()
+                # Remove the last entries which are related to the logging machinery
+                stack = stack[:-3]  # Adjust this number if needed
+                # Join the stack frames into a single string
+                stack_str = ''.join(stack)
+                setattr(record, 'stack_info', stack_str)
+                setattr(record, 'exc_info', exc_info)
         return True
 
 
@@ -265,15 +279,11 @@ class SensitiveDataFilter(logging.Filter):
         return True
 
 
-def get_console_handler(
-    log_level: int = logging.INFO, extra_info: str | None = None
-) -> logging.StreamHandler:
+def get_console_handler(log_level: int = logging.INFO) -> logging.StreamHandler:
     """Returns a console handler for logging."""
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
     formatter_str = '\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(message)s'
-    if extra_info:
-        formatter_str = f'{extra_info} - ' + formatter_str
     console_handler.setFormatter(ColoredFormatter(formatter_str, datefmt='%H:%M:%S'))
     return console_handler
 
@@ -287,8 +297,34 @@ def get_file_handler(
     file_name = f'openhands_{timestamp}.log'
     file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
     file_handler.setLevel(log_level)
-    file_handler.setFormatter(file_formatter)
+    if LOG_JSON:
+        file_handler.setFormatter(json_formatter())
+    else:
+        file_handler.setFormatter(file_formatter)
     return file_handler
+
+
+def json_formatter():
+    return JsonFormatter(
+        '{message}{levelname}',
+        style='{',
+        rename_fields={'levelname': LOG_JSON_LEVEL_KEY},
+        timestamp=True,
+    )
+
+
+def json_log_handler(
+    level: int = logging.INFO,
+    _out: TextIO = sys.stdout,
+) -> logging.Handler:
+    """
+    Configure logger instance for structured logging as json lines.
+    """
+
+    handler = logging.StreamHandler(_out)
+    handler.setLevel(level)
+    handler.setFormatter(json_formatter())
+    return handler
 
 
 # Set up logging
@@ -328,7 +364,11 @@ if current_log_level == logging.DEBUG:
     LOG_TO_FILE = True
     openhands_logger.debug('DEBUG mode enabled.')
 
-openhands_logger.addHandler(get_console_handler(current_log_level))
+if LOG_JSON:
+    openhands_logger.addHandler(json_log_handler(current_log_level))
+else:
+    openhands_logger.addHandler(get_console_handler(current_log_level))
+
 openhands_logger.addFilter(SensitiveDataFilter(openhands_logger.name))
 openhands_logger.propagate = False
 openhands_logger.debug('Logging initialized')
@@ -426,3 +466,22 @@ def _setup_llm_logger(name: str, log_level: int) -> logging.Logger:
 
 llm_prompt_logger = _setup_llm_logger('prompt', current_log_level)
 llm_response_logger = _setup_llm_logger('response', current_log_level)
+
+
+class OpenHandsLoggerAdapter(logging.LoggerAdapter):
+    extra: dict
+
+    def __init__(self, logger=openhands_logger, extra=None):
+        self.logger = logger
+        self.extra = extra or {}
+
+    def process(self, msg, kwargs):
+        """
+        If 'extra' is supplied in kwargs, merge it with the adapters 'extra' dict
+        Starting in Python 3.13, LoggerAdapter's merge_extra option will do this.
+        """
+        if 'extra' in kwargs and isinstance(kwargs['extra'], dict):
+            kwargs['extra'] = {**self.extra, **kwargs['extra']}
+        else:
+            kwargs['extra'] = self.extra
+        return msg, kwargs

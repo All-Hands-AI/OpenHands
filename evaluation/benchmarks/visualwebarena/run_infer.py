@@ -161,6 +161,7 @@ def process_instance(
 
     runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
+
     task_str, goal_image_urls = initialize_runtime(runtime)
     initial_user_action = MessageAction(content=task_str, image_urls=goal_image_urls)
     state: State | None = asyncio.run(

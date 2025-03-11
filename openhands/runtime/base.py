@@ -22,6 +22,7 @@ from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
@@ -31,6 +32,7 @@ from openhands.events.action import (
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
+    AgentThinkObservation,
     CmdOutputObservation,
     ErrorObservation,
     FileReadObservation,
@@ -219,7 +221,9 @@ class Runtime(FileEditRuntimeMixin):
         try:
             if isinstance(event, CmdRunAction):
                 if self.github_user_id and '$GITHUB_TOKEN' in event.command:
-                    gh_client = GithubServiceImpl(user_id=self.github_user_id)
+                    gh_client = GithubServiceImpl(
+                        user_id=self.github_user_id, external_token_manager=True
+                    )
                     token = await gh_client.get_latest_token()
                     if token:
                         export_cmd = CmdRunAction(
@@ -270,7 +274,7 @@ class Runtime(FileEditRuntimeMixin):
                 'github_token and selected_repository must be provided to clone a repository'
             )
         url = f'https://{github_token.get_secret_value()}@github.com/{selected_repository}.git'
-        dir_name = selected_repository.split('/')[1]
+        dir_name = selected_repository.split('/')[-1]
 
         # Generate a random branch name to avoid conflicts
         random_str = ''.join(
@@ -309,7 +313,7 @@ class Runtime(FileEditRuntimeMixin):
         microagents_dir = workspace_root / '.openhands' / 'microagents'
         repo_root = None
         if selected_repository:
-            repo_root = workspace_root / selected_repository.split('/')[1]
+            repo_root = workspace_root / selected_repository.split('/')[-1]
             microagents_dir = repo_root / '.openhands' / 'microagents'
         self.log(
             'info',
@@ -381,6 +385,8 @@ class Runtime(FileEditRuntimeMixin):
         If the action is not supported by the current runtime, an ErrorObservation is returned.
         """
         if not action.runnable:
+            if isinstance(action, AgentThinkAction):
+                return AgentThinkObservation('Your thought has been logged.')
             return NullObservation('')
         if (
             hasattr(action, 'confirmation_state')
@@ -483,3 +489,7 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def web_hosts(self) -> dict[str, int]:
         return {}
+
+    @property
+    def additional_agent_instructions(self) -> str:
+        return ''
