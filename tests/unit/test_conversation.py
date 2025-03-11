@@ -17,6 +17,7 @@ from openhands.server.routes.manage_conversations import (
     update_conversation,
 )
 from openhands.storage.data_models.conversation_status import ConversationStatus
+from openhands.storage.locations import get_conversation_metadata_filename
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -24,7 +25,7 @@ from openhands.storage.memory import InMemoryFileStore
 def _patch_store():
     file_store = InMemoryFileStore()
     file_store.write(
-        'sessions/some_conversation_id/metadata.json',
+        get_conversation_metadata_filename('some_conversation_id'),
         json.dumps(
             {
                 'title': 'Some Conversation',
