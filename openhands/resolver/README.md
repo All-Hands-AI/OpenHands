@@ -18,9 +18,10 @@ Follow these steps to use this workflow in your own repository:
    Note: If you're working with an organizational repository, you may need to configure the organization's personal access token policy first. See [Setting a personal access token policy for your organization](https://docs.github.com/en/organizations/managing-programmatic-access-to-your-organization/setting-a-personal-access-token-policy-for-your-organization) for details.
 
    **Important for organization repositories**:
-   - When working with repositories in an organization, you should generate your token with organization access.
-   - Make sure to explicitly select the organization repository under "Repository access" when creating the token.
-   - If you receive "Not Found" errors with your token, it likely doesn't have the correct organization access permissions.
+   - For organization repositories, you must generate your token from the organization settings (not personal settings)
+   - Go to your organization's Settings → Developer settings → Personal access tokens → Fine-grained tokens
+   - When creating the token, make sure to explicitly select the organization and repository under "Repository access"
+   - If you receive "Not Found" errors with your token, this usually means you created a personal token instead of an organization token
 
 2. Create an API key for the [Claude API](https://www.anthropic.com/api) (recommended) or another supported LLM service
 
