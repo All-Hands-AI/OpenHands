@@ -1,5 +1,5 @@
 ---
- name: swift-linux-install
+ name: swift-linux
  type: knowledge
  agent: CodeActAgent
  version: 1.0.0
