@@ -16,7 +16,6 @@ function EditorScreen() {
   const { conversationId } = useConversation();
   const {
     data: gitChanges,
-    isFetching,
     isSuccess,
     isError,
     error,
@@ -34,7 +33,6 @@ function EditorScreen() {
 
   return (
     <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col">
-      {isFetching && <div>Loading...</div>}
       {!isNotGitRepoError && isError && (
         <StatusMessage>{retrieveAxiosErrorMessage(error)}</StatusMessage>
       )}
