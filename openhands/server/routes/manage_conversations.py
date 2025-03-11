@@ -148,7 +148,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     gh_client = GithubServiceImpl(
         user_id=user_id,
         external_auth_token=get_access_token(request),
-        token=token,
+        github_token=token,
     )
     github_token = await gh_client.get_latest_token()
 

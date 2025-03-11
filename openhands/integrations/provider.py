@@ -85,7 +85,7 @@ class SecretStore(BaseModel):
 
 class ProviderHandler:
     def __init__(
-        self, provider_tokens: PROVIDER_TOKEN_TYPE, idp_token: SecretStr | None = None
+        self, provider_tokens: PROVIDER_TOKEN_TYPE, external_auth_token: SecretStr | None = None
     ):
         self.service_class_map: dict[ProviderType, type[GitService]] = {
             ProviderType.GITHUB: GithubServiceImpl,
@@ -93,14 +93,14 @@ class ProviderHandler:
         }
 
         self.provider_tokens = provider_tokens
-        self.idp_token = idp_token
+        self.external_auth_token = external_auth_token
 
     def _get_service(self, provider: ProviderType) -> GitService:
         """Helper method to instantiate a service for a given provider"""
         token = self.provider_tokens[provider]
         service_class = self.service_class_map[provider]
         return service_class(
-            user_id=token.user_id, idp_token=self.idp_token, token=token.token
+            user_id=token.user_id, external_auth_token=self.external_auth_token, token=token.token
         )
 
     async def get_user(self) -> User:

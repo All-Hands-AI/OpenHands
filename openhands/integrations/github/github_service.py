@@ -19,29 +19,29 @@ from openhands.core.logger import openhands_logger as logger
 
 class GitHubService(GitService):
     BASE_URL = 'https://api.github.com'
-    github_token: SecretStr = SecretStr('')
+    token: SecretStr = SecretStr('')
     refresh = False
 
     def __init__(
         self,
         user_id: str | None = None,
         external_auth_token: SecretStr | None = None,
-        github_token: SecretStr | None = None,
+        token: SecretStr | None = None,
         external_token_manager: bool = False,
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
 
-        if github_token:
-            self.github_token = github_token
+        if token:
+            self.token = token
 
     async def _get_github_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""
-        if self.user_id and not self.github_token:
-            self.github_token = await self.get_latest_token()
+        if self.user_id and not self.token:
+            self.token = await self.get_latest_token()
 
         return {
-            'Authorization': f'Bearer {self.github_token.get_secret_value() if self.github_token else ""}',
+            'Authorization': f'Bearer {self.token.get_secret_value() if self.token else ""}',
             'Accept': 'application/vnd.github.v3+json',
         }
 
@@ -49,7 +49,7 @@ class GitHubService(GitService):
         return status_code == 401
 
     async def get_latest_token(self) -> SecretStr | None:
-        return self.github_token
+        return self.token
 
     async def _fetch_data(
         self, url: str, params: dict | None = None
