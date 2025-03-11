@@ -15,7 +15,7 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.server.auth import get_idp_token, get_provider_tokens
+from openhands.server.auth import get_access_token, get_provider_tokens
 
 app = APIRouter(prefix='/api/github')
 
@@ -27,12 +27,12 @@ async def get_github_repositories(
     sort: str = 'pushed',
     installation_id: int | None = None,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    idp_token: SecretStr | None = Depends(get_idp_token),
+    access_token: SecretStr | None = Depends(get_access_token),
 ):
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
         client = GithubServiceImpl(
-            user_id=token.user_id, idp_token=idp_token, token=token.token
+            user_id=token.user_id, external_auth_token=access_token, token=token.token
         )
 
         try:
@@ -62,10 +62,10 @@ async def get_github_repositories(
 @app.get('/user', response_model=User)
 async def get_github_user(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    idp_token: SecretStr | None = Depends(get_idp_token),
+    access_token: SecretStr | None = Depends(get_access_token),
 ):
     if provider_tokens:
-        client = ProviderHandler(provider_tokens=provider_tokens, idp_token=idp_token)
+        client = ProviderHandler(provider_tokens=provider_tokens, external_auth_token=access_token)
 
         try:
             user: User = await client.get_user()
@@ -92,13 +92,13 @@ async def get_github_user(
 @app.get('/installations', response_model=list[int])
 async def get_github_installation_ids(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    idp_token: SecretStr | None = Depends(get_idp_token),
+    access_token: SecretStr | None = Depends(get_access_token),
 ):
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
 
         client = GithubServiceImpl(
-            user_id=token.user_id, idp_token=idp_token, token=token.token
+            user_id=token.user_id, external_auth_token=access_token, token=token.token
         )
         try:
             installations_ids: list[int] = await client.get_installation_ids()
@@ -129,13 +129,13 @@ async def search_github_repositories(
     sort: str = 'stars',
     order: str = 'desc',
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    idp_token: SecretStr | None = Depends(get_idp_token),
+    access_token: SecretStr | None = Depends(get_access_token),
 ):
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
 
         client = GithubServiceImpl(
-            user_id=token.user_id, idp_token=idp_token, token=token.token
+            user_id=token.user_id, external_auth_token=access_token, token=token.token
         )
         try:
             repos: list[Repository] = await client.search_repositories(
@@ -164,7 +164,7 @@ async def search_github_repositories(
 @app.get('/suggested-tasks', response_model=list[SuggestedTask])
 async def get_suggested_tasks(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    idp_token: SecretStr | None = Depends(get_idp_token),
+    access_token: SecretStr | None = Depends(get_access_token)
 ):
     """Get suggested tasks for the authenticated user across their most recently pushed repositories.
 
@@ -177,7 +177,7 @@ async def get_suggested_tasks(
         token = provider_tokens[ProviderType.GITHUB]
 
         client = GithubServiceImpl(
-            user_id=token.user_id, idp_token=idp_token, token=token.token
+            user_id=token.user_id, external_auth_token=access_token, token=token.token
         )
         try:
             tasks: list[SuggestedTask] = await client.get_suggested_tasks()

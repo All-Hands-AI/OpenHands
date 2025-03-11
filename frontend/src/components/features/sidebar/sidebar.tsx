@@ -2,7 +2,6 @@ import React from "react";
 import { FaListUl } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
-import toast from "react-hot-toast";
 import { NavLink, useLocation } from "react-router";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { UserActions } from "./user-actions";
@@ -22,6 +21,8 @@ import { ConversationPanelWrapper } from "../conversation-panel/conversation-pan
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { cn } from "#/utils/utils";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { HIDE_LLM_SETTINGS } from "#/utils/feature-flags";
 
 export function Sidebar() {
   const location = useLocation();
@@ -42,7 +43,12 @@ export function Sidebar() {
   const [conversationPanelIsOpen, setConversationPanelIsOpen] =
     React.useState(false);
 
+  // TODO: Remove HIDE_LLM_SETTINGS check once released
+  const isSaas = HIDE_LLM_SETTINGS() && config?.APP_MODE === "saas";
+
   React.useEffect(() => {
+    if (isSaas) return;
+
     if (location.pathname === "/settings") {
       setSettingsModalIsOpen(false);
     } else if (
@@ -52,7 +58,7 @@ export function Sidebar() {
     ) {
       // We don't show toast errors for settings in the global error handler
       // because we have a special case for 404 errors
-      toast.error(
+      displayErrorToast(
         "Something went wrong while fetching settings. Please reload the page.",
       );
     } else if (settingsError?.status === 404) {
