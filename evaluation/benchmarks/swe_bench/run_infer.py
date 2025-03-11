@@ -148,7 +148,8 @@ def get_config(
 ) -> AppConfig:
     # We use a different instance image for the each instance of swe-bench eval
     use_official_image = bool(
-        'verified' in metadata.dataset.lower() or 'lite' in metadata.dataset.lower()
+        ('verified' in metadata.dataset.lower() or 'lite' in metadata.dataset.lower())
+        and 'swe-gym' not in metadata.dataset.lower()
     )
     base_container_image = get_instance_docker_image(
         instance['instance_id'], use_official_image
