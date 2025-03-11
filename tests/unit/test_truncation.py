@@ -314,15 +314,15 @@ class TestTruncation:
         mock_file_store = MagicMock()
         saved_state = None
 
+        # Import the State class for monkeypatching
+        from openhands.controller.state.state import State
+
         # Mock the save_to_session method to capture the state
         def mock_save_to_session(self, sid, file_store):
             nonlocal saved_state
             saved_state = self
-            # Call the original method but with our mock
-            # We use the State class directly to avoid linting issues
-            from openhands.controller.state.state import State
-
-            State.save_to_session(self, sid, file_store)
+            # Just store the state without calling the original method
+            # to avoid recursion
 
         # Mock the restore_from_session method to return our saved state
         @staticmethod
@@ -332,8 +332,7 @@ class TestTruncation:
                 raise Exception('No saved state')
             return saved_state
 
-        # Import the State class for monkeypatching
-        from openhands.controller.state.state import State
+        # We already imported State above
 
         # Apply our mocks
         monkeypatch.setattr(State, 'save_to_session', mock_save_to_session)
