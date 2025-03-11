@@ -194,16 +194,8 @@ class TestTruncation:
         # Create a real event stream with the in-memory file store
         event_stream = EventStream(sid='test_persistence', file_store=file_store)
         
-        # First session: Create controller and events
-        controller1 = AgentController(
-            agent=mock_agent,
-            event_stream=event_stream,
-            max_iterations=10,
-            sid='test_persistence',
-            confirmation_mode=False,
-            headless_mode=True,
-        )
-
+        # First session: Create events, add them to the stream, then create controller
+        
         # Create events with IDs and add them to the event stream
         first_msg = MessageAction(content='Start task', wait_for_response=False)
         event_stream.add_event(first_msg, EventSource.USER)
@@ -221,8 +213,15 @@ class TestTruncation:
             
             events.extend([cmd, obs])
             
-        # Let the controller initialize its history from the event stream
-        controller1._init_history()
+        # Now create the controller after all events are in the stream
+        controller1 = AgentController(
+            agent=mock_agent,
+            event_stream=event_stream,
+            max_iterations=10,
+            sid='test_persistence',
+            confirmation_mode=False,
+            headless_mode=True,
+        )
 
         # Force truncation
         controller1._handle_long_context_error()
@@ -254,10 +253,13 @@ class TestTruncation:
         # Close the first controller to clean up resources
         asyncio.run(controller1.close())
         
+        # Create a new event stream with the same file store to avoid callback ID conflicts
+        new_event_stream = EventStream(sid='test_persistence', file_store=file_store)
+        
         # Second session: Create new controller with the same event stream
         controller2 = AgentController(
             agent=mock_agent,
-            event_stream=event_stream,  # Use the same event stream
+            event_stream=new_event_stream,  # Use a new event stream with the same file store
             max_iterations=10,
             sid='test_persistence',  # Use the same session ID
             confirmation_mode=False,
@@ -292,4 +294,15 @@ class TestTruncation:
                     event.id >= controller2.state.truncation_id
                 ), f'Event {event.id} is before truncation_id {controller2.state.truncation_id}'
 
+        # Clean up the second controller
+        asyncio.run(controller2.close())
+
+        # Clean up event streams
+        event_stream.close()
+        new_event_stream.close()
+
+        # Note: There may still be a RuntimeWarning about 'coroutine AgentController._on_event was never awaited'
+        # This is expected and doesn't affect the test results. The warning occurs because the event handling
+        # in AgentController.on_event uses asyncio.get_event_loop().run_until_complete() which can leave
+        # some coroutines unresolved when the test ends.
 
