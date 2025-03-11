@@ -78,6 +78,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          symlinks: true
+      
+      - name: Configure Git to preserve symlinks
+        run: git config --global core.symlinks true
 
       - name: Set up Python
         uses: actions/setup-python@v5
