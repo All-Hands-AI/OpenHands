@@ -95,12 +95,6 @@ ruff = "0.9.8"
 mypy = "1.15.0"
 pre-commit = "4.1.0"
 build = "*"
-types-pyyaml = "^6.0.12.20241230"
-types-retry = "^0.9.9.20241221"
-pandas-stubs = "^2.2.3.250308"
-types-docker = "^7.1.0.20241229"
-types-psutil = "^7.0.0.20250218"
-types-tree-sitter-languages = "^1.10.0.20240612"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
@@ -115,7 +109,6 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
-
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
@@ -144,7 +137,6 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"

@@ -54,16 +54,16 @@ class AppConfig(BaseModel):
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
-    runtime: str = Field(default="docker")
-    file_store: str = Field(default="local")
-    file_store_path: str = Field(default="/tmp/openhands_file_store")
+    runtime: str = Field(default='docker')
+    file_store: str = Field(default='local')
+    file_store_path: str = Field(default='/tmp/openhands_file_store')
     save_trajectory_path: str | None = Field(default=None)
     replay_trajectory_path: str | None = Field(default=None)
     workspace_base: str | None = Field(default=None)
     workspace_mount_path: str | None = Field(default=None)
-    workspace_mount_path_in_sandbox: str = Field(default="/workspace")
+    workspace_mount_path_in_sandbox: str = Field(default='/workspace')
     workspace_mount_rewrite: str | None = Field(default=None)
-    cache_dir: str = Field(default="/tmp/cache")
+    cache_dir: str = Field(default='/tmp/cache')
     run_as_openhands: bool = Field(default=True)
     max_iterations: int = Field(default=OH_MAX_ITERATIONS)
     max_budget_per_task: float | None = Field(default=None)
@@ -75,11 +75,11 @@ class AppConfig(BaseModel):
     debug: bool = Field(default=False)
     file_uploads_max_file_size_mb: int = Field(default=0)
     file_uploads_restrict_file_types: bool = Field(default=False)
-    file_uploads_allowed_extensions: list[str] = Field(default_factory=lambda: [".*"])
+    file_uploads_allowed_extensions: list[str] = Field(default_factory=lambda: ['.*'])
     runloop_api_key: SecretStr | None = Field(default=None)
     daytona_api_key: SecretStr | None = Field(default=None)
-    daytona_api_url: str = Field(default="https://app.daytona.io/api")
-    daytona_target: str = Field(default="us")
+    daytona_api_url: str = Field(default='https://app.daytona.io/api')
+    daytona_target: str = Field(default='us')
     cli_multiline_input: bool = Field(default=False)
     conversation_max_age_seconds: int = Field(default=864000)  # 10 days in seconds
     enable_default_condenser: bool = Field(default=True)
@@ -89,39 +89,39 @@ class AppConfig(BaseModel):
 
     defaults_dict: ClassVar[dict] = {}
 
-    model_config = {"extra": "forbid"}
+    model_config = {'extra': 'forbid'}
 
-    def get_llm_config(self, name="llm") -> LLMConfig:
+    def get_llm_config(self, name='llm') -> LLMConfig:
         """'llm' is the name for default config (for backward compatibility prior to 0.8)."""
         if name in self.llms:
             return self.llms[name]
-        if name is not None and name != "llm":
+        if name is not None and name != 'llm':
             logger.openhands_logger.warning(
-                f"llm config group {name} not found, using default config"
+                f'llm config group {name} not found, using default config'
             )
-        if "llm" not in self.llms:
-            self.llms["llm"] = LLMConfig()
-        return self.llms["llm"]
+        if 'llm' not in self.llms:
+            self.llms['llm'] = LLMConfig()
+        return self.llms['llm']
 
-    def set_llm_config(self, value: LLMConfig, name="llm") -> None:
+    def set_llm_config(self, value: LLMConfig, name='llm') -> None:
         self.llms[name] = value
 
-    def get_agent_config(self, name="agent") -> AgentConfig:
+    def get_agent_config(self, name='agent') -> AgentConfig:
         """'agent' is the name for default config (for backward compatibility prior to 0.8)."""
         if name in self.agents:
             return self.agents[name]
-        if "agent" not in self.agents:
-            self.agents["agent"] = AgentConfig()
-        return self.agents["agent"]
+        if 'agent' not in self.agents:
+            self.agents['agent'] = AgentConfig()
+        return self.agents['agent']
 
-    def set_agent_config(self, value: AgentConfig, name="agent") -> None:
+    def set_agent_config(self, value: AgentConfig, name='agent') -> None:
         self.agents[name] = value
 
     def get_agent_to_llm_config_map(self) -> dict[str, LLMConfig]:
         """Get a map of agent names to llm configs."""
         return {name: self.get_llm_config_from_agent(name) for name in self.agents}
 
-    def get_llm_config_from_agent(self, name="agent") -> LLMConfig:
+    def get_llm_config_from_agent(self, name='agent') -> LLMConfig:
         agent_config: AgentConfig = self.get_agent_config(name)
         llm_config_name = agent_config.llm_config
         return self.get_llm_config(llm_config_name)

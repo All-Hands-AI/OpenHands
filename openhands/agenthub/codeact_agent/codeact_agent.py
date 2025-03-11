@@ -25,7 +25,7 @@ from openhands.utils.prompt import PromptManager
 
 
 class CodeActAgent(Agent):
-    VERSION = "2.2"
+    VERSION = '2.2'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -74,16 +74,16 @@ class CodeActAgent(Agent):
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
         )
         logger.debug(
-            f"TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2, ensure_ascii=False).replace('\\n', '\n')}"
+            f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2, ensure_ascii=False).replace("\\n", "\n")}'
         )
         self.prompt_manager = PromptManager(
             microagent_dir=os.path.join(
                 os.path.dirname(os.path.dirname(openhands.__file__)),
-                "microagents",
+                'microagents',
             )
             if self.config.enable_prompt_extensions
             else None,
-            prompt_dir=os.path.join(os.path.dirname(__file__), "prompts"),
+            prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
             disabled_microagents=self.config.disabled_microagents,
         )
 
@@ -91,7 +91,7 @@ class CodeActAgent(Agent):
         self.conversation_memory = ConversationMemory(self.prompt_manager)
 
         self.condenser = Condenser.from_config(self.config.condenser)
-        logger.debug(f"Using condenser: {type(self.condenser)}")
+        logger.debug(f'Using condenser: {type(self.condenser)}')
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
@@ -118,15 +118,15 @@ class CodeActAgent(Agent):
 
         # if we're done, go back
         latest_user_message = state.get_last_user_message()
-        if latest_user_message and latest_user_message.content.strip() == "/exit":
+        if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
         params: dict = {
-            "messages": self.llm.format_messages_for_llm(messages),
+            'messages': self.llm.format_messages_for_llm(messages),
         }
-        params["tools"] = self.tools
+        params['tools'] = self.tools
         response = self.llm.completion(**params)
         actions = codeact_function_calling.response_to_actions(response)
         for action in actions:
@@ -166,7 +166,7 @@ class CodeActAgent(Agent):
             - For Anthropic models, specific messages are cached according to their documentation
         """
         if not self.prompt_manager:
-            raise Exception("Prompt Manager not instantiated.")
+            raise Exception('Prompt Manager not instantiated.')
 
         # Use conversation_memory to process events instead of calling events_to_messages directly
         messages = self.conversation_memory.process_initial_messages(
@@ -177,7 +177,7 @@ class CodeActAgent(Agent):
         events = self.condenser.condensed_history(state)
 
         logger.debug(
-            f"Processing {len(events)} events from a total of {len(state.history)} events"
+            f'Processing {len(events)} events from a total of {len(state.history)} events'
         )
 
         messages = self.conversation_memory.process_events(
@@ -204,14 +204,14 @@ class CodeActAgent(Agent):
         Returns:
             list[Message]: The enhanced list of messages
         """
-        assert self.prompt_manager, "Prompt Manager not instantiated."
+        assert self.prompt_manager, 'Prompt Manager not instantiated.'
 
         results: list[Message] = []
         is_first_message_handled = False
         prev_role = None
 
         for msg in messages:
-            if msg.role == "user" and not is_first_message_handled:
+            if msg.role == 'user' and not is_first_message_handled:
                 is_first_message_handled = True
                 # compose the first user message with examples
                 self.prompt_manager.add_examples_to_initial_message(msg)
@@ -221,16 +221,16 @@ class CodeActAgent(Agent):
                     self.prompt_manager.add_info_to_initial_message(msg)
 
             # enhance the user message with additional context based on keywords matched
-            if msg.role == "user":
+            if msg.role == 'user':
                 self.prompt_manager.enhance_message(msg)
 
                 # Add double newline between consecutive user messages
-                if prev_role == "user" and len(msg.content) > 0:
+                if prev_role == 'user' and len(msg.content) > 0:
                     # Find the first TextContent in the message to add newlines
                     for content_item in msg.content:
                         if isinstance(content_item, TextContent):
                             # If the previous message was also from a user, prepend two newlines to ensure separation
-                            content_item.text = "\n\n" + content_item.text
+                            content_item.text = '\n\n' + content_item.text
                             break
 
             results.append(msg)

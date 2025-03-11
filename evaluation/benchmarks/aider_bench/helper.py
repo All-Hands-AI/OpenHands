@@ -11,12 +11,12 @@ Only use standard python libraries, don't suggest installing any packages.
 
 
 FAKE_RESPONSES = {
-    "CodeActAgent": codeact_user_response,
+    'CodeActAgent': codeact_user_response,
 }
 
 INST_SUFFIXES: dict[str, str] = {
-    "CodeActAgent": (
-        "REMEMBER: All edits must be made directly in the files. Do NOT send"
-        " the edited file as output to the user.\n"
+    'CodeActAgent': (
+        'REMEMBER: All edits must be made directly in the files. Do NOT send'
+        ' the edited file as output to the user.\n'
     )
 }

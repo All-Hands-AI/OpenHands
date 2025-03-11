@@ -28,7 +28,7 @@ from openhands.core.config.security_config import SecurityConfig
 from openhands.storage import get_file_store
 from openhands.storage.files import FileStore
 
-JWT_SECRET = ".jwt_secret"
+JWT_SECRET = '.jwt_secret'
 load_dotenv()
 
 
@@ -58,7 +58,7 @@ def load_from_env(
         return None
 
     # helper function to set attributes based on env vars
-    def set_attr_from_env(sub_config: BaseModel, prefix="") -> None:
+    def set_attr_from_env(sub_config: BaseModel, prefix='') -> None:
         """Set attributes of a config model based on environment variables."""
         for field_name, field_info in sub_config.model_fields.items():
             field_value = getattr(sub_config, field_name)
@@ -69,7 +69,7 @@ def load_from_env(
             env_var_name = (prefix + field_name).upper()
 
             if isinstance(field_value, BaseModel):
-                set_attr_from_env(field_value, prefix=field_name + "_")
+                set_attr_from_env(field_value, prefix=field_name + '_')
 
             elif env_var_name in env_or_toml_dict:
                 # convert the env var to the correct type and set it
@@ -86,7 +86,7 @@ def load_from_env(
 
                     # Attempt to cast the env var to type hinted in the dataclass
                     if field_type is bool:
-                        cast_value = str(value).lower() in ["true", "1"]
+                        cast_value = str(value).lower() in ['true', '1']
                     # parse dicts like SANDBOX_RUNTIME_STARTUP_ENV_VARS
                     elif get_origin(field_type) is dict:
                         cast_value = literal_eval(value)
@@ -96,7 +96,7 @@ def load_from_env(
                     setattr(sub_config, field_name, cast_value)
                 except (ValueError, TypeError):
                     logger.openhands_logger.error(
-                        f"Error setting env var {env_var_name}={value}: check that the value is of the right type"
+                        f'Error setting env var {env_var_name}={value}: check that the value is of the right type'
                     )
 
     # Start processing from the root of the config object
@@ -104,13 +104,13 @@ def load_from_env(
 
     # load default LLM config from env
     default_llm_config = cfg.get_llm_config()
-    set_attr_from_env(default_llm_config, "LLM_")
+    set_attr_from_env(default_llm_config, 'LLM_')
     # load default agent config from env
     default_agent_config = cfg.get_agent_config()
-    set_attr_from_env(default_agent_config, "AGENT_")
+    set_attr_from_env(default_agent_config, 'AGENT_')
 
 
-def load_from_toml(cfg: AppConfig, toml_file: str = "config.toml") -> None:
+def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     """Load the config from the toml file. Supports both styles of config vars.
 
     Args:
@@ -122,24 +122,24 @@ def load_from_toml(cfg: AppConfig, toml_file: str = "config.toml") -> None:
     """
     # try to read the config.toml file into the config object
     try:
-        with open(toml_file, "r", encoding="utf-8") as toml_contents:
+        with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_config = toml.load(toml_contents)
     except FileNotFoundError:
         return
     except toml.TomlDecodeError as e:
         logger.openhands_logger.warning(
-            f"Cannot parse config from toml, toml values have not been applied.\nError: {e}",
+            f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
         )
         return
 
     # Check for the [core] section
-    if "core" not in toml_config:
+    if 'core' not in toml_config:
         logger.openhands_logger.warning(
-            f"No [core] section found in {toml_file}. Core settings will use defaults."
+            f'No [core] section found in {toml_file}. Core settings will use defaults.'
         )
         core_config = {}
     else:
-        core_config = toml_config["core"]
+        core_config = toml_config['core']
 
     # Process core section if present
     for key, value in core_config.items():
@@ -151,75 +151,75 @@ def load_from_toml(cfg: AppConfig, toml_file: str = "config.toml") -> None:
             )
 
     # Process agent section if present
-    if "agent" in toml_config:
+    if 'agent' in toml_config:
         try:
-            agent_mapping = AgentConfig.from_toml_section(toml_config["agent"])
+            agent_mapping = AgentConfig.from_toml_section(toml_config['agent'])
             for agent_key, agent_conf in agent_mapping.items():
                 cfg.set_agent_config(agent_conf, agent_key)
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
-                f"Cannot parse [agent] config from toml, values have not been applied.\nError: {e}"
+                f'Cannot parse [agent] config from toml, values have not been applied.\nError: {e}'
             )
 
     # Process llm section if present
-    if "llm" in toml_config:
+    if 'llm' in toml_config:
         try:
-            llm_mapping = LLMConfig.from_toml_section(toml_config["llm"])
+            llm_mapping = LLMConfig.from_toml_section(toml_config['llm'])
             for llm_key, llm_conf in llm_mapping.items():
                 cfg.set_llm_config(llm_conf, llm_key)
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
-                f"Cannot parse [llm] config from toml, values have not been applied.\nError: {e}"
+                f'Cannot parse [llm] config from toml, values have not been applied.\nError: {e}'
             )
 
     # Process security section if present
-    if "security" in toml_config:
+    if 'security' in toml_config:
         try:
-            security_mapping = SecurityConfig.from_toml_section(toml_config["security"])
+            security_mapping = SecurityConfig.from_toml_section(toml_config['security'])
             # We only use the base security config for now
-            if "security" in security_mapping:
-                cfg.security = security_mapping["security"]
+            if 'security' in security_mapping:
+                cfg.security = security_mapping['security']
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
-                f"Cannot parse [security] config from toml, values have not been applied.\nError: {e}"
+                f'Cannot parse [security] config from toml, values have not been applied.\nError: {e}'
             )
         except ValueError:
             # Re-raise ValueError from SecurityConfig.from_toml_section
-            raise ValueError("Error in [security] section in config.toml")
+            raise ValueError('Error in [security] section in config.toml')
 
     # Process sandbox section if present
-    if "sandbox" in toml_config:
+    if 'sandbox' in toml_config:
         try:
-            sandbox_mapping = SandboxConfig.from_toml_section(toml_config["sandbox"])
+            sandbox_mapping = SandboxConfig.from_toml_section(toml_config['sandbox'])
             # We only use the base sandbox config for now
-            if "sandbox" in sandbox_mapping:
-                cfg.sandbox = sandbox_mapping["sandbox"]
+            if 'sandbox' in sandbox_mapping:
+                cfg.sandbox = sandbox_mapping['sandbox']
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
-                f"Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}"
+                f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}'
             )
         except ValueError:
             # Re-raise ValueError from SandboxConfig.from_toml_section
-            raise ValueError("Error in [sandbox] section in config.toml")
+            raise ValueError('Error in [sandbox] section in config.toml')
 
     # Process condenser section if present
-    if "condenser" in toml_config:
+    if 'condenser' in toml_config:
         try:
             # Pass the LLM configs to the condenser config parser
             condenser_mapping = condenser_config_from_toml_section(
-                toml_config["condenser"], cfg.llms
+                toml_config['condenser'], cfg.llms
             )
             # Assign the default condenser configuration to the default agent configuration
-            if "condenser" in condenser_mapping:
+            if 'condenser' in condenser_mapping:
                 # Get the default agent config and assign the condenser config to it
                 default_agent_config = cfg.get_agent_config()
-                default_agent_config.condenser = condenser_mapping["condenser"]
+                default_agent_config.condenser = condenser_mapping['condenser']
                 logger.openhands_logger.debug(
-                    "Default condenser configuration loaded from config toml and assigned to default agent"
+                    'Default condenser configuration loaded from config toml and assigned to default agent'
                 )
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
-                f"Cannot parse [condenser] config from toml, values have not been applied.\nError: {e}"
+                f'Cannot parse [condenser] config from toml, values have not been applied.\nError: {e}'
             )
     # If no condenser section is in toml but enable_default_condenser is True,
     # set LLMSummarizingCondenserConfig as default
@@ -232,37 +232,37 @@ def load_from_toml(cfg: AppConfig, toml_file: str = "config.toml") -> None:
         # Create default LLM summarizing condenser config
         default_condenser = LLMSummarizingCondenserConfig(
             llm_config=cfg.get_llm_config(),  # Use default LLM config
-            type="llm",
+            type='llm',
         )
 
         # Set as default condenser
         default_agent_config.condenser = default_condenser
         logger.openhands_logger.debug(
-            "Default LLM summarizing condenser assigned to default agent (no condenser in config)"
+            'Default LLM summarizing condenser assigned to default agent (no condenser in config)'
         )
 
     # Process extended section if present
-    if "extended" in toml_config:
+    if 'extended' in toml_config:
         try:
-            cfg.extended = ExtendedConfig(toml_config["extended"])
+            cfg.extended = ExtendedConfig(toml_config['extended'])
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
-                f"Cannot parse [extended] config from toml, values have not been applied.\nError: {e}"
+                f'Cannot parse [extended] config from toml, values have not been applied.\nError: {e}'
             )
 
     # Check for unknown sections
     known_sections = {
-        "core",
-        "extended",
-        "agent",
-        "llm",
-        "security",
-        "sandbox",
-        "condenser",
+        'core',
+        'extended',
+        'agent',
+        'llm',
+        'security',
+        'sandbox',
+        'condenser',
     }
     for key in toml_config:
         if key.lower() not in known_sections:
-            logger.openhands_logger.warning(f"Unknown section [{key}] in {toml_file}")
+            logger.openhands_logger.warning(f'Unknown section [{key}] in {toml_file}')
 
 
 def get_or_create_jwt_secret(file_store: FileStore) -> str:
@@ -284,7 +284,7 @@ def finalize_config(cfg: AppConfig):
 
         if cfg.workspace_mount_rewrite:
             base = cfg.workspace_base or os.getcwd()
-            parts = cfg.workspace_mount_rewrite.split(":")
+            parts = cfg.workspace_mount_rewrite.split(':')
             cfg.workspace_mount_path = base.replace(parts[0], parts[1])
 
     # make sure log_completions_folder is an absolute path
@@ -293,10 +293,10 @@ def finalize_config(cfg: AppConfig):
         if llm.embedding_base_url is None:
             llm.embedding_base_url = llm.base_url
 
-    if cfg.sandbox.use_host_network and platform.system() == "Darwin":
+    if cfg.sandbox.use_host_network and platform.system() == 'Darwin':
         logger.openhands_logger.warning(
-            "Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. "
-            "See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information."
+            'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
+            'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
         )
 
     # make sure cache dir exists
@@ -312,7 +312,7 @@ def finalize_config(cfg: AppConfig):
 
 
 def get_agent_config_arg(
-    agent_config_arg: str, toml_file: str = "config.toml"
+    agent_config_arg: str, toml_file: str = 'config.toml'
 ) -> AgentConfig | None:
     """Get a group of agent settings from the config file.
 
@@ -336,36 +336,36 @@ def get_agent_config_arg(
         AgentConfig: The AgentConfig object with the settings from the config file.
     """
     # keep only the name, just in case
-    agent_config_arg = agent_config_arg.strip("[]")
+    agent_config_arg = agent_config_arg.strip('[]')
 
     # truncate the prefix, just in case
-    if agent_config_arg.startswith("agent."):
+    if agent_config_arg.startswith('agent.'):
         agent_config_arg = agent_config_arg[6:]
 
-    logger.openhands_logger.debug(f"Loading agent config from {agent_config_arg}")
+    logger.openhands_logger.debug(f'Loading agent config from {agent_config_arg}')
 
     # load the toml file
     try:
-        with open(toml_file, "r", encoding="utf-8") as toml_contents:
+        with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_config = toml.load(toml_contents)
     except FileNotFoundError as e:
-        logger.openhands_logger.error(f"Config file not found: {e}")
+        logger.openhands_logger.error(f'Config file not found: {e}')
         return None
     except toml.TomlDecodeError as e:
         logger.openhands_logger.error(
-            f"Cannot parse agent group from {agent_config_arg}. Exception: {e}"
+            f'Cannot parse agent group from {agent_config_arg}. Exception: {e}'
         )
         return None
 
     # update the agent config with the specified section
-    if "agent" in toml_config and agent_config_arg in toml_config["agent"]:
-        return AgentConfig(**toml_config["agent"][agent_config_arg])
-    logger.openhands_logger.debug(f"Loading from toml failed for {agent_config_arg}")
+    if 'agent' in toml_config and agent_config_arg in toml_config['agent']:
+        return AgentConfig(**toml_config['agent'][agent_config_arg])
+    logger.openhands_logger.debug(f'Loading from toml failed for {agent_config_arg}')
     return None
 
 
 def get_llm_config_arg(
-    llm_config_arg: str, toml_file: str = "config.toml"
+    llm_config_arg: str, toml_file: str = 'config.toml'
 ) -> LLMConfig | None:
     """Get a group of llm settings from the config file.
 
@@ -393,149 +393,149 @@ def get_llm_config_arg(
         LLMConfig: The LLMConfig object with the settings from the config file.
     """
     # keep only the name, just in case
-    llm_config_arg = llm_config_arg.strip("[]")
+    llm_config_arg = llm_config_arg.strip('[]')
 
     # truncate the prefix, just in case
-    if llm_config_arg.startswith("llm."):
+    if llm_config_arg.startswith('llm.'):
         llm_config_arg = llm_config_arg[4:]
 
-    logger.openhands_logger.debug(f"Loading llm config from {llm_config_arg}")
+    logger.openhands_logger.debug(f'Loading llm config from {llm_config_arg}')
 
     # load the toml file
     try:
-        with open(toml_file, "r", encoding="utf-8") as toml_contents:
+        with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_config = toml.load(toml_contents)
     except FileNotFoundError as e:
-        logger.openhands_logger.error(f"Config file not found: {e}")
+        logger.openhands_logger.error(f'Config file not found: {e}')
         return None
     except toml.TomlDecodeError as e:
         logger.openhands_logger.error(
-            f"Cannot parse llm group from {llm_config_arg}. Exception: {e}"
+            f'Cannot parse llm group from {llm_config_arg}. Exception: {e}'
         )
         return None
 
     # update the llm config with the specified section
-    if "llm" in toml_config and llm_config_arg in toml_config["llm"]:
-        return LLMConfig(**toml_config["llm"][llm_config_arg])
-    logger.openhands_logger.debug(f"Loading from toml failed for {llm_config_arg}")
+    if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
+        return LLMConfig(**toml_config['llm'][llm_config_arg])
+    logger.openhands_logger.debug(f'Loading from toml failed for {llm_config_arg}')
     return None
 
 
 # Command line arguments
 def get_parser() -> argparse.ArgumentParser:
     """Get the argument parser."""
-    parser = argparse.ArgumentParser(description="Run the agent via CLI")
+    parser = argparse.ArgumentParser(description='Run the agent via CLI')
 
     # Add version argument
     parser.add_argument(
-        "-v", "--version", action="store_true", help="Show version information"
+        '-v', '--version', action='store_true', help='Show version information'
     )
 
     parser.add_argument(
-        "--config-file",
+        '--config-file',
         type=str,
-        default="config.toml",
-        help="Path to the config file (default: config.toml in the current directory)",
+        default='config.toml',
+        help='Path to the config file (default: config.toml in the current directory)',
     )
     parser.add_argument(
-        "-d",
-        "--directory",
+        '-d',
+        '--directory',
         type=str,
-        help="The working directory for the agent",
+        help='The working directory for the agent',
     )
     parser.add_argument(
-        "-t",
-        "--task",
+        '-t',
+        '--task',
         type=str,
-        default="",
-        help="The task for the agent to perform",
+        default='',
+        help='The task for the agent to perform',
     )
     parser.add_argument(
-        "-f",
-        "--file",
+        '-f',
+        '--file',
         type=str,
-        help="Path to a file containing the task. Overrides -t if both are provided.",
+        help='Path to a file containing the task. Overrides -t if both are provided.',
     )
     parser.add_argument(
-        "-c",
-        "--agent-cls",
+        '-c',
+        '--agent-cls',
         default=OH_DEFAULT_AGENT,
         type=str,
-        help="Name of the default agent to use",
+        help='Name of the default agent to use',
     )
     parser.add_argument(
-        "-i",
-        "--max-iterations",
+        '-i',
+        '--max-iterations',
         default=OH_MAX_ITERATIONS,
         type=int,
-        help="The maximum number of iterations to run the agent",
+        help='The maximum number of iterations to run the agent',
     )
     parser.add_argument(
-        "-b",
-        "--max-budget-per-task",
+        '-b',
+        '--max-budget-per-task',
         type=float,
-        help="The maximum budget allowed per task, beyond which the agent will stop.",
+        help='The maximum budget allowed per task, beyond which the agent will stop.',
     )
     # --eval configs are for evaluations only
     parser.add_argument(
-        "--eval-output-dir",
-        default="evaluation/evaluation_outputs/outputs",
+        '--eval-output-dir',
+        default='evaluation/evaluation_outputs/outputs',
         type=str,
-        help="The directory to save evaluation output",
+        help='The directory to save evaluation output',
     )
     parser.add_argument(
-        "--eval-n-limit",
+        '--eval-n-limit',
         default=None,
         type=int,
-        help="The number of instances to evaluate",
+        help='The number of instances to evaluate',
     )
     parser.add_argument(
-        "--eval-num-workers",
+        '--eval-num-workers',
         default=4,
         type=int,
-        help="The number of workers to use for evaluation",
+        help='The number of workers to use for evaluation',
     )
     parser.add_argument(
-        "--eval-note",
+        '--eval-note',
         default=None,
         type=str,
-        help="The note to add to the evaluation directory",
+        help='The note to add to the evaluation directory',
     )
     parser.add_argument(
-        "-l",
-        "--llm-config",
+        '-l',
+        '--llm-config',
         default=None,
         type=str,
         help='Replace default LLM ([llm] section in config.toml) config with the specified LLM config, e.g. "llama3" for [llm.llama3] section in config.toml',
     )
     parser.add_argument(
-        "--agent-config",
+        '--agent-config',
         default=None,
         type=str,
         help='Replace default Agent ([agent] section in config.toml) config with the specified Agent config, e.g. "CodeAct" for [agent.CodeAct] section in config.toml',
     )
     parser.add_argument(
-        "-n",
-        "--name",
-        help="Session name",
+        '-n',
+        '--name',
+        help='Session name',
         type=str,
-        default="",
+        default='',
     )
     parser.add_argument(
-        "--eval-ids",
+        '--eval-ids',
         default=None,
         type=str,
-        help="The comma-separated list (in quotes) of IDs of the instances to evaluate",
+        help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
     )
     parser.add_argument(
-        "--no-auto-continue",
-        help="Disable auto-continue responses in headless mode (i.e. headless will read from stdin instead of auto-continuing)",
-        action="store_true",
+        '--no-auto-continue',
+        help='Disable auto-continue responses in headless mode (i.e. headless will read from stdin instead of auto-continuing)',
+        action='store_true',
         default=False,
     )
     parser.add_argument(
-        "--selected-repo",
-        help="GitHub repository to clone (format: owner/repo)",
+        '--selected-repo',
+        help='GitHub repository to clone (format: owner/repo)',
         type=str,
         default=None,
     )
@@ -548,14 +548,14 @@ def parse_arguments() -> argparse.Namespace:
     args = parser.parse_args()
 
     if args.version:
-        print(f"OpenHands version: {__version__}")
+        print(f'OpenHands version: {__version__}')
         sys.exit(0)
 
     return args
 
 
 def load_app_config(
-    set_logging_levels: bool = True, config_file: str = "config.toml"
+    set_logging_levels: bool = True, config_file: str = 'config.toml'
 ) -> AppConfig:
     """Load the configuration from the specified config file and environment variables.
 
@@ -589,7 +589,7 @@ def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
         else:
             llm_config = config.llms[args.llm_config]
         if llm_config is None:
-            raise ValueError(f"Invalid toml file, cannot read {args.llm_config}")
+            raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
         config.set_llm_config(llm_config)
 
     # Override default agent if provided

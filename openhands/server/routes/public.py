@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from openhands.security.options import SecurityAnalyzers
 
 with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
+    warnings.simplefilter('ignore')
     import litellm
 
 from openhands.controller.agent import Agent
@@ -16,10 +16,10 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.llm import bedrock
 from openhands.server.shared import config, server_config
 
-app = APIRouter(prefix="/api/options")
+app = APIRouter(prefix='/api/options')
 
 
-@app.get("/models", response_model=list[str])
+@app.get('/models', response_model=list[str])
 async def get_litellm_models() -> list[str]:
     """Get all models supported by LiteLLM.
 
@@ -54,25 +54,25 @@ async def get_litellm_models() -> list[str]:
     model_list = litellm_model_list_without_bedrock + bedrock_model_list
     for llm_config in config.llms.values():
         ollama_base_url = llm_config.ollama_base_url
-        if llm_config.model.startswith("ollama"):
+        if llm_config.model.startswith('ollama'):
             if not ollama_base_url:
                 ollama_base_url = llm_config.base_url
         if ollama_base_url:
-            ollama_url = ollama_base_url.strip("/") + "/api/tags"
+            ollama_url = ollama_base_url.strip('/') + '/api/tags'
             try:
                 ollama_models_list = requests.get(ollama_url, timeout=3).json()[
-                    "models"
+                    'models'
                 ]
                 for model in ollama_models_list:
-                    model_list.append("ollama/" + model["name"])
+                    model_list.append('ollama/' + model['name'])
                 break
             except requests.exceptions.RequestException as e:
-                logger.error(f"Error getting OLLAMA models: {e}")
+                logger.error(f'Error getting OLLAMA models: {e}')
 
     return list(sorted(set(model_list)))
 
 
-@app.get("/agents", response_model=list[str])
+@app.get('/agents', response_model=list[str])
 async def get_agents() -> list[str]:
     """Get all agents supported by LiteLLM.
 
@@ -87,7 +87,7 @@ async def get_agents() -> list[str]:
     return sorted(Agent.list_agents())
 
 
-@app.get("/security-analyzers", response_model=list[str])
+@app.get('/security-analyzers', response_model=list[str])
 async def get_security_analyzers() -> list[str]:
     """Get all supported security analyzers.
 
@@ -102,7 +102,7 @@ async def get_security_analyzers() -> list[str]:
     return sorted(SecurityAnalyzers.keys())
 
 
-@app.get("/config", response_model=dict[str, Any])
+@app.get('/config', response_model=dict[str, Any])
 async def get_config() -> dict[str, Any]:
     """Get current config.
 

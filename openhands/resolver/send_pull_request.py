@@ -36,31 +36,31 @@ def apply_patch(repo_dir: str, patch: str) -> None:
     diffs = parse_patch(patch)
     for diff in diffs:
         if not diff.header.new_path:
-            print("Warning: Could not determine file to patch")
+            print('Warning: Could not determine file to patch')
             continue
 
         # Remove both "a/" and "b/" prefixes from paths
         old_path = (
             os.path.join(
-                repo_dir, diff.header.old_path.removeprefix("a/").removeprefix("b/")
+                repo_dir, diff.header.old_path.removeprefix('a/').removeprefix('b/')
             )
-            if diff.header.old_path and diff.header.old_path != "/dev/null"
+            if diff.header.old_path and diff.header.old_path != '/dev/null'
             else None
         )
         new_path = os.path.join(
-            repo_dir, diff.header.new_path.removeprefix("a/").removeprefix("b/")
+            repo_dir, diff.header.new_path.removeprefix('a/').removeprefix('b/')
         )
 
         # Check if the file is being deleted
-        if diff.header.new_path == "/dev/null":
+        if diff.header.new_path == '/dev/null':
             assert old_path is not None
             if os.path.exists(old_path):
                 os.remove(old_path)
-                print(f"Deleted file: {old_path}")
+                print(f'Deleted file: {old_path}')
             continue
 
         # Handle file rename
-        if old_path and new_path and "rename from" in patch:
+        if old_path and new_path and 'rename from' in patch:
             # Create parent directory of new path
             os.makedirs(os.path.dirname(new_path), exist_ok=True)
             try:
@@ -84,29 +84,29 @@ def apply_patch(repo_dir: str, patch: str) -> None:
 
         if old_path:
             # Open the file in binary mode to detect line endings
-            with open(old_path, "rb") as f:
+            with open(old_path, 'rb') as f:
                 original_content = f.read()
 
             # Detect line endings
-            if b"\r\n" in original_content:
-                newline = "\r\n"
-            elif b"\n" in original_content:
-                newline = "\n"
+            if b'\r\n' in original_content:
+                newline = '\r\n'
+            elif b'\n' in original_content:
+                newline = '\n'
             else:
                 newline = None  # Let Python decide
 
             try:
-                with open(old_path, "r", newline=newline) as f:
+                with open(old_path, 'r', newline=newline) as f:
                     split_content = [x.strip(newline) for x in f.readlines()]
             except UnicodeDecodeError as e:
-                logger.error(f"Error reading file {old_path}: {e}")
+                logger.error(f'Error reading file {old_path}: {e}')
                 split_content = []
         else:
-            newline = "\n"
+            newline = '\n'
             split_content = []
 
         if diff.changes is None:
-            print(f"Warning: No changes to apply for {old_path}")
+            print(f'Warning: No changes to apply for {old_path}')
             continue
 
         new_content = apply_diff(diff, split_content)
@@ -115,11 +115,11 @@ def apply_patch(repo_dir: str, patch: str) -> None:
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
 
         # Write the new content using the detected line endings
-        with open(new_path, "w", newline=newline) as f:
+        with open(new_path, 'w', newline=newline) as f:
             for line in new_content:
                 print(line, file=f)
 
-    print("Patch applied successfully")
+    print('Patch applied successfully')
 
 
 def initialize_repo(
@@ -133,29 +133,29 @@ def initialize_repo(
         issue_type: The type of the issue
         base_commit: The base commit to checkout (if issue_type is pr)
     """
-    src_dir = os.path.join(output_dir, "repo")
-    dest_dir = os.path.join(output_dir, "patches", f"{issue_type}_{issue_number}")
+    src_dir = os.path.join(output_dir, 'repo')
+    dest_dir = os.path.join(output_dir, 'patches', f'{issue_type}_{issue_number}')
 
     if not os.path.exists(src_dir):
-        raise ValueError(f"Source directory {src_dir} does not exist.")
+        raise ValueError(f'Source directory {src_dir} does not exist.')
 
     if os.path.exists(dest_dir):
         shutil.rmtree(dest_dir)
 
     shutil.copytree(src_dir, dest_dir)
-    print(f"Copied repository to {dest_dir}")
+    print(f'Copied repository to {dest_dir}')
 
     # Checkout the base commit if provided
     if base_commit:
         result = subprocess.run(
-            f"git -C {dest_dir} checkout {base_commit}",
+            f'git -C {dest_dir} checkout {base_commit}',
             shell=True,
             capture_output=True,
             text=True,
         )
         if result.returncode != 0:
-            print(f"Error checking out commit: {result.stderr}")
-            raise RuntimeError("Failed to check out commit")
+            print(f'Error checking out commit: {result.stderr}')
+            raise RuntimeError('Failed to check out commit')
 
     return dest_dir
 
@@ -170,7 +170,7 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
     """
     # Check if git username is set
     result = subprocess.run(
-        f"git -C {repo_dir} config user.name",
+        f'git -C {repo_dir} config user.name',
         shell=True,
         capture_output=True,
         text=True,
@@ -185,19 +185,19 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
             shell=True,
             check=True,
         )
-        print("Git user configured as openhands")
+        print('Git user configured as openhands')
 
     # Add all changes to the git index
     result = subprocess.run(
-        f"git -C {repo_dir} add .", shell=True, capture_output=True, text=True
+        f'git -C {repo_dir} add .', shell=True, capture_output=True, text=True
     )
     if result.returncode != 0:
-        print(f"Error adding files: {result.stderr}")
-        raise RuntimeError("Failed to add files to git")
+        print(f'Error adding files: {result.stderr}')
+        raise RuntimeError('Failed to add files to git')
 
     # Check the status of the git index
     status_result = subprocess.run(
-        f"git -C {repo_dir} status --porcelain",
+        f'git -C {repo_dir} status --porcelain',
         shell=True,
         capture_output=True,
         text=True,
@@ -205,20 +205,20 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
 
     # If there are no changes, raise an error
     if not status_result.stdout.strip():
-        print(f"No changes to commit for issue #{issue.number}. Skipping commit.")
-        raise RuntimeError("ERROR: Openhands failed to make code changes.")
+        print(f'No changes to commit for issue #{issue.number}. Skipping commit.')
+        raise RuntimeError('ERROR: Openhands failed to make code changes.')
 
     # Prepare the commit message
-    commit_message = f"Fix {issue_type} #{issue.number}: {issue.title}"
+    commit_message = f'Fix {issue_type} #{issue.number}: {issue.title}'
 
     # Commit the changes
     result = subprocess.run(
-        ["git", "-C", repo_dir, "commit", "-m", commit_message],
+        ['git', '-C', repo_dir, 'commit', '-m', commit_message],
         capture_output=True,
         text=True,
     )
     if result.returncode != 0:
-        raise RuntimeError(f"Failed to commit changes: {result}")
+        raise RuntimeError(f'Failed to commit changes: {result}')
 
 
 def send_pull_request(
@@ -249,8 +249,8 @@ def send_pull_request(
         reviewer: The GitHub or Gitlab username of the reviewer to assign
         pr_title: Custom title for the pull request (optional)
     """
-    if pr_type not in ["branch", "draft", "ready"]:
-        raise ValueError(f"Invalid pr_type: {pr_type}")
+    if pr_type not in ['branch', 'draft', 'ready']:
+        raise ValueError(f'Invalid pr_type: {pr_type}')
 
     handler = None
     if platform == Platform.GITHUB:
@@ -263,33 +263,33 @@ def send_pull_request(
         )
 
     # Create a new branch with a unique name
-    base_branch_name = f"openhands-fix-issue-{issue.number}"
+    base_branch_name = f'openhands-fix-issue-{issue.number}'
     branch_name = handler.get_branch_name(
         base_branch_name=base_branch_name,
     )
 
     # Get the default branch or use specified target branch
-    print("Getting base branch...")
+    print('Getting base branch...')
     if target_branch:
         base_branch = target_branch
         exists = handler.branch_exists(branch_name=target_branch)
         if not exists:
-            raise ValueError(f"Target branch {target_branch} does not exist")
+            raise ValueError(f'Target branch {target_branch} does not exist')
     else:
         base_branch = handler.get_default_branch_name()
-    print(f"Base branch: {base_branch}")
+    print(f'Base branch: {base_branch}')
 
     # Create and checkout the new branch
-    print("Creating new branch...")
+    print('Creating new branch...')
     result = subprocess.run(
-        ["git", "-C", patch_dir, "checkout", "-b", branch_name],
+        ['git', '-C', patch_dir, 'checkout', '-b', branch_name],
         capture_output=True,
         text=True,
     )
     if result.returncode != 0:
-        print(f"Error creating new branch: {result.stderr}")
+        print(f'Error creating new branch: {result.stderr}')
         raise RuntimeError(
-            f"Failed to create a new branch {branch_name} in {patch_dir}:"
+            f'Failed to create a new branch {branch_name} in {patch_dir}:'
         )
 
     # Determine the repository to push to (original or fork)
@@ -297,51 +297,51 @@ def send_pull_request(
 
     handler._strategy.set_owner(push_owner)
 
-    print("Pushing changes...")
+    print('Pushing changes...')
     push_url = handler.get_clone_url()
     result = subprocess.run(
-        ["git", "-C", patch_dir, "push", push_url, branch_name],
+        ['git', '-C', patch_dir, 'push', push_url, branch_name],
         capture_output=True,
         text=True,
     )
     if result.returncode != 0:
-        print(f"Error pushing changes: {result.stderr}")
-        raise RuntimeError("Failed to push changes to the remote repository")
+        print(f'Error pushing changes: {result.stderr}')
+        raise RuntimeError('Failed to push changes to the remote repository')
 
     # Prepare the PR data: title and body
     final_pr_title = (
-        pr_title if pr_title else f"Fix issue #{issue.number}: {issue.title}"
+        pr_title if pr_title else f'Fix issue #{issue.number}: {issue.title}'
     )
-    pr_body = f"This pull request fixes #{issue.number}."
+    pr_body = f'This pull request fixes #{issue.number}.'
     if additional_message:
-        pr_body += f"\n\n{additional_message}"
-    pr_body += "\n\nAutomatic fix generated by [OpenHands](https://github.com/All-Hands-AI/OpenHands/) 🙌"
+        pr_body += f'\n\n{additional_message}'
+    pr_body += '\n\nAutomatic fix generated by [OpenHands](https://github.com/All-Hands-AI/OpenHands/) 🙌'
 
     # If we are not sending a PR, we can finish early and return the
     # URL for the user to open a PR manually
-    if pr_type == "branch":
+    if pr_type == 'branch':
         url = handler.get_compare_url(branch_name)
     else:
         # Prepare the PR for the GitHub API
         data = {
-            "title": final_pr_title,
-            ("body" if platform == Platform.GITHUB else "description"): pr_body,
-            ("head" if platform == Platform.GITHUB else "source_branch"): branch_name,
-            ("base" if platform == Platform.GITHUB else "target_branch"): base_branch,
-            "draft": pr_type == "draft",
+            'title': final_pr_title,
+            ('body' if platform == Platform.GITHUB else 'description'): pr_body,
+            ('head' if platform == Platform.GITHUB else 'source_branch'): branch_name,
+            ('base' if platform == Platform.GITHUB else 'target_branch'): base_branch,
+            'draft': pr_type == 'draft',
         }
 
         pr_data = handler.create_pull_request(data)
-        url = pr_data["html_url"]
+        url = pr_data['html_url']
 
         print(pr_data)
         # Request review if a reviewer was specified
-        if reviewer and pr_type != "branch":
-            number = pr_data["number"]
+        if reviewer and pr_type != 'branch':
+            number = pr_data['number']
             handler.request_reviewers(reviewer, number)
 
     print(
-        f"{pr_type} created: {url}\n\n--- Title: {final_pr_title}\n\n--- Body:\n{pr_body}"
+        f'{pr_type} created: {url}\n\n--- Title: {final_pr_title}\n\n--- Body:\n{pr_body}'
     )
 
     return url
@@ -385,19 +385,19 @@ def update_existing_pull_request(
 
     # Prepare the push command
     push_command = (
-        f"git -C {patch_dir} push "
-        f"{handler.get_authorize_url()}"
-        f"{issue.owner}/{issue.repo}.git {branch_name}"
+        f'git -C {patch_dir} push '
+        f'{handler.get_authorize_url()}'
+        f'{issue.owner}/{issue.repo}.git {branch_name}'
     )
 
     # Push the changes to the existing branch
     result = subprocess.run(push_command, shell=True, capture_output=True, text=True)
     if result.returncode != 0:
-        print(f"Error pushing changes: {result.stderr}")
-        raise RuntimeError("Failed to push changes to the remote repository")
+        print(f'Error pushing changes: {result.stderr}')
+        raise RuntimeError('Failed to push changes to the remote repository')
 
     pr_url = handler.get_pull_url(issue.number)
-    print(f"Updated pull request {pr_url} with new patches.")
+    print(f'Updated pull request {pr_url} with new patches.')
 
     # Generate a summary of all comment success indicators for PR message
     if not comment_message and additional_message:
@@ -405,10 +405,10 @@ def update_existing_pull_request(
             explanations = json.loads(additional_message)
             if explanations:
                 comment_message = (
-                    "OpenHands made the following changes to resolve the issues:\n\n"
+                    'OpenHands made the following changes to resolve the issues:\n\n'
                 )
                 for explanation in explanations:
-                    comment_message += f"- {explanation}\n"
+                    comment_message += f'- {explanation}\n'
 
                 # Summarize with LLM if provided
                 if llm_config is not None:
@@ -416,19 +416,19 @@ def update_existing_pull_request(
                     with open(
                         os.path.join(
                             os.path.dirname(__file__),
-                            "prompts/resolve/pr-changes-summary.jinja",
+                            'prompts/resolve/pr-changes-summary.jinja',
                         ),
-                        "r",
+                        'r',
                     ) as f:
                         template = jinja2.Template(f.read())
                     prompt = template.render(comment_message=comment_message)
                     response = llm.completion(
-                        messages=[{"role": "user", "content": prompt}],
+                        messages=[{'role': 'user', 'content': prompt}],
                     )
                     comment_message = response.choices[0].message.content.strip()
 
         except (json.JSONDecodeError, TypeError):
-            comment_message = f"A new OpenHands update is available, but failed to parse or summarize the changes:\n{additional_message}"
+            comment_message = f'A new OpenHands update is available, but failed to parse or summarize the changes:\n{additional_message}'
 
     # Post a comment on the PR
     if comment_message:
@@ -442,7 +442,7 @@ def update_existing_pull_request(
                 comment_id = issue.thread_ids[count]
                 handler.reply_to_comment(issue.number, comment_id, reply_comment)
         except (json.JSONDecodeError, TypeError):
-            msg = f"Error occured when replying to threads; success explanations {additional_message}"
+            msg = f'Error occured when replying to threads; success explanations {additional_message}'
             handler.send_comment_msg(issue.number, msg)
 
     return pr_url
@@ -464,20 +464,20 @@ def process_single_issue(
 ) -> None:
     if not resolver_output.success and not send_on_failure:
         print(
-            f"Issue {resolver_output.issue.number} was not successfully resolved. Skipping PR creation."
+            f'Issue {resolver_output.issue.number} was not successfully resolved. Skipping PR creation.'
         )
         return
 
     issue_type = resolver_output.issue_type
 
-    if issue_type == "issue":
+    if issue_type == 'issue':
         patched_repo_dir = initialize_repo(
             output_dir,
             resolver_output.issue.number,
             issue_type,
             resolver_output.base_commit,
         )
-    elif issue_type == "pr":
+    elif issue_type == 'pr':
         patched_repo_dir = initialize_repo(
             output_dir,
             resolver_output.issue.number,
@@ -485,13 +485,13 @@ def process_single_issue(
             resolver_output.issue.head_branch,
         )
     else:
-        raise ValueError(f"Invalid issue type: {issue_type}")
+        raise ValueError(f'Invalid issue type: {issue_type}')
 
     apply_patch(patched_repo_dir, resolver_output.git_patch)
 
     make_commit(patched_repo_dir, resolver_output.issue, issue_type)
 
-    if issue_type == "pr":
+    if issue_type == 'pr':
         update_existing_pull_request(
             issue=resolver_output.issue,
             token=token,
@@ -526,10 +526,10 @@ def process_all_successful_issues(
     llm_config: LLMConfig,
     fork_owner: str | None,
 ) -> None:
-    output_path = os.path.join(output_dir, "output.jsonl")
+    output_path = os.path.join(output_dir, 'output.jsonl')
     for resolver_output in load_all_resolver_outputs(output_path):
         if resolver_output.success:
-            print(f"Processing issue {resolver_output.issue.number}")
+            print(f'Processing issue {resolver_output.issue.number}')
             process_single_issue(
                 output_dir,
                 resolver_output,
@@ -546,112 +546,112 @@ def process_all_successful_issues(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Send a pull request to Github or Gitlab."
+        description='Send a pull request to Github or Gitlab.'
     )
     parser.add_argument(
-        "--token",
+        '--token',
         type=str,
         default=None,
-        help="token to access the repository.",
+        help='token to access the repository.',
     )
     parser.add_argument(
-        "--username",
+        '--username',
         type=str,
         default=None,
-        help="username to access the repository.",
+        help='username to access the repository.',
     )
     parser.add_argument(
-        "--output-dir",
+        '--output-dir',
         type=str,
-        default="output",
-        help="Output directory to write the results.",
+        default='output',
+        help='Output directory to write the results.',
     )
     parser.add_argument(
-        "--pr-type",
+        '--pr-type',
         type=str,
-        default="draft",
-        choices=["branch", "draft", "ready"],
-        help="Type of the pull request to send [branch, draft, ready]",
+        default='draft',
+        choices=['branch', 'draft', 'ready'],
+        help='Type of the pull request to send [branch, draft, ready]',
     )
     parser.add_argument(
-        "--issue-number",
+        '--issue-number',
         type=str,
         required=True,
         help="Issue number to send the pull request for, or 'all_successful' to process all successful issues.",
     )
     parser.add_argument(
-        "--fork-owner",
+        '--fork-owner',
         type=str,
         default=None,
-        help="Owner of the fork to push changes to (if different from the original repo owner).",
+        help='Owner of the fork to push changes to (if different from the original repo owner).',
     )
     parser.add_argument(
-        "--send-on-failure",
-        action="store_true",
-        help="Send a pull request even if the issue was not successfully resolved.",
+        '--send-on-failure',
+        action='store_true',
+        help='Send a pull request even if the issue was not successfully resolved.',
     )
     parser.add_argument(
-        "--llm-model",
+        '--llm-model',
         type=str,
         default=None,
-        help="LLM model to use for summarizing changes.",
+        help='LLM model to use for summarizing changes.',
     )
     parser.add_argument(
-        "--llm-api-key",
+        '--llm-api-key',
         type=str,
         default=None,
-        help="API key for the LLM model.",
+        help='API key for the LLM model.',
     )
     parser.add_argument(
-        "--llm-base-url",
+        '--llm-base-url',
         type=str,
         default=None,
-        help="Base URL for the LLM model.",
+        help='Base URL for the LLM model.',
     )
     parser.add_argument(
-        "--target-branch",
+        '--target-branch',
         type=str,
         default=None,
-        help="Target branch to create the pull request against (defaults to repository default branch)",
+        help='Target branch to create the pull request against (defaults to repository default branch)',
     )
     parser.add_argument(
-        "--reviewer",
+        '--reviewer',
         type=str,
-        help="GitHub or GitLab username of the person to request review from",
+        help='GitHub or GitLab username of the person to request review from',
         default=None,
     )
     parser.add_argument(
-        "--pr-title",
+        '--pr-title',
         type=str,
-        help="Custom title for the pull request",
+        help='Custom title for the pull request',
         default=None,
     )
     my_args = parser.parse_args()
 
-    token = my_args.token or os.getenv("GITHUB_TOKEN") or os.getenv("GITLAB_TOKEN")
+    token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
     if not token:
         raise ValueError(
-            "token is not set, set via --token or GITHUB_TOKEN or GITLAB_TOKEN environment variable."
+            'token is not set, set via --token or GITHUB_TOKEN or GITLAB_TOKEN environment variable.'
         )
-    username = my_args.username if my_args.username else os.getenv("GIT_USERNAME")
+    username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
 
     platform = identify_token(token)
     if platform == Platform.INVALID:
-        raise ValueError("Token is invalid.")
+        raise ValueError('Token is invalid.')
 
-    api_key = my_args.llm_api_key or os.environ["LLM_API_KEY"]
+    api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     llm_config = LLMConfig(
-        model=my_args.llm_model or os.environ["LLM_MODEL"],
+        model=my_args.llm_model or os.environ['LLM_MODEL'],
         api_key=SecretStr(api_key) if api_key else None,
-        base_url=my_args.llm_base_url or os.environ.get("LLM_BASE_URL", None),
+        base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
     )
 
     if not os.path.exists(my_args.output_dir):
-        raise ValueError(f"Output directory {my_args.output_dir} does not exist.")
+        raise ValueError(f'Output directory {my_args.output_dir} does not exist.')
 
-    if my_args.issue_number == "all_successful":
+    if my_args.issue_number == 'all_successful':
         if not username:
-            raise ValueError("username is required.")
+            raise ValueError('username is required.')
         process_all_successful_issues(
             my_args.output_dir,
             token,
@@ -663,12 +663,12 @@ def main() -> None:
         )
     else:
         if not my_args.issue_number.isdigit():
-            raise ValueError(f"Issue number {my_args.issue_number} is not a number.")
+            raise ValueError(f'Issue number {my_args.issue_number} is not a number.')
         issue_number = int(my_args.issue_number)
-        output_path = os.path.join(my_args.output_dir, "output.jsonl")
+        output_path = os.path.join(my_args.output_dir, 'output.jsonl')
         resolver_output = load_single_resolver_output(output_path, issue_number)
         if not username:
-            raise ValueError("username is required.")
+            raise ValueError('username is required.')
         process_single_issue(
             my_args.output_dir,
             resolver_output,
@@ -685,5 +685,5 @@ def main() -> None:
         )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

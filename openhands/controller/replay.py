@@ -30,7 +30,7 @@ class ReplayManager:
             replay_events.append(event)
 
         if replay_events:
-            logger.info(f"Replay events loaded, events length = {len(replay_events)}")
+            logger.info(f'Replay events loaded, events length = {len(replay_events)}')
             for index in range(len(replay_events) - 1):
                 event = replay_events[index]
                 if isinstance(event, MessageAction) and event.wait_for_response:
@@ -39,7 +39,7 @@ class ReplayManager:
                     # would have been included in the next event, and we don't
                     # want the user to interfere with the replay process
                     logger.info(
-                        "Replay events contains wait_for_response message action, ignoring wait_for_response"
+                        'Replay events contains wait_for_response message action, ignoring wait_for_response'
                     )
                     event.wait_for_response = False
         self.replay_events = replay_events

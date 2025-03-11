@@ -79,29 +79,29 @@ HTML_FILE = """
 
 
 class Test(BaseIntegrationTest):
-    INSTRUCTION = "Browse localhost:8000, and tell me the ultimate answer to life."
+    INSTRUCTION = 'Browse localhost:8000, and tell me the ultimate answer to life.'
 
     @classmethod
     def initialize_runtime(cls, runtime: Runtime) -> None:
-        action = CmdRunAction(command="mkdir -p /workspace")
+        action = CmdRunAction(command='mkdir -p /workspace')
         obs = runtime.run_action(action)
-        assert_and_raise(obs.exit_code == 0, f"Failed to run command: {obs.content}")
+        assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
-        action = CmdRunAction(command="mkdir -p /tmp/server")
+        action = CmdRunAction(command='mkdir -p /tmp/server')
         obs = runtime.run_action(action)
-        assert_and_raise(obs.exit_code == 0, f"Failed to run command: {obs.content}")
+        assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
         # create a file with a typo in /workspace/bad.txt
         with tempfile.TemporaryDirectory() as temp_dir:
-            temp_file_path = os.path.join(temp_dir, "index.html")
-            with open(temp_file_path, "w") as f:
+            temp_file_path = os.path.join(temp_dir, 'index.html')
+            with open(temp_file_path, 'w') as f:
                 f.write(HTML_FILE)
             # Copy the file to the desired location
-            runtime.copy_to(temp_file_path, "/tmp/server")
+            runtime.copy_to(temp_file_path, '/tmp/server')
 
         # create README.md
         action = CmdRunAction(
-            command="cd /tmp/server && nohup python3 -m http.server 8000 &"
+            command='cd /tmp/server && nohup python3 -m http.server 8000 &'
         )
         obs = runtime.run_action(action)
 
@@ -117,29 +117,29 @@ class Test(BaseIntegrationTest):
                 event, (MessageAction, AgentFinishAction, AgentDelegateObservation)
             )
         ]
-        logger.debug(f"Total message-like events: {len(message_actions)}")
+        logger.debug(f'Total message-like events: {len(message_actions)}')
 
         for event in message_actions:
             try:
                 if isinstance(event, AgentDelegateObservation):
                     content = event.content
                 elif isinstance(event, AgentFinishAction):
-                    content = event.outputs.get("content", "")
+                    content = event.outputs.get('content', '')
                 elif isinstance(event, MessageAction):
                     content = event.content
                 else:
-                    logger.warning(f"Unexpected event type: {type(event)}")
+                    logger.warning(f'Unexpected event type: {type(event)}')
                     continue
 
-                if "OpenHands is all you need!" in content:
+                if 'OpenHands is all you need!' in content:
                     return TestResult(success=True)
             except Exception as e:
-                logger.error(f"Error processing event: {e}")
+                logger.error(f'Error processing event: {e}')
 
         logger.debug(
-            f"Total messages: {len(message_actions)}. Messages: {message_actions}"
+            f'Total messages: {len(message_actions)}. Messages: {message_actions}'
         )
         return TestResult(
             success=False,
-            reason=f"The answer is not found in any message. Total messages: {len(message_actions)}.",
+            reason=f'The answer is not found in any message. Total messages: {len(message_actions)}.',
         )

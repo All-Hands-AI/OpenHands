@@ -24,7 +24,7 @@ class BaseMicroAgent(BaseModel):
     @classmethod
     def load(
         cls, path: Union[str, Path], file_content: str | None = None
-    ) -> "BaseMicroAgent":
+    ) -> 'BaseMicroAgent':
         """Load a microagent from a markdown file with frontmatter."""
         path = Path(path) if isinstance(path, str) else path
 
@@ -34,11 +34,11 @@ class BaseMicroAgent(BaseModel):
                 file_content = f.read()
 
         # Legacy repo instructions are stored in .openhands_instructions
-        if path.name == ".openhands_instructions":
+        if path.name == '.openhands_instructions':
             return RepoMicroAgent(
-                name="repo_legacy",
+                name='repo_legacy',
                 content=file_content,
-                metadata=MicroAgentMetadata(name="repo_legacy"),
+                metadata=MicroAgentMetadata(name='repo_legacy'),
                 source=str(path),
                 type=MicroAgentType.REPO_KNOWLEDGE,
             )
@@ -49,7 +49,7 @@ class BaseMicroAgent(BaseModel):
         try:
             metadata = MicroAgentMetadata(**loaded.metadata)
         except Exception as e:
-            raise MicroAgentValidationError(f"Error loading metadata: {e}") from e
+            raise MicroAgentValidationError(f'Error loading metadata: {e}') from e
 
         # Create appropriate subclass based on type
         subclass_map = {
@@ -58,7 +58,7 @@ class BaseMicroAgent(BaseModel):
             MicroAgentType.TASK: TaskMicroAgent,
         }
         if metadata.type not in subclass_map:
-            raise ValueError(f"Unknown microagent type: {metadata.type}")
+            raise ValueError(f'Unknown microagent type: {metadata.type}')
 
         agent_class = subclass_map[metadata.type]
         return agent_class(
@@ -81,7 +81,7 @@ class KnowledgeMicroAgent(BaseMicroAgent):
     def __init__(self, **data):
         super().__init__(**data)
         if self.type != MicroAgentType.KNOWLEDGE:
-            raise ValueError("KnowledgeMicroAgent must have type KNOWLEDGE")
+            raise ValueError('KnowledgeMicroAgent must have type KNOWLEDGE')
 
     def match_trigger(self, message: str) -> str | None:
         """Match a trigger in the message.
@@ -114,7 +114,7 @@ class RepoMicroAgent(BaseMicroAgent):
     def __init__(self, **data):
         super().__init__(**data)
         if self.type != MicroAgentType.REPO_KNOWLEDGE:
-            raise ValueError("RepoMicroAgent must have type REPO_KNOWLEDGE")
+            raise ValueError('RepoMicroAgent must have type REPO_KNOWLEDGE')
 
 
 class TaskMicroAgent(BaseMicroAgent):
@@ -123,7 +123,7 @@ class TaskMicroAgent(BaseMicroAgent):
     def __init__(self, **data):
         super().__init__(**data)
         if self.type != MicroAgentType.TASK:
-            raise ValueError("TaskMicroAgent must have type TASK")
+            raise ValueError('TaskMicroAgent must have type TASK')
 
 
 def load_microagents_from_dir(
@@ -149,12 +149,12 @@ def load_microagents_from_dir(
     task_agents = {}
 
     # Load all agents from .openhands/microagents directory
-    logger.debug(f"Loading agents from {microagent_dir}")
+    logger.debug(f'Loading agents from {microagent_dir}')
     if microagent_dir.exists():
-        for file in microagent_dir.rglob("*.md"):
-            logger.debug(f"Checking file {file}...")
+        for file in microagent_dir.rglob('*.md'):
+            logger.debug(f'Checking file {file}...')
             # skip README.md
-            if file.name == "README.md":
+            if file.name == 'README.md':
                 continue
             try:
                 agent = BaseMicroAgent.load(file)
@@ -164,8 +164,8 @@ def load_microagents_from_dir(
                     knowledge_agents[agent.name] = agent
                 elif isinstance(agent, TaskMicroAgent):
                     task_agents[agent.name] = agent
-                logger.debug(f"Loaded agent {agent.name} from {file}")
+                logger.debug(f'Loaded agent {agent.name} from {file}')
             except Exception as e:
-                raise ValueError(f"Error loading agent from {file}: {e}")
+                raise ValueError(f'Error loading agent from {file}: {e}')
 
     return repo_agents, knowledge_agents, task_agents

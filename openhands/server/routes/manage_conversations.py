@@ -26,7 +26,7 @@ from openhands.storage.data_models.conversation_metadata import ConversationMeta
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
 
-app = APIRouter(prefix="/api")
+app = APIRouter(prefix='/api')
 
 
 class InitSessionRequest(BaseModel):
@@ -46,13 +46,13 @@ async def _create_new_conversation(
     attach_convo_id: bool = False,
 ):
     logger.info(
-        "Creating conversation",
-        extra={"signal": "create_conversation", "user_id": user_id},
+        'Creating conversation',
+        extra={'signal': 'create_conversation', 'user_id': user_id},
     )
-    logger.info("Loading settings")
+    logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
-    logger.info("Settings loaded")
+    logger.info('Settings loaded')
 
     session_init_args: dict = {}
     if settings:
@@ -63,38 +63,38 @@ async def _create_new_conversation(
             not settings.llm_api_key
             or settings.llm_api_key.get_secret_value().isspace()
         ):
-            logger.warn(f"Missing api key for model {settings.llm_model}")
+            logger.warn(f'Missing api key for model {settings.llm_model}')
             raise LLMAuthenticationError(
-                "Error authenticating with the LLM provider. Please check your API key"
+                'Error authenticating with the LLM provider. Please check your API key'
             )
 
     else:
-        logger.warn("Settings not present, not starting conversation")
-        raise MissingSettingsError("Settings not found")
+        logger.warn('Settings not present, not starting conversation')
+        raise MissingSettingsError('Settings not found')
 
-    session_init_args["github_token"] = token or SecretStr("")
-    session_init_args["selected_repository"] = selected_repository
-    session_init_args["selected_branch"] = selected_branch
+    session_init_args['github_token'] = token or SecretStr('')
+    session_init_args['selected_repository'] = selected_repository
+    session_init_args['selected_branch'] = selected_branch
     conversation_init_data = ConversationInitData(**session_init_args)
-    logger.info("Loading conversation store")
+    logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
-    logger.info("Conversation store loaded")
+    logger.info('Conversation store loaded')
 
     conversation_id = uuid.uuid4().hex
     while await conversation_store.exists(conversation_id):
-        logger.warning(f"Collision on conversation ID: {conversation_id}. Retrying...")
+        logger.warning(f'Collision on conversation ID: {conversation_id}. Retrying...')
         conversation_id = uuid.uuid4().hex
     logger.info(
-        f"New conversation ID: {conversation_id}",
-        extra={"user_id": user_id, "session_id": conversation_id},
+        f'New conversation ID: {conversation_id}',
+        extra={'user_id': user_id, 'session_id': conversation_id},
     )
 
     repository_title = (
-        selected_repository.split("/")[-1] if selected_repository else None
+        selected_repository.split('/')[-1] if selected_repository else None
     )
-    conversation_title = f"{repository_title or 'Conversation'} {conversation_id[:5]}"
+    conversation_title = f'{repository_title or "Conversation"} {conversation_id[:5]}'
 
-    logger.info(f"Saving metadata for conversation {conversation_id}")
+    logger.info(f'Saving metadata for conversation {conversation_id}')
     await conversation_store.save_metadata(
         ConversationMetadata(
             conversation_id=conversation_id,
@@ -106,8 +106,8 @@ async def _create_new_conversation(
     )
 
     logger.info(
-        f"Starting agent loop for conversation {conversation_id}",
-        extra={"user_id": user_id, "session_id": conversation_id},
+        f'Starting agent loop for conversation {conversation_id}',
+        extra={'user_id': user_id, 'session_id': conversation_id},
     )
     initial_message_action = None
     if initial_user_msg or image_urls:
@@ -117,25 +117,25 @@ async def _create_new_conversation(
             else initial_user_msg
         )
         initial_message_action = MessageAction(
-            content=user_msg or "",
+            content=user_msg or '',
             image_urls=image_urls or [],
         )
     await conversation_manager.maybe_start_agent_loop(
         conversation_id, conversation_init_data, user_id, initial_message_action
     )
-    logger.info(f"Finished initializing conversation {conversation_id}")
+    logger.info(f'Finished initializing conversation {conversation_id}')
 
     return conversation_id
 
 
-@app.post("/conversations")
+@app.post('/conversations')
 async def new_conversation(request: Request, data: InitSessionRequest):
     """Initialize a new session or join an existing one.
 
     After successful initialization, the client should connect to the WebSocket
     using the returned conversation ID.
     """
-    logger.info("Initializing new conversation")
+    logger.info('Initializing new conversation')
     user_id = get_user_id(request)
     gh_client = GithubServiceImpl(
         user_id=user_id,
@@ -161,14 +161,14 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         )
 
         return JSONResponse(
-            content={"status": "ok", "conversation_id": conversation_id}
+            content={'status': 'ok', 'conversation_id': conversation_id}
         )
     except MissingSettingsError as e:
         return JSONResponse(
             content={
-                "status": "error",
-                "message": str(e),
-                "msg_id": "CONFIGURATION$SETTINGS_NOT_FOUND",
+                'status': 'error',
+                'message': str(e),
+                'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND',
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -176,15 +176,15 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     except LLMAuthenticationError as e:
         return JSONResponse(
             content={
-                "status": "error",
-                "message": str(e),
-                "msg_id": "STATUS$ERROR_LLM_AUTHENTICATION",
+                'status': 'error',
+                'message': str(e),
+                'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
 
-@app.get("/conversations")
+@app.get('/conversations')
 async def search_conversations(
     request: Request,
     page_id: str | None = None,
@@ -201,7 +201,7 @@ async def search_conversations(
     filtered_results = [
         conversation
         for conversation in conversation_metadata_result_set.results
-        if hasattr(conversation, "created_at")
+        if hasattr(conversation, 'created_at')
         and (now - conversation.created_at.replace(tzinfo=timezone.utc)).total_seconds()
         <= max_age
     ]
@@ -225,7 +225,7 @@ async def search_conversations(
     return result
 
 
-@app.get("/conversations/{conversation_id}")
+@app.get('/conversations/{conversation_id}')
 async def get_conversation(
     conversation_id: str, request: Request
 ) -> ConversationInfo | None:
@@ -241,7 +241,7 @@ async def get_conversation(
         return None
 
 
-@app.patch("/conversations/{conversation_id}")
+@app.patch('/conversations/{conversation_id}')
 async def update_conversation(
     request: Request, conversation_id: str, title: str = Body(embed=True)
 ) -> bool:
@@ -256,7 +256,7 @@ async def update_conversation(
     return True
 
 
-@app.delete("/conversations/{conversation_id}")
+@app.delete('/conversations/{conversation_id}')
 async def delete_conversation(
     conversation_id: str,
     request: Request,
@@ -284,7 +284,7 @@ async def _get_conversation_info(
     try:
         title = conversation.title
         if not title:
-            title = f"Conversation {conversation.conversation_id[:5]}"
+            title = f'Conversation {conversation.conversation_id[:5]}'
         return ConversationInfo(
             conversation_id=conversation.conversation_id,
             title=title,
@@ -297,7 +297,7 @@ async def _get_conversation_info(
         )
     except Exception as e:
         logger.error(
-            f"Error loading conversation {conversation.conversation_id}: {str(e)}",
-            extra={"session_id": conversation.conversation_id},
+            f'Error loading conversation {conversation.conversation_id}: {str(e)}',
+            extra={'session_id': conversation.conversation_id},
         )
         return None

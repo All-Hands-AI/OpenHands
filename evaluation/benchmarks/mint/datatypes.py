@@ -17,9 +17,9 @@ class TaskState:
             agent_action_count
             if agent_action_count
             else {
-                "propose_solution": 0,
-                "use_tool": 0,
-                "invalid_action": 0,
+                'propose_solution': 0,
+                'use_tool': 0,
+                'invalid_action': 0,
             }
         )
         self.terminate_reason = terminate_reason
@@ -27,11 +27,11 @@ class TaskState:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "finished": self.finished,
-            "success": self.success,
-            "agent_action_count": self.agent_action_count,
-            "terminate_reason": self.terminate_reason,
-            "latest_output": self.latest_output,
+            'finished': self.finished,
+            'success': self.success,
+            'agent_action_count': self.agent_action_count,
+            'terminate_reason': self.terminate_reason,
+            'latest_output': self.latest_output,
         }
 
 
@@ -40,9 +40,9 @@ class ParseError(Exception):
 
 
 class FeedbackType(enum.Enum):
-    FEEDBACK_WITH_GT = "feedback_with_gt"
-    FEEDBACK_WO_GT = "feedback_wo_gt"
-    NO_FEEDBACK = "no_feedback"
+    FEEDBACK_WITH_GT = 'feedback_with_gt'
+    FEEDBACK_WO_GT = 'feedback_wo_gt'
+    NO_FEEDBACK = 'no_feedback'
 
 
 class StepOutput:
@@ -62,25 +62,25 @@ class StepOutput:
         return self.observation
 
     def to_str(self) -> str:
-        output = "Observation:\n"
+        output = 'Observation:\n'
         if self.observation is not None:
-            output += self.observation + "\n"
+            output += self.observation + '\n'
         else:
             if not self.success:
-                output += "Your answer is wrong.\n"
+                output += 'Your answer is wrong.\n'
 
         if self.turn_info is not None:
             n_steps_left, n_propose_solution_left = self.turn_info
-            output += "You have {} steps left and {} chances to propose solution left.\n".format(
+            output += 'You have {} steps left and {} chances to propose solution left.\n'.format(
                 n_steps_left, n_propose_solution_left
             )
             if n_steps_left <= 1:
-                output += "You should take the last step to propose a solution.\n"
+                output += 'You should take the last step to propose a solution.\n'
 
         return output
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "observation": self.observation,
-            "success": self.success,
+            'observation': self.observation,
+            'success': self.success,
         }

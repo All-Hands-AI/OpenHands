@@ -53,7 +53,7 @@ class ActionExecutionClient(Runtime):
         self,
         config: AppConfig,
         event_stream: EventStream,
-        sid: str = "default",
+        sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Any | None = None,
@@ -105,8 +105,8 @@ class ActionExecutionClient(Runtime):
 
     def check_if_alive(self) -> None:
         with self._send_action_server_request(
-            "GET",
-            f"{self._get_action_execution_server_host()}/alive",
+            'GET',
+            f'{self._get_action_execution_server_host()}/alive',
             timeout=5,
         ):
             pass
@@ -120,11 +120,11 @@ class ActionExecutionClient(Runtime):
         try:
             data = {}
             if path is not None:
-                data["path"] = path
+                data['path'] = path
 
             with self._send_action_server_request(
-                "POST",
-                f"{self._get_action_execution_server_host()}/list_files",
+                'POST',
+                f'{self._get_action_execution_server_host()}/list_files',
                 json=data,
                 timeout=10,
             ) as response:
@@ -132,42 +132,42 @@ class ActionExecutionClient(Runtime):
                 assert isinstance(response_json, list)
                 return response_json
         except requests.Timeout:
-            raise TimeoutError("List files operation timed out")
+            raise TimeoutError('List files operation timed out')
 
     def copy_from(self, path: str) -> Path:
         """Zip all files in the sandbox and return as a stream of bytes."""
 
         try:
-            params = {"path": path}
+            params = {'path': path}
             with self._send_action_server_request(
-                "GET",
-                f"{self._get_action_execution_server_host()}/download_files",
+                'GET',
+                f'{self._get_action_execution_server_host()}/download_files',
                 params=params,
                 stream=True,
                 timeout=30,
             ) as response:
                 with tempfile.NamedTemporaryFile(
-                    suffix=".zip", delete=False
+                    suffix='.zip', delete=False
                 ) as temp_file:
                     shutil.copyfileobj(response.raw, temp_file, length=16 * 1024)
                     return Path(temp_file.name)
         except requests.Timeout:
-            raise TimeoutError("Copy operation timed out")
+            raise TimeoutError('Copy operation timed out')
 
     def copy_to(
         self, host_src: str, sandbox_dest: str, recursive: bool = False
     ) -> None:
         if not os.path.exists(host_src):
-            raise FileNotFoundError(f"Source file {host_src} does not exist")
+            raise FileNotFoundError(f'Source file {host_src} does not exist')
 
         try:
             if recursive:
                 with tempfile.NamedTemporaryFile(
-                    suffix=".zip", delete=False
+                    suffix='.zip', delete=False
                 ) as temp_zip:
                     temp_zip_path = temp_zip.name
 
-                with ZipFile(temp_zip_path, "w") as zipf:
+                with ZipFile(temp_zip_path, 'w') as zipf:
                     for root, _, files in os.walk(host_src):
                         for file in files:
                             file_path = os.path.join(root, file)
@@ -176,28 +176,28 @@ class ActionExecutionClient(Runtime):
                             )
                             zipf.write(file_path, arcname)
 
-                upload_data = {"file": open(temp_zip_path, "rb")}
+                upload_data = {'file': open(temp_zip_path, 'rb')}
             else:
-                upload_data = {"file": open(host_src, "rb")}
+                upload_data = {'file': open(host_src, 'rb')}
 
-            params = {"destination": sandbox_dest, "recursive": str(recursive).lower()}
+            params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
             with self._send_action_server_request(
-                "POST",
-                f"{self._get_action_execution_server_host()}/upload_file",
+                'POST',
+                f'{self._get_action_execution_server_host()}/upload_file',
                 files=upload_data,
                 params=params,
                 timeout=300,
             ) as response:
                 self.log(
-                    "debug",
-                    f"Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}",
+                    'debug',
+                    f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}',
                 )
         finally:
             if recursive:
                 os.unlink(temp_zip_path)
             self.log(
-                "debug", f"Copy completed: host:{host_src} -> runtime:{sandbox_dest}"
+                'debug', f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}'
             )
 
     def get_vscode_token(self) -> str:
@@ -205,18 +205,18 @@ class ActionExecutionClient(Runtime):
             if self._vscode_token is not None:  # cached value
                 return self._vscode_token
             with self._send_action_server_request(
-                "GET",
-                f"{self._get_action_execution_server_host()}/vscode/connection_token",
+                'GET',
+                f'{self._get_action_execution_server_host()}/vscode/connection_token',
                 timeout=10,
             ) as response:
                 response_json = response.json()
                 assert isinstance(response_json, dict)
-                if response_json["token"] is None:
-                    return ""
-                self._vscode_token = response_json["token"]
-                return response_json["token"]
+                if response_json['token'] is None:
+                    return ''
+                self._vscode_token = response_json['token']
+                return response_json['token']
         else:
-            return ""
+            return ''
 
     def send_action_for_execution(self, action: Action) -> Observation:
         if (
@@ -233,37 +233,37 @@ class ActionExecutionClient(Runtime):
         with self.action_semaphore:
             if not action.runnable:
                 if isinstance(action, AgentThinkAction):
-                    return AgentThinkObservation("Your thought has been logged.")
-                return NullObservation("")
+                    return AgentThinkObservation('Your thought has been logged.')
+                return NullObservation('')
             if (
-                hasattr(action, "confirmation_state")
+                hasattr(action, 'confirmation_state')
                 and action.confirmation_state
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
-                return NullObservation("")
+                return NullObservation('')
             action_type = action.action  # type: ignore[attr-defined]
             if action_type not in ACTION_TYPE_TO_CLASS:
-                raise ValueError(f"Action {action_type} does not exist.")
+                raise ValueError(f'Action {action_type} does not exist.')
             if not hasattr(self, action_type):
                 return ErrorObservation(
-                    f"Action {action_type} is not supported in the current runtime.",
-                    error_id="AGENT_ERROR$BAD_ACTION",
+                    f'Action {action_type} is not supported in the current runtime.',
+                    error_id='AGENT_ERROR$BAD_ACTION',
                 )
             if (
-                getattr(action, "confirmation_state", None)
+                getattr(action, 'confirmation_state', None)
                 == ActionConfirmationStatus.REJECTED
             ):
                 return UserRejectObservation(
-                    "Action has been rejected by the user! Waiting for further user input."
+                    'Action has been rejected by the user! Waiting for further user input.'
                 )
 
             assert action.timeout is not None
 
             try:
                 with self._send_action_server_request(
-                    "POST",
-                    f"{self._get_action_execution_server_host()}/execute_action",
-                    json={"action": event_to_dict(action)},
+                    'POST',
+                    f'{self._get_action_execution_server_host()}/execute_action',
+                    json={'action': event_to_dict(action)},
                     # wait a few more seconds to get the timeout error from client side
                     timeout=action.timeout + 5,
                 ) as response:
@@ -272,7 +272,7 @@ class ActionExecutionClient(Runtime):
                     obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
                 raise AgentRuntimeTimeoutError(
-                    f"Runtime failed to return execute_action before the requested timeout of {action.timeout}s"
+                    f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
             return obs
 

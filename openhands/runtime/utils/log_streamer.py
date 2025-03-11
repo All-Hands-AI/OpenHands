@@ -32,10 +32,10 @@ class LogStreamer:
                 if self._stop_event.is_set():
                     break
                 if log_line:
-                    decoded_line = log_line.decode("utf-8").rstrip()
-                    self.log("debug", f"[inside container] {decoded_line}")
+                    decoded_line = log_line.decode('utf-8').rstrip()
+                    self.log('debug', f'[inside container] {decoded_line}')
         except Exception as e:
-            self.log("error", f"Error streaming docker logs to stdout: {e}")
+            self.log('error', f'Error streaming docker logs to stdout: {e}')
 
     def __del__(self):
         if self.stdout_thread and self.stdout_thread.is_alive():
@@ -47,5 +47,5 @@ class LogStreamer:
         if self.stdout_thread and self.stdout_thread.is_alive():
             self.stdout_thread.join(timeout)
         # Close the log generator to release the file descriptor
-        if hasattr(self.log_generator, "close"):
+        if hasattr(self.log_generator, 'close'):
             self.log_generator.close()

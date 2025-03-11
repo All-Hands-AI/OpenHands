@@ -53,12 +53,12 @@ class PromptManager:
         self.disabled_microagents: list[str] = disabled_microagents or []
         self.prompt_dir: str = prompt_dir
         self.repository_info: RepositoryInfo | None = None
-        self.system_template: Template = self._load_template("system_prompt")
-        self.user_template: Template = self._load_template("user_prompt")
-        self.additional_info_template: Template = self._load_template("additional_info")
-        self.microagent_info_template: Template = self._load_template("microagent_info")
+        self.system_template: Template = self._load_template('system_prompt')
+        self.user_template: Template = self._load_template('user_prompt')
+        self.additional_info_template: Template = self._load_template('additional_info')
+        self.microagent_info_template: Template = self._load_template('microagent_info')
         self.runtime_info = RuntimeInfo(
-            available_hosts={}, additional_agent_instructions=""
+            available_hosts={}, additional_agent_instructions=''
         )
 
         self.knowledge_microagents: dict[str, KnowledgeMicroAgent] = {}
@@ -92,7 +92,7 @@ class PromptManager:
 
         This is typically used when loading microagents from inside a repo.
         """
-        openhands_logger.info("Loading microagents: %s", [m.name for m in microagents])
+        openhands_logger.info('Loading microagents: %s', [m.name for m in microagents])
         # Only keep KnowledgeMicroAgents and RepoMicroAgents
         for microagent in microagents:
             if microagent.name in self.disabled_microagents:
@@ -104,11 +104,11 @@ class PromptManager:
 
     def _load_template(self, template_name: str) -> Template:
         if self.prompt_dir is None:
-            raise ValueError("Prompt directory is not set")
-        template_path = os.path.join(self.prompt_dir, f"{template_name}.j2")
+            raise ValueError('Prompt directory is not set')
+        template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
         if not os.path.exists(template_path):
-            raise FileNotFoundError(f"Prompt file {template_path} not found")
-        with open(template_path, "r") as file:
+            raise FileNotFoundError(f'Prompt file {template_path} not found')
+        with open(template_path, 'r') as file:
             return Template(file.read())
 
     def get_system_message(self) -> str:
@@ -161,7 +161,7 @@ class PromptManager:
         # if there were other texts included, they were before the user message
         # so the last TextContent is the user message
         # content can be a list of TextContent or ImageContent
-        message_content = ""
+        message_content = ''
         for content in reversed(message.content):
             if isinstance(content, TextContent):
                 message_content = content.text
@@ -180,7 +180,7 @@ class PromptManager:
                     trigger,
                 )
                 # Create a dictionary with the agent and trigger word
-                triggered_agents.append({"agent": microagent, "trigger_word": trigger})
+                triggered_agents.append({'agent': microagent, 'trigger_word': trigger})
 
         if triggered_agents:
             formatted_text = self.build_microagent_info(triggered_agents)
@@ -204,14 +204,14 @@ class PromptManager:
         Args:
             message: The initial user message to add information to.
         """
-        repo_instructions = ""
-        assert len(self.repo_microagents) <= 1, (
-            f"Expecting at most one repo microagent, but found {len(self.repo_microagents)}: {self.repo_microagents.keys()}"
-        )
+        repo_instructions = ''
+        assert (
+            len(self.repo_microagents) <= 1
+        ), f'Expecting at most one repo microagent, but found {len(self.repo_microagents)}: {self.repo_microagents.keys()}'
         for microagent in self.repo_microagents.values():
             # We assume these are the repo instructions
             if repo_instructions:
-                repo_instructions += "\n\n"
+                repo_instructions += '\n\n'
             repo_instructions += microagent.content
 
         additional_info = self.additional_info_template.render(
@@ -244,7 +244,7 @@ class PromptManager:
                 (
                     m
                     for m in reversed(messages)
-                    if m.role == "user"
+                    if m.role == 'user'
                     and any(isinstance(c, TextContent) for c in m.content)
                 ),
                 1,
@@ -252,5 +252,5 @@ class PromptManager:
             None,
         )
         if latest_user_message:
-            reminder_text = f"\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>."
+            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
             latest_user_message.content.append(TextContent(text=reminder_text))

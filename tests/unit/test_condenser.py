@@ -54,7 +54,7 @@ def mock_llm() -> LLM:
     mock_llm = MagicMock(
         spec=LLM,
         config=MagicMock(
-            spec=LLMConfig, model="gpt-4o", api_key="test_key", custom_llm_provider=None
+            spec=LLMConfig, model='gpt-4o', api_key='test_key', custom_llm_provider=None
         ),
         metrics=MagicMock(),
     )
@@ -104,9 +104,9 @@ def test_noop_condenser_from_config():
 def test_noop_condenser():
     """Test that NoOpCondensers preserve their input events."""
     events = [
-        create_test_event("Event 1"),
-        create_test_event("Event 2"),
-        create_test_event("Event 3"),
+        create_test_event('Event 1'),
+        create_test_event('Event 2'),
+        create_test_event('Event 3'),
     ]
 
     mock_state = MagicMock()
@@ -134,11 +134,11 @@ def test_observation_masking_condenser_respects_attention_window(mock_state):
     condenser = ObservationMaskingCondenser(attention_window=attention_window)
 
     events = [
-        create_test_event("Event 1"),
-        Observation("Observation 1"),
-        create_test_event("Event 3"),
-        create_test_event("Event 4"),
-        Observation("Observation 2"),
+        create_test_event('Event 1'),
+        Observation('Observation 1'),
+        create_test_event('Event 3'),
+        create_test_event('Event 4'),
+        Observation('Observation 2'),
     ]
 
     mock_state.history = events
@@ -150,7 +150,7 @@ def test_observation_masking_condenser_respects_attention_window(mock_state):
         # If we're outside the attention window, observations should be masked.
         if index < len(events) - attention_window:
             if isinstance(event, Observation):
-                assert "<MASKED>" in str(condensed_event)
+                assert '<MASKED>' in str(condensed_event)
 
         # If we're within the attention window, events are unchanged.
         else:
@@ -173,12 +173,12 @@ def test_browser_output_condenser_respects_attention_window(mock_state):
     condenser = BrowserOutputCondenser(attention_window=attention_window)
 
     events = [
-        BrowserOutputObservation("Observation 1", url="", trigger_by_action=""),
-        BrowserOutputObservation("Observation 2", url="", trigger_by_action=""),
-        create_test_event("Event 3"),
-        create_test_event("Event 4"),
-        BrowserOutputObservation("Observation 3", url="", trigger_by_action=""),
-        BrowserOutputObservation("Observation 4", url="", trigger_by_action=""),
+        BrowserOutputObservation('Observation 1', url='', trigger_by_action=''),
+        BrowserOutputObservation('Observation 2', url='', trigger_by_action=''),
+        create_test_event('Event 3'),
+        create_test_event('Event 4'),
+        BrowserOutputObservation('Observation 3', url='', trigger_by_action=''),
+        BrowserOutputObservation('Observation 4', url='', trigger_by_action=''),
     ]
 
     mock_state.history = events
@@ -189,7 +189,7 @@ def test_browser_output_condenser_respects_attention_window(mock_state):
     for event, condensed_event in zip(events, result):
         if isinstance(event, BrowserOutputObservation):
             if cnt > attention_window:
-                assert "Content Omitted" in str(condensed_event)
+                assert 'Content Omitted' in str(condensed_event)
             else:
                 assert event == condensed_event
             cnt -= 1
@@ -212,11 +212,11 @@ def test_recent_events_condenser_from_config():
 def test_recent_events_condenser():
     """Test that RecentEventsCondensers keep just the most recent events."""
     events = [
-        create_test_event("Event 1"),
-        create_test_event("Event 2"),
-        create_test_event("Event 3"),
-        create_test_event("Event 4"),
-        create_test_event("Event 5"),
+        create_test_event('Event 1'),
+        create_test_event('Event 2'),
+        create_test_event('Event 3'),
+        create_test_event('Event 4'),
+        create_test_event('Event 5'),
     ]
 
     mock_state = MagicMock()
@@ -234,9 +234,9 @@ def test_recent_events_condenser():
     result = condenser.condensed_history(mock_state)
 
     assert len(result) == max_events
-    assert result[0]._message == "Event 1"  # kept from keep_first
-    assert result[1]._message == "Event 4"  # kept from max_events
-    assert result[2]._message == "Event 5"  # kept from max_events
+    assert result[0]._message == 'Event 1'  # kept from keep_first
+    assert result[1]._message == 'Event 4'  # kept from max_events
+    assert result[2]._message == 'Event 5'  # kept from max_events
 
     # If the keep_first flag is set, the first event will always be present.
     keep_first = 1
@@ -245,8 +245,8 @@ def test_recent_events_condenser():
     result = condenser.condensed_history(mock_state)
 
     assert len(result) == max_events
-    assert result[0]._message == "Event 1"
-    assert result[1]._message == "Event 5"
+    assert result[0]._message == 'Event 1'
+    assert result[1]._message == 'Event 5'
 
     # We should be able to keep more of the initial events.
     keep_first = 2
@@ -255,9 +255,9 @@ def test_recent_events_condenser():
     result = condenser.condensed_history(mock_state)
 
     assert len(result) == max_events
-    assert result[0]._message == "Event 1"  # kept from keep_first
-    assert result[1]._message == "Event 2"  # kept from keep_first
-    assert result[2]._message == "Event 5"  # kept from max_events
+    assert result[0]._message == 'Event 1'  # kept from keep_first
+    assert result[1]._message == 'Event 2'  # kept from keep_first
+    assert result[2]._message == 'Event 5'  # kept from max_events
 
 
 def test_llm_summarization_condenser_from_config():
@@ -266,15 +266,15 @@ def test_llm_summarization_condenser_from_config():
         max_size=50,
         keep_first=10,
         llm_config=LLMConfig(
-            model="gpt-4o",
-            api_key="test_key",
+            model='gpt-4o',
+            api_key='test_key',
         ),
     )
     condenser = Condenser.from_config(config)
 
     assert isinstance(condenser, LLMSummarizingCondenser)
-    assert condenser.llm.config.model == "gpt-4o"
-    assert condenser.llm.config.api_key.get_secret_value() == "test_key"
+    assert condenser.llm.config.model == 'gpt-4o'
+    assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
 
@@ -298,7 +298,7 @@ def test_llm_summarizing_condenser_grows_to_max_size(mock_llm, mock_state):
     condenser = LLMSummarizingCondenser(max_size=max_size, llm=mock_llm)
 
     for i in range(max_size):
-        event = create_test_event(f"Event {i}")
+        event = create_test_event(f'Event {i}')
         mock_state.history.append(event)
         results = condenser.condensed_history(mock_state)
         assert len(results) == i + 1
@@ -313,15 +313,15 @@ def test_llm_summarizing_condenser_forgets_and_summarizes(mock_llm, mock_state):
     )
 
     # Add initial event
-    first_event = create_test_event("Event 0")
+    first_event = create_test_event('Event 0')
     mock_state.history.append(first_event)
 
     # Set up mock LLM response
-    mock_llm.set_mock_response_content("Summary of forgotten events")
+    mock_llm.set_mock_response_content('Summary of forgotten events')
 
     # Add enough events to trigger forgetting
     for i in range(max_size + 3):  # +3 to ensure we're well past max_size
-        event = create_test_event(f"Event {i + 1}")
+        event = create_test_event(f'Event {i+1}')
         mock_state.history.append(event)
 
     # Get the condensed history
@@ -331,17 +331,17 @@ def test_llm_summarizing_condenser_forgets_and_summarizes(mock_llm, mock_state):
     # 1. First event (keep_first = 1)
     # 2. Summary event
     # 3. Most recent event
-    assert len(results) == 3, f"Expected 3 events, got {len(results)}: {results}"
-    assert results[0] == first_event, (
-        f"First event should be {first_event}, got {results[0]}"
-    )
-    assert isinstance(results[1], AgentCondensationObservation), (
-        f"Second event should be a summary, got {results[1]}"
-    )
-    assert results[1].content == "Summary of forgotten events", (
-        f"Summary content should be 'Summary of forgotten events', got {results[1].content}"
-    )
-    assert results[2] == event, f"Last event should be {event}, got {results[2]}"
+    assert len(results) == 3, f'Expected 3 events, got {len(results)}: {results}'
+    assert (
+        results[0] == first_event
+    ), f'First event should be {first_event}, got {results[0]}'
+    assert isinstance(
+        results[1], AgentCondensationObservation
+    ), f'Second event should be a summary, got {results[1]}'
+    assert (
+        results[1].content == 'Summary of forgotten events'
+    ), f"Summary content should be 'Summary of forgotten events', got {results[1].content}"
+    assert results[2] == event, f'Last event should be {event}, got {results[2]}'
 
 
 def test_llm_summarizing_condenser_llm_call(mock_llm, mock_state):
@@ -353,29 +353,29 @@ def test_llm_summarizing_condenser_llm_call(mock_llm, mock_state):
     )
 
     # Add initial event
-    first_event = create_test_event("Event 0")
+    first_event = create_test_event('Event 0')
     mock_state.history.append(first_event)
 
     # Set up mock LLM response
-    mock_llm.set_mock_response_content("Summary of forgotten events")
-    mock_llm.metrics.get.return_value = {"test_metric": 1.0}
+    mock_llm.set_mock_response_content('Summary of forgotten events')
+    mock_llm.metrics.get.return_value = {'test_metric': 1.0}
 
     # Add enough events to trigger forgetting
     for i in range(max_size):
-        event = create_test_event(f"Event {i + 1}")
+        event = create_test_event(f'Event {i+1}')
         mock_state.history.append(event)
         condenser.condensed_history(mock_state)
 
     # Verify LLM was called with correct prompt
     mock_llm.completion.assert_called_once()
     call_args = mock_llm.completion.call_args[1]
-    assert "messages" in call_args
-    assert len(call_args["messages"]) == 1
+    assert 'messages' in call_args
+    assert len(call_args['messages']) == 1
 
     # Verify metrics were added to state
-    assert "condenser_meta" in mock_state.extra_data
-    assert len(mock_state.extra_data["condenser_meta"]) == 1
-    assert mock_state.extra_data["condenser_meta"][0]["metrics"] == {"test_metric": 1.0}
+    assert 'condenser_meta' in mock_state.extra_data
+    assert len(mock_state.extra_data['condenser_meta']) == 1
+    assert mock_state.extra_data['condenser_meta'][0]['metrics'] == {'test_metric': 1.0}
 
 
 def test_amortized_forgetting_condenser_from_config():
@@ -409,7 +409,7 @@ def test_amortized_forgetting_condenser_grows_to_max_size():
     mock_state.history = []
 
     for i in range(max_size):
-        event = create_test_event(f"Event {i}")
+        event = create_test_event(f'Event {i}')
         mock_state.history.append(event)
         results = condenser.condensed_history(mock_state)
         assert len(results) == i + 1
@@ -425,7 +425,7 @@ def test_amortized_forgetting_condenser_forgets_when_larger_than_max_size():
     mock_state.history = []
 
     for i in range(max_size * 10):
-        event = create_test_event(f"Event {i}")
+        event = create_test_event(f'Event {i}')
         mock_state.history.append(event)
         results = condenser.condensed_history(mock_state)
 
@@ -442,14 +442,14 @@ def test_amortized_forgetting_condenser_keeps_first_events():
     keep_first = 1
     condenser = AmortizedForgettingCondenser(max_size=max_size, keep_first=keep_first)
 
-    first_event = create_test_event("Event 0")
+    first_event = create_test_event('Event 0')
 
     mock_state = MagicMock()
     mock_state.extra_data = {}
     mock_state.history = [first_event]
 
     for i in range(max_size * 10):
-        event = create_test_event(f"Event {i + 1}", datetime(2024, 1, 1, 10, i + 1))
+        event = create_test_event(f'Event {i+1}', datetime(2024, 1, 1, 10, i + 1))
         mock_state.history.append(event)
         results = condenser.condensed_history(mock_state)
 
@@ -470,15 +470,15 @@ def test_llm_attention_condenser_from_config():
         max_size=50,
         keep_first=10,
         llm_config=LLMConfig(
-            model="gpt-4o",
-            api_key="test_key",
+            model='gpt-4o',
+            api_key='test_key',
         ),
     )
     condenser = Condenser.from_config(config)
 
     assert isinstance(condenser, LLMAttentionCondenser)
-    assert condenser.llm.config.model == "gpt-4o"
-    assert condenser.llm.config.api_key.get_secret_value() == "test_key"
+    assert condenser.llm.config.model == 'gpt-4o'
+    assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
 
@@ -489,8 +489,8 @@ def test_llm_attention_condenser_invalid_config():
         max_size=50,
         keep_first=10,
         llm_config=LLMConfig(
-            model="claude-2",  # Older model that doesn't support response schema
-            api_key="test_key",
+            model='claude-2',  # Older model that doesn't support response schema
+            api_key='test_key',
         ),
     )
 
@@ -510,9 +510,9 @@ def test_rolling_condenser_handles_truncation(mock_state: State):
 
     # Initial history with 3 events
     events = [
-        create_test_event("Event 1", id=1),
-        create_test_event("Event 2", id=2),
-        create_test_event("Event 3", id=3),
+        create_test_event('Event 1', id=1),
+        create_test_event('Event 2', id=2),
+        create_test_event('Event 3', id=3),
     ]
     mock_state.history = events
 
@@ -531,8 +531,8 @@ def test_rolling_condenser_handles_truncation(mock_state: State):
 
     # Adding more events and condensing should "rebase" us from the truncated history
     mock_state.history += [
-        create_test_event("Event 4", id=4),
-        create_test_event("Event 5", id=5),
+        create_test_event('Event 4', id=4),
+        create_test_event('Event 5', id=5),
     ]
 
     results = condenser.condensed_history(mock_state)
@@ -545,11 +545,11 @@ def test_llm_attention_condenser_keeps_first_events(mock_llm, mock_state):
     max_size = 4
     condenser = LLMAttentionCondenser(max_size=max_size, keep_first=1, llm=mock_llm)
 
-    first_event = create_test_event("Event 0", id=0)
+    first_event = create_test_event('Event 0', id=0)
     mock_state.history.append(first_event)
 
     for i in range(max_size * 10):
-        event = create_test_event(f"Event {i + 1}", id=i + 1)
+        event = create_test_event(f'Event {i+1}', id=i + 1)
         mock_state.history.append(event)
 
         mock_llm.set_mock_response_content(
@@ -569,7 +569,7 @@ def test_llm_attention_condenser_grows_to_max_size(mock_llm, mock_state):
     condenser = LLMAttentionCondenser(max_size=max_size, llm=mock_llm)
 
     for i in range(max_size):
-        event = create_test_event(f"Event {i}")
+        event = create_test_event(f'Event {i}')
         mock_state.history.append(event)
         mock_llm.set_mock_response_content(
             ImportantEventSelection(ids=[event.id for event in mock_state.history])
@@ -586,7 +586,7 @@ def test_llm_attention_condenser_forgets_when_larger_than_max_size(
     condenser = LLMAttentionCondenser(max_size=max_size, keep_first=0, llm=mock_llm)
 
     for i in range(max_size * 10):
-        event = create_test_event(f"Event {i}", id=i)
+        event = create_test_event(f'Event {i}', id=i)
         mock_state.history.append(event)
 
         mock_llm.set_mock_response_content(
@@ -607,7 +607,7 @@ def test_llm_attention_condenser_handles_events_outside_history(mock_llm, mock_s
     condenser = LLMAttentionCondenser(max_size=max_size, keep_first=0, llm=mock_llm)
 
     for i in range(max_size * 10):
-        event = create_test_event(f"Event {i}", id=i)
+        event = create_test_event(f'Event {i}', id=i)
         mock_state.history.append(event)
 
         mock_llm.set_mock_response_content(
@@ -627,7 +627,7 @@ def test_llm_attention_condenser_handles_too_many_events(mock_llm, mock_state):
     condenser = LLMAttentionCondenser(max_size=max_size, keep_first=0, llm=mock_llm)
 
     for i in range(max_size * 10):
-        event = create_test_event(f"Event {i}", id=i)
+        event = create_test_event(f'Event {i}', id=i)
         mock_state.history.append(event)
         mock_llm.set_mock_response_content(
             ImportantEventSelection(
@@ -649,7 +649,7 @@ def test_llm_attention_condenser_handles_too_few_events(mock_llm, mock_state):
     condenser = LLMAttentionCondenser(max_size=max_size, keep_first=0, llm=mock_llm)
 
     for i in range(max_size * 10):
-        event = create_test_event(f"Event {i}", id=i)
+        event = create_test_event(f'Event {i}', id=i)
         mock_state.history.append(event)
 
         mock_llm.set_mock_response_content(
@@ -673,7 +673,7 @@ def test_llm_attention_condenser_handles_keep_first_for_larger_max_size(
 
     for i in range(max_size * 2):
         # We append new events, then ensure some are pruned.
-        event = create_test_event(f"Event {i}", id=i)
+        event = create_test_event(f'Event {i}', id=i)
         mock_state.history.append(event)
 
         mock_llm.set_mock_response_content(

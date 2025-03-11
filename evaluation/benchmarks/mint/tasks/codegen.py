@@ -4,7 +4,7 @@ from utils import check_correctness
 
 from evaluation.benchmarks.mint.tasks.base import Task
 
-LOGGER = logging.getLogger("MINT")
+LOGGER = logging.getLogger('MINT')
 
 
 class CodeGenTask(Task):
@@ -22,16 +22,16 @@ class CodeGenTask(Task):
         Can be used to provides binary feedback.
         """
         code_to_exec = self.extract_answer(solution)
-        LOGGER.debug(f"CODE_TO_EXEC:\n{code_to_exec}")
-        LOGGER.debug(f"TEST_CODE:\n{self._reference}")
+        LOGGER.debug(f'CODE_TO_EXEC:\n{code_to_exec}')
+        LOGGER.debug(f'TEST_CODE:\n{self._reference}')
         res = check_correctness(
             solution_code=code_to_exec, test_code=self._reference, timeout=10
         )
-        return res["success"]
+        return res['success']
 
 
 class MBPPTask(CodeGenTask):
-    task_name = "mbpp"
+    task_name = 'mbpp'
 
     @property
     def prompt(self) -> str:
@@ -39,7 +39,7 @@ class MBPPTask(CodeGenTask):
 
         MBPP prompt contains \"\"\" enclosed at both ends. Need to remove it.
         """
-        return self._prompt.replace('"""', "").strip()
+        return self._prompt.replace('"""', '').strip()
 
     def extract_answer(self, solution: str) -> str | None:
         """Extract the answer from the given solution.
@@ -55,7 +55,7 @@ class MBPPTask(CodeGenTask):
 
 
 class HumanEvalTask(CodeGenTask):
-    task_name = "humaneval"
+    task_name = 'humaneval'
 
     @property
     def prompt(self) -> str:
@@ -63,7 +63,7 @@ class HumanEvalTask(CodeGenTask):
 
         MBPP prompt contains \"\"\" enclosed at both ends. Need to remove it.
         """
-        return "Complete the following code:\n\n" + self._prompt
+        return 'Complete the following code:\n\n' + self._prompt
 
     def extract_answer(self, solution: str) -> str | None:
         """Extract the answer from the given solution.

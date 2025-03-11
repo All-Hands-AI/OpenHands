@@ -35,10 +35,10 @@ class AgentConfig(BaseModel):
     enable_history_truncation: bool = Field(default=True)
     enable_som_visual_browsing: bool = Field(default=False)
     condenser: CondenserConfig = Field(
-        default_factory=lambda: NoOpCondenserConfig(type="noop")
+        default_factory=lambda: NoOpCondenserConfig(type='noop')
     )
 
-    model_config = {"extra": "forbid"}
+    model_config = {'extra': 'forbid'}
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, AgentConfig]:
@@ -78,13 +78,13 @@ class AgentConfig(BaseModel):
         # Try to create the base config
         try:
             base_config = cls.model_validate(base_data)
-            agent_mapping["agent"] = base_config
+            agent_mapping['agent'] = base_config
         except ValidationError as e:
-            logger.warning(f"Invalid base agent configuration: {e}. Using defaults.")
+            logger.warning(f'Invalid base agent configuration: {e}. Using defaults.')
             # If base config fails, create a default one
             base_config = cls()
             # Still add it to the mapping
-            agent_mapping["agent"] = base_config
+            agent_mapping['agent'] = base_config
 
         # Process each custom section independently
         for name, overrides in custom_sections.items():
@@ -95,7 +95,7 @@ class AgentConfig(BaseModel):
                 agent_mapping[name] = custom_config
             except ValidationError as e:
                 logger.warning(
-                    f"Invalid agent configuration for [{name}]: {e}. This section will be skipped."
+                    f'Invalid agent configuration for [{name}]: {e}. This section will be skipped.'
                 )
                 # Skip this custom section but continue with others
                 continue

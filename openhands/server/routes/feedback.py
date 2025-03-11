@@ -7,10 +7,10 @@ from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
 from openhands.utils.async_utils import call_sync_from_async
 
-app = APIRouter(prefix="/api/conversations/{conversation_id}")
+app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
-@app.post("/submit-feedback")
+@app.post('/submit-feedback')
 async def submit_feedback(request: Request, conversation_id: str) -> JSONResponse:
     """Submit user feedback.
 
@@ -41,19 +41,19 @@ async def submit_feedback(request: Request, conversation_id: str) -> JSONRespons
     async for event in async_stream:
         trajectory.append(event_to_dict(event))
     feedback = FeedbackDataModel(
-        email=body.get("email", ""),
-        version=body.get("version", ""),
-        permissions=body.get("permissions", "private"),
-        polarity=body.get("polarity", ""),
-        feedback=body.get("polarity", ""),
+        email=body.get('email', ''),
+        version=body.get('version', ''),
+        permissions=body.get('permissions', 'private'),
+        polarity=body.get('polarity', ''),
+        feedback=body.get('polarity', ''),
         trajectory=trajectory,
     )
     try:
         feedback_data = await call_sync_from_async(store_feedback, feedback)
         return JSONResponse(status_code=status.HTTP_200_OK, content=feedback_data)
     except Exception as e:
-        logger.error(f"Error submitting feedback: {e}")
+        logger.error(f'Error submitting feedback: {e}')
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": "Failed to submit feedback"},
+            content={'error': 'Failed to submit feedback'},
         )

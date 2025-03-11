@@ -8,18 +8,18 @@ from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
 from openhands.runtime.plugins.vscode import VSCodePlugin, VSCodeRequirement
 
 __all__ = [
-    "Plugin",
-    "PluginRequirement",
-    "AgentSkillsRequirement",
-    "AgentSkillsPlugin",
-    "JupyterRequirement",
-    "JupyterPlugin",
-    "VSCodeRequirement",
-    "VSCodePlugin",
+    'Plugin',
+    'PluginRequirement',
+    'AgentSkillsRequirement',
+    'AgentSkillsPlugin',
+    'JupyterRequirement',
+    'JupyterPlugin',
+    'VSCodeRequirement',
+    'VSCodePlugin',
 ]
 
 ALL_PLUGINS = {
-    "jupyter": JupyterPlugin,
-    "agent_skills": AgentSkillsPlugin,
-    "vscode": VSCodePlugin,
+    'jupyter': JupyterPlugin,
+    'agent_skills': AgentSkillsPlugin,
+    'vscode': VSCodePlugin,
 }

@@ -25,18 +25,18 @@ class Agent(ABC):
     It tracks the execution status and maintains a history of interactions.
     """
 
-    _registry: dict[str, Type["Agent"]] = {}
+    _registry: dict[str, Type['Agent']] = {}
     sandbox_plugins: list[PluginRequirement] = []
 
     def __init__(
         self,
         llm: LLM,
-        config: "AgentConfig",
+        config: 'AgentConfig',
     ):
         self.llm = llm
         self.config = config
         self._complete = False
-        self.prompt_manager: "PromptManager" | None = None
+        self.prompt_manager: 'PromptManager' | None = None
 
     @property
     def complete(self) -> bool:
@@ -48,7 +48,7 @@ class Agent(ABC):
         return self._complete
 
     @abstractmethod
-    def step(self, state: "State") -> "Action":
+    def step(self, state: 'State') -> 'Action':
         """Starts the execution of the assigned instruction. This method should
         be implemented by subclasses to define the specific execution logic.
         """
@@ -70,7 +70,7 @@ class Agent(ABC):
         return self.__class__.__name__
 
     @classmethod
-    def register(cls, name: str, agent_cls: Type["Agent"]):
+    def register(cls, name: str, agent_cls: Type['Agent']):
         """Registers an agent class in the registry.
 
         Parameters:
@@ -85,7 +85,7 @@ class Agent(ABC):
         cls._registry[name] = agent_cls
 
     @classmethod
-    def get_cls(cls, name: str) -> Type["Agent"]:
+    def get_cls(cls, name: str) -> Type['Agent']:
         """Retrieves an agent class from the registry.
 
         Parameters:

@@ -14,7 +14,7 @@ def remove_fields(obj, fields: set[str]):
     elif isinstance(obj, (list, tuple)):
         for item in obj:
             remove_fields(item, fields)
-    elif hasattr(obj, "__dataclass_fields__"):
+    elif hasattr(obj, '__dataclass_fields__'):
         raise ValueError(
-            "Object must not contain dataclass, consider converting to dict first"
+            'Object must not contain dataclass, consider converting to dict first'
         )

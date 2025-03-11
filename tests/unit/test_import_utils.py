@@ -19,6 +19,6 @@ class Square(Shape):
 
 
 def test_get_impl():
-    ShapeImpl = get_impl(Shape, f"{Shape.__module__}.Square")
+    ShapeImpl = get_impl(Shape, f'{Shape.__module__}.Square')
     shape = ShapeImpl(5)
     assert shape.get_area() == 25

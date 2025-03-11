@@ -18,12 +18,12 @@ class LLMSummarizingCondenser(RollingCondenser):
     def __init__(self, llm: LLM, max_size: int = 100, keep_first: int = 1):
         if keep_first >= max_size // 2:
             raise ValueError(
-                f"keep_first ({keep_first}) must be less than half of max_size ({max_size})"
+                f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
             )
         if keep_first < 0:
-            raise ValueError(f"keep_first ({keep_first}) cannot be negative")
+            raise ValueError(f'keep_first ({keep_first}) cannot be negative')
         if max_size < 1:
-            raise ValueError(f"max_size ({max_size}) cannot be non-positive")
+            raise ValueError(f'max_size ({max_size}) cannot be non-positive')
 
         self.max_size = max_size
         self.keep_first = keep_first
@@ -45,7 +45,7 @@ class LLMSummarizingCondenser(RollingCondenser):
         summary_event = (
             events[self.keep_first]
             if isinstance(events[self.keep_first], AgentCondensationObservation)
-            else AgentCondensationObservation("No events summarized")
+            else AgentCondensationObservation('No events summarized')
         )
 
         # Identify events to be forgotten (those not in head or tail)
@@ -81,27 +81,27 @@ CHANGES: str(val) replaces f"{val:.16G}"
 DEPS: None modified
 INTENT: Fix precision while maintaining FITS compliance"""
 
-        prompt + "\n\n"
+        prompt + '\n\n'
 
-        prompt += ("\n" + summary_event.message + "\n") if summary_event.message else ""
+        prompt += ('\n' + summary_event.message + '\n') if summary_event.message else ''
 
-        prompt + "\n\n"
+        prompt + '\n\n'
 
         for forgotten_event in forgotten_events:
-            prompt += str(forgotten_event) + "\n\n"
+            prompt += str(forgotten_event) + '\n\n'
 
         response = self.llm.completion(
             messages=[
                 {
-                    "content": prompt,
-                    "role": "user",
+                    'content': prompt,
+                    'role': 'user',
                 },
             ],
         )
         summary = response.choices[0].message.content
 
-        self.add_metadata("response", response.model_dump())
-        self.add_metadata("metrics", self.llm.metrics.get())
+        self.add_metadata('response', response.model_dump())
+        self.add_metadata('metrics', self.llm.metrics.get())
 
         return head + [AgentCondensationObservation(summary)] + tail
 

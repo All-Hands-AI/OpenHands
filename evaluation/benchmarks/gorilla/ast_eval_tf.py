@@ -44,7 +44,7 @@ def ast_parse(candidate):
     LANGUAGE = Language(tspython.language())
     parser = Parser(LANGUAGE)
 
-    candidate_tree = parser.parse(bytes(candidate, "utf8")).root_node
+    candidate_tree = parser.parse(bytes(candidate, 'utf8')).root_node
     return candidate_tree
 
 
@@ -54,12 +54,12 @@ def get_args(node):
         return []
     args_list = []
     for child in node.children[0].children[0].children[1].children:
-        if "model=" in child.text.decode() or "model =" in child.text.decode():
+        if 'model=' in child.text.decode() or 'model =' in child.text.decode():
             args_list.append(child.children[2].text)
         elif (
-            child.text.decode() != "("
-            and child.text.decode() != ")"
-            and child.text.decode() != ","
+            child.text.decode() != '('
+            and child.text.decode() != ')'
+            and child.text.decode() != ','
         ):
             args_list.append(child.text)
     return args_list
@@ -95,20 +95,20 @@ def ast_eval_tf(api_database, qa_pairs, ast_database, question_id, response):
     hallucination = False
     output = response
     # Index the "api_call" domain
-    output = output.split("api_call")
+    output = output.split('api_call')
     if len(output) == 1:
         api_call = output[0]
     else:
         # Parse the output
-        output = output[1].split("api_provider")[0]
-        if ":" not in output:
+        output = output[1].split('api_provider')[0]
+        if ':' not in output:
             start = 0
         else:
-            start = output.index(":")
-        if ")" not in output:
+            start = output.index(':')
+        if ')' not in output:
             end = -2
         else:
-            end = output.rindex(")")
+            end = output.rindex(')')
         api_call = output[start + 2 : end + 1]
     # Parse the api_call into AST tree
     ast_tree = ast_parse(api_call)
@@ -122,6 +122,6 @@ def ast_eval_tf(api_database, qa_pairs, ast_database, question_id, response):
     # We index our reference api_call
     ref_api_call = api_database[database_index]
     # Check for functionality
-    if ref_api_call["domain"] == qa_pairs[question_id - 1]["domain"]:
+    if ref_api_call['domain'] == qa_pairs[question_id - 1]['domain']:
         correct = True
     return correct, hallucination

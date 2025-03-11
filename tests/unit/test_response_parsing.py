@@ -10,7 +10,7 @@ from openhands.io import loads as custom_loads
 
 
 @pytest.mark.parametrize(
-    "parse_response_module",
+    'parse_response_module',
     [parse_response_micro],
 )
 def test_parse_single_complete_json(parse_response_module):
@@ -30,7 +30,7 @@ def test_parse_single_complete_json(parse_response_module):
 
 
 @pytest.mark.parametrize(
-    "parse_response_module",
+    'parse_response_module',
     [parse_response_micro],
 )
 def test_parse_json_with_surrounding_text(parse_response_module):
@@ -46,14 +46,14 @@ def test_parse_json_with_surrounding_text(parse_response_module):
     Some trailing text that is also not JSON formatted.
     """
     expected = FileWriteAction(
-        path="./updated_file.txt", content="Updated text content here..."
+        path='./updated_file.txt', content='Updated text content here...'
     )
     result = parse_response_module(input_response)
     assert result == expected
 
 
 @pytest.mark.parametrize(
-    "parse_response_module",
+    'parse_response_module',
     [parse_response_micro],
 )
 def test_parse_first_of_multiple_jsons(parse_response_module):
@@ -74,7 +74,7 @@ def test_parse_first_of_multiple_jsons(parse_response_module):
         }
     }
     """
-    expected = FileWriteAction(path="./short_essay.txt", content="Text content here...")
+    expected = FileWriteAction(path='./short_essay.txt', content='Text content here...')
     result = parse_response_module(input_response)
     assert result == expected
 
@@ -87,6 +87,6 @@ def test_invalid_json_raises_error():
 
 
 def test_no_json_found():
-    input_response = "This is just a string with no JSON object."
+    input_response = 'This is just a string with no JSON object.'
     with pytest.raises(LLMResponseError):
         custom_loads(input_response)

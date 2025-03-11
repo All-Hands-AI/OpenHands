@@ -29,7 +29,7 @@ from openhands.utils.shutdown_listener import should_continue
 from .conversation_manager import ConversationManager
 
 _CLEANUP_INTERVAL = 15
-UPDATED_AT_CALLBACK_ID = "updated_at_callback_id"
+UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 
 @dataclass
@@ -74,7 +74,7 @@ class StandaloneConversationManager(ConversationManager):
                 conversation, count = self._active_conversations[sid]
                 self._active_conversations[sid] = (conversation, count + 1)
                 logger.info(
-                    f"Reusing active conversation {sid}", extra={"session_id": sid}
+                    f'Reusing active conversation {sid}', extra={'session_id': sid}
                 )
                 return conversation
 
@@ -83,7 +83,7 @@ class StandaloneConversationManager(ConversationManager):
                 conversation, _ = self._detached_conversations.pop(sid)
                 self._active_conversations[sid] = (conversation, 1)
                 logger.info(
-                    f"Reusing detached conversation {sid}", extra={"session_id": sid}
+                    f'Reusing detached conversation {sid}', extra={'session_id': sid}
                 )
                 return conversation
 
@@ -93,14 +93,14 @@ class StandaloneConversationManager(ConversationManager):
                 await c.connect()
             except AgentRuntimeUnavailableError as e:
                 logger.error(
-                    f"Error connecting to conversation {c.sid}: {e}",
-                    extra={"session_id": sid},
+                    f'Error connecting to conversation {c.sid}: {e}',
+                    extra={'session_id': sid},
                 )
                 await c.disconnect()
                 return None
             end_time = time.time()
             logger.info(
-                f"Conversation {c.sid} connected in {end_time - start_time} seconds"
+                f'Conversation {c.sid} connected in {end_time - start_time} seconds'
             )
             self._active_conversations[sid] = (c, 1)
             return c
@@ -109,8 +109,8 @@ class StandaloneConversationManager(ConversationManager):
         self, sid: str, connection_id: str, settings: Settings, user_id: str | None
     ):
         logger.info(
-            f"join_conversation:{sid}:{connection_id}",
-            extra={"session_id": sid, "user_id": user_id},
+            f'join_conversation:{sid}:{connection_id}',
+            extra={'session_id': sid, 'user_id': user_id},
         )
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self._local_connection_id_to_session_id[connection_id] = sid
@@ -184,7 +184,7 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 return
             except Exception:
-                logger.error("error_cleaning_stale")
+                logger.error('error_cleaning_stale')
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
     async def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
@@ -244,16 +244,16 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
     ) -> EventStream:
-        logger.info(f"maybe_start_agent_loop:{sid}", extra={"session_id": sid})
+        logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
         session: Session | None = None
         if not await self.is_agent_loop_running(sid):
-            logger.info(f"start_agent_loop:{sid}", extra={"session_id": sid})
+            logger.info(f'start_agent_loop:{sid}', extra={'session_id': sid})
 
             response_ids = await self.get_running_agent_loops(user_id)
             if len(response_ids) >= self.config.max_concurrent_conversations:
                 logger.info(
-                    "too_many_sessions_for:{user_id}",
-                    extra={"session_id": sid, "user_id": user_id},
+                    'too_many_sessions_for:{user_id}',
+                    extra={'session_id': sid, 'user_id': user_id},
                 )
                 # Get the conversations sorted (oldest first)
                 conversation_store = await self._get_conversation_store(user_id)
@@ -286,17 +286,17 @@ class StandaloneConversationManager(ConversationManager):
         event_stream = await self._get_event_stream(sid)
         if not event_stream:
             logger.error(
-                f"No event stream after starting agent loop: {sid}",
-                extra={"session_id": sid},
+                f'No event stream after starting agent loop: {sid}',
+                extra={'session_id': sid},
             )
-            raise RuntimeError(f"no_event_stream:{sid}")
+            raise RuntimeError(f'no_event_stream:{sid}')
         return event_stream
 
     async def _get_event_stream(self, sid: str) -> EventStream | None:
-        logger.info(f"_get_event_stream:{sid}", extra={"session_id": sid})
+        logger.info(f'_get_event_stream:{sid}', extra={'session_id': sid})
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
-            logger.info(f"found_local_agent_loop:{sid}", extra={"session_id": sid})
+            logger.info(f'found_local_agent_loop:{sid}', extra={'session_id': sid})
             return session.agent_session.event_stream
         return None
 
@@ -304,25 +304,25 @@ class StandaloneConversationManager(ConversationManager):
         # If there is a local session running, send to that
         sid = self._local_connection_id_to_session_id.get(connection_id)
         if not sid:
-            raise RuntimeError(f"no_connected_session:{connection_id}")
+            raise RuntimeError(f'no_connected_session:{connection_id}')
 
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
             await session.dispatch(data)
             return
 
-        raise RuntimeError(f"no_connected_session:{connection_id}:{sid}")
+        raise RuntimeError(f'no_connected_session:{connection_id}:{sid}')
 
     async def disconnect_from_session(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)
         logger.info(
-            f"disconnect_from_session:{connection_id}:{sid}", extra={"session_id": sid}
+            f'disconnect_from_session:{connection_id}:{sid}', extra={'session_id': sid}
         )
         if not sid:
             # This can occur if the init action was never run.
             logger.warning(
-                f"disconnect_from_uninitialized_session:{connection_id}",
-                extra={"session_id": sid},
+                f'disconnect_from_uninitialized_session:{connection_id}',
+                extra={'session_id': sid},
             )
             return
 
@@ -332,7 +332,7 @@ class StandaloneConversationManager(ConversationManager):
             await self._close_session(sid)
 
     async def _close_session(self, sid: str):
-        logger.info(f"_close_session:{sid}", extra={"session_id": sid})
+        logger.info(f'_close_session:{sid}', extra={'session_id': sid})
 
         # Clear up local variables
         connection_ids_to_remove = list(
@@ -341,20 +341,20 @@ class StandaloneConversationManager(ConversationManager):
             if sid == conn_sid
         )
         logger.info(
-            f"removing connections: {connection_ids_to_remove}",
-            extra={"session_id": sid},
+            f'removing connections: {connection_ids_to_remove}',
+            extra={'session_id': sid},
         )
         for connnnection_id in connection_ids_to_remove:
             self._local_connection_id_to_session_id.pop(connnnection_id, None)
 
         session = self._local_agent_loops_by_sid.pop(sid, None)
         if not session:
-            logger.warning(f"no_session_to_close:{sid}", extra={"session_id": sid})
+            logger.warning(f'no_session_to_close:{sid}', extra={'session_id': sid})
             return
 
-        logger.info(f"closing_session:{session.sid}", extra={"session_id": sid})
+        logger.info(f'closing_session:{session.sid}', extra={'session_id': sid})
         await session.close()
-        logger.info(f"closed_session:{session.sid}", extra={"session_id": sid})
+        logger.info(f'closed_session:{session.sid}', extra={'session_id': sid})
 
     @classmethod
     def get_instance(

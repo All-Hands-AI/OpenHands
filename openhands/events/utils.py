@@ -25,14 +25,14 @@ def get_pairs_from_events(events: list[Event]) -> list[tuple[Action, Observation
 
     for event in events:
         if event.id is None or event.id == -1:
-            logger.debug(f"Event {event} has no ID")
+            logger.debug(f'Event {event} has no ID')
 
         if isinstance(event, Action):
             action_map[event.id] = event
 
         if isinstance(event, Observation):
             if event.cause is None or event.cause == -1:
-                logger.debug(f"Observation {event} has no cause")
+                logger.debug(f'Observation {event} has no cause')
 
             if event.cause is None:
                 # runnable actions are set as cause of observations
@@ -47,14 +47,14 @@ def get_pairs_from_events(events: list[Event]) -> list[tuple[Action, Observation
             # observation with a cause
             tuples.append((action, observation))
         else:
-            tuples.append((action, NullObservation("")))
+            tuples.append((action, NullObservation('')))
 
     for cause_id, observation in observation_map.items():
         if cause_id not in action_map:
             if isinstance(observation, NullObservation):
                 continue
             if not isinstance(observation, CmdOutputObservation):
-                logger.debug(f"Observation {observation} has no cause")
+                logger.debug(f'Observation {observation} has no cause')
             tuples.append((NullAction(), observation))
 
     return tuples.copy()

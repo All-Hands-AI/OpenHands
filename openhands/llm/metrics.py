@@ -36,7 +36,7 @@ class Metrics:
       - A list of TokenUsage (one per call).
     """
 
-    def __init__(self, model_name: str = "default") -> None:
+    def __init__(self, model_name: str = 'default') -> None:
         self._accumulated_cost: float = 0.0
         self._costs: list[Cost] = []
         self._response_latencies: list[ResponseLatency] = []
@@ -50,7 +50,7 @@ class Metrics:
     @accumulated_cost.setter
     def accumulated_cost(self, value: float) -> None:
         if value < 0:
-            raise ValueError("Total cost cannot be negative.")
+            raise ValueError('Total cost cannot be negative.')
         self._accumulated_cost = value
 
     @property
@@ -59,7 +59,7 @@ class Metrics:
 
     @property
     def response_latencies(self) -> list[ResponseLatency]:
-        if not hasattr(self, "_response_latencies"):
+        if not hasattr(self, '_response_latencies'):
             self._response_latencies = []
         return self._response_latencies
 
@@ -69,7 +69,7 @@ class Metrics:
 
     @property
     def token_usages(self) -> list[TokenUsage]:
-        if not hasattr(self, "_token_usages"):
+        if not hasattr(self, '_token_usages'):
             self._token_usages = []
         return self._token_usages
 
@@ -79,7 +79,7 @@ class Metrics:
 
     def add_cost(self, value: float) -> None:
         if value < 0:
-            raise ValueError("Added cost cannot be negative.")
+            raise ValueError('Added cost cannot be negative.')
         self._accumulated_cost += value
         self._costs.append(Cost(cost=value, model=self.model_name))
 
@@ -110,7 +110,7 @@ class Metrics:
             )
         )
 
-    def merge(self, other: "Metrics") -> None:
+    def merge(self, other: 'Metrics') -> None:
         """Merge 'other' metrics into this one."""
         self._accumulated_cost += other.accumulated_cost
         self._costs += other._costs
@@ -121,12 +121,12 @@ class Metrics:
     def get(self) -> dict:
         """Return the metrics in a dictionary."""
         return {
-            "accumulated_cost": self._accumulated_cost,
-            "costs": [cost.model_dump() for cost in self._costs],
-            "response_latencies": [
+            'accumulated_cost': self._accumulated_cost,
+            'costs': [cost.model_dump() for cost in self._costs],
+            'response_latencies': [
                 latency.model_dump() for latency in self._response_latencies
             ],
-            "token_usages": [usage.model_dump() for usage in self._token_usages],
+            'token_usages': [usage.model_dump() for usage in self._token_usages],
         }
 
     def reset(self):
@@ -138,10 +138,10 @@ class Metrics:
     def log(self):
         """Log the metrics."""
         metrics = self.get()
-        logs = ""
+        logs = ''
         for key, value in metrics.items():
-            logs += f"{key}: {value}\n"
+            logs += f'{key}: {value}\n'
         return logs
 
     def __repr__(self):
-        return f"Metrics({self.get()}"
+        return f'Metrics({self.get()}'

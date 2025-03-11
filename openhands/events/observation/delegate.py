@@ -19,4 +19,4 @@ class AgentDelegateObservation(Observation):
 
     @property
     def message(self) -> str:
-        return ""
+        return ''

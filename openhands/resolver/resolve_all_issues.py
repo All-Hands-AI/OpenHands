@@ -27,9 +27,9 @@ from openhands.resolver.utils import (
 
 
 def cleanup() -> None:
-    print("Cleaning up child processes...")
+    print('Cleaning up child processes...')
     for process in mp.active_children():
-        print(f"Terminating child process: {process.name}")
+        print(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
 
@@ -40,14 +40,14 @@ async def update_progress(
 ) -> None:
     resolved_output = await output
     pbar.update(1)
-    pbar.set_description(f"issue {resolved_output.issue.number}")
+    pbar.set_description(f'issue {resolved_output.issue.number}')
     pbar.set_postfix_str(
-        f"Test Result: {resolved_output.metrics.get('test_result', 'N/A') if resolved_output.metrics else 'N/A'}"
+        f'Test Result: {resolved_output.metrics.get("test_result", "N/A") if resolved_output.metrics else "N/A"}'
     )
     logger.info(
-        f"Finished issue {resolved_output.issue.number}: {resolved_output.metrics.get('test_result', 'N/A') if resolved_output.metrics else 'N/A'}"
+        f'Finished issue {resolved_output.issue.number}: {resolved_output.metrics.get("test_result", "N/A") if resolved_output.metrics else "N/A"}'
     )
-    output_fp.write(resolved_output.model_dump_json() + "\n")
+    output_fp.write(resolved_output.model_dump_json() + '\n')
     output_fp.flush()
 
 
@@ -97,62 +97,62 @@ async def resolve_issues(
 
     if limit_issues is not None:
         issues = issues[:limit_issues]
-        logger.info(f"Limiting resolving to first {limit_issues} issues.")
+        logger.info(f'Limiting resolving to first {limit_issues} issues.')
 
     # TEST METADATA
-    model_name = llm_config.model.split("/")[-1]
+    model_name = llm_config.model.split('/')[-1]
 
     pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(os.path.join(output_dir, "infer_logs")).mkdir(
+    pathlib.Path(os.path.join(output_dir, 'infer_logs')).mkdir(
         parents=True, exist_ok=True
     )
-    logger.info(f"Using output directory: {output_dir}")
+    logger.info(f'Using output directory: {output_dir}')
 
     # checkout the repo
-    repo_dir = os.path.join(output_dir, "repo")
+    repo_dir = os.path.join(output_dir, 'repo')
     if not os.path.exists(repo_dir):
         checkout_output = subprocess.check_output(
             [
-                "git",
-                "clone",
+                'git',
+                'clone',
                 issue_handler.get_clone_url(),
-                f"{output_dir}/repo",
+                f'{output_dir}/repo',
             ]
-        ).decode("utf-8")
-        if "fatal" in checkout_output:
-            raise RuntimeError(f"Failed to clone repository: {checkout_output}")
+        ).decode('utf-8')
+        if 'fatal' in checkout_output:
+            raise RuntimeError(f'Failed to clone repository: {checkout_output}')
 
     # get the commit id of current repo for reproducibility
     base_commit = (
-        subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo_dir)
-        .decode("utf-8")
+        subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
+        .decode('utf-8')
         .strip()
     )
-    logger.info(f"Base commit: {base_commit}")
+    logger.info(f'Base commit: {base_commit}')
 
     if repo_instruction is None:
         # Check for .openhands_instructions file in the workspace directory
-        openhands_instructions_path = os.path.join(repo_dir, ".openhands_instructions")
+        openhands_instructions_path = os.path.join(repo_dir, '.openhands_instructions')
         if os.path.exists(openhands_instructions_path):
-            with open(openhands_instructions_path, "r") as f:
+            with open(openhands_instructions_path, 'r') as f:
                 repo_instruction = f.read()
 
     # OUTPUT FILE
-    output_file = os.path.join(output_dir, "output.jsonl")
-    logger.info(f"Writing output to {output_file}")
+    output_file = os.path.join(output_dir, 'output.jsonl')
+    logger.info(f'Writing output to {output_file}')
     finished_numbers = set()
     if os.path.exists(output_file):
-        with open(output_file, "r") as f:
+        with open(output_file, 'r') as f:
             for line in f:
                 data = ResolverOutput.model_validate_json(line)
                 finished_numbers.add(data.issue.number)
         logger.warning(
-            f"Output file {output_file} already exists. Loaded {len(finished_numbers)} finished issues."
+            f'Output file {output_file} already exists. Loaded {len(finished_numbers)} finished issues.'
         )
-    output_fp = open(output_file, "a")
+    output_fp = open(output_file, 'a')
 
     logger.info(
-        f"Resolving issues with model {model_name}, max iterations {max_iterations}."
+        f'Resolving issues with model {model_name}, max iterations {max_iterations}.'
     )
 
     # =============================================
@@ -160,36 +160,36 @@ async def resolve_issues(
     new_issues = []
     for issue in issues:
         if issue.number in finished_numbers:
-            logger.info(f"Skipping issue {issue.number} as it is already finished.")
+            logger.info(f'Skipping issue {issue.number} as it is already finished.')
             continue
         new_issues.append(issue)
     logger.info(
-        f"Finished issues: {len(finished_numbers)}, Remaining issues: {len(issues)}"
+        f'Finished issues: {len(finished_numbers)}, Remaining issues: {len(issues)}'
     )
     # =============================================
 
     pbar = tqdm(total=len(issues))
 
     # This sets the multi-processing
-    logger.info(f"Using {num_workers} workers.")
+    logger.info(f'Using {num_workers} workers.')
 
     try:
         tasks = []
         for issue in issues:
             # checkout to pr branch
-            if issue_type == "pr":
+            if issue_type == 'pr':
                 logger.info(
-                    f"Checking out to PR branch {issue.head_branch} for issue {issue.number}"
+                    f'Checking out to PR branch {issue.head_branch} for issue {issue.number}'
                 )
 
                 subprocess.check_output(
-                    ["git", "checkout", f"{issue.head_branch}"],
+                    ['git', 'checkout', f'{issue.head_branch}'],
                     cwd=repo_dir,
                 )
 
                 base_commit = (
-                    subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo_dir)
-                    .decode("utf-8")
+                    subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
+                    .decode('utf-8')
                     .strip()
                 )
 
@@ -222,107 +222,107 @@ async def resolve_issues(
         await asyncio.gather(*[run_with_semaphore(task) for task in tasks])
 
     except KeyboardInterrupt:
-        print("KeyboardInterrupt received. Cleaning up...")
+        print('KeyboardInterrupt received. Cleaning up...')
         cleanup()
 
     output_fp.close()
-    logger.info("Finished.")
+    logger.info('Finished.')
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Resolve multiple issues from Github or Gitlab."
+        description='Resolve multiple issues from Github or Gitlab.'
     )
     parser.add_argument(
-        "--repo",
+        '--repo',
         type=str,
         required=True,
-        help="Github or Gitlab repository to resolve issues in form of `owner/repo`.",
+        help='Github or Gitlab repository to resolve issues in form of `owner/repo`.',
     )
     parser.add_argument(
-        "--token",
+        '--token',
         type=str,
         default=None,
-        help="Github or Gitlab token to access the repository.",
+        help='Github or Gitlab token to access the repository.',
     )
     parser.add_argument(
-        "--username",
+        '--username',
         type=str,
         default=None,
-        help="Github or Gitlab username to access the repository.",
+        help='Github or Gitlab username to access the repository.',
     )
     parser.add_argument(
-        "--runtime-container-image",
+        '--runtime-container-image',
         type=str,
         default=None,
-        help="Container image to use.",
+        help='Container image to use.',
     )
     parser.add_argument(
-        "--max-iterations",
+        '--max-iterations',
         type=int,
         default=50,
-        help="Maximum number of iterations to run.",
+        help='Maximum number of iterations to run.',
     )
     parser.add_argument(
-        "--limit-issues",
+        '--limit-issues',
         type=int,
         default=None,
-        help="Limit the number of issues to resolve.",
+        help='Limit the number of issues to resolve.',
     )
     parser.add_argument(
-        "--issue-numbers",
+        '--issue-numbers',
         type=str,
         default=None,
-        help="Comma separated list of issue numbers to resolve.",
+        help='Comma separated list of issue numbers to resolve.',
     )
     parser.add_argument(
-        "--num-workers",
+        '--num-workers',
         type=int,
         default=1,
-        help="Number of workers to use for parallel processing.",
+        help='Number of workers to use for parallel processing.',
     )
     parser.add_argument(
-        "--output-dir",
+        '--output-dir',
         type=str,
-        default="output",
-        help="Output directory to write the results.",
+        default='output',
+        help='Output directory to write the results.',
     )
     parser.add_argument(
-        "--llm-model",
-        type=str,
-        default=None,
-        help="LLM model to use.",
-    )
-    parser.add_argument(
-        "--llm-api-key",
+        '--llm-model',
         type=str,
         default=None,
-        help="LLM API key to use.",
+        help='LLM model to use.',
     )
     parser.add_argument(
-        "--llm-base-url",
+        '--llm-api-key',
         type=str,
         default=None,
-        help="LLM base URL to use.",
+        help='LLM API key to use.',
     )
     parser.add_argument(
-        "--prompt-file",
+        '--llm-base-url',
         type=str,
         default=None,
-        help="Path to the prompt template file in Jinja format.",
+        help='LLM base URL to use.',
     )
     parser.add_argument(
-        "--repo-instruction-file",
+        '--prompt-file',
         type=str,
         default=None,
-        help="Path to the repository instruction file in text format.",
+        help='Path to the prompt template file in Jinja format.',
     )
     parser.add_argument(
-        "--issue-type",
+        '--repo-instruction-file',
         type=str,
-        default="issue",
-        choices=["issue", "pr"],
-        help="Type of issue to resolve, either open issue or pr comments.",
+        default=None,
+        help='Path to the repository instruction file in text format.',
+    )
+    parser.add_argument(
+        '--issue-type',
+        type=str,
+        default='issue',
+        choices=['issue', 'pr'],
+        help='Type of issue to resolve, either open issue or pr comments.',
     )
 
     my_args = parser.parse_args()
@@ -330,53 +330,53 @@ def main() -> None:
     runtime_container_image = my_args.runtime_container_image
     if runtime_container_image is None:
         runtime_container_image = (
-            f"ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik"
+            f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
         )
 
-    owner, repo = my_args.repo.split("/")
-    token = my_args.token or os.getenv("GITHUB_TOKEN") or os.getenv("GITLAB_TOKEN")
-    username = my_args.username if my_args.username else os.getenv("GIT_USERNAME")
+    owner, repo = my_args.repo.split('/')
+    token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
+    username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
     if not username:
-        raise ValueError("Username is required.")
+        raise ValueError('Username is required.')
 
     if not token:
-        raise ValueError("Token is required.")
+        raise ValueError('Token is required.')
 
     platform = identify_token(token)
     if platform == Platform.INVALID:
-        raise ValueError("Token is invalid.")
+        raise ValueError('Token is invalid.')
 
-    api_key = my_args.llm_api_key or os.environ["LLM_API_KEY"]
+    api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
 
     llm_config = LLMConfig(
-        model=my_args.llm_model or os.environ["LLM_MODEL"],
+        model=my_args.llm_model or os.environ['LLM_MODEL'],
         api_key=SecretStr(api_key) if api_key else None,
-        base_url=my_args.llm_base_url or os.environ.get("LLM_BASE_URL", None),
+        base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
     )
 
     repo_instruction = None
     if my_args.repo_instruction_file:
-        with open(my_args.repo_instruction_file, "r") as f:
+        with open(my_args.repo_instruction_file, 'r') as f:
             repo_instruction = f.read()
 
     issue_numbers = None
     if my_args.issue_numbers:
-        issue_numbers = [int(number) for number in my_args.issue_numbers.split(",")]
+        issue_numbers = [int(number) for number in my_args.issue_numbers.split(',')]
 
     issue_type = my_args.issue_type
 
     # Read the prompt template
     prompt_file = my_args.prompt_file
     if prompt_file is None:
-        if issue_type == "issue":
+        if issue_type == 'issue':
             prompt_file = os.path.join(
-                os.path.dirname(__file__), "prompts/resolve/basic-with-tests.jinja"
+                os.path.dirname(__file__), 'prompts/resolve/basic-with-tests.jinja'
             )
         else:
             prompt_file = os.path.join(
-                os.path.dirname(__file__), "prompts/resolve/basic-followup.jinja"
+                os.path.dirname(__file__), 'prompts/resolve/basic-followup.jinja'
             )
-    with open(prompt_file, "r") as f:
+    with open(prompt_file, 'r') as f:
         prompt_template = f.read()
 
     asyncio.run(
@@ -400,5 +400,5 @@ def main() -> None:
     )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

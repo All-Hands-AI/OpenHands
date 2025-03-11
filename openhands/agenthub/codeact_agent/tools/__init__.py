@@ -8,12 +8,12 @@ from .think import ThinkTool
 from .web_read import WebReadTool
 
 __all__ = [
-    "BrowserTool",
-    "CmdRunTool",
-    "FinishTool",
-    "IPythonTool",
-    "LLMBasedFileEditTool",
-    "StrReplaceEditorTool",
-    "WebReadTool",
-    "ThinkTool",
+    'BrowserTool',
+    'CmdRunTool',
+    'FinishTool',
+    'IPythonTool',
+    'LLMBasedFileEditTool',
+    'StrReplaceEditorTool',
+    'WebReadTool',
+    'ThinkTool',
 ]

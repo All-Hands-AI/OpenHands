@@ -48,11 +48,11 @@ def loads(json_str, **kwargs):
     depth = 0
     start = -1
     for i, char in enumerate(json_str):
-        if char == "{":
+        if char == '{':
             if depth == 0:
                 start = i
             depth += 1
-        elif char == "}":
+        elif char == '}':
             depth -= 1
             if depth == 0 and start != -1:
                 response = json_str[start : i + 1]
@@ -61,6 +61,6 @@ def loads(json_str, **kwargs):
                     return json.loads(json_str, **kwargs)
                 except (json.JSONDecodeError, ValueError, TypeError) as e:
                     raise LLMResponseError(
-                        "Invalid JSON in response. Please make sure the response is a valid JSON object."
+                        'Invalid JSON in response. Please make sure the response is a valid JSON object.'
                     ) from e
-    raise LLMResponseError("No valid JSON object found in response.")
+    raise LLMResponseError('No valid JSON object found in response.')

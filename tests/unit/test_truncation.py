@@ -33,25 +33,25 @@ class TestTruncation:
             agent=mock_agent,
             event_stream=mock_event_stream,
             max_iterations=10,
-            sid="test_truncation",
+            sid='test_truncation',
             confirmation_mode=False,
             headless_mode=True,
         )
 
         # Create a sequence of events with IDs
-        first_msg = MessageAction(content="Hello, start task", wait_for_response=False)
+        first_msg = MessageAction(content='Hello, start task', wait_for_response=False)
         first_msg._source = EventSource.USER
         first_msg._id = 1
 
-        cmd1 = CmdRunAction(command="ls")
+        cmd1 = CmdRunAction(command='ls')
         cmd1._id = 2
-        obs1 = CmdOutputObservation(command="ls", content="file1.txt", command_id=2)
+        obs1 = CmdOutputObservation(command='ls', content='file1.txt', command_id=2)
         obs1._id = 3
         obs1._cause = 2
 
-        cmd2 = CmdRunAction(command="pwd")
+        cmd2 = CmdRunAction(command='pwd')
         cmd2._id = 4
-        obs2 = CmdOutputObservation(command="pwd", content="/home", command_id=4)
+        obs2 = CmdOutputObservation(command='pwd', content='/home', command_id=4)
         obs2._id = 5
         obs2._cause = 4
 
@@ -78,13 +78,13 @@ class TestTruncation:
             agent=mock_agent,
             event_stream=mock_event_stream,
             max_iterations=10,
-            sid="test_truncation",
+            sid='test_truncation',
             confirmation_mode=False,
             headless_mode=True,
         )
 
         # Create a sequence of events with IDs
-        first_msg = MessageAction(content="Hello, start task", wait_for_response=False)
+        first_msg = MessageAction(content='Hello, start task', wait_for_response=False)
         first_msg._source = EventSource.USER
         first_msg._id = 1
 
@@ -92,10 +92,10 @@ class TestTruncation:
         history_len = 1 + 2 * pairs
         events = [first_msg]
         for i in range(pairs):
-            cmd = CmdRunAction(command=f"cmd{i}")
+            cmd = CmdRunAction(command=f'cmd{i}')
             cmd._id = i + 2
             obs = CmdOutputObservation(
-                command=f"cmd{i}", content=f"output{i}", command_id=cmd._id
+                command=f'cmd{i}', content=f'output{i}', command_id=cmd._id
             )
             obs._cause = cmd._id
             events.extend([cmd, obs])
@@ -125,34 +125,34 @@ class TestTruncation:
             agent=mock_agent,
             event_stream=mock_event_stream,
             max_iterations=10,
-            sid="test_truncation",
+            sid='test_truncation',
             confirmation_mode=False,
             headless_mode=True,
         )
 
         # Setup initial history with IDs
-        first_msg = MessageAction(content="Start task", wait_for_response=False)
+        first_msg = MessageAction(content='Start task', wait_for_response=False)
         first_msg._source = EventSource.USER
         first_msg._id = 1
 
         # Add agent question
         agent_msg = MessageAction(
-            content="What task would you like me to perform?", wait_for_response=True
+            content='What task would you like me to perform?', wait_for_response=True
         )
         agent_msg._source = EventSource.AGENT
         agent_msg._id = 2
 
         # Add user response
         user_response = MessageAction(
-            content="Please list all files and show me current directory",
+            content='Please list all files and show me current directory',
             wait_for_response=False,
         )
         user_response._source = EventSource.USER
         user_response._id = 3
 
-        cmd1 = CmdRunAction(command="ls")
+        cmd1 = CmdRunAction(command='ls')
         cmd1._id = 4
-        obs1 = CmdOutputObservation(command="ls", content="file1.txt", command_id=4)
+        obs1 = CmdOutputObservation(command='ls', content='file1.txt', command_id=4)
         obs1._id = 5
         obs1._cause = 4
 
@@ -183,22 +183,22 @@ class TestTruncation:
             agent=mock_agent,
             event_stream=mock_event_stream,
             max_iterations=10,
-            sid="test_truncation",
+            sid='test_truncation',
             confirmation_mode=False,
             headless_mode=True,
         )
 
         # Create events with IDs
-        first_msg = MessageAction(content="Start task", wait_for_response=False)
+        first_msg = MessageAction(content='Start task', wait_for_response=False)
         first_msg._source = EventSource.USER
         first_msg._id = 1
 
         events = [first_msg]
         for i in range(5):
-            cmd = CmdRunAction(command=f"cmd{i}")
+            cmd = CmdRunAction(command=f'cmd{i}')
             cmd._id = i + 2
             obs = CmdOutputObservation(
-                command=f"cmd{i}", content=f"output{i}", command_id=cmd._id
+                command=f'cmd{i}', content=f'output{i}', command_id=cmd._id
             )
             obs._cause = cmd._id
             events.extend([cmd, obs])
@@ -224,7 +224,7 @@ class TestTruncation:
             agent=mock_agent,
             event_stream=mock_event_stream,
             max_iterations=10,
-            sid="test_truncation",
+            sid='test_truncation',
             confirmation_mode=False,
             headless_mode=True,
         )

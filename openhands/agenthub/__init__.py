@@ -16,23 +16,23 @@ from openhands.agenthub import (  # noqa: E402
 )
 
 __all__ = [
-    "codeact_agent",
-    "delegator_agent",
-    "dummy_agent",
-    "browsing_agent",
-    "visualbrowsing_agent",
+    'codeact_agent',
+    'delegator_agent',
+    'dummy_agent',
+    'browsing_agent',
+    'visualbrowsing_agent',
 ]
 
 for agent in all_microagents.values():
-    name = agent["name"]
-    prompt = agent["prompt"]
+    name = agent['name']
+    prompt = agent['prompt']
 
     anon_class = type(
         name,
         (MicroAgent,),
         {
-            "prompt": prompt,
-            "agent_definition": agent,
+            'prompt': prompt,
+            'agent_definition': agent,
         },
     )
 

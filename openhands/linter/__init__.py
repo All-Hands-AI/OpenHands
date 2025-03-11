@@ -8,4 +8,4 @@ code](https://github.com/paul-gauthier/aider/blob/main/aider/linter.py)).
 
 from openhands_aci.linter import DefaultLinter, LintResult
 
-__all__ = ["DefaultLinter", "LintResult"]
+__all__ = ['DefaultLinter', 'LintResult']
