@@ -227,12 +227,17 @@ class TestTruncation:
         # Force truncation
         controller1._handle_long_context_error()
 
-        # Verify truncation occurred
+        # Verify truncation occurred with exact truncation_id
         # We have 1 initial message + 100 pairs of commands and observations = 201 events
-        # The truncation algorithm cuts at midpoint (index 100), so truncation_id should be around 101
-        # (It might be slightly different due to action-observation pair preservation)
-        expected_truncation_id = 101  # Midpoint of our 201 events (0-indexed)
-        assert abs(controller1.state.truncation_id - expected_truncation_id) <= 5  # Allow small deviation
+        # The events and their IDs are:
+        # - first_msg: ID 1
+        # - cmd0: ID 2, obs0: ID 3
+        # - cmd1: ID 4, obs1: ID 5
+        # ... and so on
+        # The midpoint index is 100, which corresponds to obs49 with ID 101
+        # Since obs49 is an Observation, the truncation algorithm will include its matching action cmd49 with ID 100
+        expected_truncation_id = 100  # ID of cmd49, which is included due to action-observation pair preservation
+        assert controller1.state.truncation_id == expected_truncation_id
         
         # Verify history was cut approximately in half (as per _apply_conversation_window implementation)
         # It might not be exactly half due to action-observation pair preservation
