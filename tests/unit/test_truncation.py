@@ -251,15 +251,13 @@ class TestTruncation:
         controller1.state.save_to_session('test_persistence', file_store)
 
         # Close the first controller to clean up resources
+        # This will unsubscribe from the event stream and clean up callbacks
         asyncio.run(controller1.close())
-        
-        # Create a new event stream with the same file store to avoid callback ID conflicts
-        new_event_stream = EventStream(sid='test_persistence', file_store=file_store)
         
         # Second session: Create new controller with the same event stream
         controller2 = AgentController(
             agent=mock_agent,
-            event_stream=new_event_stream,  # Use a new event stream with the same file store
+            event_stream=event_stream,  # Use the same event stream
             max_iterations=10,
             sid='test_persistence',  # Use the same session ID
             confirmation_mode=False,
@@ -297,9 +295,8 @@ class TestTruncation:
         # Clean up the second controller
         asyncio.run(controller2.close())
 
-        # Clean up event streams
+        # Clean up event stream
         event_stream.close()
-        new_event_stream.close()
 
         # Note: There may still be a RuntimeWarning about 'coroutine AgentController._on_event was never awaited'
         # This is expected and doesn't affect the test results. The warning occurs because the event handling
