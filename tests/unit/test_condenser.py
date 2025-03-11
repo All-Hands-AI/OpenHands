@@ -416,6 +416,9 @@ def test_llm_summarizing_condenser_resets_when_given_truncated_history(
     ]
     mock_state.history = alternate_history
 
+    # When we do this, the condenser should start tracking the alternative history
+    # as the de-facto history. That means we lose the summarization event and any
+    # other events that were in the previous history.
     results = condenser.condensed_history(mock_state)
     assert results == alternate_history
 
