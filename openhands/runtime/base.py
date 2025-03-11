@@ -507,12 +507,29 @@ class Runtime(FileEditRuntimeMixin):
             return ''
         return obs.content.strip()
 
-    def _get_ref_content(self, file_path: str, ref: str) -> str:
-        cmd = f'git show {ref}:{file_path}'
-        obs = self.run(CmdRunAction(command=cmd))
-        if hasattr(obs, 'error') and obs.error:
-            return ''
-        return obs.content.strip()
+    def _get_ref_content(self, file_path: str) -> str:
+        ref_non_default_branch = (
+            '$(git merge-base HEAD "$(git rev-parse --abbrev-ref origin/"$(git remote show origin | grep "HEAD branch" | cut -d'
+            ' -f5)")")'
+        )
+        ref_default_branch = (
+            'origin/$(git remote show origin | grep "HEAD branch" | cut -d' ' -f5)'
+        )
+        ref_new_repo = '$(git rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
+
+        refs = [ref_non_default_branch, ref_default_branch, ref_new_repo]
+
+        for ref in refs:
+            if self._verify_ref_exists(ref):
+                cmd = f'git show {ref}:{file_path}'
+                obs = self.run(CmdRunAction(command=cmd))
+                if hasattr(obs, 'error') and obs.error:
+                    continue
+                return obs.content.strip()
+            else:
+                continue
+
+        return ''
 
     def _verify_ref_exists(self, ref: str) -> bool:
         cmd = f'git rev-parse --verify {ref}'
@@ -520,6 +537,29 @@ class Runtime(FileEditRuntimeMixin):
         if hasattr(obs, 'error') and obs.error:
             return False
         return True
+
+    def _get_changed_files(self) -> list[str]:
+        ref_non_default_branch = (
+            '$(git merge-base HEAD "$(git rev-parse --abbrev-ref origin/"$(git remote show origin | grep "HEAD branch" | cut -d'
+            ' -f5)")")'
+        )
+        ref_default_branch = (
+            'origin/$(git remote show origin | grep "HEAD branch" | cut -d' ' -f5)'
+        )
+        ref_new_repo = '$(git rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
+
+        diff_cmd = 'git diff --name-status'
+
+        refs = [ref_non_default_branch, ref_default_branch, ref_new_repo]
+        for ref in refs:
+            if self._verify_ref_exists(ref):
+                diff_cmd += f' {ref}'
+                obs = self.run(CmdRunAction(command=diff_cmd))
+                return obs.content.splitlines()
+            else:
+                continue
+
+        return []
 
     def get_untracked_files(self) -> list[dict[str, str]]:
         try:
@@ -531,38 +571,34 @@ class Runtime(FileEditRuntimeMixin):
             logger.error(f'Error retrieving untracked files: {e}')
             return []
 
-    def get_git_changes(self, ref='HEAD') -> list[dict[str, str]]:
+    def get_git_changes(self) -> list[dict[str, str]]:
         if not self._is_git_repo():
             raise RuntimeError('Not a git repository')
 
         result = []
-        cmd = f'git diff --name-status {ref}'
+        changes_list = self._get_changed_files()
+        logger.info(f'Changes list: {changes_list}')
 
-        # Only run the command if the ref exists (e.g., it is an existing branch)
-        if self._verify_ref_exists(ref):
-            obs = self.run(CmdRunAction(command=cmd))
-            obs_list = obs.content.splitlines()
-            for line in obs_list:
-                status = line[:2].strip()
-                path = line[2:].strip()
+        for line in changes_list:
+            status = line[:2].strip()
+            path = line[2:].strip()
 
-                # Get the first non-space character as the primary status
-                primary_status = status.replace(' ', '')[0]
-                result.append(
-                    {
-                        'status': primary_status,
-                        'path': path,
-                    }
-                )
+            # Get the first non-space character as the primary status
+            primary_status = status.replace(' ', '')[0]
+            result.append(
+                {
+                    'status': primary_status,
+                    'path': path,
+                }
+            )
 
-        # join with untracked files
+        # join with any untracked files
         result += self.get_untracked_files()
-
         return result
 
     def get_git_diff(self, file_path: str, ref='HEAD') -> dict[str, str]:
         modified = self._get_current_file_content(file_path)
-        original = self._get_ref_content(file_path, ref)
+        original = self._get_ref_content(file_path)
 
         return {
             'modified': modified,

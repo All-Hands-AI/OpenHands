@@ -340,7 +340,7 @@ def zip_current_workspace(request: Request, conversation_id: str):
 async def git_changes(request: Request, ref: str = 'HEAD'):
     runtime: Runtime = request.state.conversation.runtime
     try:
-        changes = await call_sync_from_async(runtime.get_git_changes, ref)
+        changes = await call_sync_from_async(runtime.get_git_changes)
         return changes
     except AgentRuntimeUnavailableError as e:
         logger.error(f'Error getting changes: {e}')
@@ -360,7 +360,7 @@ async def git_changes(request: Request, ref: str = 'HEAD'):
 async def git_diff(request: Request, path: str, ref: str = 'HEAD'):
     runtime: Runtime = request.state.conversation.runtime
     try:
-        diff = await call_sync_from_async(runtime.get_git_diff, path, ref)
+        diff = await call_sync_from_async(runtime.get_git_diff, path)
         return diff
     except AgentRuntimeUnavailableError as e:
         logger.error(f'Error getting diff: {e}')
