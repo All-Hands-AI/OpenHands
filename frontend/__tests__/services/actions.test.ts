@@ -3,6 +3,7 @@ import { handleStatusMessage, handleActionMessage } from "#/services/actions";
 import store from "#/store";
 import { trackError } from "#/utils/error-handler";
 import ActionType from "#/types/action-type";
+import { ActionMessage } from "#/types/message";
 
 // Mock dependencies
 vi.mock("#/utils/error-handler", () => ({
@@ -61,20 +62,23 @@ describe("Actions Service", () => {
   describe("handleActionMessage", () => {
     it("should use first-person perspective for task completion messages", () => {
       // Test partial completion
-      const messagePartial = {
+      const messagePartial: ActionMessage = {
+        id: 1,
         action: ActionType.FINISH,
         source: "agent",
+        message: "",
+        timestamp: new Date().toISOString(),
         args: {
           final_thought: "",
           task_completed: "partial",
-          outputs: {},
+          outputs: "",
           thought: ""
         }
       };
 
       // Mock implementation to capture the message
       let capturedPartialMessage = "";
-      store.dispatch.mockImplementation((action) => {
+      (store.dispatch as any).mockImplementation((action: any) => {
         if (action.type === "chat/addAssistantMessage" && 
             action.payload.includes("believe that the task was **completed partially**")) {
           capturedPartialMessage = action.payload;
@@ -85,20 +89,23 @@ describe("Actions Service", () => {
       expect(capturedPartialMessage).toContain("I believe that the task was **completed partially**");
       
       // Test not completed
-      const messageNotCompleted = {
+      const messageNotCompleted: ActionMessage = {
+        id: 2,
         action: ActionType.FINISH,
         source: "agent",
+        message: "",
+        timestamp: new Date().toISOString(),
         args: {
           final_thought: "",
           task_completed: "false",
-          outputs: {},
+          outputs: "",
           thought: ""
         }
       };
 
       // Mock implementation to capture the message
       let capturedNotCompletedMessage = "";
-      store.dispatch.mockImplementation((action) => {
+      (store.dispatch as any).mockImplementation((action: any) => {
         if (action.type === "chat/addAssistantMessage" && 
             action.payload.includes("believe that the task was **not completed**")) {
           capturedNotCompletedMessage = action.payload;
@@ -109,20 +116,23 @@ describe("Actions Service", () => {
       expect(capturedNotCompletedMessage).toContain("I believe that the task was **not completed**");
       
       // Test completed successfully
-      const messageCompleted = {
+      const messageCompleted: ActionMessage = {
+        id: 3,
         action: ActionType.FINISH,
         source: "agent",
+        message: "",
+        timestamp: new Date().toISOString(),
         args: {
           final_thought: "",
           task_completed: "true",
-          outputs: {},
+          outputs: "",
           thought: ""
         }
       };
 
       // Mock implementation to capture the message
       let capturedCompletedMessage = "";
-      store.dispatch.mockImplementation((action) => {
+      (store.dispatch as any).mockImplementation((action: any) => {
         if (action.type === "chat/addAssistantMessage" && 
             action.payload.includes("believe that the task was **completed successfully**")) {
           capturedCompletedMessage = action.payload;
