@@ -145,9 +145,9 @@ export default function MainApp() {
         />
       )}
 
-      {BILLING_SETTINGS() && config.data?.APP_MODE === "saas" && settings?.IS_NEW_USER && (
-        <SetupPaymentModal />
-      )}
+      {BILLING_SETTINGS() &&
+        config.data?.APP_MODE === "saas" &&
+        settings?.IS_NEW_USER && <SetupPaymentModal />}
     </div>
   );
 }
