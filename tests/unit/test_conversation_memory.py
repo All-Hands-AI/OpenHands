@@ -558,21 +558,21 @@ def test_process_events_with_knowledge_microagent_recall_observation(
 ):
     """Test processing a RecallObservation with KNOWLEDGE_MICROAGENT type."""
     microagent_knowledge = [
-        {
-            'agent_name': 'test_agent',
-            'trigger_word': 'test',
-            'content': 'This is test agent content',
-        },
-        {
-            'agent_name': 'another_agent',
-            'trigger_word': 'another',
-            'content': 'This is another agent content',
-        },
-        {
-            'agent_name': 'disabled_agent',
-            'trigger_word': 'disabled',
-            'content': 'This is disabled agent content',
-        },
+        MicroagentKnowledge(
+            name='test_agent',
+            trigger='test',
+            content='This is test agent content',
+        ),
+        MicroagentKnowledge(
+            name='another_agent',
+            trigger='another',
+            content='This is another agent content',
+        ),
+        MicroagentKnowledge(
+            name='disabled_agent',
+            trigger='disabled',
+            content='This is disabled agent content',
+        ),
     ]
 
     obs = RecallObservation(
@@ -609,7 +609,7 @@ def test_process_events_with_knowledge_microagent_recall_observation(
     # Check that disabled_agent was filtered out
     triggered_agents = call_args['triggered_agents']
     assert len(triggered_agents) == 2
-    agent_names = [agent['agent_name'] for agent in triggered_agents]
+    agent_names = [agent.name for agent in triggered_agents]
     assert 'test_agent' in agent_names
     assert 'another_agent' in agent_names
     assert 'disabled_agent' not in agent_names
@@ -681,26 +681,26 @@ def test_process_events_with_empty_microagent_knowledge(conversation_memory):
 
 
 def test_process_events_with_recall_observation_deduplication(conversation_memory):
-    """Test that RecallObservations are properly deduplicated based on agent_name."""
+    """Test that RecallObservations are properly deduplicated based on agent name."""
     # Create a sequence of RecallObservations with overlapping agents
     obs1 = RecallObservation(
         recall_type=RecallType.KNOWLEDGE_MICROAGENT,
         microagent_knowledge=[
-            {
-                'agent_name': 'python_agent',
-                'trigger_word': 'python',
-                'content': 'Python best practices v1',
-            },
-            {
-                'agent_name': 'git_agent',
-                'trigger_word': 'git',
-                'content': 'Git best practices v1',
-            },
-            {
-                'agent_name': 'image_agent',
-                'trigger_word': 'image',
-                'content': 'Image best practices v1',
-            },
+            MicroagentKnowledge(
+                name='python_agent',
+                trigger='python',
+                content='Python best practices v1',
+            ),
+            MicroagentKnowledge(
+                name='git_agent',
+                trigger='git',
+                content='Git best practices v1',
+            ),
+            MicroagentKnowledge(
+                name='image_agent',
+                trigger='image',
+                content='Image best practices v1',
+            ),
         ],
         content='First recall',
     )
@@ -708,11 +708,11 @@ def test_process_events_with_recall_observation_deduplication(conversation_memor
     obs2 = RecallObservation(
         recall_type=RecallType.KNOWLEDGE_MICROAGENT,
         microagent_knowledge=[
-            {
-                'agent_name': 'python_agent',
-                'trigger_word': 'python',
-                'content': 'Python best practices v2',
-            },
+            MicroagentKnowledge(
+                name='python_agent',
+                trigger='python',
+                content='Python best practices v2',
+            ),
         ],
         content='Second recall',
     )
@@ -720,11 +720,11 @@ def test_process_events_with_recall_observation_deduplication(conversation_memor
     obs3 = RecallObservation(
         recall_type=RecallType.KNOWLEDGE_MICROAGENT,
         microagent_knowledge=[
-            {
-                'agent_name': 'git_agent',
-                'trigger_word': 'git',
-                'content': 'Git best practices v3',
-            },
+            MicroagentKnowledge(
+                name='git_agent',
+                trigger='git',
+                content='Git best practices v3',
+            ),
         ],
         content='Third recall',
     )
@@ -764,16 +764,16 @@ def test_process_events_with_recall_observation_deduplication_disabled_agents(
     obs1 = RecallObservation(
         recall_type=RecallType.KNOWLEDGE_MICROAGENT,
         microagent_knowledge=[
-            {
-                'agent_name': 'disabled_agent',
-                'trigger_word': 'disabled',
-                'content': 'Disabled agent content',
-            },
-            {
-                'agent_name': 'enabled_agent',
-                'trigger_word': 'enabled',
-                'content': 'Enabled agent content v1',
-            },
+            MicroagentKnowledge(
+                name='disabled_agent',
+                trigger='disabled',
+                content='Disabled agent content',
+            ),
+            MicroagentKnowledge(
+                name='enabled_agent',
+                trigger='enabled',
+                content='Enabled agent content v1',
+            ),
         ],
         content='First recall',
     )
@@ -781,11 +781,11 @@ def test_process_events_with_recall_observation_deduplication_disabled_agents(
     obs2 = RecallObservation(
         recall_type=RecallType.KNOWLEDGE_MICROAGENT,
         microagent_knowledge=[
-            {
-                'agent_name': 'enabled_agent',
-                'trigger_word': 'enabled',
-                'content': 'Enabled agent content v2',
-            },
+            MicroagentKnowledge(
+                name='enabled_agent',
+                trigger='enabled',
+                content='Enabled agent content v2',
+            ),
         ],
         content='Second recall',
     )
