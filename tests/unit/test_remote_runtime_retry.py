@@ -1,7 +1,7 @@
-"""Test the original retry mechanism in RemoteRuntime."""
+"""Test the retry mechanism in RemoteRuntime."""
 
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
 
 import requests
 import tenacity
@@ -9,11 +9,12 @@ from requests.exceptions import ConnectionError
 
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
+from openhands.runtime.utils.request import send_request
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
-class TestRemoteRuntimeRetryOriginal(unittest.TestCase):
-    """Test the original retry mechanism in RemoteRuntime."""
+class TestRemoteRuntimeRetry(unittest.TestCase):
+    """Test the retry mechanism in RemoteRuntime."""
 
     def test_retry_decorator_exists(self):
         """Test that the retry decorator is used when remote_runtime_enable_retries=True."""
@@ -126,6 +127,32 @@ class TestRemoteRuntimeRetryOriginal(unittest.TestCase):
         
         # The result should be "success after retry" from our mock decorator
         self.assertEqual(result, "success after retry")
+
+
+    def test_tenacity_retry_with_connection_error(self):
+        """Test that tenacity retry works with ConnectionError."""
+        # Create a function that will raise ConnectionError on first call
+        call_count = [0]
+        
+        @tenacity.retry(
+            retry=tenacity.retry_if_exception_type(ConnectionError),
+            stop=tenacity.stop_after_attempt(3),
+            wait=tenacity.wait_exponential(multiplier=0.1, min=0.1, max=1),
+        )
+        def function_with_retry():
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise ConnectionError("Connection refused")
+            return "success"
+        
+        # Call the function - should retry and succeed
+        result = function_with_retry()
+        
+        # Verify the function was called twice (retry happened)
+        self.assertEqual(call_count[0], 2)
+        
+        # Verify the result is correct
+        self.assertEqual(result, "success")
 
 
 if __name__ == '__main__':
