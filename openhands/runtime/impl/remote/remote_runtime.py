@@ -1,8 +1,6 @@
 import os
-import logging
 from typing import Callable
 from urllib.parse import urlparse
-from requests.exceptions import ConnectionError
 
 import requests
 import tenacity
@@ -21,7 +19,6 @@ from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
-from openhands.utils.tenacity_stop import stop_if_should_exit
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.runtime.utils.request import send_request
@@ -424,48 +421,51 @@ class RemoteRuntime(ActionExecutionClient):
             raise
 
     def _send_action_server_request(self, method, url, **kwargs):
+        if not self.config.sandbox.remote_runtime_enable_retries:
+            return self._send_action_server_request_impl(method, url, **kwargs)
+
         retry_decorator = tenacity.retry(
             retry=tenacity.retry_if_exception_type(ConnectionError),
             stop=tenacity.stop_after_attempt(3)
             | stop_if_should_exit()
             | self._stop_if_closed,
             wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
-            before_sleep=tenacity.before_sleep_log(logger, logging.WARNING),
         )
-        
-        @retry_decorator
-        def _send_with_retry():
-            try:
-                return super(RemoteRuntime, self)._send_action_server_request(method, url, **kwargs)
-            except requests.Timeout:
-                self.log(
-                    'error',
-                    f'No response received within the timeout period for url: {url}',
-                )
-                raise
-            except requests.HTTPError as e:
-                if e.response.status_code in (404, 502, 504):
-                    if e.response.status_code == 404:
-                        raise AgentRuntimeDisconnectedError(
-                            f'Runtime is not responding. This may be temporary, please try again. Original error: {e}'
-                        ) from e
-                    else:  # 502, 504
-                        raise AgentRuntimeDisconnectedError(
-                            f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
-                        ) from e
-                elif e.response.status_code == 503:
-                    if self.config.sandbox.keep_runtime_alive:
-                        self.log('warning', 'Runtime appears to be paused. Resuming...')
-                        self._resume_runtime()
-                        return super(RemoteRuntime, self)._send_action_server_request(method, url, **kwargs)
-                    else:
-                        raise AgentRuntimeDisconnectedError(
-                            f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
-                        ) from e
+        return retry_decorator(self._send_action_server_request_impl)(
+            method, url, **kwargs
+        )
+
+    def _send_action_server_request_impl(self, method, url, **kwargs):
+        try:
+            return super()._send_action_server_request(method, url, **kwargs)
+        except requests.Timeout:
+            self.log(
+                'error',
+                f'No response received within the timeout period for url: {url}',
+            )
+            raise
+
+        except requests.HTTPError as e:
+            if e.response.status_code in (404, 502, 504):
+                if e.response.status_code == 404:
+                    raise AgentRuntimeDisconnectedError(
+                        f'Runtime is not responding. This may be temporary, please try again. Original error: {e}'
+                    ) from e
+                else:  # 502, 504
+                    raise AgentRuntimeDisconnectedError(
+                        f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
+                    ) from e
+            elif e.response.status_code == 503:
+                if self.config.sandbox.keep_runtime_alive:
+                    self.log('warning', 'Runtime appears to be paused. Resuming...')
+                    self._resume_runtime()
+                    return super()._send_action_server_request(method, url, **kwargs)
                 else:
-                    raise e
-        
-        return _send_with_retry()
+                    raise AgentRuntimeDisconnectedError(
+                        f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
+                    ) from e
+            else:
+                raise e
 
     def _stop_if_closed(self, retry_state: tenacity.RetryCallState) -> bool:
         return self._runtime_closed
