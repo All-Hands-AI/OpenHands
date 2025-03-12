@@ -9,7 +9,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.runtime import get_runtime_cls
-from openhands.server.auth import get_github_token, get_idp_token, get_user_id
+from openhands.server.auth import get_access_token, get_github_token, get_github_user_id
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
@@ -136,11 +136,11 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     using the returned conversation ID.
     """
     logger.info('Initializing new conversation')
-    user_id = get_user_id(request)
+    user_id = get_github_user_id(request)
     gh_client = GithubServiceImpl(
         user_id=user_id,
-        idp_token=get_idp_token(request),
-        token=get_github_token(request),
+        external_auth_token=get_access_token(request),
+        github_token=get_github_token(request),
     )
     github_token = await gh_client.get_latest_token()
 
@@ -191,7 +191,7 @@ async def search_conversations(
     limit: int = 20,
 ) -> ConversationInfoResultSet:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request)
+        config, get_github_user_id(request)
     )
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
@@ -210,7 +210,7 @@ async def search_conversations(
         conversation.conversation_id for conversation in filtered_results
     )
     running_conversations = await conversation_manager.get_running_agent_loops(
-        get_user_id(request), set(conversation_ids)
+        get_github_user_id(request), set(conversation_ids)
     )
     result = ConversationInfoResultSet(
         results=await wait_all(
@@ -230,7 +230,7 @@ async def get_conversation(
     conversation_id: str, request: Request
 ) -> ConversationInfo | None:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request)
+        config, get_github_user_id(request)
     )
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
@@ -246,7 +246,7 @@ async def update_conversation(
     request: Request, conversation_id: str, title: str = Body(embed=True)
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request)
+        config, get_github_user_id(request)
     )
     metadata = await conversation_store.get_metadata(conversation_id)
     if not metadata:
@@ -262,7 +262,7 @@ async def delete_conversation(
     request: Request,
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request)
+        config, get_github_user_id(request)
     )
     try:
         await conversation_store.get_metadata(conversation_id)
