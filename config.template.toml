@@ -132,15 +132,6 @@ api_key = ""
 # Custom LLM provider
 #custom_llm_provider = ""
 
-# Embedding API base URL
-#embedding_base_url = ""
-
-# Embedding deployment name
-#embedding_deployment_name = ""
-
-# Embedding model to use
-embedding_model = "local"
-
 # Maximum number of characters in an observation's content
 #max_message_chars = 10000
 
