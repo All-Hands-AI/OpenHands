@@ -4694,6 +4694,18 @@
         "de": "Weiter zu Stripe"
     },
     "BILLING$YOURE_IN": {
-        "en": "You're in! You can start using your $50 in free credits now."
+        "en": "You're in! You can start using your $50 in free credits now.",
+        "ja": "登録完了！$50分の無料クレジットを今すぐご利用いただけます。",
+        "zh-CN": "您已加入！现在可以开始使用$50的免费额度了。",
+        "zh-TW": "您已加入！現在可以開始使用$50的免費額度了。",
+        "ko-KR": "가입 완료! 지금 바로 $50 상당의 무료 크레딧을 사용하실 수 있습니다.",
+        "no": "Du er med! Du kan begynne å bruke dine $50 i gratis kreditter nå.",
+        "it": "Ci sei! Puoi iniziare a utilizzare i tuoi $50 in crediti gratuiti ora.",
+        "pt": "Você está dentro! Você pode começar a usar seus $50 em créditos gratuitos agora.",
+        "es": "¡Ya estás dentro! Puedes empezar a usar tus $50 en créditos gratuitos ahora.",
+        "ar": "أنت معنا! يمكنك البدء في استخدام رصيدك المجاني البالغ 50 دولارًا الآن.",
+        "fr": "C'est fait ! Vous pouvez commencer à utiliser vos 50 $ de crédits gratuits maintenant.",
+        "tr": "Başardın! Şimdi $50 değerindeki ücretsiz kredilerini kullanmaya başlayabilirsin.",
+        "de": "Du bist dabei! Du kannst jetzt deine $50 an kostenlosen Guthaben nutzen."
     }
 }
