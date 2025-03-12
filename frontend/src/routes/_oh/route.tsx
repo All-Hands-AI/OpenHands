@@ -21,6 +21,7 @@ import { useAuth } from "#/context/auth-context";
 import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
+import { BILLING_SETTINGS } from "#/utils/feature-flags";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -144,7 +145,7 @@ export default function MainApp() {
         />
       )}
 
-      {config.data?.APP_MODE === "saas" && settings?.IS_NEW_USER && (
+      {BILLING_SETTINGS() && config.data?.APP_MODE === "saas" && settings?.IS_NEW_USER && (
         <SetupPaymentModal />
       )}
     </div>
