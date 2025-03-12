@@ -1,5 +1,5 @@
 import asyncio
-from unittest.mock import ANY, AsyncMock, MagicMock
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -838,6 +838,42 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
 
     # Check that the context window exceeded error was raised during the run
     assert step_state.has_errored
+
+
+@pytest.mark.asyncio
+async def test_run_controller_with_memory_error(test_event_stream):
+    config = AppConfig()
+    event_stream = test_event_stream
+
+    agent = MagicMock(spec=Agent)
+    agent.llm = MagicMock(spec=LLM)
+    agent.llm.metrics = Metrics()
+    agent.llm.config = config.get_llm_config()
+
+    runtime = MagicMock(spec=Runtime)
+    runtime.event_stream = event_stream
+
+    # Create a real Memory instance
+    memory = Memory(event_stream=event_stream, sid='test-memory')
+
+    # Patch the _on_recall_action method to raise our test exception
+    def mock_on_recall_action(*args, **kwargs):
+        raise RuntimeError('Test memory error')
+
+    with patch.object(memory, '_on_recall_action', side_effect=mock_on_recall_action):
+        state = await run_controller(
+            config=config,
+            initial_user_action=MessageAction(content='Test message'),
+            runtime=runtime,
+            sid='test',
+            agent=agent,
+            fake_user_response_fn=lambda _: 'repeat',
+            memory=memory,
+        )
+
+    assert state.iteration == 0
+    assert state.agent_state == AgentState.ERROR
+    assert state.last_error == 'Error: RuntimeError'
 
 
 @pytest.mark.asyncio
