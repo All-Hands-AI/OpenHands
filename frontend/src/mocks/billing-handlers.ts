@@ -6,12 +6,17 @@ export const STRIPE_BILLING_HANDLERS = [
     return HttpResponse.json({ credits: "100" });
   }),
 
-  http.post("/api/billing/create-checkout-session", async ({ request }) => {
+  http.post("/api/billing/create-checkout-session", async () => {
     await delay();
-    return HttpResponse.json({ redirect_url: "https://stripe.com/some-checkout" });
+    return HttpResponse.json({
+      redirect_url: "https://stripe.com/some-checkout",
+    });
   }),
 
   http.post("/api/billing/create-customer-setup-session", async () => {
-    return HttpResponse.json({ redirect_url: "https://stripe.com/some-customer-setup" });
+    await delay();
+    return HttpResponse.json({
+      redirect_url: "https://stripe.com/some-customer-setup",
+    });
   }),
 ];
