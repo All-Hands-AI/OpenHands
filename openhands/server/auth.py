@@ -25,6 +25,7 @@ def get_github_token(request: Request) -> SecretStr | None:
 
     return None
 
+
 def get_github_user_id(request: Request) -> str | None:
     provider_tokens = get_provider_tokens(request)
 
