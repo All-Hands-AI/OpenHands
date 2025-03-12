@@ -105,7 +105,7 @@ export default function MainApp() {
     if (error?.status === 402 && pathname !== "/") {
       navigate("/");
     } else if (!isFetching && searchParams.get('free_credits') == 'success') {
-      toast.success(t("BILLING$FREE_CREDITS_APPLIED"))
+      toast.success("You're in! You can start using your $50 in free credits now.")
       searchParams.delete("free_credits")
       navigate("/");
     }

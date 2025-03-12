@@ -4648,19 +4648,13 @@
         "tr": "Hesabınıza bakiye ekleyin",
         "de": "Guthaben zu Ihrem Konto hinzufügen"
     },
-    "BILLING$FREE_CREDITS_APPLIED": {
-        "en": "Your free credits have been applied!",
-        "ja": "無料クレジットが適用されました",
-        "zh-CN": "已应用免费额度",
-        "zh-TW": "已套用免費額度",
-        "ko-KR": "무료 크레딧이 적용되었습니다",
-        "no": "Gratiskreditter er anvendt",
-        "it": "Crediti gratuiti applicati",
-        "pt": "Créditos gratuitos aplicados",
-        "es": "Créditos gratuitos aplicados",
-        "ar": "تم تطبيق الرصيد المجاني",
-        "fr": "Crédits gratuits appliqués",
-        "tr": "Ücretsiz krediler uygulandı",
-        "de": "Kostenlose Guthaben angewendet"
+    "BILLING$YOUVE_GOT_50": {
+        "en": "You've got $50 in free OpenHands credits"
+    },
+    "BILLING$CLAIM_YOUR_50": {
+        "en": "Claim your $50 in free credits by saving a credit card with Stripe. We won't charge you without asking first!"
+    },
+    "BILLING$PROCEED_TO_STRIPE": {
+        "en": "Proceed to Stripe"
     }
 }
