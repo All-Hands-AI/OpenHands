@@ -18,7 +18,7 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.action.agent import AgentRecallAction
-from openhands.events.event import Event
+from openhands.events.event import Event, RecallType
 from openhands.events.observation.agent import RecallObservation
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
@@ -88,6 +88,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
         if isinstance(event, AgentRecallAction):
             # create a RecallObservation
             recall_observation = RecallObservation(
+                recall_type=RecallType.KNOWLEDGE_MICROAGENT,
                 content='recalled',
             )
             recall_observation._cause = event.id  # ignore attr-defined warning
