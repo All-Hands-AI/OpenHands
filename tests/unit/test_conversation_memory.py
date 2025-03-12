@@ -681,7 +681,11 @@ def test_process_events_with_empty_microagent_knowledge(conversation_memory):
 
 
 def test_process_events_with_recall_observation_deduplication(conversation_memory):
-    """Test that RecallObservations are properly deduplicated based on agent name."""
+    """Test that RecallObservations are properly deduplicated based on agent name.
+
+    The deduplication logic should keep the FIRST occurrence of each microagent
+    and filter out later occurrences to avoid redundant information.
+    """
     # Create a sequence of RecallObservations with overlapping agents
     obs1 = RecallObservation(
         recall_type=RecallType.KNOWLEDGE_MICROAGENT,
@@ -740,26 +744,26 @@ def test_process_events_with_recall_observation_deduplication(conversation_memor
         vision_is_active=False,
     )
 
-    # Verify that only the most recent content for each agent is included
+    # Verify that only the first occurrence of content for each agent is included
     assert len(messages) == 4  # system + 3 recalls
     recall_messages = messages[1:]  # Skip system message
 
-    # First recall should only include image_agent (git_agent and python_agent appears later)
+    # First recall should include all agents since they appear here first
     assert 'Image best practices v1' in recall_messages[0].content[0].text
-    assert 'Git best practices v1' not in recall_messages[0].content[0].text
-    assert 'Python best practices v1' not in recall_messages[0].content[0].text
+    assert 'Git best practices v1' in recall_messages[0].content[0].text
+    assert 'Python best practices v1' in recall_messages[0].content[0].text
 
-    # Second recall should include python_agent (it's the most recent for that agent)
-    assert 'Python best practices v2' in recall_messages[1].content[0].text
+    # Second recall should be empty as python_agent already appeared earlier
+    assert recall_messages[1].content[0].text == ''
 
-    # Third recall should include git_agent (it's the most recent for that agent)
-    assert 'Git best practices v3' in recall_messages[2].content[0].text
+    # Third recall should be empty as git_agent already appeared earlier
+    assert recall_messages[2].content[0].text == ''
 
 
 def test_process_events_with_recall_observation_deduplication_disabled_agents(
     conversation_memory,
 ):
-    """Test that disabled agents are filtered out after deduplication."""
+    """Test that disabled agents are filtered out and deduplication keeps the first occurrence."""
     # Create a sequence of RecallObservations with disabled agents
     obs1 = RecallObservation(
         recall_type=RecallType.KNOWLEDGE_MICROAGENT,
@@ -801,18 +805,16 @@ def test_process_events_with_recall_observation_deduplication_disabled_agents(
         vision_is_active=False,
     )
 
-    # Verify that disabled agents are filtered out and only the most recent content for enabled agents is included
+    # Verify that disabled agents are filtered out and only the first occurrence of enabled agents is included
     assert len(messages) == 3  # system + 2 recalls
     recall_messages = messages[1:]  # Skip system message
 
-    # First recall should not include disabled_agent
+    # First recall should include enabled_agent but not disabled_agent
     assert 'Disabled agent content' not in recall_messages[0].content[0].text
-    assert (
-        'Enabled agent content v1' not in recall_messages[0].content[0].text
-    )  # Because it appears later
+    assert 'Enabled agent content v1' in recall_messages[0].content[0].text
 
-    # Second recall should include enabled_agent (it's the most recent)
-    assert 'Enabled agent content v2' in recall_messages[1].content[0].text
+    # Second recall should be empty since enabled_agent already appeared in the first recall
+    assert recall_messages[1].content[0].text == ''
 
 
 def test_process_events_with_recall_observation_deduplication_empty(
@@ -839,3 +841,58 @@ def test_process_events_with_recall_observation_deduplication_empty(
     # Verify that empty RecallObservations are handled gracefully
     assert len(messages) == 2  # system + empty recall
     assert messages[1].content[0].text == ''  # Empty string for empty recall
+
+
+def test_has_agent_in_earlier_events(conversation_memory):
+    """Test the _has_agent_in_earlier_events helper method."""
+    # Create test RecallObservations
+    obs1 = RecallObservation(
+        recall_type=RecallType.KNOWLEDGE_MICROAGENT,
+        microagent_knowledge=[
+            MicroagentKnowledge(
+                name='agent1',
+                trigger='trigger1',
+                content='Content 1',
+            ),
+        ],
+        content='First recall',
+    )
+
+    obs2 = RecallObservation(
+        recall_type=RecallType.KNOWLEDGE_MICROAGENT,
+        microagent_knowledge=[
+            MicroagentKnowledge(
+                name='agent2',
+                trigger='trigger2',
+                content='Content 2',
+            ),
+        ],
+        content='Second recall',
+    )
+
+    obs3 = RecallObservation(
+        recall_type=RecallType.ENVIRONMENT_INFO,  # Different recall type
+        content='Environment info',
+    )
+
+    # Create a list with mixed event types
+    events = [obs1, MessageAction(content='User message'), obs2, obs3]
+
+    # Test looking for existing agents
+    assert conversation_memory._has_agent_in_earlier_events('agent1', 2, events) is True
+    assert conversation_memory._has_agent_in_earlier_events('agent1', 3, events) is True
+    assert conversation_memory._has_agent_in_earlier_events('agent1', 4, events) is True
+
+    # Test looking for an agent in a later position (should not find it)
+    assert (
+        conversation_memory._has_agent_in_earlier_events('agent2', 0, events) is False
+    )
+    assert (
+        conversation_memory._has_agent_in_earlier_events('agent2', 1, events) is False
+    )
+
+    # Test looking for an agent in a different recall type (should not find it)
+    assert (
+        conversation_memory._has_agent_in_earlier_events('non_existent', 3, events)
+        is False
+    )
