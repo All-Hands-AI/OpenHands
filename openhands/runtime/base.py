@@ -508,58 +508,48 @@ class Runtime(FileEditRuntimeMixin):
         return obs.content.strip()
 
     def _get_ref_content(self, file_path: str) -> str:
-        ref_non_default_branch = (
-            '$(git merge-base HEAD "$(git rev-parse --abbrev-ref origin/"$(git remote show origin | grep "HEAD branch" | cut -d'
-            ' -f5)")")'
-        )
-        ref_default_branch = (
-            'origin/$(git remote show origin | grep "HEAD branch" | cut -d' ' -f5)'
-        )
-        ref_new_repo = '$(git rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
+        ref = self._get_valid_ref()
+        if not ref:
+            return ''
 
-        refs = [ref_non_default_branch, ref_default_branch, ref_new_repo]
+        cmd = f'git show {ref}:{file_path}'
+        obs = self.run(CmdRunAction(command=cmd))
 
-        for ref in refs:
-            if self._verify_ref_exists(ref):
-                cmd = f'git show {ref}:{file_path}'
-                obs = self.run(CmdRunAction(command=cmd))
-                if hasattr(obs, 'error') and obs.error:
-                    continue
-                return obs.content.strip()
-            else:
-                continue
-
-        return ''
+        if hasattr(obs, 'error') and obs.error:
+            return ''
+        return obs.content.strip()
 
     def _verify_ref_exists(self, ref: str) -> bool:
         cmd = f'git rev-parse --verify {ref}'
         obs = self.run(CmdRunAction(command=cmd))
-        if hasattr(obs, 'error') and obs.error:
-            return False
-        return True
+        return not (hasattr(obs, 'error') and obs.error)
 
-    def _get_changed_files(self) -> list[str]:
-        ref_non_default_branch = (
-            '$(git merge-base HEAD "$(git rev-parse --abbrev-ref origin/"$(git remote show origin | grep "HEAD branch" | cut -d'
-            ' -f5)")")'
-        )
-        ref_default_branch = (
-            'origin/$(git remote show origin | grep "HEAD branch" | cut -d' ' -f5)'
-        )
+    def _get_current_branch(self) -> str:
+        cmd = 'git remote show origin | grep "HEAD branch"'
+        obs = self.run(CmdRunAction(command=cmd))
+        return obs.content.split()[-1].strip()
+
+    def _get_valid_ref(self) -> str | None:
+        ref_non_default_branch = f'$(git merge-base HEAD "$(git rev-parse --abbrev-ref origin/{self._get_current_branch()})")'
+        ref_default_branch = 'origin/' + self._get_current_branch()
         ref_new_repo = '$(git rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
-
-        diff_cmd = 'git diff --name-status'
 
         refs = [ref_non_default_branch, ref_default_branch, ref_new_repo]
         for ref in refs:
             if self._verify_ref_exists(ref):
-                diff_cmd += f' {ref}'
-                obs = self.run(CmdRunAction(command=diff_cmd))
-                return obs.content.splitlines()
-            else:
-                continue
+                return ref
 
-        return []
+        return None
+
+    def _get_changed_files(self) -> list[str]:
+        ref = self._get_valid_ref()
+        if not ref:
+            return []
+
+        diff_cmd = f'git diff --name-status {ref}'
+        logger.info(f'Running diff command: {diff_cmd}')
+        obs = self.run(CmdRunAction(command=diff_cmd))
+        return obs.content.splitlines()
 
     def get_untracked_files(self) -> list[dict[str, str]]:
         try:
