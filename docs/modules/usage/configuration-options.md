@@ -197,21 +197,6 @@ For development setups, you can also define custom named LLM configurations. See
   - Default: `""`
   - Description: Custom LLM provider
 
-### Embeddings
-- `embedding_base_url`
-  - Type: `str`
-  - Default: `""`
-  - Description: Embedding API base URL
-
-- `embedding_deployment_name`
-  - Type: `str`
-  - Default: `""`
-  - Description: Embedding deployment name
-
-- `embedding_model`
-  - Type: `str`
-  - Default: `"local"`
-  - Description: Embedding model to use
 
 ### Message Handling
 - `max_message_chars`
@@ -295,23 +280,6 @@ For development setups, you can also define custom named LLM configurations. See
 ## Agent Configuration
 
 The agent configuration options are defined in the `[agent]` and `[agent.<agent_name>]` sections of the `config.toml` file.
-
-### Microagent Configuration
-- `micro_agent_name`
-  - Type: `str`
-  - Default: `""`
-  - Description: Name of the micro agent to use for this agent
-
-### Memory Configuration
-- `memory_enabled`
-  - Type: `bool`
-  - Default: `false`
-  - Description: Whether long-term memory (embeddings) is enabled
-
-- `memory_max_threads`
-  - Type: `int`
-  - Default: `3`
-  - Description: The maximum number of threads indexing at the same time for embeddings
 
 ### LLM Configuration
 - `llm_config`

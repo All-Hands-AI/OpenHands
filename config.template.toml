@@ -132,15 +132,6 @@ api_key = ""
 # Custom LLM provider
 #custom_llm_provider = ""
 
-# Embedding API base URL
-#embedding_base_url = ""
-
-# Embedding deployment name
-#embedding_deployment_name = ""
-
-# Embedding model to use
-embedding_model = "local"
-
 # Maximum number of characters in an observation's content
 #max_message_chars = 10000
 
@@ -226,9 +217,6 @@ codeact_enable_llm_editor = false
 
 # whether the IPython tool is enabled
 codeact_enable_jupyter = true
-
-# Name of the micro agent to use for this agent
-#micro_agent_name = ""
 
 # Memory enabled
 #memory_enabled = false
