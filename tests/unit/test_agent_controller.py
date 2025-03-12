@@ -166,7 +166,6 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
 @pytest.mark.asyncio
 async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
     config = AppConfig()
-    event_stream = test_event_stream
 
     agent = MagicMock(spec=Agent)
     agent = MagicMock(spec=Agent)
@@ -186,10 +185,10 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
         if isinstance(event, CmdRunAction):
             error_obs = ErrorObservation('You messed around with Jim')
             error_obs._cause = event.id
-            event_stream.add_event(error_obs, EventSource.USER)
+            test_event_stream.add_event(error_obs, EventSource.USER)
 
-    event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
-    runtime.event_stream = event_stream
+    test_event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
+    runtime.event_stream = test_event_stream
 
     def on_event_memory(event: Event):
         if isinstance(event, AgentRecallAction):
@@ -198,7 +197,7 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
                 recall_type=RecallType.KNOWLEDGE_MICROAGENT,
             )
             recall_obs._cause = event.id
-            event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
+            test_event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
 
     test_event_stream.subscribe(
         EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
@@ -214,7 +213,7 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
         memory=mock_memory,
     )
     print(f'state: {state}')
-    events = list(event_stream.get_events())
+    events = list(test_event_stream.get_events())
     print(f'event_stream: {events}')
     assert state.iteration == 3
     assert state.agent_state == AgentState.ERROR
@@ -225,8 +224,6 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
 @pytest.mark.asyncio
 async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
     config = AppConfig()
-    event_stream = test_event_stream
-
     agent = MagicMock(spec=Agent)
 
     def agent_step_fn(state):
@@ -245,10 +242,10 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
                 'Non fatal error here to trigger loop'
             )
             non_fatal_error_obs._cause = event.id
-            event_stream.add_event(non_fatal_error_obs, EventSource.ENVIRONMENT)
+            test_event_stream.add_event(non_fatal_error_obs, EventSource.ENVIRONMENT)
 
-    event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
-    runtime.event_stream = event_stream
+    test_event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
+    runtime.event_stream = test_event_stream
 
     def on_event_memory(event: Event):
         if isinstance(event, AgentRecallAction):
@@ -257,9 +254,11 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
                 recall_type=RecallType.KNOWLEDGE_MICROAGENT,
             )
             recall_obs._cause = event.id
-            event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
+            test_event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
 
-    event_stream.subscribe(EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4()))
+    test_event_stream.subscribe(
+        EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
+    )
 
     state = await run_controller(
         config=config,
@@ -270,7 +269,7 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
         fake_user_response_fn=lambda _: 'repeat',
         memory=mock_memory,
     )
-    events = list(event_stream.get_events())
+    events = list(test_event_stream.get_events())
     print(f'state: {state}')
     for i, event in enumerate(events):
         print(f'event {i}: {event_to_dict(event)}')
