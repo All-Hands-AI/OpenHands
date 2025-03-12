@@ -10,18 +10,18 @@ export function SetupPaymentModal() {
   const { mutate, isPending } = useMutation({
     mutationFn: OpenHands.createBillingSessionResponse,
     onSuccess: (data) => {
-      location.href = data
+      window.location.href = data
     },
   });
-  const {t} = useTranslation();
+  const { t } = useTranslation();
 
   return (
     <ModalBackdrop>
       <ModalBody className="border border-tertiary">
         <AllHandsLogo width={68} height={46} />
         <div className="flex flex-col gap-2 w-full items-center text-center">
-          <h1 className="text-2xl font-bold">{t('BILLING$YOUVE_GOT_50')}</h1>
-          <p>{t('BILLING$CLAIM_YOUR_50')}</p>
+          <h1 className="text-2xl font-bold">{t("BILLING$YOUVE_GOT_50")}</h1>
+          <p>{t("BILLING$CLAIM_YOUR_50")}</p>
         </div>
         <BrandButton
           testId="enter-cc-details"
@@ -31,7 +31,7 @@ export function SetupPaymentModal() {
           isDisabled={isPending}
           onClick={mutate}
         >
-          {t('BILLING$PROCEED_TO_STRIPE')}
+          {t("BILLING$PROCEED_TO_STRIPE")}
         </BrandButton>
       </ModalBody>
     </ModalBackdrop>
