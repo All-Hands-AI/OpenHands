@@ -91,7 +91,6 @@ def initialize_repository_for_runtime(
 
     Args:
         runtime: The runtime to initialize the repository for.
-        agent: (optional) The agent to load microagents for.
         selected_repository: (optional) The GitHub repository to use.
         github_token: (optional) The GitHub token to use.
 
@@ -122,6 +121,16 @@ def create_memory(
     repo_directory: str | None = None,
     status_callback: Callable | None = None,
 ) -> Memory:
+    """Create a memory for the agent to use.
+
+    Args:
+        runtime: The runtime to use.
+        event_stream: The event stream it will subscribe to.
+        sid: The session id.
+        selected_repository: The repository to clone and start with, if any.
+        repo_directory: The repository directory, if any.
+        status_callback: Optional callback function to handle status updates.
+    """
     memory = Memory(
         event_stream=event_stream,
         sid=sid,
