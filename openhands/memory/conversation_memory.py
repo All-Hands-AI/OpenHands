@@ -29,7 +29,7 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     UserRejectObservation,
 )
-from openhands.events.observation.agent import RecallObservation
+from openhands.events.observation.agent import MicroagentKnowledge, RecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
@@ -429,8 +429,7 @@ class ConversationMemory:
                     filtered_agents = [
                         agent
                         for agent in filtered_agents
-                        if agent['agent_name']
-                        not in self.agent_config.disabled_microagents
+                        if agent.name not in self.agent_config.disabled_microagents
                     ]
                     formatted_text = self.prompt_manager.build_microagent_info(
                         triggered_agents=filtered_agents,
@@ -481,7 +480,7 @@ class ConversationMemory:
 
     def _filter_agents_in_recall_obs(
         self, obs: RecallObservation, current_index: int, events: list[Event]
-    ) -> list[dict[str, str]]:
+    ) -> list[MicroagentKnowledge]:
         """Filter out agents that appear in later RecallObservations.
 
         Args:
@@ -490,7 +489,7 @@ class ConversationMemory:
             events: The list of all events
 
         Returns:
-            list[dict[str, str]]: The filtered list of microagent knowledge
+            list[MicroagentKnowledge]: The filtered list of microagent knowledge
         """
         if obs.recall_type != RecallType.KNOWLEDGE_MICROAGENT:
             return obs.microagent_knowledge
@@ -500,9 +499,7 @@ class ConversationMemory:
         for agent in obs.microagent_knowledge:
             # Keep this agent if it doesn't appear in any later observation
             # that is, if this is the most recent recall observation with this microagent
-            if not self._has_agent_in_later_events(
-                agent['agent_name'], current_index, events
-            ):
+            if not self._has_agent_in_later_events(agent.name, current_index, events):
                 filtered_agents.append(agent)
 
         return filtered_agents
@@ -526,8 +523,7 @@ class ConversationMemory:
                 and event.recall_type == RecallType.KNOWLEDGE_MICROAGENT
             ):
                 if any(
-                    agent['agent_name'] == agent_name
-                    for agent in event.microagent_knowledge
+                    agent.name == agent_name for agent in event.microagent_knowledge
                 ):
                     return True
         return False

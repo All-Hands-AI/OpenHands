@@ -6,6 +6,7 @@ from jinja2 import Template
 
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
+from openhands.events.observation.agent import MicroagentKnowledge
 
 
 @dataclass
@@ -90,13 +91,13 @@ class PromptManager:
 
     def build_microagent_info(
         self,
-        triggered_agents: list[dict],
+        triggered_agents: list[MicroagentKnowledge],
     ) -> str:
         """Renders the microagent info template with the triggered agents.
 
         Args:
-            triggered_agents: A list of dictionaries, each containing an "agent"
-                            (KnowledgeMicroAgent) and a "trigger_word" (str).
+            triggered_agents: A list of MicroagentKnowledge objects containing information
+                              about triggered microagents.
         """
         return self.microagent_info_template.render(
             triggered_agents=triggered_agents

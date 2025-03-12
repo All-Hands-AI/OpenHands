@@ -47,7 +47,7 @@ def conversation_memory(agent_config):
     def build_microagent_info(triggered_agents):
         if not triggered_agents:
             return ''
-        return '\n'.join(agent['content'] for agent in triggered_agents)
+        return '\n'.join(agent.content for agent in triggered_agents)
 
     prompt_manager.build_microagent_info.side_effect = build_microagent_info
     return ConversationMemory(agent_config, prompt_manager)

@@ -6,6 +6,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import AgentRecallAction
 from openhands.events.event import Event, EventSource, RecallType
 from openhands.events.observation.agent import (
+    MicroagentKnowledge,
     RecallObservation,
 )
 from openhands.events.observation.empty import NullObservation
@@ -165,23 +166,20 @@ class Memory:
         ), f'Expected a RecallObservation, but got {type(prev_observation)}'
 
         # Process text to find suitable microagents and create a RecallObservation.
-        found_microagents = []
-        recalled_content: list[dict[str, str]] = []
+        recalled_content: list[MicroagentKnowledge] = []
         for name, microagent in self.knowledge_microagents.items():
             trigger = microagent.match_trigger(query)
             if trigger:
                 logger.info("Microagent '%s' triggered by keyword '%s'", name, trigger)
-                # Create a dictionary with the agent and trigger word
-                found_microagents.append({'agent': microagent, 'trigger_word': trigger})
                 recalled_content.append(
-                    {
-                        'agent_name': microagent.name,
-                        'trigger_word': trigger,
-                        'content': microagent.content,
-                    }
+                    MicroagentKnowledge(
+                        name=microagent.name,
+                        trigger=trigger,
+                        content=microagent.content,
+                    )
                 )
 
-        if found_microagents:
+        if recalled_content:
             if prev_observation is not None:
                 # it may be on the first user message that already found some repo info etc
                 prev_observation.microagent_knowledge.extend(recalled_content)
@@ -218,19 +216,14 @@ class Memory:
     def _load_global_microagents(self) -> None:
         """
         Loads microagents from the global microagents_dir
-        This is effectively what used to happen in PromptManager.
         """
         repo_agents, knowledge_agents, _ = load_microagents_from_dir(
             self.microagents_dir
         )
         for name, agent in knowledge_agents.items():
-            # if name in self.disabled_microagents:
-            #    continue
             if isinstance(agent, KnowledgeMicroAgent):
                 self.knowledge_microagents[name] = agent
         for name, agent in repo_agents.items():
-            # if name in self.disabled_microagents:
-            #    continue
             if isinstance(agent, RepoMicroAgent):
                 self.repo_microagents[name] = agent
 

@@ -44,6 +44,22 @@ class AgentThinkObservation(Observation):
 
 
 @dataclass
+class MicroagentKnowledge:
+    """
+    Represents knowledge from a triggered microagent.
+
+    Attributes:
+        name: The name of the microagent that was triggered
+        trigger: The word that triggered this microagent
+        content: The actual content/knowledge from the microagent
+    """
+
+    name: str
+    trigger: str
+    content: str
+
+
+@dataclass
 class RecallObservation(Observation):
     """The output of a recall action from an agent or from the environment (automatic memory operations)."""
 
@@ -58,26 +74,22 @@ class RecallObservation(Observation):
     additional_agent_instructions: str = ''
 
     # microagent
-    microagent_knowledge: list[dict[str, str]] = field(default_factory=list)
+    microagent_knowledge: list[MicroagentKnowledge] = field(default_factory=list)
     """
-    A list of dictionaries, each containing information about a triggered microagent.
-    Each dictionary has the following keys:
-        - agent_name: str - The name of the microagent that was triggered
-        - trigger_word: str - The word that triggered this microagent
-        - content: str - The actual content/knowledge from the microagent
+    A list of MicroagentKnowledge objects, each containing information from a triggered microagent.
 
     Example:
     [
-        {
-            "agent_name": "python_best_practices",
-            "trigger_word": "python",
-            "content": "Always use virtual environments for Python projects."
-        },
-        {
-            "agent_name": "git_workflow",
-            "trigger_word": "git",
-            "content": "Create a new branch for each feature or bugfix."
-        }
+        MicroagentKnowledge(
+            name="python_best_practices",
+            trigger="python",
+            content="Always use virtual environments for Python projects."
+        ),
+        MicroagentKnowledge(
+            name="git_workflow",
+            trigger="git",
+            content="Create a new branch for each feature or bugfix."
+        )
     ]
     """
 

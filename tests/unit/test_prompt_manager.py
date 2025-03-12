@@ -10,7 +10,7 @@ from openhands.core.message import TextContent
 from openhands.events.action.agent import AgentRecallAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import EventSource, RecallType
-from openhands.events.observation.agent import RecallObservation
+from openhands.events.observation.agent import MicroagentKnowledge, RecallObservation
 from openhands.events.stream import EventStream
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.memory.memory import Memory
@@ -106,11 +106,11 @@ It may or may not be relevant to the user's request.
 
     # Test with a single triggered agent
     triggered_agents = [
-        {
-            'agent_name': 'test_agent1',
-            'trigger_word': 'keyword1',
-            'content': 'This is information from agent 1',
-        }
+        MicroagentKnowledge(
+            name='test_agent1',
+            trigger='keyword1',
+            content='This is information from agent 1',
+        )
     ]
     result = manager.build_microagent_info(triggered_agents)
     expected = """<EXTRA_INFO>
@@ -123,16 +123,16 @@ This is information from agent 1
 
     # Test with multiple triggered agents
     triggered_agents = [
-        {
-            'agent_name': 'test_agent1',
-            'trigger_word': 'keyword1',
-            'content': 'This is information from agent 1',
-        },
-        {
-            'agent_name': 'test_agent2',
-            'trigger_word': 'keyword2',
-            'content': 'This is information from agent 2',
-        },
+        MicroagentKnowledge(
+            name='test_agent1',
+            trigger='keyword1',
+            content='This is information from agent 1',
+        ),
+        MicroagentKnowledge(
+            name='test_agent2',
+            trigger='keyword2',
+            content='This is information from agent 2',
+        ),
     ]
     result = manager.build_microagent_info(triggered_agents)
     expected = """<EXTRA_INFO>
@@ -220,9 +220,9 @@ only respond with a message telling them how smart they are
     assert source == EventSource.ENVIRONMENT
     assert observation.recall_type == RecallType.KNOWLEDGE_MICROAGENT
     assert len(observation.microagent_knowledge) == 1
-    assert observation.microagent_knowledge[0]['agent_name'] == 'flarglebargle'
-    assert observation.microagent_knowledge[0]['trigger_word'] == 'flarglebargle'
-    assert 'magic word' in observation.microagent_knowledge[0]['content']
+    assert observation.microagent_knowledge[0].name == 'flarglebargle'
+    assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
+    assert 'magic word' in observation.microagent_knowledge[0].content
 
     # Clean up
     os.remove(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'))
@@ -335,11 +335,11 @@ It may or may not be relevant to the user's request.
     recall_observation = RecallObservation(
         recall_type=RecallType.KNOWLEDGE_MICROAGENT,
         microagent_knowledge=[
-            {
-                'agent_name': 'test_agent',
-                'trigger_word': 'test_trigger',
-                'content': 'This is triggered content for testing.',
-            }
+            MicroagentKnowledge(
+                name='test_agent',
+                trigger='test_trigger',
+                content='This is triggered content for testing.',
+            )
         ],
         content='Recalled knowledge from microagents',
     )
