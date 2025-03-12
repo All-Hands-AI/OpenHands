@@ -51,7 +51,9 @@ async def store_settings(
             # We check if the token is valid by getting the user
             # If the token is invalid, this will raise an exception
             github = GithubServiceImpl(
-                user_id=None, idp_token=None, token=SecretStr(settings.github_token)
+                user_id=None,
+                external_auth_token=None,
+                github_token=SecretStr(settings.github_token),
             )
             await github.get_user()
 
@@ -82,6 +84,12 @@ async def store_settings(
                 settings.user_consents_to_analytics = (
                     existing_settings.user_consents_to_analytics
                 )
+
+            if settings.llm_model is None:
+                settings.llm_model = existing_settings.llm_model
+
+            if settings.llm_base_url is None:
+                settings.llm_base_url = existing_settings.llm_base_url
 
         response = JSONResponse(
             status_code=status.HTTP_200_OK,

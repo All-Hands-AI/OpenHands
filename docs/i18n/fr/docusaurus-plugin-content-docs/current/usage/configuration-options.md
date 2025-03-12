@@ -333,12 +333,6 @@ Pour les configurations de développement, vous pouvez également définir des c
 
 Les options de configuration de l'agent sont définies dans les sections `[agent]` et `[agent.<agent_name>]` du fichier `config.toml`.
 
-**Configuration du micro-agent**
-- `micro_agent_name`
-  - Type : `str`
-  - Valeur par défaut : `""`
-  - Description : Nom du micro-agent à utiliser pour cet agent
-
 **Configuration de la mémoire**
 - `memory_enabled`
   - Type : `bool`
