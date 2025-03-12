@@ -104,8 +104,8 @@ export default function MainApp() {
     // Don't allow users to use the app if it 402s
     if (error?.status === 402 && pathname !== "/") {
       navigate("/");
-    } else if (!isFetching && searchParams.get('free_credits') == 'success') {
-      toast.success("You're in! You can start using your $50 in free credits now.")
+    } else if (!isFetching && searchParams.get('free_credits') === 'success') {
+      toast.success(t("BILLING$YOURE_IN"))
       searchParams.delete("free_credits")
       navigate("/");
     }

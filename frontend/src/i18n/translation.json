@@ -4692,5 +4692,8 @@
         "fr": "Continuer vers Stripe",
         "tr": "Stripe'a ilerle",
         "de": "Weiter zu Stripe"
+    },
+    "BILLING$YOURE_IN": {
+        "en": "You're in! You can start using your $50 in free credits now."
     }
 }
