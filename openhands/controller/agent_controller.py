@@ -443,7 +443,7 @@ class AgentController:
             # set pending_action while we search for information
 
             # if this is the first user message for this agent, matters for the recall type
-            is_first_user_message = self._is_first_user_message(action)
+            is_first_user_message = action == self._first_user_message()
             recall_type = (
                 RecallType.ENVIRONMENT_INFO
                 if is_first_user_message
@@ -1176,28 +1176,21 @@ class AgentController:
                 return result
         return False
 
-    def _is_first_user_message(self, action: MessageAction) -> bool:
+    def _first_user_message(self) -> MessageAction | None:
         """
-        Determine if the given message action is the first user message for this agent.
+        Get the first user message for this agent.
 
-        For regular agents, this checks if the message is the first user message from the beginning (start_id=0).
-        For delegate agents, this checks if the message is the first user message after the delegate's start_id.
-
-        Args:
-            action: The message action to check
+        For regular agents, this is the first user message from the beginning (start_id=0).
+        For delegate agents, this is the first user message after the delegate's start_id.
 
         Returns:
-            bool: True if this is the first user message, False otherwise
+            MessageAction | None: The first user message, or None if no user message found
         """
-        if action.source != EventSource.USER:
-            return False
-
-        # self.state.start_id is the id of the first user message for the agent
         # Find the first user message from the appropriate starting point
         user_messages = list(self.event_stream.get_events(start_id=self.state.start_id))
 
-        # Get the first user message
-        first_user_message = next(
+        # Get and return the first user message
+        return next(
             (
                 e
                 for e in user_messages
@@ -1205,6 +1198,3 @@ class AgentController:
             ),
             None,
         )
-
-        # Is the current message the first user message?
-        return first_user_message is not None and first_user_message.id == action.id
