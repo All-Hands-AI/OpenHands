@@ -423,21 +423,29 @@ class ConversationMemory:
                     obs, current_index, events or []
                 )
 
-                formatted_text = ''
+                # Create and return a message if there is microagent knowledge to include
                 if filtered_agents:
-                    # Then, exclude disabled microagents
+                    # Exclude disabled microagents
                     filtered_agents = [
                         agent
                         for agent in filtered_agents
                         if agent.name not in self.agent_config.disabled_microagents
                     ]
-                    formatted_text = self.prompt_manager.build_microagent_info(
-                        triggered_agents=filtered_agents,
-                    )
 
-                message = Message(
-                    role='user', content=[TextContent(text=formatted_text)]
-                )
+                    # Only proceed if we still have agents after filtering out disabled ones
+                    if filtered_agents:
+                        formatted_text = self.prompt_manager.build_microagent_info(
+                            triggered_agents=filtered_agents,
+                        )
+
+                        return [
+                            Message(
+                                role='user', content=[TextContent(text=formatted_text)]
+                            )
+                        ]
+
+                # Return empty list if no microagents to include or all were disabled
+                return []
         elif (
             isinstance(obs, RecallObservation)
             and not self.agent_config.enable_prompt_extensions
