@@ -111,7 +111,7 @@ class AgentDelegateAction(Action):
 
 @dataclass
 class AgentRecallAction(Action):
-    # This action is used for retrieving data, e.g., from files or a knowledge base.
+    """This action is used for retrieving data, e.g., from files or a knowledge base."""
     query: str = ''
     thought: str = ''
     action: str = ActionType.RECALL
