@@ -77,9 +77,13 @@ async def store_settings(
 
         # Convert to Settings model and merge with existing settings
         if existing_settings:
-            # Keep existing LLM key if not provided
+            # Keep existing LLM settings if not provided
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
+            if settings.llm_model is None:
+                settings.llm_model = existing_settings.llm_model
+            if settings.llm_base_url is None:
+                settings.llm_base_url = existing_settings.llm_base_url
 
             # Keep existing analytics consent if not provided
             if settings.user_consents_to_analytics is None:
