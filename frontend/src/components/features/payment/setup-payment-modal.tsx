@@ -24,7 +24,7 @@ export function SetupPaymentModal() {
           <p>{t("BILLING$CLAIM_YOUR_50")}</p>
         </div>
         <BrandButton
-          testId="enter-cc-details"
+          testId="proceed-to-stripe-button"
           type="submit"
           variant="primary"
           className="w-full"
