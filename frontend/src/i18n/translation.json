@@ -4663,6 +4663,21 @@
         "tr": "OpenHands'de $50 ücretsiz kredi kazandınız",
         "de": "Sie haben $50 in kostenlosen OpenHands-Guthaben erhalten"
     },
+    "BILLING$ERROR_WHILE_CREATING_SESSION": {
+        "en": "Error occurred while setting up your payment session. Please try again later.",
+        "ja": "お支払いセッションの設定中にエラーが発生しました。後ほど再度お試しください。",
+        "zh-CN": "设置支付会话时发生错误。请稍后再试。",
+        "zh-TW": "設置支付會話時發生錯誤。請稍後再試。",
+        "ko-KR": "결제 세션 설정 중 오류가 발생했습니다. 나중에 다시 시도해 주세요.",
+        "no": "Det oppstod en feil under oppsett av betalingsøkten. Vennligst prøv igjen senere.",
+        "it": "Si è verificato un errore durante la configurazione della sessione di pagamento. Si prega di riprovare più tardi.",
+        "pt": "Ocorreu um erro ao configurar sua sessão de pagamento. Por favor, tente novamente mais tarde.",
+        "es": "Se produjo un error al configurar tu sesión de pago. Por favor, inténtalo de nuevo más tarde.",
+        "ar": "حدث خطأ أثناء إعداد جلسة الدفع الخاصة بك. يرجى المحاولة مرة أخرى لاحقًا.",
+        "fr": "Une erreur s'est produite lors de la configuration de votre session de paiement. Veuillez réessayer plus tard.",
+        "tr": "Ödeme oturumunuz kurulurken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+        "de": "Beim Einrichten Ihrer Zahlungssitzung ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut."
+    },
     "BILLING$CLAIM_YOUR_50": {
         "en": "Claim your $50 in free credits by saving a credit card with Stripe. We won't charge you without asking first!",
         "ja": "Stripeでクレジットカードを保存して$50の無料クレジットを請求してください。事前に確認なしで請求することはありません！",

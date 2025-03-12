@@ -7,7 +7,6 @@ import {
   useLocation,
   useSearchParams,
 } from "react-router";
-import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
@@ -22,6 +21,7 @@ import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
 import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
 import { BILLING_SETTINGS } from "#/utils/feature-flags";
+import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -106,7 +106,7 @@ export default function MainApp() {
     if (error?.status === 402 && pathname !== "/") {
       navigate("/");
     } else if (!isFetching && searchParams.get("free_credits") === "success") {
-      toast.success(t("BILLING$YOURE_IN"));
+      displaySuccessToast(t("BILLING$YOURE_IN"));
       searchParams.delete("free_credits");
       navigate("/");
     }
