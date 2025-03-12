@@ -218,9 +218,6 @@ codeact_enable_llm_editor = false
 # whether the IPython tool is enabled
 codeact_enable_jupyter = true
 
-# Name of the micro agent to use for this agent
-#micro_agent_name = ""
-
 # Memory enabled
 #memory_enabled = false
 
