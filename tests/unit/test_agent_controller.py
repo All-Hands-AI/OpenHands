@@ -23,7 +23,7 @@ from openhands.events.observation.agent import RecallObservation
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
-from openhands.memory.memory import Memory
+from openhands.llm.metrics import Metrics, TokenUsage
 from openhands.runtime.base import Runtime
 from openhands.storage.memory import InMemoryFileStore
 
@@ -834,3 +834,105 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
 
     # Check that the context window exceeded error was raised during the run
     assert step_state.has_errored
+
+
+@pytest.mark.asyncio
+async def test_action_metrics_copy():
+    # Setup
+    file_store = InMemoryFileStore({})
+    event_stream = EventStream(sid='test', file_store=file_store)
+
+    # Create agent with metrics
+    agent = MagicMock(spec=Agent)
+    agent.llm = MagicMock(spec=LLM)
+    metrics = Metrics(model_name='test-model')
+    metrics.accumulated_cost = 0.05
+
+    # Add multiple token usages - we should get the last one in the action
+    usage1 = TokenUsage(
+        model='test-model',
+        prompt_tokens=5,
+        completion_tokens=10,
+        cache_read_tokens=2,
+        cache_write_tokens=2,
+        response_id='test-id-1',
+    )
+
+    usage2 = TokenUsage(
+        model='test-model',
+        prompt_tokens=10,
+        completion_tokens=20,
+        cache_read_tokens=5,
+        cache_write_tokens=5,
+        response_id='test-id-2',
+    )
+
+    metrics.token_usages = [usage1, usage2]
+
+    # Add a cost instance - should not be included in action metrics
+    # This will increase accumulated_cost by 0.02
+    metrics.add_cost(0.02)
+
+    # Add a response latency - should not be included in action metrics
+    metrics.add_response_latency(0.5, 'test-id-2')
+
+    agent.llm.metrics = metrics
+
+    # Mock agent step to return an action
+    action = MessageAction(content='Test message')
+
+    def agent_step_fn(state):
+        return action
+
+    agent.step = agent_step_fn
+
+    # Create controller with correct parameters
+    controller = AgentController(
+        agent=agent,
+        event_stream=event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Execute one step
+    controller.state.agent_state = AgentState.RUNNING
+    await controller._step()
+
+    # Get the last event from event stream
+    events = list(event_stream.get_events())
+    assert len(events) > 0
+    last_action = events[-1]
+
+    # Verify metrics were copied correctly
+    assert last_action.llm_metrics is not None
+    assert (
+        last_action.llm_metrics.accumulated_cost == 0.07
+    )  # 0.05 initial + 0.02 from add_cost
+
+    # Should include the last token usage
+    assert len(last_action.llm_metrics.token_usages) == 1
+    assert last_action.llm_metrics.token_usages[0].prompt_tokens == 10
+    assert last_action.llm_metrics.token_usages[0].completion_tokens == 20
+    assert last_action.llm_metrics.token_usages[0].cache_read_tokens == 5
+    assert last_action.llm_metrics.token_usages[0].cache_write_tokens == 5
+    assert last_action.llm_metrics.token_usages[0].response_id == 'test-id-2'
+
+    # Should not include the cost history
+    assert len(last_action.llm_metrics.costs) == 0
+
+    # Should not include the response latency history
+    assert len(last_action.llm_metrics.response_latencies) == 0
+
+    # Verify that there's no latency information in the action's metrics
+    # Either directly or as a calculated property
+    assert not hasattr(last_action.llm_metrics, 'latency')
+    assert not hasattr(last_action.llm_metrics, 'total_latency')
+    assert not hasattr(last_action.llm_metrics, 'average_latency')
+
+    # Verify it's a deep copy by modifying the original
+    agent.llm.metrics.accumulated_cost = 0.1
+    assert last_action.llm_metrics.accumulated_cost == 0.07
+
+    await controller.close()
