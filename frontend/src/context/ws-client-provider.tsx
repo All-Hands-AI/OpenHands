@@ -1,5 +1,6 @@
 import React from "react";
 import { io, Socket } from "socket.io-client";
+import { useQueryClient } from "@tanstack/react-query";
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { showChatError } from "#/utils/error-handler";
@@ -12,7 +13,6 @@ import {
   FileWriteAction,
   UserMessageAction,
 } from "#/types/core/actions";
-import { queryClient } from "#/entry.client";
 
 const isOpenHandsEvent = (event: unknown): event is OpenHandsParsedEvent =>
   typeof event === "object" &&
@@ -119,6 +119,7 @@ export function WsClientProvider({
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
+  const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
