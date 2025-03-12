@@ -61,7 +61,7 @@ def create_runtime(
     if agent:
         agent_cls = type(agent)
     else:
-        agent_cls = openhands.agenthub.Agent.get_cls(config.default_agent)
+        agent_cls = Agent.get_cls(config.default_agent)
 
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
