@@ -194,7 +194,8 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
     def on_event_memory(event: Event):
         if isinstance(event, AgentRecallAction):
             recall_obs = RecallObservation(
-                content='Test recall content', recall_type=RecallType.DEFAULT
+                content='Test recall content',
+                recall_type=RecallType.KNOWLEDGE_MICROAGENT,
             )
             recall_obs._cause = event.id
             event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
@@ -252,7 +253,8 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
     def on_event_memory(event: Event):
         if isinstance(event, AgentRecallAction):
             recall_obs = RecallObservation(
-                content='Test recall content', recall_type=RecallType.DEFAULT
+                content='Test recall content',
+                recall_type=RecallType.KNOWLEDGE_MICROAGENT,
             )
             recall_obs._cause = event.id
             event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
@@ -596,7 +598,8 @@ async def test_run_controller_max_iterations_has_metrics(
     def on_event_memory(event: Event):
         if isinstance(event, AgentRecallAction):
             recall_obs = RecallObservation(
-                content='Test recall content', recall_type=RecallType.DEFAULT
+                content='Test recall content',
+                recall_type=RecallType.KNOWLEDGE_MICROAGENT,
             )
             recall_obs._cause = event.id
             event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
@@ -717,7 +720,8 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
     def on_event_memory(event: Event):
         if isinstance(event, AgentRecallAction):
             recall_obs = RecallObservation(
-                content='Test recall content', recall_type=RecallType.DEFAULT
+                content='Test recall content',
+                recall_type=RecallType.KNOWLEDGE_MICROAGENT,
             )
             recall_obs._cause = event.id
             test_event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
@@ -793,7 +797,8 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
     def on_event_memory(event: Event):
         if isinstance(event, AgentRecallAction):
             recall_obs = RecallObservation(
-                content='Test recall content', recall_type=RecallType.DEFAULT
+                content='Test recall content',
+                recall_type=RecallType.KNOWLEDGE_MICROAGENT,
             )
             recall_obs._cause = event.id
             test_event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)

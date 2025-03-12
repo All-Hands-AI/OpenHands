@@ -31,9 +31,6 @@ class RecallType(str, Enum):
     KNOWLEDGE_MICROAGENT = 'knowledge_microagent'
     """A knowledge microagent."""
 
-    DEFAULT = 'default'
-    """Anything else that doesn't fit into the other categories."""
-
 
 @dataclass
 class Event:

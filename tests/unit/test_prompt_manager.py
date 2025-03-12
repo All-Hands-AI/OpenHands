@@ -193,7 +193,7 @@ only respond with a message telling them how smart they are
 
     # Create a recall action with the trigger word
     recall_action = AgentRecallAction(
-        query='Hello, flarglebargle!', recall_type=RecallType.DEFAULT
+        query='Hello, flarglebargle!', recall_type=RecallType.KNOWLEDGE_MICROAGENT
     )
 
     # Mock the event_stream.add_event method

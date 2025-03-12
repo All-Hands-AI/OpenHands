@@ -112,10 +112,11 @@ class AgentDelegateAction(Action):
 @dataclass
 class AgentRecallAction(Action):
     """This action is used for retrieving data, e.g., from files or a knowledge base."""
+
+    recall_type: RecallType
     query: str = ''
     thought: str = ''
     action: str = ActionType.RECALL
-    recall_type: RecallType = RecallType.DEFAULT
 
     @property
     def message(self) -> str:

@@ -47,8 +47,8 @@ class AgentThinkObservation(Observation):
 class RecallObservation(Observation):
     """The output of a recall action from an agent or from the environment (automatic memory operations)."""
 
+    recall_type: RecallType
     observation: str = ObservationType.RECALL
-    recall_type: RecallType = RecallType.DEFAULT
 
     # environment_info
     repo_name: str = ''
