@@ -22,7 +22,6 @@ from openhands.events.observation import (
 from openhands.events.observation.agent import RecallObservation
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
-from openhands.llm.metrics import Metrics
 from openhands.llm.metrics import Metrics, TokenUsage
 from openhands.runtime.base import Runtime
 from openhands.storage.memory import InMemoryFileStore
