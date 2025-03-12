@@ -1,16 +1,16 @@
-import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import OpenHands from "#/api/open-hands";
 import { BrandButton } from "../settings/brand-button";
-import { useTranslation } from "react-i18next";
 
 export function SetupPaymentModal() {
   const { mutate, isPending } = useMutation({
     mutationFn: OpenHands.createBillingSessionResponse,
     onSuccess: (data) => {
-      window.location.href = data
+      window.location.href = data;
     },
   });
   const { t } = useTranslation();
