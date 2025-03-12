@@ -5,10 +5,9 @@ from pydantic import SecretStr
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.integrations.utils import validate_provider_token
-from openhands.server.auth import get_user_id, get_provider_tokens
+from openhands.server.auth import get_provider_tokens, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
-
 
 app = APIRouter(prefix='/api')
 
@@ -92,15 +91,24 @@ async def store_settings(
                 )
 
             if existing_settings.secrets_store:
-                existing_providers = [provider.value for provider in existing_settings.secrets_store.provider_tokens]
+                existing_providers = [
+                    provider.value
+                    for provider in existing_settings.secrets_store.provider_tokens
+                ]
 
                 # Merge incoming settings store with the existing one
-                for (
-                    provider,
-                    provider_token
-                ) in settings.provider_tokens.items():
-                    if provider in existing_providers and not provider_token:
-                        settings.provider_tokens[provider] = existing_settings.secrets_store.provider_tokens[ProviderType(provider)].token.get_secret_value()
+                for provider, token_value in settings.provider_tokens.items():
+                    if provider in existing_providers and not token_value:
+                        provider_type = ProviderType(provider)
+                        existing_token = (
+                            existing_settings.secrets_store.provider_tokens.get(
+                                provider_type
+                            )
+                        )
+                        if existing_token and existing_token.token:
+                            settings.provider_tokens[provider] = (
+                                existing_token.token.get_secret_value()
+                            )
 
             # Merge provider tokens with existing ones
             if settings.unset_github_token:  # Only merge if not unsetting tokens
