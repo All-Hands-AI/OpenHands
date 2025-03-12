@@ -481,7 +481,7 @@ class ConversationMemory:
     def _filter_agents_in_recall_obs(
         self, obs: RecallObservation, current_index: int, events: list[Event]
     ) -> list[MicroagentKnowledge]:
-        """Filter out agents that appear in later RecallObservations.
+        """Filter out agents that appear in earlier RecallObservations.
 
         Args:
             obs: The current RecallObservation to filter
@@ -494,20 +494,20 @@ class ConversationMemory:
         if obs.recall_type != RecallType.KNOWLEDGE_MICROAGENT:
             return obs.microagent_knowledge
 
-        # For each agent in the current recall observation, check if it appears in any later recall observation
+        # For each agent in the current recall observation, check if it appears in any earlier recall observation
         filtered_agents = []
         for agent in obs.microagent_knowledge:
-            # Keep this agent if it doesn't appear in any later observation
-            # that is, if this is the most recent recall observation with this microagent
-            if not self._has_agent_in_later_events(agent.name, current_index, events):
+            # Keep this agent if it doesn't appear in any earlier observation
+            # that is, if this is the first recall observation with this microagent
+            if not self._has_agent_in_earlier_events(agent.name, current_index, events):
                 filtered_agents.append(agent)
 
         return filtered_agents
 
-    def _has_agent_in_later_events(
+    def _has_agent_in_earlier_events(
         self, agent_name: str, current_index: int, events: list[Event]
     ) -> bool:
-        """Check if an agent appears in any later RecallObservation in the event list.
+        """Check if an agent appears in any earlier RecallObservation in the event list.
 
         Args:
             agent_name: The name of the agent to look for
@@ -515,9 +515,9 @@ class ConversationMemory:
             events: The list of all events
 
         Returns:
-            bool: True if the agent appears in a later RecallObservation, False otherwise
+            bool: True if the agent appears in an earlier RecallObservation, False otherwise
         """
-        for event in events[current_index + 1 :]:
+        for event in events[:current_index]:
             if (
                 isinstance(event, RecallObservation)
                 and event.recall_type == RecallType.KNOWLEDGE_MICROAGENT
