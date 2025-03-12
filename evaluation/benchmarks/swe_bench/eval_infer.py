@@ -452,6 +452,7 @@ if __name__ == '__main__':
             .decode('utf-8')
             .strip(),  # Current commit
             dataset=args.dataset,  # Dataset name from args
+            details={},
         )
 
     # The evaluation harness constrains the signature of `process_instance_func` but we need to
