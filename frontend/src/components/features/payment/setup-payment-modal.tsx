@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
@@ -25,7 +25,12 @@ export function SetupPaymentModal() {
         <AllHandsLogo width={68} height={46} />
         <div className="flex flex-col gap-2 w-full items-center text-center">
           <h1 className="text-2xl font-bold">{t("BILLING$YOUVE_GOT_50")}</h1>
-          <p>{t("BILLING$CLAIM_YOUR_50")}</p>
+          <p>
+            <Trans
+              i18nKey="BILLING$CLAIM_YOUR_50"
+              components={{ b: <strong /> }}
+            />
+          </p>
         </div>
         <BrandButton
           testId="proceed-to-stripe-button"
