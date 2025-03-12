@@ -9,7 +9,7 @@ import string
 import tempfile
 from abc import abstractmethod
 from pathlib import Path
-from typing import Callable
+from typing import AsyncIterator, Callable
 from zipfile import ZipFile
 
 from pydantic import SecretStr
@@ -52,7 +52,11 @@ from openhands.runtime.plugins import (
     VSCodeRequirement,
 )
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
+from openhands.storage.data_models.user_secret import UserSecret
+from openhands.storage.user_secret.user_secret_store import UserSecretStore
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.import_utils import get_impl
+from openhands.utils.search_utils import iterate
 
 STATUS_MESSAGES = {
     'STATUS$STARTING_RUNTIME': 'Starting runtime...',
@@ -61,6 +65,14 @@ STATUS_MESSAGES = {
     'STATUS$CONTAINER_STARTED': 'Container started.',
     'STATUS$WAITING_FOR_CLIENT': 'Waiting for client...',
 }
+
+UserSecretStoreImpl = get_impl(
+    UserSecretStore,  # type: ignore
+    os.environ.get(
+        'USER_SECRET_STORE_CLS',
+        'openhands.storage.user_secret.file_user_secret_store.FileUserSecretStore',
+    ),
+)
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -132,13 +144,22 @@ class Runtime(FileEditRuntimeMixin):
 
         self.github_user_id = github_user_id
 
-    def setup_initial_env(self) -> None:
+    async def setup_initial_env(self) -> None:
         if self.attach_to_existing:
             return
         logger.debug(f'Adding env vars: {self.initial_env_vars.keys()}')
         self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
+
+        user_secret_store = await UserSecretStoreImpl.get_instance(
+            self.config, self.github_user_id
+        )
+        iter: AsyncIterator[UserSecret] = iterate(user_secret_store.search)
+        env_vars = {
+            secret.key: await secret.token_factory.get_token() async for secret in iter
+        }
+        self.add_env_vars(env_vars)
 
     def close(self) -> None:
         """
@@ -220,6 +241,17 @@ class Runtime(FileEditRuntimeMixin):
         assert event.timeout is not None
         try:
             if isinstance(event, CmdRunAction):
+                user_secret_store = await UserSecretStoreImpl.get_instance(
+                    self.config, self.github_user_id
+                )
+                iter: AsyncIterator[UserSecret] = iterate(user_secret_store.search)
+                async for secret in iter:
+                    if f'${secret.key}' in event.command:
+                        export_cmd = CmdRunAction(
+                            f"export {secret.key}='{await secret.token_factory.get_token()}'"
+                        )
+                        await call_sync_from_async(self.run, export_cmd)
+
                 if self.github_user_id and '$GITHUB_TOKEN' in event.command:
                     gh_client = GithubServiceImpl(
                         user_id=self.github_user_id, external_token_manager=True
