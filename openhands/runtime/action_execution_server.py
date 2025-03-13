@@ -158,7 +158,7 @@ class ActionExecutor:
         self.bash_session: BashSession | None = None
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
-        self.file_editor = OHEditor()
+        self.file_editor = OHEditor(workspace_root=self._initial_cwd)
         self.browser = BrowserEnv(browsergym_eval_env)
         self.start_time = time.time()
         self.last_execution_time = self.start_time
