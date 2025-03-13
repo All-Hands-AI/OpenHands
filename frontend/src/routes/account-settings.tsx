@@ -369,7 +369,7 @@ function AccountSettings() {
                 <HelpLink
                   testId="github-token-help-anchor"
                   text="Get your token"
-                  linkText="here"
+                  linkText="Generate a token on GitHub or see documentation"
                   href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
                 />
                 <HelpLink
