@@ -129,7 +129,6 @@ class Session:
         selected_branch = None
         if (
             isinstance(settings, ConversationInitData)
-            and settings.provider_tokens is not None
         ):
             provider_tokens = settings.provider_tokens
             selected_repository = settings.selected_repository
