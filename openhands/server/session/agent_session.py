@@ -3,8 +3,6 @@ import time
 from logging import LoggerAdapter
 from typing import Callable
 
-from pydantic import SecretStr
-
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -129,7 +127,9 @@ class AgentSession:
             )
 
             if provider_tokens:
-                ProviderHandler.set_or_update_event_stream_secrets(self.event_stream, provider_tokens)
+                ProviderHandler.set_or_update_event_stream_secrets(
+                    self.event_stream, provider_tokens
+                )
 
             if not self._closed:
                 if initial_message:
@@ -222,7 +222,14 @@ class AgentSession:
         runtime_cls = get_runtime_cls(runtime_name)
 
         provider_handler = ProviderHandler(provider_tokens)
-        env_vars: dict[str, str] = await provider_handler.get_env_vars(expose_secrets=True)
+        raw_env_vars = await provider_handler.get_env_vars(expose_secrets=True)
+        # Convert to dict[str, str] as required by Runtime
+        env_vars: dict[str, str] = {}
+        for key, value in raw_env_vars.items():
+            if hasattr(value, 'get_secret_value'):
+                env_vars[str(key)] = value.get_secret_value()
+            else:
+                env_vars[str(key)] = str(value)
 
         kwargs = {}
         if runtime_cls == RemoteRuntime:

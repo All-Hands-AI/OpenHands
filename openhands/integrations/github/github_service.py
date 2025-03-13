@@ -5,6 +5,7 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     AuthenticationError,
     GitService,
@@ -15,7 +16,7 @@ from openhands.integrations.service_types import (
     User,
 )
 from openhands.utils.import_utils import get_impl
-from openhands.core.logger import openhands_logger as logger
+
 
 class GitHubService(GitService):
     BASE_URL = 'https://api.github.com'

@@ -226,21 +226,25 @@ class Runtime(FileEditRuntimeMixin):
             provider_handler = ProviderHandler(
                 provider_tokens=self.provider_tokens, external_token_manager=True
             )
-            env_vars: dict[
-                ProviderType, SecretStr
-            ] = await provider_handler.get_env_vars(providers_called)
+            env_vars = await provider_handler.get_env_vars(providers_called)
 
+            # Convert env_vars to the expected type
+            provider_env_vars: dict[ProviderType, SecretStr] = {}
             for provider, token in env_vars.items():
-                env_name = f'{provider.value}_token'
+                if isinstance(provider, ProviderType) and hasattr(
+                    token, 'get_secret_value'
+                ):
+                    provider_env_vars[provider] = token
 
+            for provider, token in provider_env_vars.items():
+                env_name = f'{provider.value}_token'
                 export_cmd = CmdRunAction(
                     f"export {env_name.upper()}='{token.get_secret_value()}'"
                 )
-
                 await call_sync_from_async(self.run, export_cmd)
 
             ProviderHandler.set_or_update_event_stream_secrets(
-                self.event_stream, env_vars
+                self.event_stream, provider_env_vars
             )
 
     async def _handle_action(self, event: Action) -> None:

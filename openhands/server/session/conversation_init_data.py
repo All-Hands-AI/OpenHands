@@ -1,4 +1,4 @@
-from pydantic import Field, SecretStr
+from pydantic import Field
 
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.server.settings import Settings
