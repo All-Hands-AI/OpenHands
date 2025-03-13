@@ -58,7 +58,7 @@ but seems to work well on most systems.
 
 ## All Hands Runtime
 
-OpenHands Remote Runtime is currently in beta (read [here](https://runtime.all-hands.dev/) for more details), it allows you to run rollout in parallel in the cloud, so you don't need a powerful machine to run evaluation.
+OpenHands Remote Runtime is currently in beta (read [here](https://runtime.all-hands.dev/) for more details), it allows you to launch runtimes in parallel in the cloud.
 Fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLSckVz_JFwg2_mOxNZjCtr7aoBFI2Mwdan3f75J_TrdMS1JV2g/viewform) to apply if you want to try this out!
 
 To use the All Hands Runtime, set the following environment variables when
