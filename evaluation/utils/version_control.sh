@@ -1,4 +1,7 @@
 checkout_eval_branch() {
+    # Configure Git to preserve symlinks globally
+    git config --global core.symlinks true
+    
     if [ -z "$COMMIT_HASH" ]; then
         echo "Commit hash not specified, use current git commit"
         return 0

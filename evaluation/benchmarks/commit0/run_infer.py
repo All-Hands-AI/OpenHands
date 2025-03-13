@@ -154,7 +154,7 @@ def initialize_runtime(
     obs: CmdOutputObservation
 
     action = CmdRunAction(
-        command=f'git clone -b commit0_combined https://github.com/{instance["repo"]}.git'
+        command=f'git clone --config core.symlinks=true -b commit0_combined https://github.com/{instance["repo"]}.git'
     )
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})

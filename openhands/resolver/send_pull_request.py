@@ -82,6 +82,27 @@ def apply_patch(repo_dir: str, patch: str) -> None:
                     break
             continue
 
+        # Special handling for symlinks - preserve them instead of converting to regular files
+        if old_path and os.path.islink(old_path):
+            # If the symlink needs to exist in the new location
+            if diff.header.new_path and diff.header.new_path != '/dev/null':
+                # Create parent directory for new path
+                os.makedirs(os.path.dirname(new_path), exist_ok=True)
+            
+                # Get the symlink target
+                symlink_target = os.readlink(old_path)
+            
+                # If the new path already exists but isn't a symlink, remove it
+                if os.path.exists(new_path) and not os.path.islink(new_path):
+                    os.remove(new_path)
+                
+                # Create the symlink at the new location if it doesn't exist
+                if not os.path.exists(new_path):
+                    os.symlink(symlink_target, new_path)
+                
+            # Skip the regular file processing for symlinks
+            continue
+
         if old_path:
             # Open the file in binary mode to detect line endings
             with open(old_path, 'rb') as f:
@@ -142,11 +163,26 @@ def initialize_repo(
     if os.path.exists(dest_dir):
         shutil.rmtree(dest_dir)
 
+    # Copy the repository without using symlinks parameter to avoid GitHub action issues
     shutil.copytree(src_dir, dest_dir)
     print(f'Copied repository to {dest_dir}')
+    
+    # Configure Git to properly handle symlinks
+    subprocess.run(
+        f'git -C {dest_dir} config core.symlinks true',
+        shell=True,
+        check=True
+    )
 
     # Checkout the base commit if provided
     if base_commit:
+        # Ensure Git is configured to handle symlinks properly
+        subprocess.run(
+            f'git -C {dest_dir} config core.symlinks true',
+            shell=True,
+            check=True
+        )
+        
         result = subprocess.run(
             f'git -C {dest_dir} checkout {base_commit}',
             shell=True,

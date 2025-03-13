@@ -283,7 +283,7 @@ class Runtime(FileEditRuntimeMixin):
         openhands_workspace_branch = f'openhands-workspace-{random_str}'
 
         # Clone repository command
-        clone_command = f'git clone {url} {dir_name}'
+        clone_command = f'git clone --config core.symlinks=true {url} {dir_name}'
 
         # Checkout to appropriate branch
         checkout_command = (

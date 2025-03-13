@@ -120,7 +120,7 @@ def initialize_runtime(
 
     repo_url = instance['github']
     repo_name = repo_url.split('/')[-1]
-    action = CmdRunAction(command=f'git clone {repo_url} /workspace/{repo_name}')
+    action = CmdRunAction(command=f'git clone --config core.symlinks=true {repo_url} /workspace/{repo_name}')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
