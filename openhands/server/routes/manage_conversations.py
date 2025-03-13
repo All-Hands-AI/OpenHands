@@ -8,9 +8,9 @@ from pydantic import BaseModel, SecretStr
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands.integrations.provider import ProviderType
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken, ProviderType
 from openhands.runtime import get_runtime_cls
-from openhands.server.auth import get_provider_tokens, get_access_token, get_github_user_id
+from openhands.server.auth import get_github_user_id_from_provider_tokens, get_provider_tokens, get_access_token, get_github_user_id
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
@@ -38,14 +38,14 @@ class InitSessionRequest(BaseModel):
 
 
 async def _create_new_conversation(
-    user_id: str | None,
-    token: SecretStr | None,
+    provider_tokens: PROVIDER_TOKEN_TYPE,
     selected_repository: str | None,
     selected_branch: str | None,
     initial_user_msg: str | None,
     image_urls: list[str] | None,
     attach_convo_id: bool = False,
 ):
+    user_id = get_github_user_id_from_provider_tokens(provider_tokens)
     logger.info(
         'Creating conversation',
         extra={'signal': 'create_conversation', 'user_id': user_id},
@@ -73,7 +73,7 @@ async def _create_new_conversation(
         logger.warn('Settings not present, not starting conversation')
         raise MissingSettingsError('Settings not found')
 
-    session_init_args['github_token'] = token or SecretStr('')
+    session_init_args['provider_tokens'] = provider_tokens
     session_init_args['selected_repository'] = selected_repository
     session_init_args['selected_branch'] = selected_branch
     conversation_init_data = ConversationInitData(**session_init_args)
@@ -137,10 +137,13 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     using the returned conversation ID.
     """
     logger.info('Initializing new conversation')
-    user_id = None
-    github_token = None
     provider_tokens = get_provider_tokens(request)
-    if provider_tokens and ProviderType.GITHUB in provider_tokens:
+
+    if not provider_tokens or ProviderType.GITHUB not in provider_tokens:
+        raise MissingSettingsError("Require git provider tokens")
+
+   
+    if not provider_tokens[ProviderType.GITHUB].token:
         token = provider_tokens[ProviderType.GITHUB]
         user_id = token.user_id
         gh_client = GithubServiceImpl(
@@ -149,6 +152,11 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             token=token.token,
         )
         github_token = await gh_client.get_latest_token()
+        provider_tokens[ProviderType.GITHUB] = ProviderToken(user_id=user_id,
+                                                             token=github_token)
+
+
+        
 
     selected_repository = data.selected_repository
     selected_branch = data.selected_branch
@@ -158,8 +166,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     try:
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
-            user_id,
-            github_token,
+            provider_tokens,
             selected_repository,
             selected_branch,
             initial_user_msg,

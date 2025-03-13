@@ -15,6 +15,7 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.microagent import BaseMicroAgent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
@@ -79,7 +80,7 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        github_token: SecretStr | None = None,
+        provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         selected_repository: str | None = None,
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
@@ -113,7 +114,7 @@ class AgentSession:
                 runtime_name=runtime_name,
                 config=config,
                 agent=agent,
-                github_token=github_token,
+                provider_tokens=provider_tokens,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
             )
@@ -126,12 +127,10 @@ class AgentSession:
                 agent_to_llm_config=agent_to_llm_config,
                 agent_configs=agent_configs,
             )
-            if github_token:
-                self.event_stream.set_secrets(
-                    {
-                        'github_token': github_token.get_secret_value(),
-                    }
-                )
+
+            if provider_tokens:
+                ProviderHandler.set_or_update_event_stream_secrets(self.event_stream, provider_tokens)
+
             if not self._closed:
                 if initial_message:
                     self.event_stream.add_event(initial_message, EventSource.USER)
@@ -201,7 +200,7 @@ class AgentSession:
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
-        github_token: SecretStr | None = None,
+        provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         selected_repository: str | None = None,
         selected_branch: str | None = None,
     ) -> bool:
@@ -221,17 +220,12 @@ class AgentSession:
 
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
-        env_vars = (
-            {
-                'GITHUB_TOKEN': github_token.get_secret_value(),
-            }
-            if github_token
-            else None
-        )
 
+        provider_handler = ProviderHandler(provider_tokens)
+        env_vars = provider_handler.get_env_vars()
         kwargs = {}
         if runtime_cls == RemoteRuntime:
-            kwargs['github_user_id'] = self.github_user_id
+            kwargs['provider_tokens'] = provider_tokens
 
         self.runtime = runtime_cls(
             config=config,

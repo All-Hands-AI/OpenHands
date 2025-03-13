@@ -42,6 +42,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.github.github_service import GithubServiceImpl
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler, ProviderType
 from openhands.microagent import (
     BaseMicroAgent,
     load_microagents_from_dir,
@@ -97,7 +98,7 @@ class Runtime(FileEditRuntimeMixin):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
-        github_user_id: str | None = None,
+        provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
@@ -130,7 +131,7 @@ class Runtime(FileEditRuntimeMixin):
             self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
         )
 
-        self.github_user_id = github_user_id
+        self.provider_handler = ProviderHandler(provider_tokens)
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -219,24 +220,21 @@ class Runtime(FileEditRuntimeMixin):
             event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
         assert event.timeout is not None
         try:
-            if isinstance(event, CmdRunAction):
-                if self.github_user_id and '$GITHUB_TOKEN' in event.command:
-                    gh_client = GithubServiceImpl(
-                        user_id=self.github_user_id, external_token_manager=True
+            providers_called = ProviderHandler.check_cmd_action_for_provider_token_ref(event)
+            if providers_called:
+                env_vars: dict[ProviderType, SecretStr] = self.provider_handler.get_env_vars(providers_called)
+
+                for provider, token in env_vars.items():
+                    env_name = f"{provider.value}_token"
+                        
+                    export_cmd = CmdRunAction(
+                        f"export {env_name.upper()}='{token.get_secret_value()}'"
                     )
-                    token = await gh_client.get_latest_token()
-                    if token:
-                        export_cmd = CmdRunAction(
-                            f"export GITHUB_TOKEN='{token.get_secret_value()}'"
-                        )
 
-                        self.event_stream.update_secrets(
-                            {
-                                'github_token': token.get_secret_value(),
-                            }
-                        )
+                    await call_sync_from_async(self.run, export_cmd)
 
-                        await call_sync_from_async(self.run, export_cmd)
+                ProviderHandler.set_or_update_event_stream_secrets(self.event_stream, env_vars)
+                    
 
             observation: Observation = await call_sync_from_async(
                 self.run_action, event
