@@ -99,6 +99,7 @@ class Runtime(FileEditRuntimeMixin):
         headless_mode: bool = False,
         github_user_id: str | None = None,
     ):
+        logger.info(f'Runtime created with sid {sid}, github_user_id {github_user_id}')
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(

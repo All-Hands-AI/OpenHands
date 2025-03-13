@@ -47,6 +47,9 @@ class RemoteRuntime(ActionExecutionClient):
         headless_mode: bool = True,
         github_user_id: str | None = None,
     ):
+        logger.info(
+            f'RemoteRuntime created with sid {sid}, github_user_id {github_user_id}'
+        )
         super().__init__(
             config,
             event_stream,
