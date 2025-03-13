@@ -95,6 +95,8 @@ def get_config(metadata: EvalMetadata, instance: pd.Series) -> AppConfig:
 
 @dataclass
 class ConditionalImports:
+    """We instantiate the values in this dataclass differently if we're evaluating SWE-bench or SWE-Gym."""
+
     get_eval_report: Callable
     APPLY_PATCH_FAIL: str
     APPLY_PATCH_PASS: str
@@ -118,8 +120,13 @@ def process_instance(
         log_dir (str | None, default=None): Path to directory where log files will be written. Must
         be provided if `reset_logger` is set.
 
+        conditional_imports: A dataclass containing values that are imported differently based on
+        whether we're evaluating SWE-bench or SWE-Gym.
+
     Raises:
         AssertionError: if the `reset_logger` flag is set without a provided log directory.
+
+        AssertionError: if `conditional_imports` is not provided.
     """
     assert (
         conditional_imports is not None
@@ -463,6 +470,8 @@ if __name__ == '__main__':
     process_instance_func = partial(
         process_instance,
         log_dir=output_file.replace('.jsonl', '.logs'),
+        # We have to explicitly pass these imports to the process_instance function, otherwise
+        # they won't be available in the multiprocessing context.
         conditional_imports=ConditionalImports(
             get_eval_report=get_eval_report,
             APPLY_PATCH_FAIL=APPLY_PATCH_FAIL,
