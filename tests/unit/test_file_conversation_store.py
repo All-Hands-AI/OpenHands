@@ -13,7 +13,7 @@ async def test_load_store():
     store = FileConversationStore(InMemoryFileStore({}))
     expected = ConversationMetadata(
         conversation_id='some-conversation-id',
-        github_user_id='some-user-id',
+        user_id='some-user-id',
         selected_repository='some-repo',
         title="Let's talk about trains",
     )
@@ -40,7 +40,7 @@ async def test_load_int_user_id():
         )
     )
     found = await store.get_metadata('some-conversation-id')
-    assert found.github_user_id == '12345'
+    assert found.user_id == '12345'
 
 
 @pytest.mark.asyncio
