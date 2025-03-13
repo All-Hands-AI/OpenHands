@@ -134,9 +134,7 @@ The Local Runtime allows the OpenHands agent to execute actions directly on your
 Before using the Local Runtime, ensure you have the following dependencies installed:
 
 1. A working installation of OpenHands following the [development setup instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) - e.g., `make build` finishes successfully without errro
-2. Jupyter installed in your Poetry environment
-3. libtmux installed and tmux available on your system
-4. Browser dependencies for the browser environment
+2. tmux available on your system
 
 ### Configuration
 
