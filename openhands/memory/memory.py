@@ -1,7 +1,9 @@
 import asyncio
+import os
 import uuid
 from typing import Callable
 
+import openhands
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import AgentRecallAction
 from openhands.events.event import Event, EventSource, RecallType
@@ -20,7 +22,10 @@ from openhands.microagent import (
 from openhands.runtime.base import Runtime
 from openhands.utils.prompt import RepositoryInfo, RuntimeInfo
 
-GLOBAL_MICROAGENTS_DIR = 'microagents'
+GLOBAL_MICROAGENTS_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(openhands.__file__)),
+    'microagents',
+)
 
 
 class Memory:
@@ -41,7 +46,6 @@ class Memory:
     ):
         self.event_stream = event_stream
         self.sid = sid if sid else str(uuid.uuid4())
-        self.microagents_dir = GLOBAL_MICROAGENTS_DIR
         self.status_callback = status_callback
         self.loop = None
 
@@ -206,8 +210,6 @@ class Memory:
             'Loading user workspace microagents: %s', [m.name for m in user_microagents]
         )
         for user_microagent in user_microagents:
-            # if user_microagent.name in self.disabled_microagents:
-            #    continue
             if isinstance(user_microagent, KnowledgeMicroAgent):
                 self.knowledge_microagents[user_microagent.name] = user_microagent
             elif isinstance(user_microagent, RepoMicroAgent):
@@ -218,7 +220,7 @@ class Memory:
         Loads microagents from the global microagents_dir
         """
         repo_agents, knowledge_agents, _ = load_microagents_from_dir(
-            self.microagents_dir
+            GLOBAL_MICROAGENTS_DIR
         )
         for name, agent in knowledge_agents.items():
             if isinstance(agent, KnowledgeMicroAgent):
