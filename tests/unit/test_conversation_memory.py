@@ -681,13 +681,9 @@ def test_process_events_with_empty_microagent_knowledge(conversation_memory):
         vision_is_active=False,
     )
 
-    # The implementation returns an empty string but still creates a message
-    assert len(messages) == 2
+    # The implementation returns an empty string and it doesn't creates a message
+    assert len(messages) == 1
     assert messages[0].role == 'system'
-    assert messages[1].role == 'user'
-    assert len(messages[1].content) == 1
-    assert isinstance(messages[1].content[0], TextContent)
-    assert messages[1].content[0].text == ''
 
     # When there are no triggered agents, build_microagent_info is not called
     conversation_memory.prompt_manager.build_microagent_info.assert_not_called()
@@ -752,7 +748,6 @@ It may or may not be relevant to the user's request.
 The following information has been included based on a keyword match for "test_trigger".
 It may or may not be relevant to the user's request.
 
-This is triggered content for testing the microagent_info template.
 This is triggered content for testing.
 </EXTRA_INFO>"""
 
@@ -905,19 +900,15 @@ def test_process_events_with_recall_observation_deduplication(conversation_memor
     )
 
     # Verify that only the first occurrence of content for each agent is included
-    assert len(messages) == 4  # system + 3 recalls
+    assert (
+        len(messages) == 2
+    )  # system + 1 recall, because the second and third recalls are duplicates
     recall_messages = messages[1:]  # Skip system message
 
     # First recall should include all agents since they appear here first
     assert 'Image best practices v1' in recall_messages[0].content[0].text
     assert 'Git best practices v1' in recall_messages[0].content[0].text
     assert 'Python best practices v1' in recall_messages[0].content[0].text
-
-    # Second recall should be empty as python_agent already appeared earlier
-    assert recall_messages[1].content[0].text == ''
-
-    # Third recall should be empty as git_agent already appeared earlier
-    assert recall_messages[2].content[0].text == ''
 
 
 def test_process_events_with_recall_observation_deduplication_disabled_agents(
@@ -966,15 +957,14 @@ def test_process_events_with_recall_observation_deduplication_disabled_agents(
     )
 
     # Verify that disabled agents are filtered out and only the first occurrence of enabled agents is included
-    assert len(messages) == 3  # system + 2 recalls
+    assert (
+        len(messages) == 2
+    )  # system + 1 recall, the second is the same "enabled_agent"
     recall_messages = messages[1:]  # Skip system message
 
     # First recall should include enabled_agent but not disabled_agent
     assert 'Disabled agent content' not in recall_messages[0].content[0].text
     assert 'Enabled agent content v1' in recall_messages[0].content[0].text
-
-    # Second recall should be empty since enabled_agent already appeared in the first recall
-    assert recall_messages[1].content[0].text == ''
 
 
 def test_process_events_with_recall_observation_deduplication_empty(
@@ -999,8 +989,9 @@ def test_process_events_with_recall_observation_deduplication_empty(
     )
 
     # Verify that empty RecallObservations are handled gracefully
-    assert len(messages) == 2  # system + empty recall
-    assert messages[1].content[0].text == ''  # Empty string for empty recall
+    assert (
+        len(messages) == 1
+    )  # system message, because an empty recall is not added to Messages
 
 
 def test_has_agent_in_earlier_events(conversation_memory):
