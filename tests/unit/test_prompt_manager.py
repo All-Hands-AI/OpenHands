@@ -1,18 +1,13 @@
 import os
 import shutil
-from unittest.mock import MagicMock
 
 import pytest
 
-from openhands.core.config.agent_config import AgentConfig
-from openhands.core.message import TextContent
-from openhands.events.event import RecallType
-from openhands.events.observation.agent import MicroagentKnowledge, RecallObservation
-from openhands.memory.conversation_memory import ConversationMemory
-from openhands.microagent import (
-    BaseMicroAgent,
-)
-from openhands.utils.prompt import PromptManager, RepositoryInfo
+from openhands.controller.state.state import State
+from openhands.core.message import Message, TextContent
+from openhands.events.observation.agent import MicroagentKnowledge
+from openhands.microagent import BaseMicroAgent
+from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
 
 
 @pytest.fixture
@@ -27,6 +22,7 @@ def prompt_dir(tmp_path):
 
 
 def test_prompt_manager_template_rendering(prompt_dir):
+    """Test PromptManager's template rendering functionality."""
     # Create temporary template files
     with open(os.path.join(prompt_dir, 'system_prompt.j2'), 'w') as f:
         f.write("""System prompt: bar""")
@@ -73,6 +69,8 @@ At the user's request, repository {{ repository_info.repo_name }} has been clone
 
 
 def test_prompt_manager_file_not_found(prompt_dir):
+    """Test PromptManager behavior when a template file is not found."""
+    # Test with a non-existent template
     with pytest.raises(FileNotFoundError):
         BaseMicroAgent.load(
             os.path.join(prompt_dir, 'micro', 'non_existent_microagent.md')
@@ -87,7 +85,7 @@ def test_build_microagent_info(prompt_dir):
         with open(template_path, 'w') as f:
             f.write("""{% for agent_info in triggered_agents %}
 <EXTRA_INFO>
-The following information has been included based on a keyword match for "{{ agent_info.trigger_word }}".
+The following information has been included based on a keyword match for "{{ agent_info.trigger }}".
 It may or may not be relevant to the user's request.
 
 {{ agent_info.content }}
@@ -149,81 +147,63 @@ This is information from agent 2
     assert result.strip() == ''
 
 
-def test_conversation_memory_processes_recall_observation(prompt_dir):
-    """Test that ConversationMemory processes RecallObservations correctly."""
-    # Create a microagent_info.j2 template file
-    template_path = os.path.join(prompt_dir, 'microagent_info.j2')
-    if not os.path.exists(template_path):
-        with open(template_path, 'w') as f:
-            f.write("""{% for agent_info in triggered_agents %}
-<EXTRA_INFO>
-The following information has been included based on a keyword match for "{{ agent_info.trigger_word }}".
-It may or may not be relevant to the user's request.
+def test_add_examples_to_initial_message(prompt_dir):
+    """Test adding example messages to an initial message."""
+    # Create a user_prompt.j2 template file
+    with open(os.path.join(prompt_dir, 'user_prompt.j2'), 'w') as f:
+        f.write('This is an example user message')
 
-{{ agent_info.content }}
-</EXTRA_INFO>
-{% endfor %}
-""")
+    # Initialize the PromptManager
+    manager = PromptManager(prompt_dir=prompt_dir)
 
-    # Create a mock agent config
-    agent_config = MagicMock(spec=AgentConfig)
-    agent_config.enable_prompt_extensions = True
-    agent_config.disabled_microagents = []
+    # Create a message
+    message = Message(role='user', content=[TextContent(text='Original content')])
 
-    # Create a PromptManager
-    prompt_manager = PromptManager(prompt_dir=prompt_dir)
+    # Add examples to the message
+    manager.add_examples_to_initial_message(message)
 
-    # Initialize ConversationMemory
-    conversation_memory = ConversationMemory(
-        config=agent_config, prompt_manager=prompt_manager
+    # Check that the example was added at the beginning
+    assert len(message.content) == 2
+    assert message.content[0].text == 'This is an example user message'
+    assert message.content[1].text == 'Original content'
+
+    # Clean up
+    os.remove(os.path.join(prompt_dir, 'user_prompt.j2'))
+
+
+def test_add_turns_left_reminder(prompt_dir):
+    """Test adding turns left reminder to messages."""
+    # Initialize the PromptManager
+    manager = PromptManager(prompt_dir=prompt_dir)
+
+    # Create a State object with specific iteration values
+    state = State()
+    state.iteration = 3
+    state.max_iterations = 10
+
+    # Create a list of messages with a user message
+    user_message = Message(role='user', content=[TextContent(text='User content')])
+    assistant_message = Message(
+        role='assistant', content=[TextContent(text='Assistant content')]
+    )
+    messages = [assistant_message, user_message]
+
+    # Add turns left reminder
+    manager.add_turns_left_reminder(messages, state)
+
+    # Check that the reminder was added to the latest user message
+    assert len(user_message.content) == 2
+    assert (
+        'ENVIRONMENT REMINDER: You have 7 turns left to complete the task.'
+        in user_message.content[1].text
     )
 
-    # Create a RecallObservation with microagent knowledge
-    recall_observation = RecallObservation(
-        recall_type=RecallType.KNOWLEDGE_MICROAGENT,
-        microagent_knowledge=[
-            MicroagentKnowledge(
-                name='test_agent',
-                trigger='test_trigger',
-                content='This is triggered content for testing.',
-            )
-        ],
-        content='Recalled knowledge from microagents',
-    )
 
-    # Process the observation
-    messages = conversation_memory._process_observation(
-        obs=recall_observation,
-        tool_call_id_to_message={},
-        max_message_chars=None,
-        current_index=0,
-        events=[],
-    )
-
-    # Verify the message was created correctly
-    assert len(messages) == 1
-    message = messages[0]
-    assert message.role == 'user'
-    assert len(message.content) == 1
-    assert isinstance(message.content[0], TextContent)
-
-    expected_text = """<EXTRA_INFO>
-The following information has been included based on a keyword match for "test_trigger".
-It may or may not be relevant to the user's request.
-
-This is triggered content for testing.
-</EXTRA_INFO>"""
-
-    assert message.content[0].text.strip() == expected_text.strip()
-
-
-def test_conversation_memory_processes_environment_info(prompt_dir):
-    """Test that ConversationMemory processes environment info RecallObservations correctly."""
+def test_build_additional_info_with_repo_and_runtime(prompt_dir):
+    """Test building additional info with repository and runtime information."""
     # Create an additional_info.j2 template file
-    template_path = os.path.join(prompt_dir, 'additional_info.j2')
-    if not os.path.exists(template_path):
-        with open(template_path, 'w') as f:
-            f.write("""
+    with open(os.path.join(prompt_dir, 'additional_info.j2'), 'w') as f:
+        f.write("""
 {% if repository_info %}
 <REPOSITORY_INFO>
 At the user's request, repository {{ repository_info.repo_name }} has been cloned to directory {{ repository_info.repo_directory }}.
@@ -253,57 +233,39 @@ each of which has a corresponding port:
 {% endif %}
 """)
 
-    # Create a mock agent config
-    agent_config = MagicMock(spec=AgentConfig)
-    agent_config.enable_prompt_extensions = True
+    # Initialize the PromptManager
+    manager = PromptManager(prompt_dir=prompt_dir)
 
-    # Create a PromptManager
-    prompt_manager = PromptManager(prompt_dir=prompt_dir)
-
-    # Initialize ConversationMemory
-    conversation_memory = ConversationMemory(
-        config=agent_config, prompt_manager=prompt_manager
-    )
-
-    # Create a RecallObservation with environment info
-    recall_observation = RecallObservation(
-        recall_type=RecallType.ENVIRONMENT_INFO,
-        repo_name='owner/repo',
-        repo_directory='/workspace/repo',
-        repo_instructions='This repository contains important code.',
-        runtime_hosts={'example.com': 8080},
+    # Create repository and runtime information
+    repo_info = RepositoryInfo(repo_name='owner/repo', repo_directory='/workspace/repo')
+    runtime_info = RuntimeInfo(
+        available_hosts={'example.com': 8080},
         additional_agent_instructions='You know everything about this runtime.',
-        content='Recalled environment info',
+    )
+    repo_instructions = 'This repository contains important code.'
+
+    # Build additional info
+    result = manager.build_additional_info(
+        repository_info=repo_info,
+        runtime_info=runtime_info,
+        repo_instructions=repo_instructions,
     )
 
-    # Process the observation
-    messages = conversation_memory._process_observation(
-        obs=recall_observation,
-        tool_call_id_to_message={},
-        max_message_chars=None,
-        current_index=0,
-        events=[],
-    )
+    # Check that all information is included
+    assert '<REPOSITORY_INFO>' in result
+    assert 'owner/repo' in result
+    assert '/workspace/repo' in result
+    assert '<REPOSITORY_INSTRUCTIONS>' in result
+    assert 'This repository contains important code.' in result
+    assert '<RUNTIME_INFORMATION>' in result
+    assert 'example.com (port 8080)' in result
+    assert 'You know everything about this runtime.' in result
 
-    # Verify the message was created correctly
-    assert len(messages) == 1
-    message = messages[0]
-    assert message.role == 'user'
-    assert len(message.content) == 1
-    assert isinstance(message.content[0], TextContent)
+    # Clean up
+    os.remove(os.path.join(prompt_dir, 'additional_info.j2'))
 
-    # Check that the message contains the repository info
-    assert '<REPOSITORY_INFO>' in message.content[0].text
-    assert 'owner/repo' in message.content[0].text
-    assert '/workspace/repo' in message.content[0].text
 
-    # Check that the message contains the repository instructions
-    assert '<REPOSITORY_INSTRUCTIONS>' in message.content[0].text
-    assert 'This repository contains important code.' in message.content[0].text
-
-    # Check that the message contains the runtime info
-    assert '<RUNTIME_INFORMATION>' in message.content[0].text
-    assert 'example.com (port 8080)' in message.content[0].text
-
-    # Check that the message contains the additional agent instructions
-    assert 'You know everything about this runtime.' in message.content[0].text
+def test_prompt_manager_initialization_error():
+    """Test that PromptManager raises an error if the prompt directory is not set."""
+    with pytest.raises(ValueError, match='Prompt directory is not set'):
+        PromptManager(None)
