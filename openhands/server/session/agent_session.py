@@ -77,10 +77,10 @@ class AgentSession:
         config: AppConfig,
         agent: Agent,
         max_iterations: int,
+        provider_tokens: PROVIDER_TOKEN_TYPE,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         selected_repository: str | None = None,
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
@@ -200,7 +200,7 @@ class AgentSession:
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
-        provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
+        provider_tokens: PROVIDER_TOKEN_TYPE,
         selected_repository: str | None = None,
         selected_branch: str | None = None,
     ) -> bool:
@@ -222,7 +222,8 @@ class AgentSession:
         runtime_cls = get_runtime_cls(runtime_name)
 
         provider_handler = ProviderHandler(provider_tokens)
-        env_vars = provider_handler.get_env_vars()
+        env_vars: dict[str, str] = await provider_handler.get_env_vars(expose_secrets=True)
+
         kwargs = {}
         if runtime_cls == RemoteRuntime:
             kwargs['provider_tokens'] = provider_tokens
@@ -258,7 +259,7 @@ class AgentSession:
         if selected_repository:
             repo_directory = await call_sync_from_async(
                 self.runtime.clone_repo,
-                github_token,
+                provider_tokens,
                 selected_repository,
                 selected_branch,
             )

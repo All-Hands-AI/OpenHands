@@ -41,8 +41,11 @@ from openhands.events.observation import (
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler, ProviderType
+from openhands.integrations.provider import (
+    PROVIDER_TOKEN_TYPE,
+    ProviderHandler,
+    ProviderType,
+)
 from openhands.microagent import (
     BaseMicroAgent,
     load_microagents_from_dir,
@@ -131,7 +134,7 @@ class Runtime(FileEditRuntimeMixin):
             self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
         )
 
-        self.provider_handler = ProviderHandler(provider_tokens)
+        self.provider_tokens = provider_tokens
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -214,28 +217,39 @@ class Runtime(FileEditRuntimeMixin):
         if isinstance(event, Action):
             asyncio.get_event_loop().run_until_complete(self._handle_action(event))
 
+    async def _export_latest_provider_tokens(self, event: Action) -> None:
+        providers_called = ProviderHandler.check_cmd_action_for_provider_token_ref(
+            event
+        )
+
+        if providers_called and self.provider_tokens:
+            provider_handler = ProviderHandler(
+                provider_tokens=self.provider_tokens, external_token_manager=True
+            )
+            env_vars: dict[
+                ProviderType, SecretStr
+            ] = await provider_handler.get_env_vars(providers_called)
+
+            for provider, token in env_vars.items():
+                env_name = f'{provider.value}_token'
+
+                export_cmd = CmdRunAction(
+                    f"export {env_name.upper()}='{token.get_secret_value()}'"
+                )
+
+                await call_sync_from_async(self.run, export_cmd)
+
+            ProviderHandler.set_or_update_event_stream_secrets(
+                self.event_stream, env_vars
+            )
+
     async def _handle_action(self, event: Action) -> None:
         if event.timeout is None:
             # We don't block the command if this is a default timeout action
             event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
         assert event.timeout is not None
         try:
-            providers_called = ProviderHandler.check_cmd_action_for_provider_token_ref(event)
-            if providers_called:
-                env_vars: dict[ProviderType, SecretStr] = self.provider_handler.get_env_vars(providers_called)
-
-                for provider, token in env_vars.items():
-                    env_name = f"{provider.value}_token"
-                        
-                    export_cmd = CmdRunAction(
-                        f"export {env_name.upper()}='{token.get_secret_value()}'"
-                    )
-
-                    await call_sync_from_async(self.run, export_cmd)
-
-                ProviderHandler.set_or_update_event_stream_secrets(self.event_stream, env_vars)
-                    
-
+            await self._export_latest_provider_tokens(event)
             observation: Observation = await call_sync_from_async(
                 self.run_action, event
             )
@@ -263,14 +277,20 @@ class Runtime(FileEditRuntimeMixin):
 
     def clone_repo(
         self,
-        github_token: SecretStr,
+        provider_tokens: PROVIDER_TOKEN_TYPE,
         selected_repository: str,
         selected_branch: str | None,
     ) -> str:
-        if not github_token or not selected_repository:
+        if not (
+            ProviderType.GITHUB not in provider_tokens
+            and provider_tokens[ProviderType.GITHUB].token
+            and selected_repository
+        ):
             raise ValueError(
                 'github_token and selected_repository must be provided to clone a repository'
             )
+
+        github_token: SecretStr = provider_tokens[ProviderType.GITHUB].token
         url = f'https://{github_token.get_secret_value()}@github.com/{selected_repository}.git'
         dir_name = selected_repository.split('/')[-1]
 

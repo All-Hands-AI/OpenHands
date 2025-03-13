@@ -23,6 +23,7 @@ from openhands.events.observation import (
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
@@ -123,7 +124,7 @@ class Session:
 
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
-        provider_tokens = None
+        provider_tokens: PROVIDER_TOKEN_TYPE = {}
         selected_repository = None
         selected_branch = None
         if isinstance(settings, ConversationInitData):
