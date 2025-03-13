@@ -82,7 +82,7 @@ async def _create_new_conversation(
     session_init_args['selected_branch'] = selected_branch
     conversation_init_data = ConversationInitData(**session_init_args)
     logger.info('Loading conversation store')
-    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
+    conversation_store = await ConversationStoreImpl.get_instance(config, user_id, None)
     logger.info('Conversation store loaded')
 
     conversation_id = uuid.uuid4().hex
@@ -127,7 +127,10 @@ async def _create_new_conversation(
             image_urls=image_urls or [],
         )
     await conversation_manager.maybe_start_agent_loop(
-        conversation_id, conversation_init_data, user_id, initial_message_action
+        conversation_id,
+        conversation_init_data,
+        user_id,
+        initial_user_msg=initial_message_action,
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 
@@ -197,7 +200,7 @@ async def search_conversations(
     limit: int = 20,
 ) -> ConversationInfoResultSet:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request)
+        config, get_user_id(request), get_github_user_id(request)
     )
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
@@ -236,7 +239,7 @@ async def get_conversation(
     conversation_id: str, request: Request
 ) -> ConversationInfo | None:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request)
+        config, get_user_id(request), get_github_user_id(request)
     )
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
@@ -252,7 +255,7 @@ async def update_conversation(
     request: Request, conversation_id: str, title: str = Body(embed=True)
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request)
+        config, get_user_id(request), get_github_user_id(request)
     )
     metadata = await conversation_store.get_metadata(conversation_id)
     if not metadata:
@@ -268,7 +271,7 @@ async def delete_conversation(
     request: Request,
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request)
+        config, get_user_id(request), get_github_user_id(request)
     )
     try:
         await conversation_store.get_metadata(conversation_id)
