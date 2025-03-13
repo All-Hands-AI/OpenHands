@@ -40,6 +40,8 @@ from openhands.events.action import (
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 
+_finish_count = 0
+
 
 def combine_thought(action: Action, thought: str) -> Action:
     if not hasattr(action, 'thought'):
@@ -108,10 +110,27 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             # AgentFinishAction
             # ================================================
             elif tool_call.function.name == FinishTool['function']['name']:
-                action = AgentFinishAction(
-                    final_thought=arguments.get('message', ''),
-                    task_completed=arguments.get('task_completed', None),
-                )
+                # hack: think first, and then finish only if finish action is called again
+                # if it turns out to be useful, we should rethink about the design and make
+                # it generally useful. One idea is to make a micro-agent that gets triggered
+                # whenever a function call is made. We need to be able to track the state
+                # (e.g. the number of times the function has been called) and have the micro-agent
+                # make a decision based on the state, PLUS the history of the conversation
+                # (e.g. the original user intent).
+                global _finish_count
+                if _finish_count == 0:
+                    action = MessageAction(
+                        content='Final thought: '
+                        + arguments.get('message', '')
+                        + '\nPlease double check the final answer and make sure it adheres to the instructions, including the format requirements, then call finish function again with the final answer.',
+                        wait_for_response=False,
+                    )
+                    _finish_count += 1
+                else:
+                    action = AgentFinishAction(
+                        final_thought=arguments.get('message', ''),
+                        task_completed=arguments.get('task_completed', None),
+                    )
 
             # ================================================
             # LLMBasedFileEditTool (LLM-based file editor, deprecated)
