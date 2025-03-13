@@ -138,19 +138,17 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     """
     logger.info('Initializing new conversation')
     user_id = None
-    token = None
-    provider_tokens = get_provider_tokens(request)
     github_token = None
+    provider_tokens = get_provider_tokens(request)
     if provider_tokens and ProviderType.GITHUB in provider_tokens:
         token = provider_tokens[ProviderType.GITHUB]
         user_id = token.user_id
-    
-    gh_client = GithubServiceImpl(
-        user_id=user_id,
-        external_auth_token=get_access_token(request),
-        token=token,
-    )
-    github_token = await gh_client.get_latest_token()
+        gh_client = GithubServiceImpl(
+            user_id=user_id,
+            external_auth_token=get_access_token(request),
+            token=token.token,
+        )
+        github_token = await gh_client.get_latest_token()
 
     selected_repository = data.selected_repository
     selected_branch = data.selected_branch
