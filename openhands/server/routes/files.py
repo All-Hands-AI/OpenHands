@@ -337,7 +337,7 @@ def zip_current_workspace(request: Request, conversation_id: str):
 
 
 @app.get('/git/changes')
-async def git_changes(request: Request, ref: str = 'HEAD'):
+async def git_changes(request: Request):
     runtime: Runtime = request.state.conversation.runtime
     try:
         changes = await call_sync_from_async(runtime.get_git_changes)
@@ -357,7 +357,7 @@ async def git_changes(request: Request, ref: str = 'HEAD'):
 
 
 @app.get('/git/diff')
-async def git_diff(request: Request, path: str, ref: str = 'HEAD'):
+async def git_diff(request: Request, path: str):
     runtime: Runtime = request.state.conversation.runtime
     try:
         diff = await call_sync_from_async(runtime.get_git_diff, path)
