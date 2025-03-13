@@ -58,62 +58,89 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
 
 def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
-    # Instruction based on Anthropic's official trajectory
-    # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
-    instruction = (
-        '<uploaded_files>\n'
-        f'/workspace/{workspace_dir_name}\n'
-        '</uploaded_files>\n'
-        f"I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following issue description:\n\n"
-        f'<issue_description>\n'
-        f'{instance.problem_statement}\n'
-        '</issue_description>\n\n'
-        'Can you help me implement the necessary changes to the repository so that the requirements specified in the <issue_description> are met?\n'
-        "I've already taken care of all changes to any of the test files described in the <issue_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!\n"
-        "Also the development Python environment is already set up for you (i.e., all dependencies already installed), so you don't need to install other packages.\n"
-        'Your task is to make the minimal changes to non-test files in the /workspace directory to ensure the <issue_description> is satisfied.\n'
-        'Follow these steps to resolve the issue:\n'
-        '1. As a first step, it might be a good idea to explore the repo to familiarize yourself with its structure.\n'
-        '2. Create a script to reproduce the error and execute it with `python <filename.py>` using the BashTool, to confirm the error\n'
-        '3. Edit the sourcecode of the repo to resolve the issue\n'
-        '4. Rerun your reproduce script and confirm that the error is fixed!\n'
-        '5. Think about edgecases, add comprehensive tests for them in your reproduce script, and run them to make sure your fix handles them as well\n'
-        f'6. Once you are done with the initial implementation, please carefully re-read the problem description and check the difference between the current code and the base commit {instance["base_commit"]}. Do you think that the issue has been completely and comprehensively solved? Write tests to check the correctness of the solution, specifically focusing on tests that may point out any remaining problems that are not yet solved. Run all of the tests in the repo and check if any of them fail, and if they do fix the code. Repeat this process of carefully reading the problem description and current implementation, testing, and fixing any problems until you are confident that the current implementation is correct. Find and run any tests in the repo that are related to:\n'
-        '   - The issue you are fixing\n'
-        '   - The files you modified\n'
-        '   - The functions you changed\n'
-        '   Make sure all these tests pass with your changes.\n'
-        "Your thinking should be thorough and so it's fine if it's very long.\n"
-    )
+    instruction = f"""
+<uploaded_files>
+/workspace/{workspace_dir_name}
+</uploaded_files>
+
+I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following issue description:
+
+<issue_description>
+{instance.problem_statement}
+</issue_description>
+
+Can you help me implement the necessary changes to the repository so that the requirements specified in the <issue_description> are met?
+I've already taken care of all changes to any of the test files described in the <issue_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!
+Also the development Python environment is already set up for you (i.e., all dependencies already installed), so you don't need to install other packages.
+Your task is to make the minimal changes to non-test files in the /workspace/{workspace_dir_name} directory to ensure the <issue_description> is satisfied.
+
+Follow these steps to resolve the issue:
+
+1. EXPLORATION: First, thoroughly explore the repository structure using tools like `find` and `grep`.
+   - Identify all files mentioned in the problem statement
+   - Locate where the issue occurs in the codebase
+   - Understand the surrounding context and dependencies
+   - Use `grep` to search for relevant functions, classes, or error messages
+
+2. ANALYSIS: Based on your exploration, think carefully about the problem and propose 2-5 possible approaches to fix the issue.
+   - Analyze the root cause of the problem
+   - Consider trade-offs between different solutions
+   - Select the most promising approach and explain your reasoning
+
+3. TEST CREATION: Before implementing any fix, create a script to reproduce and verify the issue.
+   - Look at existing test files in the repository to understand the test format/structure
+   - Create a minimal reproduction script that demonstrates the issue
+   - Run your script to confirm the error exists
+
+4. IMPLEMENTATION: Edit the source code to implement your chosen solution.
+   - Make minimal, focused changes to fix the issue
+
+5. VERIFICATION: Test your implementation thoroughly.
+   - Run your reproduction script to verify the fix works
+   - Add edge cases to your test script to ensure comprehensive coverage
+   - Run existing tests related to the modified code to ensure you haven't broken anything
+
+6. FINAL REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["base_commit"]}.
+   - Ensure you've fully addressed all requirements
+   - Run any tests in the repository related to:
+     * The issue you are fixing
+     * The files you modified
+     * The functions you changed
+   - If any tests fail, revise your implementation until all tests pass
+
+Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
+"""
 
     if RUN_WITH_BROWSING:
-        instruction += (
-            '<IMPORTANT!>\n'
-            'You SHOULD NEVER attempt to browse the web. '
-            '</IMPORTANT!>\n'
-        )
+        instruction += """
+<IMPORTANT!>
+You SHOULD NEVER attempt to browse the web.
+</IMPORTANT!>
+"""
     return instruction
 
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
-DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')
-logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
+DEFAULT_DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')
+logger.info(f'Default docker image prefix: {DEFAULT_DOCKER_IMAGE_PREFIX}')
 
 
 def get_instance_docker_image(instance_id: str, official_image: bool = False) -> str:
     if official_image:
         # Official SWE-Bench image
         # swebench/sweb.eval.x86_64.django_1776_django-11333:v1
+        docker_image_prefix = 'docker.io/swebench/'
         repo, name = instance_id.split('__')
         image_name = f'sweb.eval.x86_64.{repo}_1776_{name}:latest'
         logger.warning(f'Using official SWE-Bench image: {image_name}')
     else:
         # OpenHands version of the image
+        docker_image_prefix = DEFAULT_DOCKER_IMAGE_PREFIX
         image_name = 'sweb.eval.x86_64.' + instance_id
         image_name = image_name.replace(
             '__', '_s_'
         )  # to comply with docker image naming convention
-    return (DOCKER_IMAGE_PREFIX.rstrip('/') + '/' + image_name).lower()
+    return (docker_image_prefix.rstrip('/') + '/' + image_name).lower()
 
 
 def get_config(
