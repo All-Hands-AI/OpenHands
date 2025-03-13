@@ -15,6 +15,7 @@ from openhands.core.config.condenser_config import (
     RecentEventsCondenserConfig,
 )
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.message import Message, TextContent
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.agent import AgentCondensationObservation
@@ -79,6 +80,10 @@ def mock_llm() -> LLM:
 
     # Attach helper methods to the mock object
     mock_llm.set_mock_response_content = set_mock_response_content
+
+    mock_llm.format_messages_for_llm = lambda events: [
+        Message(role='user', content=[TextContent(text=str(event))]) for event in events
+    ]
 
     return mock_llm
 
