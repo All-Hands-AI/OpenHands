@@ -23,3 +23,8 @@ be accessed from any host (e.g. 0.0.0.0).
 {{ runtime_info.additional_agent_instructions }}
 </RUNTIME_INFORMATION>
 {% endif %}
+{% if personality_instructions -%}
+<PERSONALITY>
+{{ personality_instructions }}
+</PERSONALITY>
+{% endif %}
