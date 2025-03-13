@@ -501,8 +501,13 @@ class Runtime(FileEditRuntimeMixin):
         return output == 'true'
 
     def _get_current_file_content(self, file_path: str) -> str:
-        cmd = f'cat {file_path}'
-        obs = self.run(CmdRunAction(command=cmd))
+        logger.info(f'workspace_mount_path: {self.config.workspace_mount_path}')
+        logger.info(f'workspace_base: {self.config.workspace_base}')
+        logger.info(
+            f'workspace_mount_path_in_sandbox: {self.config.workspace_mount_path_in_sandbox}'
+        )
+        logger.info(f'workspace_mount_rewrite: {self.config.workspace_mount_rewrite}')
+        obs = self.read(FileReadAction(path=file_path))
         if hasattr(obs, 'error') and obs.error:
             return ''
         return obs.content.strip()
