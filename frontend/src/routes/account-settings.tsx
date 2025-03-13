@@ -369,8 +369,16 @@ function AccountSettings() {
                 <HelpLink
                   testId="github-token-help-anchor"
                   text="Get your token"
-                  linkText="Generate a token on GitHub or see documentation"
-                  href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
+                  links={[
+                    {
+                      text: "Generate a token on GitHub",
+                      href: "https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
+                    },
+                    {
+                      text: "see documentation",
+                      href: "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
+                    }
+                  ]}
                 />
                 <HelpLink
                   testId="github-token-help-anchor"
