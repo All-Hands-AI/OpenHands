@@ -98,7 +98,6 @@ class ConditionalImports:
     get_eval_report: Callable
     APPLY_PATCH_FAIL: str
     APPLY_PATCH_PASS: str
-    TestSpec: type
 
 
 def process_instance(
@@ -139,7 +138,7 @@ def process_instance(
     config = get_config(metadata, instance)
     instance_id = instance.instance_id
     model_patch = instance['model_patch']
-    test_spec: TestSpec = instance['test_spec']
+    test_spec = instance['test_spec']
     logger.info(f'Starting evaluation for instance {instance_id}.')
 
     if 'test_result' not in instance.keys():
@@ -211,7 +210,9 @@ def process_instance(
         instance['test_result']['apply_patch_output'] = apply_patch_output
 
         if 'APPLY_PATCH_FAIL' in apply_patch_output:
-            logger.info(f'[{instance_id}] {APPLY_PATCH_FAIL}:\n{apply_patch_output}')
+            logger.info(
+                f'[{instance_id}] {conditional_imports.APPLY_PATCH_FAIL}:\n{apply_patch_output}'
+            )
             instance['test_result']['report']['failed_apply_patch'] = True
 
             return EvalOutput(
@@ -220,7 +221,9 @@ def process_instance(
                 metadata=metadata,
             )
         elif 'APPLY_PATCH_PASS' in apply_patch_output:
-            logger.info(f'[{instance_id}] {APPLY_PATCH_PASS}:\n{apply_patch_output}')
+            logger.info(
+                f'[{instance_id}] {conditional_imports.APPLY_PATCH_PASS}:\n{apply_patch_output}'
+            )
 
             # Run eval script in background and save output to log file
             log_file = '/tmp/eval_output.log'
@@ -286,7 +289,7 @@ def process_instance(
                         with open(test_output_path, 'w') as f:
                             f.write(test_output)
                         try:
-                            _report = get_eval_report(
+                            _report = conditional_imports.get_eval_report(
                                 test_spec=test_spec,
                                 prediction={
                                     'model_patch': model_patch,
@@ -360,7 +363,6 @@ if __name__ == '__main__':
         )
         from swegym.harness.test_spec import (
             SWEbenchInstance,
-            TestSpec,
             make_test_spec,
         )
         from swegym.harness.utils import load_swebench_dataset
@@ -372,7 +374,6 @@ if __name__ == '__main__':
         )
         from swebench.harness.test_spec.test_spec import (
             SWEbenchInstance,
-            TestSpec,
             make_test_spec,
         )
         from swebench.harness.utils import load_swebench_dataset
@@ -460,7 +461,13 @@ if __name__ == '__main__':
     # The evaluation harness constrains the signature of `process_instance_func` but we need to
     # pass extra information. Build a new function object to avoid issues with multiprocessing.
     process_instance_func = partial(
-        process_instance, log_dir=output_file.replace('.jsonl', '.logs')
+        process_instance,
+        log_dir=output_file.replace('.jsonl', '.logs'),
+        conditional_imports=ConditionalImports(
+            get_eval_report=get_eval_report,
+            APPLY_PATCH_FAIL=APPLY_PATCH_FAIL,
+            APPLY_PATCH_PASS=APPLY_PATCH_PASS,
+        ),
     )
 
     run_evaluation(
