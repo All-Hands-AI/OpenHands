@@ -3,7 +3,9 @@ import os
 import subprocess
 import tempfile
 import time
+from dataclasses import dataclass
 from functools import partial
+from typing import Callable
 
 import pandas as pd
 from tqdm import tqdm
@@ -91,12 +93,21 @@ def get_config(metadata: EvalMetadata, instance: pd.Series) -> AppConfig:
     return config
 
 
+@dataclass
+class ConditionalImports:
+    get_eval_report: Callable
+    APPLY_PATCH_FAIL: str
+    APPLY_PATCH_PASS: str
+    TestSpec: type
+
+
 def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
     log_dir: str | None = None,
     runtime_failure_count: int = 0,
+    conditional_imports: ConditionalImports | None = None,
 ) -> EvalOutput:
     """
     Evaluate agent performance on a SWE-bench problem instance.
@@ -111,6 +122,10 @@ def process_instance(
     Raises:
         AssertionError: if the `reset_logger` flag is set without a provided log directory.
     """
+    assert (
+        conditional_imports is not None
+    ), 'conditional_imports must be provided to run process_instance using multiprocessing'
+
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
         assert (
