@@ -56,11 +56,12 @@ any files that are mounted into its workspace.
 This setup can cause some issues with file permissions (hence the `SANDBOX_USER_ID` variable)
 but seems to work well on most systems.
 
-## All Hands Runtime
-The All Hands Runtime is currently in beta. You can request access by joining
-the #remote-runtime-limited-beta channel on Slack ([see the README](https://github.com/All-Hands-AI/OpenHands?tab=readme-ov-file#-how-to-join-the-community) for an invite).
+## OpenHands Remote Runtime
 
-To use the All Hands Runtime, set the following environment variables when
+OpenHands Remote Runtime is currently in beta (read [here](https://runtime.all-hands.dev/) for more details), it allows you to launch runtimes in parallel in the cloud.
+Fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLSckVz_JFwg2_mOxNZjCtr7aoBFI2Mwdan3f75J_TrdMS1JV2g/viewform) to apply if you want to try this out!
+
+To use the OpenHands Remote Runtime, set the following environment variables when
 starting OpenHands:
 
 ```bash
