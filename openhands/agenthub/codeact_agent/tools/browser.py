@@ -25,7 +25,7 @@ click('48', button='middle', modifiers=['Shift'])
 """
 
 _BROWSER_TOOL_DESCRIPTION = """
-The following 15 functions allow you to interact with the webpage. Most of them are python function executing playwright code. The primary way of referring to elements in the page is through bid which are specified in your observations.
+The following 15 functions allow you to interact with the webpage. Most of them are python functions executing playwright code. The primary way of referring to elements in the page is through bid which are specified in your observations.
 
 goto(url: str)
     Description: Navigate to a url.

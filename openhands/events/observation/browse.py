@@ -69,7 +69,7 @@ class BrowserOutputObservation(Observation):
                 # FIXME: handle the case when the web page is too large
                 cur_axtree_txt = self.get_axtree_str(filter_visible_only=False)
                 text += (
-                    f'Accessibility tree:\nNote: [bid] is the unique alpha-numeric identifier at the beginning of lines for each element in the AXTree. Always use bid to refer to elements in your actions.\n'
+                    f'Accessibility tree of the COMPLETE webpage:\nNote: [bid] is the unique alpha-numeric identifier at the beginning of lines for each element in the AXTree. Always use bid to refer to elements in your actions.\n'
                     f'============== BEGIN accessibility tree ==============\n'
                     f'{cur_axtree_txt}\n'
                     f'============== END accessibility tree ==============\n'

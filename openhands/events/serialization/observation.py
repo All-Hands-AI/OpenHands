@@ -16,6 +16,7 @@ from openhands.events.observation.empty import (
     NullObservation,
 )
 from openhands.events.observation.error import ErrorObservation
+from openhands.events.observation.file_download import FileDownloadObservation
 from openhands.events.observation.files import (
     FileEditObservation,
     FileReadObservation,
@@ -42,6 +43,7 @@ observations = (
     AgentCondensationObservation,
     AgentThinkObservation,
     SearchEngineObservation,
+    FileDownloadObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {
