@@ -1,3 +1,5 @@
+import os
+import shutil
 from unittest.mock import MagicMock, Mock
 
 import pytest
@@ -58,6 +60,17 @@ def conversation_memory(agent_config):
 
     prompt_manager.build_microagent_info.side_effect = build_microagent_info
     return ConversationMemory(agent_config, prompt_manager)
+
+
+@pytest.fixture
+def prompt_dir(tmp_path):
+    # Copy contents from "openhands/agenthub/codeact_agent" to the temp directory
+    shutil.copytree(
+        'openhands/agenthub/codeact_agent/prompts', tmp_path, dirs_exist_ok=True
+    )
+
+    # Return the temporary directory path
+    return tmp_path
 
 
 @pytest.fixture
@@ -678,6 +691,153 @@ def test_process_events_with_empty_microagent_knowledge(conversation_memory):
 
     # When there are no triggered agents, build_microagent_info is not called
     conversation_memory.prompt_manager.build_microagent_info.assert_not_called()
+
+
+def test_conversation_memory_processes_recall_observation(prompt_dir):
+    """Test that ConversationMemory processes RecallObservations correctly."""
+    # Create a microagent_info.j2 template file
+    template_path = os.path.join(prompt_dir, 'microagent_info.j2')
+    if not os.path.exists(template_path):
+        with open(template_path, 'w') as f:
+            f.write("""{% for agent_info in triggered_agents %}
+<EXTRA_INFO>
+The following information has been included based on a keyword match for "{{ agent_info.trigger_word }}".
+It may or may not be relevant to the user's request.
+
+    # Verify the template was correctly rendered
+{{ agent_info.content }}
+</EXTRA_INFO>
+{% endfor %}
+""")
+
+    # Create a mock agent config
+    agent_config = MagicMock(spec=AgentConfig)
+    agent_config.enable_prompt_extensions = True
+    agent_config.disabled_microagents = []
+
+    # Create a PromptManager
+    prompt_manager = PromptManager(prompt_dir=prompt_dir)
+
+    # Initialize ConversationMemory
+    conversation_memory = ConversationMemory(
+        config=agent_config, prompt_manager=prompt_manager
+    )
+
+    # Create a RecallObservation with microagent knowledge
+    recall_observation = RecallObservation(
+        recall_type=RecallType.KNOWLEDGE_MICROAGENT,
+        microagent_knowledge=[
+            MicroagentKnowledge(
+                name='test_agent',
+                trigger='test_trigger',
+                content='This is triggered content for testing.',
+            )
+        ],
+        content='Recalled knowledge from microagents',
+    )
+
+    # Process the observation
+    messages = conversation_memory._process_observation(
+        obs=recall_observation, tool_call_id_to_message={}, max_message_chars=None
+    )
+
+    # Verify the message was created correctly
+    assert len(messages) == 1
+    message = messages[0]
+    assert message.role == 'user'
+    assert len(message.content) == 1
+    assert isinstance(message.content[0], TextContent)
+
+    expected_text = """<EXTRA_INFO>
+The following information has been included based on a keyword match for "test_trigger".
+It may or may not be relevant to the user's request.
+
+This is triggered content for testing the microagent_info template.
+This is triggered content for testing.
+</EXTRA_INFO>"""
+
+    assert message.content[0].text.strip() == expected_text.strip()
+
+    # Clean up
+    os.remove(os.path.join(prompt_dir, 'microagent_info.j2'))
+
+
+def test_conversation_memory_processes_environment_info(prompt_dir):
+    """Test that ConversationMemory processes environment info RecallObservations correctly."""
+    # Create an additional_info.j2 template file
+    template_path = os.path.join(prompt_dir, 'additional_info.j2')
+    if not os.path.exists(template_path):
+        with open(template_path, 'w') as f:
+            f.write("""
+{% if repository_info %}
+<REPOSITORY_INFO>
+At the user's request, repository {{ repository_info.repo_name }} has been cloned to directory {{ repository_info.repo_directory }}.
+</REPOSITORY_INFO>
+{% endif %}
+
+{% if repository_instructions %}
+<REPOSITORY_INSTRUCTIONS>
+{{ repository_instructions }}
+</REPOSITORY_INSTRUCTIONS>
+{% endif %}
+
+{% if runtime_info and runtime_info.available_hosts %}
+<RUNTIME_INFORMATION>
+The user has access to the following hosts for accessing a web application,
+each of which has a corresponding port:
+{% for host, port in runtime_info.available_hosts.items() %}
+* {{ host }} (port {{ port }})
+{% endfor %}
+</RUNTIME_INFORMATION>
+{% endif %}
+""")
+
+    # Create a mock agent config
+    agent_config = MagicMock(spec=AgentConfig)
+    agent_config.enable_prompt_extensions = True
+
+    # Create a PromptManager
+    prompt_manager = PromptManager(prompt_dir=prompt_dir)
+
+    # Initialize ConversationMemory
+    conversation_memory = ConversationMemory(
+        config=agent_config, prompt_manager=prompt_manager
+    )
+
+    # Create a RecallObservation with environment info
+    recall_observation = RecallObservation(
+        recall_type=RecallType.ENVIRONMENT_INFO,
+        repo_name='owner/repo',
+        repo_directory='/workspace/repo',
+        repo_instructions='This repository contains important code.',
+        runtime_hosts={'example.com': 8080},
+        content='Recalled environment info',
+    )
+
+    # Process the observation
+    messages = conversation_memory._process_observation(
+        obs=recall_observation, tool_call_id_to_message={}, max_message_chars=None
+    )
+
+    # Verify the message was created correctly
+    assert len(messages) == 1
+    message = messages[0]
+    assert message.role == 'user'
+    assert len(message.content) == 1
+    assert isinstance(message.content[0], TextContent)
+
+    # Check that the message contains the repository info
+    assert '<REPOSITORY_INFO>' in message.content[0].text
+    assert 'owner/repo' in message.content[0].text
+    assert '/workspace/repo' in message.content[0].text
+
+    # Check that the message contains the repository instructions
+    assert '<REPOSITORY_INSTRUCTIONS>' in message.content[0].text
+    assert 'This repository contains important code.' in message.content[0].text
+
+    # Check that the message contains the runtime info
+    assert '<RUNTIME_INFORMATION>' in message.content[0].text
+    assert 'example.com (port 8080)' in message.content[0].text
 
 
 def test_process_events_with_recall_observation_deduplication(conversation_memory):
