@@ -17,7 +17,8 @@ export default {
         basic: "#9099AC", // light gray
         tertiary: "#454545", // gray, used for inputs
         "tertiary-light": "#B7BDC2", // lighter gray, used for borders and placeholder text
-        content: "#F9FBFE", // light gray, used mostly for text
+        content: "#ECEDEE", // light gray, used mostly for text
+        "content-2": "#F9FBFE",
       },
     },
     animation: {

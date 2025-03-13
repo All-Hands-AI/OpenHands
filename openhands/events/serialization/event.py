@@ -23,7 +23,14 @@ TOP_KEYS = [
     'tool_call_metadata',
     'llm_metrics',
 ]
-UNDERSCORE_KEYS = ['id', 'timestamp', 'source', 'cause', 'tool_call_metadata', 'llm_metrics']
+UNDERSCORE_KEYS = [
+    'id',
+    'timestamp',
+    'source',
+    'cause',
+    'tool_call_metadata',
+    'llm_metrics',
+]
 
 DELETE_FROM_TRAJECTORY_EXTRAS = {
     'screenshot',
@@ -62,8 +69,13 @@ def event_from_dict(data) -> 'Event':
                     metrics.accumulated_cost = value.get('accumulated_cost', 0.0)
                     for cost in value.get('costs', []):
                         metrics._costs.append(Cost(**cost))
-                    metrics.response_latencies = [ResponseLatency(**latency) for latency in value.get('response_latencies', [])]
-                    metrics.token_usages = [TokenUsage(**usage) for usage in value.get('token_usages', [])]
+                    metrics.response_latencies = [
+                        ResponseLatency(**latency)
+                        for latency in value.get('response_latencies', [])
+                    ]
+                    metrics.token_usages = [
+                        TokenUsage(**usage) for usage in value.get('token_usages', [])
+                    ]
                 value = metrics
             setattr(evt, '_' + key, value)
     return evt
