@@ -7,6 +7,7 @@ from pydantic import BaseModel, SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
+from openhands.events.stream import EventStreamSubscriberObj
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.runtime import get_runtime_cls
 from openhands.server.auth import get_access_token, get_github_token, get_github_user_id
@@ -44,6 +45,7 @@ async def _create_new_conversation(
     initial_user_msg: str | None,
     image_urls: list[str] | None,
     attach_convo_id: bool = False,
+    initial_event_stream_subscription: EventStreamSubscriberObj | None = None
 ):
     logger.info(
         'Creating conversation',
@@ -121,7 +123,11 @@ async def _create_new_conversation(
             image_urls=image_urls or [],
         )
     await conversation_manager.maybe_start_agent_loop(
-        conversation_id, conversation_init_data, user_id, initial_message_action
+        conversation_id, 
+        conversation_init_data, 
+        user_id, 
+        initial_message_action,
+        initial_event_stream_subscription
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 

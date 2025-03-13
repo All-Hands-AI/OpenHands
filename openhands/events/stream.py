@@ -7,6 +7,8 @@ from enum import Enum
 from functools import partial
 from typing import Callable, Iterable
 
+from pydantic import BaseModel
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event, EventSource
 from openhands.events.serialization.event import event_from_dict, event_to_dict
@@ -29,6 +31,13 @@ class EventStreamSubscriber(str, Enum):
     RUNTIME = 'runtime'
     MAIN = 'main'
     TEST = 'test'
+
+
+class EventStreamSubscriberObj(BaseModel):
+    callback_func: Callable
+    subscriber_id: EventStreamSubscriber
+    callback_id: str
+
 
 
 async def session_exists(sid: str, file_store: FileStore) -> bool:

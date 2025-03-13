@@ -7,6 +7,7 @@ import socketio
 from openhands.core.config import AppConfig
 from openhands.events.action import MessageAction
 from openhands.events import EventStream, EventStreamSubscriber
+from openhands.events.stream import EventStreamSubscriberObj
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import Conversation
@@ -74,6 +75,7 @@ class ConversationManager(ABC):
         settings: Settings,
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
+        initial_event_stream_subscription: EventStreamSubscriberObj | None = None
     ) -> EventStream:
         """Start an event loop if one is not already running"""
 
