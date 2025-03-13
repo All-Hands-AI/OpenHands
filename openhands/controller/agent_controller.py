@@ -53,6 +53,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
+from openhands.llm.metrics import Metrics, TokenUsage
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -78,7 +79,6 @@ class AgentController:
         NullObservation,
         ChangeAgentStateAction,
         AgentStateChangedObservation,
-        AgentCondensationObservation,
     )
 
     def __init__(
@@ -193,10 +193,13 @@ class AgentController:
         Args:
             level (str): The logging level to use (e.g., 'info', 'debug', 'error').
             message (str): The message to log.
-            extra (dict | None, optional): Additional fields to include in the log. Defaults to None.
+            extra (dict | None, optional): Additional fields to log. Includes session_id by default.
         """
         message = f'[Agent Controller {self.id}] {message}'
-        getattr(logger, level)(message, extra=extra, stacklevel=2)
+        if extra is None:
+            extra = {}
+        extra_merged = {'session_id': self.id, **extra}
+        getattr(logger, level)(message, extra=extra_merged, stacklevel=2)
 
     def update_state_before_step(self):
         self.state.iteration += 1
@@ -248,8 +251,9 @@ class AgentController:
             )
             reported = RuntimeError(
                 'There was an unexpected error while running the agent. Please '
-                f'report this error to the developers. Your session ID is {self.id}. '
-                f'Error type: {e.__class__.__name__}'
+                'report this error to the developers by opening an issue at '
+                'https://github.com/All-Hands-AI/OpenHands. Your session ID is '
+                f' {self.id}. Error type: {e.__class__.__name__}'
             )
             if (
                 isinstance(e, litellm.AuthenticationError)
@@ -730,6 +734,10 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
+
+            # Create and log metrics for frontend display
+            self._prepare_metrics_for_frontend(action)
+
             self.event_stream.add_event(action, action._source)  # type: ignore [attr-defined]
 
         await self.update_state_after_step()
@@ -1082,6 +1090,44 @@ class AgentController:
             return True
 
         return self._stuck_detector.is_stuck(self.headless_mode)
+
+    def _prepare_metrics_for_frontend(self, action: Action) -> None:
+        """Create a minimal metrics object for frontend display and log it.
+
+        To avoid performance issues with long conversations, we only keep:
+        - accumulated_cost: The current total cost
+        - latest token_usage: Token statistics from the most recent API call
+
+        Args:
+            action: The action to attach metrics to
+        """
+        metrics = Metrics(model_name=self.agent.llm.metrics.model_name)
+        metrics.accumulated_cost = self.agent.llm.metrics.accumulated_cost
+        if self.agent.llm.metrics.token_usages:
+            latest_usage = self.agent.llm.metrics.token_usages[-1]
+            metrics.add_token_usage(
+                prompt_tokens=latest_usage.prompt_tokens,
+                completion_tokens=latest_usage.completion_tokens,
+                cache_read_tokens=latest_usage.cache_read_tokens,
+                cache_write_tokens=latest_usage.cache_write_tokens,
+                response_id=latest_usage.response_id,
+            )
+        action.llm_metrics = metrics
+
+        # Log the metrics information for frontend display
+        log_usage: TokenUsage | None = (
+            metrics.token_usages[-1] if metrics.token_usages else None
+        )
+        self.log(
+            'debug',
+            f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
+            f'tokens (prompt/completion/cache_read/cache_write): '
+            f'{log_usage.prompt_tokens if log_usage else 0}/'
+            f'{log_usage.completion_tokens if log_usage else 0}/'
+            f'{log_usage.cache_read_tokens if log_usage else 0}/'
+            f'{log_usage.cache_write_tokens if log_usage else 0}',
+            extra={'msg_type': 'METRICS'},
+        )
 
     def __repr__(self):
         return (

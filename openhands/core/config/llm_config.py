@@ -15,11 +15,8 @@ class LLMConfig(BaseModel):
     Attributes:
         model: The model to use.
         api_key: The API key to use.
-        base_url: The base URL for the API. This is necessary for local LLMs. It is also used for Azure embeddings.
+        base_url: The base URL for the API. This is necessary for local LLMs.
         api_version: The version of the API.
-        embedding_model: The embedding model to use.
-        embedding_base_url: The base URL for the embedding API.
-        embedding_deployment_name: The name of the deployment for the embedding API. This is used for Azure OpenAI.
         aws_access_key_id: The AWS access key ID.
         aws_secret_access_key: The AWS secret access key.
         aws_region_name: The AWS region name.
@@ -48,13 +45,10 @@ class LLMConfig(BaseModel):
         reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Exclusive for o1 models.
     """
 
-    model: str = Field(default='claude-3-5-sonnet-20241022')
+    model: str = Field(default='claude-3-7-sonnet-20250219')
     api_key: SecretStr | None = Field(default=None)
     base_url: str | None = Field(default=None)
     api_version: str | None = Field(default=None)
-    embedding_model: str = Field(default='local')
-    embedding_base_url: str | None = Field(default=None)
-    embedding_deployment_name: str | None = Field(default=None)
     aws_access_key_id: SecretStr | None = Field(default=None)
     aws_secret_access_key: SecretStr | None = Field(default=None)
     aws_region_name: str | None = Field(default=None)

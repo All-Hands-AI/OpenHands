@@ -95,6 +95,11 @@ workspace_base = "./workspace"
 # List of allowed file extensions for uploads
 #file_uploads_allowed_extensions = [".*"]
 
+# Whether to enable the default LLM summarizing condenser when no condenser is specified in config
+# When true, a LLMSummarizingCondenserConfig will be used as the default condenser
+# When false, a NoOpCondenserConfig (no summarization) will be used
+#enable_default_condenser = true
+
 #################################### LLM #####################################
 # Configuration for LLM models (group name starts with 'llm')
 # use 'llm' for the default LLM config
@@ -126,15 +131,6 @@ api_key = ""
 
 # Custom LLM provider
 #custom_llm_provider = ""
-
-# Embedding API base URL
-#embedding_base_url = ""
-
-# Embedding deployment name
-#embedding_deployment_name = ""
-
-# Embedding model to use
-embedding_model = "local"
 
 # Maximum number of characters in an observation's content
 #max_message_chars = 10000
@@ -222,9 +218,6 @@ codeact_enable_llm_editor = false
 # whether the IPython tool is enabled
 codeact_enable_jupyter = true
 
-# Name of the micro agent to use for this agent
-#micro_agent_name = ""
-
 # Memory enabled
 #memory_enabled = false
 
@@ -293,6 +286,69 @@ llm_config = 'gpt3'
 
 # The security analyzer to use (For Headless / CLI only -  In Web this is overridden by Session Init)
 #security_analyzer = ""
+
+#################################### Condenser #################################
+# Condensers control how conversation history is managed and compressed when
+# the context grows too large. Each agent uses one condenser configuration.
+##############################################################################
+[condenser]
+# The type of condenser to use. Available options:
+# - "noop": No condensing, keeps full history (default)
+# - "observation_masking": Keeps full event structure but masks older observations
+# - "recent": Keeps only recent events and discards older ones
+# - "llm": Uses an LLM to summarize conversation history
+# - "amortized": Intelligently forgets older events while preserving important context
+# - "llm_attention": Uses an LLM to prioritize most relevant context
+type = "noop"
+
+# Examples for each condenser type (uncomment and modify as needed):
+
+# 1. NoOp Condenser - No additional settings needed
+#type = "noop"
+
+# 2. Observation Masking Condenser
+#type = "observation_masking"
+# Number of most-recent events where observations will not be masked
+#attention_window = 100
+
+# 3. Recent Events Condenser
+#type = "recent"
+# Number of initial events to always keep (typically includes task description)
+#keep_first = 1
+# Maximum number of events to keep in history
+#max_events = 100
+
+# 4. LLM Summarizing Condenser
+#type = "llm"
+# Reference to an LLM config to use for summarization
+#llm_config = "condenser"
+# Number of initial events to always keep (typically includes task description)
+#keep_first = 1
+# Maximum size of history before triggering summarization
+#max_size = 100
+
+# 5. Amortized Forgetting Condenser
+#type = "amortized"
+# Number of initial events to always keep (typically includes task description)
+#keep_first = 1
+# Maximum size of history before triggering forgetting
+#max_size = 100
+
+# 6. LLM Attention Condenser
+#type = "llm_attention"
+# Reference to an LLM config to use for attention scoring
+#llm_config = "condenser"
+# Number of initial events to always keep (typically includes task description)
+#keep_first = 1
+# Maximum size of history before triggering attention mechanism
+#max_size = 100
+
+# Example of a custom LLM configuration for condensers that require an LLM
+# If not provided, it falls back to the default LLM
+#[llm.condenser]
+#model = "gpt-4o"
+#temperature = 0.1
+#max_tokens = 1024
 
 #################################### Eval ####################################
 # Configuration for the evaluation, please refer to the specific evaluation

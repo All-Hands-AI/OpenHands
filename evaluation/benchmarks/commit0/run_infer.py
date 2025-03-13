@@ -35,10 +35,10 @@ from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
-USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
@@ -104,7 +104,6 @@ def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
 ) -> AppConfig:
-    assert USE_INSTANCE_IMAGE
     repo_name = instance['repo'].split('/')[1]
     base_container_image = get_instance_docker_image(repo_name)
     logger.info(
@@ -302,16 +301,6 @@ def complete_runtime(
     pytest_exit_code = obs.content.strip()
     # logger.info(f'Pytest exit code: {pytest_exit_code}')
 
-    # Read the test report
-    action = CmdRunAction(command='cat report.json')
-    action.set_hard_timeout(600)
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(
-        isinstance(obs, CmdOutputObservation),
-        f'Failed to read test report: {str(obs)}',
-    )
     # Get test IDs from instance
     repo_name = instance['repo'].split('/')[1]
     repo_name = repo_name.replace('.', '-')
@@ -322,8 +311,20 @@ def complete_runtime(
     # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     test_ids = obs.content.strip().split('\n')
 
+    # Read the test report
+    action = CmdRunAction(command='cat report.json')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        isinstance(obs, CmdOutputObservation),
+        f'Failed to read test report: {str(obs)}',
+    )
+    json_report = obs.content.strip()
+
     try:
-        report = json.loads(obs.content)
+        report = json.loads(json_report)
         tests = {x['nodeid']: x['call'] for x in report['tests'] if 'call' in x}
 
         # Calculate test statistics
@@ -394,6 +395,7 @@ def process_instance(
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
     try:
         initialize_runtime(runtime, instance)
 

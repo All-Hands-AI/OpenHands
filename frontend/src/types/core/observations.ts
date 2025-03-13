@@ -63,6 +63,7 @@ export interface ReadObservation extends OpenHandsObservationEvent<"read"> {
   source: "agent";
   extras: {
     path: string;
+    impl_source: string;
   };
 }
 
@@ -71,6 +72,7 @@ export interface EditObservation extends OpenHandsObservationEvent<"edit"> {
   extras: {
     path: string;
     diff: string;
+    impl_source: string;
   };
 }
 

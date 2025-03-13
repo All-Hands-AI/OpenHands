@@ -552,7 +552,9 @@ if __name__ == '__main__':
             try:
                 verify_api_key(request.headers.get('X-Session-API-Key'))
             except HTTPException as e:
-                return e
+                return JSONResponse(
+                    status_code=e.status_code, content={'detail': e.detail}
+                )
         response = await call_next(request)
         return response
 

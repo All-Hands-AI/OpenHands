@@ -30,11 +30,6 @@ if [ -z "$MAX_ITER" ]; then
   MAX_ITER=100
 fi
 
-if [ -z "$USE_INSTANCE_IMAGE" ]; then
-  echo "USE_INSTANCE_IMAGE not specified, use default true"
-  USE_INSTANCE_IMAGE=true
-fi
-
 if [ -z "$RUN_WITH_BROWSING" ]; then
   echo "RUN_WITH_BROWSING not specified, use default false"
   RUN_WITH_BROWSING=false
@@ -56,8 +51,6 @@ if [ -z "$SPLIT" ]; then
   SPLIT="test"
 fi
 
-export USE_INSTANCE_IMAGE=$USE_INSTANCE_IMAGE
-echo "USE_INSTANCE_IMAGE: $USE_INSTANCE_IMAGE"
 export RUN_WITH_BROWSING=$RUN_WITH_BROWSING
 echo "RUN_WITH_BROWSING: $RUN_WITH_BROWSING"
 
@@ -91,7 +84,7 @@ fi
 
 function run_eval() {
   local eval_note=$1
-  COMMAND="poetry run python evaluation/benchmarks/commit0_bench/run_infer.py \
+  COMMAND="poetry run python evaluation/benchmarks/commit0/run_infer.py \
     --agent-cls $AGENT \
     --llm-config $MODEL_CONFIG \
     --max-iterations $MAX_ITER \
