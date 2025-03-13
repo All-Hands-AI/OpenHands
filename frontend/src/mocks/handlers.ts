@@ -191,8 +191,8 @@ export const handlers = [
 
     if (!settings) return HttpResponse.json(null, { status: 404 });
 
-    // @ts-expect-error - mock types
-    if (Object.keys(settings.provider_tokens).length > 0) settings.github_token_is_set = true;
+    if (Object.keys(settings.provider_tokens).length > 0)
+      settings.github_token_is_set = true;
 
     return HttpResponse.json(settings);
   }),
