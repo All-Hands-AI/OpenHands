@@ -6,7 +6,7 @@ import socketio
 
 from openhands.core.config import AppConfig
 from openhands.events.action import MessageAction
-from openhands.events.stream import EventStream
+from openhands.events import EventStream, EventStreamSubscriber
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import Conversation
@@ -80,6 +80,10 @@ class ConversationManager(ABC):
     @abstractmethod
     async def send_to_event_stream(self, connection_id: str, data: dict):
         """Send data to an event stream."""
+
+    @abstractmethod
+    async def unsubscribe_from_event_stream(self, connection_id: str, subscriber_id: EventStreamSubscriber, callback_id: str):
+        """Unsubscribe callback from event stream."""
 
     @abstractmethod
     async def disconnect_from_session(self, connection_id: str):

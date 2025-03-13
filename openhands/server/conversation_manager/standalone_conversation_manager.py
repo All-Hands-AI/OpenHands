@@ -312,6 +312,14 @@ class StandaloneConversationManager(ConversationManager):
             return
 
         raise RuntimeError(f'no_connected_session:{connection_id}:{sid}')
+    
+    async def unsubscribe_from_event_stream(self, 
+                                            connection_id: str, 
+                                            subscriber_id: EventStreamSubscriber, 
+                                            callback_id: str):
+
+        event_stream = await self._get_event_stream(connection_id)
+        event_stream.unsubscribe(subscriber_id, callback_id)
 
     async def disconnect_from_session(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)
