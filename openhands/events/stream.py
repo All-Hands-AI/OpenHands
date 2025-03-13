@@ -39,7 +39,6 @@ class EventStreamSubscriberObj(BaseModel):
     callback_id: str
 
 
-
 async def session_exists(sid: str, file_store: FileStore) -> bool:
     try:
         await call_sync_from_async(file_store.list, get_conversation_dir(sid))
