@@ -99,8 +99,6 @@ class ProviderHandler:
         self.provider_tokens = provider_tokens
         self.external_auth_token = external_auth_token
 
-        self.provider_types = [provider.value for provider in ProviderType]
-
 
     def _get_service(self, provider: ProviderType) -> GitService:
         """Helper method to instantiate a service for a given provider"""
