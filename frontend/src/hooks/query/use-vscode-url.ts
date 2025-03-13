@@ -13,6 +13,8 @@ export const useVSCodeUrl = (config: { enabled: boolean }) => {
     },
     enabled: !!conversationId && config.enabled,
     refetchOnMount: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
   });
 
   return data;

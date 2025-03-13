@@ -19,6 +19,7 @@ export const DEFAULT_SETTINGS: Settings = {
     github: "",
     gitlab: "",
   },
+  IS_NEW_USER: true,
 };
 
 /**

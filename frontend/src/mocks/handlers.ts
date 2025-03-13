@@ -26,9 +26,9 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
 };
 
 const MOCK_USER_PREFERENCES: {
-  settings: ApiSettings | PostApiSettings;
+  settings: ApiSettings | PostApiSettings | null;
 } = {
-  settings: MOCK_DEFAULT_USER_SETTINGS,
+  settings: null,
 };
 
 const conversations: Conversation[] = [
@@ -175,23 +175,24 @@ export const handlers = [
   ),
   http.get("/api/options/config", () => {
     const mockSaas = import.meta.env.VITE_MOCK_SAAS === "true";
+
     const config: GetConfigResponse = {
       APP_MODE: mockSaas ? "saas" : "oss",
       GITHUB_CLIENT_ID: "fake-github-client-id",
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
+      STRIPE_PUBLISHABLE_KEY: "",
     };
 
     return HttpResponse.json(config);
   }),
   http.get("/api/settings", async () => {
     await delay();
-    const settings: ApiSettings = {
-      ...MOCK_USER_PREFERENCES.settings,
-      language: "no",
-    };
-    if (Object.keys(settings.provider_tokens).length > 0) {
-      settings.github_token_is_set = true;
-    }
+    const { settings } = MOCK_USER_PREFERENCES;
+
+    if (!settings) return HttpResponse.json(null, { status: 404 });
+
+    // @ts-expect-error - mock types
+    if (Object.keys(settings.provider_tokens).length > 0) settings.github_token_is_set = true;
 
     return HttpResponse.json(settings);
   }),
@@ -209,11 +210,13 @@ export const handlers = [
         }
       }
 
-      MOCK_USER_PREFERENCES.settings = {
+      const fullSettings = {
+        ...MOCK_DEFAULT_USER_SETTINGS,
         ...MOCK_USER_PREFERENCES.settings,
         ...newSettings,
       };
 
+      MOCK_USER_PREFERENCES.settings = fullSettings;
       return HttpResponse.json(null, { status: 200 });
     }
 

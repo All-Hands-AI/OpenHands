@@ -14,6 +14,7 @@ export type Settings = {
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
   PROVIDER_TOKENS: Record<Provider, string>;
+  IS_NEW_USER?: boolean;
 };
 
 export type ApiSettings = {

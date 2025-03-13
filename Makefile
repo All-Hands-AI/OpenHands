@@ -133,7 +133,7 @@ install-python-dependencies:
 		export HNSWLIB_NO_NATIVE=1; \
 		poetry run pip install chroma-hnswlib; \
 	fi
-	@poetry install --without llama-index
+	@poetry install
 	@if [ -f "/etc/manjaro-release" ]; then \
 		echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
 		poetry run pip install playwright; \
@@ -264,35 +264,6 @@ setup-config-prompts:
 
 	@read -p "Enter your LLM base URL [mostly used for local LLMs, leave blank if not needed - example: http://localhost:5001/v1/]: " llm_base_url; \
 	 if [[ ! -z "$$llm_base_url" ]]; then echo "base_url=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; fi
-
-	@echo "Enter your LLM Embedding Model"; \
-		echo "Choices are:"; \
-		echo "  - openai"; \
-		echo "  - azureopenai"; \
-		echo "  - Embeddings available only with OllamaEmbedding:"; \
-		echo "    - llama2"; \
-		echo "    - mxbai-embed-large"; \
-		echo "    - nomic-embed-text"; \
-		echo "    - all-minilm"; \
-		echo "    - stable-code"; \
-		echo "    - bge-m3"; \
-		echo "    - bge-large"; \
-		echo "    - paraphrase-multilingual"; \
-		echo "    - snowflake-arctic-embed"; \
-		echo "  - Leave blank to default to 'BAAI/bge-small-en-v1.5' via huggingface"; \
-		read -p "> " llm_embedding_model; \
-		echo "embedding_model=\"$$llm_embedding_model\"" >> $(CONFIG_FILE).tmp; \
-		if [ "$$llm_embedding_model" = "llama2" ] || [ "$$llm_embedding_model" = "mxbai-embed-large" ] || [ "$$llm_embedding_model" = "nomic-embed-text" ] || [ "$$llm_embedding_model" = "all-minilm" ] || [ "$$llm_embedding_model" = "stable-code" ]; then \
-			read -p "Enter the local model URL for the embedding model (will set llm.embedding_base_url): " llm_embedding_base_url; \
-				echo "embedding_base_url=\"$$llm_embedding_base_url\"" >> $(CONFIG_FILE).tmp; \
-		elif [ "$$llm_embedding_model" = "azureopenai" ]; then \
-			read -p "Enter the Azure endpoint URL (will overwrite llm.base_url): " llm_base_url; \
-				echo "base_url=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; \
-			read -p "Enter the Azure LLM Embedding Deployment Name: " llm_embedding_deployment_name; \
-				echo "embedding_deployment_name=\"$$llm_embedding_deployment_name\"" >> $(CONFIG_FILE).tmp; \
-			read -p "Enter the Azure API Version: " llm_api_version; \
-				echo "api_version=\"$$llm_api_version\"" >> $(CONFIG_FILE).tmp; \
-		fi
 
 
 # Develop in container
