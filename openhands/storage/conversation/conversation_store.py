@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Iterable
 
 from openhands.core.config.app_config import AppConfig
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_metadata_result_set import (
     ConversationMetadataResultSet,
 )
+from openhands.utils.async_utils import wait_all
 
 
 class ConversationStore(ABC):
@@ -37,6 +39,12 @@ class ConversationStore(ABC):
         limit: int = 20,
     ) -> ConversationMetadataResultSet:
         """Search conversations"""
+
+    async def get_all_metadata(
+        self, conversation_ids: Iterable[str]
+    ) -> list[ConversationMetadata]:
+        """Get metadata for multiple conversations in parallel"""
+        return await wait_all([self.get_metadata(cid) for cid in conversation_ids])
 
     @classmethod
     @abstractmethod

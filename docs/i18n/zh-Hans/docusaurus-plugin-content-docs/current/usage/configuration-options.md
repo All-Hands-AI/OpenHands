@@ -328,12 +328,6 @@ LLM(大语言模型)配置选项在 `config.toml` 文件的 `[llm]` 部分中定
 
 Agent 配置选项在 `config.toml` 文件的 `[agent]` 和 `[agent.<agent_name>]` 部分中定义。
 
-**Microagent 配置**
-- `micro_agent_name`
-  - 类型: `str`
-  - 默认值: `""`
-  - 描述: 用于此 agent 的 micro agent 名称
-
 **内存配置**
 - `memory_enabled`
   - 类型: `bool`
