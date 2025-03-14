@@ -17,9 +17,9 @@ from openhands.events.action import (
     AgentFinishAction,
     MessageAction,
 )
-from openhands.events.action.agent import AgentRecallAction
-from openhands.events.event import Event, RecallType
-from openhands.events.observation.agent import RecallObservation
+from openhands.events.action.agent import MicroagentAction
+from openhands.events.event import Event, MicroagentInfoType
+from openhands.events.observation.agent import MicroagentObservation
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
@@ -80,19 +80,19 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
         initial_state=parent_state,
     )
 
-    # Setup a Memory to catch RecallActions
+    # Setup Memory to catch MicroagentActions
     mock_memory = MagicMock(spec=Memory)
     mock_memory.event_stream = mock_event_stream
 
     def on_event(event: Event):
-        if isinstance(event, AgentRecallAction):
-            # create a RecallObservation
-            recall_observation = RecallObservation(
-                recall_type=RecallType.KNOWLEDGE_MICROAGENT,
-                content='recalled',
+        if isinstance(event, MicroagentAction):
+            # create a MicroagentObservation
+            microagent_observation = MicroagentObservation(
+                info_type=MicroagentInfoType.KNOWLEDGE,
+                content='microagent',
             )
-            recall_observation._cause = event.id  # ignore attr-defined warning
-            mock_event_stream.add_event(recall_observation, EventSource.ENVIRONMENT)
+            microagent_observation._cause = event.id  # ignore attr-defined warning
+            mock_event_stream.add_event(microagent_observation, EventSource.ENVIRONMENT)
 
     mock_memory.on_event = on_event
     mock_event_stream.subscribe(
@@ -111,12 +111,14 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     # Give time for the async step() to execute
     await asyncio.sleep(1)
 
-    # Verify that a RecallObservation was added to the event stream
+    # Verify that a MicroagentObservation was added to the event stream
     events = list(mock_event_stream.get_events())
-    assert mock_event_stream.get_latest_event_id() == 3  # Recalls and AgentChangeState
+    assert (
+        mock_event_stream.get_latest_event_id() == 3
+    )  # Microagents and AgentChangeState
 
-    # a RecallObs and an AgentDelegateAction should be in the list
-    assert any(isinstance(event, RecallObservation) for event in events)
+    # a MicroagentObservation and an AgentDelegateAction should be in the list
+    assert any(isinstance(event, MicroagentObservation) for event in events)
     assert any(isinstance(event, AgentDelegateAction) for event in events)
 
     # Verify that a delegate agent controller is created

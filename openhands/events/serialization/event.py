@@ -103,8 +103,8 @@ def event_to_dict(event: 'Event') -> dict:
                 d['timestamp'] = d['timestamp'].isoformat()
         if key == 'source' and 'source' in d:
             d['source'] = d['source'].value
-        if key == 'recall_type' and 'recall_type' in d:
-            d['recall_type'] = d['recall_type'].value
+        if key == 'info_type' and 'info_type' in d:
+            d['info_type'] = d['info_type'].value
         if key == 'tool_call_metadata' and 'tool_call_metadata' in d:
             d['tool_call_metadata'] = d['tool_call_metadata'].model_dump()
         if key == 'llm_metrics' and 'llm_metrics' in d:
@@ -122,7 +122,7 @@ def event_to_dict(event: 'Event') -> dict:
         # props is a dict whose values can include a complex object like an instance of a BaseModel subclass
         # such as CmdOutputMetadata
         # we serialize it along with the rest
-        # we also handle the Enum conversion for RecallObservation
+        # we also handle the Enum conversion for MicroagentObservation
         d['extras'] = {
             k: (v.value if isinstance(v, Enum) else _convert_pydantic_to_dict(v))
             for k, v in props.items()

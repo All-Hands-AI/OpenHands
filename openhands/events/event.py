@@ -22,13 +22,13 @@ class FileReadSource(str, Enum):
     DEFAULT = 'default'
 
 
-class RecallType(str, Enum):
-    """The type of information that can be recalled."""
+class MicroagentInfoType(str, Enum):
+    """The type of information that can be retrieved from microagents."""
 
-    ENVIRONMENT_INFO = 'environment_info'
+    ENVIRONMENT = 'environment'
     """environment information (repo instructions, runtime, etc.)"""
 
-    KNOWLEDGE_MICROAGENT = 'knowledge_microagent'
+    KNOWLEDGE = 'knowledge'
     """A knowledge microagent."""
 
 

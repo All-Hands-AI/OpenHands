@@ -5,10 +5,10 @@ from openhands.events.action.action import Action
 from openhands.events.action.agent import (
     AgentDelegateAction,
     AgentFinishAction,
-    AgentRecallAction,
     AgentRejectAction,
     AgentThinkAction,
     ChangeAgentStateAction,
+    MicroagentAction,
 )
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
 from openhands.events.action.commands import (
@@ -36,7 +36,7 @@ actions = (
     AgentFinishAction,
     AgentRejectAction,
     AgentDelegateAction,
-    AgentRecallAction,
+    MicroagentAction,
     ChangeAgentStateAction,
     MessageAction,
 )

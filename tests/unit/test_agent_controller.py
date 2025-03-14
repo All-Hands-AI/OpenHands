@@ -14,12 +14,12 @@ from openhands.core.main import run_controller
 from openhands.core.schema import AgentState
 from openhands.events import Event, EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import ChangeAgentStateAction, CmdRunAction, MessageAction
-from openhands.events.action.agent import AgentRecallAction
-from openhands.events.event import RecallType
+from openhands.events.action.agent import MicroagentAction
+from openhands.events.event import MicroagentInfoType
 from openhands.events.observation import (
     ErrorObservation,
 )
-from openhands.events.observation.agent import RecallObservation
+from openhands.events.observation.agent import MicroagentObservation
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
@@ -191,13 +191,13 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
     runtime.event_stream = test_event_stream
 
     def on_event_memory(event: Event):
-        if isinstance(event, AgentRecallAction):
-            recall_obs = RecallObservation(
-                content='Test recall content',
-                recall_type=RecallType.KNOWLEDGE_MICROAGENT,
+        if isinstance(event, MicroagentAction):
+            microagent_obs = MicroagentObservation(
+                content='Test microagent content',
+                info_type=MicroagentInfoType.KNOWLEDGE,
             )
-            recall_obs._cause = event.id
-            test_event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
+            microagent_obs._cause = event.id
+            test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
 
     test_event_stream.subscribe(
         EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
@@ -248,13 +248,13 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
     runtime.event_stream = test_event_stream
 
     def on_event_memory(event: Event):
-        if isinstance(event, AgentRecallAction):
-            recall_obs = RecallObservation(
-                content='Test recall content',
-                recall_type=RecallType.KNOWLEDGE_MICROAGENT,
+        if isinstance(event, MicroagentAction):
+            microagent_obs = MicroagentObservation(
+                content='Test microagent content',
+                info_type=MicroagentInfoType.KNOWLEDGE,
             )
-            recall_obs._cause = event.id
-            test_event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
+            microagent_obs._cause = event.id
+            test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
 
     test_event_stream.subscribe(
         EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
@@ -595,13 +595,13 @@ async def test_run_controller_max_iterations_has_metrics(
     runtime.event_stream = event_stream
 
     def on_event_memory(event: Event):
-        if isinstance(event, AgentRecallAction):
-            recall_obs = RecallObservation(
-                content='Test recall content',
-                recall_type=RecallType.KNOWLEDGE_MICROAGENT,
+        if isinstance(event, MicroagentAction):
+            microagent_obs = MicroagentObservation(
+                content='Test microagent content',
+                info_type=MicroagentInfoType.KNOWLEDGE,
             )
-            recall_obs._cause = event.id
-            event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
+            microagent_obs._cause = event.id
+            event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
 
     event_stream.subscribe(EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4()))
 
@@ -717,13 +717,13 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
     mock_agent.config = AgentConfig()
 
     def on_event_memory(event: Event):
-        if isinstance(event, AgentRecallAction):
-            recall_obs = RecallObservation(
-                content='Test recall content',
-                recall_type=RecallType.KNOWLEDGE_MICROAGENT,
+        if isinstance(event, MicroagentAction):
+            microagent_obs = MicroagentObservation(
+                content='Test microagent content',
+                info_type=MicroagentInfoType.KNOWLEDGE,
             )
-            recall_obs._cause = event.id
-            test_event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
+            microagent_obs._cause = event.id
+            test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
 
     test_event_stream.subscribe(
         EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
@@ -794,13 +794,13 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
     mock_agent.config.enable_history_truncation = False
 
     def on_event_memory(event: Event):
-        if isinstance(event, AgentRecallAction):
-            recall_obs = RecallObservation(
-                content='Test recall content',
-                recall_type=RecallType.KNOWLEDGE_MICROAGENT,
+        if isinstance(event, MicroagentAction):
+            microagent_obs = MicroagentObservation(
+                content='Test microagent content',
+                info_type=MicroagentInfoType.KNOWLEDGE,
             )
-            recall_obs._cause = event.id
-            test_event_stream.add_event(recall_obs, EventSource.ENVIRONMENT)
+            microagent_obs._cause = event.id
+            test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
 
     test_event_stream.subscribe(
         EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())

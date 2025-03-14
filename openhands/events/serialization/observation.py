@@ -1,11 +1,11 @@
 import copy
 
-from openhands.events.event import RecallType
+from openhands.events.event import MicroagentInfoType
 from openhands.events.observation.agent import (
     AgentCondensationObservation,
     AgentStateChangedObservation,
     AgentThinkObservation,
-    RecallObservation,
+    MicroagentObservation,
 )
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
@@ -42,7 +42,7 @@ observations = (
     UserRejectObservation,
     AgentCondensationObservation,
     AgentThinkObservation,
-    RecallObservation,
+    MicroagentObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {
@@ -113,9 +113,9 @@ def observation_from_dict(observation: dict) -> Observation:
         else:
             extras['metadata'] = CmdOutputMetadata()
 
-    if observation_class is RecallObservation:
+    if observation_class is MicroagentObservation:
         # handle the Enum conversion
-        if 'recall_type' in extras:
-            extras['recall_type'] = RecallType(extras['recall_type'])
+        if 'info_type' in extras:
+            extras['info_type'] = MicroagentInfoType(extras['info_type'])
 
     return observation_class(content=content, **extras)

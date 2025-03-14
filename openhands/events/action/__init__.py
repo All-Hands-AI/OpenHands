@@ -2,11 +2,11 @@ from openhands.events.action.action import Action, ActionConfirmationStatus
 from openhands.events.action.agent import (
     AgentDelegateAction,
     AgentFinishAction,
-    AgentRecallAction,
     AgentRejectAction,
     AgentSummarizeAction,
     AgentThinkAction,
     ChangeAgentStateAction,
+    MicroagentAction,
 )
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
 from openhands.events.action.commands import CmdRunAction, IPythonRunCellAction
@@ -36,5 +36,5 @@ __all__ = [
     'MessageAction',
     'ActionConfirmationStatus',
     'AgentThinkAction',
-    'AgentRecallAction',
+    'MicroagentAction',
 ]

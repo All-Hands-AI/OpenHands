@@ -5,11 +5,11 @@ from typing import Callable
 
 import openhands
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action.agent import AgentRecallAction
-from openhands.events.event import Event, EventSource, RecallType
+from openhands.events.action.agent import MicroagentAction
+from openhands.events.event import Event, EventSource, MicroagentInfoType
 from openhands.events.observation.agent import (
     MicroagentKnowledge,
-    RecallObservation,
+    MicroagentObservation,
 )
 from openhands.events.observation.empty import NullObservation
 from openhands.events.stream import EventStream, EventStreamSubscriber
@@ -30,7 +30,8 @@ GLOBAL_MICROAGENTS_DIR = os.path.join(
 
 class Memory:
     """
-    Memory is a component that listens to the EventStream for AgentRecallAction (to create a RecallObservation).
+    Memory is a component that listens to the EventStream for information retrieval actions
+    (such as MicroagentAction) and publishes observations with the content (such as MicroagentObservation).
     """
 
     sid: str
@@ -74,23 +75,23 @@ class Memory:
     async def _on_event(self, event: Event):
         """Handle an event from the event stream asynchronously."""
         try:
-            observation: RecallObservation | NullObservation | None = None
-            # Handle AgentRecallAction
-            if isinstance(event, AgentRecallAction):
-                # if this is an environment_info type recall (on first user message)
-                # create and add a RecallObservation
+            observation: MicroagentObservation | NullObservation | None = None
+            # Handle MicroagentAction
+            if isinstance(event, MicroagentAction):
+                # if this is an environment type microagent (on first user message)
+                # create and add a MicroagentObservation
                 # with info about repo and runtime.
                 if (
                     event.source == EventSource.USER
-                    and event.recall_type == RecallType.ENVIRONMENT_INFO
+                    and event.info_type == MicroagentInfoType.ENVIRONMENT
                 ):
-                    observation = self._on_first_recall_action(event)
+                    observation = self._on_first_microagent_action(event)
 
                 # continue with the next handler, to include knowledge microagents if suitable for this query
                 assert observation is None or isinstance(
-                    observation, RecallObservation
-                ), f'Expected a RecallObservation, but got {type(observation)}'
-                observation = self._on_recall_action(
+                    observation, MicroagentObservation
+                ), f'Expected a MicroagentObservation, but got {type(observation)}'
+                observation = self._on_microagent_action(
                     event, prev_observation=observation
                 )
 
@@ -107,12 +108,12 @@ class Memory:
             self.send_error_message('STATUS$ERROR_MEMORY', error_str)
             return
 
-    def _on_first_recall_action(
-        self, event: AgentRecallAction
-    ) -> RecallObservation | None:
-        """Add repository and runtime information to the stream as a RecallObservation."""
+    def _on_first_microagent_action(
+        self, event: MicroagentAction
+    ) -> MicroagentObservation | None:
+        """Add repository and runtime information to the stream as a MicroagentObservation."""
 
-        # Create ENVIRONMENT_INFO:
+        # Create ENVIRONMENT info:
         # - repository_info
         # - runtime_info
         # - repository_instructions
@@ -131,8 +132,8 @@ class Memory:
 
         # Create observation if we have anything
         if self.repository_info or self.runtime_info or repo_instructions:
-            obs = RecallObservation(
-                recall_type=RecallType.ENVIRONMENT_INFO,
+            obs = MicroagentObservation(
+                info_type=MicroagentInfoType.ENVIRONMENT,
                 repo_name=self.repository_info.repo_name
                 if self.repository_info and self.repository_info.repo_name is not None
                 else '',
@@ -149,27 +150,27 @@ class Memory:
                 and self.runtime_info.additional_agent_instructions is not None
                 else '',
                 microagent_knowledge=[],
-                content='Recalled environment info',
+                content='Retrieved environment info',
             )
             return obs
         return None
 
-    def _on_recall_action(
+    def _on_microagent_action(
         self,
-        event: AgentRecallAction,
-        prev_observation: RecallObservation | None = None,
-    ) -> RecallObservation | None:
-        """When a recall action triggers microagents, create a RecallObservation with structured data."""
+        event: MicroagentAction,
+        prev_observation: MicroagentObservation | None = None,
+    ) -> MicroagentObservation | None:
+        """When a microagent action triggers microagents, create a MicroagentObservation with structured data."""
         # If there's no query, do nothing
         query = event.query.strip()
         if not query:
             return prev_observation
 
         assert prev_observation is None or isinstance(
-            prev_observation, RecallObservation
-        ), f'Expected a RecallObservation, but got {type(prev_observation)}'
+            prev_observation, MicroagentObservation
+        ), f'Expected a MicroagentObservation, but got {type(prev_observation)}'
 
-        # Process text to find suitable microagents and create a RecallObservation.
+        # Process text to find suitable microagents and create a MicroagentObservation.
         recalled_content: list[MicroagentKnowledge] = []
         for name, microagent in self.knowledge_microagents.items():
             trigger = microagent.match_trigger(query)
@@ -189,10 +190,10 @@ class Memory:
                 prev_observation.microagent_knowledge.extend(recalled_content)
             else:
                 # if it's not the first user message, we may not have found any information this step
-                obs = RecallObservation(
-                    recall_type=RecallType.KNOWLEDGE_MICROAGENT,
+                obs = MicroagentObservation(
+                    info_type=MicroagentInfoType.KNOWLEDGE,
                     microagent_knowledge=recalled_content,
-                    content='Recalled knowledge from microagents',
+                    content='Retrieved knowledge from microagents',
                 )
 
                 return obs
@@ -203,8 +204,9 @@ class Memory:
         self, user_microagents: list[BaseMicroAgent]
     ) -> None:
         """
-        If you want to load microagents from a user's cloned repo or workspace directory,
-        call this from agent_session or setup once the workspace is cloned.
+        This method loads microagents from a user's cloned repo or workspace directory.
+
+        This is typically called from agent_session or setup once the workspace is cloned.
         """
         logger.info(
             'Loading user workspace microagents: %s', [m.name for m in user_microagents]

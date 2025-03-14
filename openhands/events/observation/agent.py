@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from openhands.core.schema import ObservationType
-from openhands.events.event import RecallType
+from openhands.events.event import MicroagentInfoType
 from openhands.events.observation.observation import Observation
 
 
@@ -60,20 +60,20 @@ class MicroagentKnowledge:
 
 
 @dataclass
-class RecallObservation(Observation):
-    """The output of a recall action from an agent or from the environment (automatic memory operations)."""
+class MicroagentObservation(Observation):
+    """The retrieval of content from a microagent or more microagents."""
 
-    recall_type: RecallType
-    observation: str = ObservationType.RECALL
+    info_type: MicroagentInfoType
+    observation: str = ObservationType.MICROAGENT
 
-    # environment_info
+    # environment
     repo_name: str = ''
     repo_directory: str = ''
     repo_instructions: str = ''
     runtime_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
 
-    # microagent
+    # knowledge
     microagent_knowledge: list[MicroagentKnowledge] = field(default_factory=list)
     """
     A list of MicroagentKnowledge objects, each containing information from a triggered microagent.
@@ -100,11 +100,11 @@ class RecallObservation(Observation):
     def __str__(self) -> str:
         # Build a string representation of all fields
         fields = [
-            f'recall_type={self.recall_type}',
+            f'info_type={self.info_type}',
             f'repo_name={self.repo_name}',
             f'repo_instructions={self.repo_instructions[:20]}...',
             f'runtime_hosts={self.runtime_hosts}',
             f'additional_agent_instructions={self.additional_agent_instructions[:20]}...',
-            f'microagent_knowledge={self.microagent_knowledge}',
+            f'microagent_knowledge={", ".join([m.name for m in self.microagent_knowledge])}',
         ]
-        return f'Recalled: {", ".join(fields)}'
+        return f'Found: {", ".join(fields)}'

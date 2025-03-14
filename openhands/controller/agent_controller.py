@@ -29,7 +29,12 @@ from openhands.core.exceptions import (
 from openhands.core.logger import LOG_ALL_EVENTS
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
-from openhands.events import EventSource, EventStream, EventStreamSubscriber, RecallType
+from openhands.events import (
+    EventSource,
+    EventStream,
+    EventStreamSubscriber,
+    MicroagentInfoType,
+)
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
@@ -42,7 +47,7 @@ from openhands.events.action import (
     MessageAction,
     NullAction,
 )
-from openhands.events.action.agent import AgentRecallAction
+from openhands.events.action.agent import MicroagentAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -395,7 +400,7 @@ class AgentController:
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
 
-        # this happens for runnable actions and recall actions
+        # this happens for runnable actions and microagent actions
         if self._pending_action and self._pending_action.id == observation.cause:
             if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
                 return
@@ -442,20 +447,20 @@ class AgentController:
             # try to retrieve microagents relevant to the user message
             # set pending_action while we search for information
 
-            # if this is the first user message for this agent, matters for the recall type
+            # if this is the first user message for this agent, matters for the microagent info type
             is_first_user_message = action == self._first_user_message()
-            recall_type = (
-                RecallType.ENVIRONMENT_INFO
+            microagent_info_type = (
+                MicroagentInfoType.ENVIRONMENT
                 if is_first_user_message
-                else RecallType.KNOWLEDGE_MICROAGENT
+                else MicroagentInfoType.KNOWLEDGE
             )
 
-            recall_action = AgentRecallAction(
-                query=action.content, recall_type=recall_type
+            microagent_action = MicroagentAction(
+                query=action.content, info_type=microagent_info_type
             )
-            self._pending_action = recall_action
-            # this is source=USER because the user message is the trigger for the recall
-            self.event_stream.add_event(recall_action, EventSource.USER)
+            self._pending_action = microagent_action
+            # this is source=USER because the user message is the trigger for the microagent retrieval
+            self.event_stream.add_event(microagent_action, EventSource.USER)
 
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
@@ -486,7 +491,7 @@ class AgentController:
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
                 self.event_stream.add_event(obs, EventSource.AGENT)
 
-        # NOTE: do RecallActions need an Observation? No, as long as they have no tool calls
+        # NOTE: MicroagentActions don't need an ErrorObservation upon reset, as long as they have no tool calls
 
         # reset the pending action, this will be called when the agent is STOPPED or ERROR
         self._pending_action = None
