@@ -133,12 +133,14 @@ The Local Runtime allows the OpenHands agent to execute actions directly on your
 
 Before using the Local Runtime, ensure you have the following dependencies installed:
 
-1. A working installation of OpenHands following the [development setup instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) - e.g., `make build` finishes successfully without errro
-2. tmux available on your system
+1. You have followed the [Development setup instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+2. tmux is available on your system.
 
 ### Configuration
 
 To use the Local Runtime, besides required configurations like the model, API key, you'll need to set the following options via environment variables or the [config.toml file](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml) when starting OpenHands:
+
+- Via environment variables:
 
 ```bash
 # Required
@@ -146,6 +148,14 @@ export RUNTIME=local
 
 # Optional but recommended
 export WORKSPACE_BASE=/path/to/your/workspace
+```
+
+- Via `config.toml`:
+
+```toml
+[core]
+runtime = "local"
+workspace_base = "/path/to/your/workspace"
 ```
 
 If `WORKSPACE_BASE` is not set, the runtime will create a temporary directory for the agent to work in.
@@ -169,7 +179,7 @@ poetry run python -m openhands.core.main -t "write a bash script that prints hi"
 
 The Local Runtime is particularly useful for:
 
-- CI/CD pipelines where Docker is not available
-- Testing and development of OpenHands itself
-- Environments where container usage is restricted
-- Scenarios where direct file system access is required
+- CI/CD pipelines where Docker is not available.
+- Testing and development of OpenHands itself.
+- Environments where container usage is restricted.
+- Scenarios where direct file system access is required.
