@@ -293,7 +293,7 @@ class Runtime(FileEditRuntimeMixin):
         )
 
         action = CmdRunAction(
-            command=f'{clone_command} ; cd {dir_name} ; {checkout_command}',
+            command=f'{clone_command} ; cd {dir_name} ; {checkout_command} ; cd ..',
         )
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
