@@ -21,7 +21,6 @@ from openhands.events.event import (
 )
 from openhands.events.observation import CmdOutputObservation
 from openhands.events.observation.agent import (
-    MicroagentInfoType,
     MicroagentKnowledge,
     MicroagentObservation,
 )

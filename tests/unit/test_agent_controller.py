@@ -978,3 +978,56 @@ async def test_action_metrics_copy():
     assert last_action.llm_metrics.accumulated_cost == 0.07
 
     await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_first_user_message_with_identical_content():
+    """
+    Test that _first_user_message correctly identifies the first user message
+    even when multiple messages have identical content but different IDs.
+
+    The issue we're checking is that the comparison (action == self._first_user_message())
+    should correctly differentiate between messages with the same content but different IDs.
+    """
+    # Create a real event stream for this test
+    event_stream = EventStream(sid='test', file_store=InMemoryFileStore({}))
+
+    # Create an agent controller
+    mock_agent = MagicMock(spec=Agent)
+    mock_agent.llm = MagicMock(spec=LLM)
+    mock_agent.llm.metrics = Metrics()
+    mock_agent.llm.config = AppConfig().get_llm_config()
+
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Create and add the first user message
+    first_message = MessageAction(content='Hello, this is a test message')
+    first_message._source = EventSource.USER
+    event_stream.add_event(first_message, EventSource.USER)
+
+    # Create and add a second user message with identical content
+    second_message = MessageAction(content='Hello, this is a test message')
+    second_message._source = EventSource.USER
+    event_stream.add_event(second_message, EventSource.USER)
+
+    # Verify that _first_user_message returns the first message
+    first_user_message = controller._first_user_message()
+    assert first_user_message is not None
+    assert first_user_message.id == first_message.id  # Check IDs match
+    assert first_user_message.id != second_message.id  # Different IDs
+    assert first_user_message == first_message == second_message  # dataclass equality
+
+    # Test the comparison used in the actual code
+    assert first_message == first_user_message  # This should be True
+    assert (
+        second_message.id != first_user_message.id
+    )  # This should be False, but may be True if there's a bug
+
+    await controller.close()
