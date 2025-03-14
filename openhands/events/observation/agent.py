@@ -105,6 +105,6 @@ class MicroagentObservation(Observation):
             f'repo_instructions={self.repo_instructions[:20]}...',
             f'runtime_hosts={self.runtime_hosts}',
             f'additional_agent_instructions={self.additional_agent_instructions[:20]}...',
-            f'microagent_knowledge={", ".join([m.name for m in self.microagent_knowledge])}',
+            f'microagent_knowledge={", ".join([m.name for m in self.microagent_knowledge] if self.microagent_knowledge else "None")}',
         ]
         return f'**MicroagentObservation**\n{", ".join(fields)}'
