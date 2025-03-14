@@ -346,7 +346,7 @@ class ConversationMemory:
                 and enable_som_visual_browsing
                 and vision_is_active
             ):
-                text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
+                text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. However, the Accessibility tree contains information from the entire webpage.)\n'
                 message = Message(
                     role='user',
                     content=[

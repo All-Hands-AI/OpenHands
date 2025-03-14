@@ -111,6 +111,11 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
+    action = CmdRunAction(command='mkdir -p /workspace/downloads')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    assert obs.exit_code == 0
+
     if instance['file_name'] != '':
         # if this question comes with a file, we need to save it to the workspace
         assert metadata.data_split is not None
@@ -218,7 +223,7 @@ Here is the task:\n{instance['Question']}\n\n"""
     image_urls = []
     if dest_file:
         if extension_name not in ['jpg', 'png', 'zip']:
-            instruction += f"To solve this task you will have to use the attached file provided in the workspace (present working directory) at: {dest_file.split('/')[-1]}\n\n"
+            instruction += f'To solve this task you will have to use the attached file provided in the workspace at location: {dest_file}\n\n'
         elif extension_name == 'zip':
             filenames = []
             src_file = os.path.join(
@@ -226,8 +231,9 @@ Here is the task:\n{instance['Question']}\n\n"""
             )
             with zipfile.ZipFile(src_file, 'r') as zip_ref:
                 filenames = zip_ref.namelist()
+            filenames = [f'/workspace/{file}' for file in filenames]
             filenames = ', '.join(filenames)
-            instruction += f'To solve this task you will have to use the attached files provided in the workspace (present working directory) at: {filenames}\n\n'
+            instruction += f'To solve this task you will have to use the attached files provided in the workspace at locations: {filenames}\n\n'
         else:
             src_file = os.path.join(
                 DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name']

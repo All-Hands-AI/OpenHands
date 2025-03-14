@@ -30,7 +30,7 @@ uvicorn = "*"
 types-toml = "*"
 numpy = "*"
 json-repair = "*"
-browsergym-core = "0.10.2" # integrate browsergym-core as the browsing interface
+browsergym-core = { git = "https://github.com/adityasoni9998/browsergym.git", subdirectory = "browsergym/core", branch = "browsergym_fixes" } # integrate browsergym-core as the browsing interface
 html2text = "*"
 e2b = ">=1.0.5,<1.2.0"
 pexpect = "*"

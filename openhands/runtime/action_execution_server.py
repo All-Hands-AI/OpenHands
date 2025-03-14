@@ -18,6 +18,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
+import puremagic
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
@@ -484,12 +485,23 @@ class ActionExecutor:
                 src_path = os.path.join(
                     self.downloads_directory, self.downloaded_files[-1]
                 )
+                # TODO: Guess extension of file using puremagic and add it to tgt_path file name
+                file_ext = ''
+                try:
+                    guesses = puremagic.magic_file(src_path)
+                    if len(guesses) > 0:
+                        ext = guesses[0].extension.strip()
+                        if len(ext) > 0:
+                            file_ext = ext
+                except Exception as _:
+                    pass
+
                 tgt_path = os.path.join(
-                    '/workspace', f'file_{len(self.downloaded_files)}'
+                    '/workspace', f'file_{len(self.downloaded_files)}{file_ext}'
                 )
                 shutil.copy(src_path, tgt_path)
                 file_download_obs = FileDownloadObservation(
-                    content=f'Execution of the previous action {action} resulted in a file download. The downloaded file is saved at location: {tgt_path}.',
+                    content=f'Execution of the previous action {action.browser_actions} resulted in a file download. The downloaded file is saved at location: {tgt_path}',
                     file_path=tgt_path,
                 )
                 return file_download_obs
