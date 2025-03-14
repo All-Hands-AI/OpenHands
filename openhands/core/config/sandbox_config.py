@@ -74,7 +74,6 @@ class SandboxConfig(BaseModel):
     enable_gpu: bool = Field(default=False)
     docker_runtime_kwargs: dict | None = Field(default=None)
     selected_repo: str | None = Field(default=None)
-    search_api_key: str | None = Field(default=None)
 
     model_config = {'extra': 'forbid'}
 
