@@ -98,9 +98,9 @@ class Runtime(FileEditRuntimeMixin):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
-        github_user_id: str | None = None,
+        user_id: str | None = None,
     ):
-        logger.info(f'Runtime created with sid {sid}, github_user_id {github_user_id}')
+        logger.info(f'Runtime created with sid {sid}, user_id {user_id}')
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(
@@ -132,7 +132,7 @@ class Runtime(FileEditRuntimeMixin):
             self, enable_llm_editor=config.get_agent_config().codeact_enable_llm_editor
         )
 
-        self.github_user_id = github_user_id
+        self.user_id = user_id
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -222,9 +222,9 @@ class Runtime(FileEditRuntimeMixin):
         assert event.timeout is not None
         try:
             if isinstance(event, CmdRunAction):
-                if self.github_user_id and '$GITHUB_TOKEN' in event.command:
+                if self.user_id and '$GITHUB_TOKEN' in event.command:
                     gh_client = GithubServiceImpl(
-                        user_id=self.github_user_id, external_token_manager=True
+                        external_auth_id=self.user_id, external_token_manager=True
                     )
                     token = await gh_client.get_latest_token()
                     if token:
