@@ -140,10 +140,6 @@ class StandaloneConversationManager(ConversationManager):
                     self._active_conversations.pop(sid)
                     self._detached_conversations[sid] = (conversation, time.time())
 
-
-    async def get_connections_to_session(self, sid: str) -> list[str]:
-        return await self.sio.rooms(ROOM_KEY.format(sid=sid))
-
     async def _cleanup_stale(self):
         while should_continue():
             try:

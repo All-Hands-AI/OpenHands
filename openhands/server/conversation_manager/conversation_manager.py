@@ -51,10 +51,6 @@ class ConversationManager(ABC):
     ) -> EventStream | None:
         """Join a conversation and return its event stream."""
 
-    @abstractmethod
-    async def get_connections_to_session(self, sid: str) -> list[str]:
-        """Get connections ids for a session"""
-
     async def is_agent_loop_running(self, sid: str) -> bool:
         """Check if an agent loop is running for the given session ID."""
         sids = await self.get_running_agent_loops(filter_to_sids={sid})
