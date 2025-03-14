@@ -410,15 +410,29 @@ class ConversationMemory:
                     obs.repo_instructions if obs.repo_instructions else ''
                 )
 
-                # ok, now we can build the additional info
-                formatted_text = self.prompt_manager.build_additional_info(
-                    repository_info=repo_info,
-                    runtime_info=runtime_info,
-                    repo_instructions=repo_instructions,
+                # Have some meaningful content before calling the template
+                has_repo_info = repo_info is not None and (
+                    repo_info.repo_name or repo_info.repo_directory
                 )
-                message = Message(
-                    role='user', content=[TextContent(text=formatted_text)]
+                has_runtime_info = runtime_info is not None and (
+                    runtime_info.available_hosts
+                    or runtime_info.additional_agent_instructions
                 )
+                has_repo_instructions = bool(repo_instructions.strip())
+
+                # Build additional info if we have something to render
+                if has_repo_info or has_runtime_info or has_repo_instructions:
+                    # ok, now we can build the additional info
+                    formatted_text = self.prompt_manager.build_additional_info(
+                        repository_info=repo_info,
+                        runtime_info=runtime_info,
+                        repo_instructions=repo_instructions,
+                    )
+                    message = Message(
+                        role='user', content=[TextContent(text=formatted_text)]
+                    )
+                else:
+                    return []
             elif obs.info_type == MicroagentInfoType.KNOWLEDGE:
                 # Use prompt manager to build the microagent info
                 # First, filter out agents that appear in earlier MicroagentObservations

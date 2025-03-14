@@ -10,8 +10,15 @@ from openhands.events.action import (
     CmdRunAction,
     MessageAction,
 )
-from openhands.events.event import Event, EventSource, FileEditSource, FileReadSource
+from openhands.events.event import (
+    Event,
+    EventSource,
+    FileEditSource,
+    FileReadSource,
+    MicroagentInfoType,
+)
 from openhands.events.observation import CmdOutputObservation
+from openhands.events.observation.agent import MicroagentObservation
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
     CmdOutputMetadata,
@@ -327,6 +334,40 @@ def test_process_events_with_user_reject_observation(conversation_memory):
     assert isinstance(result.content[0], TextContent)
     assert 'Action rejected' in result.content[0].text
     assert '[Last action has been rejected by the user]' in result.content[0].text
+
+
+def test_process_events_with_empty_environment_info(conversation_memory):
+    """Test that empty environment info observations return an empty list of messages without calling build_additional_info."""
+    # Create a MicroagentObservation with empty info
+
+    empty_obs = MicroagentObservation(
+        info_type=MicroagentInfoType.ENVIRONMENT,
+        repo_name='',
+        repo_directory='',
+        repo_instructions='',
+        runtime_hosts={},
+        additional_agent_instructions='',
+        microagent_knowledge=[],
+        content='Retrieved environment info',
+    )
+
+    initial_messages = [
+        Message(role='system', content=[TextContent(text='System message')])
+    ]
+
+    messages = conversation_memory.process_events(
+        condensed_history=[empty_obs],
+        initial_messages=initial_messages,
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Should only contain the initial system message
+    assert len(messages) == 1
+    assert messages[0].role == 'system'
+
+    # Verify that build_additional_info was NOT called since all input values were empty
+    conversation_memory.prompt_manager.build_additional_info.assert_not_called()
 
 
 def test_process_events_with_function_calling_observation(conversation_memory):

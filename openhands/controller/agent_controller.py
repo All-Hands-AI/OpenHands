@@ -448,7 +448,10 @@ class AgentController:
             # set pending_action while we search for information
 
             # if this is the first user message for this agent, matters for the microagent info type
-            is_first_user_message = action == self._first_user_message()
+            first_user_message = self._first_user_message()
+            is_first_user_message = (
+                action.id == first_user_message.id if first_user_message else False
+            )
             microagent_info_type = (
                 MicroagentInfoType.ENVIRONMENT
                 if is_first_user_message

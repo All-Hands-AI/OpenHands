@@ -107,4 +107,4 @@ class MicroagentObservation(Observation):
             f'additional_agent_instructions={self.additional_agent_instructions[:20]}...',
             f'microagent_knowledge={", ".join([m.name for m in self.microagent_knowledge])}',
         ]
-        return f'Found: {", ".join(fields)}'
+        return f'**MicroagentObservation**\n{", ".join(fields)}'

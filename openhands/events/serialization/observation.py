@@ -5,6 +5,7 @@ from openhands.events.observation.agent import (
     AgentCondensationObservation,
     AgentStateChangedObservation,
     AgentThinkObservation,
+    MicroagentKnowledge,
     MicroagentObservation,
 )
 from openhands.events.observation.browse import BrowserOutputObservation
@@ -117,5 +118,14 @@ def observation_from_dict(observation: dict) -> Observation:
         # handle the Enum conversion
         if 'info_type' in extras:
             extras['info_type'] = MicroagentInfoType(extras['info_type'])
+
+        # convert dicts in microagent_knowledge to MicroagentKnowledge objects
+        if 'microagent_knowledge' in extras and isinstance(
+            extras['microagent_knowledge'], list
+        ):
+            extras['microagent_knowledge'] = [
+                MicroagentKnowledge(**item) if isinstance(item, dict) else item
+                for item in extras['microagent_knowledge']
+            ]
 
     return observation_class(content=content, **extras)
