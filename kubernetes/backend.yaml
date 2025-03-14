@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+data:
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_USER: postgres
+  DB_PASSWORD: postgres
+  DB_NAME: openhands
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  JWT_SECRET: "change-this-in-production"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openhands-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: openhands-backend
+  template:
+    metadata:
+      labels:
+        app: openhands-backend
+    spec:
+      containers:
+        - name: openhands-backend
+          image: openhands-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: backend-config
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openhands-backend
+spec:
+  selector:
+    app: openhands-backend
+  ports:
+    - port: 3000
+      targetPort: 3000
+  type: ClusterIP
