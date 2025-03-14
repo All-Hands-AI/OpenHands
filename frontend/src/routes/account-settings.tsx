@@ -365,19 +365,8 @@ function AccountSettings() {
                   }
                   placeholder={isGitHubTokenSet ? "**********" : ""}
                 />
-
-                <HelpLink
-                  testId="github-token-help-anchor"
-                  text="Get your token"
-                  linkText="here"
-                  href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
-                />
-                <HelpLink
-                  testId="github-token-help-anchor"
-                  text="More Info on Github permissions and tokens "
-                  linkText="here."
-                  href="https://docs.all-hands.dev/modules/usage/how-to/gui-mode#github-token-setup"
-                />
+                <p class="text-xs">Generate a token on <b><a href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow" target="_blank" class="underline underline-offset-2" rel="noopener noreferrer">GitHub</a> </b>
+                    or see the <b><a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token" target="_blank" class="underline underline-offset-2" rel="noopener noreferrer">documentation</a></b>.</p>
               </>
             )}
 

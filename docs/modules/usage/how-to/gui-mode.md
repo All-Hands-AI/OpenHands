@@ -32,7 +32,7 @@ OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it 
      - `repo` (Full control of private repositories)
    - **Fine-Grained Tokens**
      - All Repositories (You can select specific repositories, but this will impact what returns in repo search)
-     - Minimal Permissions ( Select **Meta Data** read for search, **Pull Requests** read and write ability)
+     - Minimal Permissions ( Select **Meta Data = Read-only** read for search, **Pull Requests = Read and Write**, **Content = Read and Write** for branch creation)
   2. **Enter Token in OpenHands**:
    - Click the Settings button (gear icon).
    - Navigate to the `GitHub Settings` section.
