@@ -6,11 +6,11 @@ from litellm import ChatCompletionMessageToolCall
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.function_calling import (
     BrowserTool,
-    CmdRunTool,
     IPythonTool,
     LLMBasedFileEditTool,
-    StrReplaceEditorTool,
     WebReadTool,
+    create_cmd_run_tool,
+    create_str_replace_editor_tool,
     get_tools,
     response_to_actions,
 )
@@ -119,6 +119,7 @@ def test_get_tools_with_options():
 
 
 def test_cmd_run_tool():
+    CmdRunTool = create_cmd_run_tool()
     assert CmdRunTool['type'] == 'function'
     assert CmdRunTool['function']['name'] == 'execute_bash'
     assert 'command' in CmdRunTool['function']['parameters']['properties']
@@ -149,6 +150,7 @@ def test_llm_based_file_edit_tool():
 
 
 def test_str_replace_editor_tool():
+    StrReplaceEditorTool = create_str_replace_editor_tool()
     assert StrReplaceEditorTool['type'] == 'function'
     assert StrReplaceEditorTool['function']['name'] == 'str_replace_editor'
 
