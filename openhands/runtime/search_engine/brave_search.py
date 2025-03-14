@@ -210,17 +210,14 @@ def search(action: SearchAction):
         return ErrorObservation(
             content='The query string for search_engine tool must be a non-empty string.'
         )
-        # raise FunctionCallValidationError(
-        #     'The query string for search_engine tool must be a non-empty string.'
-        # )
 
     BRAVE_SEARCH_URL = os.environ.get(
-        'SEARCH_API_URL', 'https://api.search.brave.com/res/v1/web/search'
+        'BRAVE_API_URL', 'https://api.search.brave.com/res/v1/web/search'
     )
 
-    API_KEY = os.environ.get('SEARCH_API_KEY', None)
+    API_KEY = os.environ.get('BRAVE_API_KEY', None)
     if API_KEY is None:
         raise ValueError(
-            'Environment variable API_KEY not set. It must be set to Brave Search API Key.'
+            'Environment variable BRAVE_API_KEY not set. It must be set to the Brave Search API Key.'
         )
     return query_api(query, API_KEY, BRAVE_SEARCH_URL)
