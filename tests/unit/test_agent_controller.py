@@ -856,11 +856,13 @@ async def test_run_controller_with_memory_error(test_event_stream):
     # Create a real Memory instance
     memory = Memory(event_stream=event_stream, sid='test-memory')
 
-    # Patch the _on_recall_action method to raise our test exception
-    def mock_on_recall_action(*args, **kwargs):
+    # Patch the _on_microagent_action method to raise our test exception
+    def mock_on_microagent_action(*args, **kwargs):
         raise RuntimeError('Test memory error')
 
-    with patch.object(memory, '_on_recall_action', side_effect=mock_on_recall_action):
+    with patch.object(
+        memory, '_on_microagent_action', side_effect=mock_on_microagent_action
+    ):
         state = await run_controller(
             config=config,
             initial_user_action=MessageAction(content='Test message'),

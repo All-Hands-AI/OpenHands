@@ -1,12 +1,12 @@
 from openhands.core.schema.observation import ObservationType
 from openhands.events.action.files import FileEditSource
+from openhands.events.event import MicroagentInfoType
 from openhands.events.observation import (
     CmdOutputMetadata,
     CmdOutputObservation,
     FileEditObservation,
+    MicroagentObservation,
     Observation,
-    RecallObservation,
-    RecallType,
 )
 from openhands.events.serialization import (
     event_from_dict,
@@ -242,13 +242,13 @@ def test_file_edit_observation_legacy_serialization():
     assert 'formatted_output_and_error' not in event_dict['extras']
 
 
-def test_recall_observation_serialization():
+def test_microagent_observation_serialization():
     original_observation_dict = {
-        'observation': 'recall',
+        'observation': 'microagent',
         'content': '',
-        'message': "Recalled: recall_type=RecallType.ENVIRONMENT_INFO, repo_name=some_repo_name, repo_instructions=complex_repo_instruc..., runtime_hosts={'host1': 8080, 'host2': 8081}, additional_agent_instructions=You know it all abou..., microagent_knowledge=[]",
+        'message': "Retrieved: info_type=MicroagentInfoType.ENVIRONMENT, repo_name=some_repo_name, repo_instructions=complex_repo_instruc..., runtime_hosts={'host1': 8080, 'host2': 8081}, additional_agent_instructions=You know it all abou..., microagent_knowledge=[]",
         'extras': {
-            'recall_type': 'environment_info',
+            'info_type': 'environment',
             'repo_name': 'some_repo_name',
             'repo_directory': 'some_repo_directory',
             'runtime_hosts': {'host1': 8080, 'host2': 8081},
@@ -257,16 +257,16 @@ def test_recall_observation_serialization():
             'microagent_knowledge': [],
         },
     }
-    serialization_deserialization(original_observation_dict, RecallObservation)
+    serialization_deserialization(original_observation_dict, MicroagentObservation)
 
 
-def test_recall_observation_microagent_knowledge_serialization():
+def test_microagent_observation_microagent_knowledge_serialization():
     original_observation_dict = {
-        'observation': 'recall',
+        'observation': 'microagent',
         'content': '',
-        'message': "Recalled: recall_type=RecallType.KNOWLEDGE_MICROAGENT, repo_name=, repo_instructions=..., runtime_hosts={}, additional_agent_instructions=..., microagent_knowledge=[{'agent_name': 'microagent1', 'trigger_word': 'trigger_word1', 'content': 'content1'}, {'agent_name': 'microagent2', 'trigger_word': 'trigger_word2', 'content': 'content2'}]",
+        'message': "Retrieved: info_type=MicroagentInfoType.KNOWLEDGE, repo_name=, repo_instructions=..., runtime_hosts={}, additional_agent_instructions=..., microagent_knowledge=[{'agent_name': 'microagent1', 'trigger_word': 'trigger_word1', 'content': 'content1'}, {'agent_name': 'microagent2', 'trigger_word': 'trigger_word2', 'content': 'content2'}]",
         'extras': {
-            'recall_type': 'knowledge_microagent',
+            'info_type': 'knowledge',
             'repo_name': '',
             'repo_directory': '',
             'repo_instructions': '',
@@ -286,15 +286,15 @@ def test_recall_observation_microagent_knowledge_serialization():
             ],
         },
     }
-    serialization_deserialization(original_observation_dict, RecallObservation)
+    serialization_deserialization(original_observation_dict, MicroagentObservation)
 
 
-def test_recall_observation_knowledge_microagent_serialization():
-    """Test serialization of a RecallObservation with KNOWLEDGE_MICROAGENT type."""
-    # Create a RecallObservation with microagent knowledge content
-    original = RecallObservation(
+def test_microagent_observation_knowledge_microagent_serialization():
+    """Test serialization of a MicroagentObservation with KNOWLEDGE_MICROAGENT type."""
+    # Create a MicroagentObservation with microagent knowledge content
+    original = MicroagentObservation(
         content='Knowledge microagent information',
-        recall_type=RecallType.KNOWLEDGE_MICROAGENT,
+        info_type=MicroagentInfoType.KNOWLEDGE,
         microagent_knowledge=[
             {
                 'agent_name': 'python_best_practices',
@@ -313,17 +313,17 @@ def test_recall_observation_knowledge_microagent_serialization():
     serialized = event_to_dict(original)
 
     # Verify serialized data structure
-    assert serialized['observation'] == ObservationType.RECALL
+    assert serialized['observation'] == ObservationType.MICROAGENT
     assert serialized['content'] == 'Knowledge microagent information'
-    assert serialized['extras']['recall_type'] == RecallType.KNOWLEDGE_MICROAGENT.value
+    assert serialized['extras']['info_type'] == MicroagentInfoType.KNOWLEDGE.value
     assert len(serialized['extras']['microagent_knowledge']) == 2
     assert serialized['extras']['microagent_knowledge'][0]['trigger_word'] == 'python'
 
-    # Deserialize back to RecallObservation
+    # Deserialize back to MicroagentObservation
     deserialized = observation_from_dict(serialized)
 
     # Verify properties are preserved
-    assert deserialized.recall_type == RecallType.KNOWLEDGE_MICROAGENT
+    assert deserialized.info_type == MicroagentInfoType.KNOWLEDGE
     assert deserialized.microagent_knowledge == original.microagent_knowledge
     assert deserialized.content == original.content
 
@@ -334,12 +334,12 @@ def test_recall_observation_knowledge_microagent_serialization():
     assert deserialized.runtime_hosts == {}
 
 
-def test_recall_observation_environment_info_serialization():
-    """Test serialization of a RecallObservation with ENVIRONMENT_INFO type."""
-    # Create a RecallObservation with environment info
-    original = RecallObservation(
+def test_microagent_observation_environment_serialization():
+    """Test serialization of a MicroagentObservation with ENVIRONMENT type."""
+    # Create a MicroagentObservation with environment info
+    original = MicroagentObservation(
         content='Environment information',
-        recall_type=RecallType.ENVIRONMENT_INFO,
+        info_type=MicroagentInfoType.ENVIRONMENT,
         repo_name='OpenHands',
         repo_directory='/workspace/openhands',
         repo_instructions="Follow the project's coding style guide.",
@@ -351,9 +351,9 @@ def test_recall_observation_environment_info_serialization():
     serialized = event_to_dict(original)
 
     # Verify serialized data structure
-    assert serialized['observation'] == ObservationType.RECALL
+    assert serialized['observation'] == ObservationType.MICROAGENT
     assert serialized['content'] == 'Environment information'
-    assert serialized['extras']['recall_type'] == RecallType.ENVIRONMENT_INFO.value
+    assert serialized['extras']['info_type'] == MicroagentInfoType.ENVIRONMENT.value
     assert serialized['extras']['repo_name'] == 'OpenHands'
     assert serialized['extras']['runtime_hosts'] == {
         '127.0.0.1': 8080,
@@ -363,11 +363,11 @@ def test_recall_observation_environment_info_serialization():
         serialized['extras']['additional_agent_instructions']
         == 'You know it all about this runtime'
     )
-    # Deserialize back to RecallObservation
+    # Deserialize back to MicroagentObservation
     deserialized = observation_from_dict(serialized)
 
     # Verify properties are preserved
-    assert deserialized.recall_type == RecallType.ENVIRONMENT_INFO
+    assert deserialized.info_type == MicroagentInfoType.ENVIRONMENT
     assert deserialized.repo_name == original.repo_name
     assert deserialized.repo_directory == original.repo_directory
     assert deserialized.repo_instructions == original.repo_instructions
@@ -380,14 +380,14 @@ def test_recall_observation_environment_info_serialization():
     assert deserialized.microagent_knowledge == []
 
 
-def test_recall_observation_combined_serialization():
-    """Test serialization of a RecallObservation with both types of information."""
-    # Create a RecallObservation with both environment and microagent info
-    # Note: In practice, recall_type would still be one specific type,
+def test_microagent_observation_combined_serialization():
+    """Test serialization of a MicroagentObservation with both types of information."""
+    # Create a MicroagentObservation with both environment and microagent info
+    # Note: In practice, info_type would still be one specific type,
     # but the object could contain both types of fields
-    original = RecallObservation(
+    original = MicroagentObservation(
         content='Combined information',
-        recall_type=RecallType.ENVIRONMENT_INFO,
+        info_type=MicroagentInfoType.ENVIRONMENT,
         # Environment info
         repo_name='OpenHands',
         repo_directory='/workspace/openhands',
@@ -408,7 +408,7 @@ def test_recall_observation_combined_serialization():
     serialized = event_to_dict(original)
 
     # Verify serialized data has both types of fields
-    assert serialized['extras']['recall_type'] == RecallType.ENVIRONMENT_INFO.value
+    assert serialized['extras']['info_type'] == MicroagentInfoType.ENVIRONMENT.value
     assert serialized['extras']['repo_name'] == 'OpenHands'
     assert (
         serialized['extras']['microagent_knowledge'][0]['agent_name']
@@ -418,11 +418,11 @@ def test_recall_observation_combined_serialization():
         serialized['extras']['additional_agent_instructions']
         == 'You know it all about this runtime'
     )
-    # Deserialize back to RecallObservation
+    # Deserialize back to MicroagentObservation
     deserialized = observation_from_dict(serialized)
 
     # Verify all properties are preserved
-    assert deserialized.recall_type == RecallType.ENVIRONMENT_INFO
+    assert deserialized.info_type == MicroagentInfoType.ENVIRONMENT
 
     # Environment properties
     assert deserialized.repo_name == original.repo_name

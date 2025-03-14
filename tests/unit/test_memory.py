@@ -10,10 +10,13 @@ from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
 from openhands.core.main import run_controller
 from openhands.core.schema.agent import AgentState
-from openhands.events.action.agent import AgentRecallAction
+from openhands.events.action.agent import MicroagentAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import EventSource
-from openhands.events.observation.agent import RecallObservation, RecallType
+from openhands.events.observation.agent import (
+    MicroagentInfoType,
+    MicroagentObservation,
+)
 from openhands.events.stream import EventStream
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
@@ -71,7 +74,7 @@ async def test_memory_on_event_exception_handling(memory, event_stream):
 
     # Mock Memory method to raise an exception
     with patch.object(
-        memory, '_on_first_recall_action', side_effect=Exception('Test error')
+        memory, '_on_first_microagent_action', side_effect=Exception('Test error')
     ):
         state = await run_controller(
             config=AppConfig(),
@@ -90,8 +93,10 @@ async def test_memory_on_event_exception_handling(memory, event_stream):
 
 
 @pytest.mark.asyncio
-async def test_memory_on_first_recall_action_exception_handling(memory, event_stream):
-    """Test that exceptions in Memory._on_first_recall_action are properly handled via status callback."""
+async def test_memory_on_first_microagent_action_exception_handling(
+    memory, event_stream
+):
+    """Test that exceptions in Memory._on_first_microagent_action are properly handled via status callback."""
 
     # Create a dummy agent for the controller
     agent = MagicMock(spec=Agent)
@@ -103,11 +108,11 @@ async def test_memory_on_first_recall_action_exception_handling(memory, event_st
     runtime = MagicMock(spec=Runtime)
     runtime.event_stream = event_stream
 
-    # Mock Memory._on_first_recall_action to raise an exception
+    # Mock Memory._on_first_microagent_action to raise an exception
     with patch.object(
         memory,
-        '_on_first_recall_action',
-        side_effect=Exception('Test error from _on_first_recall_action'),
+        '_on_first_microagent_action',
+        side_effect=Exception('Test error from _on_first_microagent_action'),
     ):
         state = await run_controller(
             config=AppConfig(),
@@ -126,11 +131,11 @@ async def test_memory_on_first_recall_action_exception_handling(memory, event_st
 
 
 def test_memory_with_microagents():
-    """Test that Memory loads microagents from the global directory and processes recall actions.
+    """Test that Memory loads microagents from the global directory and processes microagent actions.
 
     This test verifies that:
     1. Memory loads microagents from the global GLOBAL_MICROAGENTS_DIR
-    2. When a recall action with a trigger word is processed, a RecallObservation is created
+    2. When a microagent action with a trigger word is processed, a MicroagentObservation is created
     """
     # Create a mock event stream
     event_stream = MagicMock(spec=EventStream)
@@ -148,9 +153,9 @@ def test_memory_with_microagents():
     # We know 'flarglebargle' exists in the global directory
     assert 'flarglebargle' in memory.knowledge_microagents
 
-    # Create a recall action with the trigger word
-    recall_action = AgentRecallAction(
-        query='Hello, flarglebargle!', recall_type=RecallType.KNOWLEDGE_MICROAGENT
+    # Create a microagent action with the trigger word
+    microagent_action = MicroagentAction(
+        query='Hello, flarglebargle!', info_type=MicroagentInfoType.KNOWLEDGE
     )
 
     # Mock the event_stream.add_event method
@@ -161,21 +166,21 @@ def test_memory_with_microagents():
 
     event_stream.add_event = original_add_event
 
-    # Add the recall action to the event stream
-    event_stream.add_event(recall_action, EventSource.USER)
+    # Add the microagent action to the event stream
+    event_stream.add_event(microagent_action, EventSource.USER)
 
     # Clear the events list to only capture new events
     added_events.clear()
 
-    # Process the recall action
-    memory.on_event(recall_action)
+    # Process the microagent action
+    memory.on_event(microagent_action)
 
-    # Verify a RecallObservation was added to the event stream
+    # Verify a MicroagentObservation was added to the event stream
     assert len(added_events) == 1
     observation, source = added_events[0]
-    assert isinstance(observation, RecallObservation)
+    assert isinstance(observation, MicroagentObservation)
     assert source == EventSource.ENVIRONMENT
-    assert observation.recall_type == RecallType.KNOWLEDGE_MICROAGENT
+    assert observation.info_type == MicroagentInfoType.KNOWLEDGE
     assert len(observation.microagent_knowledge) == 1
     assert observation.microagent_knowledge[0].name == 'flarglebargle'
     assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
@@ -183,7 +188,7 @@ def test_memory_with_microagents():
 
 
 def test_memory_repository_info(prompt_dir):
-    """Test that Memory adds repository info to RecallObservations."""
+    """Test that Memory adds repository info to MicroagentObservations."""
     # Create an in-memory file store and real event stream
     file_store = InMemoryFileStore()
     event_stream = EventStream(sid='test-session', file_store=file_store)
@@ -223,12 +228,12 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
         user_message._source = EventSource.USER  # type: ignore[attr-defined]
         event_stream.add_event(user_message, EventSource.USER)
 
-        # Create and add the recall action
-        recall_action = AgentRecallAction(
-            query='First user message', recall_type=RecallType.ENVIRONMENT_INFO
+        # Create and add the microagent action
+        microagent_action = MicroagentAction(
+            query='First user message', info_type=MicroagentInfoType.ENVIRONMENT
         )
-        recall_action._source = EventSource.USER  # type: ignore[attr-defined]
-        event_stream.add_event(recall_action, EventSource.USER)
+        microagent_action._source = EventSource.USER  # type: ignore[attr-defined]
+        event_stream.add_event(microagent_action, EventSource.USER)
 
         # Give it a little time to process
         time.sleep(0.3)
@@ -236,17 +241,17 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
         # Get all events from the stream
         events = list(event_stream.get_events())
 
-        # Find the RecallObservation event
-        recall_obs_events = [
-            event for event in events if isinstance(event, RecallObservation)
+        # Find the MicroagentObservation event
+        microagent_obs_events = [
+            event for event in events if isinstance(event, MicroagentObservation)
         ]
 
-        # We should have at least one RecallObservation
-        assert len(recall_obs_events) > 0
+        # We should have at least one MicroagentObservation
+        assert len(microagent_obs_events) > 0
 
-        # Get the first RecallObservation
-        observation = recall_obs_events[0]
-        assert observation.recall_type == RecallType.ENVIRONMENT_INFO
+        # Get the first MicroagentObservation
+        observation = microagent_obs_events[0]
+        assert observation.info_type == MicroagentInfoType.ENVIRONMENT
         assert observation.repo_name == 'owner/repo'
         assert observation.repo_directory == '/workspace/repo'
         assert 'This is a test repository' in observation.repo_instructions
