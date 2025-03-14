@@ -24,7 +24,10 @@ function Home() {
   });
 
   return (
-    <div className="bg-base-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto px-2">
+    <div
+      data-testid="home-screen"
+      className="bg-base-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto px-2"
+    >
       <HeroHeading />
       <div className="flex flex-col gap-8 w-full md:w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
