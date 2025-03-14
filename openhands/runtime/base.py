@@ -100,7 +100,6 @@ class Runtime(FileEditRuntimeMixin):
         headless_mode: bool = False,
         user_id: str | None = None,
     ):
-        logger.info(f'Runtime created with sid {sid}, user_id {user_id}')
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(
