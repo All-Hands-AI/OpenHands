@@ -19,6 +19,12 @@ The cloud deployment of OpenHands consists of the following components:
 For development or small-scale deployments, you can use Docker Compose:
 
 ```bash
+# Set required environment variables
+export DB_USER=your_db_user
+export DB_PASSWORD=your_secure_password
+export DB_NAME=openhands
+export JWT_SECRET=your_secure_jwt_secret
+
 # Build and start all services
 docker-compose -f docker-compose.cloud.yml up -d
 
@@ -34,8 +40,27 @@ docker-compose -f docker-compose.cloud.yml down
 For production deployments, use Kubernetes:
 
 ```bash
-# Apply Kubernetes configuration
-kubectl apply -k kubernetes/
+# Create a .env file with your configuration
+cat > .env << EOL
+export DB_USER=your_db_user
+export DB_PASSWORD=your_secure_password
+export DB_NAME=openhands
+export JWT_SECRET=your_secure_jwt_secret
+
+# Base64 encode secrets for Kubernetes
+export DB_PASSWORD_BASE64=$(echo -n "$DB_PASSWORD" | base64)
+export JWT_SECRET_BASE64=$(echo -n "$JWT_SECRET" | base64)
+EOL
+
+# Source the environment variables
+source .env
+
+# Process template files with environment variables
+envsubst < kubernetes/postgres.yaml | kubectl apply -f -
+envsubst < kubernetes/backend.yaml | kubectl apply -f -
+kubectl apply -f kubernetes/redis.yaml
+kubectl apply -f kubernetes/frontend.yaml
+kubectl apply -f kubernetes/ingress.yaml
 
 # Check deployment status
 kubectl get pods
@@ -48,26 +73,29 @@ kubectl logs -l app=openhands-backend
 
 ### Environment Variables
 
-The following environment variables can be configured:
+The following environment variables must be configured:
 
 - `DB_HOST`: PostgreSQL host (default: postgres)
 - `DB_PORT`: PostgreSQL port (default: 5432)
-- `DB_USER`: PostgreSQL username (default: postgres)
-- `DB_PASSWORD`: PostgreSQL password (default: postgres)
-- `DB_NAME`: PostgreSQL database name (default: openhands)
+- `DB_USER`: PostgreSQL username
+- `DB_PASSWORD`: PostgreSQL password
+- `DB_NAME`: PostgreSQL database name
 - `REDIS_HOST`: Redis host (default: redis)
 - `REDIS_PORT`: Redis port (default: 6379)
-- `JWT_SECRET`: Secret key for JWT tokens (default: change-this-in-production)
+- `JWT_SECRET`: Secret key for JWT tokens
 
 ### Security Considerations
 
 For production deployments:
 
-1. Change all default passwords
-2. Set a strong JWT_SECRET
-3. Enable HTTPS with proper certificates
-4. Configure proper network policies in Kubernetes
-5. Set up regular database backups
+1. **Never hardcode secrets** in configuration files or source code
+2. Use Kubernetes Secrets or a secure vault solution (HashiCorp Vault, AWS Secrets Manager, etc.)
+3. Set a strong JWT_SECRET with high entropy
+4. Enable HTTPS with proper certificates
+5. Configure proper network policies in Kubernetes
+6. Set up regular database backups
+7. Implement proper access controls and RBAC
+8. Regularly rotate credentials and secrets
 
 ## Scaling
 

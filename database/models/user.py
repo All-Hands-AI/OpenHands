@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta
+import os
 from typing import Optional, List
 import jwt
 from pydantic import BaseModel, EmailStr, SecretStr, Field
 import bcrypt
 
-# Configuration (should be moved to settings)
-JWT_SECRET = "your-secret-key"  # This should be in environment variables
+# Configuration from environment variables
+JWT_SECRET = os.getenv("JWT_SECRET", "")  # Must be set in environment
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_DELTA = timedelta(days=1)
 
@@ -50,6 +51,9 @@ class User:
     
     def generate_token(self) -> str:
         """Generate JWT token for the user"""
+        if not JWT_SECRET:
+            raise ValueError("JWT_SECRET environment variable must be set")
+            
         payload = {
             'user_id': self.id,
             'username': self.username,
@@ -60,6 +64,9 @@ class User:
     @staticmethod
     def verify_token(token: str) -> Optional[dict]:
         """Verify a JWT token and return payload if valid"""
+        if not JWT_SECRET:
+            raise ValueError("JWT_SECRET environment variable must be set")
+            
         try:
             payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
             return payload

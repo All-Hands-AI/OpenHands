@@ -5,12 +5,20 @@ metadata:
 data:
   DB_HOST: postgres
   DB_PORT: "5432"
-  DB_USER: postgres
-  DB_PASSWORD: postgres
-  DB_NAME: openhands
+  DB_USER: ${DB_USER}
+  DB_NAME: ${DB_NAME}
   REDIS_HOST: redis
   REDIS_PORT: "6379"
-  JWT_SECRET: "change-this-in-production"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secrets
+type: Opaque
+data:
+  # These values should be base64 encoded and provided via environment or CI/CD
+  DB_PASSWORD: ${DB_PASSWORD_BASE64}
+  JWT_SECRET: ${JWT_SECRET_BASE64}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -35,6 +43,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: backend-config
+            - secretRef:
+                name: backend-secrets
           resources:
             limits:
               cpu: "1"
