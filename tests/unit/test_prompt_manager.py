@@ -117,7 +117,7 @@ def test_prompt_manager_template_rendering(prompt_dir):
     msg_content: str = initial_msg.content[0].text
     assert '<REPOSITORY_INFO>' in msg_content
     assert (
-        "At the user's request, repository owner/repo has been cloned to directory /workspace/repo."
+        "At the user's request, repository owner/repo has been cloned to the current working directory /workspace/repo."
         in msg_content
     )
     assert '</REPOSITORY_INFO>' in msg_content
