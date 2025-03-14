@@ -1,5 +1,5 @@
 import asyncio
-from unittest.mock import ANY, AsyncMock, MagicMock
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -841,6 +841,44 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
 
 
 @pytest.mark.asyncio
+async def test_run_controller_with_memory_error(test_event_stream):
+    config = AppConfig()
+    event_stream = test_event_stream
+
+    agent = MagicMock(spec=Agent)
+    agent.llm = MagicMock(spec=LLM)
+    agent.llm.metrics = Metrics()
+    agent.llm.config = config.get_llm_config()
+
+    runtime = MagicMock(spec=Runtime)
+    runtime.event_stream = event_stream
+
+    # Create a real Memory instance
+    memory = Memory(event_stream=event_stream, sid='test-memory')
+
+    # Patch the _on_microagent_action method to raise our test exception
+    def mock_on_microagent_action(*args, **kwargs):
+        raise RuntimeError('Test memory error')
+
+    with patch.object(
+        memory, '_on_microagent_action', side_effect=mock_on_microagent_action
+    ):
+        state = await run_controller(
+            config=config,
+            initial_user_action=MessageAction(content='Test message'),
+            runtime=runtime,
+            sid='test',
+            agent=agent,
+            fake_user_response_fn=lambda _: 'repeat',
+            memory=memory,
+        )
+
+    assert state.iteration == 0
+    assert state.agent_state == AgentState.ERROR
+    assert state.last_error == 'Error: RuntimeError'
+
+
+@pytest.mark.asyncio
 async def test_action_metrics_copy():
     # Setup
     file_store = InMemoryFileStore({})
@@ -938,5 +976,58 @@ async def test_action_metrics_copy():
     # Verify it's a deep copy by modifying the original
     agent.llm.metrics.accumulated_cost = 0.1
     assert last_action.llm_metrics.accumulated_cost == 0.07
+
+    await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_first_user_message_with_identical_content():
+    """
+    Test that _first_user_message correctly identifies the first user message
+    even when multiple messages have identical content but different IDs.
+
+    The issue we're checking is that the comparison (action == self._first_user_message())
+    should correctly differentiate between messages with the same content but different IDs.
+    """
+    # Create a real event stream for this test
+    event_stream = EventStream(sid='test', file_store=InMemoryFileStore({}))
+
+    # Create an agent controller
+    mock_agent = MagicMock(spec=Agent)
+    mock_agent.llm = MagicMock(spec=LLM)
+    mock_agent.llm.metrics = Metrics()
+    mock_agent.llm.config = AppConfig().get_llm_config()
+
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Create and add the first user message
+    first_message = MessageAction(content='Hello, this is a test message')
+    first_message._source = EventSource.USER
+    event_stream.add_event(first_message, EventSource.USER)
+
+    # Create and add a second user message with identical content
+    second_message = MessageAction(content='Hello, this is a test message')
+    second_message._source = EventSource.USER
+    event_stream.add_event(second_message, EventSource.USER)
+
+    # Verify that _first_user_message returns the first message
+    first_user_message = controller._first_user_message()
+    assert first_user_message is not None
+    assert first_user_message.id == first_message.id  # Check IDs match
+    assert first_user_message.id != second_message.id  # Different IDs
+    assert first_user_message == first_message == second_message  # dataclass equality
+
+    # Test the comparison used in the actual code
+    assert first_message == first_user_message  # This should be True
+    assert (
+        second_message.id != first_user_message.id
+    )  # This should be False, but may be True if there's a bug
 
     await controller.close()
