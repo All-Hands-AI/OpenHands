@@ -7,6 +7,7 @@ import random
 import shutil
 import string
 import tempfile
+import traceback
 from abc import abstractmethod
 from pathlib import Path
 from typing import Callable
@@ -243,6 +244,7 @@ class Runtime(FileEditRuntimeMixin):
                 self.run_action, event
             )
         except Exception as e:
+            traceback.print_exc()
             err_id = ''
             if isinstance(e, ConnectionError) or isinstance(
                 e, AgentRuntimeDisconnectedError
