@@ -8,6 +8,7 @@ from openhands.events.observation import (
     MicroagentObservation,
     Observation,
 )
+from openhands.events.observation.agent import MicroagentKnowledge
 from openhands.events.serialization import (
     event_from_dict,
     event_to_dict,
@@ -246,7 +247,7 @@ def test_microagent_observation_serialization():
     original_observation_dict = {
         'observation': 'microagent',
         'content': '',
-        'message': "Retrieved: info_type=MicroagentInfoType.ENVIRONMENT, repo_name=some_repo_name, repo_instructions=complex_repo_instruc..., runtime_hosts={'host1': 8080, 'host2': 8081}, additional_agent_instructions=You know it all abou..., microagent_knowledge=[]",
+        'message': "**MicroagentObservation**\ninfo_type=MicroagentInfoType.ENVIRONMENT, repo_name=some_repo_name, repo_instructions=complex_repo_instruc..., runtime_hosts={'host1': 8080, 'host2': 8081}, additional_agent_instructions=You know it all abou..., microagent_knowledge=",
         'extras': {
             'info_type': 'environment',
             'repo_name': 'some_repo_name',
@@ -264,7 +265,7 @@ def test_microagent_observation_microagent_knowledge_serialization():
     original_observation_dict = {
         'observation': 'microagent',
         'content': '',
-        'message': "Retrieved: info_type=MicroagentInfoType.KNOWLEDGE, repo_name=, repo_instructions=..., runtime_hosts={}, additional_agent_instructions=..., microagent_knowledge=[{'agent_name': 'microagent1', 'trigger_word': 'trigger_word1', 'content': 'content1'}, {'agent_name': 'microagent2', 'trigger_word': 'trigger_word2', 'content': 'content2'}]",
+        'message': '**MicroagentObservation**\ninfo_type=MicroagentInfoType.KNOWLEDGE, repo_name=, repo_instructions=..., runtime_hosts={}, additional_agent_instructions=..., microagent_knowledge=microagent1, microagent2',
         'extras': {
             'info_type': 'knowledge',
             'repo_name': '',
@@ -274,13 +275,13 @@ def test_microagent_observation_microagent_knowledge_serialization():
             'additional_agent_instructions': '',
             'microagent_knowledge': [
                 {
-                    'agent_name': 'microagent1',
-                    'trigger_word': 'trigger_word1',
+                    'name': 'microagent1',
+                    'trigger': 'trigger1',
                     'content': 'content1',
                 },
                 {
-                    'agent_name': 'microagent2',
-                    'trigger_word': 'trigger_word2',
+                    'name': 'microagent2',
+                    'trigger': 'trigger2',
                     'content': 'content2',
                 },
             ],
@@ -296,16 +297,16 @@ def test_microagent_observation_knowledge_microagent_serialization():
         content='Knowledge microagent information',
         info_type=MicroagentInfoType.KNOWLEDGE,
         microagent_knowledge=[
-            {
-                'agent_name': 'python_best_practices',
-                'trigger_word': 'python',
-                'content': 'Always use virtual environments for Python projects.',
-            },
-            {
-                'agent_name': 'git_workflow',
-                'trigger_word': 'git',
-                'content': 'Create a new branch for each feature or bugfix.',
-            },
+            MicroagentKnowledge(
+                name='python_best_practices',
+                trigger='python',
+                content='Always use virtual environments for Python projects.',
+            ),
+            MicroagentKnowledge(
+                name='git_workflow',
+                trigger='git',
+                content='Create a new branch for each feature or bugfix.',
+            ),
         ],
     )
 
@@ -317,7 +318,7 @@ def test_microagent_observation_knowledge_microagent_serialization():
     assert serialized['content'] == 'Knowledge microagent information'
     assert serialized['extras']['info_type'] == MicroagentInfoType.KNOWLEDGE.value
     assert len(serialized['extras']['microagent_knowledge']) == 2
-    assert serialized['extras']['microagent_knowledge'][0]['trigger_word'] == 'python'
+    assert serialized['extras']['microagent_knowledge'][0]['trigger'] == 'python'
 
     # Deserialize back to MicroagentObservation
     deserialized = observation_from_dict(serialized)
@@ -396,11 +397,11 @@ def test_microagent_observation_combined_serialization():
         additional_agent_instructions='You know it all about this runtime',
         # Knowledge microagent info
         microagent_knowledge=[
-            {
-                'agent_name': 'python_best_practices',
-                'trigger_word': 'python',
-                'content': 'Always use virtual environments for Python projects.',
-            }
+            MicroagentKnowledge(
+                name='python_best_practices',
+                trigger='python',
+                content='Always use virtual environments for Python projects.',
+            ),
         ],
     )
 
@@ -411,7 +412,7 @@ def test_microagent_observation_combined_serialization():
     assert serialized['extras']['info_type'] == MicroagentInfoType.ENVIRONMENT.value
     assert serialized['extras']['repo_name'] == 'OpenHands'
     assert (
-        serialized['extras']['microagent_knowledge'][0]['agent_name']
+        serialized['extras']['microagent_knowledge'][0]['name']
         == 'python_best_practices'
     )
     assert (
