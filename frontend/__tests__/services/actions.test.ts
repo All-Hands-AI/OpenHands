@@ -79,7 +79,7 @@ describe("Actions Service", () => {
       // Mock implementation to capture the message
       let capturedPartialMessage = "";
       (store.dispatch as any).mockImplementation((action: any) => {
-        if (action.type === "chat/addAssistantMessage" && 
+        if (action.type === "chat/addAssistantMessage" &&
             action.payload.includes("believe that the task was **completed partially**")) {
           capturedPartialMessage = action.payload;
         }
@@ -87,7 +87,7 @@ describe("Actions Service", () => {
 
       handleActionMessage(messagePartial);
       expect(capturedPartialMessage).toContain("I believe that the task was **completed partially**");
-      
+
       // Test not completed
       const messageNotCompleted: ActionMessage = {
         id: 2,
@@ -106,7 +106,7 @@ describe("Actions Service", () => {
       // Mock implementation to capture the message
       let capturedNotCompletedMessage = "";
       (store.dispatch as any).mockImplementation((action: any) => {
-        if (action.type === "chat/addAssistantMessage" && 
+        if (action.type === "chat/addAssistantMessage" &&
             action.payload.includes("believe that the task was **not completed**")) {
           capturedNotCompletedMessage = action.payload;
         }
@@ -114,7 +114,7 @@ describe("Actions Service", () => {
 
       handleActionMessage(messageNotCompleted);
       expect(capturedNotCompletedMessage).toContain("I believe that the task was **not completed**");
-      
+
       // Test completed successfully
       const messageCompleted: ActionMessage = {
         id: 3,
@@ -133,7 +133,7 @@ describe("Actions Service", () => {
       // Mock implementation to capture the message
       let capturedCompletedMessage = "";
       (store.dispatch as any).mockImplementation((action: any) => {
-        if (action.type === "chat/addAssistantMessage" && 
+        if (action.type === "chat/addAssistantMessage" &&
             action.payload.includes("believe that the task was **completed successfully**")) {
           capturedCompletedMessage = action.payload;
         }

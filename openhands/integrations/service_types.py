@@ -60,7 +60,7 @@ class GitService(Protocol):
         """Initialize the service with authentication details"""
         ...
 
-    async def get_latest_token(self) -> SecretStr:
+    async def get_latest_token(self) -> SecretStr | None:
         """Get latest working token of the users"""
         ...
 

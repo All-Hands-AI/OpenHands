@@ -3,6 +3,9 @@ from enum import Enum
 from pydantic import BaseModel, SecretStr, SerializationInfo, field_serializer
 from pydantic.json import pydantic_encoder
 
+from openhands.events.action.action import Action
+from openhands.events.action.commands import CmdRunAction
+from openhands.events.stream import EventStream
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
@@ -88,6 +91,7 @@ class ProviderHandler:
         self,
         provider_tokens: PROVIDER_TOKEN_TYPE,
         external_auth_token: SecretStr | None = None,
+        external_token_manager: bool = False,
     ):
         self.service_class_map: dict[ProviderType, type[GitService]] = {
             ProviderType.GITHUB: GithubServiceImpl,
@@ -96,6 +100,7 @@ class ProviderHandler:
 
         self.provider_tokens = provider_tokens
         self.external_auth_token = external_auth_token
+        self.external_token_manager = external_token_manager
 
     def _get_service(self, provider: ProviderType) -> GitService:
         """Helper method to instantiate a service for a given provider"""
@@ -105,6 +110,7 @@ class ProviderHandler:
             user_id=token.user_id,
             external_auth_token=self.external_auth_token,
             token=token.token,
+            external_token_manager=self.external_token_manager,
         )
 
     async def get_user(self) -> User:
@@ -117,14 +123,12 @@ class ProviderHandler:
                 continue
         raise AuthenticationError('Need valid provider token')
 
-    async def get_latest_provider_tokens(self) -> dict[ProviderType, SecretStr]:
-        """Get latest token from services"""
-        tokens = {}
-        for provider in self.provider_tokens:
-            service = self._get_service(provider)
-            tokens[provider] = await service.get_latest_token()
-
-        return tokens
+    async def _get_latest_provider_token(
+        self, provider: ProviderType
+    ) -> SecretStr | None:
+        """Get latest token from service"""
+        service = self._get_service(provider)
+        return await service.get_latest_token()
 
     async def get_repositories(
         self, page: int, per_page: int, sort: str, installation_id: int | None
@@ -141,3 +145,63 @@ class ProviderHandler:
             except Exception:
                 continue
         return all_repos
+
+    @classmethod
+    def set_or_update_event_stream_secrets(
+        cls,
+        event_stream: EventStream,
+        provider_tokens: PROVIDER_TOKEN_TYPE | dict[ProviderType, SecretStr],
+    ):
+        for provider in provider_tokens:
+            token = (
+                provider_tokens[provider].token
+                if isinstance(provider_tokens[provider], ProviderToken)
+                else provider_tokens[provider]
+            )
+            if token:
+                token_name = f'{provider.value}_token'
+                event_stream.set_secrets(
+                    {
+                        token_name: token.get_secret_value(),
+                    }
+                )
+
+    async def get_env_vars(
+        self, required_providers: list[ProviderType] | None = None, expose_secrets=False
+    ) -> dict[ProviderType, SecretStr] | dict[str, str]:
+        if not self.provider_tokens:
+            return {}
+
+        env_vars: dict[ProviderType, SecretStr] = {}
+        all_providers = [provider for provider in ProviderType]
+        provider_list = required_providers if required_providers else all_providers
+
+        for provider in provider_list:
+            if provider in self.provider_tokens:
+                token = await self._get_latest_provider_token(provider)
+                if token:
+                    env_vars[provider] = token
+
+        if not expose_secrets:
+            return env_vars
+
+        exposed_envs = {}
+        for provider, token in env_vars.items():
+            exposed_envs[f'{provider.value.upper()}_token'] = token.get_secret_value()
+
+        return exposed_envs
+
+    @classmethod
+    def check_cmd_action_for_provider_token_ref(
+        cls, event: Action
+    ) -> list[ProviderType]:
+        if not isinstance(event, CmdRunAction):
+            return []
+
+        called_providers = []
+        for provider in ProviderType:
+            env_name = f'${provider.value.upper()}_TOKEN'
+            if env_name in event.command:
+                called_providers.append(provider)
+
+        return called_providers

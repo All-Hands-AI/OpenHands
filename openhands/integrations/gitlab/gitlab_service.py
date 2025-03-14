@@ -46,7 +46,7 @@ class GitLabService(GitService):
     def _has_token_expired(self, status_code: int) -> bool:
         return status_code == 401
 
-    async def get_latest_token(self) -> SecretStr:
+    async def get_latest_token(self) -> SecretStr | None:
         return self.token
 
     async def _fetch_data(

@@ -121,7 +121,9 @@ You SHOULD NEVER attempt to browse the web.
 
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
-DEFAULT_DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')
+DEFAULT_DOCKER_IMAGE_PREFIX = os.environ.get(
+    'EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/'
+)
 logger.info(f'Default docker image prefix: {DEFAULT_DOCKER_IMAGE_PREFIX}')
 
 
