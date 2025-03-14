@@ -155,7 +155,15 @@ class BrowserEnv:
                         continue
 
                     action = action_data['action']
-                    obs, reward, terminated, truncated, info = env.step(action)
+                    try:
+                        obs, reward, terminated, truncated, info = env.step(action)
+                    except Exception as e:
+                        obs = {}
+                        obs['last_action'] = action
+                        obs['last_action_error'] = str(e)
+                        obs['text_content'] = ''
+                        self.browser_side.send((unique_request_id, obs))
+                        continue
 
                     # EVAL ONLY: Save the rewards into file for evaluation
                     if self.eval_mode:

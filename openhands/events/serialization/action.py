@@ -21,6 +21,7 @@ from openhands.events.action.files import (
     FileWriteAction,
 )
 from openhands.events.action.message import MessageAction
+from openhands.events.action.search_engine import SearchAction
 
 actions = (
     NullAction,
@@ -37,6 +38,7 @@ actions = (
     AgentDelegateAction,
     ChangeAgentStateAction,
     MessageAction,
+    SearchAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]
