@@ -721,7 +721,7 @@ describe("Settings Screen", () => {
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           llm_api_key: "", // empty because it's not set previously
-          github_token: undefined,
+          provider_tokens: undefined,
           language: "no",
         }),
       );
@@ -758,7 +758,7 @@ describe("Settings Screen", () => {
 
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          github_token: undefined,
+          provider_tokens: undefined,
           llm_api_key: "", // empty because it's not set previously
           llm_model: "openai/gpt-4o",
         }),
@@ -801,7 +801,7 @@ describe("Settings Screen", () => {
 
       expect(saveSettingsSpy).toHaveBeenCalledWith({
         ...mockCopy,
-        github_token: undefined, // not set
+        provider_tokens: undefined, // not set
         llm_api_key: "", // reset as well
       });
       expect(screen.queryByTestId("reset-modal")).not.toBeInTheDocument();
