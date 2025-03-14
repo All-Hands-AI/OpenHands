@@ -12,7 +12,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.observation.agent import AgentStateChangedObservation
-from openhands.events.stream import EventStream, EventStreamSubscriber, session_exists
+from openhands.events.stream import EventStream, EventStreamSubscriber, EventStreamSubscriberObj, session_exists
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
@@ -243,6 +243,7 @@ class StandaloneConversationManager(ConversationManager):
         settings: Settings,
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
+        initial_event_stream_subscription: EventStreamSubscriberObj | None = None
     ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
         session: Session | None = None
@@ -280,6 +281,13 @@ class StandaloneConversationManager(ConversationManager):
                     self._create_conversation_update_callback(user_id, sid),
                     UPDATED_AT_CALLBACK_ID,
                 )
+
+                if initial_event_stream_subscription:
+                    session.agent_session.event_stream.subscribe(
+                      initial_event_stream_subscription.subscriber_id,
+                      initial_event_stream_subscription.callback_func,
+                      initial_event_stream_subscription.callback_id
+                    )
             except ValueError:
                 pass  # Already subscribed - take no action
 
@@ -312,6 +320,15 @@ class StandaloneConversationManager(ConversationManager):
             return
 
         raise RuntimeError(f'no_connected_session:{connection_id}:{sid}')
+    
+    async def unsubscribe_from_event_stream(self, 
+                                            connection_id: str, 
+                                            subscriber_id: EventStreamSubscriber, 
+                                            callback_id: str):
+
+        event_stream = await self._get_event_stream(connection_id)
+        if event_stream:
+            event_stream.unsubscribe(subscriber_id, callback_id)
 
     async def disconnect_from_session(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)
