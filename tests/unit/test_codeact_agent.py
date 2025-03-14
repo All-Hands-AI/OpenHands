@@ -238,7 +238,11 @@ def test_step_with_no_pending_actions(mock_state: State):
     mock_response.choices[0].message.content = 'Task completed'
     mock_response.choices[0].message.tool_calls = []
 
+    mock_config = Mock()
+    mock_config.model = 'mock_model'
+
     llm = Mock()
+    llm.config = mock_config
     llm.completion = Mock(return_value=mock_response)
     llm.is_function_calling_active = Mock(return_value=True)  # Enable function calling
     llm.is_caching_prompt_active = Mock(return_value=False)
