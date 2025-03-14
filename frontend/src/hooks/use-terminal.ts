@@ -133,20 +133,28 @@ export const useTerminal = ({
           content = content.replaceAll(secret, "*".repeat(10));
         });
 
-        // For input type, the command is already displayed in the terminal
-        // as the user types it, so we don't need to display it again
-        if (type === "input") {
-          // Skip displaying the input command as it's already shown
-          // when the user types it and presses Enter
-        } else {
-          // For output type, display the content
+        // Check if this is an output that starts with the previous input command
+        // This happens when the backend echoes back the command in the output
+        let shouldDisplayContent = true;
+        if (type === "output" && i > 0 && commands[i - 1].type === "input") {
+          const prevInputCommand = commands[i - 1].content.trim();
+          // If the output starts with the input command, remove it to avoid duplication
+          if (content.trim().startsWith(prevInputCommand)) {
+            // Skip displaying this part as it's a duplicate of the user's input
+            // that's already shown in the terminal
+            shouldDisplayContent = false;
+          }
+        }
+
+        if (shouldDisplayContent) {
           terminal.current?.writeln(
             parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
           );
-          // Add a new prompt after the output
-          if (type === "output") {
-            terminal.current.write(`\n$ `);
-          }
+        }
+
+        // Add a new prompt after the output
+        if (type === "output") {
+          terminal.current.write(`\n$ `);
         }
       }
 
