@@ -1,6 +1,7 @@
 import pytest
 
 from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.integrations.provider import ProviderType, ProviderToken
 
 
 def test_provider_tokens_not_shared_between_instances():
@@ -14,10 +15,12 @@ def test_provider_tokens_not_shared_between_instances():
     assert instance2.provider_tokens == {}
 
     # Modify the first instance
-    instance1.provider_tokens["test_provider"] = "test_token"
+    provider_token = ProviderToken(token=None, user_id="test_user")
+    instance1.provider_tokens[ProviderType.GITHUB] = provider_token
 
     # Verify the second instance is not affected
-    assert instance1.provider_tokens == {"test_provider": "test_token"}
+    assert ProviderType.GITHUB in instance1.provider_tokens
+    assert instance1.provider_tokens[ProviderType.GITHUB].user_id == "test_user"
     assert instance2.provider_tokens == {}
 
 
