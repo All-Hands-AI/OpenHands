@@ -4,8 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
 import OpenHands from "#/api/open-hands";
 import { PaymentForm } from "#/components/features/payment/payment-form";
+import * as featureFlags from "#/utils/feature-flags";
 
 describe("PaymentForm", () => {
+  const billingSettingsSpy = vi.spyOn(featureFlags, "BILLING_SETTINGS");
   const getBalanceSpy = vi.spyOn(OpenHands, "getBalance");
   const createCheckoutSessionSpy = vi.spyOn(OpenHands, "createCheckoutSession");
   const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
@@ -26,6 +28,7 @@ describe("PaymentForm", () => {
       GITHUB_CLIENT_ID: "123",
       POSTHOG_CLIENT_KEY: "456",
     });
+    billingSettingsSpy.mockReturnValue(true);
   });
 
   afterEach(() => {
