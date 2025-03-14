@@ -82,7 +82,12 @@ Follow these steps to resolve the issue:
    - Understand the surrounding context and dependencies
    - Use `grep` to search for relevant functions, classes, or error messages
 
-2. ANALYSIS: Based on your exploration, think carefully about the problem and propose 2-5 possible approaches to fix the issue.
+2.a. SYMPTOM ANALYSIS: Based on your exploration, think carefully about the problem and propose how you would test the issue.
+   - Describe how you would reproduce the issue.
+   - Describe how it could be tested, propose 2-5 ways of testing.
+   - Select the most promising test and explain why.
+
+2.b. ROOT ANALYSIS: Based on your exploration, think carefully about the problem and propose 2-5 possible approaches to fix the issue.
    - Analyze the root cause of the problem
    - Consider trade-offs between different solutions
    - Select the most promising approach and explain your reasoning
@@ -121,24 +126,26 @@ You SHOULD NEVER attempt to browse the web.
 
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
-DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')
-logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
+DEFAULT_DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')
+logger.info(f'Default docker image prefix: {DEFAULT_DOCKER_IMAGE_PREFIX}')
 
 
 def get_instance_docker_image(instance_id: str, official_image: bool = False) -> str:
     if official_image:
         # Official SWE-Bench image
         # swebench/sweb.eval.x86_64.django_1776_django-11333:v1
+        docker_image_prefix = 'docker.io/swebench/'
         repo, name = instance_id.split('__')
         image_name = f'sweb.eval.x86_64.{repo}_1776_{name}:latest'
         logger.warning(f'Using official SWE-Bench image: {image_name}')
     else:
         # OpenHands version of the image
+        docker_image_prefix = DEFAULT_DOCKER_IMAGE_PREFIX
         image_name = 'sweb.eval.x86_64.' + instance_id
         image_name = image_name.replace(
             '__', '_s_'
         )  # to comply with docker image naming convention
-    return (DOCKER_IMAGE_PREFIX.rstrip('/') + '/' + image_name).lower()
+    return (docker_image_prefix.rstrip('/') + '/' + image_name).lower()
 
 
 def get_config(
