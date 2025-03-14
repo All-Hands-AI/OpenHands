@@ -78,7 +78,7 @@ async def _create_new_conversation(
         logger.warn('Settings not present, not starting conversation')
         raise MissingSettingsError('Settings not found')
 
-    session_init_args['github_token'] = token or SecretStr('')
+    session_init_args['github_token'] = SecretStr('')
     session_init_args['selected_repository'] = selected_repository
     session_init_args['selected_branch'] = selected_branch
     conversation_init_data = ConversationInitData(**session_init_args)
@@ -167,7 +167,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     try:
         # Create conversation with initial message
         conversation_id = await _create_new_conversation(
-            user_id,
+            get_user_id(request),
             github_token,
             selected_repository,
             selected_branch,
