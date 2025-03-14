@@ -1,0 +1,11 @@
+app = "openhands-redis"
+primary_region = "iad"
+
+[mounts]
+  source = "redis_data"
+  destination = "/data"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512

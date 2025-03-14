@@ -8,6 +8,9 @@ import {
 export default [
   layout("routes/_oh/route.tsx", [
     index("routes/_oh._index/route.tsx"),
+    route("login", "pages/auth/Login.tsx"),
+    route("register", "pages/auth/Register.tsx"),
+    route("auth/oauth-callback", "pages/auth/OAuthCallback.tsx"),
     route("settings", "routes/settings.tsx", [
       index("routes/account-settings.tsx"),
       route("billing", "routes/billing.tsx"),

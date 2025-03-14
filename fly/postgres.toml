@@ -1,0 +1,15 @@
+app = "openhands-postgres"
+primary_region = "iad"
+
+[env]
+  POSTGRES_DB = "openhands"
+  POSTGRES_USER = "postgres"
+
+[mounts]
+  source = "postgres_data"
+  destination = "/var/lib/postgresql/data"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 1024

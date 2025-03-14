@@ -29,6 +29,18 @@ export default defineConfig(({ mode }) => {
       viteTsconfigPaths(),
       svgr(),
     ],
+    build: {
+      sourcemap: true,
+      // Disable inline scripts for CSP compliance
+      rollupOptions: {
+        output: {
+          // Disable code splitting for CSP compliance
+          manualChunks: undefined,
+          // Ensure no inline scripts
+          inlineDynamicImports: false,
+        },
+      },
+    },
     server: {
       port: FE_PORT,
       proxy: {
