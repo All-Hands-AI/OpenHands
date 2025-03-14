@@ -86,6 +86,8 @@ export const useTerminal = ({
 
   const handleEnter = (command: string) => {
     terminal.current?.write("\r\n");
+    // Send the command to the backend but don't echo it back in the terminal
+    // The backend will include the command in its response
     send(getTerminalCommand(command));
   };
 
@@ -131,12 +133,20 @@ export const useTerminal = ({
           content = content.replaceAll(secret, "*".repeat(10));
         });
 
-        terminal.current?.writeln(
-          parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
-        );
-
-        if (type === "output") {
-          terminal.current.write(`\n$ `);
+        // For input type, the command is already displayed in the terminal
+        // as the user types it, so we don't need to display it again
+        if (type === "input") {
+          // Skip displaying the input command as it's already shown
+          // when the user types it and presses Enter
+        } else {
+          // For output type, display the content
+          terminal.current?.writeln(
+            parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
+          );
+          // Add a new prompt after the output
+          if (type === "output") {
+            terminal.current.write(`\n$ `);
+          }
         }
       }
 
