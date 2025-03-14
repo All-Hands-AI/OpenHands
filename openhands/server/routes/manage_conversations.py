@@ -12,8 +12,8 @@ from openhands.integrations.provider import ProviderType
 from openhands.runtime import get_runtime_cls
 from openhands.server.auth import (
     get_access_token,
-    get_github_token,
     get_github_user_id,
+    get_provider_tokens,
     get_user_id,
 )
 from openhands.server.data_models.conversation_info import ConversationInfo
