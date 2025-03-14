@@ -1,7 +1,5 @@
-import pytest
-
+from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.integrations.provider import ProviderType, ProviderToken
 
 
 def test_provider_tokens_not_shared_between_instances():
@@ -15,12 +13,12 @@ def test_provider_tokens_not_shared_between_instances():
     assert instance2.provider_tokens == {}
 
     # Modify the first instance
-    provider_token = ProviderToken(token=None, user_id="test_user")
+    provider_token = ProviderToken(token=None, user_id='test_user')
     instance1.provider_tokens[ProviderType.GITHUB] = provider_token
 
     # Verify the second instance is not affected
     assert ProviderType.GITHUB in instance1.provider_tokens
-    assert instance1.provider_tokens[ProviderType.GITHUB].user_id == "test_user"
+    assert instance1.provider_tokens[ProviderType.GITHUB].user_id == 'test_user'
     assert instance2.provider_tokens == {}
 
 
@@ -35,10 +33,10 @@ def test_selected_repository_not_shared_between_instances():
     assert instance2.selected_repository is None
 
     # Modify the first instance
-    instance1.selected_repository = "test_repo"
+    instance1.selected_repository = 'test_repo'
 
     # Verify the second instance is not affected
-    assert instance1.selected_repository == "test_repo"
+    assert instance1.selected_repository == 'test_repo'
     assert instance2.selected_repository is None
 
 
@@ -53,8 +51,8 @@ def test_selected_branch_not_shared_between_instances():
     assert instance2.selected_branch is None
 
     # Modify the first instance
-    instance1.selected_branch = "test_branch"
+    instance1.selected_branch = 'test_branch'
 
     # Verify the second instance is not affected
-    assert instance1.selected_branch == "test_branch"
+    assert instance1.selected_branch == 'test_branch'
     assert instance2.selected_branch is None
