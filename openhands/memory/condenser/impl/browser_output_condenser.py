@@ -26,12 +26,11 @@ class BrowserOutputCondenser(Condenser):
                 isinstance(event, BrowserOutputObservation)
                 and cnt >= self.attention_window
             ):
-                obs = AgentCondensationObservation(
-                    content=f'URL: {event.url}\nContent Omitted.'
+                results.append(
+                    AgentCondensationObservation(
+                        f'Current URL: {event.url}\nContent Omitted'
+                    )
                 )
-                if hasattr(event, 'tool_call_metadata'):
-                    obs.tool_call_metadata = event.tool_call_metadata
-                results.append(obs)
             else:
                 results.append(event)
                 if isinstance(event, BrowserOutputObservation):

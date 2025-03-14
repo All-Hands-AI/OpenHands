@@ -3,8 +3,8 @@ from __future__ import annotations
 from pydantic import BaseModel, Field, ValidationError
 
 from openhands.core.config.condenser_config import (
-    BrowserOutputCondenserConfig,
     CondenserConfig,
+    NoOpCondenserConfig,
 )
 from openhands.core.logger import openhands_logger as logger
 
@@ -29,11 +29,12 @@ class AgentConfig(BaseModel):
     codeact_enable_browsing: bool = Field(default=True)
     codeact_enable_llm_editor: bool = Field(default=False)
     codeact_enable_jupyter: bool = Field(default=True)
-    enable_prompt_extensions: bool = Field(default=False)
+    enable_prompt_extensions: bool = Field(default=True)
     disabled_microagents: list[str] = Field(default_factory=list)
     enable_history_truncation: bool = Field(default=True)
-    enable_som_visual_browsing: bool = Field(default=True)
-    condenser: CondenserConfig = Field(default_factory=BrowserOutputCondenserConfig)
+    enable_som_visual_browsing: bool = Field(default=False)
+    search_api_key: str | None = Field(default=None)
+    condenser: CondenserConfig = Field(default_factory=NoOpCondenserConfig)
 
     model_config = {'extra': 'forbid'}
 

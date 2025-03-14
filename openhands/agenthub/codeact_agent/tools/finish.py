@@ -1,7 +1,5 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
-# TODO: Prof. Graham was mentioning this tool improved performance on SWE-Bench. Maybe we could check with him once if we should not include this newer tool.
-
 _FINISH_DESCRIPTION = """Signals the completion of the current task or conversation.
 
 Use this tool when:

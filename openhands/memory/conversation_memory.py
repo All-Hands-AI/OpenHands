@@ -24,7 +24,6 @@ from openhands.events.observation import (
     AgentThinkObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
-    FileDownloadObservation,
     FileEditObservation,
     FileReadObservation,
     IPythonRunCellObservation,
@@ -287,7 +286,6 @@ class ConversationMemory:
         - ErrorObservation: Formats error messages from failed actions
         - UserRejectObservation: Formats user rejection messages
         - SearchEngineObservation: Formats results from a search engine
-        - FileDownloadObservation: Formats the result of a browsing action that opened/downloaded a file
 
         In function calling mode, observations with tool_call_metadata are stored in
         tool_call_id_to_message for later processing instead of being returned immediately.
@@ -346,7 +344,7 @@ class ConversationMemory:
                 and enable_som_visual_browsing
                 and vision_is_active
             ):
-                text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. However, the Accessibility tree contains information from the entire webpage.)\n'
+                text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
                 message = Message(
                     role='user',
                     content=[
@@ -381,8 +379,6 @@ class ConversationMemory:
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, SearchEngineObservation):
             # TODO: should we call truncate_content here? Or in any of above calls?
-            message = Message(role='user', content=[TextContent(text=obs.content)])
-        elif isinstance(obs, FileDownloadObservation):
             message = Message(role='user', content=[TextContent(text=obs.content)])
         else:
             # If an observation message is not returned, it will cause an error

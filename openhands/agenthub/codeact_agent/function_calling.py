@@ -230,11 +230,13 @@ def get_tools(
     codeact_enable_browsing: bool = False,
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
+    search_api_key: str | None = None,
 ) -> list[ChatCompletionToolParam]:
-    # tools = [CmdRunTool, ThinkTool, FinishTool]
-    tools = [CmdRunTool, SearchEngineTool, FinishTool]
+    tools = [CmdRunTool, ThinkTool, FinishTool]
+    if search_api_key is not None:
+        tools.append(SearchEngineTool)
     if codeact_enable_browsing:
-        # tools.append(WebReadTool)
+        tools.append(WebReadTool)
         tools.append(BrowserTool)
     if codeact_enable_jupyter:
         tools.append(IPythonTool)

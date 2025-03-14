@@ -1,17 +1,11 @@
 import asyncio
-import base64
 import functools
-import io
 import os
 import re
-import shutil
-import zipfile
 
 import huggingface_hub
-import numpy as np
 import pandas as pd
 from datasets import load_dataset
-from PIL import Image
 
 from evaluation.benchmarks.gaia.scorer import question_scorer
 from evaluation.utils.shared import (
@@ -34,11 +28,7 @@ from openhands.core.config import (
 from openhands.core.config.utils import get_agent_config_arg
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import (
-    AgentFinishAction,
-    CmdRunAction,
-    MessageAction,
-)
+from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
@@ -50,28 +40,16 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': functools.partial(codeact_user_response, encapsulate_solution=True),
 }
 
-# TODO: change this message as per the finish tool you are using.
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have solved the question, please use the finish tool and include your final answer in the message parameter of the finish tool. Your final answer MUST be encapsulated within <solution> and </solution>.\n\n'
+    'CodeActAgent': 'When you think you have solved the question, please first send your answer to user through message and then exit.\n'
 }
-# AGENT_CLS_TO_INST_SUFFIX = {
-#     'CodeActAgent': 'When you think you have solved the question, please first send your answer to user through message and then exit using the finish tool.\n\n'
-# }
 
 
 def get_config(
     metadata: EvalMetadata,
 ) -> AppConfig:
-    brave_search_api_key = os.environ.get('SEARCH_API_KEY', None)
-    assert (
-        brave_search_api_key is not None
-    ), 'Environment variable SEARCH_API_KEY is not set.'
-
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
-    sandbox_config.runtime_startup_env_vars = {
-        'SEARCH_API_KEY': brave_search_api_key,
-    }
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
@@ -88,10 +66,7 @@ def get_config(
     else:
         logger.info('Agent config not provided, using default settings')
         agent_config = config.get_agent_config(metadata.agent_class)
-        print(agent_config)
-        # agent_config.enable_prompt_extensions = False
-        # agent_config.enable_som_visual_browsing = True
-
+        agent_config.enable_prompt_extensions = False
     return config
 
 
@@ -111,42 +86,24 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    action = CmdRunAction(command='mkdir -p /workspace/downloads')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    assert obs.exit_code == 0
-
     if instance['file_name'] != '':
         # if this question comes with a file, we need to save it to the workspace
         assert metadata.data_split is not None
-        extension_name = instance['file_name'].split('.')[-1]
         src_file = os.path.join(
             DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name']
         )
         assert os.path.exists(src_file)
-        if extension_name == 'zip':
-            temp_dir = os.path.join(
-                DATASET_CACHE_DIR, '2023', metadata.data_split, 'tmp_file'
-            )
-            os.makedirs(temp_dir, exist_ok=True)
-            with zipfile.ZipFile(src_file, 'r') as zip_ref:
-                zip_ref.extractall(temp_dir)
-            for root, dirs, files in os.walk(temp_dir):
-                for file in files:
-                    dest_file = '/workspace'
-                    runtime.copy_to(os.path.join(root, file), dest_file)
-            shutil.rmtree(temp_dir)
-        elif extension_name not in ['jpg', 'png']:
-            dest_file = '/workspace'
-            runtime.copy_to(src_file, dest_file)
+        dest_file = os.path.join('/workspace', instance['file_name'])
+        runtime.copy_to(src_file, dest_file)
 
-            # rename to file.extension_name
-            action = CmdRunAction(
-                command=f'mv /workspace/{instance["file_name"]} /workspace/file.{extension_name}'
-            )
-            logger.info(action, extra={'msg_type': 'ACTION'})
-            obs = runtime.run_action(action)
-            assert obs.exit_code == 0
+        # rename to file.extension_name
+        extension_name = instance['file_name'].split('.')[-1]
+        action = CmdRunAction(
+            command=f'mv /workspace/{instance["file_name"]} /workspace/file.{extension_name}'
+        )
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        assert obs.exit_code == 0
 
     action = CmdRunAction(command='cd /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -154,44 +111,6 @@ def initialize_runtime(
     assert obs.exit_code == 0
 
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
-
-
-def image_to_png_base64_url(
-    image: np.ndarray | Image.Image, add_data_prefix: bool = True
-):
-    """Convert a numpy array to a base64 encoded png image url."""
-    if isinstance(image, np.ndarray):
-        image = Image.fromarray(image)
-    if image.mode in ('RGBA', 'LA'):
-        image = image.convert('RGB')
-    buffered = io.BytesIO()
-    image.save(buffered, format='PNG')
-
-    image_base64 = base64.b64encode(buffered.getvalue()).decode()
-    return (
-        f'data:image/png;base64,{image_base64}'
-        if add_data_prefix
-        else f'{image_base64}'
-    )
-
-
-def image_to_jpg_base64_url(
-    image: np.ndarray | Image.Image, add_data_prefix: bool = True
-):
-    """Convert a numpy array to a base64 encoded jpeg image url."""
-    if isinstance(image, np.ndarray):
-        image = Image.fromarray(image)
-    if image.mode in ('RGBA', 'LA'):
-        image = image.convert('RGB')
-    buffered = io.BytesIO()
-    image.save(buffered, format='JPEG')
-
-    image_base64 = base64.b64encode(buffered.getvalue()).decode()
-    return (
-        f'data:image/jpeg;base64,{image_base64}'
-        if add_data_prefix
-        else f'{image_base64}'
-    )
 
 
 def process_instance(
@@ -215,43 +134,16 @@ def process_instance(
         dest_file = None
 
     # Prepare instruction
-    instruction = f"""You have one question to answer. It is paramount that you provide a correct answer.
-Give it all you can: I know for a fact that you have access to all the relevant tools to solve it and find the correct answer (the answer does exist). Failure or 'I cannot answer' or 'None found' will not be tolerated, success will be rewarded.
-You must make sure you find the correct answer! You MUST strictly follow the task-specific formatting instructions for your final answer.
-Here is the task:\n{instance['Question']}\n\n"""
+    instruction = f"{instance['Question']}\n"
     logger.info(f'Instruction: {instruction}')
-    image_urls = []
     if dest_file:
-        if extension_name not in ['jpg', 'png', 'zip']:
-            instruction += f'To solve this task you will have to use the attached file provided in the workspace at location: {dest_file}\n\n'
-        elif extension_name == 'zip':
-            filenames = []
-            src_file = os.path.join(
-                DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name']
-            )
-            with zipfile.ZipFile(src_file, 'r') as zip_ref:
-                filenames = zip_ref.namelist()
-            filenames = [f'/workspace/{file}' for file in filenames]
-            filenames = ', '.join(filenames)
-            instruction += f'To solve this task you will have to use the attached files provided in the workspace at locations: {filenames}\n\n'
-        else:
-            src_file = os.path.join(
-                DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name']
-            )
-            instruction += 'Image: To solve this task you will have to use the image shown below.\n\n'
-            image = Image.open(src_file)
-            if extension_name == 'jpg':
-                image_urls.append(image_to_jpg_base64_url(image))
-            else:
-                image_urls.append(image_to_png_base64_url(image))
-    instruction += """IMPORTANT: When seeking information from a website, REFRAIN from arbitrary URL navigation. You should utilize the designated search engine tool with precise keywords to obtain relevant URLs or use the specific website's search interface. DO NOT navigate directly to specific URLs as they may not exist.\n\nFor example: if you want to search for a research paper on Arxiv, either use the search engine tool with specific keywords or navigate to arxiv.org and then use its interface.\n"""
-    instruction += 'IMPORTANT: You should NEVER ask for Human Help.\n'
-    instruction += 'IMPORTANT: Please encapsulate your final answer (answer ONLY) within <solution> and </solution>. Your answer will be evaluated using string matching approaches so it important that you STRICTLY adhere to the output formatting instructions specified in the task (e.g., alphabetization, sequencing, units, rounding, decimal places, etc.)\n'
+        instruction += f"\n\nThe mentioned file is provided in the workspace at: {dest_file.split('/')[-1]}"
+
+    instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+    instruction += 'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
     instruction += (
         'For example: The answer to the question is <solution> 42 </solution>.\n'
     )
-    instruction += "IMPORTANT: Your final answer should be a number OR as few words as possible OR a comma separated list of numbers and/or strings. If you are asked for a number, express it numerically (i.e., with digits rather than words), do not use commas, and do not include units such as $ or percent signs unless specified otherwise. If you are asked for a string, don't use articles, neither abbreviations (e.g. for cities). If you are asked for a comma separated list, apply the above rules depending of whether the element to be put in the list is a number or a string.\n"
-
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(metadata.agent_class, '')
     logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
@@ -264,9 +156,7 @@ Here is the task:\n{instance['Question']}\n\n"""
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            initial_user_action=MessageAction(
-                content=instruction, image_urls=image_urls
-            ),
+            initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 metadata.agent_class
@@ -285,7 +175,7 @@ Here is the task:\n{instance['Question']}\n\n"""
     for event in reversed(state.history):
         if event.source == 'agent':
             if isinstance(event, AgentFinishAction):
-                model_answer_raw = event.final_thought
+                model_answer_raw = event.thought
                 break
             elif isinstance(event, CmdRunAction):
                 model_answer_raw = event.thought
@@ -332,7 +222,6 @@ Here is the task:\n{instance['Question']}\n\n"""
         error=state.last_error if state and state.last_error else None,
         test_result=test_result,
     )
-    runtime.close()
     return output
 
 

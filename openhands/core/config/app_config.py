@@ -56,7 +56,7 @@ class AppConfig(BaseModel):
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     runtime: str = Field(default='docker')
     file_store: str = Field(default='local')
-    file_store_path: str = Field(default='/tmp/openhands_file_store2')
+    file_store_path: str = Field(default='/tmp/openhands_file_store')
     save_trajectory_path: str | None = Field(default=None)
     replay_trajectory_path: str | None = Field(default=None)
     workspace_base: str | None = Field(default=None)
