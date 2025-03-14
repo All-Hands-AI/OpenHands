@@ -1,22 +1,31 @@
 interface HelpLinkProps {
   testId: string;
   text: string;
-  linkText: string;
-  href: string;
+  links: Array<{
+    text: string;
+    href: string;
+  }>;
 }
 
-export function HelpLink({ testId, text, linkText, href }: HelpLinkProps) {
+export function HelpLink({ testId, text, links }: HelpLinkProps) {
   return (
     <p data-testid={testId} className="text-xs">
       {text}{" "}
-      <a
-        href={href}
-        rel="noreferrer noopener"
-        target="_blank"
-        className="underline underline-offset-2"
-      >
-        {linkText}
-      </a>
+      {links.map((link, index) => (
+        <>
+          {index > 0 && " or "}
+          <a
+            key={link.href}
+            href={link.href}
+            rel="noreferrer noopener"
+            target="_blank"
+            className="underline underline-offset-2"
+          >
+            {link.text}
+          </a>
+        </>
+      ))}
+      .
     </p>
   );
 }
