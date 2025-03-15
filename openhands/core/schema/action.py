@@ -82,5 +82,8 @@ class ActionTypeSchema(BaseModel):
     SEND_PR: str = Field(default='send_pr')
     """Send a PR to github."""
 
+    MICROAGENT: str = Field(default='microagent')
+    """Retrieves content from a microagent."""
+
 
 ActionType = ActionTypeSchema()

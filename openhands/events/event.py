@@ -22,6 +22,16 @@ class FileReadSource(str, Enum):
     DEFAULT = 'default'
 
 
+class MicroagentInfoType(str, Enum):
+    """The type of information that can be retrieved from microagents."""
+
+    ENVIRONMENT = 'environment'
+    """environment information (repo instructions, runtime, etc.)"""
+
+    KNOWLEDGE = 'knowledge'
+    """A knowledge microagent."""
+
+
 @dataclass
 class Event:
     INVALID_ID = -1

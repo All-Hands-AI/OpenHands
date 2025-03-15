@@ -85,8 +85,8 @@ class FileConversationStore(ConversationStore):
             try:
                 conversations.append(await self.get_metadata(conversation_id))
             except Exception:
-                logger.error(
-                    f'Error loading conversation: {conversation_id}',
+                logger.warning(
+                    f'Could not load conversation metadata: {conversation_id}',
                 )
         conversations.sort(key=_sort_key, reverse=True)
         conversations = conversations[start:end]
