@@ -1,7 +1,9 @@
+from openhands.events.event import RecallType
 from openhands.events.observation.agent import (
     AgentCondensationObservation,
     AgentStateChangedObservation,
     AgentThinkObservation,
+    MicroagentObservation,
 )
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
@@ -40,4 +42,6 @@ __all__ = [
     'SuccessObservation',
     'UserRejectObservation',
     'AgentCondensationObservation',
+    'MicroagentObservation',
+    'RecallType',
 ]

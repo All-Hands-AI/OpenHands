@@ -1,6 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from openhands.core.schema import ObservationType
+from openhands.events.event import RecallType
 from openhands.events.observation.observation import Observation
 
 
@@ -40,3 +41,76 @@ class AgentThinkObservation(Observation):
     @property
     def message(self) -> str:
         return self.content
+
+
+@dataclass
+class MicroagentKnowledge:
+    """
+    Represents knowledge from a triggered microagent.
+
+    Attributes:
+        name: The name of the microagent that was triggered
+        trigger: The word that triggered this microagent
+        content: The actual content/knowledge from the microagent
+    """
+
+    name: str
+    trigger: str
+    content: str
+
+
+@dataclass
+class MicroagentObservation(Observation):
+    """The retrieval of content from a microagent or more microagents."""
+
+    recall_type: RecallType
+    observation: str = ObservationType.MICROAGENT
+
+    # environment
+    repo_name: str = ''
+    repo_directory: str = ''
+    repo_instructions: str = ''
+    runtime_hosts: dict[str, int] = field(default_factory=dict)
+    additional_agent_instructions: str = ''
+
+    # knowledge
+    microagent_knowledge: list[MicroagentKnowledge] = field(default_factory=list)
+    """
+    A list of MicroagentKnowledge objects, each containing information from a triggered microagent.
+
+    Example:
+    [
+        MicroagentKnowledge(
+            name="python_best_practices",
+            trigger="python",
+            content="Always use virtual environments for Python projects."
+        ),
+        MicroagentKnowledge(
+            name="git_workflow",
+            trigger="git",
+            content="Create a new branch for each feature or bugfix."
+        )
+    ]
+    """
+
+    @property
+    def message(self) -> str:
+        return self.__str__()
+
+    def __str__(self) -> str:
+        # Build a string representation of all fields
+        fields = [
+            f'recall_type={self.recall_type}',
+            f'repo_name={self.repo_name}',
+            f'repo_instructions={self.repo_instructions[:20]}...',
+            f'runtime_hosts={self.runtime_hosts}',
+            f'additional_agent_instructions={self.additional_agent_instructions[:20]}...',
+        ]
+
+        # Only include microagent_knowledge if it's not empty
+        if self.microagent_knowledge:
+            fields.append(
+                f'microagent_knowledge={", ".join([m.name for m in self.microagent_knowledge])}'
+            )
+
+        return f'**MicroagentObservation**\n{", ".join(fields)}'
