@@ -353,19 +353,22 @@ def test_process_events_with_user_reject_observation(conversation_memory):
     assert '[Last action has been rejected by the user]' in result.content[0].text
 
 
-def test_process_events_with_empty_environment_info(conversation_memory):
-    """Test that empty environment info observations return an empty list of messages without calling build_additional_info."""
-    # Create a MicroagentObservation with empty info
+def test_process_events_with_empty_workspace_context(conversation_memory):
+    """Test that empty workspace context info observations return an empty list of messages without calling build in prompt manager."""
+    # Create a WorkspaceContextObservation with empty info
 
-    empty_obs = MicroagentObservation(
-        recall_type=RecallType.WORKSPACE_CONTEXT,
+    # Create an initial user message
+    user_message = MessageAction(content='Hello, I have a question')
+    user_message._source = EventSource.USER
+
+    empty_obs = WorkspaceContextObservation(
         repo_name='',
         repo_directory='',
         repo_instructions='',
         runtime_hosts={},
         additional_agent_instructions='',
         microagent_knowledge=[],
-        content='Retrieved environment info',
+        content='Added workspace context',
     )
 
     initial_messages = [
@@ -373,18 +376,204 @@ def test_process_events_with_empty_environment_info(conversation_memory):
     ]
 
     messages = conversation_memory.process_events(
-        condensed_history=[empty_obs],
+        condensed_history=[user_message, empty_obs],
         initial_messages=initial_messages,
         max_message_chars=None,
         vision_is_active=False,
     )
 
-    # Should only contain the initial system message
-    assert len(messages) == 1
+    # Should contain the initial system message and user message (but no observation message)
+    assert len(messages) == 2
     assert messages[0].role == 'system'
+    assert messages[1].role == 'user'
+    assert messages[1].content[0].text == 'Hello, I have a question'
 
     # Verify that build_additional_info was NOT called since all input values were empty
     conversation_memory.prompt_manager.build_additional_info.assert_not_called()
+    # Verify that build_microagent_info was NOT called since all input values were empty
+    conversation_memory.prompt_manager.build_microagent_info.assert_not_called()
+
+
+def test_process_events_with_only_repo_context(conversation_memory):
+    """Test processing a WorkspaceContextObservation with only repository info but no microagent knowledge."""
+    # Create an initial user message
+    user_message = MessageAction(content='Hello, I have a question')
+    user_message._source = EventSource.USER
+
+    # Create a WorkspaceContextObservation with only repository info
+    repo_only_obs = WorkspaceContextObservation(
+        repo_name='test-repo',
+        repo_directory='/path/to/repo',
+        repo_instructions='This is a test repository',
+        runtime_hosts={'localhost': 8080},
+        additional_agent_instructions='Additional instructions',
+        microagent_knowledge=[],  # Empty microagent knowledge
+        content='Added workspace context',
+    )
+
+    initial_messages = [
+        Message(role='system', content=[TextContent(text='System message')])
+    ]
+
+    messages = conversation_memory.process_events(
+        condensed_history=[user_message, repo_only_obs],
+        initial_messages=initial_messages,
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Should contain system message, user message, and one message with repo context
+    assert len(messages) == 3
+    assert messages[0].role == 'system'
+    assert messages[1].role == 'user'
+    assert messages[1].content[0].text == 'Hello, I have a question'
+    assert messages[2].role == 'user'
+
+    # Verify that only build_additional_info was called, not build_microagent_info
+    conversation_memory.prompt_manager.build_additional_info.assert_called_once()
+    conversation_memory.prompt_manager.build_microagent_info.assert_not_called()
+
+    # Verify that the repository info was passed correctly
+    call_args = conversation_memory.prompt_manager.build_additional_info.call_args[1]
+    assert call_args['repository_info'].repo_name == 'test-repo'
+    assert call_args['repository_info'].repo_directory == '/path/to/repo'
+
+
+def test_process_events_with_only_microagent_knowledge(conversation_memory):
+    """Test processing a WorkspaceContextObservation with only microagent knowledge but no repository info."""
+    # Create an initial user message
+    user_message = MessageAction(content='Hello, I have a question about python')
+    user_message._source = EventSource.USER
+
+    # Create microagent knowledge
+    microagent_knowledge = [
+        MicroagentKnowledge(
+            name='test_agent',
+            trigger='python',
+            content='This is test agent content',
+        )
+    ]
+
+    # Create a WorkspaceContextObservation with only microagent knowledge
+    microagent_only_obs = WorkspaceContextObservation(
+        repo_name='',
+        repo_directory='',
+        repo_instructions='',
+        runtime_hosts={},
+        additional_agent_instructions='',
+        microagent_knowledge=microagent_knowledge,
+        content='Added workspace context',
+    )
+
+    initial_messages = [
+        Message(role='system', content=[TextContent(text='System message')])
+    ]
+
+    messages = conversation_memory.process_events(
+        condensed_history=[user_message, microagent_only_obs],
+        initial_messages=initial_messages,
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Should contain system message, user message, and one message with microagent info
+    assert len(messages) == 3
+    assert messages[0].role == 'system'
+    assert messages[1].role == 'user'
+    assert messages[1].content[0].text == 'Hello, I have a question about python'
+    assert messages[2].role == 'user'
+
+    # Verify that only build_microagent_info was called, not build_additional_info
+    conversation_memory.prompt_manager.build_additional_info.assert_not_called()
+    conversation_memory.prompt_manager.build_microagent_info.assert_called_once()
+
+    # Verify that the microagent info was passed correctly
+    call_args = conversation_memory.prompt_manager.build_microagent_info.call_args[1]
+    assert len(call_args['triggered_agents']) == 1
+    assert call_args['triggered_agents'][0].name == 'test_agent'
+    assert call_args['triggered_agents'][0].trigger == 'python'
+    assert call_args['triggered_agents'][0].content == 'This is test agent content'
+
+
+def test_process_events_with_combined_context_and_microagents(conversation_memory):
+    """Test processing a WorkspaceContextObservation with both repository info and microagent knowledge."""
+    # Create an initial user message
+    user_message = MessageAction(
+        content='Hello, I have a question about git in this repo'
+    )
+    user_message._source = EventSource.USER
+
+    # Create microagent knowledge
+    microagent_knowledge = [
+        MicroagentKnowledge(
+            name='test_agent',
+            trigger='git',
+            content='This is test agent content',
+        ),
+        MicroagentKnowledge(
+            name='another_agent',
+            trigger='repo',
+            content='This is another agent content',
+        ),
+    ]
+
+    # Create a WorkspaceContextObservation with both repo info and microagent knowledge
+    combined_obs = WorkspaceContextObservation(
+        repo_name='test-repo',
+        repo_directory='/path/to/repo',
+        repo_instructions='This is a test repository',
+        runtime_hosts={'localhost': 8080},
+        additional_agent_instructions='Additional instructions',
+        microagent_knowledge=microagent_knowledge,
+        content='Added workspace context',
+    )
+
+    initial_messages = [
+        Message(role='system', content=[TextContent(text='System message')])
+    ]
+
+    # Reset mock call counts before test
+    conversation_memory.prompt_manager.build_additional_info.reset_mock()
+    conversation_memory.prompt_manager.build_microagent_info.reset_mock()
+
+    messages = conversation_memory.process_events(
+        condensed_history=[user_message, combined_obs],
+        initial_messages=initial_messages,
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Should contain system message, user message, and one message with both types of info
+    assert len(messages) == 3
+    assert messages[0].role == 'system'
+    assert messages[1].role == 'user'
+    assert (
+        messages[1].content[0].text == 'Hello, I have a question about git in this repo'
+    )
+    assert messages[2].role == 'user'
+
+    # Verify both template methods were called
+    conversation_memory.prompt_manager.build_additional_info.assert_called_once()
+    conversation_memory.prompt_manager.build_microagent_info.assert_called_once()
+
+    # Verify the correct message structure with multiple TextContent objects
+    assert len(messages[2].content) == 2
+    assert isinstance(messages[2].content[0], TextContent)
+    assert isinstance(messages[2].content[1], TextContent)
+
+    # Verify that the repository info was passed correctly
+    repo_args = conversation_memory.prompt_manager.build_additional_info.call_args[1]
+    assert repo_args['repository_info'].repo_name == 'test-repo'
+    assert repo_args['repository_info'].repo_directory == '/path/to/repo'
+
+    # Verify that the microagent info was passed correctly
+    microagent_args = (
+        conversation_memory.prompt_manager.build_microagent_info.call_args[1]
+    )
+    assert len(microagent_args['triggered_agents']) == 2
+    agent_names = [agent.name for agent in microagent_args['triggered_agents']]
+    assert 'test_agent' in agent_names
+    assert 'another_agent' in agent_names
 
 
 def test_process_events_with_function_calling_observation(conversation_memory):

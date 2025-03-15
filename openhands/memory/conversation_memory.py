@@ -389,16 +389,15 @@ class ConversationMemory:
             isinstance(obs, WorkspaceContextObservation)
             and self.agent_config.enable_prompt_extensions
         ):
-            # Handle WorkspaceContextObservation (previously MicroagentObservation with WORKSPACE_CONTEXT type)
             # everything is optional, check if they are present
-            repo_info = (
-                RepositoryInfo(
+            if obs.repo_name or obs.repo_directory:
+                repo_info = RepositoryInfo(
                     repo_name=obs.repo_name or '',
                     repo_directory=obs.repo_directory or '',
                 )
-                if obs.repo_name or obs.repo_directory
-                else None
-            )
+            else:
+                repo_info = None
+
             if obs.runtime_hosts or obs.additional_agent_instructions:
                 runtime_info = RuntimeInfo(
                     available_hosts=obs.runtime_hosts,
@@ -419,17 +418,42 @@ class ConversationMemory:
             )
             has_repo_instructions = bool(repo_instructions.strip())
 
-            # Build additional info if we have something to render
+            # Filter and process microagent knowledge
+            filtered_agents = []
+            if obs.microagent_knowledge:
+                # Exclude disabled microagents
+                filtered_agents = [
+                    agent
+                    for agent in obs.microagent_knowledge
+                    if agent.name not in self.agent_config.disabled_microagents
+                ]
+
+            has_microagent_knowledge = bool(filtered_agents)
+
+            # Generate appropriate content based on what we have
+            message_content = []
+
+            # Build additional info if we have repo or runtime info
             if has_repo_info or has_runtime_info or has_repo_instructions:
-                # ok, now we can build the additional info
-                formatted_text = self.prompt_manager.build_additional_info(
+                # Format the workspace context information
+                formatted_workspace_text = self.prompt_manager.build_additional_info(
                     repository_info=repo_info,
                     runtime_info=runtime_info,
                     repo_instructions=repo_instructions,
                 )
-                message = Message(
-                    role='user', content=[TextContent(text=formatted_text)]
+                message_content.append(TextContent(text=formatted_workspace_text))
+
+            # Add microagent info if we have filtered agents
+            if has_microagent_knowledge:
+                # Format the microagent information
+                formatted_microagent_text = self.prompt_manager.build_microagent_info(
+                    triggered_agents=filtered_agents,
                 )
+                message_content.append(TextContent(text=formatted_microagent_text))
+
+            # Return the combined message if we have any content
+            if message_content:
+                return [Message(role='user', content=message_content)]
             else:
                 return []
         elif (
@@ -507,6 +531,10 @@ class ConversationMemory:
         self, obs: MicroagentObservation, current_index: int, events: list[Event]
     ) -> list[MicroagentKnowledge]:
         """Filter out agents that appear in earlier MicroagentObservations or WorkspaceContextObservations.
+
+        Note: This method is only used for MicroagentObservation, not for WorkspaceContextObservation,
+        since WorkspaceContextObservation is always the first observation in the conversation and
+        we have no earlier occurrences.
 
         Args:
             obs: The current MicroagentObservation to filter
