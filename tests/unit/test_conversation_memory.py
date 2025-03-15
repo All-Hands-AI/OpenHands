@@ -36,7 +36,7 @@ from openhands.events.observation.files import FileEditObservation, FileReadObse
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.tool import ToolCallMetadata
 from openhands.memory.conversation_memory import ConversationMemory
-from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import PromptManager
 
 
 @pytest.fixture
@@ -437,6 +437,11 @@ def test_process_events_with_only_repo_context(conversation_memory):
     call_args = conversation_memory.prompt_manager.build_additional_info.call_args[1]
     assert call_args['repository_info'].repo_name == 'test-repo'
     assert call_args['repository_info'].repo_directory == '/path/to/repo'
+    assert call_args['runtime_info'].available_hosts == {'localhost': 8080}
+    assert (
+        call_args['runtime_info'].additional_agent_instructions
+        == 'Additional instructions'
+    )
 
 
 def test_process_events_with_only_microagent_knowledge(conversation_memory):
@@ -716,49 +721,6 @@ def test_apply_prompt_caching(conversation_memory):
     assert messages[3].content[0].cache_prompt is True
 
 
-def test_process_events_with_environment_microagent_observation(conversation_memory):
-    """Test processing a MicroagentObservation with ENVIRONMENT info type."""
-    obs = MicroagentObservation(
-        recall_type=RecallType.WORKSPACE_CONTEXT,
-        repo_name='test-repo',
-        repo_directory='/path/to/repo',
-        repo_instructions='# Test Repository\nThis is a test repository.',
-        runtime_hosts={'localhost': 8080},
-        content='Retrieved environment info',
-    )
-
-    initial_messages = [
-        Message(role='system', content=[TextContent(text='System message')])
-    ]
-
-    messages = conversation_memory.process_events(
-        condensed_history=[obs],
-        initial_messages=initial_messages,
-        max_message_chars=None,
-        vision_is_active=False,
-    )
-
-    assert len(messages) == 2
-    result = messages[1]
-    assert result.role == 'user'
-    assert len(result.content) == 1
-    assert isinstance(result.content[0], TextContent)
-    assert result.content[0].text == 'Formatted repository and runtime info'
-
-    # Verify the prompt_manager was called with the correct parameters
-    conversation_memory.prompt_manager.build_additional_info.assert_called_once()
-    call_args = conversation_memory.prompt_manager.build_additional_info.call_args[1]
-    assert isinstance(call_args['repository_info'], RepositoryInfo)
-    assert call_args['repository_info'].repo_name == 'test-repo'
-    assert call_args['repository_info'].repo_directory == '/path/to/repo'
-    assert isinstance(call_args['runtime_info'], RuntimeInfo)
-    assert call_args['runtime_info'].available_hosts == {'localhost': 8080}
-    assert (
-        call_args['repo_instructions']
-        == '# Test Repository\nThis is a test repository.'
-    )
-
-
 def test_process_events_with_knowledge_microagent_microagent_observation(
     conversation_memory,
 ):
@@ -952,7 +914,7 @@ This is triggered content for testing.
 
 
 def test_conversation_memory_processes_environment_microagent_observation(prompt_dir):
-    """Test that ConversationMemory processes environment info MicroagentObservations correctly."""
+    """Test that ConversationMemory processes WorkspaceContextObservation correctly."""
     # Create an additional_info.j2 template file
     template_path = os.path.join(prompt_dir, 'additional_info.j2')
     if not os.path.exists(template_path):
@@ -984,6 +946,7 @@ each of which has a corresponding port:
     # Create a mock agent config
     agent_config = MagicMock(spec=AgentConfig)
     agent_config.enable_prompt_extensions = True
+    agent_config.disabled_microagents = []
 
     # Create a PromptManager
     prompt_manager = PromptManager(prompt_dir=prompt_dir)
@@ -993,19 +956,20 @@ each of which has a corresponding port:
         config=agent_config, prompt_manager=prompt_manager
     )
 
-    # Create a MicroagentObservation with environment info
-    microagent_observation = MicroagentObservation(
-        recall_type=RecallType.WORKSPACE_CONTEXT,
+    # Create a WorkspaceContextObservation with environment info
+    workspace_observation = WorkspaceContextObservation(
         repo_name='owner/repo',
         repo_directory='/workspace/repo',
         repo_instructions='This repository contains important code.',
         runtime_hosts={'example.com': 8080},
-        content='Retrieved environment info',
+        additional_agent_instructions='',
+        microagent_knowledge=[],
+        content='Added workspace context',
     )
 
     # Process the observation
     messages = conversation_memory._process_observation(
-        obs=microagent_observation, tool_call_id_to_message={}, max_message_chars=None
+        obs=workspace_observation, tool_call_id_to_message={}, max_message_chars=None
     )
 
     # Verify the message was created correctly
