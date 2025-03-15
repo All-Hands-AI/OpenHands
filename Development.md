@@ -126,3 +126,19 @@ cd ./containers/dev
 ```
 
 You do need [Docker](https://docs.docker.com/engine/install/) installed on your host though.
+
+## Key Documentation Resources
+Here's a guide to the important documentation files in the repository:
+
+- `/README.md`: Main project overview, features, and basic setup instructions
+- `/Development.md` (this file): Comprehensive guide for developers working on OpenHands
+- `/CONTRIBUTING.md`: Guidelines for contributing to the project, including code style and PR process
+- `/docs/DOC_STYLE_GUIDE.md`: Standards for writing and maintaining project documentation
+- `/openhands/README.md`: Details about the backend Python implementation
+- `/frontend/README.md`: Frontend React application setup and development guide
+- `/containers/README.md`: Information about Docker containers and deployment
+- `/tests/unit/README.md`: Guide to writing and running unit tests
+- `/evaluation/README.md`: Documentation for the evaluation framework and benchmarks
+- `/microagents/README.md`: Information about the microagents architecture and implementation
+- `/openhands/server/README.md`: Server implementation details and API documentation
+- `/openhands/runtime/README.md`: Documentation for the runtime environment and execution model

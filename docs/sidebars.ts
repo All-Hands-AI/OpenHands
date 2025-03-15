@@ -171,6 +171,11 @@ const sidebars: SidebarsConfig = {
       label: 'For OpenHands Developers',
       items: [
         {
+          type: 'doc',
+          label: 'Development Overview',
+          id: 'usage/how-to/development-overview',
+        },
+        {
           type: 'category',
           label: 'Architecture',
           items: [
