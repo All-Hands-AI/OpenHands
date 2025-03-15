@@ -32,7 +32,7 @@ def test_prompt_manager_template_rendering(prompt_dir):
         f.write("""
 {% if repository_info %}
 <REPOSITORY_INFO>
-At the user's request, repository {{ repository_info.repo_name }} has been cloned to directory {{ repository_info.repo_directory }}.
+At the user's request, repository {{ repository_info.repo_name }} has been cloned to the current working directory {{ repository_info.repo_directory }}.
 </REPOSITORY_INFO>
 {% endif %}
 """)
@@ -56,7 +56,7 @@ At the user's request, repository {{ repository_info.repo_name }} has been clone
     )
     assert '<REPOSITORY_INFO>' in additional_info
     assert (
-        "At the user's request, repository owner/repo has been cloned to directory /workspace/repo."
+        "At the user's request, repository owner/repo has been cloned to the current working directory /workspace/repo."
         in additional_info
     )
     assert '</REPOSITORY_INFO>' in additional_info
