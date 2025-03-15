@@ -48,7 +48,8 @@ async def test_iterate_single_page():
                 get_conversation_metadata_filename('conv1'): json.dumps(
                     {
                         'conversation_id': 'conv1',
-                        'github_user_id': '123', 'user_id': '123',
+                        'github_user_id': '123',
+                        'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'First conversation',
                         'created_at': '2025-01-16T19:51:04Z',
@@ -57,7 +58,8 @@ async def test_iterate_single_page():
                 get_conversation_metadata_filename('conv2'): json.dumps(
                     {
                         'conversation_id': 'conv2',
-                        'github_user_id': '123', 'user_id': '123',
+                        'github_user_id': '123',
+                        'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'Second conversation',
                         'created_at': '2025-01-17T19:51:04Z',
@@ -85,7 +87,8 @@ async def test_iterate_multiple_pages():
                 get_conversation_metadata_filename(f'conv{i}'): json.dumps(
                     {
                         'conversation_id': f'conv{i}',
-                        'github_user_id': '123', 'user_id': '123',
+                        'github_user_id': '123',
+                        'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': f'Conversation {i}',
                         'created_at': f'2025-01-{15+i}T19:51:04Z',
@@ -119,7 +122,8 @@ async def test_iterate_with_invalid_conversation():
                 get_conversation_metadata_filename('conv1'): json.dumps(
                     {
                         'conversation_id': 'conv1',
-                        'github_user_id': '123', 'user_id': '123',
+                        'github_user_id': '123',
+                        'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'Valid conversation',
                         'created_at': '2025-01-16T19:51:04Z',

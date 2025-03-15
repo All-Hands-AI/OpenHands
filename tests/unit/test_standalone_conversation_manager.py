@@ -93,10 +93,18 @@ async def test_join_local_session():
                 'new-session-id', ConversationInitData(), None
             )
             await conversation_manager.join_conversation(
-                'new-session-id', 'new-session-id', ConversationInitData(), None, '12345'
+                'new-session-id',
+                'new-session-id',
+                ConversationInitData(),
+                None,
+                '12345',
             )
             await conversation_manager.join_conversation(
-                'new-session-id', 'new-session-id', ConversationInitData(), None, '12345'
+                'new-session-id',
+                'new-session-id',
+                ConversationInitData(),
+                None,
+                '12345',
             )
     assert session_instance.initialize_agent.call_count == 1
     assert sio.enter_room.await_count == 2
