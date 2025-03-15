@@ -21,6 +21,8 @@ const getSettingsQueryFn = async () => {
     ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
     ENABLE_SOUND_NOTIFICATIONS: apiSettings.enable_sound_notifications,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
+    PROVIDER_TOKENS: apiSettings.provider_tokens,
+    IS_NEW_USER: false,
   };
 };
 
@@ -34,6 +36,8 @@ export const useSettings = () => {
     // would want to show the modal immediately if the
     // settings are not found
     retry: (_, error) => error.status !== 404,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
     meta: {
       disableToast: true,
     },

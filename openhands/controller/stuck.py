@@ -103,8 +103,9 @@ class StuckDetector:
                 return True
 
         # scenario 5: context window error loop
-        if self._is_stuck_context_window_error(filtered_history):
-            return True
+        if len(filtered_history) >= 10:
+            if self._is_stuck_context_window_error(filtered_history):
+                return True
 
         return False
 
@@ -333,12 +334,12 @@ class StuckDetector:
             if isinstance(event, AgentCondensationObservation)
         ]
 
-        # Need at least 3 condensation events to detect a loop
-        if len(condensation_events) < 3:
+        # Need at least 10 condensation events to detect a loop
+        if len(condensation_events) < 10:
             return False
 
-        # Get the last 3 condensation events
-        last_condensation_events = condensation_events[-3:]
+        # Get the last 10 condensation events
+        last_condensation_events = condensation_events[-10:]
 
         # Check if there are any non-condensation events between them
         for i in range(len(last_condensation_events) - 1):

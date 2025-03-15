@@ -8,8 +8,9 @@ from pydantic import BaseModel, SecretStr
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.integrations.github.github_service import GithubServiceImpl
+from openhands.integrations.provider import ProviderType
 from openhands.runtime import get_runtime_cls
-from openhands.server.auth import get_access_token, get_github_token, get_github_user_id
+from openhands.server.auth import get_provider_tokens, get_access_token, get_github_user_id
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
@@ -136,13 +137,18 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     using the returned conversation ID.
     """
     logger.info('Initializing new conversation')
-    user_id = get_github_user_id(request)
-    gh_client = GithubServiceImpl(
-        user_id=user_id,
-        external_auth_token=get_access_token(request),
-        github_token=get_github_token(request),
-    )
-    github_token = await gh_client.get_latest_token()
+    user_id = None
+    github_token = None
+    provider_tokens = get_provider_tokens(request)
+    if provider_tokens and ProviderType.GITHUB in provider_tokens:
+        token = provider_tokens[ProviderType.GITHUB]
+        user_id = token.user_id
+        gh_client = GithubServiceImpl(
+            user_id=user_id,
+            external_auth_token=get_access_token(request),
+            token=token.token,
+        )
+        github_token = await gh_client.get_latest_token()
 
     selected_repository = data.selected_repository
     selected_branch = data.selected_branch

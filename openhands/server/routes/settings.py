@@ -3,8 +3,9 @@ from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands.server.auth import get_github_token, get_user_id
+from openhands.integrations.provider import ProviderToken, ProviderType
+from openhands.integrations.utils import validate_provider_token
+from openhands.server.auth import get_provider_tokens, get_user_id
 from openhands.server.settings import GETSettingsModel, POSTSettingsModel, Settings
 from openhands.server.shared import SettingsStoreImpl, config
 
@@ -23,14 +24,14 @@ async def load_settings(request: Request) -> GETSettingsModel | JSONResponse:
                 content={'error': 'Settings not found'},
             )
 
-        token_is_set = bool(user_id) or bool(get_github_token(request))
+        github_token_is_set = bool(user_id) or bool(get_provider_tokens(request))
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(),
-            github_token_is_set=token_is_set,
+            github_token_is_set=github_token_is_set,
         )
         settings_with_token_data.llm_api_key = settings.llm_api_key
 
-        del settings_with_token_data.github_token
+        del settings_with_token_data.secrets_store
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
@@ -45,26 +46,27 @@ async def store_settings(
     request: Request,
     settings: POSTSettingsModel,
 ) -> JSONResponse:
-    # Check if token is valid
-    if settings.github_token:
-        try:
-            # We check if the token is valid by getting the user
-            # If the token is invalid, this will raise an exception
-            github = GithubServiceImpl(
-                user_id=None,
-                external_auth_token=None,
-                github_token=SecretStr(settings.github_token),
-            )
-            await github.get_user()
+    # Check provider tokens are valid
+    if settings.provider_tokens:
+        # Remove extraneous token types
+        provider_types = [provider.value for provider in ProviderType]
+        settings.provider_tokens = {
+            k: v for k, v in settings.provider_tokens.items() if k in provider_types
+        }
 
-        except Exception as e:
-            logger.warning(f'Invalid GitHub token: {e}')
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={
-                    'error': 'Invalid GitHub token. Please make sure it is valid.'
-                },
-            )
+        # Determine whether tokens are valid
+        for token_type, token_value in settings.provider_tokens.items():
+            if token_value:
+                confirmed_token_type = await validate_provider_token(
+                    SecretStr(token_value)
+                )
+                if not confirmed_token_type or confirmed_token_type.value != token_type:
+                    return JSONResponse(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        content={
+                            'error': f'Invalid token. Please make sure it is a valid {token_type} token.'
+                        },
+                    )
 
     try:
         settings_store = await SettingsStoreImpl.get_instance(
@@ -72,32 +74,46 @@ async def store_settings(
         )
         existing_settings = await settings_store.load()
 
+        # Convert to Settings model and merge with existing settings
         if existing_settings:
-            # LLM key isn't on the frontend, so we need to keep it if unset
+            # Keep existing LLM settings if not provided
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
+            if settings.llm_model is None:
+                settings.llm_model = existing_settings.llm_model
+            if settings.llm_base_url is None:
+                settings.llm_base_url = existing_settings.llm_base_url
 
-            if settings.github_token is None:
-                settings.github_token = existing_settings.github_token
-
+            # Keep existing analytics consent if not provided
             if settings.user_consents_to_analytics is None:
                 settings.user_consents_to_analytics = (
                     existing_settings.user_consents_to_analytics
                 )
 
-            if settings.llm_model is None:
-                settings.llm_model = existing_settings.llm_model
+            if existing_settings.secrets_store:
+                existing_providers = [
+                    provider.value
+                    for provider in existing_settings.secrets_store.provider_tokens
+                ]
 
-            if settings.llm_base_url is None:
-                settings.llm_base_url = existing_settings.llm_base_url
+                # Merge incoming settings store with the existing one
+                for provider, token_value in settings.provider_tokens.items():
+                    if provider in existing_providers and not token_value:
+                        provider_type = ProviderType(provider)
+                        existing_token = (
+                            existing_settings.secrets_store.provider_tokens.get(
+                                provider_type
+                            )
+                        )
+                        if existing_token and existing_token.token:
+                            settings.provider_tokens[provider] = (
+                                existing_token.token.get_secret_value()
+                            )
 
-        response = JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={'message': 'Settings stored'},
-        )
-
-        if settings.unset_github_token:
-            settings.github_token = None
+            # Merge provider tokens with existing ones
+            if settings.unset_github_token:  # Only merge if not unsetting tokens
+                settings.secrets_store.provider_tokens = {}
+                settings.provider_tokens = {}
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
@@ -106,9 +122,11 @@ async def store_settings(
             )
 
         settings = convert_to_settings(settings)
-
         await settings_store.store(settings)
-        return response
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'Settings stored'},
+        )
     except Exception as e:
         logger.warning(f'Something went wrong storing settings: {e}')
         return JSONResponse(
@@ -127,8 +145,19 @@ def convert_to_settings(settings_with_token_data: POSTSettingsModel) -> Settings
         if key in Settings.model_fields  # Ensures only `Settings` fields are included
     }
 
-    # Convert the `llm_api_key` and `github_token` to a `SecretStr` instance
+    # Convert the `llm_api_key` to a `SecretStr` instance
     filtered_settings_data['llm_api_key'] = settings_with_token_data.llm_api_key
-    filtered_settings_data['github_token'] = settings_with_token_data.github_token
 
-    return Settings(**filtered_settings_data)
+    # Create a new Settings instance without provider tokens
+    settings = Settings(**filtered_settings_data)
+
+    # Update provider tokens if any are provided
+    if settings_with_token_data.provider_tokens:
+        for token_type, token_value in settings_with_token_data.provider_tokens.items():
+            if token_value:
+                provider = ProviderType(token_type)
+                settings.secrets_store.provider_tokens[provider] = ProviderToken(
+                    token=SecretStr(token_value), user_id=None
+                )
+
+    return settings
