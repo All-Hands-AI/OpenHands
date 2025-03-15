@@ -490,6 +490,116 @@ class Runtime(FileEditRuntimeMixin):
     def web_hosts(self) -> dict[str, int]:
         return {}
 
+    # ====================================================================
+    # Git
+    # ====================================================================
+
+    def _is_git_repo(self) -> bool:
+        cmd = 'git rev-parse --is-inside-work-tree'
+        obs = self.run(CmdRunAction(command=cmd))
+        output = obs.content.strip()
+        return output == 'true'
+
+    def _get_current_file_content(self, file_path: str) -> str:
+        logger.info(f'workspace_mount_path: {self.config.workspace_mount_path}')
+        logger.info(f'workspace_base: {self.config.workspace_base}')
+        logger.info(
+            f'workspace_mount_path_in_sandbox: {self.config.workspace_mount_path_in_sandbox}'
+        )
+        logger.info(f'workspace_mount_rewrite: {self.config.workspace_mount_rewrite}')
+        obs = self.read(FileReadAction(path=file_path))
+        if hasattr(obs, 'error') and obs.error:
+            return ''
+        return obs.content.strip()
+
+    def _get_ref_content(self, file_path: str) -> str:
+        ref = self._get_valid_ref()
+        if not ref:
+            return ''
+
+        cmd = f'git show {ref}:{file_path}'
+        obs = self.run(CmdRunAction(command=cmd))
+
+        if hasattr(obs, 'error') and obs.error:
+            return ''
+        return obs.content.strip()
+
+    def _verify_ref_exists(self, ref: str) -> bool:
+        cmd = f'git rev-parse --verify {ref}'
+        obs = self.run(CmdRunAction(command=cmd))
+        return not (hasattr(obs, 'error') and obs.error)
+
+    def _get_current_branch(self) -> str:
+        cmd = 'git remote show origin | grep "HEAD branch"'
+        obs = self.run(CmdRunAction(command=cmd))
+        return obs.content.split()[-1].strip()
+
+    def _get_valid_ref(self) -> str | None:
+        ref_non_default_branch = f'$(git merge-base HEAD "$(git rev-parse --abbrev-ref origin/{self._get_current_branch()})")'
+        ref_default_branch = 'origin/' + self._get_current_branch()
+        ref_new_repo = '$(git rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
+
+        refs = [ref_non_default_branch, ref_default_branch, ref_new_repo]
+        for ref in refs:
+            if self._verify_ref_exists(ref):
+                return ref
+
+        return None
+
+    def _get_changed_files(self) -> list[str]:
+        ref = self._get_valid_ref()
+        if not ref:
+            return []
+
+        diff_cmd = f'git diff --name-status {ref}'
+        logger.info(f'Running diff command: {diff_cmd}')
+        obs = self.run(CmdRunAction(command=diff_cmd))
+        return obs.content.splitlines()
+
+    def get_untracked_files(self) -> list[dict[str, str]]:
+        try:
+            cmd = 'git ls-files --others --exclude-standard'
+            obs = self.run(CmdRunAction(command=cmd))
+            obs_list = obs.content.splitlines()
+            return [{'status': 'A', 'path': path} for path in obs_list]
+        except Exception as e:
+            logger.error(f'Error retrieving untracked files: {e}')
+            return []
+
+    def get_git_changes(self) -> list[dict[str, str]]:
+        if not self._is_git_repo():
+            raise RuntimeError('Not a git repository')
+
+        result = []
+        changes_list = self._get_changed_files()
+        logger.info(f'Changes list: {changes_list}')
+
+        for line in changes_list:
+            status = line[:2].strip()
+            path = line[2:].strip()
+
+            # Get the first non-space character as the primary status
+            primary_status = status.replace(' ', '')[0]
+            result.append(
+                {
+                    'status': primary_status,
+                    'path': path,
+                }
+            )
+
+        # join with any untracked files
+        result += self.get_untracked_files()
+        return result
+
+    def get_git_diff(self, file_path: str, ref='HEAD') -> dict[str, str]:
+        modified = self._get_current_file_content(file_path)
+        original = self._get_ref_content(file_path)
+
+        return {
+            'modified': modified,
+            'original': original,
+        }
+
     @property
     def additional_agent_instructions(self) -> str:
         return ''
