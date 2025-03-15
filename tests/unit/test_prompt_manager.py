@@ -56,7 +56,7 @@ At the user's request, repository {{ repository_info.repo_name }} has been clone
     )
     assert '<REPOSITORY_INFO>' in additional_info
     assert (
-        "At the user's request, repository owner/repo has been cloned to the current working directory /workspace/repo."
+        "At the user's request, repository owner/repo has been cloned to directory /workspace/repo."
         in additional_info
     )
     assert '</REPOSITORY_INFO>' in additional_info
