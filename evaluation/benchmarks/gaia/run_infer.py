@@ -140,6 +140,7 @@ def process_instance(
         instruction += f"\n\nThe mentioned file is provided in the workspace at: {dest_file.split('/')[-1]}"
 
     instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+    instruction += "IMPORTANT: Your final answer should be a number OR as few words as possible OR a comma separated list of numbers and/or strings. If you are asked for a number, don't use comma to write your number neither use units such as $ or percent sign unless specified otherwise. If you are asked for a string, don't use articles, neither abbreviations (e.g. for cities), and write the digits in plain text unless specified otherwise. If you are asked for a comma separated list, apply the above rules depending of whether the element to be put in the list is a number or a string.\n"
     instruction += 'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
     instruction += (
         'For example: The answer to the question is <solution> 42 </solution>.\n'
