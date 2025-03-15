@@ -247,7 +247,7 @@ def test_microagent_observation_serialization():
     original_observation_dict = {
         'observation': 'microagent',
         'content': '',
-        'message': "**MicroagentObservation**\ninfo_type=MicroagentInfoType.ENVIRONMENT, repo_name=some_repo_name, repo_instructions=complex_repo_instruc..., runtime_hosts={'host1': 8080, 'host2': 8081}, additional_agent_instructions=You know it all abou..., microagent_knowledge=",
+        'message': "**MicroagentObservation**\ninfo_type=MicroagentInfoType.ENVIRONMENT, repo_name=some_repo_name, repo_instructions=complex_repo_instruc..., runtime_hosts={'host1': 8080, 'host2': 8081}, additional_agent_instructions=You know it all abou...",
         'extras': {
             'info_type': 'environment',
             'repo_name': 'some_repo_name',
