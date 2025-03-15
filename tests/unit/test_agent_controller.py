@@ -1,5 +1,5 @@
 import asyncio
-from unittest.mock import ANY, AsyncMock, MagicMock
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -14,12 +14,16 @@ from openhands.core.main import run_controller
 from openhands.core.schema import AgentState
 from openhands.events import Event, EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import ChangeAgentStateAction, CmdRunAction, MessageAction
+from openhands.events.action.agent import RecallAction
+from openhands.events.event import RecallType
 from openhands.events.observation import (
     ErrorObservation,
 )
+from openhands.events.observation.agent import MicroagentObservation
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
+from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.storage.memory import InMemoryFileStore
 
@@ -47,17 +51,36 @@ def mock_agent():
 
 @pytest.fixture
 def mock_event_stream():
-    mock = MagicMock(spec=EventStream)
+    mock = MagicMock(
+        spec=EventStream,
+        event_stream=EventStream(sid='test', file_store=InMemoryFileStore({})),
+    )
     mock.get_latest_event_id.return_value = 0
     return mock
 
 
 @pytest.fixture
+def test_event_stream():
+    event_stream = EventStream(sid='test', file_store=InMemoryFileStore({}))
+    return event_stream
+
+
+@pytest.fixture
 def mock_runtime() -> Runtime:
-    return MagicMock(
+    runtime = MagicMock(
         spec=Runtime,
-        event_stream=EventStream(sid='test', file_store=InMemoryFileStore({})),
+        event_stream=test_event_stream,
     )
+    return runtime
+
+
+@pytest.fixture
+def mock_memory() -> Memory:
+    memory = MagicMock(
+        spec=Memory,
+        event_stream=test_event_stream,
+    )
+    return memory
 
 
 @pytest.fixture
@@ -68,6 +91,7 @@ def mock_status_callback():
 async def send_event_to_controller(controller, event):
     await controller._on_event(event)
     await asyncio.sleep(0.1)
+    controller._pending_action = None
 
 
 @pytest.mark.asyncio
@@ -140,10 +164,8 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
 
 
 @pytest.mark.asyncio
-async def test_run_controller_with_fatal_error():
+async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
     config = AppConfig()
-    file_store = InMemoryFileStore({})
-    event_stream = EventStream(sid='test', file_store=file_store)
 
     agent = MagicMock(spec=Agent)
     agent = MagicMock(spec=Agent)
@@ -163,10 +185,23 @@ async def test_run_controller_with_fatal_error():
         if isinstance(event, CmdRunAction):
             error_obs = ErrorObservation('You messed around with Jim')
             error_obs._cause = event.id
-            event_stream.add_event(error_obs, EventSource.USER)
+            test_event_stream.add_event(error_obs, EventSource.USER)
 
-    event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
-    runtime.event_stream = event_stream
+    test_event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
+    runtime.event_stream = test_event_stream
+
+    def on_event_memory(event: Event):
+        if isinstance(event, RecallAction):
+            microagent_obs = MicroagentObservation(
+                content='Test microagent content',
+                recall_type=RecallType.KNOWLEDGE,
+            )
+            microagent_obs._cause = event.id
+            test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
+
+    test_event_stream.subscribe(
+        EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
+    )
 
     state = await run_controller(
         config=config,
@@ -175,22 +210,20 @@ async def test_run_controller_with_fatal_error():
         sid='test',
         agent=agent,
         fake_user_response_fn=lambda _: 'repeat',
+        memory=mock_memory,
     )
     print(f'state: {state}')
-    events = list(event_stream.get_events())
+    events = list(test_event_stream.get_events())
     print(f'event_stream: {events}')
-    assert state.iteration == 4
+    assert state.iteration == 3
     assert state.agent_state == AgentState.ERROR
     assert state.last_error == 'AgentStuckInLoopError: Agent got stuck in a loop'
     assert len(events) == 11
 
 
 @pytest.mark.asyncio
-async def test_run_controller_stop_with_stuck():
+async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
     config = AppConfig()
-    file_store = InMemoryFileStore({})
-    event_stream = EventStream(sid='test', file_store=file_store)
-
     agent = MagicMock(spec=Agent)
 
     def agent_step_fn(state):
@@ -209,10 +242,23 @@ async def test_run_controller_stop_with_stuck():
                 'Non fatal error here to trigger loop'
             )
             non_fatal_error_obs._cause = event.id
-            event_stream.add_event(non_fatal_error_obs, EventSource.ENVIRONMENT)
+            test_event_stream.add_event(non_fatal_error_obs, EventSource.ENVIRONMENT)
 
-    event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
-    runtime.event_stream = event_stream
+    test_event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
+    runtime.event_stream = test_event_stream
+
+    def on_event_memory(event: Event):
+        if isinstance(event, RecallAction):
+            microagent_obs = MicroagentObservation(
+                content='Test microagent content',
+                recall_type=RecallType.KNOWLEDGE,
+            )
+            microagent_obs._cause = event.id
+            test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
+
+    test_event_stream.subscribe(
+        EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
+    )
 
     state = await run_controller(
         config=config,
@@ -221,16 +267,17 @@ async def test_run_controller_stop_with_stuck():
         sid='test',
         agent=agent,
         fake_user_response_fn=lambda _: 'repeat',
+        memory=mock_memory,
     )
-    events = list(event_stream.get_events())
+    events = list(test_event_stream.get_events())
     print(f'state: {state}')
     for i, event in enumerate(events):
         print(f'event {i}: {event_to_dict(event)}')
 
-    assert state.iteration == 4
+    assert state.iteration == 3
     assert len(events) == 11
     # check the eventstream have 4 pairs of repeated actions and observations
-    repeating_actions_and_observations = events[2:10]
+    repeating_actions_and_observations = events[4:12]
     for action, observation in zip(
         repeating_actions_and_observations[0::2],
         repeating_actions_and_observations[1::2],
@@ -510,12 +557,13 @@ async def test_reset_with_pending_action_no_metadata(
 
 
 @pytest.mark.asyncio
-async def test_run_controller_max_iterations_has_metrics():
+async def test_run_controller_max_iterations_has_metrics(
+    test_event_stream, mock_memory
+):
     config = AppConfig(
         max_iterations=3,
     )
-    file_store = InMemoryFileStore({})
-    event_stream = EventStream(sid='test', file_store=file_store)
+    event_stream = test_event_stream
 
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
@@ -546,6 +594,17 @@ async def test_run_controller_max_iterations_has_metrics():
     event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
     runtime.event_stream = event_stream
 
+    def on_event_memory(event: Event):
+        if isinstance(event, RecallAction):
+            microagent_obs = MicroagentObservation(
+                content='Test microagent content',
+                recall_type=RecallType.KNOWLEDGE,
+            )
+            microagent_obs._cause = event.id
+            event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
+
+    event_stream.subscribe(EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4()))
+
     state = await run_controller(
         config=config,
         initial_user_action=MessageAction(content='Test message'),
@@ -553,6 +612,7 @@ async def test_run_controller_max_iterations_has_metrics():
         sid='test',
         agent=agent,
         fake_user_response_fn=lambda _: 'repeat',
+        memory=mock_memory,
     )
     assert state.iteration == 3
     assert state.agent_state == AgentState.ERROR
@@ -630,7 +690,7 @@ async def test_context_window_exceeded_error_handling(mock_agent, mock_event_str
 
 @pytest.mark.asyncio
 async def test_run_controller_with_context_window_exceeded_with_truncation(
-    mock_agent, mock_runtime
+    mock_agent, mock_runtime, mock_memory, test_event_stream
 ):
     """Tests that the controller can make progress after handling context window exceeded errors, as long as enable_history_truncation is ON"""
 
@@ -656,6 +716,20 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
     mock_agent.step = step_state.step
     mock_agent.config = AgentConfig()
 
+    def on_event_memory(event: Event):
+        if isinstance(event, RecallAction):
+            microagent_obs = MicroagentObservation(
+                content='Test microagent content',
+                recall_type=RecallType.KNOWLEDGE,
+            )
+            microagent_obs._cause = event.id
+            test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
+
+    test_event_stream.subscribe(
+        EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
+    )
+    mock_runtime.event_stream = test_event_stream
+
     try:
         state = await asyncio.wait_for(
             run_controller(
@@ -665,6 +739,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
                 sid='test',
                 agent=mock_agent,
                 fake_user_response_fn=lambda _: 'repeat',
+                memory=mock_memory,
             ),
             timeout=10,
         )
@@ -691,7 +766,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
 
 @pytest.mark.asyncio
 async def test_run_controller_with_context_window_exceeded_without_truncation(
-    mock_agent, mock_runtime
+    mock_agent, mock_runtime, mock_memory, test_event_stream
 ):
     """Tests that the controller would quit upon context window exceeded errors without enable_history_truncation ON."""
 
@@ -702,7 +777,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
         def step(self, state: State):
             # If the state has more than one message and we haven't errored yet,
             # throw the context window exceeded error
-            if len(state.history) > 1 and not self.has_errored:
+            if len(state.history) > 3 and not self.has_errored:
                 error = ContextWindowExceededError(
                     message='prompt is too long: 233885 tokens > 200000 maximum',
                     model='',
@@ -718,6 +793,19 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
     mock_agent.config = AgentConfig()
     mock_agent.config.enable_history_truncation = False
 
+    def on_event_memory(event: Event):
+        if isinstance(event, RecallAction):
+            microagent_obs = MicroagentObservation(
+                content='Test microagent content',
+                recall_type=RecallType.KNOWLEDGE,
+            )
+            microagent_obs._cause = event.id
+            test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
+
+    test_event_stream.subscribe(
+        EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
+    )
+    mock_runtime.event_stream = test_event_stream
     try:
         state = await asyncio.wait_for(
             run_controller(
@@ -727,6 +815,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
                 sid='test',
                 agent=mock_agent,
                 fake_user_response_fn=lambda _: 'repeat',
+                memory=mock_memory,
             ),
             timeout=10,
         )
@@ -749,6 +838,44 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
 
     # Check that the context window exceeded error was raised during the run
     assert step_state.has_errored
+
+
+@pytest.mark.asyncio
+async def test_run_controller_with_memory_error(test_event_stream):
+    config = AppConfig()
+    event_stream = test_event_stream
+
+    agent = MagicMock(spec=Agent)
+    agent.llm = MagicMock(spec=LLM)
+    agent.llm.metrics = Metrics()
+    agent.llm.config = config.get_llm_config()
+
+    runtime = MagicMock(spec=Runtime)
+    runtime.event_stream = event_stream
+
+    # Create a real Memory instance
+    memory = Memory(event_stream=event_stream, sid='test-memory')
+
+    # Patch the _on_microagent_action method to raise our test exception
+    def mock_on_microagent_action(*args, **kwargs):
+        raise RuntimeError('Test memory error')
+
+    with patch.object(
+        memory, '_on_microagent_action', side_effect=mock_on_microagent_action
+    ):
+        state = await run_controller(
+            config=config,
+            initial_user_action=MessageAction(content='Test message'),
+            runtime=runtime,
+            sid='test',
+            agent=agent,
+            fake_user_response_fn=lambda _: 'repeat',
+            memory=memory,
+        )
+
+    assert state.iteration == 0
+    assert state.agent_state == AgentState.ERROR
+    assert state.last_error == 'Error: RuntimeError'
 
 
 @pytest.mark.asyncio
@@ -849,5 +976,58 @@ async def test_action_metrics_copy():
     # Verify it's a deep copy by modifying the original
     agent.llm.metrics.accumulated_cost = 0.1
     assert last_action.llm_metrics.accumulated_cost == 0.07
+
+    await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_first_user_message_with_identical_content():
+    """
+    Test that _first_user_message correctly identifies the first user message
+    even when multiple messages have identical content but different IDs.
+
+    The issue we're checking is that the comparison (action == self._first_user_message())
+    should correctly differentiate between messages with the same content but different IDs.
+    """
+    # Create a real event stream for this test
+    event_stream = EventStream(sid='test', file_store=InMemoryFileStore({}))
+
+    # Create an agent controller
+    mock_agent = MagicMock(spec=Agent)
+    mock_agent.llm = MagicMock(spec=LLM)
+    mock_agent.llm.metrics = Metrics()
+    mock_agent.llm.config = AppConfig().get_llm_config()
+
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Create and add the first user message
+    first_message = MessageAction(content='Hello, this is a test message')
+    first_message._source = EventSource.USER
+    event_stream.add_event(first_message, EventSource.USER)
+
+    # Create and add a second user message with identical content
+    second_message = MessageAction(content='Hello, this is a test message')
+    second_message._source = EventSource.USER
+    event_stream.add_event(second_message, EventSource.USER)
+
+    # Verify that _first_user_message returns the first message
+    first_user_message = controller._first_user_message()
+    assert first_user_message is not None
+    assert first_user_message.id == first_message.id  # Check IDs match
+    assert first_user_message.id != second_message.id  # Different IDs
+    assert first_user_message == first_message == second_message  # dataclass equality
+
+    # Test the comparison used in the actual code
+    assert first_message == first_user_message  # This should be True
+    assert (
+        second_message.id != first_user_message.id
+    )  # This should be False, but may be True if there's a bug
 
     await controller.close()
