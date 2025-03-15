@@ -10,7 +10,7 @@ from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
 from openhands.core.main import run_controller
 from openhands.core.schema.agent import AgentState
-from openhands.events.action.agent import MicroagentAction
+from openhands.events.action.agent import RecallAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import EventSource
 from openhands.events.observation.agent import (
@@ -154,7 +154,7 @@ def test_memory_with_microagents():
     assert 'flarglebargle' in memory.knowledge_microagents
 
     # Create a microagent action with the trigger word
-    microagent_action = MicroagentAction(
+    microagent_action = RecallAction(
         query='Hello, flarglebargle!', info_type=MicroagentInfoType.KNOWLEDGE
     )
 
@@ -229,7 +229,7 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
         event_stream.add_event(user_message, EventSource.USER)
 
         # Create and add the microagent action
-        microagent_action = MicroagentAction(
+        microagent_action = RecallAction(
             query='First user message', info_type=MicroagentInfoType.ENVIRONMENT
         )
         microagent_action._source = EventSource.USER  # type: ignore[attr-defined]

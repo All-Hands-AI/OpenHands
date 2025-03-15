@@ -47,7 +47,7 @@ from openhands.events.action import (
     MessageAction,
     NullAction,
 )
-from openhands.events.action.agent import MicroagentAction
+from openhands.events.action.agent import RecallAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentCondensationObservation,
@@ -458,7 +458,7 @@ class AgentController:
                 else MicroagentInfoType.KNOWLEDGE
             )
 
-            microagent_action = MicroagentAction(
+            microagent_action = RecallAction(
                 query=action.content, info_type=microagent_info_type
             )
             self._pending_action = microagent_action
@@ -494,7 +494,7 @@ class AgentController:
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
                 self.event_stream.add_event(obs, EventSource.AGENT)
 
-        # NOTE: MicroagentActions don't need an ErrorObservation upon reset, as long as they have no tool calls
+        # NOTE: RecallActions don't need an ErrorObservation upon reset, as long as they have no tool calls
 
         # reset the pending action, this will be called when the agent is STOPPED or ERROR
         self._pending_action = None

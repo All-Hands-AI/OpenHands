@@ -5,7 +5,7 @@ from typing import Callable
 
 import openhands
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action.agent import MicroagentAction
+from openhands.events.action.agent import RecallAction
 from openhands.events.event import Event, EventSource, MicroagentInfoType
 from openhands.events.observation.agent import (
     MicroagentKnowledge,
@@ -31,7 +31,7 @@ GLOBAL_MICROAGENTS_DIR = os.path.join(
 class Memory:
     """
     Memory is a component that listens to the EventStream for information retrieval actions
-    (such as MicroagentAction) and publishes observations with the content (such as MicroagentObservation).
+    (a RecallAction) and publishes observations with the content (such as MicroagentObservation).
     """
 
     sid: str
@@ -76,9 +76,9 @@ class Memory:
         """Handle an event from the event stream asynchronously."""
         try:
             observation: MicroagentObservation | NullObservation | None = None
-            # Handle MicroagentAction
-            if isinstance(event, MicroagentAction):
-                # if this is an environment type microagent (on first user message)
+
+            if isinstance(event, RecallAction):
+                # if this is a workspace context recall (on first user message)
                 # create and add a MicroagentObservation
                 # with info about repo and runtime.
                 if (
@@ -109,7 +109,7 @@ class Memory:
             return
 
     def _on_first_microagent_action(
-        self, event: MicroagentAction
+        self, event: RecallAction
     ) -> MicroagentObservation | None:
         """Add repository and runtime information to the stream as a MicroagentObservation."""
 
@@ -157,7 +157,7 @@ class Memory:
 
     def _on_microagent_action(
         self,
-        event: MicroagentAction,
+        event: RecallAction,
         prev_observation: MicroagentObservation | None = None,
     ) -> MicroagentObservation | None:
         """When a microagent action triggers microagents, create a MicroagentObservation with structured data."""

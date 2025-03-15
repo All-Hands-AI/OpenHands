@@ -110,19 +110,19 @@ class AgentDelegateAction(Action):
 
 
 @dataclass
-class MicroagentAction(Action):
-    """This action is used for retrieving microagent content, e.g., from the global directory or user workspace."""
+class RecallAction(Action):
+    """This action is used for retrieving content, e.g., from the global directory or user workspace."""
 
     info_type: MicroagentInfoType
     query: str = ''
     thought: str = ''
-    action: str = ActionType.MICROAGENT
+    action: str = ActionType.RECALL
 
     @property
     def message(self) -> str:
-        return f'Retrieving microagent content for: {self.query[:50]}'
+        return f'Retrieving content for: {self.query[:50]}'
 
     def __str__(self) -> str:
-        ret = '**MicroagentAction**\n'
+        ret = '**RecallAction**\n'
         ret += f'QUERY: {self.query[:50]}'
         return ret

@@ -17,7 +17,7 @@ from openhands.events.action import (
     AgentFinishAction,
     MessageAction,
 )
-from openhands.events.action.agent import MicroagentAction
+from openhands.events.action.agent import RecallAction
 from openhands.events.event import Event, MicroagentInfoType
 from openhands.events.observation.agent import MicroagentObservation
 from openhands.events.stream import EventStreamSubscriber
@@ -80,12 +80,12 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
         initial_state=parent_state,
     )
 
-    # Setup Memory to catch MicroagentActions
+    # Setup Memory to catch RecallActions
     mock_memory = MagicMock(spec=Memory)
     mock_memory.event_stream = mock_event_stream
 
     def on_event(event: Event):
-        if isinstance(event, MicroagentAction):
+        if isinstance(event, RecallAction):
             # create a MicroagentObservation
             microagent_observation = MicroagentObservation(
                 info_type=MicroagentInfoType.KNOWLEDGE,
