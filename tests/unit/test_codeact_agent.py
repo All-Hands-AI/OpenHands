@@ -266,6 +266,28 @@ def test_step_with_no_pending_actions(mock_state: State):
     assert action.content == 'Task completed'
 
 
+def test_correct_tool_description_loaded_based_on_model_name(mock_state: State):
+    """Tests that the simplified tool descriptions are loaded for specific models."""
+    o3_mock_config = Mock()
+    o3_mock_config.model = 'mock_o3_model'
+
+    llm = Mock()
+    llm.config = o3_mock_config
+
+    agent = CodeActAgent(llm=llm, config=AgentConfig())
+    for tool in agent.tools:
+        # Assert all descriptions have less than 1024 characters
+        assert len(tool['function']['description']) < 1024
+
+    sonnet_mock_config = Mock()
+    sonnet_mock_config.model = 'mock_sonnet_model'
+
+    llm.config = sonnet_mock_config
+    agent = CodeActAgent(llm=llm, config=AgentConfig())
+    # Assert existence of the detailed tool descriptions that are longer than 1024 characters
+    assert any(len(tool['function']['description']) > 1024 for tool in agent.tools)
+
+
 def test_mismatched_tool_call_events(mock_state: State):
     """Tests that the agent can convert mismatched tool call events (i.e., an observation with no corresponding action) into messages."""
     agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
