@@ -1,6 +1,6 @@
 import copy
 
-from openhands.events.event import MicroagentInfoType
+from openhands.events.event import RecallType
 from openhands.events.observation.agent import (
     AgentCondensationObservation,
     AgentStateChangedObservation,
@@ -116,8 +116,8 @@ def observation_from_dict(observation: dict) -> Observation:
 
     if observation_class is MicroagentObservation:
         # handle the Enum conversion
-        if 'info_type' in extras:
-            extras['info_type'] = MicroagentInfoType(extras['info_type'])
+        if 'recall_type' in extras:
+            extras['recall_type'] = RecallType(extras['recall_type'])
 
         # convert dicts in microagent_knowledge to MicroagentKnowledge objects
         if 'microagent_knowledge' in extras and isinstance(

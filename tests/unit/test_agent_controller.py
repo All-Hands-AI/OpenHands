@@ -15,7 +15,7 @@ from openhands.core.schema import AgentState
 from openhands.events import Event, EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import ChangeAgentStateAction, CmdRunAction, MessageAction
 from openhands.events.action.agent import RecallAction
-from openhands.events.event import MicroagentInfoType
+from openhands.events.event import RecallType
 from openhands.events.observation import (
     ErrorObservation,
 )
@@ -194,7 +194,7 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
         if isinstance(event, RecallAction):
             microagent_obs = MicroagentObservation(
                 content='Test microagent content',
-                info_type=MicroagentInfoType.KNOWLEDGE,
+                recall_type=RecallType.KNOWLEDGE,
             )
             microagent_obs._cause = event.id
             test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
@@ -251,7 +251,7 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
         if isinstance(event, RecallAction):
             microagent_obs = MicroagentObservation(
                 content='Test microagent content',
-                info_type=MicroagentInfoType.KNOWLEDGE,
+                recall_type=RecallType.KNOWLEDGE,
             )
             microagent_obs._cause = event.id
             test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
@@ -598,7 +598,7 @@ async def test_run_controller_max_iterations_has_metrics(
         if isinstance(event, RecallAction):
             microagent_obs = MicroagentObservation(
                 content='Test microagent content',
-                info_type=MicroagentInfoType.KNOWLEDGE,
+                recall_type=RecallType.KNOWLEDGE,
             )
             microagent_obs._cause = event.id
             event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
@@ -720,7 +720,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
         if isinstance(event, RecallAction):
             microagent_obs = MicroagentObservation(
                 content='Test microagent content',
-                info_type=MicroagentInfoType.KNOWLEDGE,
+                recall_type=RecallType.KNOWLEDGE,
             )
             microagent_obs._cause = event.id
             test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
@@ -797,7 +797,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
         if isinstance(event, RecallAction):
             microagent_obs = MicroagentObservation(
                 content='Test microagent content',
-                info_type=MicroagentInfoType.KNOWLEDGE,
+                recall_type=RecallType.KNOWLEDGE,
             )
             microagent_obs._cause = event.id
             test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)

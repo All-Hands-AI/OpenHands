@@ -1,4 +1,4 @@
-from openhands.events.event import MicroagentInfoType
+from openhands.events.event import RecallType
 from openhands.events.observation.agent import (
     AgentCondensationObservation,
     AgentStateChangedObservation,
@@ -43,5 +43,5 @@ __all__ = [
     'UserRejectObservation',
     'AgentCondensationObservation',
     'MicroagentObservation',
-    'MicroagentInfoType',
+    'RecallType',
 ]

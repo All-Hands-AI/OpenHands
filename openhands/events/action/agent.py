@@ -4,7 +4,7 @@ from typing import Any
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action
-from openhands.events.event import MicroagentInfoType
+from openhands.events.event import RecallType
 
 
 @dataclass
@@ -113,7 +113,7 @@ class AgentDelegateAction(Action):
 class RecallAction(Action):
     """This action is used for retrieving content, e.g., from the global directory or user workspace."""
 
-    info_type: MicroagentInfoType
+    recall_type: RecallType
     query: str = ''
     thought: str = ''
     action: str = ActionType.RECALL

@@ -33,7 +33,7 @@ from openhands.events import (
     EventSource,
     EventStream,
     EventStreamSubscriber,
-    MicroagentInfoType,
+    RecallType,
 )
 from openhands.events.action import (
     Action,
@@ -452,18 +452,16 @@ class AgentController:
             is_first_user_message = (
                 action.id == first_user_message.id if first_user_message else False
             )
-            microagent_info_type = (
-                MicroagentInfoType.ENVIRONMENT
+            recall_type = (
+                RecallType.WORKSPACE_CONTEXT
                 if is_first_user_message
-                else MicroagentInfoType.KNOWLEDGE
+                else RecallType.KNOWLEDGE
             )
 
-            microagent_action = RecallAction(
-                query=action.content, info_type=microagent_info_type
-            )
-            self._pending_action = microagent_action
+            recall_action = RecallAction(query=action.content, recall_type=recall_type)
+            self._pending_action = recall_action
             # this is source=USER because the user message is the trigger for the microagent retrieval
-            self.event_stream.add_event(microagent_action, EventSource.USER)
+            self.event_stream.add_event(recall_action, EventSource.USER)
 
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)

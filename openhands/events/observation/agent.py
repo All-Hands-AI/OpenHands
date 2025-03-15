@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from openhands.core.schema import ObservationType
-from openhands.events.event import MicroagentInfoType
+from openhands.events.event import RecallType
 from openhands.events.observation.observation import Observation
 
 
@@ -63,7 +63,7 @@ class MicroagentKnowledge:
 class MicroagentObservation(Observation):
     """The retrieval of content from a microagent or more microagents."""
 
-    info_type: MicroagentInfoType
+    recall_type: RecallType
     observation: str = ObservationType.MICROAGENT
 
     # environment
@@ -100,7 +100,7 @@ class MicroagentObservation(Observation):
     def __str__(self) -> str:
         # Build a string representation of all fields
         fields = [
-            f'info_type={self.info_type}',
+            f'recall_type={self.recall_type}',
             f'repo_name={self.repo_name}',
             f'repo_instructions={self.repo_instructions[:20]}...',
             f'runtime_hosts={self.runtime_hosts}',

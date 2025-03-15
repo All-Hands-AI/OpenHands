@@ -6,7 +6,7 @@ from typing import Callable
 import openhands
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import RecallAction
-from openhands.events.event import Event, EventSource, MicroagentInfoType
+from openhands.events.event import Event, EventSource, RecallType
 from openhands.events.observation.agent import (
     MicroagentKnowledge,
     MicroagentObservation,
@@ -83,7 +83,7 @@ class Memory:
                 # with info about repo and runtime.
                 if (
                     event.source == EventSource.USER
-                    and event.info_type == MicroagentInfoType.ENVIRONMENT
+                    and event.recall_type == RecallType.WORKSPACE_CONTEXT
                 ):
                     observation = self._on_first_microagent_action(event)
 
@@ -133,7 +133,7 @@ class Memory:
         # Create observation if we have anything
         if self.repository_info or self.runtime_info or repo_instructions:
             obs = MicroagentObservation(
-                info_type=MicroagentInfoType.ENVIRONMENT,
+                recall_type=RecallType.WORKSPACE_CONTEXT,
                 repo_name=self.repository_info.repo_name
                 if self.repository_info and self.repository_info.repo_name is not None
                 else '',
@@ -191,7 +191,7 @@ class Memory:
             else:
                 # if it's not the first user message, we may not have found any information this step
                 obs = MicroagentObservation(
-                    info_type=MicroagentInfoType.KNOWLEDGE,
+                    recall_type=RecallType.KNOWLEDGE,
                     microagent_knowledge=recalled_content,
                     content='Retrieved knowledge from microagents',
                 )

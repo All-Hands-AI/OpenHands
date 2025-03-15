@@ -17,7 +17,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.event import Event, MicroagentInfoType
+from openhands.events.event import Event, RecallType
 from openhands.events.observation import (
     AgentCondensationObservation,
     AgentDelegateObservation,
@@ -388,7 +388,7 @@ class ConversationMemory:
             isinstance(obs, MicroagentObservation)
             and self.agent_config.enable_prompt_extensions
         ):
-            if obs.info_type == MicroagentInfoType.ENVIRONMENT:
+            if obs.recall_type == RecallType.WORKSPACE_CONTEXT:
                 # everything is optional, check if they are present
                 repo_info = (
                     RepositoryInfo(
@@ -433,7 +433,7 @@ class ConversationMemory:
                     )
                 else:
                     return []
-            elif obs.info_type == MicroagentInfoType.KNOWLEDGE:
+            elif obs.recall_type == RecallType.KNOWLEDGE:
                 # Use prompt manager to build the microagent info
                 # First, filter out agents that appear in earlier MicroagentObservations
                 filtered_agents = self._filter_agents_in_microagent_obs(
@@ -516,7 +516,7 @@ class ConversationMemory:
         Returns:
             list[MicroagentKnowledge]: The filtered list of microagent knowledge
         """
-        if obs.info_type != MicroagentInfoType.KNOWLEDGE:
+        if obs.recall_type != RecallType.KNOWLEDGE:
             return obs.microagent_knowledge
 
         # For each agent in the current microagent observation, check if it appears in any earlier microagent observation
@@ -545,7 +545,7 @@ class ConversationMemory:
         for event in events[:current_index]:
             if (
                 isinstance(event, MicroagentObservation)
-                and event.info_type == MicroagentInfoType.KNOWLEDGE
+                and event.recall_type == RecallType.KNOWLEDGE
             ):
                 if any(
                     agent.name == agent_name for agent in event.microagent_knowledge

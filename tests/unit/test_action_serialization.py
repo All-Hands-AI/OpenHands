@@ -363,7 +363,7 @@ def test_agent_microagent_action_serialization_deserialization():
         'args': {
             'query': 'What is the capital of France?',
             'thought': 'I need to find information about France',
-            'info_type': 'knowledge',
+            'recall_type': 'knowledge',
         },
     }
     serialization_deserialization(original_action_dict, RecallAction)

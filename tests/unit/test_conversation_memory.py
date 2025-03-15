@@ -17,7 +17,7 @@ from openhands.events.event import (
     EventSource,
     FileEditSource,
     FileReadSource,
-    MicroagentInfoType,
+    RecallType,
 )
 from openhands.events.observation import CmdOutputObservation
 from openhands.events.observation.agent import (
@@ -357,7 +357,7 @@ def test_process_events_with_empty_environment_info(conversation_memory):
     # Create a MicroagentObservation with empty info
 
     empty_obs = MicroagentObservation(
-        info_type=MicroagentInfoType.ENVIRONMENT,
+        recall_type=RecallType.WORKSPACE_CONTEXT,
         repo_name='',
         repo_directory='',
         repo_instructions='',
@@ -529,7 +529,7 @@ def test_apply_prompt_caching(conversation_memory):
 def test_process_events_with_environment_microagent_observation(conversation_memory):
     """Test processing a MicroagentObservation with ENVIRONMENT info type."""
     obs = MicroagentObservation(
-        info_type=MicroagentInfoType.ENVIRONMENT,
+        recall_type=RecallType.WORKSPACE_CONTEXT,
         repo_name='test-repo',
         repo_directory='/path/to/repo',
         repo_instructions='# Test Repository\nThis is a test repository.',
@@ -592,7 +592,7 @@ def test_process_events_with_knowledge_microagent_microagent_observation(
     ]
 
     obs = MicroagentObservation(
-        info_type=MicroagentInfoType.KNOWLEDGE,
+        recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=microagent_knowledge,
         content='Retrieved knowledge from microagents',
     )
@@ -639,7 +639,7 @@ def test_process_events_with_microagent_observation_extensions_disabled(
     agent_config.enable_prompt_extensions = False
 
     obs = MicroagentObservation(
-        info_type=MicroagentInfoType.ENVIRONMENT,
+        recall_type=RecallType.WORKSPACE_CONTEXT,
         repo_name='test-repo',
         repo_directory='/path/to/repo',
         content='Retrieved environment info',
@@ -668,7 +668,7 @@ def test_process_events_with_microagent_observation_extensions_disabled(
 def test_process_events_with_empty_microagent_knowledge(conversation_memory):
     """Test processing a MicroagentObservation with empty microagent knowledge."""
     obs = MicroagentObservation(
-        info_type=MicroagentInfoType.KNOWLEDGE,
+        recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[],
         content='Retrieved knowledge from microagents',
     )
@@ -724,7 +724,7 @@ It may or may not be relevant to the user's request.
 
     # Create a MicroagentObservation with microagent knowledge
     microagent_observation = MicroagentObservation(
-        info_type=MicroagentInfoType.KNOWLEDGE,
+        recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
                 name='test_agent',
@@ -804,7 +804,7 @@ each of which has a corresponding port:
 
     # Create a MicroagentObservation with environment info
     microagent_observation = MicroagentObservation(
-        info_type=MicroagentInfoType.ENVIRONMENT,
+        recall_type=RecallType.WORKSPACE_CONTEXT,
         repo_name='owner/repo',
         repo_directory='/workspace/repo',
         repo_instructions='This repository contains important code.',
@@ -846,7 +846,7 @@ def test_process_events_with_microagent_observation_deduplication(conversation_m
     """
     # Create a sequence of MicroagentObservations with overlapping agents
     obs1 = MicroagentObservation(
-        info_type=MicroagentInfoType.KNOWLEDGE,
+        recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
                 name='python_agent',
@@ -868,7 +868,7 @@ def test_process_events_with_microagent_observation_deduplication(conversation_m
     )
 
     obs2 = MicroagentObservation(
-        info_type=MicroagentInfoType.KNOWLEDGE,
+        recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
                 name='python_agent',
@@ -880,7 +880,7 @@ def test_process_events_with_microagent_observation_deduplication(conversation_m
     )
 
     obs3 = MicroagentObservation(
-        info_type=MicroagentInfoType.KNOWLEDGE,
+        recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
                 name='git_agent',
@@ -920,7 +920,7 @@ def test_process_events_with_microagent_observation_deduplication_disabled_agent
     """Test that disabled agents are filtered out and deduplication keeps the first occurrence."""
     # Create a sequence of MicroagentObservations with disabled agents
     obs1 = MicroagentObservation(
-        info_type=MicroagentInfoType.KNOWLEDGE,
+        recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
                 name='disabled_agent',
@@ -937,7 +937,7 @@ def test_process_events_with_microagent_observation_deduplication_disabled_agent
     )
 
     obs2 = MicroagentObservation(
-        info_type=MicroagentInfoType.KNOWLEDGE,
+        recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
                 name='enabled_agent',
@@ -975,7 +975,7 @@ def test_process_events_with_microagent_observation_deduplication_empty(
 ):
     """Test that empty MicroagentObservations are handled correctly."""
     obs = MicroagentObservation(
-        info_type=MicroagentInfoType.KNOWLEDGE,
+        recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[],
         content='Empty retrieval',
     )
@@ -1001,7 +1001,7 @@ def test_has_agent_in_earlier_events(conversation_memory):
     """Test the _has_agent_in_earlier_events helper method."""
     # Create test MicroagentObservations
     obs1 = MicroagentObservation(
-        info_type=MicroagentInfoType.KNOWLEDGE,
+        recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
                 name='agent1',
@@ -1013,7 +1013,7 @@ def test_has_agent_in_earlier_events(conversation_memory):
     )
 
     obs2 = MicroagentObservation(
-        info_type=MicroagentInfoType.KNOWLEDGE,
+        recall_type=RecallType.KNOWLEDGE,
         microagent_knowledge=[
             MicroagentKnowledge(
                 name='agent2',
@@ -1025,7 +1025,7 @@ def test_has_agent_in_earlier_events(conversation_memory):
     )
 
     obs3 = MicroagentObservation(
-        info_type=MicroagentInfoType.ENVIRONMENT,
+        recall_type=RecallType.WORKSPACE_CONTEXT,
         content='Environment info',
     )
 

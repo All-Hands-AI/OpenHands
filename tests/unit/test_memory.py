@@ -14,8 +14,8 @@ from openhands.events.action.agent import RecallAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import EventSource
 from openhands.events.observation.agent import (
-    MicroagentInfoType,
     MicroagentObservation,
+    RecallType,
 )
 from openhands.events.stream import EventStream
 from openhands.llm import LLM
@@ -155,7 +155,7 @@ def test_memory_with_microagents():
 
     # Create a microagent action with the trigger word
     microagent_action = RecallAction(
-        query='Hello, flarglebargle!', info_type=MicroagentInfoType.KNOWLEDGE
+        query='Hello, flarglebargle!', recall_type=RecallType.KNOWLEDGE
     )
 
     # Mock the event_stream.add_event method
@@ -180,7 +180,7 @@ def test_memory_with_microagents():
     observation, source = added_events[0]
     assert isinstance(observation, MicroagentObservation)
     assert source == EventSource.ENVIRONMENT
-    assert observation.info_type == MicroagentInfoType.KNOWLEDGE
+    assert observation.recall_type == RecallType.KNOWLEDGE
     assert len(observation.microagent_knowledge) == 1
     assert observation.microagent_knowledge[0].name == 'flarglebargle'
     assert observation.microagent_knowledge[0].trigger == 'flarglebargle'
@@ -230,7 +230,7 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
 
         # Create and add the microagent action
         microagent_action = RecallAction(
-            query='First user message', info_type=MicroagentInfoType.ENVIRONMENT
+            query='First user message', recall_type=RecallType.WORKSPACE_CONTEXT
         )
         microagent_action._source = EventSource.USER  # type: ignore[attr-defined]
         event_stream.add_event(microagent_action, EventSource.USER)
@@ -251,7 +251,7 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
 
         # Get the first MicroagentObservation
         observation = microagent_obs_events[0]
-        assert observation.info_type == MicroagentInfoType.ENVIRONMENT
+        assert observation.recall_type == RecallType.WORKSPACE_CONTEXT
         assert observation.repo_name == 'owner/repo'
         assert observation.repo_directory == '/workspace/repo'
         assert 'This is a test repository' in observation.repo_instructions
